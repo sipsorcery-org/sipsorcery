@@ -37,7 +37,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -262,7 +262,7 @@ namespace SIPSorcery.SIP
 
                             if (delimIndex == -1)
                             {
-                                //logger.Warn("Via header missing semi-colon: " + header + ".");
+                                //logger.LogWarning("Via header missing semi-colon: " + header + ".");
                                 //parserError = SIPValidationError.NoBranchOnVia;
                                 //return null;
                                 contactAddress = nextField.Trim();
@@ -278,7 +278,7 @@ namespace SIPSorcery.SIP
                                 // Check that the branch parameter is present, without it the Via header is illegal.
                                 //if (!viaHeader.ViaParameters.Has(m_branchKey))
                                 //{
-                                //    logger.Warn("Via header missing branch: " + header + ".");
+                                //    logger.LogWarning("Via header missing branch: " + header + ".");
                                 //    parserError = SIPValidationError.NoBranchOnVia;
                                 //    return null;
                                 //}
@@ -1241,7 +1241,7 @@ namespace SIPSorcery.SIP
     {
         public const int DEFAULT_CSEQ = 100;
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
         private static string m_CRLF = SIPConstants.CRLF;
 
         // RFC SIP headers.
@@ -1436,7 +1436,7 @@ namespace SIPSorcery.SIP
 
                         if (delimiterIndex == -1)
                         {
-                            logger.Warn("Invalid SIP header, ignoring, " + headerLine + ".");
+                            logger.LogWarning("Invalid SIP header, ignoring, " + headerLine + ".");
                             continue;
                         }
 
@@ -1480,13 +1480,13 @@ namespace SIPSorcery.SIP
                             string[] cseqFields = headerValue.Split(' ');
                             if (cseqFields == null || cseqFields.Length == 0)
                             {
-                                logger.Warn("The " + SIPHeaders.SIP_HEADER_CSEQ + " was empty.");
+                                logger.LogWarning("The " + SIPHeaders.SIP_HEADER_CSEQ + " was empty.");
                             }
                             else
                             {
                                 if (!Int32.TryParse(cseqFields[0], out sipHeader.CSeq))
                                 {
-                                    logger.Warn(SIPHeaders.SIP_HEADER_CSEQ + " did not contain a valid integer, " + headerLine + ".");
+                                    logger.LogWarning(SIPHeaders.SIP_HEADER_CSEQ + " did not contain a valid integer, " + headerLine + ".");
                                 }
 
                                 if (cseqFields != null && cseqFields.Length > 1)
@@ -1495,7 +1495,7 @@ namespace SIPSorcery.SIP
                                 }
                                 else
                                 {
-                                    logger.Warn("There was no " + SIPHeaders.SIP_HEADER_CSEQ + " method, " + headerLine + ".");
+                                    logger.LogWarning("There was no " + SIPHeaders.SIP_HEADER_CSEQ + " method, " + headerLine + ".");
                                 }
                             }
                         }
@@ -1507,7 +1507,7 @@ namespace SIPSorcery.SIP
 
                             if (!Int32.TryParse(headerValue, out sipHeader.Expires))
                             {
-                                logger.Warn("The Expires value was not a valid integer, " + headerLine + ".");
+                                logger.LogWarning("The Expires value was not a valid integer, " + headerLine + ".");
                             }
                         }
                         #endregion
@@ -1516,7 +1516,7 @@ namespace SIPSorcery.SIP
                         {
                             if (!Int32.TryParse(headerValue, out sipHeader.MinExpires))
                             {
-                                logger.Warn("The Min-Expires value was not a valid integer, " + headerLine + ".");
+                                logger.LogWarning("The Min-Expires value was not a valid integer, " + headerLine + ".");
                             }
                         }
                         #endregion
@@ -1585,7 +1585,7 @@ namespace SIPSorcery.SIP
                         {
                             if (!Int32.TryParse(headerValue, out sipHeader.MaxForwards))
                             {
-                                logger.Warn("The " + SIPHeaders.SIP_HEADER_MAXFORWARDS + " could not be parsed as a valid integer, " + headerLine + ".");
+                                logger.LogWarning("The " + SIPHeaders.SIP_HEADER_MAXFORWARDS + " could not be parsed as a valid integer, " + headerLine + ".");
                             }
                         }
                         #endregion
@@ -1595,7 +1595,7 @@ namespace SIPSorcery.SIP
                         {
                             if (!Int32.TryParse(headerValue, out sipHeader.ContentLength))
                             {
-                                logger.Warn("The " + SIPHeaders.SIP_HEADER_CONTENTLENGTH + " could not be parsed as a valid integer.");
+                                logger.LogWarning("The " + SIPHeaders.SIP_HEADER_CONTENTLENGTH + " could not be parsed as a valid integer.");
                             }
                         }
                         #endregion
@@ -1955,7 +1955,7 @@ namespace SIPSorcery.SIP
                     }
                     catch (Exception parseExcp)
                     {
-                        logger.Error("Error parsing SIP header " + headerLine + ". " + parseExcp.Message);
+                        logger.LogError("Error parsing SIP header " + headerLine + ". " + parseExcp.Message);
                         throw new SIPValidationException(SIPValidationFieldsEnum.Headers, "Unknown error parsing Header.");
                     }
                 }
@@ -1970,7 +1970,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ParseSIPHeaders. " + excp.Message);
+                logger.LogError("Exception ParseSIPHeaders. " + excp.Message);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Headers, "Unknown error parsing Headers.");
             }
         }
@@ -2107,7 +2107,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPHeader ToString. " + excp.Message);
+                logger.LogError("Exception SIPHeader ToString. " + excp.Message);
                 throw excp;
             }
         }
@@ -2151,7 +2151,7 @@ namespace SIPSorcery.SIP
 
                     if (delimiterIndex == -1)
                     {
-                        logger.Warn("Invalid SIP header, ignoring, " + unknonwHeader + ".");
+                        logger.LogWarning("Invalid SIP header, ignoring, " + unknonwHeader + ".");
                         continue;
                     }
 

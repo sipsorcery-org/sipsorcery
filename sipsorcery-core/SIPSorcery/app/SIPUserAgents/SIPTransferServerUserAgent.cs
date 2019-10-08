@@ -36,7 +36,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
@@ -46,7 +46,7 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public class SIPTransferServerUserAgent : ISIPServerUserAgent
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public SIPCallDirection CallDirection
         {
@@ -197,7 +197,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTransferServerUserAgent Answer. " + excp.Message);
+                logger.LogError("Exception SIPTransferServerUserAgent Answer. " + excp.Message);
                 throw;
             }
         }
@@ -209,7 +209,7 @@ namespace SIPSorcery.SIP.App
 
         public void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders)
         {
-            logger.Warn("SIPTransferServerUserAgent Reject called with " + failureStatus + " " + reasonPhrase + ".");
+            logger.LogWarning("SIPTransferServerUserAgent Reject called with " + failureStatus + " " + reasonPhrase + ".");
 
             if (UASStateChanged != null)
             {
@@ -280,7 +280,7 @@ namespace SIPSorcery.SIP.App
             }
             catch(Exception excp)
             {
-                logger.Error("Exception PendingLegHungup. " + excp);
+                logger.LogError("Exception PendingLegHungup. " + excp);
             }
         }
     }

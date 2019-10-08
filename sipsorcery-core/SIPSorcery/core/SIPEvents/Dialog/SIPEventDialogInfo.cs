@@ -41,7 +41,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -74,7 +74,7 @@ namespace SIPSorcery.SIP
     /// </remarks>
     public class SIPEventDialogInfo : SIPEvent
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public static readonly string m_dialogXMLNS = SIPEventConsts.DIALOG_XML_NAMESPACE_URN;
         //private static readonly string m_sipsorceryXMLNS = SIPEventConsts.SIPSORCERY_DIALOG_XML_NAMESPACE_URN;
@@ -114,7 +114,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPEventDialogInfo Ctor. " + excp.Message);
+                logger.LogError("Exception SIPEventDialogInfo Ctor. " + excp.Message);
                 throw;
             }
         }

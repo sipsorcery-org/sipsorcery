@@ -40,7 +40,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
@@ -69,7 +69,7 @@ namespace SIPSorcery.SIP
         private static string m_looseRouteParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
         public static IPAddress BlackholeAddress = IPAddress.Any;                               // (IPAddress.Any is 0.0.0.0) Any SIP messages with this IP address will be dropped.
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private bool m_queueIncoming = true;     // Dictates whether the transport later will queue incoming requests for processing on a separate thread of process immediately on the same thread.
         // Most SIP elements with the exception of Stateless Proxies would typically want to queue incoming SIP messages.
@@ -172,7 +172,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception AddSIPChannel. " + excp.Message);
+                logger.LogError("Exception AddSIPChannel. " + excp.Message);
                 throw excp;
             }
         }
@@ -222,7 +222,7 @@ namespace SIPSorcery.SIP
                     // Keep the queue within size limits 
                     if (m_inMessageQueue.Count >= MAX_INMESSAGE_QUEUECOUNT)
                     {
-                        logger.Warn("SIPTransport queue full new message from " + remoteEndPoint + " being discarded.");
+                        logger.LogWarning("SIPTransport queue full new message from " + remoteEndPoint + " being discarded.");
                     }
                     else
                     {
@@ -237,7 +237,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTransport ReceiveMessage. " + excp.Message);
+                logger.LogError("Exception SIPTransport ReceiveMessage. " + excp.Message);
                 throw excp;
             }
         }
@@ -256,11 +256,11 @@ namespace SIPSorcery.SIP
                 m_inMessageArrived.Set();
                 m_inMessageArrived.Set();
 
-                logger.Debug("SIPTransport Shutdown Complete.");
+                logger.LogDebug("SIPTransport Shutdown Complete.");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTransport Shutdown. " + excp.Message);
+                logger.LogError("Exception SIPTransport Shutdown. " + excp.Message);
             }
         }
 
@@ -497,8 +497,8 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                logger.Warn("No SIPChannel could be found for " + localSIPEndPoint + " in SIPTransport.SendRaw, sending to " + destinationEndPoint.ToString() + ".");
-                //logger.Warn(Encoding.UTF8.GetString(buffer));
+                logger.LogWarning("No SIPChannel could be found for " + localSIPEndPoint + " in SIPTransport.SendRaw, sending to " + destinationEndPoint.ToString() + ".");
+                //logger.LogWarning(Encoding.UTF8.GetString(buffer));
             }
         }
 
@@ -609,7 +609,7 @@ namespace SIPSorcery.SIP
             }
             catch (ApplicationException appExcp)
             {
-                logger.Warn("ApplicationException SIPTransport SendRequest. " + appExcp.Message);
+                logger.LogWarning("ApplicationException SIPTransport SendRequest. " + appExcp.Message);
 
                 SIPResponse errorResponse = GetResponse(sipRequest, SIPResponseStatusCodesEnum.InternalServerError, appExcp.Message);
 
@@ -628,7 +628,7 @@ namespace SIPSorcery.SIP
 
                 if (errorResponse.Header.Vias.Length == 0)
                 {
-                    logger.Warn("Could not send error response for " + appExcp.Message + " as no non-local Via headers were available.");
+                    logger.LogWarning("Could not send error response for " + appExcp.Message + " as no non-local Via headers were available.");
                 }
                 else
                 {
@@ -661,7 +661,7 @@ namespace SIPSorcery.SIP
                 throw new ApplicationException("Cannot send reliable SIP message as the reliable transmissions queue is full.");
             }
 
-            //logger.Debug("SendSIPReliable transaction URI " + sipTransaction.TransactionRequest.URI.ToString() + ".");
+            //logger.LogDebug("SendSIPReliable transaction URI " + sipTransaction.TransactionRequest.URI.ToString() + ".");
 
             if (sipTransaction.TransactionType == SIPTransactionTypesEnum.Invite &&
                 sipTransaction.TransactionState == SIPTransactionStatesEnum.Completed)
@@ -734,7 +734,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    logger.Warn("Could not find channel to send SIP Response in SendResponse.");
+                    logger.LogWarning("Could not find channel to send SIP Response in SendResponse.");
                 }
             }
         }
@@ -756,8 +756,8 @@ namespace SIPSorcery.SIP
             SIPViaHeader topViaHeader = sipResponse.Header.Vias.TopViaHeader;
             if (topViaHeader == null)
             {
-                logger.Warn("There was no top Via header on a SIP response from " + sipResponse.RemoteSIPEndPoint + " when attempting to send it, response dropped.");
-                //logger.Warn(sipResponse.ToString());
+                logger.LogWarning("There was no top Via header on a SIP response from " + sipResponse.RemoteSIPEndPoint + " when attempting to send it, response dropped.");
+                //logger.LogWarning(sipResponse.ToString());
             }
             else
             {
@@ -840,7 +840,7 @@ namespace SIPSorcery.SIP
             }
             catch (ApplicationException appExcp)
             {
-                logger.Warn("ApplicationException SIPTransport SendResponse. " + appExcp.Message);
+                logger.LogWarning("ApplicationException SIPTransport SendResponse. " + appExcp.Message);
             }
         }
 
@@ -872,11 +872,11 @@ namespace SIPSorcery.SIP
                     m_inMessageArrived.WaitOne(MAX_QUEUEWAIT_PERIOD);
                 }
 
-                logger.Warn("SIPTransport process received messsages thread stopped.");
+                logger.LogWarning("SIPTransport process received messsages thread stopped.");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTransport ProcessInMessage. " + excp.Message);
+                logger.LogError("Exception SIPTransport ProcessInMessage. " + excp.Message);
             }
         }
 
@@ -884,7 +884,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                logger.Debug("SIPTransport ProcessMetrics thread started.");
+                logger.LogDebug("SIPTransport ProcessMetrics thread started.");
                 
                 while (!m_closed)
                 {
@@ -1013,7 +1013,7 @@ namespace SIPSorcery.SIP
                                     avgParseTime = totalParseTime / totalParsedPackets;
                                 }
 
-                                metricsLogger.Info(
+                                metricslogger.LogInformation(
                                     SIPTransportMetric.PACKET_VOLUMES_KEY + "," +
                                     sampleTimeString + "," +
                                     METRICS_SAMPLE_PERIOD + "," +
@@ -1040,11 +1040,11 @@ namespace SIPSorcery.SIP
                                     {
                                         methodCountStr += "," + methodCount.Key + "=" + methodCount.Value;
                                     }
-                                    metricsLogger.Info(methodCountStr);
+                                    metricslogger.LogInformation(methodCountStr);
                                 }
                                 else
                                 {
-                                    metricsLogger.Info(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
+                                    metricslogger.LogInformation(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
                                 }
 
                                 #endregion
@@ -1075,39 +1075,39 @@ namespace SIPSorcery.SIP
                                         topTalkersStr += "," + curTopTalker + "=" + curTopTalkerCount;
                                         topTalkers.Remove(curTopTalker);
                                     }
-                                    metricsLogger.Info(topTalkersStr);
+                                    metricslogger.LogInformation(topTalkersStr);
                                 }
                                 else
                                 {
-                                    metricsLogger.Info(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
+                                    metricslogger.LogInformation(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
                                 }
 
                                 #endregion
                             }
                             else
                             {
-                                //metricsLogger.Info(SIPTransportMetric.PACKET_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD + ",0,0,0,0,0,0," + SIPTransaction.Count + ",0,0,0,0,0,0");
-                                metricsLogger.Info(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                                metricsLogger.Info(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
+                                //metricslogger.LogInformation(SIPTransportMetric.PACKET_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD + ",0,0,0,0,0,0," + SIPTransaction.Count + ",0,0,0,0,0,0");
+                                metricslogger.LogInformation(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
+                                metricslogger.LogInformation(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
                             }
                         }
                     }
                     else
                     {
-                       // metricsLogger.Info(SIPTransportMetric.PACKET_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD + ",0,0,0,0,0,0," + SIPTransaction.Count + ",0,0,0,0,0,0");
-                        metricsLogger.Info(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                        metricsLogger.Info(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
+                       // metricslogger.LogInformation(SIPTransportMetric.PACKET_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD + ",0,0,0,0,0,0," + SIPTransaction.Count + ",0,0,0,0,0,0");
+                        metricslogger.LogInformation(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
+                        metricslogger.LogInformation(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
                     }
 
                     //m_stopMetrics.WaitOne(METRICS_SAMPLE_PERIOD * 1000, false);
                     m_stopMetrics.WaitOne(METRICS_SAMPLE_PERIOD * 1000);
                 }
 
-                logger.Debug("SIPTransport ProcessMetrics thread stopped.");
+                logger.LogDebug("SIPTransport ProcessMetrics thread stopped.");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTransport ProcessMetrics. " + excp.Message);
+                logger.LogError("Exception SIPTransport ProcessMetrics. " + excp.Message);
             }
         }*/
 
@@ -1150,7 +1150,7 @@ namespace SIPSorcery.SIP
                                 {
                                     if (DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds >= m_t6)
                                     {
-                                        //logger.Debug("Request timed out " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ".");
+                                        //logger.LogDebug("Request timed out " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ".");
 
                                         transaction.DeliveryPending = false;
                                         transaction.DeliveryFailed = true;
@@ -1163,7 +1163,7 @@ namespace SIPSorcery.SIP
                                     {
                                         double nextTransmitMilliseconds = Math.Pow(2, transaction.Retransmits - 1) * m_t1;
                                         nextTransmitMilliseconds = (nextTransmitMilliseconds > m_t2) ? m_t2 : nextTransmitMilliseconds;
-                                        //logger.Debug("Time since retransmit " + transaction.Retransmits + " for " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + " " + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + ".");
+                                        //logger.LogDebug("Time since retransmit " + transaction.Retransmits + " for " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + " " + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + ".");
 
                                         if (DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds >= nextTransmitMilliseconds)
                                         {
@@ -1172,7 +1172,7 @@ namespace SIPSorcery.SIP
 
                                             if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionState == SIPTransactionStatesEnum.Completed)
                                             {
-                                                //logger.Debug("Retransmit " + transaction.Retransmits + "(" + transaction.TransactionId + ") for INVITE reponse " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
+                                                //logger.LogDebug("Retransmit " + transaction.Retransmits + "(" + transaction.TransactionId + ") for INVITE reponse " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
 
                                                 // This is an INVITE transaction that wants to send a reliable response, once the ACK is received it will change the transaction state to confirmed.
                                                 //SIPViaHeader topViaHeader = transaction.TransactionFinalResponse.Header.Vias.TopViaHeader;
@@ -1182,7 +1182,7 @@ namespace SIPSorcery.SIP
                                             }
                                             else
                                             {
-                                                //logger.Debug("Retransmit " + transaction.Retransmits + " for request " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
+                                                //logger.LogDebug("Retransmit " + transaction.Retransmits + " for request " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
                                                 if (transaction.OutboundProxy != null)
                                                 {
                                                     SendRequest(transaction.OutboundProxy, transaction.TransactionRequest);
@@ -1213,17 +1213,17 @@ namespace SIPSorcery.SIP
                     }
                     catch (Exception excp)
                     {
-                        logger.Error("Exception SIPTransport ProcessPendingRequests checking pendings. " + excp.Message);
+                        logger.LogError("Exception SIPTransport ProcessPendingRequests checking pendings. " + excp.Message);
                     }
 
                     Thread.Sleep(PENDINGREQUESTS_CHECK_PERIOD);
                 }
 
-                //logger.Warn("SIPTransport process reliable transmissions thread stopped.");
+                //logger.LogWarning("SIPTransport process reliable transmissions thread stopped.");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTransport ProcessPendingRequests. " + excp.Message);
+                logger.LogError("Exception SIPTransport ProcessPendingRequests. " + excp.Message);
             }
             finally
             {
@@ -1340,8 +1340,8 @@ namespace SIPSorcery.SIP
                                     }
                                     catch (SIPValidationException sipValidationException)
                                     {
-                                        //logger.Warn("Invalid SIP response from " + sipMessage.ReceivedFrom + ", " + sipResponse.ValidationError + " , ignoring.");
-                                        //logger.Warn(sipMessage.RawMessage);
+                                        //logger.LogWarning("Invalid SIP response from " + sipMessage.ReceivedFrom + ", " + sipResponse.ValidationError + " , ignoring.");
+                                        //logger.LogWarning(sipMessage.RawMessage);
                                         FireSIPBadResponseInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipMessage.RawMessage, sipValidationException.SIPErrorField, sipMessage.RawMessage);
                                     }
 
@@ -1380,16 +1380,16 @@ namespace SIPSorcery.SIP
                                         {
                                             if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed && sipRequest.Method != SIPMethodsEnum.ACK)
                                             {
-                                                logger.Warn("Resending final response for " + sipRequest.Method + ", " + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".");
+                                                logger.LogWarning("Resending final response for " + sipRequest.Method + ", " + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".");
                                                 requestTransaction.RetransmitFinalResponse();
                                             }
                                             else if (sipRequest.Method == SIPMethodsEnum.ACK)
                                             {
-                                                //logger.Debug("ACK received for " + requestTransaction.TransactionRequest.URI.ToString() + ".");
+                                                //logger.LogDebug("ACK received for " + requestTransaction.TransactionRequest.URI.ToString() + ".");
 
                                                 if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed)
                                                 {
-                                                    //logger.Debug("ACK received for INVITE, setting state to Confirmed, " + sipRequest.URI.ToString() + " from " + sipRequest.Header.From.FromURI.User + " " + remoteEndPoint + ".");
+                                                    //logger.LogDebug("ACK received for INVITE, setting state to Confirmed, " + sipRequest.URI.ToString() + " from " + sipRequest.Header.From.FromURI.User + " " + remoteEndPoint + ".");
                                                     //requestTransaction.UpdateTransactionState(SIPTransactionStatesEnum.Confirmed);
                                                     requestTransaction.ACKReceived(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipRequest);
                                                 }
@@ -1399,13 +1399,13 @@ namespace SIPSorcery.SIP
                                                 }
                                                 else
                                                 {
-                                                    //logger.Warn("ACK recieved from " + remoteEndPoint.ToString() + " on " + requestTransaction.TransactionState + " transaction, ignoring.");
+                                                    //logger.LogWarning("ACK recieved from " + remoteEndPoint.ToString() + " on " + requestTransaction.TransactionState + " transaction, ignoring.");
                                                     FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "ACK recieved on " + requestTransaction.TransactionState + " transaction, ignoring.", SIPValidationFieldsEnum.Request, null);
                                                 }
                                             }
                                             else
                                             {
-                                                logger.Warn("Transaction already exists, ignoring duplicate request, " + sipRequest.Method + " " + sipRequest.URI.ToString() + ".");
+                                                logger.LogWarning("Transaction already exists, ignoring duplicate request, " + sipRequest.Method + " " + sipRequest.URI.ToString() + ".");
                                                 //FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Transaction already exists, ignoring duplicate request, " + sipRequest.Method + " " + sipRequest.URI.ToString() + " from " + remoteEndPoint + ".", SIPValidationFieldsEnum.Request);
                                             }
                                         }
@@ -1419,7 +1419,7 @@ namespace SIPSorcery.SIP
                                             {
                                                 // Check the MaxForwards value, if equal to 0 the request must be discarded. If MaxForwards is -1 it indicates the
                                                 // header was not present in the request and that the MaxForwards check should not be undertaken.
-                                                //logger.Warn("SIPTransport responding with TooManyHops due to 0 MaxForwards.");
+                                                //logger.LogWarning("SIPTransport responding with TooManyHops due to 0 MaxForwards.");
                                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Zero MaxForwards on " + sipRequest.Method + " " + sipRequest.URI.ToString() + " from " + sipRequest.Header.From.FromURI.User + " " + remoteEndPoint.ToString(), SIPValidationFieldsEnum.Request, sipRequest.ToString());
                                                 SIPResponse tooManyHops = GetResponse(sipRequest, SIPResponseStatusCodesEnum.TooManyHops, null);
                                                 SendResponse(sipChannel, tooManyHops);
@@ -1427,7 +1427,7 @@ namespace SIPSorcery.SIP
                                             }
                                             /*else if (sipRequest.IsLoop(sipChannel.SIPChannelEndPoint.SocketEndPoint.Address.ToString(), sipChannel.SIPChannelEndPoint.SocketEndPoint.Port, sipRequest.CreateBranchId()))
                                             {
-                                                //logger.Warn("SIPTransport Dropping looped request.");
+                                                //logger.LogWarning("SIPTransport Dropping looped request.");
                                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Dropping looped request, " + sipRequest.Method + " " + sipRequest.URI.ToString() + " from " + sipRequest.Header.From.FromURI.User + " " + IPSocket.GetSocketString(remoteEndPoint), SIPValidationFieldsEnum.Request);
                                                 SIPResponse loopResponse = GetResponse(sipRequest, SIPResponseStatusCodesEnum.LoopDetected, null);
                                                 SendResponse(loopResponse);
@@ -1497,7 +1497,7 @@ namespace SIPSorcery.SIP
         public SIPChannel FindSIPChannel(SIPEndPoint localSIPEndPoint)
         {
             //bool isEqual = (localSIPEndPoint == m_sipChannels.Keys.First<SIPEndPoint>());
-            //logger.Debug("Searching for SIP channel for endpoint " + localSIPEndPoint.ToString() + ". First channel in transport list is " + m_sipChannels.Keys.First().ToString() + ". " + m_sipChannels.Keys.Contains(localSIPEndPoint) + ", " + isEqual);
+            //logger.LogDebug("Searching for SIP channel for endpoint " + localSIPEndPoint.ToString() + ". First channel in transport list is " + m_sipChannels.Keys.First().ToString() + ". " + m_sipChannels.Keys.Contains(localSIPEndPoint) + ", " + isEqual);
             if (localSIPEndPoint == null)
             {
                 return null;
@@ -1510,7 +1510,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    logger.Warn("No SIP channel could be found for local SIP end point " + localSIPEndPoint.ToString() + ".");
+                    logger.LogWarning("No SIP channel could be found for local SIP end point " + localSIPEndPoint.ToString() + ".");
                     return null;
                 }
             }
@@ -1539,7 +1539,7 @@ namespace SIPSorcery.SIP
                 }  
             }
 
-            logger.Warn("No default SIP channel could be found for " + protocol + ".");
+            logger.LogWarning("No default SIP channel could be found for " + protocol + ".");
             return null;
         }
 
@@ -1552,7 +1552,7 @@ namespace SIPSorcery.SIP
                 return sipChannel;
             }
 
-            logger.Warn("No default SIP channel could be found for " + dstEndPoint.ToString() + ".");
+            logger.LogWarning("No default SIP channel could be found for " + dstEndPoint.ToString() + ".");
             return null;
         }
 
@@ -1592,7 +1592,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GetListeningSIPEndPoints. " + excp.Message);
+                logger.LogError("Exception GetListeningSIPEndPoints. " + excp.Message);
                 throw;
             }
         }
@@ -1610,7 +1610,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception FireSIPRequestInTraceEvent. " + excp.Message);
+                logger.LogError("Exception FireSIPRequestInTraceEvent. " + excp.Message);
             }
         }
 
@@ -1625,7 +1625,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception FireSIPRequestOutTraceEvent. " + excp.Message);
+                logger.LogError("Exception FireSIPRequestOutTraceEvent. " + excp.Message);
             }
         }
 
@@ -1640,7 +1640,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception FireSIPResponseInTraceEvent. " + excp.Message);
+                logger.LogError("Exception FireSIPResponseInTraceEvent. " + excp.Message);
             }
         }
 
@@ -1655,7 +1655,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception FireSIPResponseOutTraceEvent. " + excp.Message);
+                logger.LogError("Exception FireSIPResponseOutTraceEvent. " + excp.Message);
             }
         }
 
@@ -1663,7 +1663,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                //logger.Warn("SIPTransport SIPValidationException SIPRequest. Field=" + sipErrorField + ", Message=" + message + ", Remote=" + remoteEndPoint.ToString() + ".");
+                //logger.LogWarning("SIPTransport SIPValidationException SIPRequest. Field=" + sipErrorField + ", Message=" + message + ", Remote=" + remoteEndPoint.ToString() + ".");
 
                 if (SIPBadRequestInTraceEvent != null)
                 {
@@ -1672,7 +1672,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception FireSIPBadRequestInTraceEvent. " + excp.Message);
+                logger.LogError("Exception FireSIPBadRequestInTraceEvent. " + excp.Message);
             }
         }
 
@@ -1687,7 +1687,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception FireSIPBadResponseInTraceEvent. " + excp.Message);
+                logger.LogError("Exception FireSIPBadResponseInTraceEvent. " + excp.Message);
             }
         }
 
@@ -1731,7 +1731,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTransport GetResponse. " + excp.Message);
+                logger.LogError("Exception SIPTransport GetResponse. " + excp.Message);
                 throw excp;
             }
         }
@@ -1764,7 +1764,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTransport GetResponse. " + excp.Message);
+                logger.LogError("Exception SIPTransport GetResponse. " + excp.Message);
                 throw;
             }
         }
@@ -1825,7 +1825,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception CreateNonInviteTransaction. " + excp.Message);
+                logger.LogError("Exception CreateNonInviteTransaction. " + excp.Message);
                 throw;
             }
         }
@@ -1846,7 +1846,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception CreateUACTransaction. " + excp.Message);
+                logger.LogError("Exception CreateUACTransaction. " + excp.Message);
                 throw;
             }
         }
@@ -1867,7 +1867,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception CreateUASTransaction. " + excp);
+                logger.LogError("Exception CreateUASTransaction. " + excp);
                 throw;
             }
         }
@@ -1888,7 +1888,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception CreateUASTransaction. " + excp);
+                logger.LogError("Exception CreateUASTransaction. " + excp);
                 throw;
             }
         }

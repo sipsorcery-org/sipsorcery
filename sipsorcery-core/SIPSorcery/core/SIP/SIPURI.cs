@@ -37,7 +37,7 @@ using System.Net;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -123,7 +123,7 @@ namespace SIPSorcery.SIP
         private const char HEADER_TAG_DELIMITER = '&';
         private const char TAG_NAME_VALUE_SEPERATOR = '=';
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private static char[] m_invalidSIPHostChars = new char[] { ',', '"' };
 
@@ -360,7 +360,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ParseSIPURI (URI=" + uri + "). " + excp.Message);
+                logger.LogError("Exception ParseSIPURI (URI=" + uri + "). " + excp.Message);
                 throw new SIPValidationException(SIPValidationFieldsEnum.URI, "Unknown error parsing SIP URI.");
             }
         }
@@ -430,7 +430,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPURI ToString. " + excp.Message);
+                logger.LogError("Exception SIPURI ToString. " + excp.Message);
                 throw excp;
             }
         }
@@ -459,7 +459,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPURI ToParamaterlessString. " + excp.Message);
+                logger.LogError("Exception SIPURI ToParamaterlessString. " + excp.Message);
                 throw excp;
             }
         }

@@ -35,7 +35,7 @@ using System.Collections.Generic;
 using System.Net;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
@@ -44,7 +44,7 @@ namespace SIPSorcery.SIP.App
         private const int DNS_LOOKUP_TIMEOUT = 5000;
         private const char OUTBOUNDPROXY_AS_ROUTESET_CHAR = '<';    // If this character exists in the call descriptor OutboundProxy setting it gets treated as a Route set.
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
         private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
@@ -322,7 +322,7 @@ namespace SIPSorcery.SIP.App
                                 if (customerAccount == null)
                                 {
                                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A billable call could not proceed as no account exists for account code or number " + m_sipCallDescriptor.AccountCode + ".", Owner));
-                                    logger.Debug("A billable call could not proceed as no account exists for account code or number " + m_sipCallDescriptor.AccountCode + " and owner " + Owner + ".");
+                                    logger.LogDebug("A billable call could not proceed as no account exists for account code or number " + m_sipCallDescriptor.AccountCode + " and owner " + Owner + ".");
                                     rtccError = "Real-time call control invalid account code";
                                 }
                                 else
@@ -341,7 +341,7 @@ namespace SIPSorcery.SIP.App
                                     if (rate == null)
                                     {
                                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A billable call could not proceed as no rate could be determined for destination " + rateDestination + ".", Owner));
-                                        logger.Debug("A billable call could not proceed as no rate could be determined for destination " + rateDestination + " and owner " + Owner + ".");
+                                        logger.LogDebug("A billable call could not proceed as no rate could be determined for destination " + rateDestination + " and owner " + Owner + ".");
                                         rtccError = "Real-time call control no rate";
                                     }
                                     else
@@ -360,7 +360,7 @@ namespace SIPSorcery.SIP.App
                                             if (balance < Rate)
                                             {
                                                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A billable call could not proceed as the available credit for " + AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + ".", Owner));
-                                                logger.Debug("A billable call could not proceed as the available credit for " + AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + " and owner " + Owner + ".");
+                                                logger.LogDebug("A billable call could not proceed as the available credit for " + AccountCode + " was not sufficient for 60 seconds to destination " + rateDestination + " and owner " + Owner + ".");
                                                 rtccError = "Real-time call control insufficient credit";
                                             }
                                             else
@@ -372,7 +372,7 @@ namespace SIPSorcery.SIP.App
                                                 if (reservationCost == Decimal.MinusOne)
                                                 {
                                                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call will not proceed as the intial real-time call control credit reservation failed.", Owner));
-                                                    logger.Debug("Call will not proceed as the intial real-time call control credit reservation failed for owner " + Owner + ".");
+                                                    logger.LogDebug("Call will not proceed as the intial real-time call control credit reservation failed for owner " + Owner + ".");
                                                     rtccError = "Real-time call control initial reservation failed";
                                                 }
                                                 else
@@ -461,7 +461,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else //if (m_serverTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding || m_serverTransaction.TransactionState == SIPTransactionStatesEnum.Trying)
                 {
-                    //logger.Debug("Cancelling forwarded call leg, sending CANCEL to " + ForwardedTransaction.TransactionRequest.URI.ToString() + " (transid: " + ForwardedTransaction.TransactionId + ").");
+                    //logger.LogDebug("Cancelling forwarded call leg, sending CANCEL to " + ForwardedTransaction.TransactionRequest.URI.ToString() + " (transid: " + ForwardedTransaction.TransactionId + ").");
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Cancelling forwarded call leg, sending CANCEL to " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
 
                     // No reponse has been received from the server so no CANCEL request neccessary, stop any retransmits of the INVITE.
@@ -528,7 +528,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPClientUserAgent Hangup. " + excp.Message);
+                logger.LogError("Exception SIPClientUserAgent Hangup. " + excp.Message);
                 throw;
             }
         }
@@ -637,7 +637,7 @@ namespace SIPSorcery.SIP.App
 #endif
                                 }
 
-                                logger.Debug("RTCC reservation was reallocated from CDR " + originalCallTransaction.CDR?.CDRId + " to " + m_serverTransaction.CDR?.CDRId + " for owner " + Owner + ".");
+                                logger.LogDebug("RTCC reservation was reallocated from CDR " + originalCallTransaction.CDR?.CDRId + " to " + m_serverTransaction.CDR?.CDRId + " for owner " + Owner + ".");
                             }
                             m_serverTransaction.UACInviteTransactionInformationResponseReceived += ServerInformationResponseReceived;
                             m_serverTransaction.UACInviteTransactionFinalResponseReceived += ServerFinalResponseReceived;
@@ -673,7 +673,7 @@ namespace SIPSorcery.SIP.App
                             else
                             {
                                 //m_callInProgress = false; // the call is now established
-                                //logger.Debug("Final response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + ForwardedTransaction.TransactionRequest.URI.ToString() + ".");
+                                //logger.LogDebug("Final response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + ForwardedTransaction.TransactionRequest.URI.ToString() + ".");
                                 // Determine of response SDP should be mangled.
 
                                 IPEndPoint sdpEndPoint = SDP.GetSDPRTPEndPoint(sipResponse.Body);
@@ -908,7 +908,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception Parsing CustomHeader for GetInviteRequest. " + excp.Message + sipCallDescriptor.CustomHeaders);
+                logger.LogError("Exception Parsing CustomHeader for GetInviteRequest. " + excp.Message + sipCallDescriptor.CustomHeaders);
             }
 
             return inviteRequest;

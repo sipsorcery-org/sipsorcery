@@ -37,7 +37,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -47,7 +47,7 @@ namespace SIPSorcery.Net
         private static string m_rtspEOL = RTSPConstants.CRLF;
         private static string m_rtspMessageDelimiter = RTSPConstants.CRLF + RTSPConstants.CRLF;
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public RTSPServer Server { get; private set; }
         public NetworkStream Stream { get; private set; }
@@ -78,7 +78,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception closeExcp)
             {
-                logger.Warn("Exception closing socket in RTSPConnection Close. " + closeExcp.Message);
+                logger.LogWarning("Exception closing socket in RTSPConnection Close. " + closeExcp.Message);
             }
         }
 
@@ -148,7 +148,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RTSPConnection SocketReadCompleted. " + excp.Message);
+                logger.LogError("Exception RTSPConnection SocketReadCompleted. " + excp.Message);
                 throw;
             }
         }

@@ -1,13 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions">
+      <Version>1.0.0</Version>
+    </PackageReference>
   </ItemGroup>
 
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
-	<Version>3.0.1.0</Version>
-	<Authors>Aaron Clauson</Authors>
+	<Version>3.0.2.0</Version>
+	<Authors>Aaron Clauson and contributors</Authors>
 	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
 	<Title>SIPSorcery</Title>
@@ -23,8 +25,11 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP RTP RTCP STUN WebRtc SDP SIPSorcery</PackageTags>
-	<PackageReleaseNotes>Version &gt; 3.0.0.0 replaces the previous multi assembly package, that only targeted the .NET Framework, with a single assembly that targets the .NET Standard. The release is mainly about rearranging classes and assemblies to support .Net Standard. There have been some functionality changes.</PackageReleaseNotes>
+	<PackageReleaseNotes>- Version &gt; 3.0.0 replaces the previous multi assembly package, that only targeted the .NET Framework, with a single assembly that targets the .NET Standard. The release is mainly about rearranging classes and assemblies to support .Net Standard. There have been some functionality changes.
+- Version 3.0.2:  Added net452 target. Replaced log4net dependency with extensible Microsoft logging extension.</PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
+	<AssemblyVersion>3.0.2.0</AssemblyVersion>
+	<FileVersion>3.0.2.0</FileVersion>
   </PropertyGroup>    
 
 </Project>

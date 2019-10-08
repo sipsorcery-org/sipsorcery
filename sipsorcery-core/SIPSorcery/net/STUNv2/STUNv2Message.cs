@@ -36,7 +36,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -46,7 +46,7 @@ namespace SIPSorcery.Net
         private const int MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH = 20;
         private const int FINGERPRINT_ATTRIBUTE_CRC32_LENGTH = 4;
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
         
         public STUNv2Header Header = new STUNv2Header();
         public List<STUNv2Attribute> Attributes = new List<STUNv2Attribute>();

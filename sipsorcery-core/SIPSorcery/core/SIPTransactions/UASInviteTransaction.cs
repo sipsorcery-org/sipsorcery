@@ -35,6 +35,7 @@ using System;
 using System.Linq;
 using System.Net;
 using SIPSorcery.Sys;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -81,7 +82,7 @@ namespace SIPSorcery.SIP
                 m_localTag = sipRequest.Header.To.ToTag;
             }
 
-            //logger.Debug("New UASTransaction (" + TransactionId + ") for " + TransactionRequest.URI.ToString() + " to " + RemoteEndPoint + ".");
+            //logger.LogDebug("New UASTransaction (" + TransactionId + ") for " + TransactionRequest.URI.ToString() + " to " + RemoteEndPoint + ".");
             SIPEndPoint localEP = SIPEndPoint.TryParse(sipRequest.Header.ProxyReceivedOn) ?? localSIPEndPoint;
             SIPEndPoint remoteEP = SIPEndPoint.TryParse(sipRequest.Header.ProxyReceivedFrom) ?? dstEndPoint;
 
@@ -110,20 +111,13 @@ namespace SIPSorcery.SIP
 
         private void UASInviteTransaction_TransactionTimedOut(SIPTransaction sipTransaction)
         {
-            if (UASInviteTransactionTimedOut != null)
-            {
-                UASInviteTransactionTimedOut(this);
-            }
-
-            if (CDR != null)
-            {
-                CDR.TimedOut();
-            }
+            UASInviteTransactionTimedOut?.Invoke(this);
+            CDR?.TimedOut();
         }
 
         private void UASInviteTransaction_TransactionResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
-            logger.Warn("UASInviteTransaction received unexpected response, " + sipResponse.ReasonPhrase + " from " + remoteEndPoint.ToString() + ", ignoring.");
+            logger.LogWarning("UASInviteTransaction received unexpected response, " + sipResponse.ReasonPhrase + " from " + remoteEndPoint.ToString() + ", ignoring.");
         }
 
         private void UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
@@ -132,11 +126,11 @@ namespace SIPSorcery.SIP
             {
                 if (TransactionState == SIPTransactionStatesEnum.Terminated)
                 {
-                    logger.Debug("Request received by UASInviteTransaction for a terminated transaction, ignoring.");
+                    logger.LogDebug("Request received by UASInviteTransaction for a terminated transaction, ignoring.");
                 }
                 else if (sipRequest.Method != SIPMethodsEnum.INVITE)
                 {
-                    logger.Warn("Unexpected " + sipRequest.Method + " passed to UASInviteTransaction.");
+                    logger.LogWarning("Unexpected " + sipRequest.Method + " passed to UASInviteTransaction.");
                 }
                 else
                 {
@@ -161,7 +155,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception UASInviteTransaction GotRequest. " + excp.Message);
+                logger.LogError("Exception UASInviteTransaction GotRequest. " + excp.Message);
             }
         }
 
@@ -183,7 +177,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception UASInviteTransaction SendInformationalResponse. " + excp.Message);
+                logger.LogError("Exception UASInviteTransaction SendInformationalResponse. " + excp.Message);
                 throw;
             }
         }
@@ -201,7 +195,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception UASInviteTransaction SendFinalResponse. " + excp.Message);
+                logger.LogError("Exception UASInviteTransaction SendFinalResponse. " + excp.Message);
                 throw;
             }
         }
@@ -224,7 +218,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    logger.Warn("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
+                    logger.LogWarning("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
                 }
 
                 //if (CDR != null) {
@@ -233,7 +227,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception UASInviteTransaction CancelCall. " + excp.Message);
+                logger.LogError("Exception UASInviteTransaction CancelCall. " + excp.Message);
                 throw;
             }
         }
@@ -268,7 +262,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GetOkResponse. " + excp.Message);
+                logger.LogError("Exception GetOkResponse. " + excp.Message);
                 throw excp;
             }
         }

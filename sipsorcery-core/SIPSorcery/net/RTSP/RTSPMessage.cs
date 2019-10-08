@@ -36,7 +36,7 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -45,7 +45,7 @@ namespace SIPSorcery.Net
         private const string RTSP_RESPONSE_PREFIX = "RTSP";
         private const string RTSP_MESSAGE_IDENTIFIER = "RTSP";	// String that must be in a message buffer to be recognised as an RTSP message and processed.
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private static string m_CRLF = RTSPConstants.CRLF;
         private static int m_minFirstLineLength = 7;
@@ -74,7 +74,7 @@ namespace SIPSorcery.Net
                 }
                 else if (buffer.Length > RTSPConstants.RTSP_MAXIMUM_LENGTH)
                 {
-                    logger.Error("RTSP message received that exceeded the maximum allowed message length, ignoring.");
+                    logger.LogError("RTSP message received that exceeded the maximum allowed message length, ignoring.");
                     return null;
                 }
                 else if (!ByteBufferInfo.HasString(buffer, 0, buffer.Length, RTSP_MESSAGE_IDENTIFIER, m_CRLF))
@@ -95,7 +95,7 @@ namespace SIPSorcery.Net
             {
                 message = message.Replace("\n", "LF");
                 message = message.Replace("\r", "CR");
-                logger.Error("Exception ParseRTSPMessage. " + excp.Message + "\nRTSP Message=" + message + ".");
+                logger.LogError("Exception ParseRTSPMessage. " + excp.Message + "\nRTSP Message=" + message + ".");
                 return null;
             }
         }
@@ -147,13 +147,13 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.Error("Error ParseRTSPMessage, there were no end of line characters in the string being parsed.");
+                    logger.LogError("Error ParseRTSPMessage, there were no end of line characters in the string being parsed.");
                     return null;
                 }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ParseRTSPMessage. " + excp.Message + "\nRTSP Message=" + message + ".");
+                logger.LogError("Exception ParseRTSPMessage. " + excp.Message + "\nRTSP Message=" + message + ".");
                 return null;
             }
         }

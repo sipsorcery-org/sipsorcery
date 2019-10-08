@@ -129,7 +129,7 @@ namespace SIPSorcery.Net
             if (StunRflxIPEndPoint != null)
             {
                 candidateStr += String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), StunRflxIPEndPoint.Address, StunRflxIPEndPoint.Port, LocalAddress.ToString(), (LocalRtpSocket.LocalEndPoint as IPEndPoint).Port);
-                //logger.Debug(" " + srflxCandidateStr);
+                //logger.LogDebug(" " + srflxCandidateStr);
                 //iceCandidateString += srflxCandidateStr;
             }
 

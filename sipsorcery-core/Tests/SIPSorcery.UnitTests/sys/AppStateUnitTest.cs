@@ -1,6 +1,6 @@
 ﻿using System;
-using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Sys.UnitTests
 {
@@ -11,7 +11,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void CheckLoggingTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            Log.logger.Debug("CheckLoggingTest");
+            Log.Logger.LogDebug("CheckLoggingTest");
             Console.WriteLine("-----------------------------------------");
         }
     }

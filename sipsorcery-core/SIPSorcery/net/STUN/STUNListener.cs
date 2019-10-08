@@ -35,7 +35,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -45,9 +45,9 @@ namespace SIPSorcery.Net
 	{
         private const string STUN_LISTENER_THREAD_NAME = "stunlistener-";
 
-		public ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
-		private IPEndPoint m_localEndPoint = null;
+        private IPEndPoint m_localEndPoint = null;
 		private UdpClient m_stunConn = null;
 		private bool m_closed = false;
 
@@ -63,11 +63,11 @@ namespace SIPSorcery.Net
 			try
 			{
 				m_localEndPoint = InitialiseSockets(endPoint.Address, endPoint.Port);
-				logger.Info("STUNListener created " + endPoint.Address + ":" + endPoint.Port + ".");
+				logger.LogInformation("STUNListener created " + endPoint.Address + ":" + endPoint.Port + ".");
 			}
 			catch(Exception excp)
 			{
-                logger.Error("Exception STUNListener (ctor). " + excp.Message);
+                logger.LogError("Exception STUNListener (ctor). " + excp.Message);
 				throw excp;
 			}
 		}
@@ -80,7 +80,7 @@ namespace SIPSorcery.Net
 			}
 			catch(Exception excp)
 			{
-                logger.Error("Exception Disposing STUNListener. " + excp.Message);
+                logger.LogError("Exception Disposing STUNListener. " + excp.Message);
 			}
 		}
 
@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
 			}
 			catch(Exception excp)
 			{
-				logger.Error("Exception STUNListener InitialiseSockets. " + excp.Message);
+				logger.LogError("Exception STUNListener InitialiseSockets. " + excp.Message);
 				throw excp;
 			}
 		}
@@ -127,14 +127,14 @@ namespace SIPSorcery.Net
 					}
 					catch(Exception bufExcp)
 					{					
-						logger.Error("Exception listening in STUNListener. " + bufExcp.Message + ".");
+						logger.LogError("Exception listening in STUNListener. " + bufExcp.Message + ".");
 						inEndPoint = new IPEndPoint(IPAddress.Any, 0);
 						continue;
 					}
 
 					if(buffer == null || buffer.Length == 0)
 					{
-						logger.Error("Unable to read from STUNListener local end point " + m_localEndPoint.Address.ToString() + ":" + m_localEndPoint.Port);
+						logger.LogError("Unable to read from STUNListener local end point " + m_localEndPoint.Address.ToString() + ":" + m_localEndPoint.Port);
 					}
 					else
 					{
@@ -146,7 +146,7 @@ namespace SIPSorcery.Net
                             }
                             catch (Exception excp)
                             {
-                                logger.Error("Exception processing STUNListener MessageReceived. " + excp.Message);
+                                logger.LogError("Exception processing STUNListener MessageReceived. " + excp.Message);
                             }
                         }
 					}
@@ -154,7 +154,7 @@ namespace SIPSorcery.Net
 			}
 			catch(Exception excp)
 			{
-				logger.Error("Exception STUNListener Listen. " + excp.Message);
+				logger.LogError("Exception STUNListener Listen. " + excp.Message);
 				throw excp;
 			}
 		}
@@ -165,18 +165,18 @@ namespace SIPSorcery.Net
 			{		
 				if(destinationEndPoint == null)
 				{
-					logger.Error("An empty destination was specified to Send in STUNListener.");
+					logger.LogError("An empty destination was specified to Send in STUNListener.");
 				}
 
 				m_stunConn.Send(buffer, buffer.Length, destinationEndPoint);
 			}
 			catch(ObjectDisposedException)
 			{
-				logger.Warn("The STUNListener was not accessible when attempting to send a message to, " + IPSocket.GetSocketString(destinationEndPoint) + ".");
+				logger.LogWarning("The STUNListener was not accessible when attempting to send a message to, " + IPSocket.GetSocketString(destinationEndPoint) + ".");
 			}
 			catch(Exception excp)
 			{
-				logger.Error("Exception (" + excp.GetType().ToString() + ") STUNListener Send (sendto=>" + IPSocket.GetSocketString(destinationEndPoint) + "). " + excp.Message);
+				logger.LogError("Exception (" + excp.GetType().ToString() + ") STUNListener Send (sendto=>" + IPSocket.GetSocketString(destinationEndPoint) + "). " + excp.Message);
 				throw excp;
 			}
 		}		
@@ -185,14 +185,14 @@ namespace SIPSorcery.Net
 		{
 			try
 			{
-				logger.Debug("Closing STUNListener.");
+				logger.LogDebug("Closing STUNListener.");
 				
 				m_closed = true;
 				m_stunConn.Close();
 			}
 			catch(Exception excp)
 			{
-				logger.Warn("Exception STUNListener Close. " +excp.Message);
+				logger.LogWarning("Exception STUNListener Close. " +excp.Message);
 			}
 		}
 	}

@@ -31,6 +31,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -60,7 +61,7 @@ namespace SIPSorcery.SIP
         {
             if (sipResponse.StatusCode < 200)
             {
-                logger.Warn("A SIP CANCEL transaction received an unexpected SIP information response " + sipResponse.ReasonPhrase + ".");
+                logger.LogWarning("A SIP CANCEL transaction received an unexpected SIP information response " + sipResponse.ReasonPhrase + ".");
             }
             else
             {
@@ -75,7 +76,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                //logger.Debug("CANCEL request received, attempting to locate and cancel transaction.");
+                //logger.LogDebug("CANCEL request received, attempting to locate and cancel transaction.");
 
                 //UASInviteTransaction originalTransaction = (UASInviteTransaction)GetTransaction(GetRequestTransactionId(sipRequest.Header.Via.TopViaHeader.Branch, SIPMethodsEnum.INVITE));
 
@@ -83,7 +84,7 @@ namespace SIPSorcery.SIP
 
                 if (m_originalTransaction != null)
                 {
-                    //logger.Debug("Transaction found to cancel " + originalTransaction.TransactionId + " type " + originalTransaction.TransactionType + ".");
+                    //logger.LogDebug("Transaction found to cancel " + originalTransaction.TransactionId + " type " + originalTransaction.TransactionType + ".");
                     m_originalTransaction.CancelCall();
                     cancelResponse = GetCancelResponse(sipRequest, SIPResponseStatusCodesEnum.Ok);
                 }
@@ -97,7 +98,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPCancelTransaction GotRequest. " + excp.Message);
+                logger.LogError("Exception SIPCancelTransaction GotRequest. " + excp.Message);
             }
         }
 
@@ -117,7 +118,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GetCancelResponse. " + excp.Message);
+                logger.LogError("Exception GetCancelResponse. " + excp.Message);
                 throw excp;
             }
         }

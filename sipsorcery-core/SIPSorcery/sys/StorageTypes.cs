@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Sys
 {
@@ -25,7 +25,7 @@ namespace SIPSorcery.Sys
 
     public class StorageTypesConverter
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public static StorageTypes GetStorageType(string storageType)
         {
@@ -35,7 +35,7 @@ namespace SIPSorcery.Sys
             }
             catch
             {
-                logger.Error("StorageTypesConverter " + storageType + " unknown.");
+                logger.LogError("StorageTypesConverter " + storageType + " unknown.");
                 return StorageTypes.Unknown;
             }
         }

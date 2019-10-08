@@ -36,7 +36,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using SIPSorcery.SIP;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {    
@@ -49,7 +49,7 @@ namespace SIPSorcery.Net
 
         private string m_CRLF = SIPConstants.CRLF;
 
-        protected static ILog logger = Log.logger;
+        protected static ILogger logger = Log.Logger;
 
         public int NumberChannels = 1;
         public int FrameSize = 20;        // In milliseconds, determines how often packets are transmitted, e.g. framezie=20ms results in 50 packets per second.
@@ -73,7 +73,7 @@ namespace SIPSorcery.Net
             {
                 if (description == null || description.Trim().Length == 0)
                 {
-                    logger.Error("Cannot parse NetTestDescriptor from an empty string.");
+                    logger.LogError("Cannot parse NetTestDescriptor from an empty string.");
                     return null;
                 }
                 else
@@ -89,7 +89,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ParseNetTestDescriptor. " + excp.Message);
+                logger.LogError("Exception ParseNetTestDescriptor. " + excp.Message);
                 throw excp;
             }
         }

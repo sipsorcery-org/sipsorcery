@@ -16,84 +16,79 @@
 ///----------------------------------------------------------------------------
 
 using System;
-using System.IO;
-using System.Reflection;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Sys
 {
     public class Log
     {
-        private const string LOG4NET_CONFIG_FILE = "log4net.config";
-        private const string APP_LOGGING_ID = "sipsorcery"; // Name of log4net identifier.
-        public const string DEFAULT_ERRRORLOG_FILE = @"c:\temp\sipsorcery.error.log";
+        public const string LOG_CATEGORY = "sipsorcery";
 
-        public static ILog logger { get; private set; }
-
-        static Log()
+        private static ILoggerFactory _loggerFactory;
+        public static ILoggerFactory LoggerFactory
         {
-            try
+            set 
             {
-                try
-                {
-                    // Initialise logging functionality from an XML node in the app.config file.
-                    Console.WriteLine("Starting logging initialisation.");
-
-                    // dotnet core doesn't have app.config or web.config so the default log4net config initialisation cannot be used.
-                    // The alternative is to use a dedicated log4net.config file which can contain exactly the same block of XML.
-
-                    if (File.Exists(LOG4NET_CONFIG_FILE))
-                    {
-                        var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
-                        log4net.Config.XmlConfigurator.Configure(logRepository, new FileInfo(LOG4NET_CONFIG_FILE));
-                    }
-                    else
-                    {
-                        ConfigureConsoleLogger();
-                    }
-                }
-                catch
-                {
-                    // Unable to load the log4net configuration node (probably invalid XML in the config file).
-                    Console.WriteLine($"Unable to load logging configuration from {LOG4NET_CONFIG_FILE}.");
-
-
-                    // Configure a basic console appender so if there is anyone watching they can still see log messages and to
-                    // ensure that any classes using the logger won't get null references.
-                    ConfigureConsoleLogger();
-                }
-                finally
-                {
-                    try
-                    {
-                        logger = log4net.LogManager.GetLogger(Assembly.GetEntryAssembly(), APP_LOGGING_ID);
-                        logger.Debug("Logging initialised.");
-                    }
-                    catch (Exception excp)
-                    {
-                        StreamWriter errorLog = new StreamWriter(DEFAULT_ERRRORLOG_FILE, true);
-                        errorLog.WriteLine(DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + " Exception Initialising Log Logging. " + excp.Message);
-                        errorLog.Close();
-                    }
-                }
+                _loggerFactory = value;
+                _logger = null;
             }
-            catch (Exception excp)
-            {
-                StreamWriter errorLog = new StreamWriter(DEFAULT_ERRRORLOG_FILE, true);
-                errorLog.WriteLine(DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + " Exception Initialising Log. " + excp.Message);
-                errorLog.Close();
-            }
+
         }
 
-        public static void ConfigureConsoleLogger()
+        private static ILogger _logger;
+        public static ILogger Logger
         {
-            log4net.Appender.ConsoleAppender appender = new log4net.Appender.ConsoleAppender();
+            get
+            {
+                if (_logger == null && _loggerFactory != null)
+                {
+                    _logger = _loggerFactory.CreateLogger(LOG_CATEGORY);
+                }
 
-            log4net.Layout.ILayout fallbackLayout = new log4net.Layout.PatternLayout("%m%n");
-            appender.Layout = fallbackLayout;
+                return _logger ?? NullLogger.Instance;
+            }
+        }
+    }
 
-            var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
-            log4net.Config.BasicConfigurator.Configure(logRepository);
+    /// <summary>
+    /// Minimalistic logger that does nothing.
+    /// </summary>
+    public class NullLogger : ILogger
+    {
+        public static NullLogger Instance { get; } = new NullLogger();
+
+        private NullLogger()
+        {
+        }
+
+        public IDisposable BeginScope<TState>(TState state)
+        {
+            return NullScope.Instance;
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return false;
+        }
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        {
+        }
+    }
+
+    /// <summary>
+    /// An empty scope without any logic
+    /// </summary>
+    public class NullScope : IDisposable
+    {
+        public static NullScope Instance { get; } = new NullScope();
+
+        private NullScope()
+        {
+        }
+
+        public void Dispose()
+        {
         }
     }
 }

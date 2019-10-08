@@ -38,7 +38,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -113,18 +113,18 @@ namespace SIPSorcery.Net
             {
                 if (value < 1)
                 {
-                    logger.Info("Changing RTP channels from " + m_channels + " to 1, requested value was " + value + ".");
+                    logger.LogInformation("Changing RTP channels from " + m_channels + " to 1, requested value was " + value + ".");
                     m_channels = 1;
                 }
                 else if (value != m_channels)
                 {
-                    logger.Info("Changing RTP channels from " + m_channels + " to " + value + ".");
+                    logger.LogInformation("Changing RTP channels from " + m_channels + " to " + value + ".");
                     m_channels = value;
                 }
             }
         }
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private IPEndPoint m_streamEndPoint;
 
@@ -226,9 +226,9 @@ namespace SIPSorcery.Net
 
             m_udpListener.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, RTPPacketTypeOfService);
 
-            logger.Info("RTPSink established on " + m_localEndPoint.Address.ToString() + ":" + m_localEndPoint.Port + ".");
-            //receiveLogger.Info("Send Time,Send Timestamp,Receive Time,Receive Timestamp,Receive Offset(ms),Timestamp Diff,SeqNum,Bytes");
-            //sendLogger.Info("Send Time,Send Timestamp,Send Offset(ms),SeqNum,Bytes");
+            logger.LogInformation("RTPSink established on " + m_localEndPoint.Address.ToString() + ":" + m_localEndPoint.Port + ".");
+            //receivelogger.LogInformation("Send Time,Send Timestamp,Receive Time,Receive Timestamp,Receive Offset(ms),Timestamp Diff,SeqNum,Bytes");
+            //sendlogger.LogInformation("Send Time,Send Timestamp,Send Offset(ms),SeqNum,Bytes");
         }
 
         public RTPSink(IPEndPoint localEndPoint)
@@ -239,9 +239,9 @@ namespace SIPSorcery.Net
 
             m_udpListener.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, RTPPacketTypeOfService);
 
-            logger.Info("RTPSink established on " + m_localEndPoint.Address.ToString() + ":" + m_localEndPoint.Port + ".");
-            //receiveLogger.Info("Receive Time,Receive Offset (ms),SeqNum,Bytes");
-            //sendLogger.Info("Send Time,Send Offset (ms),SeqNum,Bytes");
+            logger.LogInformation("RTPSink established on " + m_localEndPoint.Address.ToString() + ":" + m_localEndPoint.Port + ".");
+            //receivelogger.LogInformation("Receive Time,Receive Offset (ms),SeqNum,Bytes");
+            //sendlogger.LogInformation("Send Time,Send Offset (ms),SeqNum,Bytes");
         }
 
         public void StartListening()
@@ -260,7 +260,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception Starting RTP Listener Threads. " + excp.Message);
+                logger.LogError("Exception Starting RTP Listener Threads. " + excp.Message);
                 throw excp;
             }
         }
@@ -273,12 +273,12 @@ namespace SIPSorcery.Net
 
                 if (udpSvr == null)
                 {
-                    logger.Error("The UDP server was not correctly initialised in the RTP sink when attempting to start the listener, the RTP stream has not been intialised.");
+                    logger.LogError("The UDP server was not correctly initialised in the RTP sink when attempting to start the listener, the RTP stream has not been intialised.");
                     return;
                 }
                 else
                 {
-                    logger.Debug("RTP Listener now listening on " + m_localEndPoint.Address + ":" + m_localEndPoint.Port + ".");
+                    logger.LogDebug("RTP Listener now listening on " + m_localEndPoint.Address + ":" + m_localEndPoint.Port + ".");
                 }
 
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
@@ -303,7 +303,7 @@ namespace SIPSorcery.Net
                     }
                     catch
                     {
-                        //logger.Warn("Remote socket closed on receive. Last RTP received " + m_lastRTPReceivedTime.ToString("dd MMM yyyy HH:mm:ss") + ", last RTP successfull send " +  m_lastRTPSentTime.ToString("dd MMM yyyy HH:mm:ss") + ".");
+                        //logger.LogWarning("Remote socket closed on receive. Last RTP received " + m_lastRTPReceivedTime.ToString("dd MMM yyyy HH:mm:ss") + ", last RTP successfull send " +  m_lastRTPSentTime.ToString("dd MMM yyyy HH:mm:ss") + ".");
                     }
 
                     if (rcvdBytes != null && rcvdBytes.Length > 0)
@@ -323,7 +323,7 @@ namespace SIPSorcery.Net
 
                         if (packetType == RTCPHeader.RTCP_PACKET_TYPE)
                         {
-                            logger.Debug("RTP Listener received remote RTCP report from " + remoteEndPoint + ".");
+                            logger.LogDebug("RTP Listener received remote RTCP report from " + remoteEndPoint + ".");
 
                             try
                             {
@@ -337,7 +337,7 @@ namespace SIPSorcery.Net
                             }
                             catch (Exception rtcpExcp)
                             {
-                                logger.Error("Exception processing remote RTCP report. " + rtcpExcp.Message);
+                                logger.LogError("Exception processing remote RTCP report. " + rtcpExcp.Message);
                             }
 
                             continue;
@@ -369,13 +369,13 @@ namespace SIPSorcery.Net
                             }
                             catch (Exception excp)
                             {
-                                logger.Error("Exception RTPSink DataReceived. " + excp.Message);
+                                logger.LogError("Exception RTPSink DataReceived. " + excp.Message);
                             }
                         }
 
                         if (m_packetsReceived % 500 == 0)
                         {
-                            logger.Debug("Total packets received from " + remoteEndPoint.ToString() + " " + m_packetsReceived + ", bytes " + NumberFormatter.ToSIByteFormat(m_bytesReceived, 2) + ".");
+                            logger.LogDebug("Total packets received from " + remoteEndPoint.ToString() + " " + m_packetsReceived + ", bytes " + NumberFormatter.ToSIByteFormat(m_bytesReceived, 2) + ".");
                         }
 
                         try
@@ -385,7 +385,7 @@ namespace SIPSorcery.Net
                             uint timestamp = rtpPacket.Header.Timestamp;
                             sequenceNumber = rtpPacket.Header.SequenceNumber;
 
-                            //logger.Debug("seqno=" + rtpPacket.Header.SequenceNumber + ", timestamp=" + timestamp);
+                            //logger.LogDebug("seqno=" + rtpPacket.Header.SequenceNumber + ", timestamp=" + timestamp);
 
                             if (previousRTPReceiveTime != DateTime.MinValue)
                             {
@@ -396,7 +396,7 @@ namespace SIPSorcery.Net
 
                                 if (previousTimestamp > timestamp)
                                 {
-                                    logger.Error("BUG: Listener previous timestamp (" + previousTimestamp + ") > timestamp (" + timestamp + "), last seq num=" + previousSeqNum + ", seqnum=" + sequenceNumber + ".");
+                                    logger.LogError("BUG: Listener previous timestamp (" + previousTimestamp + ") > timestamp (" + timestamp + "), last seq num=" + previousSeqNum + ", seqnum=" + sequenceNumber + ".");
 
                                     // Cover for this bug until it's nailed down.
                                     senderSendSpacing = lastSenderSendSpacing;
@@ -409,7 +409,7 @@ namespace SIPSorcery.Net
 
                                 if (m_rtcpSampler == null)
                                 {
-                                    //resultsLogger.Info("First Packet: " + rtpPacket.Header.SequenceNumber + "," + m_arrivalTime.ToString("HH:mm:fff"));
+                                    //resultslogger.LogInformation("First Packet: " + rtpPacket.Header.SequenceNumber + "," + m_arrivalTime.ToString("HH:mm:fff"));
 
                                     m_rtcpSampler = new RTCPReportSampler(m_streamId, syncSource, remoteEndPoint, rtpPacket.Header.SequenceNumber, m_lastRTPReceivedTime, rcvdBytes.Length);
                                     m_rtcpSampler.RTCPReportReady += new RTCPSampleReadyDelegate(m_rtcpSampler_RTCPReportReady);
@@ -427,11 +427,11 @@ namespace SIPSorcery.Net
 
                                     if (jitter > 75)
                                     {
-                                        logger.Debug("seqno=" + rtpPacket.Header.SequenceNumber + ", timestmap=" + timestamp + ", ts-prev=" + previousTimestamp + ", receive spacing=" + interarrivalReceiveTime + ", send spacing=" + senderSpacingMilliseconds + ", jitter=" + jitter);
+                                        logger.LogDebug("seqno=" + rtpPacket.Header.SequenceNumber + ", timestmap=" + timestamp + ", ts-prev=" + previousTimestamp + ", receive spacing=" + interarrivalReceiveTime + ", send spacing=" + senderSpacingMilliseconds + ", jitter=" + jitter);
                                     }
                                     else
                                     {
-                                        //logger.Debug("seqno=" + rtpPacket.Header.SequenceNumber + ", receive spacing=" + interarrivalReceiveTime + ", timestamp=" + timestamp + ", transit time=" + transitTime);
+                                        //logger.LogDebug("seqno=" + rtpPacket.Header.SequenceNumber + ", receive spacing=" + interarrivalReceiveTime + ", timestamp=" + timestamp + ", transit time=" + transitTime);
                                     }
 
                                     m_rtcpSampler.RecordRTPReceive(m_lastRTPReceivedTime, rtpPacket.Header.SequenceNumber, rcvdBytes.Length, jitter);
@@ -441,14 +441,14 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.Debug("RTPSink Listen SyncSource=" + rtpPacket.Header.SyncSource + ".");
+                                logger.LogDebug("RTPSink Listen SyncSource=" + rtpPacket.Header.SyncSource + ".");
                             }
 
                             previousTimestamp = timestamp;
                         }
                         catch (Exception excp)
                         {
-                            logger.Error("Received data was not a valid RTP packet. " + excp.Message);
+                            logger.LogError("Received data was not a valid RTP packet. " + excp.Message);
                         }
 
                         #region Switching endpoint if required to cope with NAT.
@@ -458,7 +458,7 @@ namespace SIPSorcery.Net
                         {
                             if (m_streamEndPoint != null && m_streamEndPoint.Address != null && remoteEndPoint != null && remoteEndPoint.Address != null && (m_streamEndPoint.Address.ToString() != remoteEndPoint.Address.ToString() || m_streamEndPoint.Port != remoteEndPoint.Port))
                             {
-                                logger.Debug("Expecting RTP on " + IPSocket.GetSocketString(m_streamEndPoint) + " but received on " + IPSocket.GetSocketString(remoteEndPoint) + ", now sending to " + IPSocket.GetSocketString(remoteEndPoint) + ".");
+                                logger.LogDebug("Expecting RTP on " + IPSocket.GetSocketString(m_streamEndPoint) + " but received on " + IPSocket.GetSocketString(remoteEndPoint) + ", now sending to " + IPSocket.GetSocketString(remoteEndPoint) + ".");
                                 m_streamEndPoint = remoteEndPoint;
 
                                 if (RemoteEndPointChanged != null)
@@ -469,14 +469,14 @@ namespace SIPSorcery.Net
                                     }
                                     catch (Exception changeExcp)
                                     {
-                                        logger.Error("Exception RTPListener Changing Remote EndPoint. " + changeExcp.Message);
+                                        logger.LogError("Exception RTPListener Changing Remote EndPoint. " + changeExcp.Message);
                                     }
                                 }
                             }
                         }
                         catch (Exception setSendExcp)
                         {
-                            logger.Error("Exception RTPListener setting SendTo Socket. " + setSendExcp.Message);
+                            logger.LogError("Exception RTPListener setting SendTo Socket. " + setSendExcp.Message);
                         }
 
                         #endregion
@@ -486,7 +486,7 @@ namespace SIPSorcery.Net
                         double noRTPRcvdDuration = (m_lastRTPReceivedTime != DateTime.MinValue) ? DateTime.Now.Subtract(m_lastRTPReceivedTime).TotalSeconds : 0;
                         double noRTPSentDuration = (m_lastRTPSentTime != DateTime.MinValue) ? DateTime.Now.Subtract(m_lastRTPSentTime).TotalSeconds : 0;
 
-                        //logger.Warn("Remote socket closed on receive on " + m_localEndPoint.Address.ToString() + ":" + + m_localEndPoint.Port + ", reinitialising. No rtp for " + noRTPRcvdDuration + "s. last rtp " + m_lastRTPReceivedTime.ToString("dd MMM yyyy HH:mm:ss") + ".");
+                        //logger.LogWarning("Remote socket closed on receive on " + m_localEndPoint.Address.ToString() + ":" + + m_localEndPoint.Port + ", reinitialising. No rtp for " + noRTPRcvdDuration + "s. last rtp " + m_lastRTPReceivedTime.ToString("dd MMM yyyy HH:mm:ss") + ".");
 
                         // If this check is not done then the stream will never time out if it doesn't receive the first packet.
                         if (m_lastRTPReceivedTime == DateTime.MinValue)
@@ -498,7 +498,7 @@ namespace SIPSorcery.Net
 
                         if ((noRTPRcvdDuration > NO_RTP_TIMEOUT || noRTPSentDuration > NO_RTP_TIMEOUT) && StopIfNoData)
                         {
-                            logger.Warn("Disconnecting RTP listener on " + m_localEndPoint.ToString() + " due to not being able to send or receive any RTP for " + NO_RTP_TIMEOUT + "s.");
+                            logger.LogWarning("Disconnecting RTP listener on " + m_localEndPoint.ToString() + " due to not being able to send or receive any RTP for " + NO_RTP_TIMEOUT + "s.");
                             Shutdown();
                         }
                     }
@@ -506,7 +506,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception Listen RTPSink: " + excp.Message);
+                logger.LogError("Exception Listen RTPSink: " + excp.Message);
             }
             finally
             {
@@ -522,7 +522,7 @@ namespace SIPSorcery.Net
                     }
                     catch (Exception excp)
                     {
-                        logger.Error("Exception RTPSink ListenerClosed. " + excp.Message);
+                        logger.LogError("Exception RTPSink ListenerClosed. " + excp.Message);
                     }
                 }
 
@@ -546,7 +546,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.Error("Exception m_rtcpSampler_RTCPReportReady. " + excp.Message);
+                    logger.LogError("Exception m_rtcpSampler_RTCPReportReady. " + excp.Message);
                 }
             }
         }
@@ -569,7 +569,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SendRTCPReport. " + excp.Message);
+                logger.LogError("Exception SendRTCPReport. " + excp.Message);
             }
         }
 
@@ -577,7 +577,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                logger.Debug("Listener timeout thread started for RTP stream " + m_streamId);
+                logger.LogDebug("Listener timeout thread started for RTP stream " + m_streamId);
 
                 // Wait for the first RTP packet to be received.
                 m_lastPacketReceived.WaitOne();
@@ -587,7 +587,7 @@ namespace SIPSorcery.Net
                 {
                     if (!m_lastPacketReceived.WaitOne(NO_RTP_TIMEOUT * 1000, false))
                     {
-                        logger.Debug("RTP Listener did not receive any packets for " + NO_RTP_TIMEOUT + "s, shutting down stream.");
+                        logger.LogDebug("RTP Listener did not receive any packets for " + NO_RTP_TIMEOUT + "s, shutting down stream.");
                         Shutdown();
                         break;
                     }
@@ -595,7 +595,7 @@ namespace SIPSorcery.Net
                     // Shutdown the socket even if there is still RTP but the stay alive limit has been exceeded.
                     if (RTPMaxStayAlive > 0 && DateTime.Now.Subtract(m_startRTPSendTime).TotalSeconds > RTPMaxStayAlive)
                     {
-                        logger.Warn("Shutting down RTPSink due to passing RTPMaxStayAlive time.");
+                        logger.LogWarning("Shutting down RTPSink due to passing RTPMaxStayAlive time.");
                         Shutdown();
                         break;
                     }
@@ -605,7 +605,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ListenerTimeout. " + excp.Message);
+                logger.LogError("Exception ListenerTimeout. " + excp.Message);
                 throw excp;
             }
         }
@@ -632,7 +632,7 @@ namespace SIPSorcery.Net
                 uint lastSendTimestamp = sendTimestamp;
                 UInt16 lastSeqNum = 0;
 
-                logger.Debug("RTP send stream starting to " + IPSocket.GetSocketString(m_streamEndPoint) + " with payload size " + payloadSize + " bytes.");
+                logger.LogDebug("RTP send stream starting to " + IPSocket.GetSocketString(m_streamEndPoint) + " with payload size " + payloadSize + " bytes.");
 
                 Sending = true;
                 m_startRTPSendTime = DateTime.MinValue;
@@ -646,12 +646,12 @@ namespace SIPSorcery.Net
                     // This may be changed by the listener so it needs to be set each iteration.
                     IPEndPoint dstEndPoint = m_streamEndPoint;
 
-                    //logger.Info("Sending RTP packet to " + dstEndPoint.Address + ":"  + dstEndPoint.Port);
+                    //logger.LogInformation("Sending RTP packet to " + dstEndPoint.Address + ":"  + dstEndPoint.Port);
 
                     if (payloadSize != m_rtpPacketSendSize)
                     {
                         payloadSize = m_rtpPacketSendSize;
-                        logger.Info("Changing RTP payload to " + payloadSize);
+                        logger.LogInformation("Changing RTP payload to " + payloadSize);
                         rtpPacket = new RTPPacket(RTP_HEADER_SIZE + m_rtpPacketSendSize);
                         rtpBytes = rtpPacket.GetBytes();
                     }
@@ -663,7 +663,7 @@ namespace SIPSorcery.Net
                             m_startRTPSendTime = DateTime.Now;
                             rtpHeader.MarkerBit = 0;
 
-                            logger.Debug("RTPSink Send SyncSource=" + rtpPacket.Header.SyncSource + ".");
+                            logger.LogDebug("RTPSink Send SyncSource=" + rtpPacket.Header.SyncSource + ".");
                         }
                         else
                         {
@@ -673,12 +673,12 @@ namespace SIPSorcery.Net
 
                             if (lastSendTimestamp > sendTimestamp)
                             {
-                                logger.Error("RTP Sender previous timestamp (" + lastSendTimestamp + ") > timestamp (" + sendTimestamp + ") ms since last send=" + milliSinceLastSend + ", lastseqnum=" + lastSeqNum + ", seqnum=" + rtpHeader.SequenceNumber + ".");
+                                logger.LogError("RTP Sender previous timestamp (" + lastSendTimestamp + ") > timestamp (" + sendTimestamp + ") ms since last send=" + milliSinceLastSend + ", lastseqnum=" + lastSeqNum + ", seqnum=" + rtpHeader.SequenceNumber + ".");
                             }
 
                             if (DateTime.Now.Subtract(m_lastRTPSentTime).TotalMilliseconds > 75)
                             {
-                                logger.Debug("delayed send: " + rtpHeader.SequenceNumber + ", time since last send " + DateTime.Now.Subtract(m_lastRTPSentTime).TotalMilliseconds + "ms.");
+                                logger.LogDebug("delayed send: " + rtpHeader.SequenceNumber + ", time since last send " + DateTime.Now.Subtract(m_lastRTPSentTime).TotalMilliseconds + "ms.");
                             }
                         }
 
@@ -689,10 +689,10 @@ namespace SIPSorcery.Net
                         // Send RTP packets and any extra channels required to emulate mutliple calls.
                         for (int channelCount = 0; channelCount < m_channels; channelCount++)
                         {
-                            //logger.Debug("Send rtp getting wallclock timestamp for " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff"));
+                            //logger.LogDebug("Send rtp getting wallclock timestamp for " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff"));
                             //DateTime sendTime = DateTime.Now;
                             //rtpHeader.Timestamp = RTPHeader.GetWallclockUTCStamp(sendTime);
-                            //logger.Debug(rtpHeader.SequenceNumber + "," + rtpHeader.Timestamp);
+                            //logger.LogDebug(rtpHeader.SequenceNumber + "," + rtpHeader.Timestamp);
 
                             m_udpListener.Send(rtpBytes, rtpBytes.Length, dstEndPoint);
                             m_lastRTPSentTime = DateTime.Now;
@@ -702,12 +702,12 @@ namespace SIPSorcery.Net
 
                             if (m_packetsSent % 500 == 0)
                             {
-                                logger.Debug("Total packets sent to " + dstEndPoint.ToString() + " " + m_packetsSent + ", bytes " + NumberFormatter.ToSIByteFormat(m_bytesSent, 2) + ".");
+                                logger.LogDebug("Total packets sent to " + dstEndPoint.ToString() + " " + m_packetsSent + ", bytes " + NumberFormatter.ToSIByteFormat(m_bytesSent, 2) + ".");
                             }
 
-                            //sendLogger.Info(m_lastRTPSentTime.ToString("dd MMM yyyy HH:mm:ss:fff") + "," + m_lastRTPSentTime.Subtract(m_startRTPSendTime).TotalMilliseconds.ToString("0") + "," + rtpHeader.SequenceNumber + "," + rtpBytes.Length);
+                            //sendlogger.LogInformation(m_lastRTPSentTime.ToString("dd MMM yyyy HH:mm:ss:fff") + "," + m_lastRTPSentTime.Subtract(m_startRTPSendTime).TotalMilliseconds.ToString("0") + "," + rtpHeader.SequenceNumber + "," + rtpBytes.Length);
 
-                            //sendLogger.Info(rtpHeader.SequenceNumber + "," + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff"));
+                            //sendlogger.LogInformation(rtpHeader.SequenceNumber + "," + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss:fff"));
 
                             if (DataSent != null)
                             {
@@ -717,14 +717,14 @@ namespace SIPSorcery.Net
                                 }
                                 catch (Exception excp)
                                 {
-                                    logger.Error("Exception RTPSink DataSent. " + excp.Message);
+                                    logger.LogError("Exception RTPSink DataSent. " + excp.Message);
                                 }
                             }
 
                             lastSeqNum = rtpHeader.SequenceNumber;
                             if (rtpHeader.SequenceNumber == UInt16.MaxValue)
                             {
-                                //logger.Debug("RTPSink looping  the sequence number in sample.");
+                                //logger.LogDebug("RTPSink looping  the sequence number in sample.");
                                 rtpHeader.SequenceNumber = 0;
                             }
                             else
@@ -735,14 +735,14 @@ namespace SIPSorcery.Net
                     }
                     catch (Exception excp)
                     {
-                        logger.Error("Exception RTP Send. " + excp.GetType() + ". " + excp.Message);
+                        logger.LogError("Exception RTP Send. " + excp.GetType() + ". " + excp.Message);
 
                         if (excp.GetType() == typeof(SocketException))
                         {
-                            logger.Error("socket exception errorcode=" + ((SocketException)excp).ErrorCode + ".");
+                            logger.LogError("socket exception errorcode=" + ((SocketException)excp).ErrorCode + ".");
                         }
 
-                        logger.Warn("Remote socket closed on send. Last RTP recevied " + m_lastRTPReceivedTime.ToString("dd MMM yyyy HH:mm:ss") + ", last RTP successfull send " + m_lastRTPSentTime.ToString("dd MMM yyyy HH:mm:ss") + ".");
+                        logger.LogWarning("Remote socket closed on send. Last RTP recevied " + m_lastRTPReceivedTime.ToString("dd MMM yyyy HH:mm:ss") + ", last RTP successfull send " + m_lastRTPSentTime.ToString("dd MMM yyyy HH:mm:ss") + ".");
                     }
 
                     Thread.Sleep(RTPFrameSize);
@@ -759,14 +759,14 @@ namespace SIPSorcery.Net
                         (m_lastRTPReceivedTime == DateTime.MinValue && testDuration > NO_RTP_TIMEOUT)) // If the test request comes from a private or unreachable IP address then no RTP will ever be received. 
                         && StopIfNoData)
                     {
-                        logger.Warn("Disconnecting RTP stream on " + m_localEndPoint.Address.ToString() + ":" + m_localEndPoint.Port + " due to not being able to send any RTP for " + NO_RTP_TIMEOUT + "s.");
+                        logger.LogWarning("Disconnecting RTP stream on " + m_localEndPoint.Address.ToString() + ":" + m_localEndPoint.Port + " due to not being able to send any RTP for " + NO_RTP_TIMEOUT + "s.");
                         StopListening = true;
                     }
 
                     // Shutdown the socket even if there is still RTP but the stay alive limit has been exceeded.
                     if (RTPMaxStayAlive > 0 && DateTime.Now.Subtract(m_startRTPSendTime).TotalSeconds > RTPMaxStayAlive)
                     {
-                        logger.Warn("Shutting down RTPSink due to passing RTPMaxStayAlive time.");
+                        logger.LogWarning("Shutting down RTPSink due to passing RTPMaxStayAlive time.");
                         Shutdown();
                         StopListening = true;
                     }
@@ -776,7 +776,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception Send RTPSink: " + excp.Message);
+                logger.LogError("Exception Send RTPSink: " + excp.Message);
             }
             finally
             {
@@ -792,7 +792,7 @@ namespace SIPSorcery.Net
                     }
                     catch (Exception excp)
                     {
-                        logger.Error("Exception RTPSink SenderClosed. " + excp.Message);
+                        logger.LogError("Exception RTPSink SenderClosed. " + excp.Message);
                     }
                 }
 
@@ -824,7 +824,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.Warn("Exception RTPSink Shutdown (shutting down listener). " + excp.Message);
+                    logger.LogWarning("Exception RTPSink Shutdown (shutting down listener). " + excp.Message);
                 }
             }
         }

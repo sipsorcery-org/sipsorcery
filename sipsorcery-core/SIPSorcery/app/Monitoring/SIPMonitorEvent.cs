@@ -38,7 +38,7 @@
 
 using System;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
@@ -199,7 +199,7 @@ namespace SIPSorcery.SIP.App
         public const string SERIALISATION_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss.ffffff zzz";
 		public const string END_MESSAGE_DELIMITER = "##";
 
-        protected static ILog logger = Log.logger;
+        protected static ILogger logger = Log.Logger;
 
         protected string m_serialisationPrefix = SIPMonitorConsoleEvent.SERIALISATION_PREFIX;    // Default to a control client event.
 
@@ -233,7 +233,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                logger.Warn("The monitor event prefix of " + eventCSV.Trim().Substring(0, 1) + " was not recognised. " + eventCSV);
+                logger.LogWarning("The monitor event prefix of " + eventCSV.Trim().Substring(0, 1) + " was not recognised. " + eventCSV);
                 return null;
             }
 		}

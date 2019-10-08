@@ -32,7 +32,7 @@
 
 using System;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -103,7 +103,7 @@ namespace SIPSorcery.SIP
     /// </note>
     public class SIPTransaction
     {
-        protected static ILog logger = Log.logger;
+        protected static ILogger logger = Log.Logger;
 
         protected static readonly int m_t1 = SIPTimings.T1;                     // SIP Timer T1 in milliseconds.
         protected static readonly int m_t6 = SIPTimings.T6;                     // SIP Timer T1 in milliseconds.
@@ -252,7 +252,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPTransaction (ctor). " + excp.Message);
+                logger.LogError("Exception SIPTransaction (ctor). " + excp.Message);
                 throw excp;
             }
         }
@@ -380,7 +380,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RetransmitFinalResponse. " + excp.Message);
+                logger.LogError("Exception RetransmitFinalResponse. " + excp.Message);
             }
         }
 
@@ -452,7 +452,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GetInformationalResponse. " + excp.Message);
+                logger.LogError("Exception GetInformationalResponse. " + excp.Message);
                 throw excp;
             }
         }
@@ -482,7 +482,7 @@ namespace SIPSorcery.SIP
                 }
                 catch (Exception excp)
                 {
-                    logger.Error("Exception TransactionRequestRetransmit. " + excp.Message);
+                    logger.LogError("Exception TransactionRequestRetransmit. " + excp.Message);
                 }
             }
 
@@ -499,7 +499,7 @@ namespace SIPSorcery.SIP
                 }
                 catch (Exception excp)
                 {
-                    logger.Error("Exception TransactionResponseRetransmit. " + excp.Message);
+                    logger.LogError("Exception TransactionResponseRetransmit. " + excp.Message);
                 }
             }
 
@@ -522,7 +522,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                logger.Warn("An ACK retransmit was required but there was no stored ACK request to send.");
+                logger.LogWarning("An ACK retransmit was required but there was no stored ACK request to send.");
             }
         }
 
@@ -537,7 +537,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception FireTransactionTimedOut (" + TransactionId + " " + TransactionRequest.URI.ToString() + ", callid=" + TransactionRequest.Header.CallId + ", " + this.GetType().ToString() + "). " + excp.Message);
+                logger.LogError("Exception FireTransactionTimedOut (" + TransactionId + " " + TransactionRequest.URI.ToString() + ", callid=" + TransactionRequest.Header.CallId + ", " + this.GetType().ToString() + "). " + excp.Message);
             }
         }
 
@@ -552,7 +552,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception FireTransactionRemoved. " + excp.Message);
+                logger.LogError("Exception FireTransactionRemoved. " + excp.Message);
             }
         }
 
@@ -573,7 +573,7 @@ namespace SIPSorcery.SIP
                 }
                 catch (Exception excp)
                 {
-                    logger.Error("Exception FireTransactionStateChangedEvent. " + excp.Message);
+                    logger.LogError("Exception FireTransactionStateChangedEvent. " + excp.Message);
                 }
             }
         }
@@ -588,7 +588,7 @@ namespace SIPSorcery.SIP
                 }
                 catch (Exception excp)
                 {
-                    logger.Error("Exception FireTransactionTraceMessage. " + excp.Message);
+                    logger.LogError("Exception FireTransactionTraceMessage. " + excp.Message);
                 }
             }
         }

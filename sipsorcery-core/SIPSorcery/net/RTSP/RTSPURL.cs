@@ -32,7 +32,7 @@
 
 using System;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -64,7 +64,7 @@ namespace SIPSorcery.Net
         //private static int m_defaultRTSPPort = RTSPConstants.DEFAULT_RTSP_PORT;
         private static string m_rtspTransport = RTSPConstants.RTSP_RELIABLE_TRANSPORTID;
 		
-		private static ILog logger = Log.logger;
+		private static ILogger logger = Log.Logger;
 
         public string URLTransport = m_rtspTransport;
         public string Host;
@@ -141,7 +141,7 @@ namespace SIPSorcery.Net
 			}
 			catch(Exception excp)
 			{
-				logger.Error("Exception RTSPURL ToString. " + excp.Message);
+				logger.LogError("Exception RTSPURL ToString. " + excp.Message);
 				throw excp;
 			}
 		}

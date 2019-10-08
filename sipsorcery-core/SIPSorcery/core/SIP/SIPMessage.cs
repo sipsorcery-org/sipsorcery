@@ -34,7 +34,7 @@
 using System;
 using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -54,7 +54,7 @@ namespace SIPSorcery.SIP
         private static int m_minFirstLineLength = 7;
         private static string m_CRLF = SIPConstants.CRLF;
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public string RawMessage;
         public SIPMessageTypesEnum SIPMessageType = SIPMessageTypesEnum.Unknown;
@@ -107,7 +107,7 @@ namespace SIPSorcery.SIP
             {
                 message = message.Replace("\n", "LF");
                 message = message.Replace("\r", "CR");
-                logger.Error("Exception ParseSIPMessage. " + excp.Message + "\nSIP Message=" + message + ".");
+                logger.LogError("Exception ParseSIPMessage. " + excp.Message + "\nSIP Message=" + message + ".");
                 return null;
             }
         }
@@ -158,13 +158,13 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    logger.Warn("Error ParseSIPMessage, there were no end of line characters in the string being parsed.");
+                    logger.LogWarning("Error ParseSIPMessage, there were no end of line characters in the string being parsed.");
                     return null;
                 }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ParseSIPMessage. " + excp.Message + "\nSIP Message=" + message + ".");
+                logger.LogError("Exception ParseSIPMessage. " + excp.Message + "\nSIP Message=" + message + ".");
                 return null;
             }
         }

@@ -34,6 +34,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using SIPSorcery.Sys;
+using Microsoft.Extensions.Logging;
 
 [assembly: InternalsVisibleToAttribute("SIPSorcery.UnitTests")]
 
@@ -84,7 +85,7 @@ namespace SIPSorcery.SIP
 
         private void UACInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
         {
-            logger.Warn("UACInviteTransaction received unexpected request, " + sipRequest.Method + " from " + remoteEndPoint.ToString() + ", ignoring.");
+            logger.LogWarning("UACInviteTransaction received unexpected request, " + sipRequest.Method + " from " + remoteEndPoint.ToString() + ", ignoring.");
         }
 
         private void UACInviteTransaction_TransactionTimedOut(SIPTransaction sipTransaction)
@@ -103,7 +104,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception UACInviteTransaction_TransactionTimedOut. " + excp.Message);
+                logger.LogError("Exception UACInviteTransaction_TransactionTimedOut. " + excp.Message);
                 throw;
             }
         }
@@ -126,7 +127,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception UACInviteTransaction_TransactionInformationResponseReceived. " + excp.Message);
+                logger.LogError("Exception UACInviteTransaction_TransactionInformationResponseReceived. " + excp.Message);
             }
         }
 
@@ -163,7 +164,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception UACInviteTransaction_TransactionFinalResponseReceived. " + excp.Message);
+                logger.LogError("Exception UACInviteTransaction_TransactionFinalResponseReceived. " + excp.Message);
             }
         }
 
@@ -310,7 +311,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception UACInviteTransaction CancelCall. " + excp.Message);
+                logger.LogError("Exception UACInviteTransaction CancelCall. " + excp.Message);
                 throw;
             }
         }

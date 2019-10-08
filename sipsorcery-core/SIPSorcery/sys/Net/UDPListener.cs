@@ -39,7 +39,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Sys
 {
@@ -47,7 +47,7 @@ namespace SIPSorcery.Sys
     {
         private const string THREAD_NAME = "udplistener-";
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private IPEndPoint m_localEndPoint;
         private Guid m_socketId = Guid.NewGuid();
@@ -72,11 +72,11 @@ namespace SIPSorcery.Sys
                 listenThread.Name = THREAD_NAME + Crypto.GetRandomString(4);
                 listenThread.Start();
 
-                logger.Debug("UDPListener listener created " + m_localEndPoint + ".");
+                logger.LogDebug("UDPListener listener created " + m_localEndPoint + ".");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception UDPListener Initialise. " + excp.Message);
+                logger.LogError("Exception UDPListener Initialise. " + excp.Message);
                 throw excp;
             }
         }
@@ -89,7 +89,7 @@ namespace SIPSorcery.Sys
             }
             catch (Exception excp)
             {
-                logger.Error("Exception Disposing UDPListener. " + excp.Message);
+                logger.LogError("Exception Disposing UDPListener. " + excp.Message);
             }
         }
 
@@ -99,7 +99,7 @@ namespace SIPSorcery.Sys
             {
                 byte[] buffer = null;
 
-                logger.Debug("UDPListener socket on " + m_localEndPoint + " listening started.");
+                logger.LogDebug("UDPListener socket on " + m_localEndPoint + " listening started.");
 
                 while (!m_closed)
                 {
@@ -119,7 +119,7 @@ namespace SIPSorcery.Sys
                     catch (Exception listenExcp)
                     {
                         // There is no point logging this as without processing the ICMP message it's not possible to know which socket the rejection came from.
-                        logger.Error("Exception listening on UDPListener. " + listenExcp.Message);
+                        logger.LogError("Exception listening on UDPListener. " + listenExcp.Message);
 
                         inEndPoint = new IPEndPoint(IPAddress.Any, 0);
                         continue;
@@ -129,7 +129,7 @@ namespace SIPSorcery.Sys
                     {
                         // No need to care about zero byte packets.
                         //string remoteEndPoint = (inEndPoint != null) ? inEndPoint.ToString() : "could not determine";
-                        //logger.Error("Zero bytes received on SIPUDPChannel " + m_localSIPEndPoint.ToString() + ".");
+                        //logger.LogError("Zero bytes received on SIPUDPChannel " + m_localSIPEndPoint.ToString() + ".");
                     }
                     else
                     {
@@ -140,11 +140,11 @@ namespace SIPSorcery.Sys
                     }
                 }
 
-                logger.Debug("UDPListener socket on " + m_localEndPoint + " listening halted.");
+                logger.LogDebug("UDPListener socket on " + m_localEndPoint + " listening halted.");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception UDPListener Listen. " + excp.Message);
+                logger.LogError("Exception UDPListener Listen. " + excp.Message);
                 //throw excp;
             }
         }
@@ -178,7 +178,7 @@ namespace SIPSorcery.Sys
             }
             catch (Exception excp)
             {
-                logger.Error("Exception (" + excp.GetType().ToString() + ") UDPListener Send (sendto=>" + IPSocket.GetSocketString(destinationEndPoint) + "). " + excp.Message);
+                logger.LogError("Exception (" + excp.GetType().ToString() + ") UDPListener Send (sendto=>" + IPSocket.GetSocketString(destinationEndPoint) + "). " + excp.Message);
                 throw excp;
             }
         }
@@ -187,14 +187,14 @@ namespace SIPSorcery.Sys
         {
             try
             {
-                logger.Debug("Closing UDPListener " + m_localEndPoint + ".");
+                logger.LogDebug("Closing UDPListener " + m_localEndPoint + ".");
 
                 m_closed = true;
                 m_udpClient.Close();
             }
             catch (Exception excp)
             {
-                logger.Warn("Exception UDPListener Close. " + excp.Message);
+                logger.LogWarning("Exception UDPListener Close. " + excp.Message);
             }
         }
     }

@@ -37,7 +37,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -63,7 +63,7 @@ namespace SIPSorcery.SIP
         private const int PRUNE_CONNECTIONS_INTERVAL = 60000;        // The period at which to prune the connections.
         private const int PRUNE_NOTRANSMISSION_MINUTES = 70;         // The number of minutes after which if no transmissions are sent or received a connection will be pruned.
 
-        protected ILog logger = Log.logger;
+        protected ILogger logger = Log.Logger;
 
         public static List<string> LocalTCPSockets = new List<string>(); // Keeps a list of TCP sockets this process is listening on to prevent it establishing TCP connections to itself.
 
@@ -144,7 +144,7 @@ namespace SIPSorcery.SIP
 
                             if (inactiveConnection != null)
                             {
-                                logger.Debug("Pruning inactive connection on " + SIPChannelContactURI + " to remote end point " + inactiveConnection.RemoteEndPoint.ToString() + ".");
+                                logger.LogDebug("Pruning inactive connection on " + SIPChannelContactURI + " to remote end point " + inactiveConnection.RemoteEndPoint.ToString() + ".");
                                 inactiveConnection.Close();
                             }
                             else
@@ -158,7 +158,7 @@ namespace SIPSorcery.SIP
                         }
                         catch (Exception pruneExcp)
                         {
-                            logger.Error("Exception PruneConnections (pruning). " + pruneExcp.Message);
+                            logger.LogError("Exception PruneConnections (pruning). " + pruneExcp.Message);
                             checkComplete = true;
                         }
                     }
@@ -167,11 +167,11 @@ namespace SIPSorcery.SIP
                     checkComplete = false;
                 }
 
-                logger.Debug("SIPChannel socket on " + m_localSIPEndPoint.ToString() + " pruning connections halted.");
+                logger.LogDebug("SIPChannel socket on " + m_localSIPEndPoint.ToString() + " pruning connections halted.");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPChannel PruneConnections. " + excp.Message);
+                logger.LogError("Exception SIPChannel PruneConnections. " + excp.Message);
             }
         }
 

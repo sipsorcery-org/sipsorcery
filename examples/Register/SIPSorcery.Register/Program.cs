@@ -37,7 +37,8 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using SIPSorcery.Sys.Net;
+using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Register
 {
@@ -48,7 +49,17 @@ namespace SIPSorcery.Register
             Console.WriteLine("SIPSorcery registration user agent example.");
             Console.WriteLine("Press ctrl-c to exit.");
 
-            // If your default DNS server support SRV records there is no need to set a specific DNS server.
+            // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
+            var loggerConfig = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console()
+                .CreateLogger();
+            loggerFactory.AddSerilog(loggerConfig);
+            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+
+            // If your default DNS server supports SRV records there is no need to set a specific DNS server.
             DNSManager.SetDNSServers(new List<IPEndPoint> { IPEndPoint.Parse("8.8.8.8:53") });
 
             // Set up a default SIP transport.
@@ -57,29 +68,20 @@ namespace SIPSorcery.Register
             var sipChannel = new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv4Address(), port));
             sipTransport.AddSIPChannel(sipChannel);
 
-            // Create a client user agent. In this case the client maintains a registration with a SIP server.
+            // Create a client user agent to maintain a periodic registration with a SIP server.
             var regUserAgent = new SIPRegistrationUserAgent(
                 sipTransport,
-                null,
-                sipTransport.GetDefaultSIPEndPoint(),
-                SIPURI.ParseSIPURIRelaxed("softphonesample@sipsorcery.com"),
                 "softphonesample",
                 "password",
-                "sipsorcery.com",
-                "sipsorcery.com",
-                new SIPURI(SIPSchemesEnum.sip, sipTransport.GetDefaultTransportContact(SIPProtocolsEnum.udp)),
-                180,
-                null,
-                null, 
-                (ev) => Console.WriteLine(ev?.Message));
+                "sipsorcery.com");
 
             // Event handlers for the different stages of the registration.
-            regUserAgent.RegistrationFailed += (uri, err) => Console.WriteLine($"Registration for {uri.ToString()} failed. {err}");
-            regUserAgent.RegistrationTemporaryFailure += (uri, msg) => Console.WriteLine($"Registration for {uri.ToString()} in progress. {msg}");
-            regUserAgent.RegistrationRemoved += (uri) => Console.WriteLine($"Permanent failure for {uri.ToString()} registration.");
-            regUserAgent.RegistrationSuccessful += (uri) => Console.WriteLine($"Registration for {uri.ToString()} succeeded.");
+            regUserAgent.RegistrationFailed += (uri, err) => SIPSorcery.Sys.Log.Logger.LogError($"{uri.ToString()}: {err}");
+            regUserAgent.RegistrationTemporaryFailure += (uri, msg) => SIPSorcery.Sys.Log.Logger.LogWarning($"{uri.ToString()}: {msg}");
+            regUserAgent.RegistrationRemoved += (uri) => SIPSorcery.Sys.Log.Logger.LogError($"{uri.ToString()} registration failed.");
+            regUserAgent.RegistrationSuccessful += (uri) => SIPSorcery.Sys.Log.Logger.LogInformation($"{uri.ToString()} registration succeeded.");
 
-            // Finally start the thread to perform the initial and registration and periodically resend it.
+            // Start the thread to perform the initial registration and then periodically resend it.
             regUserAgent.Start();
         }
     }

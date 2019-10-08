@@ -51,7 +51,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -80,7 +80,7 @@ namespace SIPSorcery.Net
         private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         private static DateTime UtcEpoch1970 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private static int _nextMediaPort = MEDIA_PORT_START;
         private static Mutex _allocatePortsMutex = new Mutex();
@@ -217,7 +217,7 @@ namespace SIPSorcery.Net
         //    }
         //    catch (Exception excp)
         //    {
-        //        logger.Error("Exception SetICEState. " + excp);
+        //        logger.LogError("Exception SetICEState. " + excp);
         //    }
         //}
 
@@ -285,7 +285,7 @@ namespace SIPSorcery.Net
                             _controlSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                             _controlSocket.Bind(new IPEndPoint(IPAddress.Any, _controlPort));
 
-                            logger.Debug("RTSP session " + _sessionID + " allocated RTP port of " + _rtpPort + " and control port of " + _controlPort + ".");
+                            logger.LogDebug("RTSP session " + _sessionID + " allocated RTP port of " + _rtpPort + " and control port of " + _controlPort + ".");
 
                             bindSuccess = true;
 
@@ -293,7 +293,7 @@ namespace SIPSorcery.Net
                         }
                         catch(System.Net.Sockets.SocketException sockExcp)
                         {
-                            logger.Warn("RTSP session " + _sessionID + " failed to bind to RTP port " + _rtpPort + " and/or control port of " + _controlPort + ", attempt " + bindAttempts + ". " + sockExcp);
+                            logger.LogWarning("RTSP session " + _sessionID + " failed to bind to RTP port " + _rtpPort + " and/or control port of " + _controlPort + ", attempt " + bindAttempts + ". " + sockExcp);
 
                             // Jump up the port range in case there is an OS/network issue closing/cleaning up already used ports.
                             _rtpPort += 100;
@@ -329,7 +329,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                logger.Warn("An RTSP session could not start as either RTP or control sockets were not available.");
+                logger.LogWarning("An RTSP session could not start as either RTP or control sockets were not available.");
             }
         }
 
@@ -342,7 +342,7 @@ namespace SIPSorcery.Net
             {
                 try
                 {
-                    logger.Debug("Closing RTP and control sockets for RTSP session " + _sessionID + ".");
+                    logger.LogDebug("Closing RTP and control sockets for RTSP session " + _sessionID + ".");
 
                     _closed = true;
 
@@ -358,7 +358,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.Error("Exception RTSPSession.Close. " + excp);
+                    logger.LogError("Exception RTSPSession.Close. " + excp);
                 }
             }
         }
@@ -379,7 +379,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RTSPSession.GetNextRTPPacket. " + excp);
+                logger.LogError("Exception RTSPSession.GetNextRTPPacket. " + excp);
                 return null;
             }
         }
@@ -403,13 +403,13 @@ namespace SIPSorcery.Net
 
                         IPEndPoint remoteIPEndPoint = remoteEP as IPEndPoint;
 
-                        //logger.Debug("RTPReceive from " + remoteEP + ".");
+                        //logger.LogDebug("RTPReceive from " + remoteEP + ".");
 
                         //if (((IPEndPoint)remoteEP).Address.ToString() != _remoteEndPoint.Address.ToString())
                         //{
                         //    var oldEndPoint = _remoteEndPoint;
                         //    _remoteEndPoint = remoteEP as IPEndPoint;
-                        //    logger.Warn("RtspSession " + _sessionID + " switched to new remote endpoint at " + _remoteEndPoint + " (old end point " + oldEndPoint + ").");
+                        //    logger.LogWarning("RtspSession " + _sessionID + " switched to new remote endpoint at " + _remoteEndPoint + " (old end point " + oldEndPoint + ").");
                         //}
 
                         if (bytesRead > 0)
@@ -429,12 +429,12 @@ namespace SIPSorcery.Net
                                         }
                                         catch(Exception dtlsExcp)
                                         {
-                                            logger.Error("Exception RTSPSession.RTPReceive DTLS. " + dtlsExcp);
+                                            logger.LogError("Exception RTSPSession.RTPReceive DTLS. " + dtlsExcp);
                                         }
                                     }
                                     else
                                     {
-                                        logger.Warn("RTSPSession.RTPReceive received a DTLS packet from " + _remoteEndPoint + "but bo DTLS handler has been set.");
+                                        logger.LogWarning("RTSPSession.RTPReceive received a DTLS packet from " + _remoteEndPoint + "but bo DTLS handler has been set.");
                                     }
                                 }
                                 else if ((buffer[0] == 0) || (buffer[0] == 1))
@@ -446,11 +446,11 @@ namespace SIPSorcery.Net
                                     //    {
                                     //        STUNv2Message stunMessage = STUNv2Message.ParseSTUNMessage(buffer, bytesRead);
 
-                                    //        //logger.Debug("STUN message received from Receiver Client @ " + stunMessage.Header.MessageType + ".");
+                                    //        //logger.LogDebug("STUN message received from Receiver Client @ " + stunMessage.Header.MessageType + ".");
 
                                     //        if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingRequest)
                                     //        {
-                                    //            //logger.Debug("Sending STUN response to Receiver Client @ " + remoteEndPoint + ".");
+                                    //            //logger.LogDebug("Sending STUN response to Receiver Client @ " + remoteEndPoint + ".");
 
                                     //            STUNv2Message stunResponse = new STUNv2Message(STUNv2MessageTypesEnum.BindingSuccessResponse);
                                     //            stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
@@ -458,7 +458,7 @@ namespace SIPSorcery.Net
                                     //            byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(_iceState.SenderPassword, true);
                                     //            _rtpSocket.SendTo(stunRespBytes, remoteIPEndPoint);
 
-                                    //            //logger.Debug("Sending Binding request to Receiver Client @ " + remoteEndPoint + ".");
+                                    //            //logger.LogDebug("Sending Binding request to Receiver Client @ " + remoteEndPoint + ".");
 
                                     //            STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
                                     //            stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
@@ -475,34 +475,34 @@ namespace SIPSorcery.Net
                                     //            if (!_iceState.IsSTUNExchangeComplete)
                                     //            {
                                     //                _iceState.IsSTUNExchangeComplete = true;
-                                    //                logger.Debug("WebRTC client STUN exchange complete for " + remoteIPEndPoint.ToString() + " and ICE ufrag " + _iceState.ReceiverUser + ".");
+                                    //                logger.LogDebug("WebRTC client STUN exchange complete for " + remoteIPEndPoint.ToString() + " and ICE ufrag " + _iceState.ReceiverUser + ".");
 
                                     //                _remoteEndPoint = remoteIPEndPoint;
                                     //            }
                                     //        }
                                     //        else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingErrorResponse)
                                     //        {
-                                    //            //logger.Warn("A STUN binding error response was received from " + remoteIPEndPoint + ".");
+                                    //            //logger.LogWarning("A STUN binding error response was received from " + remoteIPEndPoint + ".");
                                     //        }
                                     //        else
                                     //        {
-                                    //            //logger.Warn("An unrecognised STUN request was received from " + remoteIPEndPoint + ".");
+                                    //            //logger.LogWarning("An unrecognised STUN request was received from " + remoteIPEndPoint + ".");
                                     //        }
                                     //    }
                                     //    catch (SocketException sockExcp)
                                     //    {
-                                    //        logger.Debug("RTPSession.RTPReceive STUN processing (" + remoteIPEndPoint + "). " + sockExcp.Message);
+                                    //        logger.LogDebug("RTPSession.RTPReceive STUN processing (" + remoteIPEndPoint + "). " + sockExcp.Message);
                                     //        continue;
                                     //    }
                                     //    catch (Exception stunExcp)
                                     //    {
-                                    //        logger.Warn("Exception RTPSession.RTPReceive STUN processing (" + remoteIPEndPoint + "). " + stunExcp);
+                                    //        logger.LogWarning("Exception RTPSession.RTPReceive STUN processing (" + remoteIPEndPoint + "). " + stunExcp);
                                     //        continue;
                                     //    }
                                     //}
                                     //else
                                     //{
-                                    //    //logger.Warn("A STUN reponse was received on RTP socket from " + remoteIPEndPoint + " but no ICE state was set.");
+                                    //    //logger.LogWarning("A STUN reponse was received on RTP socket from " + remoteIPEndPoint + " but no ICE state was set.");
                                     //}
                                 }
                                 else if ((buffer[0] >= 128) && (buffer[0] <= 191))
@@ -518,14 +518,14 @@ namespace SIPSorcery.Net
                                         RTPPacket rtpPacket = new RTPPacket(buffer.Take(bytesRead).ToArray());
 
                                         //System.Diagnostics.Debug.WriteLine("RTPReceive ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", marker " + rtpPacket.Header.MarkerBit + ".");
-                                        //logger.Debug("RTPReceive remote " + remoteIPEndPoint + ", ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", bytes " + bytesRead + ", marker " + rtpPacket.Header.MarkerBit + ".");
+                                        //logger.LogDebug("RTPReceive remote " + remoteIPEndPoint + ", ssrc " + rtpPacket.Header.SyncSource + ", seq num " + rtpPacket.Header.SequenceNumber + ", timestamp " + rtpPacket.Header.Timestamp + ", bytes " + bytesRead + ", marker " + rtpPacket.Header.MarkerBit + ".");
 
                                         lock (_packets)
                                         {
                                             if (_packets.Count > RTP_PACKETS_MAX_QUEUE_LENGTH)
                                             {
                                                 System.Diagnostics.Debug.WriteLine("RTSPSession.RTPReceive packets queue full, clearing.");
-                                                logger.Warn("RTSPSession.RTPReceive packets queue full, clearing.");
+                                                logger.LogWarning("RTSPSession.RTPReceive packets queue full, clearing.");
 
                                                 _packets.Clear();
 
@@ -544,12 +544,12 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.Warn("RTSPSession.RTPReceive an unrecognised packet was received for session ID " + SessionID + " and " + remoteIPEndPoint + ".");
+                                logger.LogWarning("RTSPSession.RTPReceive an unrecognised packet was received for session ID " + SessionID + " and " + remoteIPEndPoint + ".");
                             }
                         }
                         else
                         {
-                            logger.Warn("Zero bytes read from RTSPSession RTP socket for session ID " + SessionID + " and " + remoteIPEndPoint + ".");
+                            logger.LogWarning("Zero bytes read from RTSPSession RTP socket for session ID " + SessionID + " and " + remoteIPEndPoint + ".");
                             break;
                         }
                     }
@@ -578,7 +578,7 @@ namespace SIPSorcery.Net
                     {
                         if (!_closed)
                         {
-                            logger.Error("Exception RTSPSession.RTPReceive receiving. " + excp);
+                            logger.LogError("Exception RTSPSession.RTPReceive receiving. " + excp);
                         }
                     }
                 }
@@ -587,7 +587,7 @@ namespace SIPSorcery.Net
             {
                 if (!_closed)
                 {
-                    logger.Error("Exception RTSPSession.RTPReceive. " + excp);
+                    logger.LogError("Exception RTSPSession.RTPReceive. " + excp);
 
                     if (OnRTPSocketDisconnected != null)
                     {
@@ -620,7 +620,7 @@ namespace SIPSorcery.Net
                 {
                     if (!_closed)
                     {
-                        logger.Warn("A " + _controlSocketError + " occurred receiving on Control socket for RTSP session " + _sessionID + ".");
+                        logger.LogWarning("A " + _controlSocketError + " occurred receiving on Control socket for RTSP session " + _sessionID + ".");
 
                         if (OnControlSocketDisconnected != null)
                         {
@@ -633,7 +633,7 @@ namespace SIPSorcery.Net
             {
                 if (!_closed)
                 {
-                    logger.Error("Exception RTSPSession.ControlSocketReceive. " + excp);
+                    logger.LogError("Exception RTSPSession.ControlSocketReceive. " + excp);
 
                     if (OnControlSocketDisconnected != null)
                     {
@@ -658,15 +658,15 @@ namespace SIPSorcery.Net
             {
                 if (_closed)
                 {
-                    logger.Warn("SendJpegFrame cannot be called on a closed session.");
+                    logger.LogWarning("SendJpegFrame cannot be called on a closed session.");
                 }
                 else if (_rtpSocketError != SocketError.Success)
                 {
-                    logger.Warn("SendJpegFrame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
+                    logger.LogWarning("SendJpegFrame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
                 }
                 else if (_remoteEndPoint == null)
                 {
-                    logger.Warn("SendJpegFrame frame not sent as remote end point is not yet set.");
+                    logger.LogWarning("SendJpegFrame frame not sent as remote end point is not yet set.");
                 }
                 else
                 {
@@ -714,7 +714,7 @@ namespace SIPSorcery.Net
 
                         //if (sw.ElapsedMilliseconds > 15)
                         //{
-                        //    logger.Warn(" SendJpegFrame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
+                        //    logger.LogWarning(" SendJpegFrame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
                         //}
                     }
 
@@ -726,7 +726,7 @@ namespace SIPSorcery.Net
             {
                 if (!_closed)
                 {
-                    logger.Warn("Exception RTPSession.SendJpegFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
+                    logger.LogWarning("Exception RTPSession.SendJpegFrame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
                     //_rtpSocketError = SocketError.SocketError;
 
                     if (OnRTPSocketDisconnected != null)
@@ -748,15 +748,15 @@ namespace SIPSorcery.Net
             {
                 if (_closed)
                 {
-                    logger.Warn("SendH264Frame cannot be called on a closed session.");
+                    logger.LogWarning("SendH264Frame cannot be called on a closed session.");
                 }
                 else if (_rtpSocketError != SocketError.Success)
                 {
-                    logger.Warn("SendH264Frame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
+                    logger.LogWarning("SendH264Frame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
                 }
                 else if (_remoteEndPoint == null)
                 {
-                    logger.Warn("SendH264Frame frame not sent as remote end point is not yet set.");
+                    logger.LogWarning("SendH264Frame frame not sent as remote end point is not yet set.");
                 }
                 else
                 {
@@ -837,7 +837,7 @@ namespace SIPSorcery.Net
 
                         //if (sw.ElapsedMilliseconds > 15)
                         //{
-                        //    logger.Warn(" SendH264Frame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
+                        //    logger.LogWarning(" SendH264Frame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
                         //}
                     }
                 }
@@ -846,7 +846,7 @@ namespace SIPSorcery.Net
             {
                 if (!_closed)
                 {
-                    logger.Warn("Exception RTSPSession.SendH264Frame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
+                    logger.LogWarning("Exception RTSPSession.SendH264Frame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
 
                     if (OnRTPSocketDisconnected != null)
                     {
@@ -867,15 +867,15 @@ namespace SIPSorcery.Net
             {
                 if (_closed)
                 {
-                    logger.Warn("SendVP8Frame cannot be called on a closed session.");
+                    logger.LogWarning("SendVP8Frame cannot be called on a closed session.");
                 }
                 else if (_rtpSocketError != SocketError.Success)
                 {
-                    logger.Warn("SendVP8Frame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
+                    logger.LogWarning("SendVP8Frame was called for an RTP socket in an error state of " + _rtpSocketError + ".");
                 }
                 else if (_remoteEndPoint == null)
                 {
-                   // logger.Warn("SendVP8Frame frame not sent as remote end point is not yet set.");
+                   // logger.LogWarning("SendVP8Frame frame not sent as remote end point is not yet set.");
                 }
                 else
                 {
@@ -929,7 +929,7 @@ namespace SIPSorcery.Net
 
                         //if (sw.ElapsedMilliseconds > 15)
                         //{
-                        //    logger.Warn(" SendVP8Frame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
+                        //    logger.LogWarning(" SendVP8Frame offset " + offset + ", payload length " + payloadLength + ", sequence number " + rtpPacket.Header.SequenceNumber + ", marker " + rtpPacket.Header.MarkerBit + ", took " + sw.ElapsedMilliseconds + "ms.");
                         //}
                     }
                 }
@@ -938,7 +938,7 @@ namespace SIPSorcery.Net
             {
                 if (!_closed)
                 {
-                    logger.Warn("Exception RTSPSession.SendVP8Frame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
+                    logger.LogWarning("Exception RTSPSession.SendVP8Frame attempting to send to the RTP socket at " + _remoteEndPoint + ". " + excp);
 
                     if (OnRTPSocketDisconnected != null)
                     {
@@ -971,7 +971,7 @@ namespace SIPSorcery.Net
             {
                 if (!_closed)
                 {
-                    logger.Error("Exception RTSPSession.SendRTPRaw attempting to send to " + _remoteEndPoint + ". " + excp);
+                    logger.LogError("Exception RTSPSession.SendRTPRaw attempting to send to " + _remoteEndPoint + ". " + excp);
 
                     if (OnRTPSocketDisconnected != null)
                     {
@@ -996,7 +996,7 @@ namespace SIPSorcery.Net
             }
             catch(Exception excp)
             {
-                logger.Error("Exception SendRtcpSenderReport. " + excp);
+                logger.LogError("Exception SendRtcpSenderReport. " + excp);
             }
         }
 
@@ -1010,7 +1010,7 @@ namespace SIPSorcery.Net
             {
                 if (!_closed)
                 {
-                    logger.Error("Exception RTSPSession.SendRtpCallback attempting to send to " + _remoteEndPoint + ". " + excp);
+                    logger.LogError("Exception RTSPSession.SendRtpCallback attempting to send to " + _remoteEndPoint + ". " + excp);
 
                     if (OnRTPSocketDisconnected != null)
                     {
@@ -1030,7 +1030,7 @@ namespace SIPSorcery.Net
             {
                 if (!_closed)
                 {
-                    logger.Error("Exception RTSPSession.SendRtcpCallback attempting to send to " + _rtcpRemoteEndPoint + ". " + excp);
+                    logger.LogError("Exception RTSPSession.SendRtcpCallback attempting to send to " + _rtcpRemoteEndPoint + ". " + excp);
 
                     //if (OnRTPSocketDisconnected != null)
                     //{

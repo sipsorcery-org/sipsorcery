@@ -50,13 +50,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
     public class Mjpeg
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public sealed class Tags
         {
@@ -490,7 +490,7 @@ namespace SIPSorcery.Net
 
                     if(Width == 0 || Height == 0)
                     {
-                        logger.WarnFormat("ProcessMjpegFrame could not determine either the width or height of the jpeg frame (width={0}, height={1}).", Width, Height);
+                        logger.LogWarning("ProcessMjpegFrame could not determine either the width or height of the jpeg frame (width={0}, height={1}).", Width, Height);
                     }
 
                     //Restart Interval 64 - 127

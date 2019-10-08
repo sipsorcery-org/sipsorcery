@@ -37,7 +37,7 @@ using System.Text.RegularExpressions;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using Heijden.DNS;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
@@ -66,7 +66,7 @@ namespace SIPSorcery.SIP.App
         private const int DNS_A_RECORD_LOOKUP_TIMEOUT = 15;              // 5 second timeout for crticial A record DNS lookups.
         private const int CACHE_UNAVAILABLE_SRV_LOOKUP_PERIOD = 300;    // Period to cache timed or empty SRV lookups for.
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static int m_defaultSIPSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
@@ -87,7 +87,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPDNSManager ResolveSIPService (" + host + "). " + excp.Message);
+                logger.LogError("Exception SIPDNSManager ResolveSIPService (" + host + "). " + excp.Message);
                 throw;
             }
         }
@@ -147,12 +147,12 @@ namespace SIPSorcery.SIP.App
                     DNSSRVRecordLookup(sipURI.Scheme, sipURI.Protocol, host, async, ref sipLookupResult);
                     if (sipLookupResult.Pending)
                     {
-                        //logger.Debug("SIPDNSManager SRV lookup for " + host + " is pending.");
+                        //logger.LogDebug("SIPDNSManager SRV lookup for " + host + " is pending.");
                         return sipLookupResult;
                     }
                     else
                     {
-                        //logger.Debug("SIPDNSManager SRV lookup for " + host + " is final.");
+                        //logger.LogDebug("SIPDNSManager SRV lookup for " + host + " is final.");
 
                         // Add some custom logic to cope with sips SRV records using _sips._tcp (e.g. free.call.ciscospark.com).
                         // By default only _sips._tls SRV records are checked for. THis block adds an additional check for _sips._tcp SRV records.
@@ -174,7 +174,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPDNSManager ResolveSIPService (" + sipURI.ToString() + "). " + excp.Message);
+                logger.LogError("Exception SIPDNSManager ResolveSIPService (" + sipURI.ToString() + "). " + excp.Message);
                 m_inProgressSIPServiceLookups.Remove(sipURI.ToString());
                 return new SIPDNSLookupResult(sipURI, excp.Message);
             }

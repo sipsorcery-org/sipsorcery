@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
     public class SIPTransactionEngine
     {
-        protected static ILog logger = Log.logger;
+        protected static ILogger logger = Log.Logger;
 
         private static readonly int m_t6 = SIPTimings.T6;
         protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for (typically 10 mins).    
@@ -76,14 +76,14 @@ namespace SIPSorcery.SIP
             {
                 //if (transactionMethod == SIPMethodsEnum.ACK)
                 //{
-                    //logger.Info("Matching ACK with contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + ".");
+                    //logger.LogInformation("Matching ACK with contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + ".");
                 //}
 
                 if (transactionId != null && m_transactions.ContainsKey(transactionId))
                 {
                     //if (transactionMethod == SIPMethodsEnum.ACK)
                     //{
-                        //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by branchid.");
+                        //logger.LogInformation("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by branchid.");
                     //}
 
                     return m_transactions[transactionId];
@@ -93,7 +93,7 @@ namespace SIPSorcery.SIP
                     // No normal match found so look fo a 2xx INVITE response waiting for an ACK.
                     if (sipRequest.Method == SIPMethodsEnum.ACK)
                     {
-                        //logger.Debug("Looking for ACK transaction, branchid=" + sipRequest.Header.Via.TopViaHeader.Branch + ".");
+                        //logger.LogDebug("Looking for ACK transaction, branchid=" + sipRequest.Header.Via.TopViaHeader.Branch + ".");
 
                         foreach (SIPTransaction transaction in m_transactions.Values)
                         {
@@ -121,7 +121,7 @@ namespace SIPSorcery.SIP
                                     transaction.TransactionFinalResponse.Header.From.FromTag == sipRequest.Header.From.FromTag &&
                                     transaction.TransactionFinalResponse.Header.CSeq == sipRequest.Header.CSeq)
                                 {
-                                    //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by callid, tags and cseq.");
+                                    //logger.LogInformation("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by callid, tags and cseq.");
 
                                     return transaction;
                                 }
@@ -130,13 +130,13 @@ namespace SIPSorcery.SIP
                                     IsCallIdUniqueForPending(sipRequest.Header.CallId))
                                 {
                                     string requestEndPoint = (sipRequest.RemoteSIPEndPoint != null) ? sipRequest.RemoteSIPEndPoint.ToString() : " ? ";
-                                    //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched using Call-ID mechanism (to tags: " + transaction.TransactionFinalResponse.Header.To.ToTag + "=" + sipRequest.Header.To.ToTag + ", from tags:" + transaction.TransactionFinalResponse.Header.From.FromTag + "=" + sipRequest.Header.From.FromTag + ").");
+                                    //logger.LogInformation("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched using Call-ID mechanism (to tags: " + transaction.TransactionFinalResponse.Header.To.ToTag + "=" + sipRequest.Header.To.ToTag + ", from tags:" + transaction.TransactionFinalResponse.Header.From.FromTag + "=" + sipRequest.Header.From.FromTag + ").");
                                     return transaction;
                                 }
                             }
                         }
 
-                        //logger.Info("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was not matched.");
+                        //logger.LogInformation("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was not matched.");
                     }
 
                     return null;
@@ -232,7 +232,7 @@ namespace SIPSorcery.SIP
                             }
                             else if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
                             {
-                                //logger.Debug("INVITE transaction (" + transaction.TransactionId + ") " + transaction.TransactionRequestURI.ToString() + " in " + transaction.TransactionState + " has been alive for " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0") + ".");
+                                //logger.LogDebug("INVITE transaction (" + transaction.TransactionId + ") " + transaction.TransactionRequestURI.ToString() + " in " + transaction.TransactionState + " has been alive for " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0") + ".");
 
                                 if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
                                     transaction.TransactionState == SIPTransactionStatesEnum.Trying)
@@ -255,7 +255,7 @@ namespace SIPSorcery.SIP
                                transaction.TransactionState == SIPTransactionStatesEnum.Trying ||
                                transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
                             {
-                                //logger.Warn("Timed out transaction in SIPTransactionEngine, should have been timed out in the SIP Transport layer. " + transaction.TransactionRequest.Method + ".");
+                                //logger.LogWarning("Timed out transaction in SIPTransactionEngine, should have been timed out in the SIP Transport layer. " + transaction.TransactionRequest.Method + ".");
                                 transaction.DeliveryPending = false;
                                 transaction.DeliveryFailed = true;
                                 transaction.TimedOutAt = DateTime.Now;
@@ -282,17 +282,17 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RemoveExpiredTransaction. " + excp.Message);
+                logger.LogError("Exception RemoveExpiredTransaction. " + excp.Message);
             }
         }
 
         public void PrintPendingTransactions()
          {
-             logger.Debug("=== Pending Transactions ===");
+             logger.LogDebug("=== Pending Transactions ===");
 
              foreach (SIPTransaction transaction in m_transactions.Values)
              {
-                 logger.Debug(" Pending tansaction " + transaction.TransactionRequest.Method + " " + transaction.TransactionState + " " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0.##") + "s " + transaction.TransactionRequestURI.ToString() + " (" + transaction.TransactionId + ").");
+                 logger.LogDebug(" Pending tansaction " + transaction.TransactionRequest.Method + " " + transaction.TransactionState + " " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0.##") + "s " + transaction.TransactionRequestURI.ToString() + " (" + transaction.TransactionId + ").");
              }
          }
 

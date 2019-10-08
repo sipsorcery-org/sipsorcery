@@ -41,13 +41,13 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
     public class SIPEventPresence : SIPEvent
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public static readonly string m_pidfXMLNS = SIPEventConsts.PIDF_XML_NAMESPACE_URN;
 
@@ -79,7 +79,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPEventPresence Load. " + excp.Message);
+                logger.LogError("Exception SIPEventPresence Load. " + excp.Message);
                 throw;
             }
         }

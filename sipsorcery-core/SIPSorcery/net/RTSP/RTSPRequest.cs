@@ -33,7 +33,7 @@
 using System;
 using System.Net;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -48,7 +48,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTSPRequest
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 		
 		private static string m_CRLF = RTSPConstants.CRLF;
 		private static string m_rtspFullVersion = RTSPConstants.RTSP_FULLVERSION_STRING;
@@ -93,7 +93,7 @@ namespace SIPSorcery.Net
 			}
 			catch(Exception excp)
 			{
-				logger.Error("Exception RTSPRequest Ctor. " + excp.Message + ".");
+				logger.LogError("Exception RTSPRequest Ctor. " + excp.Message + ".");
 			}
 		}
 
@@ -128,7 +128,7 @@ namespace SIPSorcery.Net
                 if (rtspRequest.Method == RTSPMethodsEnum.UNKNOWN)
                 {
                     rtspRequest.UnknownMethod = method;
-                    logger.Warn("Unknown RTSP method received " + rtspRequest.Method + ".");
+                    logger.LogWarning("Unknown RTSP method received " + rtspRequest.Method + ".");
                 }
 
                 statusLine = statusLine.Substring(firstSpacePosn).Trim();
@@ -152,7 +152,7 @@ namespace SIPSorcery.Net
     		}
 			catch(Exception excp)
 			{
-				logger.Error("Exception parsing RTSP request. URI, " + urlStr + ".");
+				logger.LogError("Exception parsing RTSP request. URI, " + urlStr + ".");
 				throw new ApplicationException("There was an exception parsing an RTSP request. " + excp.Message);
 			}
 		}
@@ -179,7 +179,7 @@ namespace SIPSorcery.Net
 			}
 			catch(Exception excp)
 			{
-				logger.Error("Exception RTSPRequest ToString. " + excp.Message);
+				logger.LogError("Exception RTSPRequest ToString. " + excp.Message);
 				throw excp;
 			}
 		}

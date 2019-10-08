@@ -32,7 +32,7 @@
 
 using System;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -49,7 +49,7 @@ namespace SIPSorcery.SIP
 	/// </bnf>
 	public class SIPRequest
 	{
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private delegate bool IsLocalSIPSocketDelegate(string socket, SIPProtocolsEnum protocol);
 
@@ -89,7 +89,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPRequest ctor. " + excp.Message);
+                logger.LogError("Exception SIPRequest ctor. " + excp.Message);
                 throw;
             }
 		}
@@ -121,7 +121,7 @@ namespace SIPSorcery.SIP
                 if (sipRequest.Method == SIPMethodsEnum.UNKNOWN)
                 {
                     sipRequest.UnknownMethod = method;
-                    logger.Warn("Unknown SIP method received " + sipRequest.UnknownMethod + ".");
+                    logger.LogWarning("Unknown SIP method received " + sipRequest.UnknownMethod + ".");
                 }
 
                 statusLine = statusLine.Substring(firstSpacePosn).Trim();
@@ -149,8 +149,8 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception parsing SIP Request. " + excp.Message);
-                logger.Error(sipMessage.RawMessage);
+                logger.LogError("Exception parsing SIP Request. " + excp.Message);
+                logger.LogError(sipMessage.RawMessage);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Request, "Unknown error parsing SIP Request");
             }
 		}
@@ -168,8 +168,8 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ParseSIPRequest. " + excp.Message);
-                logger.Error(sipMessageStr);
+                logger.LogError("Exception ParseSIPRequest. " + excp.Message);
+                logger.LogError(sipMessageStr);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Request, "Unknown error parsing SIP Request");
             }
         }
@@ -195,7 +195,7 @@ namespace SIPSorcery.SIP
 			}
 			catch(Exception excp)
 			{
-				logger.Error("Exception SIPRequest ToString. " + excp.Message);
+				logger.LogError("Exception SIPRequest ToString. " + excp.Message);
 				throw excp;
 			}
 		}

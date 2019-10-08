@@ -42,13 +42,13 @@ using System.Text;
 using System.Threading;
 using SIPSorcery.SIP;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
     public class SIPNonInviteClientUserAgent
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private static readonly string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
 
@@ -94,7 +94,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPNonInviteClientUserAgent SendRequest to " + m_callDescriptor.Uri + ". " + excp.Message);
+                logger.LogError("Exception SIPNonInviteClientUserAgent SendRequest to " + m_callDescriptor.Uri + ". " + excp.Message);
                 throw;
             }
         }
@@ -153,7 +153,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPNonInviteClientUserAgent ServerResponseReceived (" + remoteEndPoint + "). " + excp.Message);
+                logger.LogError("Exception SIPNonInviteClientUserAgent ServerResponseReceived (" + remoteEndPoint + "). " + excp.Message);
             }
         }
 
@@ -214,7 +214,7 @@ namespace SIPSorcery.SIP.App
                 }
                 catch (Exception excp)
                 {
-                    logger.Error("Exception Parsing CustomHeader for SIPNonInviteClientUserAgent GetRequest. " + excp.Message + m_callDescriptor.CustomHeaders);
+                    logger.LogError("Exception Parsing CustomHeader for SIPNonInviteClientUserAgent GetRequest. " + excp.Message + m_callDescriptor.CustomHeaders);
                 }
 
                 if (!m_callDescriptor.Content.IsNullOrBlank())
@@ -228,7 +228,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPNonInviteClientUserAgent GetRequest. " + excp.Message);
+                logger.LogError("Exception SIPNonInviteClientUserAgent GetRequest. " + excp.Message);
                 throw excp;
             }
         }
@@ -257,7 +257,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPNonInviteClientUserAgent GetAuthenticatedRequest. " + excp.Message);
+                logger.LogError("Exception SIPNonInviteClientUserAgent GetAuthenticatedRequest. " + excp.Message);
                 throw excp;
             }
         }

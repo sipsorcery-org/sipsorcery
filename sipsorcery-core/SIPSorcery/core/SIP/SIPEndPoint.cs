@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -17,7 +17,7 @@ namespace SIPSorcery.SIP
     /// </summary>
     public class SIPEndPoint
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private static string m_transportParameterKey = SIPHeaderAncillary.SIP_HEADERANC_TRANSPORT;
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
@@ -138,7 +138,7 @@ namespace SIPSorcery.SIP
             }
             catch //(Exception excp)
             {
-                //logger.Error("Exception ParseSIPEndPoint (sipEndPointStr=" + sipEndPointStr + "). " + excp.Message);
+                //logger.LogError("Exception ParseSIPEndPoint (sipEndPointStr=" + sipEndPointStr + "). " + excp.Message);
                 throw;
             }
         }

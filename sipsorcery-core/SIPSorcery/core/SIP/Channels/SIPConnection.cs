@@ -37,7 +37,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -51,7 +51,7 @@ namespace SIPSorcery.SIP
 
     public class SIPConnection
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH;
         private static string m_sipEOL = SIPConstants.CRLF;
@@ -141,7 +141,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    //logger.Debug("SIP " + ConnectionProtocol + " socket to " + RemoteEndPoint + " was disconnected, closing.");
+                    //logger.LogDebug("SIP " + ConnectionProtocol + " socket to " + RemoteEndPoint + " was disconnected, closing.");
                     //SIPStream.Close();
                     Close();
                     SIPSocketDisconnected(RemoteEndPoint);
@@ -163,7 +163,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPConnection SocketReadCompleted. " + excp.Message);
+                logger.LogError("Exception SIPConnection SocketReadCompleted. " + excp.Message);
                 throw;
             }
         }
@@ -344,7 +344,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception closeExcp)
             {
-                logger.Warn("Exception closing socket in SIPConnection Close. " + closeExcp.Message);
+                logger.LogWarning("Exception closing socket in SIPConnection Close. " + closeExcp.Message);
             }
         }
     }

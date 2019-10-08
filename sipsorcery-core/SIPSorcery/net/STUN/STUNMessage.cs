@@ -34,13 +34,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
     public class STUNMessage
 	{
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
         
         public STUNHeader Header = new STUNHeader();
         public List<STUNAttribute> Attributes = new List<STUNAttribute>();

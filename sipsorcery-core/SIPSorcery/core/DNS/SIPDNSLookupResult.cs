@@ -35,7 +35,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -117,7 +117,7 @@ namespace SIPSorcery.SIP
 
         public void AddLookupResult(SIPDNSLookupEndPoint lookupEndPoint)
         {
-            //logger.Debug(" adding SIP end point result for " + URI.ToString() + " of " + lookupEndPoint.LookupEndPoint + ".");
+            //logger.LogDebug(" adding SIP end point result for " + URI.ToString() + " of " + lookupEndPoint.LookupEndPoint + ".");
 
             if(EndPointResults == null)
             {

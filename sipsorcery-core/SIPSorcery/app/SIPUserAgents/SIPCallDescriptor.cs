@@ -44,7 +44,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
@@ -126,7 +126,7 @@ namespace SIPSorcery.SIP.App
         private readonly static string m_defaultFromURI = SIPConstants.SIP_DEFAULT_FROMURI;
         private static char m_customHeadersSeparator = '|';                 // Must match SIPProvider.CUSTOM_HEADERS_SEPARATOR.
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public string Username;                 // The username that will be used in the From header and to authenticate the call unless overridden by AuthUsername.
         public string AuthUsername;             // The username that will be used from authentication. Optional setting only needed if the From header user needs to be different from the digest username.
@@ -487,7 +487,7 @@ namespace SIPSorcery.SIP.App
                             }
                             else if (customHeader.IndexOf(':') == -1)
                             {
-                                logger.Warn("ParseCustomHeaders skipping custom header due to missing colon, " + customHeader + ".");
+                                logger.LogWarning("ParseCustomHeaders skipping custom header due to missing colon, " + customHeader + ".");
                                 continue;
                             }
                             else
@@ -498,7 +498,7 @@ namespace SIPSorcery.SIP.App
 
                                 if (Regex.Match(customHeader.Trim(), "^(Via|From|Contact|CSeq|Call-ID|Max-Forwards|Content-Length)$", RegexOptions.IgnoreCase).Success)
                                 {
-                                    logger.Warn("ParseCustomHeaders skipping custom header due to an non-permitted string in header name, " + customHeader + ".");
+                                    logger.LogWarning("ParseCustomHeaders skipping custom header due to an non-permitted string in header name, " + customHeader + ".");
                                     continue;
                                 }
                                 else
@@ -512,7 +512,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ParseCustomHeaders (" + customHeaders + "). " + excp.Message);
+                logger.LogError("Exception ParseCustomHeaders (" + customHeaders + "). " + excp.Message);
             }
 
             return customHeaderList;

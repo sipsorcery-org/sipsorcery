@@ -36,7 +36,7 @@
 using System;
 using System.Runtime.Serialization;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -57,7 +57,7 @@ namespace SIPSorcery.SIP
     {
         private const char PARAM_TAG_DELIMITER = ';';
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         [DataMember]
         public string Name;
@@ -167,7 +167,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPUserField ToString. " + excp.Message);
+                logger.LogError("Exception SIPUserField ToString. " + excp.Message);
                 throw;
             }
         }
@@ -189,7 +189,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPUserField ToParameterlessString. " + excp.Message);
+                logger.LogError("Exception SIPUserField ToParameterlessString. " + excp.Message);
                 throw;
             }
         }

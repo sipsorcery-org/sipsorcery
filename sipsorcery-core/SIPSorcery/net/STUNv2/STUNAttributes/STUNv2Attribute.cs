@@ -53,7 +53,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -114,7 +114,7 @@ namespace SIPSorcery.Net
     {
         public const short STUNATTRIBUTE_HEADER_LENGTH = 4;
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public STUNv2AttributeTypesEnum AttributeType = STUNv2AttributeTypesEnum.Unknown;
         public byte[] Value;
@@ -197,7 +197,7 @@ namespace SIPSorcery.Net
                     {
                         if (stunAttributeLength + startIndex + 4 > endIndex)
                         {
-                            logger.Warn("The attribute length on a STUN parameter was greater than the available number of bytes.");
+                            logger.LogWarning("The attribute length on a STUN parameter was greater than the available number of bytes.");
                         }
                         else
                         {

@@ -74,7 +74,7 @@
 using System;
 using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
         public const int STUN_HEADER_LENGTH = 20;
         public const int TRANSACTION_ID_LENGTH = 16;
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public STUNMessageTypesEnum MessageType = STUNMessageTypesEnum.Unknown;
         public UInt16 MessageLength;

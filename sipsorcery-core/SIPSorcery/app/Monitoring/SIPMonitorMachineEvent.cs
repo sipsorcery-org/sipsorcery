@@ -40,6 +40,7 @@ using System;
 using System.Globalization;
 using System.Net;
 using SIPSorcery.Sys;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
@@ -116,7 +117,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPMonitorMachineEvent ParseEventCSV. " + excp.Message);
+                logger.LogError("Exception SIPMonitorMachineEvent ParseEventCSV. " + excp.Message);
                 return null;
             }
         }
@@ -146,7 +147,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPMonitorMachineEvent ToCSV. " + excp.Message);
+                logger.LogError("Exception SIPMonitorMachineEvent ToCSV. " + excp.Message);
                 return null;
             }
         }
@@ -184,7 +185,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPMonitorMachineEvent ToAnonymousCSV. " + excp.Message);
+                logger.LogError("Exception SIPMonitorMachineEvent ToAnonymousCSV. " + excp.Message);
                 return null;
             }
         }

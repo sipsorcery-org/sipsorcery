@@ -32,7 +32,7 @@
 
 using System;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -61,7 +61,7 @@ namespace SIPSorcery.SIP
 	/// </summary>
 	public class SIPResponse
 	{
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 		
 		private static string m_CRLF = SIPConstants.CRLF;
 		private static string m_sipVersion = SIPConstants.SIP_FULLVERSION_STRING;
@@ -118,8 +118,8 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ParseSIPResponse. " + excp.Message);
-                logger.Error(sipMessage.RawMessage);
+                logger.LogError("Exception ParseSIPResponse. " + excp.Message);
+                logger.LogError(sipMessage.RawMessage);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Response, "Error parsing SIP Response");
             }
 		}
@@ -137,8 +137,8 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ParseSIPResponse. " + excp.Message);
-                logger.Error(sipMessageStr);
+                logger.LogError("Exception ParseSIPResponse. " + excp.Message);
+                logger.LogError(sipMessageStr);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Response, "Error parsing SIP Response");
             }
         }

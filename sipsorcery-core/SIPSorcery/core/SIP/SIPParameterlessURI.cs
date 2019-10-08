@@ -34,14 +34,14 @@
 using System;
 using System.Runtime.Serialization;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
     [DataContract]
     public class SIPParameterlessURI 
 	{
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private SIPURI m_uri;
 
@@ -110,7 +110,7 @@ namespace SIPSorcery.SIP
 			}
 			catch(Exception excp)
 			{
-				logger.Error("Exception SIPParameterlessURI ToString. " + excp.Message);
+				logger.LogError("Exception SIPParameterlessURI ToString. " + excp.Message);
 				throw excp;
 			}
 		}

@@ -37,13 +37,13 @@
 
 using System;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
     public class SIPNonInviteServerUserAgent : ISIPServerUserAgent
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private SIPMonitorLogDelegate Log_External = (e) => { }; //SIPMonitorEvent.DefaultSIPMonitorLogger;
         private SIPAuthenticateRequestDelegate SIPAuthenticateRequest_External;
@@ -150,7 +150,7 @@ namespace SIPSorcery.SIP.App
             //m_uasTransaction.UASInviteTransactionTimedOut += ClientTimedOut;
             //m_uasTransaction.UASInviteTransactionCancelled += UASTransactionCancelled;
             //m_uasTransaction.TransactionRemoved += new SIPTransactionRemovedDelegate(UASTransaction_TransactionRemoved);
-            //m_uasTransaction.TransactionStateChanged += (t) => { logger.Debug("Transaction state change to " + t.TransactionState + ", uri=" + t.TransactionRequestURI.ToString() + "."); };
+            //m_uasTransaction.TransactionStateChanged += (t) => { logger.LogDebug("Transaction state change to " + t.TransactionState + ", uri=" + t.TransactionRequestURI.ToString() + "."); };
         }
 
         public bool LoadSIPAccountForIncomingCall()
@@ -202,7 +202,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception LoadSIPAccountForIncomingCall. " + excp.Message);
+                logger.LogError("Exception LoadSIPAccountForIncomingCall. " + excp.Message);
                 Reject(SIPResponseStatusCodesEnum.InternalServerError, null, null);
                 return false;
             }
@@ -267,7 +267,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPNonInviteUserAgent AuthenticateCall. " + excp.Message);
+                logger.LogError("Exception SIPNonInviteUserAgent AuthenticateCall. " + excp.Message);
                 Reject(SIPResponseStatusCodesEnum.InternalServerError, null, null);
             }
 

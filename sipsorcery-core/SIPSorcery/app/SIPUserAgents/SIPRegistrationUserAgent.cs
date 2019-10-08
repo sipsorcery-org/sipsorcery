@@ -35,13 +35,9 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using SIPSorcery.SIP;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
@@ -55,7 +51,7 @@ namespace SIPSorcery.SIP.App
         private const int DEFAULT_REGISTER_EXPIRY = 600;
         private const int MAX_REGISTER_ATTEMPTS = 3;                 // The maximum number of registration attempts that will be made without a failure condition before incurring a temporary failure.
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private static readonly string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
 
@@ -72,24 +68,39 @@ namespace SIPSorcery.SIP.App
         private SIPURI m_contactURI;
         private int m_expiry;
         private string m_owner;
-        private string m_adminMemberID;
 
         private bool m_isRegistered;
         private int m_cseq;
         private string m_callID;
         private bool m_exit;
         private int m_attempts;
-        private string m_lastServerNonce;
         private ManualResetEvent m_waitForRegistrationMRE = new ManualResetEvent(false);
 
         public string UserAgent;                // If not null this value will replace the default user agent value in the REGISTER request.
-        //public bool RequestSwitchboardToken;    // If set to true a header will be set on the REGISTER request that asks the server to return a toekn that can be used by the switchboard for 3rd party authorisation.
-        //public string SwitchboardToken;         // If a switchboard token is provided by the server it will be placed here.
 
         public event Action<SIPURI, string> RegistrationFailed;
         public event Action<SIPURI, string> RegistrationTemporaryFailure;
         public event Action<SIPURI> RegistrationSuccessful;
         public event Action<SIPURI> RegistrationRemoved;
+
+        public SIPRegistrationUserAgent(
+            SIPTransport sipTransport,
+            string username,
+            string password,
+            string server)
+        {
+            m_sipTransport = sipTransport;
+            m_localEndPoint = sipTransport.GetDefaultSIPEndPoint();
+            m_sipAccountAOR = new SIPURI(username, server, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
+            m_authUsername = username;
+            m_password = password;
+            m_registrarHost = server;
+            m_contactURI = new SIPURI(SIPSchemesEnum.sip, m_localEndPoint);
+            m_expiry = DEFAULT_REGISTER_EXPIRY;
+            m_callID = Guid.NewGuid().ToString();
+
+            Log_External = (ev) => logger.LogDebug(ev?.Message);
+        }
 
         public SIPRegistrationUserAgent(
             SIPTransport sipTransport,
@@ -117,7 +128,6 @@ namespace SIPSorcery.SIP.App
             m_contactURI = contactURI;
             m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
             m_owner = owner;
-            m_adminMemberID = adminMemberID;
             m_callID = Guid.NewGuid().ToString();
 
             Log_External = logDelegate;
@@ -132,7 +142,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                logger.Debug("Starting SIPRegistrationUserAgent for " + m_sipAccountAOR.ToString() + ".");
+                logger.LogDebug("Starting SIPRegistrationUserAgent for " + m_sipAccountAOR.ToString() + ".");
 
                 while (!m_exit)
                 {
@@ -153,21 +163,21 @@ namespace SIPSorcery.SIP.App
 
                     if (!m_exit && m_isRegistered)
                     {
-                        logger.Debug("SIPRegistrationUserAgent was successful, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + (m_expiry - REGISTRATION_HEAD_TIME) + "s.");
+                        logger.LogDebug("SIPRegistrationUserAgent was successful, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + (m_expiry - REGISTRATION_HEAD_TIME) + "s.");
                         Thread.Sleep((m_expiry - REGISTRATION_HEAD_TIME) * 1000);
                     }
                     else
                     {
-                        logger.Debug("SIPRegistrationUserAgent temporarily failed, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + REGISTER_FAILURERETRY_INTERVAL + "s.");
+                        logger.LogDebug("SIPRegistrationUserAgent temporarily failed, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + REGISTER_FAILURERETRY_INTERVAL + "s.");
                         Thread.Sleep(REGISTER_FAILURERETRY_INTERVAL * 1000);
                     }
                 }
 
-                logger.Debug("SIPRegistrationUserAgent for " + m_sipAccountAOR.ToString() + " stopping.");
+                logger.LogDebug("SIPRegistrationUserAgent for " + m_sipAccountAOR.ToString() + " stopping.");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPRegistrationUserAgent Start. " + excp.Message);
+                logger.LogError("Exception SIPRegistrationUserAgent Start. " + excp.Message);
             }
         }
 
@@ -177,7 +187,7 @@ namespace SIPSorcery.SIP.App
             {
                 if (!m_exit)
                 {
-                    logger.Debug("Stopping SIP registration user agent for " + m_sipAccountAOR.ToString() + ".");
+                    logger.LogDebug("Stopping SIP registration user agent for " + m_sipAccountAOR.ToString() + ".");
 
                     m_exit = true;
                     m_waitForRegistrationMRE.Set();
@@ -192,7 +202,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPRegistrationUserAgent Stop. " + excp.Message);
+                logger.LogError("Exception SIPRegistrationUserAgent Stop. " + excp.Message);
             }
         }
 
@@ -227,7 +237,7 @@ namespace SIPSorcery.SIP.App
 
                     if (registrarSIPEndPoint == null)
                     {
-                        logger.Warn("SIPRegistrationAgent could not resolve " + m_registrarHost + ".");
+                        logger.LogWarning("SIPRegistrationAgent could not resolve " + m_registrarHost + ".");
 
                         RegistrationFailed?.Invoke(m_sipAccountAOR, "Could not resolve " + m_registrarHost + ".");
                     }
@@ -247,7 +257,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SendInitialRegister to " + m_registrarHost + ". " + excp.Message);
+                logger.LogError("Exception SendInitialRegister to " + m_registrarHost + ". " + excp.Message);
                 RegistrationFailed?.Invoke(m_sipAccountAOR, "Exception SendInitialRegister to " + m_registrarHost + ". " + excp.Message);
             }
         }
@@ -341,7 +351,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPRegistrationUserAgent ServerResponseReceived (" + remoteEndPoint + "). " + excp.Message);
+                logger.LogError("Exception SIPRegistrationUserAgent ServerResponseReceived (" + remoteEndPoint + "). " + excp.Message);
             }
         }
 
@@ -404,7 +414,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPRegistrationUserAgent AuthResponseReceived. " + excp.Message);
+                logger.LogError("Exception SIPRegistrationUserAgent AuthResponseReceived. " + excp.Message);
             }
         }
 
@@ -506,7 +516,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GetRegistrationRequest. " + excp.Message);
+                logger.LogError("Exception GetRegistrationRequest. " + excp.Message);
                 throw excp;
             }
         }
@@ -516,7 +526,6 @@ namespace SIPSorcery.SIP.App
             try
             {
                 SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
-                m_lastServerNonce = authRequest.Nonce;
                 string username = (m_authUsername != null) ? m_authUsername : m_sipAccountAOR.User;
                 authRequest.SetCredentials(username, m_password, registerRequest.URI.ToString(), SIPMethodsEnum.REGISTER.ToString());
 
@@ -530,16 +539,11 @@ namespace SIPSorcery.SIP.App
                 regRequest.Header.AuthenticationHeader = new SIPAuthenticationHeader(authRequest);
                 regRequest.Header.AuthenticationHeader.SIPDigest.Response = authRequest.Digest;
 
-                //if (RequestSwitchboardToken)
-                //{
-                //    regRequest.Header.SwitchboardTokenRequest = m_expiry;
-                //}
-
                 return regRequest;
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GetAuthenticatedRegistrationRequest. " + excp.Message);
+                logger.LogError("Exception GetAuthenticatedRegistrationRequest. " + excp.Message);
                 throw excp;
             }
         }

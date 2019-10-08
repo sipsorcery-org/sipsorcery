@@ -16,19 +16,16 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
     public class ICMPListener
     {
-        private readonly static ILog logger = Log.logger;
+        private readonly static ILogger logger = Log.Logger;
 
         private Socket m_icmpListener;
         private bool m_stop;
@@ -49,12 +46,12 @@ namespace SIPSorcery.Net
                 byte[] buffer = new byte[4096];
                 EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
-                logger.Debug("ICMPListener receive thread starting.");
+                logger.LogDebug("ICMPListener receive thread starting.");
 
                 while (!m_stop)
                 {
                     int bytesRead = m_icmpListener.ReceiveFrom(buffer, ref remoteEndPoint);
-                    logger.Debug("ICMPListener received " + bytesRead + " from " + remoteEndPoint.ToString());
+                    logger.LogDebug("ICMPListener received " + bytesRead + " from " + remoteEndPoint.ToString());
 
                     if (Receive != null)
                     {
@@ -64,11 +61,11 @@ namespace SIPSorcery.Net
                     //m_icmpListener.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, this.ReceiveRawPacket, buffer);
                 }
 
-                logger.Debug("ICMPListener receive thread stopped.");
+                logger.LogDebug("ICMPListener receive thread stopped.");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ICMPListener Start. " + excp.Message);
+                logger.LogError("Exception ICMPListener Start. " + excp.Message);
                 throw;
             }
         }
@@ -79,11 +76,11 @@ namespace SIPSorcery.Net
             {
                 byte[] buffer = (byte[])ar.AsyncState;
                 int bytesRead = m_icmpListener.EndReceive(ar);
-                logger.Debug("ICMPListener received " + bytesRead + ".");
+                logger.LogDebug("ICMPListener received " + bytesRead + ".");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ReceiveRawPacket. " + excp.Message);
+                logger.LogError("Exception ReceiveRawPacket. " + excp.Message);
             }
         }
 
@@ -96,7 +93,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ICMPListener Stop. " + excp.Message);
+                logger.LogError("Exception ICMPListener Stop. " + excp.Message);
             }
         }
     }

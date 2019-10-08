@@ -38,7 +38,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -49,7 +49,7 @@ namespace SIPSorcery.Net
         private const int RTP_MAX_PAYLOAD = 1400;
         private const int SRTP_AUTH_KEY_LENGTH = 10;
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public int PayloadType { get; private set; }
         public uint Ssrc       { get; private set; }
@@ -107,7 +107,7 @@ namespace SIPSorcery.Net
                     int rtperr = SrtpProtect == null ? 0 : SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength);
                     if (rtperr != 0)
                     {
-                        logger.Error("SendAudioFrame SRTP packet protection failed, result " + rtperr + ".");
+                        logger.LogError("SendAudioFrame SRTP packet protection failed, result " + rtperr + ".");
                     }
                     else
                     {
@@ -120,7 +120,7 @@ namespace SIPSorcery.Net
             }
             catch (System.Net.Sockets.SocketException sockExcp)
             {
-                logger.Error("SocketException SendAudioFrame. " + sockExcp.Message);
+                logger.LogError("SocketException SendAudioFrame. " + sockExcp.Message);
             }
         }
 
@@ -154,7 +154,7 @@ namespace SIPSorcery.Net
                     int rtperr = SrtpProtect == null ? 0 : SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength);
                     if (rtperr != 0)
                     {
-                        logger.Error("SendVp8Frame SRTP packet protection failed, result " + rtperr + ".");
+                        logger.LogError("SendVp8Frame SRTP packet protection failed, result " + rtperr + ".");
                     }
                     else
                     {
@@ -167,7 +167,7 @@ namespace SIPSorcery.Net
             }
             catch (System.Net.Sockets.SocketException sockExcp)
             {
-                logger.Error("SocketException SendVp8Frame. " + sockExcp.Message);
+                logger.LogError("SocketException SendVp8Frame. " + sockExcp.Message);
             }
         }
 
@@ -191,7 +191,7 @@ namespace SIPSorcery.Net
                     int rtperr = SrtcpProtect(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
                     if (rtperr != 0)
                     {
-                        logger.Warn("SRTP RTCP packet protection failed, result " + rtperr + ".");
+                        logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
                     }
                     else
                     {
@@ -201,7 +201,7 @@ namespace SIPSorcery.Net
             }
             catch(Exception excp)
             {
-                logger.Warn("Exception SendRtcpSenderReport. " + excp.Message);
+                logger.LogWarning("Exception SendRtcpSenderReport. " + excp.Message);
             }
         }
     }

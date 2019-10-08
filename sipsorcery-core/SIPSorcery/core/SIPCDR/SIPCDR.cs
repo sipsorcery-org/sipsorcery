@@ -33,7 +33,7 @@
 using System;
 using System.Runtime.Serialization;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -53,7 +53,7 @@ namespace SIPSorcery.SIP
     [DataContract]
     public class SIPCDR
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
         private static string m_newLine = Environment.NewLine;
 
         public static event CDRReadyDelegate CDRCreated = c => { };
@@ -234,7 +234,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPCDR Answered. " + excp);
+                logger.LogError("Exception SIPCDR Answered. " + excp);
             }
         }
 
@@ -247,7 +247,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPCDR Cancelled. " + excp);
+                logger.LogError("Exception SIPCDR Cancelled. " + excp);
             }
         }
 
@@ -260,7 +260,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPCDR TimedOut. " + excp);
+                logger.LogError("Exception SIPCDR TimedOut. " + excp);
             }
         }
 
@@ -276,7 +276,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPCDR Hungup. " + excp);
+                logger.LogError("Exception SIPCDR Hungup. " + excp);
             }
         }
 
@@ -298,7 +298,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPCDR Updated. " + excp);
+                logger.LogError("Exception SIPCDR Updated. " + excp);
             }
         }
     }

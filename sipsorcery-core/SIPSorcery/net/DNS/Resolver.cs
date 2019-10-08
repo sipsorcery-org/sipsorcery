@@ -27,7 +27,7 @@ using System.Net.NetworkInformation;
 //using System.Diagnostics;
 //using System.Runtime.Remoting.Messaging;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 /*
  * Network Working Group                                     P. Mockapetris
@@ -59,7 +59,7 @@ namespace Heijden.DNS
         private const int SWITCH_ACTIVE_TIMEOUT_COUNT = 5;  // The timeout in seconds that if no response is received on the active DNS server it will be switched.
         private const int FAILURE_RETRY = 60;               // The timeout in seconds to retry DNS lookups that failed.
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         /// <summary>
         /// Gets list of OPENDNS servers
@@ -299,13 +299,13 @@ namespace Heijden.DNS
 
             string strKey = question.QClass + "-" + question.QType + "-" + question.QName;
 
-            //logger.Debug("Checking cache for " + strKey + ".");
+            //logger.LogDebug("Checking cache for " + strKey + ".");
 
             lock (m_lookupFailures)
             {
                 if (m_lookupFailures.ContainsKey(strKey))
                 {
-                    //logger.Debug("DNS cache failed result found for " + strKey + ".");
+                    //logger.LogDebug("DNS cache failed result found for " + strKey + ".");
 
                     if (DateTime.Now.Subtract(m_lookupFailures[strKey].TimeStamp).TotalSeconds < FAILURE_RETRY)
                     {
@@ -325,7 +325,7 @@ namespace Heijden.DNS
             {
                 if (!m_ResponseCache.ContainsKey(strKey))
                 {
-                    //logger.Debug("DNS cache no result found for " + strKey + ".");
+                    //logger.LogDebug("DNS cache no result found for " + strKey + ".");
                     return null;
                 }
 
@@ -341,19 +341,19 @@ namespace Heijden.DNS
 
             //int TimeLived = (int)((DateTime.Now.Ticks - response.TimeStamp.Ticks) / TimeSpan.TicksPerSecond);
             int secondsLived = (int)(DateTime.Now.Subtract(response.TimeStamp).TotalSeconds % Int32.MaxValue);
-            //logger.Debug("Seconds lived=" + secondsLived + ".");
+            //logger.LogDebug("Seconds lived=" + secondsLived + ".");
             foreach (RR rr in response.RecordsRR)
             {
                 //rr.TimeLived = TimeLived;
                 // The TTL property calculates its actual time to live
                 if (secondsLived >= rr.TTL)
                 {
-                    //logger.Debug("DNS cache out of date result found for " + strKey + ".");
+                    //logger.LogDebug("DNS cache out of date result found for " + strKey + ".");
                     return null; // out of date
                 }
             }
 
-            //logger.Debug("DNS cache curent result found for " + strKey + ".");
+            //logger.LogDebug("DNS cache curent result found for " + strKey + ".");
             return response;
         }
 
@@ -380,7 +380,7 @@ namespace Heijden.DNS
             if (response.Error != null)
             {
                 // Cache error responses for a short period of time to avoid overloading the server with failing DNS lookups.
-                logger.Debug("Caching DNS lookup failure for " + questionKey + " error was " + response.Error + ".");
+                logger.LogDebug("Caching DNS lookup failure for " + questionKey + " error was " + response.Error + ".");
                 lock (m_lookupFailures)
                 {
                     if (m_lookupFailures.ContainsKey(questionKey))
@@ -394,7 +394,7 @@ namespace Heijden.DNS
             else if(!response.Timedout && response.Answers.Count > 0)
             {
                 // Cache non-error responses.
-                logger.Debug("Caching DNS lookup success for " + questionKey + ".");
+                logger.LogDebug("Caching DNS lookup success for " + questionKey + ".");
                 lock (m_ResponseCache)
                 {
                     if (m_ResponseCache.ContainsKey(questionKey))
@@ -424,7 +424,7 @@ namespace Heijden.DNS
             //    for (int intDnsServer = 0; intDnsServer < dnsServers.Count; intDnsServer++)
             //	{
             string requestStr = request.Questions[0].QType + " " + request.Questions[0].QName;
-            logger.Debug("Resolver sending UDP DNS request to " + activeDNSServer + " for " + requestStr + ".");
+            logger.LogDebug("Resolver sending UDP DNS request to " + activeDNSServer + " for " + requestStr + ".");
 
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, timeout * 1000);
@@ -438,19 +438,19 @@ namespace Heijden.DNS
                 Array.Copy(responseMessage, data, intReceived);
                 DNSResponse response = new DNSResponse(activeDNSServer, data);
                 //AddToCache(response);
-                //logger.Debug("Success in UdpRequest for " + requestStr + ".");
+                //logger.LogDebug("Success in UdpRequest for " + requestStr + ".");
                 return response;
             }
             catch (SocketException sockExcp)
             {
-                //logger.Debug("SocketException UdpRequest for " + requestStr + ". " + sockExcp.Message);
+                //logger.LogDebug("SocketException UdpRequest for " + requestStr + ". " + sockExcp.Message);
                 IncrementTimeoutCount(activeDNSServer);
-                logger.Warn("Resolver connection to nameserver " + activeDNSServer + " failed. " + sockExcp.Message);
+                logger.LogWarning("Resolver connection to nameserver " + activeDNSServer + " failed. " + sockExcp.Message);
                 //continue; // next try
             }
             catch (Exception excp)
             {
-                logger.Error("Exception Resolver UdpRequest for " + requestStr + ". " + excp.Message);
+                logger.LogError("Exception Resolver UdpRequest for " + requestStr + ". " + excp.Message);
             }
             finally
             {
@@ -462,7 +462,7 @@ namespace Heijden.DNS
             //	}
             //}
 
-            logger.Warn("Resolver UDP request timed out for " + requestStr + ".");
+            logger.LogWarning("Resolver UDP request timed out for " + requestStr + ".");
             DNSResponse responseTimeout = new DNSResponse();
             responseTimeout.Timedout = true;
             return responseTimeout;
@@ -901,7 +901,7 @@ namespace Heijden.DNS
                         {
                             if (dnsServer != m_activeDNSServer)
                             {
-                                logger.Debug("Switching active DNS server from " + m_activeDNSServer + " to " + dnsServer + ".");
+                                logger.LogDebug("Switching active DNS server from " + m_activeDNSServer + " to " + dnsServer + ".");
                                 m_activeDNSServer = dnsServer;
                                 ResetTimeoutCount(m_activeDNSServer);
                             }

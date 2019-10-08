@@ -41,7 +41,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
@@ -60,7 +60,7 @@ namespace SIPSorcery.SIP.App
 
         private static readonly string m_filterTextType = SIPMIMETypes.MWI_TEXT_TYPE;
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private SIPMonitorLogDelegate Log_External;
         private SIPTransport m_sipTransport;
@@ -133,7 +133,7 @@ namespace SIPSorcery.SIP.App
             {
                 if (!m_exit)
                 {
-                    logger.Debug("Stopping SIP notifier user agent for user " + m_authUsername + " and resource URI " + m_resourceURI.ToString() + ".");
+                    logger.LogDebug("Stopping SIP notifier user agent for user " + m_authUsername + " and resource URI " + m_resourceURI.ToString() + ".");
 
                     m_exit = true;
                     m_attempts = 0;
@@ -142,7 +142,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPNotifierClient Stop. " + excp.Message);
+                logger.LogError("Exception SIPNotifierClient Stop. " + excp.Message);
             }
         }
 
@@ -150,23 +150,23 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                logger.Debug("SIPNotifierClient GotNotificationRequest for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " " + sipRequest.Header.CSeq + ".");
+                logger.LogDebug("SIPNotifierClient GotNotificationRequest for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " " + sipRequest.Header.CSeq + ".");
 
                 SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                 m_sipTransport.SendResponse(okResponse);
 
-                //logger.Debug(sipRequest.ToString());
+                //logger.LogDebug(sipRequest.ToString());
 
                 if (sipRequest.Method == SIPMethodsEnum.NOTIFY && sipRequest.Header.CallId == m_subscribeCallID &&
                      sipRequest.Header.Event == m_sipEventPackage.ToString() && sipRequest.Body != null)
                 {
                     if (sipRequest.Header.CSeq <= m_remoteCSeq)
                     {
-                        logger.Warn("A duplicate NOTIFY request received by SIPNotifierClient for subscription Call-ID " + m_subscribeCallID + ".");
+                        logger.LogWarning("A duplicate NOTIFY request received by SIPNotifierClient for subscription Call-ID " + m_subscribeCallID + ".");
                     }
                     else
                     {
-                        //logger.Debug("New dialog info notification request received.");
+                        //logger.LogDebug("New dialog info notification request received.");
                         m_remoteCSeq = sipRequest.Header.CSeq;
                         T sipEvent = new T();
                         sipEvent.Load(sipRequest.Body);
@@ -175,13 +175,13 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    logger.Warn("A request received by SIPNotifierClient did not match the subscription details, request Call-ID=" + sipRequest.Header.CallId + ", subscribed Call-ID=" + m_subscribeCallID + ".");
-                    logger.Debug(sipRequest.ToString());
+                    logger.LogWarning("A request received by SIPNotifierClient did not match the subscription details, request Call-ID=" + sipRequest.Header.CallId + ", subscribed Call-ID=" + m_subscribeCallID + ".");
+                    logger.LogDebug(sipRequest.ToString());
                 }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GotNotificationRequest. " + excp.Message);
+                logger.LogError("Exception GotNotificationRequest. " + excp.Message);
             }
         }
 
@@ -199,7 +199,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                logger.Debug("SIPNotifierClient starting for " + m_resourceURI.ToString() + " and event package " + m_sipEventPackage.ToString() + ".");
+                logger.LogDebug("SIPNotifierClient starting for " + m_resourceURI.ToString() + " and event package " + m_sipEventPackage.ToString() + ".");
 
                 while (!m_exit)
                 {
@@ -234,7 +234,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPNotifierClient StartSubscription. " + excp.Message);
+                logger.LogError("Exception SIPNotifierClient StartSubscription. " + excp.Message);
             }
         }
 
@@ -308,7 +308,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPNotifierClient Subscribe. " + excp.Message);
+                logger.LogError("Exception SIPNotifierClient Subscribe. " + excp.Message);
                 SubscriptionFailed(m_resourceURI, SIPResponseStatusCodesEnum.InternalServerError, "Exception Subscribing. " + excp.Message);
                 m_waitForSubscribeResponse.Set();
             }
@@ -427,7 +427,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SubscribeTransactionFinalResponseReceived. " + excp.Message);
+                logger.LogError("Exception SubscribeTransactionFinalResponseReceived. " + excp.Message);
                 SubscriptionFailed(m_resourceURI, SIPResponseStatusCodesEnum.InternalServerError, "Exception processing subscribe response. " + excp.Message);
                 m_waitForSubscribeResponse.Set();
             }

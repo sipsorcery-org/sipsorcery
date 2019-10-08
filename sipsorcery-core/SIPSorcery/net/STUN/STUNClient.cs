@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -15,13 +15,13 @@ namespace SIPSorcery.Net
         public const int DEFAULT_STUN_PORT = 3478;
         private const int STUN_SERVER_RESPONSE_TIMEOUT = 3;
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public static IPAddress GetPublicIPAddress(string stunServer)
         {
             try
             {
-                logger.Debug("STUNClient attempting to determine public IP from " + stunServer + ".");
+                logger.LogDebug("STUNClient attempting to determine public IP from " + stunServer + ".");
 
                 using (UdpClient udpClient = new UdpClient(stunServer, DEFAULT_STUN_PORT))
                 {
@@ -41,7 +41,7 @@ namespace SIPSorcery.Net
 
                                 if (stunResponseBuffer != null && stunResponseBuffer.Length > 0)
                                 {
-                                    logger.Debug("STUNClient Response to initial STUN message received from " + stunResponseEndPoint + ".");
+                                    logger.LogDebug("STUNClient Response to initial STUN message received from " + stunResponseEndPoint + ".");
                                     STUNMessage stunResponse = STUNMessage.ParseSTUNMessage(stunResponseBuffer, stunResponseBuffer.Length);
 
                                     if (stunResponse.Attributes.Count > 0)
@@ -51,7 +51,7 @@ namespace SIPSorcery.Net
                                             if (stunAttribute.AttributeType == STUNAttributeTypesEnum.MappedAddress)
                                             {
                                                 publicIPAddress = ((STUNAddressAttribute)stunAttribute).Address;
-                                                logger.Debug("STUNClient Public IP=" + publicIPAddress.ToString() + ".");
+                                                logger.LogDebug("STUNClient Public IP=" + publicIPAddress.ToString() + ".");
                                             }
                                         }
                                     }
@@ -61,7 +61,7 @@ namespace SIPSorcery.Net
                             }
                             catch (Exception recvExcp)
                             {
-                                logger.Warn("Exception STUNClient Receive. " + recvExcp.Message);
+                                logger.LogWarning("Exception STUNClient Receive. " + recvExcp.Message);
                             }
                         }, null);
 
@@ -71,14 +71,14 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.Warn("STUNClient server response timedout after " + STUN_SERVER_RESPONSE_TIMEOUT + "s.");
+                            logger.LogWarning("STUNClient server response timedout after " + STUN_SERVER_RESPONSE_TIMEOUT + "s.");
                             return null;
                         }
                     }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception STUNClient GetPublicIPAddress. " + excp.Message);
+                logger.LogError("Exception STUNClient GetPublicIPAddress. " + excp.Message);
                 return null;
                 //throw;
             }

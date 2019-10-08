@@ -37,7 +37,7 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
@@ -45,7 +45,7 @@ namespace SIPSorcery.SIP.App
     {
         private const int NONCE_REFRESH_SECONDS = 120;
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private static string m_previousNoncePrefix = null;
         private static string m_currentNoncePrefix = null;

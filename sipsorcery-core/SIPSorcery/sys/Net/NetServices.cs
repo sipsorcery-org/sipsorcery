@@ -20,7 +20,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Sys
 {
@@ -38,7 +38,7 @@ namespace SIPSorcery.Sys
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
         private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 5;               // The maximum number of re-attempts that will be made when trying to bind the RTP port.
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public static PlatformEnum Platform = PlatformEnum.Windows;
 
@@ -124,11 +124,11 @@ namespace SIPSorcery.Sys
                                 controlSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                                 controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
 
-                                logger.Debug("Successfully bound RTP socket " + localAddress + ":" + rtpPort + " and control socket " + localAddress + ":" + controlPort + ".");
+                                logger.LogDebug("Successfully bound RTP socket " + localAddress + ":" + rtpPort + " and control socket " + localAddress + ":" + controlPort + ".");
                             }
                             else
                             {
-                                logger.Debug("Successfully bound RTP socket " + localAddress + ":" + rtpPort + ".");
+                                logger.LogDebug("Successfully bound RTP socket " + localAddress + ":" + rtpPort + ".");
                             }
 
                             bindSuccess = true;
@@ -139,11 +139,11 @@ namespace SIPSorcery.Sys
                         {
                             if (controlPort != 0)
                             {
-                                logger.Warn("Failed to bind on address " + localAddress + " to RTP port " + rtpPort + " and/or control port of " + controlPort + ", attempt " + bindAttempts + ".");
+                                logger.LogWarning("Failed to bind on address " + localAddress + " to RTP port " + rtpPort + " and/or control port of " + controlPort + ", attempt " + bindAttempts + ".");
                             }
                             else
                             {
-                                logger.Warn("Failed to bind on address " + localAddress + " to RTP port " + rtpPort + ", attempt " + bindAttempts + ".");
+                                logger.LogWarning("Failed to bind on address " + localAddress + " to RTP port " + rtpPort + ", attempt " + bindAttempts + ".");
                             }
 
                             // Increment the port range in case there is an OS/network issue closing/cleaning up already used ports.
@@ -186,14 +186,14 @@ namespace SIPSorcery.Sys
                         }
                         catch
                         {
-                            //logger.Warn("Warning couldn't create UDP end point for " + localAddress + ":" + port + "." + excp.Message);
+                            //logger.LogWarning("Warning couldn't create UDP end point for " + localAddress + ":" + port + "." + excp.Message);
                         }
 
                         attempts++;
                     }
                 }
 
-                //logger.Debug("Attempts to create UDP end point for " + localAddress + ":" + port + " was " + attempts);
+                //logger.LogDebug("Attempts to create UDP end point for " + localAddress + ":" + port + " was " + attempts);
 
                 return randomClient;
             }
@@ -239,7 +239,7 @@ namespace SIPSorcery.Sys
             }
             catch
             {
-                //logger.Error("Exception GetDefaultGateway. " + excp.Message);
+                //logger.LogError("Exception GetDefaultGateway. " + excp.Message);
                 return null;
             }
         }
@@ -286,7 +286,7 @@ namespace SIPSorcery.Sys
             }
             catch
             {
-                //logger.Error("Exception GetDefaultIPAddress. " + excp.Message);
+                //logger.LogError("Exception GetDefaultIPAddress. " + excp.Message);
                 return null;
             }
         }
@@ -311,7 +311,7 @@ namespace SIPSorcery.Sys
             }
             catch (Exception excp)
             {
-                //logger.Error("Exception call to 'route print': " + excp.Message);
+                //logger.LogError("Exception call to 'route print': " + excp.Message);
                 throw new ApplicationException("An attempt to call 'route print' failed. " + excp.Message);
             }
         }

@@ -6,7 +6,7 @@
 // of SIP messages.
 //
 // History:
-// 14 Sep 2008	    Aaron Clauson	    Created (most methods extractd from StatefulProxyCore).
+// 14 Sep 2008	    Aaron Clauson	    Created (most methods extracted from StatefulProxyCore).
 //
 // Author(s):
 // Aaron Clauson
@@ -36,21 +36,17 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
 using SIPSorcery.Net;
-using SIPSorcery.SIP;
-using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {
     public class SIPPacketMangler
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         public static string MangleSDP(string sdpBody, string publicIPAddress, out bool wasMangled)
         {
@@ -65,26 +61,23 @@ namespace SIPSorcery.SIP.App
                     // Only mangle if there is something to change. For example the server could be on the same private subnet in which case it can't help.
                     if (IPSocket.IsPrivateAddress(sdpAddress) && publicIPAddress != sdpAddress)
                     {
-                        //logger.Debug("MangleSDP replacing private " + sdpAddress + " with " + publicIPAddress + ".");
+                        //logger.LogDebug("MangleSDP replacing private " + sdpAddress + " with " + publicIPAddress + ".");
                         string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", "c=IN IP4 " + publicIPAddress, RegexOptions.Singleline);
                         wasMangled = true;
 
                         return mangledSDP;
                     }
-                    // else {
-                    //    logger.Debug("MangleSDP did not replace " + sdpAddress + " with " + publicIPAddress + ".");
-                    //}
                 }
                 else
                 {
-                    logger.Warn("Mangle SDP was called with an empty body or public IP address.");
+                    logger.LogWarning("Mangle SDP was called with an empty body or public IP address.");
                 }
 
                 return sdpBody;
             }
             catch (Exception excp)
             {
-                logger.Error("Exception MangleSDP. " + excp.Message);
+                logger.LogError("Exception MangleSDP. " + excp.Message);
                 return sdpBody;
             }
         }
@@ -111,7 +104,7 @@ namespace SIPSorcery.SIP.App
                         string origContact = sipRequest.Header.Contact[0].ContactURI.Host;
                         sipRequest.Header.Contact[0].ContactURI.Host = sipRequest.Header.Vias.BottomViaHeader.ReceivedFromAddress;
 
-                        //logger.Debug("Contact URI identified as containing private address for " + sipRequest.Method + " " + origContact + " adjusting to use bottom via " + bottomViaHost + ".");
+                        //logger.LogDebug("Contact URI identified as containing private address for " + sipRequest.Method + " " + origContact + " adjusting to use bottom via " + bottomViaHost + ".");
                         //FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorServerTypesEnum.ContactRegisterInProgress, "Contact on " + sipRequest.Method + " " + origContact + " had private address adjusted to " + bottomViaHost + ".", username));
                     }
                 }
@@ -135,7 +128,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception MangleSIPRequest. " + excp.Message);
+                logger.LogError("Exception MangleSIPRequest. " + excp.Message);
             }
         }
 
@@ -159,7 +152,7 @@ namespace SIPSorcery.SIP.App
                         SIPURI origContact = sipResponse.Header.Contact[0].ContactURI;
                         sipResponse.Header.Contact[0].ContactURI = new SIPURI(origContact.Scheme, remoteEndPoint);
 
-                        //logger.Debug("INVITE response Contact URI identified as containing private address, original " + origContact + " adjustied to " + remoteEndPoint.ToString() + ".");
+                        //logger.LogDebug("INVITE response Contact URI identified as containing private address, original " + origContact + " adjustied to " + remoteEndPoint.ToString() + ".");
                         //FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorServerTypesEnum.ContactRegisterInProgress, "INVITE Response contact adjusted from " + origContact + " to " + remoteEndPoint.ToString() + ".", username));
                     }
                 }
@@ -183,7 +176,7 @@ namespace SIPSorcery.SIP.App
             }
             catch (Exception excp)
             {
-                logger.Error("Exception MangleSIPResponse. " + excp.Message);
+                logger.LogError("Exception MangleSIPResponse. " + excp.Message);
             }
         }
 

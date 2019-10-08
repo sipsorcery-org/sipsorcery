@@ -33,7 +33,7 @@
 using System;
 using System.Net;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -49,7 +49,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTSPResponse
     {
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 		
 		private static string m_CRLF = RTSPConstants.CRLF;
 		//private static string m_rtspFullVersion = RTSPConstants.RTSP_FULLVERSION_STRING;
@@ -116,7 +116,7 @@ namespace SIPSorcery.Net
     		}
 			catch(Exception excp)
 			{
-				logger.Error("Exception parsing RTSP reqsponse. "  + excp.Message);
+				logger.LogError("Exception parsing RTSP reqsponse. "  + excp.Message);
 				throw new ApplicationException("There was an exception parsing an RTSP response. " + excp.Message);
 			}
 		}
@@ -144,7 +144,7 @@ namespace SIPSorcery.Net
 			}
 			catch(Exception excp)
 			{
-				logger.Error("Exception RTSPResponse ToString. " + excp.Message);
+				logger.LogError("Exception RTSPResponse ToString. " + excp.Message);
 				throw excp;
 			}
 		}

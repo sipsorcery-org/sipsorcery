@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -67,7 +67,7 @@ namespace SIPSorcery.SIP
         private const char BACK_SLASH = '\\';
         private const char DEFAULT_PARAMETER_DELIMITER = ';';
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         [DataMember]
         public char TagDelimiter = DEFAULT_PARAMETER_DELIMITER;
@@ -192,7 +192,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GetKeyValuePairsFromQuoted. " + excp.Message);
+                logger.LogError("Exception GetKeyValuePairsFromQuoted. " + excp.Message);
                 throw excp;
             }
         }

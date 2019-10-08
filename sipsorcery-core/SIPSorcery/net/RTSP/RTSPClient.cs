@@ -39,7 +39,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
@@ -51,7 +51,7 @@ namespace SIPSorcery.Net
         private const int RTP_TIMEOUT_SECONDS = 15;             // If no RTP packets are received during this interval then assume the connection has failed.
         private const int BANDWIDTH_CALCULATION_SECONDS = 5;    // The interval at which to do bandwidth calculations.
 
-        private static ILog logger = Log.logger;
+        private static ILogger logger = Log.Logger;
 
         private string _url;
         private int _cseq = 1;
@@ -106,7 +106,7 @@ namespace SIPSorcery.Net
                 string hostname = Regex.Match(url, @"rtsp://(?<hostname>\S+?)/").Result("${hostname}");
                 //IPEndPoint rtspEndPoint = DNSResolver.R(hostname, DNS_RESOLUTION_TIMEOUT);
 
-                logger.Debug("RTSP Client Connecting to " + hostname + ".");
+                logger.LogDebug("RTSP Client Connecting to " + hostname + ".");
                 TcpClient rtspSocket = new TcpClient(hostname, RTSP_PORT);
                 NetworkStream rtspStream = rtspSocket.GetStream();
 
@@ -127,7 +127,7 @@ namespace SIPSorcery.Net
 
                 if (bytesRead > 0)
                 {
-                    logger.Debug(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                    logger.LogDebug(Encoding.UTF8.GetString(buffer, 0, bytesRead));
                     byte[] msgBuffer = new byte[bytesRead];
                     Buffer.BlockCopy(buffer, 0, msgBuffer, 0, bytesRead);
                     rtspMessage = RTSPMessage.ParseRTSPMessage(msgBuffer, null, null);
@@ -135,14 +135,14 @@ namespace SIPSorcery.Net
                     if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
                     {
                         rtspResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
-                        logger.Debug("RTSP Response received: " + rtspResponse.StatusCode + " " + rtspResponse.Status + " " + rtspResponse.ReasonPhrase + ".");
+                        logger.LogDebug("RTSP Response received: " + rtspResponse.StatusCode + " " + rtspResponse.Status + " " + rtspResponse.ReasonPhrase + ".");
                     }
 
                     rtspSDP = rtspResponse.Body;
                 }
                 else
                 {
-                    logger.Warn("Socket closed prematurely in GetStreamDescription for " + url + ".");
+                    logger.LogWarning("Socket closed prematurely in GetStreamDescription for " + url + ".");
                 }
 
                 rtspSocket.Close();
@@ -151,7 +151,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GetStreamDescription. " + excp.Message);
+                logger.LogError("Exception GetStreamDescription. " + excp.Message);
                 throw excp;
             }
         }
@@ -177,7 +177,7 @@ namespace SIPSorcery.Net
                     hostname = SIPSorcery.Sys.IPSocket.ParseHostFromSocket(hostname);
                 }
 
-                logger.Debug("RTSP client connecting to " + hostname + ", port " + port + ".");
+                logger.LogDebug("RTSP client connecting to " + hostname + ", port " + port + ".");
 
                 _rtspConnection = new TcpClient(hostname, port);
                 _rtspStream = _rtspConnection.GetStream();
@@ -219,7 +219,7 @@ namespace SIPSorcery.Net
                             _rtspSession.RemoteEndPoint = new IPEndPoint((_rtspConnection.Client.RemoteEndPoint as IPEndPoint).Address, setupResponse.Header.Transport.GetServerRTPPort());
                             _rtspSession.Start();
 
-                            logger.Debug("RTSP Response received to SETUP: " + setupResponse.Status + ", session ID " + _rtspSession.SessionID + ", server RTP endpoint " + _rtspSession.RemoteEndPoint + ".");
+                            logger.LogDebug("RTSP Response received to SETUP: " + setupResponse.Status + ", session ID " + _rtspSession.SessionID + ", server RTP endpoint " + _rtspSession.RemoteEndPoint + ".");
 
                             if (OnSetupSuccess != null)
                             {
@@ -228,7 +228,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.Warn("RTSP Response received to SETUP: " + setupResponse.Status + ".");
+                            logger.LogWarning("RTSP Response received to SETUP: " + setupResponse.Status + ".");
                             throw new ApplicationException("An error response of " + setupResponse.Status + " was received for an RTSP setup request.");
                         }
                     }
@@ -244,7 +244,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                logger.Warn("RTSPCient.RTPQueueFull purging frames list.");
+                logger.LogWarning("RTSPCient.RTPQueueFull purging frames list.");
                 System.Diagnostics.Debug.WriteLine("RTSPCient.RTPQueueFull purging frames list.");
 
                 lock (_frames)
@@ -256,7 +256,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RTSPClient.RTPQueueFull. " + excp);
+                logger.LogError("Exception RTSPClient.RTPQueueFull. " + excp);
             }
         }
 
@@ -289,7 +289,7 @@ namespace SIPSorcery.Net
                 if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
                 {
                     var playResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
-                    logger.Debug("RTSP Response received to PLAY: " + playResponse.StatusCode + " " + playResponse.Status + " " + playResponse.ReasonPhrase + ".");
+                    logger.LogDebug("RTSP Response received to PLAY: " + playResponse.StatusCode + " " + playResponse.Status + " " + playResponse.ReasonPhrase + ".");
                 }
             }
             else
@@ -307,7 +307,7 @@ namespace SIPSorcery.Net
             {
                 if (_rtspStream != null && _rtspConnection.Connected)
                 {
-                    logger.Debug("RTSP client sending teardown request for " + _url + ".");
+                    logger.LogDebug("RTSP client sending teardown request for " + _url + ".");
 
                     RTSPRequest teardownRequest = new RTSPRequest(RTSPMethodsEnum.TEARDOWN, _url);
                     RTSPHeader teardownHeader = new RTSPHeader(_cseq++, _rtspSession.SessionID);
@@ -320,12 +320,12 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    logger.Debug("RTSP client did not send teardown request for " + _url + ", the socket was closed.");
+                    logger.LogDebug("RTSP client did not send teardown request for " + _url + ", the socket was closed.");
                 }
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RTSPClient.Teardown. " + excp);
+                logger.LogError("Exception RTSPClient.Teardown. " + excp);
             }
         }
 
@@ -338,7 +338,7 @@ namespace SIPSorcery.Net
             {
                 if (!_isClosed)
                 {
-                    logger.Debug("RTSP client, closing connection for " + _url + ".");
+                    logger.LogDebug("RTSP client, closing connection for " + _url + ".");
 
                     _isClosed = true;
                     _sendKeepAlivesMRE.Set();
@@ -358,7 +358,7 @@ namespace SIPSorcery.Net
                         }
                         catch (Exception rtpStreamExcp)
                         {
-                            logger.Error("Exception RTSPClient.Close closing RTP stream. " + rtpStreamExcp);
+                            logger.LogError("Exception RTSPClient.Close closing RTP stream. " + rtpStreamExcp);
                         }
                     }
 
@@ -370,7 +370,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RTSPClient.Close. " + excp);
+                logger.LogError("Exception RTSPClient.Close. " + excp);
             }
         }
 
@@ -448,14 +448,14 @@ namespace SIPSorcery.Net
 
                                     _lastCompleteFrameTimestamp = rtpPacket.Header.Timestamp;
                                     //System.Diagnostics.Debug.WriteLine("Frame ready " + frame.Timestamp + ", sequence numbers " + frame.StartSequenceNumber + " to " + frame.EndSequenceNumber + ",  payload length " + imageBytes.Length + ".");
-                                    //logger.Debug("Frame ready " + frame.Timestamp + ", sequence numbers " + frame.StartSequenceNumber + " to " + frame.EndSequenceNumber + ",  payload length " + imageBytes.Length + ".");
+                                    //logger.LogDebug("Frame ready " + frame.Timestamp + ", sequence numbers " + frame.StartSequenceNumber + " to " + frame.EndSequenceNumber + ",  payload length " + imageBytes.Length + ".");
                                     _frames.Remove(frame);
 
                                     // Also remove any earlier frames as we don't care about anything that's earlier than the current complete frame.
                                     foreach (var oldFrame in _frames.Where(x => x.Timestamp <= rtpPacket.Header.Timestamp).ToList())
                                     {
                                         System.Diagnostics.Debug.WriteLine("Discarding old frame for timestamp " + oldFrame.Timestamp + ".");
-                                        logger.Warn("Discarding old frame for timestamp " + oldFrame.Timestamp + ".");
+                                        logger.LogWarning("Discarding old frame for timestamp " + oldFrame.Timestamp + ".");
                                         _frames.Remove(oldFrame);
                                     }
 
@@ -466,7 +466,7 @@ namespace SIPSorcery.Net
                                             //if (frame.FramePackets.Count == 1)
                                             //{
                                             //    // REMOVE.
-                                            //    logger.Warn("Discarding frame as there should have been more than 1 RTP packets.");
+                                            //    logger.LogWarning("Discarding frame as there should have been more than 1 RTP packets.");
                                             //}
                                             //else
                                             //{
@@ -476,7 +476,7 @@ namespace SIPSorcery.Net
                                         }
                                         catch (Exception frameReadyExcp)
                                         {
-                                            logger.Error("Exception RTSPClient.ProcessRTPPackets OnFrameReady. " + frameReadyExcp);
+                                            logger.LogError("Exception RTSPClient.ProcessRTPPackets OnFrameReady. " + frameReadyExcp);
                                         }
                                     }
                                 }
@@ -486,7 +486,7 @@ namespace SIPSorcery.Net
 
                     if (DateTime.Now.Subtract(_lastRTPReceivedAt).TotalSeconds > RTP_TIMEOUT_SECONDS)
                     {
-                        logger.Warn("No RTP packets were received on RTSP session " + _rtspSession.SessionID + " for " + RTP_TIMEOUT_SECONDS + ". The session will now be closed.");
+                        logger.LogWarning("No RTP packets were received on RTSP session " + _rtspSession.SessionID + " for " + RTP_TIMEOUT_SECONDS + ". The session will now be closed.");
                         Close();
                     }
                     else
@@ -497,7 +497,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RTSPClient.ProcessRTPPackets. " + excp);
+                logger.LogError("Exception RTSPClient.ProcessRTPPackets. " + excp);
             }
         }
 
@@ -539,12 +539,12 @@ namespace SIPSorcery.Net
                         if (rtspMessage.RTSPMessageType == RTSPMessageTypesEnum.Response)
                         {
                             var optionsResponse = RTSPResponse.ParseRTSPResponse(rtspMessage);
-                            //logger.Debug("RTSP Response received for OPTIONS keep-alive request: " + optionsResponse.StatusCode + " " + optionsResponse.Status + " " + optionsResponse.ReasonPhrase + ".");
+                            //logger.LogDebug("RTSP Response received for OPTIONS keep-alive request: " + optionsResponse.StatusCode + " " + optionsResponse.Status + " " + optionsResponse.ReasonPhrase + ".");
                         }
                     }
                     else
                     {
-                        logger.Warn("Zero bytes were read from the RTSP client socket in response to an OPTIONS keep-alive request.");
+                        logger.LogWarning("Zero bytes were read from the RTSP client socket in response to an OPTIONS keep-alive request.");
                     }
 
                     _sendKeepAlivesMRE.Reset();
@@ -553,7 +553,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception RTSPClient.SendKeepAlives. " + excp);
+                logger.LogError("Exception RTSPClient.SendKeepAlives. " + excp);
             }
         }
     }

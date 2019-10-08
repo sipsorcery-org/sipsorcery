@@ -39,7 +39,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {

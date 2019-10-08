@@ -37,7 +37,7 @@ using System.Data;
 using System.Net;
 using System.Threading;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {	   
@@ -254,7 +254,7 @@ namespace SIPSorcery.Net
         private const string RTCP_FORMAT_STRING = "syncsrc={0}, ts={1} ,te={2} , dur={3} ,seqs={4,-5:S} ,seqe={5,-5:S} ,pkttot={6,-3:S} ,jitmax={7,-3:S}, jitavg={8,-4:S} " + 
                                     ",transit={9,-5:S} ,pktrate={10,-5:S} ,bytestot={11,-5:S} ,bw={12,-9:S} ,drops={13} ,jitdrops={14} ,duplicates={15} ,outoforder={16}";
 
-		private static ILog logger = Log.logger;
+		private static ILogger logger = Log.Logger;
 
         public int JitterBufferMilliseconds = 150;	// The size of a the theoretical jitter buffer.
 		public int ReportSampleDuration = 1500;		// Sample time in milliseconds after which a new sample is generated.
@@ -293,8 +293,8 @@ namespace SIPSorcery.Net
 
             m_lastSampleTime = DateTime.Now;
 
-            logger.Debug("New RTCP report created for " + syncSource + " for stream from " + IPSocket.GetSocketString(remoteEndPoint) + ", start seq num=" + startSequenceNumber + ".");
-			//resultsLogger.Info("StartTime,StartTimestamp,EndTime,EndTimestamp,Duration(ms),StartSeqNum,EndSeqNum,TotalPackets,TotalBytes,TransmissionRate(bps),Drops,Duplicates");
+            logger.LogDebug("New RTCP report created for " + syncSource + " for stream from " + IPSocket.GetSocketString(remoteEndPoint) + ", start seq num=" + startSequenceNumber + ".");
+			//resultslogger.LogInformation("StartTime,StartTimestamp,EndTime,EndTimestamp,Duration(ms),StartSeqNum,EndSeqNum,TotalPackets,TotalBytes,TransmissionRate(bps),Drops,Duplicates");
 
             RTPReceiveRecord measurement = new RTPReceiveRecord(startTime, startSequenceNumber, bytesReceived, 0, true, false);
             m_rcvdSeqNums.Add(startSequenceNumber, measurement);
@@ -317,11 +317,11 @@ namespace SIPSorcery.Net
 		{
 			try
 			{
-                //logger.Debug("RecordRTPReceive " + sequenceNumber + ".");
+                //logger.LogDebug("RecordRTPReceive " + sequenceNumber + ".");
                 
                 if(m_rcvdSeqNums.ContainsKey(sequenceNumber))
 				{
-                    logger.Debug("duplicate " + sequenceNumber + ".");
+                    logger.LogDebug("duplicate " + sequenceNumber + ".");
                     m_rcvdSeqNums[sequenceNumber].Duplicates = m_rcvdSeqNums[sequenceNumber].Duplicates + 1;
 				}
 				//else if(sequenceNumber < m_windowStartSeqNum)
@@ -333,7 +333,7 @@ namespace SIPSorcery.Net
                     bool inSequence = (m_windowLastSeqNum != UInt16.MaxValue) ? sequenceNumber == m_windowLastSeqNum + 1 : sequenceNumber == 0;
                     //bool inSequence = (Math.Abs(sequenceNumber - m_windowLastSeqNum) > (UInt16.MaxValue / 2)) ? sequenceNumber == m_windowLastSeqNum + 1 : sequenceNumber == 0;
 
-                    //logger.Debug(sequenceNumber + " in sequence=" + inSequence + ".");
+                    //logger.LogDebug(sequenceNumber + " in sequence=" + inSequence + ".");
 
                     /*int startJitterBufferSeq = (m_windowLastSeqNum - JitterBufferSamples >= 0) ? m_windowLastSeqNum - JitterBufferSamples : m_windowLastSeqNum  + 65535 - JitterBufferSamples;
                     int endJitterBufferSeq = (m_windowLastSeqNum + JitterBufferSamples <= 65535) ? m_windowLastSeqNum + JitterBufferSamples : m_windowLastSeqNum + JitterBufferSamples - 65535;
@@ -364,10 +364,10 @@ namespace SIPSorcery.Net
                     //m_latestInterArrivalTimes.Enqueue(interArrivalMilliseconds);
                     //int avgArrivalTime = GetAverageTransitMilliseconds();
 
-                    //logger.Debug("Avg transit time=" + avgTransitTime + "ms, " + sequenceNumber);
+                    //logger.LogDebug("Avg transit time=" + avgTransitTime + "ms, " + sequenceNumber);
 
                     //double jitterAbs = Math.Abs(interArrivalMilliseconds - avgArrivalTime);
-                    //logger.Debug("jitterAbs=" + jitterAbs + "ms, " + sequenceNumber);
+                    //logger.LogDebug("jitterAbs=" + jitterAbs + "ms, " + sequenceNumber);
                     //int jitter = 0;
                     //if (jitterAbs > 1)
                     //{
@@ -377,23 +377,23 @@ namespace SIPSorcery.Net
                     bool jitterDiscard = false;
                     if (jitter >= JitterBufferMilliseconds)
                     {
-                        logger.Debug("jitter discard " + sequenceNumber + ".");
+                        logger.LogDebug("jitter discard " + sequenceNumber + ".");
                         jitterDiscard = true;
                     }
 
-                    //logger.Debug("jitter=" + jitter + "ms, avg transit=" + avgArrivalTime);
+                    //logger.LogDebug("jitter=" + jitter + "ms, avg transit=" + avgArrivalTime);
 
-                    //resultsLogger.Info(sequenceNumber + "," + bytesReceived + "," + avgTransitTime + "," + jitter + "," + inSequence + "," + jitterDiscard + ",[" + startJitterBufferSeq + "<=" + sequenceNumber + "<=" + endJitterBufferSeq + "]"); 
+                    //resultslogger.LogInformation(sequenceNumber + "," + bytesReceived + "," + avgTransitTime + "," + jitter + "," + inSequence + "," + jitterDiscard + ",[" + startJitterBufferSeq + "<=" + sequenceNumber + "<=" + endJitterBufferSeq + "]"); 
 
                     //RTPReceiveRecord measurement = new RTPReceiveRecord(localSendTime, utcReceiveTime, sequenceNumber, bytesReceived);
                     RTPReceiveRecord measurement = new RTPReceiveRecord(receiveTime, sequenceNumber, bytesReceived, jitter, inSequence, jitterDiscard);
 
-                    //logger.Debug("adding measurement for " + measurement.SequenceNumber + ".");
+                    //logger.LogDebug("adding measurement for " + measurement.SequenceNumber + ".");
                     lock (m_rcvdSeqNums)
                     {
                         if (m_rcvdSeqNums.ContainsKey(sequenceNumber))
                         {
-                            logger.Warn("RecordRTPReceive having to remove measurement for " + sequenceNumber + " in order to accomodate new RTP measurement.");
+                            logger.LogWarning("RecordRTPReceive having to remove measurement for " + sequenceNumber + " in order to accomodate new RTP measurement.");
                             m_rcvdSeqNums.Remove(sequenceNumber);
                         }
 
@@ -405,7 +405,7 @@ namespace SIPSorcery.Net
 			}
 			catch(Exception excp)
 			{
-                logger.Error("Exception RecordRTPReceive for " + sequenceNumber + ". " + excp.Message);
+                logger.LogError("Exception RecordRTPReceive for " + sequenceNumber + ". " + excp.Message);
 			}
 		}
 
@@ -418,12 +418,12 @@ namespace SIPSorcery.Net
         {
             try
             {
-                //logger.Debug("Check for available sample " + sequenceNumber + ".");
+                //logger.LogDebug("Check for available sample " + sequenceNumber + ".");
                 RTCPReport sample = null;
 
                 RTPReceiveRecord measurement = m_rcvdSeqNums[sequenceNumber];
 
-                //logger.Debug("window start seq num=" + m_windowStartSeqNum);
+                //logger.LogDebug("window start seq num=" + m_windowStartSeqNum);
                 RTPReceiveRecord startSampleMeasuerment = m_rcvdSeqNums[m_windowStartSeqNum];
                 
                 UInt16 endSampleSeqNum = 0;
@@ -441,18 +441,18 @@ namespace SIPSorcery.Net
                     int sampleDuration = ReportSampleDuration + randomElement;
                     sampleCutOffTime = m_lastSampleTime.AddMilliseconds(sampleDuration);
 
-                    //logger.Debug("Sample duration=" + sampleDuration + "ms, cut off time=" + sampleCutOffTime.ToString("HH:mm:ss:fff") + ".");
+                    //logger.LogDebug("Sample duration=" + sampleDuration + "ms, cut off time=" + sampleCutOffTime.ToString("HH:mm:ss:fff") + ".");
 
                     // Get the list of RTP measurements from last time a sample was taken up to the last receive within the window.
                     int endSeqNum = (sequenceNumber < m_windowStartSeqNum) ? sequenceNumber + UInt16.MaxValue + 1: sequenceNumber;
-                    //logger.Debug("Checking for sample from " + m_windowStartSeqNum + " to " + endSeqNum + ".");
+                    //logger.LogDebug("Checking for sample from " + m_windowStartSeqNum + " to " + endSeqNum + ".");
                     for (int seqNum = m_windowStartSeqNum; seqNum <= endSeqNum; seqNum++)
 					{
                         UInt16 testSeqNum = (seqNum > UInt16.MaxValue) ? Convert.ToUInt16((seqNum % UInt16.MaxValue) - 1) : Convert.ToUInt16(seqNum);
 
                         if (m_rcvdSeqNums.ContainsKey(testSeqNum))
 						{
-                            //logger.Debug(testSeqNum + " " + m_rcvdSeqNums[testSeqNum].ReceiveTime.ToString("ss:fff") + "<" + sampleCutOffTime.ToString("ss:fff") + ".");
+                            //logger.LogDebug(testSeqNum + " " + m_rcvdSeqNums[testSeqNum].ReceiveTime.ToString("ss:fff") + "<" + sampleCutOffTime.ToString("ss:fff") + ".");
                             
                             if (m_rcvdSeqNums[testSeqNum].ReceiveTime < sampleCutOffTime)
 							{
@@ -478,10 +478,10 @@ namespace SIPSorcery.Net
 
                 if (sampleAvailable)
                 {
-                    //logger.Debug(samplesAvailable + " ready for RTCP sampling, start seq num=" + m_windowStartSeqNum + " to " + endSampleSeqNumMinusOne + ".");
+                    //logger.LogDebug(samplesAvailable + " ready for RTCP sampling, start seq num=" + m_windowStartSeqNum + " to " + endSampleSeqNumMinusOne + ".");
 
                     TimeSpan measurementsSampleDuration = m_rcvdSeqNums[endSampleSeqNumMinusOne].ReceiveTime.Subtract(m_rcvdSeqNums[m_windowStartSeqNum].ReceiveTime);
-                    //logger.Debug("Sample available start seq num=" + m_windowStartSeqNum + " end seq num=" + endSampleSeqNumMinusOne + ", " + measurementsSampleDuration.TotalMilliseconds.ToString("0") + ".");
+                    //logger.LogDebug("Sample available start seq num=" + m_windowStartSeqNum + " end seq num=" + endSampleSeqNumMinusOne + ", " + measurementsSampleDuration.TotalMilliseconds.ToString("0") + ".");
 
                     sample = Sample(m_windowStartSeqNum, endSampleSeqNumMinusOne, measurementsSampleDuration);
 
@@ -493,7 +493,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception CheckForAvailableSample. " + excp.Message);
+                logger.LogError("Exception CheckForAvailableSample. " + excp.Message);
                 return null;
             }
         }
@@ -517,12 +517,12 @@ namespace SIPSorcery.Net
 
                 int endSequence = (sampleEndSequenceNumber < sampleStartSequenceNumber) ? sampleEndSequenceNumber + UInt16.MaxValue + 1 : sampleEndSequenceNumber;
 
-                // logger.Debug("Sampling range " + sampleStartSequenceNumber + " to " + endSequence);
+                // logger.LogDebug("Sampling range " + sampleStartSequenceNumber + " to " + endSequence);
 
                 for (int index = sampleStartSequenceNumber; index <= endSequence; index++)
                 {
                     UInt16 testSeqNum = (index > UInt16.MaxValue) ? Convert.ToUInt16((index % UInt16.MaxValue) - 1) : Convert.ToUInt16(index);
-                    //logger.Debug("Sampling " + testSeqNum + ".");
+                    //logger.LogDebug("Sampling " + testSeqNum + ".");
 
                     if (m_rcvdSeqNums.ContainsKey(testSeqNum))
                     {
@@ -542,13 +542,13 @@ namespace SIPSorcery.Net
 
                         if (measurement.Duplicates > 0)
                         {
-                            logger.Debug("Duplicates for " + testSeqNum + " number " + measurement.Duplicates);
+                            logger.LogDebug("Duplicates for " + testSeqNum + " number " + measurement.Duplicates);
                             sample.Duplicates += (uint)measurement.Duplicates;
                         }
 
                         if (!measurement.InSequence)
                         {
-                            logger.Debug("OutOfOrder for " + testSeqNum);
+                            logger.LogDebug("OutOfOrder for " + testSeqNum);
                             sample.OutOfOrder++;
                         }
                         else
@@ -562,14 +562,14 @@ namespace SIPSorcery.Net
 
                             if (measurement.Jitter > sample.JitterMaximum)
                             {
-                                //logger.Debug("Jitter max set to " + measurement.Jitter + " for sequence number " + measurement.SequenceNumber);
+                                //logger.LogDebug("Jitter max set to " + measurement.Jitter + " for sequence number " + measurement.SequenceNumber);
                                 sample.JitterMaximum = (uint)measurement.Jitter;
                             }
                         }
 
                         if (measurement.JitterBufferDiscard)
                         {
-                            logger.Debug("Jitter discard for " + testSeqNum);
+                            logger.LogDebug("Jitter discard for " + testSeqNum);
                             sample.JitterDiscards++;
                         }
 
@@ -577,13 +577,13 @@ namespace SIPSorcery.Net
                         // Remove the RTP measurements now that they have been sampled.
                         lock (m_rcvdSeqNums)
                         {
-                            //logger.Debug("Removing " + index);
+                            //logger.LogDebug("Removing " + index);
                             m_rcvdSeqNums.Remove(testSeqNum);
                         }
                     }
                     else
                     {
-                        logger.Debug("Packet drop for " + index);
+                        logger.LogDebug("Packet drop for " + index);
                         sample.PacketsLost++;
                     }
                 }
@@ -627,9 +627,9 @@ namespace SIPSorcery.Net
                     sample.Duplicates.ToString(),
                     sample.OutOfOrder.ToString()});
 
-                logger.Info(rtcpReport);
+                logger.LogInformation(rtcpReport);
 
-                //logger.Info("start=" + sample.SampleStartTime.ToString("HH:mm:ss:fff") + ",end=" + sample.SampleEndTime.ToString("HH:mm:ss:fff") + ",dur=" + sampleDuration.TotalMilliseconds.ToString("0") + "ms" +
+                //logger.LogInformation("start=" + sample.SampleStartTime.ToString("HH:mm:ss:fff") + ",end=" + sample.SampleEndTime.ToString("HH:mm:ss:fff") + ",dur=" + sampleDuration.TotalMilliseconds.ToString("0") + "ms" +
                 //    ",seqnnumstart=" + sample.StartSequenceNumber + ",seqnumend=" + sample.EndSequenceNumber + ",pktstotal=" + sample.TotalPackets + "p,pktrate=" + packetRate.ToString("0.##") + "pps,bytestotal=" + sample.BytesReceived + "B,bw=" + sample.TransmissionRate.ToString("0.##") + "Kbps,jitteravg=" +
                 //    sample.JitterAverage.ToString("0.##") + ",jittermax=" + sample.JitterMaximum.ToString("0.##") + ",pktslost=" + sample.PacketsLost + ",jitterdiscards=" + sample.JitterDiscards + ",duplicates=" + sample.Duplicates + ",outoforder=" + sample.OutOfOrder);
 
@@ -637,7 +637,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Error("Exception Sample. " + excp.Message);
+                logger.LogError("Exception Sample. " + excp.Message);
                 return null;
             }
             finally
@@ -671,7 +671,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.Debug("Exception CheckForSamples. " + excp.Message);
+                logger.LogDebug("Exception CheckForSamples. " + excp.Message);
             }
         }
 
@@ -679,14 +679,14 @@ namespace SIPSorcery.Net
         {
             try
             {
-                logger.Debug("Shutting down RTCPReportSampler for syncsource= " + m_syncSource + " on stream from " + m_remoteEndPoint.ToString () + ".");
+                logger.LogDebug("Shutting down RTCPReportSampler for syncsource= " + m_syncSource + " on stream from " + m_remoteEndPoint.ToString () + ".");
 
                 m_checkForSamples = false;
                 m_checkForSampleEvent.Set();
             }
             catch(Exception excp)
             {
-                logger.Error("Exception RTCPReportSampler Shutdown. " + excp.Message);
+                logger.LogError("Exception RTCPReportSampler Shutdown. " + excp.Message);
             }
         }
 	}	
