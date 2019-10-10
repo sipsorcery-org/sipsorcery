@@ -32,8 +32,8 @@
 
 namespace SIPSorcery.SIP
 {
-	public class SIPNonInviteTransaction : SIPTransaction
-	{
+    public class SIPNonInviteTransaction : SIPTransaction
+    {
         public event SIPTransactionResponseReceivedDelegate NonInviteTransactionInfoResponseReceived;
         public event SIPTransactionResponseReceivedDelegate NonInviteTransactionFinalResponseReceived;
         public event SIPTransactionTimedOutDelegate NonInviteTransactionTimedOut;
@@ -63,42 +63,27 @@ namespace SIPSorcery.SIP
 
         private void SIPNonInviteTransaction_TransactionTimedOut(SIPTransaction sipTransaction)
         {
-            if (NonInviteTransactionTimedOut != null)
-            {
-                NonInviteTransactionTimedOut(this);
-            }
+            NonInviteTransactionTimedOut?.Invoke(this);
         }
 
         private void SIPNonInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
         {
-            if (NonInviteRequestReceived != null)
-            {
-                NonInviteRequestReceived(localSIPEndPoint, remoteEndPoint, this, sipRequest);
-            }
+            NonInviteRequestReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipRequest);
         }
 
         private void SIPNonInviteTransaction_TransactionInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
-            if (NonInviteTransactionInfoResponseReceived != null)
-            {
-                NonInviteTransactionInfoResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
-            }
+            NonInviteTransactionInfoResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipResponse);
         }
 
         private void SIPNonInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
-            if (NonInviteTransactionFinalResponseReceived != null)
-            {
-                NonInviteTransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
-            }
+            NonInviteTransactionFinalResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipResponse);
         }
 
         private void SIPNonInviteTransaction_TransactionRequestRetransmit(SIPTransaction sipTransaction, SIPRequest sipRequest, int retransmitNumber)
         {
-            if (NonInviteTransactionRequestRetransmit != null)
-            {
-                NonInviteTransactionRequestRetransmit(sipTransaction, sipRequest, retransmitNumber);
-            }
+            NonInviteTransactionRequestRetransmit?.Invoke(sipTransaction, sipRequest, retransmitNumber);
         }
     }
 }

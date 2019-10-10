@@ -224,7 +224,7 @@ namespace SIPSorcery.SIP.App
                     if (m_callCancelled)
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Call was cancelled during DNS resolution of " + callURI.Host, Owner));
-                        FireCallFailed(this, "Cancelled by caller");
+                        CallFailed?.Invoke(this, "Cancelled by caller");
                     }
                     else if (m_serverEndPoint != null)
                     {
@@ -397,7 +397,7 @@ namespace SIPSorcery.SIP.App
                         else
                         {
                             m_serverTransaction.CancelCall(rtccError);
-                            FireCallFailed(this, rtccError);
+                            CallFailed?.Invoke(this, rtccError);
                         }
                     }
                     else
@@ -406,13 +406,13 @@ namespace SIPSorcery.SIP.App
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Forward leg failed, could not resolve URI host " + callURI.Host, Owner));
                             m_serverTransaction?.CancelCall("Unresolvable destination " + callURI.Host);
-                            FireCallFailed(this, "unresolvable destination " + callURI.Host);
+                            CallFailed?.Invoke(this, "unresolvable destination " + callURI.Host);
                         }
                         else
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Forward leg failed, could not resolve top Route host " + routeSet.TopRoute.Host, Owner));
                             m_serverTransaction?.CancelCall("Unresolvable destination " + routeSet.TopRoute.Host);
-                            FireCallFailed(this, "unresolvable destination " + routeSet.TopRoute.Host);
+                            CallFailed?.Invoke(this, "unresolvable destination " + routeSet.TopRoute.Host);
                         }
                     }
                 }
@@ -420,13 +420,13 @@ namespace SIPSorcery.SIP.App
             catch (ApplicationException appExcp)
             {
                 m_serverTransaction?.CancelCall(appExcp.Message);
-                FireCallFailed(this, appExcp.Message);
+                CallFailed?.Invoke(this, appExcp.Message);
             }
             catch (Exception excp)
             {
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Exception UserAgentClient Call. " + excp.Message, Owner));
                 m_serverTransaction?.CancelCall("Unknown exception");
-                FireCallFailed(this, excp.Message);
+                CallFailed?.Invoke(this, excp.Message);
             }
         }
 
@@ -486,7 +486,7 @@ namespace SIPSorcery.SIP.App
                 //    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Cancelling forwarded call leg " + m_sipCallDescriptor.Uri.ToString() + ", no response from server has been received so no CANCEL request required.", Owner));
                 //}
 
-                FireCallFailed(this, "Call cancelled by user.");
+                CallFailed?.Invoke(this, "Call cancelled by user.");
             }
             catch (Exception excp)
             {
@@ -520,6 +520,7 @@ namespace SIPSorcery.SIP.App
                 SIPRequest byeRequest = GetByeRequest(localEndPoint);
                 SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, m_outboundProxy);
                 byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
+                byeTransaction.NonInviteTransactionTimedOut += (tx) => logger.LogDebug($"Bye request for {m_sipCallDescriptor.Uri} timed out.");
                 byeTransaction.SendReliableRequest();
             }
             catch (Exception excp)
@@ -598,7 +599,7 @@ namespace SIPSorcery.SIP.App
                         {
                             // No point trying to authenticate if there is no password to use.
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Forward leg failed, authentication was requested but no credentials were available.", Owner));
-                            FireCallFailed(this, "Authentication requested when no credentials available");
+                            CallFailed?.Invoke(this, "Authentication requested when no credentials available");
                         }
                         else if (m_serverAuthAttempts == 0)
                         {
@@ -644,7 +645,7 @@ namespace SIPSorcery.SIP.App
                         }
                         else
                         {
-                            FireCallFailed(this, "Authentication with provided credentials failed");
+                            CallFailed?.Invoke(this, "Authentication with provided credentials failed");
                         }
                     }
 
@@ -790,7 +791,7 @@ namespace SIPSorcery.SIP.App
         {
             if (!m_callCancelled)
             {
-                FireCallFailed(this, "Timeout, no response from server");
+                CallFailed?.Invoke(this, "Timeout, no response from server");
             }
         }
 
@@ -815,8 +816,9 @@ namespace SIPSorcery.SIP.App
                     authRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                     authRequest.Header.CSeq++;
 
-                    SIPNonInviteTransaction newTransaction = m_sipTransport.CreateNonInviteTransaction(authRequest, null, localSIPEndPoint, m_outboundProxy);
-                    newTransaction.SendReliableRequest();
+                    SIPNonInviteTransaction authByeTransaction = m_sipTransport.CreateNonInviteTransaction(authRequest, null, localSIPEndPoint, m_outboundProxy);
+                    authByeTransaction.NonInviteTransactionTimedOut += (tx) => logger.LogDebug($"Authenticated Bye request for {m_sipCallDescriptor.Uri} timed out.");
+                    authByeTransaction.SendReliableRequest();
                 }
             }
             catch (Exception exception)
@@ -1001,14 +1003,6 @@ namespace SIPSorcery.SIP.App
             if (CallAnswered != null)
             {
                 CallAnswered(uac, answeredResponse);
-            }
-        }
-
-        private void FireCallFailed(SIPClientUserAgent uac, string errorMessage)
-        {
-            if (CallFailed != null)
-            {
-                CallFailed(uac, errorMessage);
             }
         }
 

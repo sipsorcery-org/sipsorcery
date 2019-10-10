@@ -39,7 +39,6 @@ namespace SIPSorcery.SIP
     public enum SIPResponseParserError
     {
         None = 0,
-
         TooLarge = 1,
     }
     
@@ -76,6 +75,11 @@ namespace SIPSorcery.SIP
         public DateTime Created = DateTime.Now;
         public SIPEndPoint RemoteSIPEndPoint;               // The remote IP socket the response was received from or sent to.
         public SIPEndPoint LocalSIPEndPoint;                // The local SIP socket the response was received on or sent from.
+
+        public string ShortDescription
+        {
+            get { return Header?.CSeqMethod + " " + StatusCode + " " + ReasonPhrase; }
+        }
 
 		private SIPResponse()
 		{}

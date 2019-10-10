@@ -74,6 +74,15 @@ namespace SIPSorcery.SIP
 		public SIPEndPoint RemoteSIPEndPoint;               // The remote IP socket the request was received from or sent to.
         public SIPEndPoint LocalSIPEndPoint;                // The local SIP socket the request was received on or sent from.
 
+        public string StatusLine
+        {
+            get 
+            {
+                string methodStr = (Method != SIPMethodsEnum.UNKNOWN) ? Method.ToString() : UnknownMethod;
+                return methodStr + " " + URI.ToString() + " " + SIPVersion;  
+            }
+        }
+
 		private SIPRequest()
 		{
             //Created++;
@@ -178,9 +187,7 @@ namespace SIPSorcery.SIP
 		{
 			try
 			{
-				string methodStr = (Method != SIPMethodsEnum.UNKNOWN) ? Method.ToString() : UnknownMethod;
-				
-				string message = methodStr + " " + URI.ToString() + " " + SIPVersion + m_CRLF + this.Header.ToString();
+				string message = StatusLine + m_CRLF + this.Header.ToString();
 
 				if(Body != null)
 				{

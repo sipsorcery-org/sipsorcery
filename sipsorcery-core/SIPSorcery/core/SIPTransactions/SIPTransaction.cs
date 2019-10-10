@@ -38,7 +38,6 @@ namespace SIPSorcery.SIP
 {
     public enum SIPTransactionStatesEnum
     {
-        //Unknown = 0,
         Calling = 1,
         Completed = 2,
         Confirmed = 3,
@@ -81,25 +80,6 @@ namespace SIPSorcery.SIP
     ///  3. the method of the request matches the one that created the
     ///     transaction, except for ACK, where the method of the request
     ///     that created the transaction is INVITE.
-    /// 
-    /// [RFC 3261 12 Dialogs] (Note: I've gotten a bit mixed up between dialogs and
-    /// transactions here, AC).
-    /// A dialog ID is also associated with all responses and with any
-    /// request that contains a tag in the To field.  The rules for computing
-    /// the dialog ID of a message depend on whether the SIP element is a UAC
-    /// or UAS.  For a UAC, the Call-ID value of the dialog ID is set to the
-    /// Call-ID of the message, the remote tag is set to the tag in the To
-    /// field of the message, and the local tag is set to the tag in the From
-    /// field of the message (these rules apply to both requests and
-    /// responses).  As one would expect for a UAS, the Call-ID value of the
-    /// dialog ID is set to the Call-ID of the message, the remote tag is set
-    /// to the tag in the From field of the message, and the local tag is set
-    /// to the tag in the To field of the message.
-    /// 
-    /// Notes (Not too sure on matching requests to transactions AC 09 Feb 2008):
-    /// - Matching a response to a transaction can rely on the branchid in the Via header.
-    /// - Matching a request to a transaction can rely on the branchid EXCEPT for an
-    ///   ACK for a 2xx final response which is a new transaction and has a new branch ID.
     /// </note>
     public class SIPTransaction
     {
@@ -223,10 +203,6 @@ namespace SIPSorcery.SIP
                 {
                     throw new ArgumentNullException("A SIPRequest object must be supplied when creating a SIPTransaction.");
                 }
-                /*else if (dstEndPoint == null && outboundProxy == null)
-                {
-                    throw new ArgumentNullException("The remote SIP end point or outbound proxy must be set when creating a SIPTransaction.");
-                }*/
                 else if (localSIPEndPoint == null)
                 {
                     throw new ArgumentNullException("The local SIP end point must be set when creating a SIPTransaction.");
@@ -264,19 +240,15 @@ namespace SIPSorcery.SIP
 
         public void GotRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            FireTransactionTraceMessage("Received Request " + localSIPEndPoint.ToString() + "<-" + remoteEndPoint.ToString() + m_crLF + sipRequest.ToString());
-
-            if (TransactionRequestReceived != null)
-            {
-                TransactionRequestReceived(localSIPEndPoint, remoteEndPoint, this, sipRequest);
-            }
+            FireTransactionTraceMessage($"Received Request {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
+            TransactionRequestReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipRequest);
         }
 
         public void GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
             if (TransactionState == SIPTransactionStatesEnum.Completed || TransactionState == SIPTransactionStatesEnum.Confirmed)
             {
-                FireTransactionTraceMessage("Received Duplicate Response " + localSIPEndPoint.ToString() + "<-" + remoteEndPoint + m_crLF + sipResponse.ToString());
+                FireTransactionTraceMessage($"Received Duplicate Response {localSIPEndPoint.ToString()}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
 
                 if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.INVITE)
                 {
@@ -297,7 +269,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                FireTransactionTraceMessage("Received Response " + localSIPEndPoint.ToString() + "<-" + remoteEndPoint + m_crLF + sipResponse.ToString());
+                FireTransactionTraceMessage($"Received Response {localSIPEndPoint.ToString()}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
 
                 if (sipResponse.StatusCode >= 100 && sipResponse.StatusCode <= 199)
                 {
@@ -340,19 +312,19 @@ namespace SIPSorcery.SIP
 
             if (TransactionType == SIPTransactionTypesEnum.Invite)
             {
-                FireTransactionTraceMessage("Send Final Response Reliable " + LocalSIPEndPoint.ToString() + "->" + viaAddress + m_crLF + finalResponse.ToString());
+                FireTransactionTraceMessage($"Send Final Response Reliable {LocalSIPEndPoint.ToString()}->{viaAddress}: {finalResponse.ShortDescription}");
                 m_sipTransport.SendSIPReliable(this);
             }
             else
             {
-                FireTransactionTraceMessage("Send Final Response " + LocalSIPEndPoint.ToString() + "->" + viaAddress + m_crLF + finalResponse.ToString());
+                FireTransactionTraceMessage($"Send Final Response {LocalSIPEndPoint.ToString()}->{viaAddress}: {finalResponse.ShortDescription}");
                 m_sipTransport.SendResponse(finalResponse);
             }
         }
 
         public virtual void SendInformationalResponse(SIPResponse sipResponse)
         {
-            FireTransactionTraceMessage("Send Info Response " + LocalSIPEndPoint.ToString() + "->" + this.RemoteEndPoint + m_crLF + sipResponse.ToString());
+            FireTransactionTraceMessage($"Send Info Response {LocalSIPEndPoint.ToString()}->{this.RemoteEndPoint}: {sipResponse.ShortDescription}");
 
             if (sipResponse.StatusCode == 100)
             {
@@ -386,7 +358,7 @@ namespace SIPSorcery.SIP
 
         public void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
-            FireTransactionTraceMessage("Send Request " + LocalSIPEndPoint.ToString() + "->" + dstEndPoint + m_crLF + sipRequest.ToString());
+            FireTransactionTraceMessage($"Send Request {LocalSIPEndPoint.ToString()}->{dstEndPoint}: {sipRequest.StatusLine}");
 
             if (sipRequest.Method == SIPMethodsEnum.ACK)
             {
@@ -403,7 +375,7 @@ namespace SIPSorcery.SIP
 
             if (dstEndPoint != null)
             {
-                FireTransactionTraceMessage("Send Request " + LocalSIPEndPoint.ToString() + "->" + dstEndPoint.ToString() + m_crLF + sipRequest.ToString());
+                FireTransactionTraceMessage($"Send Request {LocalSIPEndPoint.ToString()}->{dstEndPoint.ToString()}: {sipRequest.StatusLine}");
 
                 if (sipRequest.Method == SIPMethodsEnum.ACK)
                 {
@@ -425,7 +397,7 @@ namespace SIPSorcery.SIP
 
         public void SendReliableRequest()
         {
-            FireTransactionTraceMessage("Send Request reliable " + LocalSIPEndPoint.ToString() + "->" + RemoteEndPoint + m_crLF + TransactionRequest.ToString());
+            FireTransactionTraceMessage($"Send Request reliable {LocalSIPEndPoint.ToString()}->{RemoteEndPoint}: {TransactionRequest.StatusLine}");
 
             if (TransactionType == SIPTransactionTypesEnum.Invite && this.TransactionRequest.Method == SIPMethodsEnum.INVITE)
             {
@@ -486,7 +458,8 @@ namespace SIPSorcery.SIP
                 }
             }
 
-            FireTransactionTraceMessage("Send Request retransmit " + Retransmits + " " + LocalSIPEndPoint.ToString() + "->" + this.RemoteEndPoint + m_crLF + this.TransactionRequest.ToString());
+            //FireTransactionTraceMessage("Send Request retransmit " + Retransmits + " " + LocalSIPEndPoint.ToString() + "->" + this.RemoteEndPoint + m_crLF + this.TransactionRequest.ToString());
+            FireTransactionTraceMessage($"Send Request retransmit {Retransmits} {LocalSIPEndPoint.ToString()}->{this.RemoteEndPoint}: {this.TransactionRequest.StatusLine}");
         }
 
         private void ResponseRetransmit()
@@ -503,7 +476,8 @@ namespace SIPSorcery.SIP
                 }
             }
 
-            FireTransactionTraceMessage("Send Response retransmit " + LocalSIPEndPoint.ToString() + "->" + this.RemoteEndPoint + m_crLF + this.TransactionFinalResponse.ToString());
+            //FireTransactionTraceMessage("Send Response retransmit " + LocalSIPEndPoint.ToString() + "->" + this.RemoteEndPoint + m_crLF + this.TransactionFinalResponse.ToString());
+            FireTransactionTraceMessage($"Send Response retransmit {Retransmits} {LocalSIPEndPoint.ToString()}->{this.RemoteEndPoint}: {this.TransactionFinalResponse.StatusCode} {this.TransactionFinalResponse.ReasonPhrase}");
         }
 
         public void ACKReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
@@ -518,7 +492,6 @@ namespace SIPSorcery.SIP
                 SendRequest(m_ackRequest);
                 AckRetransmits += 1;
                 LastTransmit = DateTime.Now;
-                //RequestRetransmit();
             }
             else
             {
@@ -530,10 +503,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (TransactionTimedOut != null)
-                {
-                    TransactionTimedOut(this);
-                }
+                TransactionTimedOut?.Invoke(this);
             }
             catch (Exception excp)
             {
@@ -545,10 +515,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (TransactionRemoved != null)
-                {
-                    TransactionRemoved(this);
-                }
+                TransactionRemoved?.Invoke(this);
             }
             catch (Exception excp)
             {
@@ -563,33 +530,27 @@ namespace SIPSorcery.SIP
 
         private void FireTransactionStateChangedEvent()
         {
-            FireTransactionTraceMessage("Transaction state changed to " + this.TransactionState + ".");
+            FireTransactionTraceMessage($"Transaction state changed to {this.TransactionState}.");
 
-            if (TransactionStateChanged != null)
+            try
             {
-                try
-                {
-                    TransactionStateChanged(this);
-                }
-                catch (Exception excp)
-                {
-                    logger.LogError("Exception FireTransactionStateChangedEvent. " + excp.Message);
-                }
+                TransactionStateChanged?.Invoke(this);
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception FireTransactionStateChangedEvent. " + excp.Message);
             }
         }
 
         private void FireTransactionTraceMessage(string message)
         {
-            if (TransactionTraceMessage != null)
+            try
             {
-                try
-                {
-                    TransactionTraceMessage(this, message);
-                }
-                catch (Exception excp)
-                {
-                    logger.LogError("Exception FireTransactionTraceMessage. " + excp.Message);
-                }
+                TransactionTraceMessage?.Invoke(this, message);
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception FireTransactionTraceMessage. " + excp.Message);
             }
         }
 
