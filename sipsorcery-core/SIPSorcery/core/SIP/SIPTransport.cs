@@ -871,8 +871,6 @@ namespace SIPSorcery.SIP
                     //m_inMessageArrived.WaitOne(MAX_QUEUEWAIT_PERIOD, false);
                     m_inMessageArrived.WaitOne(MAX_QUEUEWAIT_PERIOD);
                 }
-
-                logger.LogWarning("SIPTransport process received messsages thread stopped.");
             }
             catch (Exception excp)
             {

@@ -425,7 +425,7 @@ namespace SIPSorcery.Net
                     m_lookupARE.Set();
                 }
 
-                logger.LogDebug("DNSManager thread shutdown.");
+                //logger.LogDebug("DNSManager thread shutdown.");
             }
         }
     }
