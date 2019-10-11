@@ -33,6 +33,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -49,12 +50,14 @@ namespace SIPSorcery
 {
     class Program
     {
+        private static readonly string AUDIO_FILE = "the_simplicity.ulaw";
+        //private static readonly string AUDIO_FILE = "the_simplicity.mp3";
+        private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
+
         static void Main()
         {
             Console.WriteLine("SIPSorcery client user agent server example.");
             Console.WriteLine("Press ctrl-c to exit.");
-
-            CancellationTokenSource cts = new CancellationTokenSource();
 
             // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
@@ -66,13 +69,17 @@ namespace SIPSorcery
             loggerFactory.AddSerilog(loggerConfig);
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
 
-            IPAddress defaultAddr = LocalIPConfig.GetDefaultIPv4Address();
-
             // Set up a default SIP transport.
+            IPAddress defaultAddr = LocalIPConfig.GetDefaultIPv4Address();
             var sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
             int port = FreePort.FindNextAvailableUDPPort(SIPConstants.DEFAULT_SIP_PORT);
             var sipChannel = new SIPUDPChannel(new IPEndPoint(defaultAddr, port));
             sipTransport.AddSIPChannel(sipChannel);
+
+            // To keep things a bit simpler this example only supports a single call at a time and the SIP server user agent
+            // acts as a singleton
+            SIPServerUserAgent uas = null;
+            CancellationTokenSource uasCts = null;
 
             // Because this is a server user agent the SIP transport must start listening for client user agents.
             sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -80,8 +87,14 @@ namespace SIPSorcery
                 if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
                     SIPSorcery.Sys.Log.Logger.LogInformation("Incoming call request: " + localSIPEndPoint + "<-" + remoteEndPoint + " " + sipRequest.URI.ToString() + ".");
+
+                    // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
+                    // means this example can be kept a little it simpler.
+                    uas?.Hangup();
+
                     UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
-                    var uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
+                    uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
+                    uasCts = new CancellationTokenSource();
 
                     uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
                     uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
@@ -91,12 +104,12 @@ namespace SIPSorcery
                     Socket controlSocket = null;
                     NetServices.CreateRtpSocket(defaultAddr, 49000, 49100, false, out rtpSocket, out controlSocket);
 
-                    IPEndPoint rtpEndPoint = new IPEndPoint(defaultAddr, (rtpSocket.LocalEndPoint as IPEndPoint).Port);
+                    IPEndPoint rtpEndPoint = rtpSocket.LocalEndPoint as IPEndPoint;
                     IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
-
                     var rtpSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 
-                    var rtpTask = Task.Run(() => SendRecvRtp(rtpSocket, rtpSession, dstRtpEndPoint, cts)).ContinueWith(x => uas.Hangup());
+                    var rtpTask = Task.Run(() => SendRecvRtp(rtpSocket, rtpSession, dstRtpEndPoint, AUDIO_FILE, uasCts))
+                        .ContinueWith(_ => { if (uas?.IsHungup == false) uas?.Hangup(); });
 
                     uas.Answer(SDP.SDP_MIME_CONTENTTYPE, GetSDP(rtpEndPoint).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
                 }
@@ -106,19 +119,18 @@ namespace SIPSorcery
                     SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
                     SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     byeTransaction.SendFinalResponse(byeResponse);
+                    uas?.Hangup();
+                    uasCts?.Cancel();
                 }
             };
 
-            Console.CancelKeyPress += async delegate (object sender, ConsoleCancelEventArgs e)
+            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
 
                 SIPSorcery.Sys.Log.Logger.LogInformation("Exiting...");
-                cts.Cancel();
-
-                // Give calls time to hangup.
-                SIPSorcery.Sys.Log.Logger.LogInformation("Waiting 1s for calls to hangup...");
-                await Task.Delay(1000);
+                if(uas?.IsHungup == false) uas?.Hangup();
+                uasCts?.Cancel();
 
                 if (sipTransport != null)
                 {
@@ -128,7 +140,7 @@ namespace SIPSorcery
             };
         }
 
-        private static async Task SendRecvRtp(Socket rtpSocket, RTPSession rtpSession, IPEndPoint dstRtpEndPoint, CancellationTokenSource cts)
+        private static async Task SendRecvRtp(Socket rtpSocket, RTPSession rtpSession, IPEndPoint dstRtpEndPoint, string audioFileName, CancellationTokenSource cts)
         {
             try
             {
@@ -138,7 +150,10 @@ namespace SIPSorcery
                 // be switched if it differs from the one in the SDP. This helps cope with NAT.
                 var rtpRecvTask = Task.Run(async () =>
                 {
-                    byte[] buffer = new byte[2048];
+                    DateTime lastRecvReportAt = DateTime.Now;
+                    uint packetReceivedCount = 0;
+                    uint bytesReceivedCount = 0;
+                    byte[] buffer = new byte[512];
                     EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
 
                     SIPSorcery.Sys.Log.Logger.LogDebug($"Listening on RTP socket {rtpSocket.LocalEndPoint}.");
@@ -147,58 +162,101 @@ namespace SIPSorcery
 
                     while (recvResult.ReceivedBytes > 0 && !cts.IsCancellationRequested)
                     {
+                        RTPPacket rtpPacket = new RTPPacket(buffer.Take(recvResult.ReceivedBytes).ToArray());
+
+                        packetReceivedCount++;
+                        bytesReceivedCount += (uint)rtpPacket.Payload.Length;
+
                         recvResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, remoteEP);
-                        Console.WriteLine($"Read {recvResult.ReceivedBytes} from remote RTP socket {recvResult.RemoteEndPoint}.");
-                        dstRtpEndPoint = recvResult.RemoteEndPoint as IPEndPoint;
+
+                        if(DateTime.Now.Subtract(lastRecvReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
+                        {
+                            lastRecvReportAt = DateTime.Now;
+                            dstRtpEndPoint = recvResult.RemoteEndPoint as IPEndPoint;
+
+                            SIPSorcery.Sys.Log.Logger.LogDebug($"RTP recv {rtpSocket.LocalEndPoint}<-{dstRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
+                        }
                     }
                 });
 
-                // Send 
-                uint timestamp = 0;
-                using (StreamReader sr = new StreamReader(@"musiconhold\macroform-the_simplicity.ulaw"))
+                switch (Path.GetExtension(audioFileName).ToLower())
                 {
-                    byte[] buffer = new byte[320];
-                    int bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
+                    case ".ulaw":
+                        {
+                            uint timestamp = 0;
+                            using (StreamReader sr = new StreamReader(audioFileName))
+                            {
+                                DateTime lastSendReportAt = DateTime.Now;
+                                uint packetReceivedCount = 0;
+                                uint bytesReceivedCount = 0;
+                                byte[] buffer = new byte[320];
+                                int bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
 
-                    while (bytesRead > 0 && !cts.IsCancellationRequested)
-                    {
-                        rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
-                        timestamp += (uint)buffer.Length;
-                        await Task.Delay(40, cts.Token);
-                        bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
-                    }
-                }
+                                while (bytesRead > 0 && !cts.IsCancellationRequested)
+                                {
+                                    packetReceivedCount++;
+                                    bytesReceivedCount += (uint)bytesRead;
 
-                //if (dstRtpEndPoint != null)
-                //{
-                //    var pcmFormat = new WaveFormat(8000, 16, 1);
-                //    var ulawFormat = WaveFormat.CreateMuLawFormat(8000, 1);
+                                    rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
+                                    timestamp += (uint)buffer.Length;
 
-                //    uint timestamp = 0;
+                                    if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
+                                    {
+                                        lastSendReportAt = DateTime.Now;
+                                        SIPSorcery.Sys.Log.Logger.LogDebug($"RTP send {rtpSocket.LocalEndPoint}->{dstRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
+                                    }
 
-                //    using (WaveFormatConversionStream pcmStm = new WaveFormatConversionStream(pcmFormat, new Mp3FileReader("some.mp3")))
-                //    {
-                //        using (WaveFormatConversionStream ulawStm = new WaveFormatConversionStream(ulawFormat, pcmStm))
-                //        {
-                //            byte[] buffer = new byte[320];
-                //            int bytesRead = ulawStm.Read(buffer, 0, buffer.Length);
+                                    await Task.Delay(40, cts.Token);
+                                    bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
+                                }
+                            }
+                        }
+                        break;
 
-                //            while (!exit && bytesRead > 0 && uas.IsCancelled == false && isHungup == false)
-                //            {
-                //                byte[] sample = new byte[bytesRead];
-                //                Array.Copy(buffer, sample, bytesRead);
+                    case ".mp3":
+                        {
+                            DateTime lastSendReportAt = DateTime.Now;
+                            uint packetReceivedCount = 0;
+                            uint bytesReceivedCount = 0;
+                            var pcmFormat = new WaveFormat(8000, 16, 1);
+                            var ulawFormat = WaveFormat.CreateMuLawFormat(8000, 1);
 
-                //                rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
+                            uint timestamp = 0;
 
-                //                timestamp += (uint)buffer.Length;
+                            using (WaveFormatConversionStream pcmStm = new WaveFormatConversionStream(pcmFormat, new Mp3FileReader(audioFileName)))
+                            {
+                                using (WaveFormatConversionStream ulawStm = new WaveFormatConversionStream(ulawFormat, pcmStm))
+                                {
+                                    byte[] buffer = new byte[320];
+                                    int bytesRead = ulawStm.Read(buffer, 0, buffer.Length);
 
-                //                await Task.Delay(40, cts.Token);
+                                    while (bytesRead > 0 && !cts.IsCancellationRequested)
+                                    {
+                                        packetReceivedCount++;
+                                        bytesReceivedCount += (uint)bytesRead;
 
-                //                bytesRead = ulawStm.Read(buffer, 0, buffer.Length);
-                //            }
-                //        }
-                //    }
-                //}
+                                        byte[] sample = new byte[bytesRead];
+                                        Array.Copy(buffer, sample, bytesRead);
+                                        rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
+                                        timestamp += (uint)buffer.Length;
+
+                                        if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
+                                        {
+                                            lastSendReportAt = DateTime.Now;
+                                            SIPSorcery.Sys.Log.Logger.LogDebug($"RTP send {rtpSocket.LocalEndPoint}->{dstRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
+                                        }
+
+                                        await Task.Delay(40, cts.Token);
+                                        bytesRead = ulawStm.Read(buffer, 0, buffer.Length);
+                                    }
+                                }
+                            }
+                        }
+                        break;
+
+                    default:
+                        throw new NotImplementedException("Only ulaw and mp3 files are understood by this example.");
+                 }
             }
             catch (OperationCanceledException) { }
             catch (Exception excp)

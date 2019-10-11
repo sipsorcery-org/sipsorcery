@@ -54,6 +54,7 @@ namespace SIPSorcery.SIP.App
         private SIPDialogue m_sipDialogue;
         private bool m_isAuthenticated;
         private bool m_isCancelled;
+        private bool m_isHungup;
         private string m_owner;
         private string m_adminMemberId;
         private string m_sipUsername;
@@ -109,6 +110,11 @@ namespace SIPSorcery.SIP.App
             get { return m_uasTransaction != null && m_uasTransaction.TransactionFinalResponse != null; }
         }
 
+        public bool IsHungup
+        {
+            get { return m_isHungup; }
+        }
+
         public event SIPUASDelegate CallCancelled;
         public event SIPUASDelegate NoRingTimeout;
         public event SIPUASDelegate TransactionComplete;
@@ -139,15 +145,11 @@ namespace SIPSorcery.SIP.App
             m_uasTransaction.UASInviteTransactionTimedOut += ClientTimedOut;
             m_uasTransaction.UASInviteTransactionCancelled += UASTransactionCancelled;
             m_uasTransaction.TransactionRemoved += new SIPTransactionRemovedDelegate(UASTransaction_TransactionRemoved);
-            //m_uasTransaction.TransactionStateChanged += (t) => { logger.LogDebug("Transaction state change to " + t.TransactionState + ", uri=" + t.TransactionRequestURI.ToString() + "."); };
         }
 
         private void UASTransaction_TransactionRemoved(SIPTransaction sipTransaction)
         {
-            if (TransactionComplete != null)
-            {
-                TransactionComplete(this);
-            }
+            TransactionComplete?.Invoke(this);
         }
 
         public void SetTraceDelegate(SIPTransactionTraceMessageDelegate traceDelegate)
@@ -256,7 +258,7 @@ namespace SIPSorcery.SIP.App
                                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "New call from " + remoteEndPoint.ToString() + " successfully authenticated by digest.", m_sipAccount.Owner));
                             }
 
-                            SetOwner(m_sipAccount.Owner,  m_sipAccount.AdminMemberId);
+                            SetOwner(m_sipAccount.Owner, m_sipAccount.AdminMemberId);
                             m_isAuthenticated = true;
                         }
                         else
@@ -466,6 +468,8 @@ namespace SIPSorcery.SIP.App
 
         public void Hangup()
         {
+            m_isHungup = true;
+
             if (m_sipDialogue == null)
                 return;
 
@@ -525,10 +529,7 @@ namespace SIPSorcery.SIP.App
         {
             logger.LogDebug("SIPServerUserAgent got cancellation request.");
             m_isCancelled = true;
-            if (CallCancelled != null)
-            {
-                CallCancelled(this);
-            }
+            CallCancelled?.Invoke(this);
         }
 
         private void ClientTimedOut(SIPTransaction sipTransaction)

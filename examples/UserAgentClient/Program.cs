@@ -50,6 +50,9 @@ namespace SIPSorcery
 {
     class Program
     {
+        private static readonly string DESTINATION_SIP_URI = "sip:500@sipsorcery.com";
+        private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
+
         static void Main()
         {
             Console.WriteLine("SIPSorcery client user agent example.");
@@ -77,42 +80,23 @@ namespace SIPSorcery
             var sipChannel = new SIPUDPChannel(new IPEndPoint(defaultAddr, port));
             sipTransport.AddSIPChannel(sipChannel);
 
-            // The only incoming request that needs to be explicitly handled for this example is if the remote end hangs up the call.
-            sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
-            {
-                if (sipRequest.Method == SIPMethodsEnum.BYE)
-                {
-                    SIPSorcery.Sys.Log.Logger.LogInformation("Call was hungup by remote server.");
-                    SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
-                    SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    byeTransaction.SendFinalResponse(byeResponse);
-                    isCallHungup = true;
-                    cts.Cancel();
-                }
-            };
-
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
             Socket rtpSocket = null;
             Socket controlSocket = null;
             NetServices.CreateRtpSocket(defaultAddr, 49000, 49100, false, out rtpSocket, out controlSocket);
             var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 
-            // It's a good idea to start the RTP receiving socket before the call request is sent.
-            // A SIP server will generally start sending RTP as soon as it has processed the incoming call request and
-            // being ready to receive will stop any ICMP error response being generated.
-            Task.Run(() => SendRecvRtp(rtpSocket, rtpSendSession, cts));
-
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
-            var clientUserAgent = new SIPClientUserAgent(sipTransport);
+            var uac = new SIPClientUserAgent(sipTransport);
 
-            clientUserAgent.CallTrying += (uac, resp) => SIPSorcery.Sys.Log.Logger.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
-            clientUserAgent.CallRinging += (uac, resp) => SIPSorcery.Sys.Log.Logger.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
-            clientUserAgent.CallFailed += (uac, err) =>
+            uac.CallTrying += (uac, resp) => SIPSorcery.Sys.Log.Logger.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
+            uac.CallRinging += (uac, resp) => SIPSorcery.Sys.Log.Logger.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
+            uac.CallFailed += (uac, err) =>
             {
                 SIPSorcery.Sys.Log.Logger.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                 hasCallFailed = true;
             };
-            clientUserAgent.CallAnswered += (uac, resp) =>
+            uac.CallAnswered += (uac, resp) =>
             {
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
@@ -130,12 +114,34 @@ namespace SIPSorcery
                 }
             };
 
+            // The only incoming request that needs to be explicitly handled for this example is if the remote end hangs up the call.
+            sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+            {
+                if (sipRequest.Method == SIPMethodsEnum.BYE)
+                {
+                    SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                    SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    byeTransaction.SendFinalResponse(byeResponse);
+
+                    if (uac.IsUACAnswered)
+                    {
+                        SIPSorcery.Sys.Log.Logger.LogInformation("Call was hungup by remote server.");
+                        isCallHungup = true;
+                        cts.Cancel();
+                    }
+                }
+            };
+
+            // It's a good idea to start the RTP receiving socket before the call request is sent.
+            // A SIP server will generally start sending RTP as soon as it has processed the incoming call request and
+            // being ready to receive will stop any ICMP error response being generated.
+            Task.Run(() => SendRecvRtp(rtpSocket, rtpSendSession, cts));
+
             // Start the thread that places the call.
             SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
                 SIPConstants.SIP_DEFAULT_USERNAME,
                 null,
-                //"sip:500@sipsorcery.com",
-                "sip:192.168.0.50",
+                DESTINATION_SIP_URI,
                 SIPConstants.SIP_DEFAULT_FROMURI,
                 null, null, null, null,
                 SIPCallDirection.Out,
@@ -143,7 +149,7 @@ namespace SIPSorcery
                 GetSDP(rtpSocket.LocalEndPoint as IPEndPoint).ToString(),
                 null);
 
-            clientUserAgent.Call(callDescriptor);
+            uac.Call(callDescriptor);
 
             // At this point the call has been initiated and everything will be handled in an event handler or on the RTP
             // receive task. The code below is to gracefully exit.
@@ -155,17 +161,20 @@ namespace SIPSorcery
 
                 SIPSorcery.Sys.Log.Logger.LogInformation("Exiting...");
 
-                if (!isCallHungup && clientUserAgent != null)
+                rtpSocket?.Close();
+                controlSocket?.Close();
+
+                if (!isCallHungup && uac != null)
                 {
-                    if (clientUserAgent.IsUACAnswered)
+                    if (uac.IsUACAnswered)
                     {
-                        SIPSorcery.Sys.Log.Logger.LogInformation($"Hanging up call to {clientUserAgent.CallDescriptor.To}.");
-                        clientUserAgent.Hangup();
+                        SIPSorcery.Sys.Log.Logger.LogInformation($"Hanging up call to {uac.CallDescriptor.To}.");
+                        uac.Hangup();
                     }
                     else if (!hasCallFailed)
                     {
-                        SIPSorcery.Sys.Log.Logger.LogInformation($"Cancelling call to {clientUserAgent.CallDescriptor.To}.");
-                        clientUserAgent.Cancel();
+                        SIPSorcery.Sys.Log.Logger.LogInformation($"Cancelling call to {uac.CallDescriptor.To}.");
+                        uac.Cancel();
                     }
 
                     // Give the BYE or CANCEL request time to be transmitted.
@@ -194,6 +203,11 @@ namespace SIPSorcery
         {
             try
             {
+                DateTime lastRecvReportAt = DateTime.Now;
+                uint packetReceivedCount = 0;
+                uint bytesReceivedCount = 0;
+                uint packetSentCount = 0;
+                uint bytesSentCount = 0;
                 byte[] buffer = new byte[512];
 
                 uint rtpSendTimestamp = 0;
@@ -207,13 +221,16 @@ namespace SIPSorcery
                     waveOutEvent.Init(waveProvider);
                     waveOutEvent.Play();
 
-                    var readResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, anyEndPoint);
+                    var recvResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, anyEndPoint);
 
-                    SIPSorcery.Sys.Log.Logger.LogDebug($"Initial RTP packet recieved from {readResult.RemoteEndPoint}.");
+                    SIPSorcery.Sys.Log.Logger.LogDebug($"Initial RTP packet recieved from {recvResult.RemoteEndPoint}.");
 
-                    while (readResult.ReceivedBytes > 0 && !cts.IsCancellationRequested)
+                    while (recvResult.ReceivedBytes > 0 && !cts.IsCancellationRequested)
                     {
-                        var rtpPacket = new RTPPacket(buffer.Take(readResult.ReceivedBytes).ToArray());
+                        var rtpPacket = new RTPPacket(buffer.Take(recvResult.ReceivedBytes).ToArray());
+
+                        packetReceivedCount++;
+                        bytesReceivedCount += (uint)rtpPacket.Payload.Length;
 
                         for (int index = 0; index < rtpPacket.Payload.Length; index++)
                         {
@@ -223,20 +240,27 @@ namespace SIPSorcery
                         }
 
                         // Periodically Send a dummy packet to keep any NAT session that may be on the media path open.
-                        if (rtpPacket.Header.SequenceNumber % 100 == 0)
+                        if (DateTime.Now.Subtract(lastRecvReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
                         {
-                            rtpSendSession.SendAudioFrame(rtpSocket, readResult.RemoteEndPoint as IPEndPoint, rtpSendTimestamp, new byte[] { 0x00 });
+                            // This is typically where RTCP reports would be sent. Omitted here for brevity.
+                            lastRecvReportAt = DateTime.Now;
+                            var remoteRtpEndPoint = recvResult.RemoteEndPoint as IPEndPoint;
+                            SIPSorcery.Sys.Log.Logger.LogDebug($"RTP recv {rtpSocket.LocalEndPoint}<-{remoteRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
+
+                            rtpSendSession.SendAudioFrame(rtpSocket, recvResult.RemoteEndPoint as IPEndPoint, rtpSendTimestamp, new byte[] { 0x00 });
                             rtpSendTimestamp += 32000; // Arbitrary and not critical. Corresponds to 40ms payload at 25pps which means 4s for 100 packets.
 
-                            SIPSorcery.Sys.Log.Logger.LogDebug($"RTP seqnum {rtpPacket.Header.SequenceNumber} timestamp {rtpPacket.Header.Timestamp}, " +
-                                $"from remote RTP socket {readResult.RemoteEndPoint}.");
+                            packetSentCount++;
+                            bytesSentCount++;
+                            SIPSorcery.Sys.Log.Logger.LogDebug($"RTP sent {rtpSocket.LocalEndPoint}->{remoteRtpEndPoint} pkts {packetSentCount} bytes {bytesSentCount}");
+
                         }
 
-                        readResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, anyEndPoint);
+                        recvResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, anyEndPoint);
                     }
                 }
             }
-            catch (ObjectDisposedException) { } // This is how .Net deals with an in use socket being clsoed. Safe to ignore.
+            catch (ObjectDisposedException) { } // This is how .Net deals with an in use socket being closed. Safe to ignore.
             catch (Exception excp)
             {
                 SIPSorcery.Sys.Log.Logger.LogError($"Exception processing RTP. {excp}");
