@@ -32,6 +32,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -48,13 +49,12 @@ namespace SIPSorcery
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             Console.WriteLine("SIPSorcery client user agent server example.");
             Console.WriteLine("Press ctrl-c to exit.");
 
             CancellationTokenSource cts = new CancellationTokenSource();
-            bool exit = false;
 
             // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
@@ -74,19 +74,14 @@ namespace SIPSorcery
             var sipChannel = new SIPUDPChannel(new IPEndPoint(defaultAddr, port));
             sipTransport.AddSIPChannel(sipChannel);
 
-            bool isHungup = false;
-
             // Because this is a server user agent the SIP transport must start listening for client user agents.
             sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
             {
                 if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
-                    isHungup = false;
-
                     SIPSorcery.Sys.Log.Logger.LogInformation("Incoming call request: " + localSIPEndPoint + "<-" + remoteEndPoint + " " + sipRequest.URI.ToString() + ".");
                     UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
                     var uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
-                    //uas.CallCancelled += UASCallCancelled;
 
                     uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
                     uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
@@ -97,110 +92,16 @@ namespace SIPSorcery
                     NetServices.CreateRtpSocket(defaultAddr, 49000, 49100, false, out rtpSocket, out controlSocket);
 
                     IPEndPoint rtpEndPoint = new IPEndPoint(defaultAddr, (rtpSocket.LocalEndPoint as IPEndPoint).Port);
-                    IPEndPoint dstRtpEndPoint = null;
+                    IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
 
                     var rtpSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 
-                    var rtpRecvTask = Task.Run(async () =>
-                    {
-                        byte[] buffer = new byte[2048];
-                        EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
-
-                        SIPSorcery.Sys.Log.Logger.LogDebug($"Listening on RTP socket {rtpSocket.LocalEndPoint}.");
-
-                        while (!exit && uas.IsCancelled == false && isHungup == false)
-                        {
-                            var recvResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, remoteEP);
-                            Console.WriteLine($"Read {recvResult.ReceivedBytes} from remote RTP socket {recvResult.RemoteEndPoint}.");
-                            dstRtpEndPoint = recvResult.RemoteEndPoint as IPEndPoint;
-                        }
-                    });
-
-                    var rtpSendTask = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            SIPSorcery.Sys.Log.Logger.LogDebug($"Sending from RTP socket {rtpSocket.LocalEndPoint}.");
-
-                            while (!exit && uas.IsCancelled == false && isHungup == false && dstRtpEndPoint == null)
-                            {
-                                await Task.Delay(500, cts.Token);
-                            }
-
-                            SIPSorcery.Sys.Log.Logger.LogDebug($"Remote RTP end point set to {dstRtpEndPoint}.");
-
-                            //if (dstRtpEndPoint != null)
-                            //{
-                            //    uint timestamp = 0;
-
-                            //    using (StreamReader sr = new StreamReader(@"musiconhold\macroform-the_simplicity.ulaw"))
-                            //    {
-                            //        byte[] buffer = new byte[320];
-                            //        int bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
-
-                            //        while (bytesRead > 0 && uas.IsCancelled == false && isHungup == false)
-                            //        {
-                            //            Console.WriteLine($"Read {bytesRead} from file.");
-
-                            //            rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
-
-                            //            timestamp += (uint)buffer.Length;
-
-                            //            await Task.Delay(40, cts.Token);
-                            //        }
-                            //    }
-                            //}
-
-                            if (dstRtpEndPoint != null)
-                            {
-                                var pcmFormat = new WaveFormat(8000, 16, 1);
-                                var ulawFormat = WaveFormat.CreateMuLawFormat(8000, 1);
-
-                                uint timestamp = 0;
-
-                                using (WaveFormatConversionStream pcmStm = new WaveFormatConversionStream(pcmFormat, new Mp3FileReader("whitelight.mp3")))
-                                {
-                                    using (WaveFormatConversionStream ulawStm = new WaveFormatConversionStream(ulawFormat, pcmStm))
-                                    {
-                                        byte[] buffer = new byte[320];
-                                        int bytesRead = ulawStm.Read(buffer, 0, buffer.Length);
-
-                                        while (!exit && bytesRead > 0 && uas.IsCancelled == false && isHungup == false)
-                                        {
-                                            byte[] sample = new byte[bytesRead];
-                                            Array.Copy(buffer, sample, bytesRead);
-
-                                            rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
-                                            
-                                            timestamp += (uint)buffer.Length;
-
-                                            await Task.Delay(40, cts.Token);
-
-                                            bytesRead = ulawStm.Read(buffer, 0, buffer.Length);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        catch (OperationCanceledException) { }
-                        catch (Exception excp)
-                        {
-                            SIPSorcery.Sys.Log.Logger.LogError($"Exception sending RTP. {excp.Message}");
-                        }
-                        finally
-                        {
-                            rtpSocket?.Close();
-                            controlSocket?.Close();
-                            uas.Hangup();
-                        }
-                    });
+                    var rtpTask = Task.Run(() => SendRecvRtp(rtpSocket, rtpSession, dstRtpEndPoint, cts)).ContinueWith(x => uas.Hangup());
 
                     uas.Answer(SDP.SDP_MIME_CONTENTTYPE, GetSDP(rtpEndPoint).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.BYE)
                 {
-                    isHungup = true;
-
                     SIPSorcery.Sys.Log.Logger.LogInformation("Call hungup.");
                     SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
                     SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
@@ -208,13 +109,16 @@ namespace SIPSorcery
                 }
             };
 
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+            Console.CancelKeyPress += async delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
 
                 SIPSorcery.Sys.Log.Logger.LogInformation("Exiting...");
-                exit = true;
                 cts.Cancel();
+
+                // Give calls time to hangup.
+                SIPSorcery.Sys.Log.Logger.LogInformation("Waiting 1s for calls to hangup...");
+                await Task.Delay(1000);
 
                 if (sipTransport != null)
                 {
@@ -222,6 +126,85 @@ namespace SIPSorcery
                     sipTransport.Shutdown();
                 }
             };
+        }
+
+        private static async Task SendRecvRtp(Socket rtpSocket, RTPSession rtpSession, IPEndPoint dstRtpEndPoint, CancellationTokenSource cts)
+        {
+            try
+            {
+                SIPSorcery.Sys.Log.Logger.LogDebug($"Sending from RTP socket {rtpSocket.LocalEndPoint} to {dstRtpEndPoint}.");
+
+                // Nothing is being done with the data being received from the client. But if the remote socket data socket will
+                // be switched if it differs from the one in the SDP. This helps cope with NAT.
+                var rtpRecvTask = Task.Run(async () =>
+                {
+                    byte[] buffer = new byte[2048];
+                    EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+
+                    SIPSorcery.Sys.Log.Logger.LogDebug($"Listening on RTP socket {rtpSocket.LocalEndPoint}.");
+
+                    var recvResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, remoteEP);
+
+                    while (recvResult.ReceivedBytes > 0 && !cts.IsCancellationRequested)
+                    {
+                        recvResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, remoteEP);
+                        Console.WriteLine($"Read {recvResult.ReceivedBytes} from remote RTP socket {recvResult.RemoteEndPoint}.");
+                        dstRtpEndPoint = recvResult.RemoteEndPoint as IPEndPoint;
+                    }
+                });
+
+                // Send 
+                uint timestamp = 0;
+                using (StreamReader sr = new StreamReader(@"musiconhold\macroform-the_simplicity.ulaw"))
+                {
+                    byte[] buffer = new byte[320];
+                    int bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
+
+                    while (bytesRead > 0 && !cts.IsCancellationRequested)
+                    {
+                        rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
+                        timestamp += (uint)buffer.Length;
+                        await Task.Delay(40, cts.Token);
+                        bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
+                    }
+                }
+
+                //if (dstRtpEndPoint != null)
+                //{
+                //    var pcmFormat = new WaveFormat(8000, 16, 1);
+                //    var ulawFormat = WaveFormat.CreateMuLawFormat(8000, 1);
+
+                //    uint timestamp = 0;
+
+                //    using (WaveFormatConversionStream pcmStm = new WaveFormatConversionStream(pcmFormat, new Mp3FileReader("some.mp3")))
+                //    {
+                //        using (WaveFormatConversionStream ulawStm = new WaveFormatConversionStream(ulawFormat, pcmStm))
+                //        {
+                //            byte[] buffer = new byte[320];
+                //            int bytesRead = ulawStm.Read(buffer, 0, buffer.Length);
+
+                //            while (!exit && bytesRead > 0 && uas.IsCancelled == false && isHungup == false)
+                //            {
+                //                byte[] sample = new byte[bytesRead];
+                //                Array.Copy(buffer, sample, bytesRead);
+
+                //                rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
+
+                //                timestamp += (uint)buffer.Length;
+
+                //                await Task.Delay(40, cts.Token);
+
+                //                bytesRead = ulawStm.Read(buffer, 0, buffer.Length);
+                //            }
+                //        }
+                //    }
+                //}
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception excp)
+            {
+                SIPSorcery.Sys.Log.Logger.LogError($"Exception sending RTP. {excp.Message}");
+            }
         }
 
         private static SDP GetSDP(IPEndPoint rtpSocket)
@@ -241,9 +224,8 @@ namespace SIPSorcery
                 MediaFormats = new List<SDPMediaFormat>() { new SDPMediaFormat((int)SDPMediaFormatsEnum.PCMU, "PCMU", 8000) }
             };
             audioAnnouncement.Port = rtpSocket.Port;
+            audioAnnouncement.ExtraAttributes.Add("a=sendrecv");
             sdp.Media.Add(audioAnnouncement);
-
-            //sdp.AddExtra("a=sendrecv");
 
             return sdp;
         }

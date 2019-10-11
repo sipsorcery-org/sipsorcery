@@ -56,14 +56,9 @@ namespace SIPSorcery
             Console.WriteLine("Press ctrl-c to exit.");
 
             // Plumbing code to facilitate a graceful exit.
-            ManualResetEvent exitMre = new ManualResetEvent(false);
+            CancellationTokenSource cts = new CancellationTokenSource();
             bool isCallHungup = false;
             bool hasCallFailed = false;
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
-            {
-                e.Cancel = true;
-                exitMre.Set();
-            };
 
             // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
@@ -92,6 +87,7 @@ namespace SIPSorcery
                     SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     byeTransaction.SendFinalResponse(byeResponse);
                     isCallHungup = true;
+                    cts.Cancel();
                 }
             };
 
@@ -104,7 +100,7 @@ namespace SIPSorcery
             // It's a good idea to start the RTP receiving socket before the call request is sent.
             // A SIP server will generally start sending RTP as soon as it has processed the incoming call request and
             // being ready to receive will stop any ICMP error response being generated.
-            Task.Run(() => ProcessRtp(rtpSocket, rtpSendSession));
+            Task.Run(() => SendRecvRtp(rtpSocket, rtpSendSession, cts));
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var clientUserAgent = new SIPClientUserAgent(sipTransport);
@@ -138,7 +134,8 @@ namespace SIPSorcery
             SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
                 SIPConstants.SIP_DEFAULT_USERNAME,
                 null,
-                "sip:500@sipsorcery.com",
+                //"sip:500@sipsorcery.com",
+                "sip:192.168.0.50",
                 SIPConstants.SIP_DEFAULT_FROMURI,
                 null, null, null, null,
                 SIPCallDirection.Out,
@@ -151,37 +148,39 @@ namespace SIPSorcery
             // At this point the call has been initiated and everything will be handled in an event handler or on the RTP
             // receive task. The code below is to gracefully exit.
             // Ctrl-c will gracefully exit the call at any point.
-            exitMre.WaitOne();
-
-            SIPSorcery.Sys.Log.Logger.LogInformation("Exiting...");
-
-            if (!isCallHungup && clientUserAgent != null)
+            Console.CancelKeyPress += async delegate (object sender, ConsoleCancelEventArgs e)
             {
-                if (clientUserAgent.IsUACAnswered)
+                e.Cancel = true;
+                cts.Cancel();
+
+                SIPSorcery.Sys.Log.Logger.LogInformation("Exiting...");
+
+                if (!isCallHungup && clientUserAgent != null)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogInformation($"Hanging up call to {clientUserAgent.CallDescriptor.To}.");
-                    clientUserAgent.Hangup();
+                    if (clientUserAgent.IsUACAnswered)
+                    {
+                        SIPSorcery.Sys.Log.Logger.LogInformation($"Hanging up call to {clientUserAgent.CallDescriptor.To}.");
+                        clientUserAgent.Hangup();
+                    }
+                    else if (!hasCallFailed)
+                    {
+                        SIPSorcery.Sys.Log.Logger.LogInformation($"Cancelling call to {clientUserAgent.CallDescriptor.To}.");
+                        clientUserAgent.Cancel();
+                    }
+
+                    // Give the BYE or CANCEL request time to be transmitted.
+                    SIPSorcery.Sys.Log.Logger.LogInformation("Waiting 1s for call to clean up...");
+                    await Task.Delay(1000);
                 }
-                else if (!hasCallFailed)
+
+                SIPSorcery.Net.DNSManager.Stop();
+
+                if (sipTransport != null)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogInformation($"Cancelling call to {clientUserAgent.CallDescriptor.To}.");
-                    clientUserAgent.Cancel();
+                    SIPSorcery.Sys.Log.Logger.LogInformation("Shutting down SIP transport...");
+                    sipTransport.Shutdown();
                 }
-
-                // Give the BYE or CANCEL request time to be transmitted.
-                Task.Delay(500).Wait();
-            }
-
-            rtpSocket?.Close();
-            controlSocket?.Close();
-
-            SIPSorcery.Net.DNSManager.Stop();
-
-            if (sipTransport != null)
-            {
-                SIPSorcery.Sys.Log.Logger.LogInformation("Shutting down SIP transport...");
-                sipTransport.Shutdown();
-            }
+            };
         }
 
         /// <summary>
@@ -190,7 +189,8 @@ namespace SIPSorcery
         /// used to multiplex different protocols. This is what WebRTC does with STUN, RTP and RTCP.
         /// </summary>
         /// <param name="rtpSocket">The raw RTP socket.</param>
-        private static async void ProcessRtp(Socket rtpSocket, RTPSession rtpSendSession)
+        /// <param name="rtpSendSession">The session infor for the RTP pakcets being sent.</param>
+        private static async void SendRecvRtp(Socket rtpSocket, RTPSession rtpSendSession, CancellationTokenSource cts)
         {
             try
             {
@@ -211,7 +211,7 @@ namespace SIPSorcery
 
                     SIPSorcery.Sys.Log.Logger.LogDebug($"Initial RTP packet recieved from {readResult.RemoteEndPoint}.");
 
-                    while (readResult.ReceivedBytes > 0)
+                    while (readResult.ReceivedBytes > 0 && !cts.IsCancellationRequested)
                     {
                         var rtpPacket = new RTPPacket(buffer.Take(readResult.ReceivedBytes).ToArray());
 
@@ -222,11 +222,11 @@ namespace SIPSorcery
                             waveProvider.AddSamples(pcmSample, 0, 2);
                         }
 
-                        // Periodically Send a dummy packet to keep the NAT session open.
+                        // Periodically Send a dummy packet to keep any NAT session that may be on the media path open.
                         if (rtpPacket.Header.SequenceNumber % 100 == 0)
                         {
                             rtpSendSession.SendAudioFrame(rtpSocket, readResult.RemoteEndPoint as IPEndPoint, rtpSendTimestamp, new byte[] { 0x00 });
-                            rtpSendTimestamp += 32000; // Corresponds to 40ms payload at 25pps which means 4s for 100 packets.
+                            rtpSendTimestamp += 32000; // Arbitrary and not critical. Corresponds to 40ms payload at 25pps which means 4s for 100 packets.
 
                             SIPSorcery.Sys.Log.Logger.LogDebug($"RTP seqnum {rtpPacket.Header.SequenceNumber} timestamp {rtpPacket.Header.Timestamp}, " +
                                 $"from remote RTP socket {readResult.RemoteEndPoint}.");
