@@ -67,7 +67,7 @@ sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEn
 };
 ````
 
-The full source code for the demo program is shown below. It's also available with a project file in [examples\GetStarted)(https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted).
+The full source code for the demo program is shown below. It's also available with a project file in [examples\GetStarted](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted).
 
 ````
 using System;
@@ -144,7 +144,7 @@ Additional example programs are provided to demonstrate how to use the SIPSorcer
 
 * [SIP Proxy](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPProxy): Expands the `Get Started` example to also handle REGISTER requests. 
 
-* [Registration Client](https://github.com/sipsorcery/sipsorcery/tree/master/examples/UserAgentRegistrar): Demonstrates how to use the `SIPRegistrationUserAgent` class to register with a SIP Registrar server.
+* [Registration Client](https://github.com/sipsorcery/sipsorcery/tree/master/examples/UserAgentRegister): Demonstrates how to use the `SIPRegistrationUserAgent` class to register with a SIP Registrar server.
 
 * [SIP Call Client](https://github.com/sipsorcery/sipsorcery/tree/master/examples/UserAgentClient): Demonstrates how to use `SIPClientUserAgent` class to place a call to a SIP server user agent.
  
