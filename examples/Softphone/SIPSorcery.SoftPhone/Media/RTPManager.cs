@@ -33,17 +33,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading;
-using SIPSorceryMedia;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
-using SIPSorcery.Sys.Net;
 using log4net;
 
 namespace SIPSorcery.SoftPhone

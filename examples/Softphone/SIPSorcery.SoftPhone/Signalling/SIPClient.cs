@@ -32,7 +32,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,7 +40,6 @@ using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using SIPSorcery.Sys.Net;
 using log4net;
 
 namespace SIPSorcery.SoftPhone
