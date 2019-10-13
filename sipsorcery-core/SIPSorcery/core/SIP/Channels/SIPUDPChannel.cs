@@ -46,7 +46,6 @@ namespace SIPSorcery.SIP
         private const string THREAD_NAME = "sipchanneludp-";
 
         // Channel sockets.
-        private Guid m_socketId = Guid.NewGuid();
         private UdpClient m_sipConn = null;
 
         public SIPUDPChannel(IPEndPoint endPoint)
@@ -54,6 +53,9 @@ namespace SIPSorcery.SIP
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, endPoint);
             Initialise();
         }
+
+        public SIPUDPChannel(IPAddress listenAddress, int listenPort) : this(new IPEndPoint(listenAddress, listenPort))
+        { }
 
         private void Initialise()
         {

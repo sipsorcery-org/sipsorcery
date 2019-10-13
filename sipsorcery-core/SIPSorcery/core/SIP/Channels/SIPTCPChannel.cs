@@ -66,6 +66,9 @@ namespace SIPSorcery.SIP
             Initialise();
         }
 
+        public SIPTCPChannel(IPAddress listenAddress, int listenPort) : this(new IPEndPoint(listenAddress, listenPort))
+        { }
+
         private void Initialise()
         {
             try

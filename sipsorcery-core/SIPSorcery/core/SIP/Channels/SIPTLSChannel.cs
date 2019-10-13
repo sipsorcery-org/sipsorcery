@@ -31,16 +31,12 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Security;
-using System.Security.Authentication;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
@@ -82,11 +78,13 @@ namespace SIPSorcery.SIP
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, endPoint);
             m_isReliable = true;
             m_isTLS = true;
-            //m_certificatePath = certificateFileName;
-            ///base.Name = "s" + Crypto.GetRandomInt(4);
             m_serverCertificate = serverCertificate;
             Initialise();
         }
+
+        public SIPTLSChannel(X509Certificate2 serverCertificate, IPAddress listenAddress, int listenPort) : 
+            this(serverCertificate, new IPEndPoint(listenAddress, listenPort))
+        { }
 
         private void Initialise()
         {

@@ -37,12 +37,13 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading;
-using SIPSorcery.Sys;
-using Microsoft.Extensions.Logging;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using SIPSorcery.SIP.App;
+using SIPSorcery.Sys;
+using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
@@ -103,6 +104,15 @@ namespace SIPSorcery.SIP
         // rather then just relying on the initial request to get through.
         private Dictionary<string, SIPTransaction> m_reliableTransmissions = new Dictionary<string, SIPTransaction>();
         private bool m_reliablesThreadRunning = false;   // Only gets started when a request is made to send a reliable request.
+
+        /// <summary>
+        /// Creates a SIP transport class with default DNS resolver and SIP transaction engine.
+        /// </summary>
+        public SIPTransport()
+        {
+            ResolveSIPEndPoint_External = SIPDNSManager.ResolveSIPService;
+            m_transactionEngine = new SIPTransactionEngine();
+        } 
 
         public SIPTransport(ResolveSIPEndPointDelegate sipResolver, SIPTransactionEngine transactionEngine)
         {

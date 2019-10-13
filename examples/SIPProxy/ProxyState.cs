@@ -35,19 +35,16 @@ using System.Configuration;
 using System.Net;
 using System.Xml;
 using SIPSorcery.Sys;
-using log4net;
+using Microsoft.Extensions.Logging;
 
-namespace SIPSorcery.SimpleServers.Proxy
-{
-    public class ProxyState
+namespace SIPSorcery.SIPProxy
+{ 
+    public class ProxyState : IConfigurationSectionHandler
     {
-        private const string SIPSOFTPHONE_CONFIGNODE_NAME = "proxy";
+        private const string SIPPROXY_CONFIGNODE_NAME = "proxy";
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
-        private const int DEFAULT_VIDEO_DEVICE_INDEX = 0;
-
-        private static ILog logger = AppState.logger;
-
-        private static readonly XmlNode m_sipSoftPhoneConfigNode;
+  
+        private static readonly XmlNode m_proxyConfigNode;
         public static readonly XmlNode SIPSocketsNode;
         
         public static IPAddress DefaultLocalAddress;
@@ -56,24 +53,39 @@ namespace SIPSorcery.SimpleServers.Proxy
         {
             try
             {
-                if (ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME) != null)
+                var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => {
+                    builder
+                    .AddFilter("*", LogLevel.Debug)
+                    .AddConsole();
+                });
+                SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+
+                if (ConfigurationManager.GetSection(SIPPROXY_CONFIGNODE_NAME) != null)
                 {
-                    m_sipSoftPhoneConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME);
+                    m_proxyConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPPROXY_CONFIGNODE_NAME);
                 }
 
-                if (m_sipSoftPhoneConfigNode != null)
+                if (m_proxyConfigNode != null)
                 {
-                    SIPSocketsNode = m_sipSoftPhoneConfigNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
+                    SIPSocketsNode = m_proxyConfigNode.SelectSingleNode(SIPSOCKETS_CONFIGNODE_NAME);
                 }
 
                 DefaultLocalAddress = LocalIPConfig.GetDefaultIPv4Address();
-                logger.Debug("Default local IPv4 address determined as " + DefaultLocalAddress + ".");
+                SIPSorcery.Sys.Log.Logger.LogDebug("Default local IPv4 address determined as " + DefaultLocalAddress + ".");
             }
             catch (Exception excp)
             {
-                logger.Error("Exception ProxyState. " + excp.Message);
+                SIPSorcery.Sys.Log.Logger.LogError("Exception ProxyState. " + excp.Message);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Handler for processing the App.Config file and retrieving a custom XML node.
+        /// </summary>
+        public object Create(object parent, object context, XmlNode configSection)
+        {
+            return configSection;
         }
     }
 }

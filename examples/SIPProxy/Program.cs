@@ -1,7 +1,11 @@
-﻿// Description: An example of a simple SIP Proxy Server. 
+﻿//-----------------------------------------------------------------------------
+// Filename: Program.cs
+//
+// Description: An example of a simple SIP Proxy Server. 
 // 
-// History:
+// History: 
 // 15 Nov 2016	Aaron Clauson	Created.
+// 13 Oct 2019  Aaron Clauson   Updated to use teh SIPSorcery nuget package.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -27,34 +31,73 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// Notes:
+//
+// A convenient tool to test SIP applications is [SIPp] (https://github.com/SIPp/sipp). The OPTIONS request handling can 
+// be tested from Ubuntu or [WSL] (https://docs.microsoft.com/en-us/windows/wsl/install-win10) using the steps below.
+//
+// $ sudo apt install sip-tester
+// $ wget https://raw.githubusercontent.com/saghul/sipp-scenarios/master/sipp_uac_options.xml
+// $ sipp -sf sipp_uac_options.xml -max_socket 1 -r 1 -p 5062 -rp 1000 -trace_err 127.0.0.1
+//
+// To test registrations (note SIPp returns an error due to no 401 response, if this demo app registers the contact then
+// it worked correctly):
+//
+// $ wget http://tomeko.net/other/sipp/scenarios/REGISTER_client.xml
+// $ wget http://tomeko.net/other/sipp/scenarios/REGISTER_SUBSCRIBE_client.csv
+// $ sipp 127.0.0.1 -sf REGISTER_client.xml -inf REGISTER_client.csv -m 1 -trace_msg -trace_err 
+//-----------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Xml;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using SIPSorcery.Sys.Net;
-using log4net;
 
-namespace SIPSorcery.SimpleServers.Proxy
+namespace SIPSorcery.SIPProxy
 {
+    struct SIPAccountBinding
+    {
+        public SIPAccount SIPAccount;
+        public SIPURI RegisteredContact;
+        public SIPEndPoint RemoteEndPoint;
+        public SIPEndPoint LocalEndPoint;
+        public int Expiry;
+
+        public SIPAccountBinding(SIPAccount sipAccount, SIPURI contact, SIPEndPoint remote, SIPEndPoint local, int expiry)
+        {
+            SIPAccount = sipAccount;
+            RegisteredContact = contact;
+            RemoteEndPoint = remote;
+            LocalEndPoint = local;
+            Expiry = expiry;
+        }
+    }
+
     class Program
     {
-        private static ILog logger = AppState.logger;
+        private static ILogger logger = null;
 
         private static XmlNode _sipSocketsNode = ProxyState.SIPSocketsNode;                // Optional XML node that can be used to configure the SIP channels used with the SIP transport layer.
-        private static IPAddress _defaultLocalAddress = ProxyState.DefaultLocalAddress;    // The default IPv4 address for the machine running the application.
+        private static IPAddress _defaultLocalAddress = ProxyState.DefaultLocalAddress;   // The default IPv4 address for the machine running the application.
         private static int _defaultSIPUdpPort = SIPConstants.DEFAULT_SIP_PORT;             // The default UDP SIP port.
 
         private static SIPTransport _sipTransport;
-        private static Dictionary<string, SIPRegistrarBinding> _sipRegistrations = new Dictionary<string, SIPRegistrarBinding>(); // [SIP Username, Contact Address], tracks SIP clients that have registered with the server.
+        private static Dictionary<string, SIPAccountBinding> _sipRegistrations = new Dictionary<string, SIPAccountBinding>(); // [SIP Username, Binding], tracks SIP clients that have registered with the server.
 
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
+                Console.WriteLine("SIPSorcery SIP Proxy Demo");
+
+                logger = SIPSorcery.Sys.Log.Logger;
+
                 // Configure the SIP transport layer.
                 _sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
 
@@ -79,10 +122,10 @@ namespace SIPSorcery.SimpleServers.Proxy
                 // If you want to see ALL the nitty gritty SIP traffic wire up the events below.
                 //_sipTransport.SIPBadRequestInTraceEvent += SIPBadRequestInTraceEvent;
                 //_sipTransport.SIPBadResponseInTraceEvent += SIPBadResponseInTraceEvent;
-                //_sipTransport.SIPRequestInTraceEvent += SIPRequestInTraceEvent;
+                _sipTransport.SIPRequestInTraceEvent += SIPRequestInTraceEvent;
                 //_sipTransport.SIPRequestOutTraceEvent += SIPRequestOutTraceEvent;
                 //_sipTransport.SIPResponseInTraceEvent += SIPResponseInTraceEvent;
-                //_sipTransport.SIPResponseOutTraceEvent += SIPResponseOutTraceEvent;
+                _sipTransport.SIPResponseOutTraceEvent += SIPResponseOutTraceEvent;
 
                 ManualResetEvent mre = new ManualResetEvent(false);
                 mre.WaitOne();
@@ -90,11 +133,6 @@ namespace SIPSorcery.SimpleServers.Proxy
             catch (Exception excp)
             {
                 Console.WriteLine("Exception Main. " + excp);
-            }
-            finally
-            {
-                Console.WriteLine("Press any key to exit...");
-                Console.ReadLine();
             }
         }
 
@@ -128,13 +166,16 @@ namespace SIPSorcery.SimpleServers.Proxy
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.REGISTER)
                 {
+                    SIPResponse tryingResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
+                    _sipTransport.SendResponse(tryingResponse);
+
                     SIPResponseStatusCodesEnum registerResponse = SIPResponseStatusCodesEnum.Ok;
 
                     if (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0)
                     {
                         int expiry = sipRequest.Header.Contact[0].Expires > 0 ? sipRequest.Header.Contact[0].Expires : sipRequest.Header.Expires;
                         var sipAccount = new SIPAccount(null, sipRequest.Header.From.FromURI.Host, sipRequest.Header.From.FromURI.User, null, null);
-                        SIPRegistrarBinding binding = new SIPRegistrarBinding(sipAccount, sipRequest.Header.Contact[0].ContactURI, null, 0, null, remoteEndPoint, localSIPEndPoint, null, expiry);
+                        SIPAccountBinding binding = new SIPAccountBinding(sipAccount, sipRequest.Header.Contact[0].ContactURI, remoteEndPoint, localSIPEndPoint, expiry);
 
                         if (_sipRegistrations.ContainsKey(sipAccount.SIPUsername))
                         {
@@ -143,7 +184,7 @@ namespace SIPSorcery.SimpleServers.Proxy
 
                         _sipRegistrations.Add(sipAccount.SIPUsername, binding);
 
-                        logger.Debug("Registered contact for " + sipAccount.SIPUsername + " as " + binding.ToContactString() + ".");
+                        logger.LogDebug("Registered contact for " + sipAccount.SIPUsername + " as " + binding.RegisteredContact.ToString() + ".");
                     }
                     else
                     {
@@ -156,12 +197,12 @@ namespace SIPSorcery.SimpleServers.Proxy
                 }
                 else
                 {
-                    logger.Debug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
+                    logger.LogDebug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
                 }
             }
             catch (NotImplementedException)
             {
-                logger.Debug(sipRequest.Method + " request processing not implemented for " + sipRequest.URI.ToParameterlessString() + " from " + remoteEndPoint + ".");
+                logger.LogDebug(sipRequest.Method + " request processing not implemented for " + sipRequest.URI.ToParameterlessString() + " from " + remoteEndPoint + ".");
 
                 SIPNonInviteTransaction notImplTransaction = _sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
                 SIPResponse notImplResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotImplemented, null);
@@ -177,43 +218,43 @@ namespace SIPSorcery.SimpleServers.Proxy
         /// <param name="sipResponse">The SIP response received.</param>
         private static void SIPTransportResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
-            logger.Debug("Response received from " + remoteEndPoint + " method " + sipResponse.Header.CSeqMethod + " status " + sipResponse.Status + ".");
+            logger.LogDebug("Response received from " + remoteEndPoint + " method " + sipResponse.Header.CSeqMethod + " status " + sipResponse.Status + ".");
         }
 
         #region Non-functional trace/logging handlers. Main use is troubleshooting.
 
         private static void SIPRequestInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            logger.DebugFormat("REQUEST IN {0}->{1}", remoteEndPoint.ToString(), localSIPEndPoint.ToString());
-            logger.Debug(sipRequest.ToString());
+            logger.LogDebug("REQUEST IN {0}->{1}", remoteEndPoint.ToString(), localSIPEndPoint.ToString());
+            logger.LogDebug(sipRequest.ToString());
         }
 
         private static void SIPRequestOutTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            logger.DebugFormat("REQUEST OUT {0}->{1}", localSIPEndPoint.ToString(), remoteEndPoint.ToString());
-            logger.Debug(sipRequest.ToString());
+            logger.LogDebug("REQUEST OUT {0}->{1}", localSIPEndPoint.ToString(), remoteEndPoint.ToString());
+            logger.LogDebug(sipRequest.ToString());
         }
 
         private static void SIPResponseInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
-            logger.DebugFormat("RESPONSE IN {0}->{1}", remoteEndPoint.ToString(), localSIPEndPoint.ToString());
-            logger.Debug(sipResponse.ToString());
+            logger.LogDebug("RESPONSE IN {0}->{1}", remoteEndPoint.ToString(), localSIPEndPoint.ToString());
+            logger.LogDebug(sipResponse.ToString());
         }
 
         private static void SIPResponseOutTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
-            logger.DebugFormat("RESPONSE OUT {0}->{1}", localSIPEndPoint.ToString(), remoteEndPoint.ToString());
-            logger.Debug(sipResponse.ToString());
+            logger.LogDebug("RESPONSE OUT {0}->{1}", localSIPEndPoint.ToString(), remoteEndPoint.ToString());
+            logger.LogDebug(sipResponse.ToString());
         }
 
         private static void SIPBadRequestInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, string message, SIPValidationFieldsEnum sipErrorField, string rawMessage)
         {
-            logger.Warn("Bad SIPRequest. Field=" + sipErrorField + ", Message=" + message + ", Remote=" + remoteEndPoint.ToString() + ".");
+            logger.LogWarning("Bad SIPRequest. Field=" + sipErrorField + ", Message=" + message + ", Remote=" + remoteEndPoint.ToString() + ".");
         }
 
         private static void SIPBadResponseInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, string message, SIPValidationFieldsEnum sipErrorField, string rawMessage)
         {
-            logger.Warn("Bad SIPResponse. Field=" + sipErrorField + ", Message=" + message + ", Remote=" + remoteEndPoint.ToString() + ".");
+            logger.LogWarning("Bad SIPResponse. Field=" + sipErrorField + ", Message=" + message + ", Remote=" + remoteEndPoint.ToString() + ".");
         }
 
         #endregion

@@ -1,9 +1,11 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/github/sipsorcery/sipsorcery?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery) 
 
 This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261). In addition 
-there is partial support for the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550), Web Real-Time Communication [(WebRTC)](https://en.wikipedia.org/wiki/WebRTC) and a number of related protocols such as RTCP, STUN, SDP and RTSP. Work is ongoing to fully support RTP and add IPv6 support for SIP.
+there is partial support for the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550), Web Real-Time Communication [(WebRTC)](https://en.wikipedia.org/wiki/WebRTC) and a number of related protocols such as RTCP, STUN, SDP and RTSP. Work is ongoing to fully support RTP and add IPv6.
 
-## Howto
+This project does not provide any media (audio and video) handling. There are some limited capabilities in the separate [SIPSorcery.Media](https://github.com/sipsorcery/sipsorcery-media) project but they are Windows specific and not suitable for production. This project can be used for SIP signalling and to send and receive RTP packets but it does not have features to do anything with the payloads in the RTP packets.
+
+## Installation
 
 The library is compliant with .NET Standard 2.0 and .NET Framework 4.5.2. It is available via NuGet.
 
@@ -19,66 +21,134 @@ With Visual Studio Package Manager Console (or search for SIPSorcery on NuGet):
 Install-Package SIPSorcery
 ````
 
-## Example
+## Getting Started
 
-The example below shows how to create a client user agent to maintain a SIP account registration with a SIP server.
-The full source code can be found in the examples\Register folder .
+The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examples) contains full sample code designed to demonstrate some common use cases. The [GetStarted](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted) example is the best place to start. It is explained below.
+
+To use the SIP functionality the first step is to initialise the `SIPTransport` class. It takes care of things like retransmitting requests and responses, DNS resolution, selecting the next hop for requests, matching SIP messages to transactions and more.
+
+The `SIPTransport` class can have multiple SIP channels added to it. A SIP channel is the equivalent to a network socket but for SIP and expects all packets 
+received to be either a SIP request or response. The types of SIP channels supported are UDP, TCP and TLS. Currently only IPv4 is supported. Work is in progress to support IPv6.
+
+The code below shows how to create a `SIPTransport` instance and add a single UDP channel to it.
+
+````
+var sipTransport = new SIPTransport();
+var sipChannel = new SIPUDPChannel(IPAddress.Loopback, 5060);
+sipTransport.AddSIPChannel(sipChannel);
+````
+
+To shutdown the `SIPTransport` use:
+
+````
+sipTransport.Shutdown();
+````
+
+There are two common scenarios when using the `SIPTransport` class:
+
+1. For a server application wire up the `SIPTransport` event handlers, see code below,
+2. For client applications the `SIPTranpsort` class can be passed as a constructor parameter. There are a number of client user agents in the `app\SIPUserAgents` folder that
+can be used for common client scenarios. See [Next Steps](#next-steps) for a description of the example client applications.
+
+
+An example of the first approach of wiring up the `SIPTransport` event handlers is shown below. It will respond with a 200 OK response for OPTIONS requests 
+and will ignore all other request types.
+
+````
+sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+{
+  Console.WriteLine($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
+
+  if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
+  {
+     SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+     sipTransport.SendResponse(optionsResponse);
+  }
+};
+````
+
+The full source code for the demo program is shown below. It's also available with a project file in [examples\GetStarted)(https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted).
 
 ````
 using System;
-using System.Collections.Generic;
 using System.Net;
-using SIPSorcery.Net;
 using SIPSorcery.SIP;
-using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
-using Serilog;
-using Microsoft.Extensions.Logging;
 
-namespace SIPSorcery.Register
+namespace demo
 {
-    class Program
+  class Program
+  {
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+      Console.WriteLine("SIPSorcery demo");
+
+      var sipTransport = new SIPTransport();
+      var sipChannel = new SIPUDPChannel(IPAddress.Loopback, 5060);
+      sipTransport.AddSIPChannel(sipChannel);
+
+      sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+      {
+        Console.WriteLine($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
+
+        if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
         {
-            Console.WriteLine("SIPSorcery registration user agent example.");
-            Console.WriteLine("Press ctrl-c to exit.");
-
-            // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console()
-                .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
-
-            // If your default DNS server supports SRV records there is no need to set a specific DNS server.
-            DNSManager.SetDNSServers(new List<IPEndPoint> { IPEndPoint.Parse("8.8.8.8:53") });
-
-            // Set up a default SIP transport.
-            var sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
-            int port = FreePort.FindNextAvailableUDPPort(SIPConstants.DEFAULT_SIP_PORT);
-            var sipChannel = new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv4Address(), port));
-            sipTransport.AddSIPChannel(sipChannel);
-
-            // Create a client user agent to maintain a periodic registration with a SIP server.
-            var regUserAgent = new SIPRegistrationUserAgent(
-                sipTransport,
-                "softphonesample",
-                "password",
-                "sipsorcery.com");
-
-            // Event handlers for the different stages of the registration.
-            regUserAgent.RegistrationFailed += (uri, err) => SIPSorcery.Sys.Log.Logger.LogError($"{uri.ToString()}: {err}");
-            regUserAgent.RegistrationTemporaryFailure += (uri, msg) => SIPSorcery.Sys.Log.Logger.LogWarning($"{uri.ToString()}: {msg}");
-            regUserAgent.RegistrationRemoved += (uri) => SIPSorcery.Sys.Log.Logger.LogError($"{uri.ToString()} registration failed.");
-            regUserAgent.RegistrationSuccessful += (uri) => SIPSorcery.Sys.Log.Logger.LogInformation($"{uri.ToString()} registration succeeded.");
-
-            // Start the thread to perform the initial registration and then periodically resend it.
-            regUserAgent.Start();
+          SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+          sipTransport.SendResponse(optionsResponse);
         }
+      };
+
+      Console.Write("press any key to exit...");
+      Console.Read();
+
+      sipTransport.Shutdown();
     }
+  }
 }
 ````
+
+## Testing
+
+A convenient tool to test SIP applications is [SIPp](https://github.com/SIPp/sipp). The OPTIONS request handling can be tested from Ubuntu or 
+[WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) using the steps below.
+
+````
+$ sudo apt install sip-tester
+$ wget https://raw.githubusercontent.com/saghul/sipp-scenarios/master/sipp_uac_options.xml
+$ sipp -sf sipp_uac_options.xml -m 3 127.0.0.1
+````
+
+If working correctly the message below should appear on the SIPSorcery demo program console:
+
+```` 
+SIPSorcery Getting Started Demo
+press any key to exit...
+Request received udp:127.0.0.1:5060<-udp:127.0.0.1:5061: OPTIONS sip:127.0.0.1:5060 SIP/2.0
+Request received udp:127.0.0.1:5060<-udp:127.0.0.1:5061: OPTIONS sip:127.0.0.1:5060 SIP/2.0
+Request received udp:127.0.0.1:5060<-udp:127.0.0.1:5061: OPTIONS sip:127.0.0.1:5060 SIP/2.0
+````
+
+The SIPp program will also report some test results after a completed test run. In correct operation the `Successful call` row should be greater than 0 and `Failed call` should be 0.
+
+````
+-------------------------+---------------------------+--------------------------
+  Successful call        |        0                  |        3
+  Failed call            |        0                  |        0
+-------------------------+---------------------------+--------------------------
+````
+
+## Next Steps
+
+Additional example programs are provided to demonstrate how to use the SIPSorcery library in some common scenarios. The example programs are in the `examples` folder.
+
+* [Get Started](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted): Simplest example. Demonstrates how to initialise a SIP channel and respond to an OPTIONS request.
+
+* [SIP Proxy](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPProxy): Expands the `Get Started` example to also handle REGISTER requests. 
+
+* [Registration Client](https://github.com/sipsorcery/sipsorcery/tree/master/examples/UserAgentRegistrar): Demonstrates how to use the `SIPRegistrationUserAgent` class to register with a SIP Registrar server.
+
+* [SIP Call Client](https://github.com/sipsorcery/sipsorcery/tree/master/examples/UserAgentClient): Demonstrates how to use `SIPClientUserAgent` class to place a call to a SIP server user agent.
+ 
+* [SIP Call Server](https://github.com/sipsorcery/sipsorcery/tree/master/examples/UserAgentServer): Demonstrates how to use the `SIPServerUserAgent` class to receive a call from a SIP client user agent.
+ 
+* [SoftPhone](https://github.com/sipsorcery/sipsorcery/tree/master/examples/Softphone): A very rudimentary SIP softphone implementation.
+
