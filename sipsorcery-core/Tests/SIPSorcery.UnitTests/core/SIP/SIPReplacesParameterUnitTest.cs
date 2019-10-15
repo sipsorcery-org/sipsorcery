@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Text;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SIPSorcery.SIP.Core.UnitTests
+namespace SIPSorcery.SIP.UnitTests
 {
     [TestClass]
     public class SIPReplacesParameterUnitTest

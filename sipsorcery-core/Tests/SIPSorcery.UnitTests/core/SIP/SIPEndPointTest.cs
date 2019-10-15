@@ -3,7 +3,7 @@ using System.Net;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SIPSorcery.SIP.Core.UnitTests
+namespace SIPSorcery.SIP.UnitTests
 {
     [TestClass]
     public class SIPEndPointTest
@@ -199,9 +199,29 @@ namespace SIPSorcery.SIP.Core.UnitTests
 
             logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
 
-            Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
-            Assert.IsTrue(sipEndPoint.Address.ToString() == "::1", "The SIPEndPoint IP address was incorrectly parsed.");
-            Assert.IsTrue(sipEndPoint.Port == 6060, "The SIPEndPoint port was incorrectly parsed.");
+            Assert.AreEqual(sipEndPoint.Protocol, SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
+            Assert.AreEqual(sipEndPoint.Address.ToString(), "::1", "The SIPEndPoint IP address was incorrectly parsed.");
+            Assert.AreEqual(sipEndPoint.Address.AddressFamily, System.Net.Sockets.AddressFamily.InterNetworkV6, "The SIPEndPoint IP address family was incorrectly parsed.");
+            Assert.AreEqual(sipEndPoint.Port, 6060, "The SIPEndPoint port was incorrectly parsed.");
+        }
+
+        /// <summary>
+        /// Tests that a SIP end point with an IPv6 loopback address and scheme gets parsed correctly.
+        /// </summary>
+        [TestMethod]
+        public void IPv6LoopbackWithScehemeParseTest()
+        {
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipEndPointStr = "sip:[::1]:6060";
+            SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
+
+            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+
+            Assert.AreEqual(sipEndPoint.Protocol, SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
+            Assert.AreEqual(sipEndPoint.Address.ToString(), "::1", "The SIPEndPoint IP address was incorrectly parsed.");
+            Assert.AreEqual(sipEndPoint.Address.AddressFamily, System.Net.Sockets.AddressFamily.InterNetworkV6, "The SIPEndPoint IP address family was incorrectly parsed.");
+            Assert.AreEqual(sipEndPoint.Port, 6060, "The SIPEndPoint port was incorrectly parsed.");
         }
     }
 }

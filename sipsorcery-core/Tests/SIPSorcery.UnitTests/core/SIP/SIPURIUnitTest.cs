@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Net;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SIPSorcery.SIP.Core.UnitTests
+namespace SIPSorcery.SIP.UnitTests
 {
     [TestClass]
     public class SIPURIUnitTest
@@ -445,6 +446,44 @@ namespace SIPSorcery.SIP.Core.UnitTests
 
             Assert.AreEqual(sipURI.ToString(), "sip:127.0.0.1", "The SIP URI was not ToString'ed correctly.");
             Assert.AreEqual(sipURI.CanonicalAddress, "sip:127.0.0.1:5060", "The SIP URI canonical address was not correct.");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with an IPv6 address is correctly parsed.
+        /// </summary>
+        [TestMethod]
+        public void ParseIPv6UnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI sipURI = SIPURI.ParseSIPURI("sip:[::1]");
+
+            Assert.AreEqual(sipURI.Scheme, SIPSchemesEnum.sip, "The SIP URI scheme was not parsed correctly.");
+            Assert.AreEqual(sipURI.Host, "[::1]", "The SIP URI host was not parsed correctly.");
+            Assert.AreEqual(sipURI.ToSIPEndPoint(), new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.IPv6Loopback, 5060), "The SIP URI end point details were not parsed correctly.");
+
+            logger.LogDebug($"SIP URI {sipURI.ToString()}");
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with an IPv6 address and an explicit port is correctly parsed.
+        /// </summary>
+        [TestMethod]
+        public void ParseIPv6WithExplicitPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI sipURI = SIPURI.ParseSIPURI("sip:[::1]:6060");
+
+            Assert.AreEqual(sipURI.Scheme, SIPSchemesEnum.sip, "The SIP URI scheme was not parsed correctly.");
+            Assert.AreEqual(sipURI.Host, "[::1]:6060", "The SIP URI host was not parsed correctly.");
+            Assert.AreEqual(sipURI.ToSIPEndPoint(), new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.IPv6Loopback, 6060), "The SIP URI end point details were not parsed correctly.");
+
+            logger.LogDebug($"SIP URI {sipURI.ToString()}");
 
             logger.LogDebug("-----------------------------------------");
         }

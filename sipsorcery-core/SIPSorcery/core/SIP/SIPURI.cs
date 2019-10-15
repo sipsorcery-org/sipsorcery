@@ -263,7 +263,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-        //TODO needs IPv6 fixing.
         public static SIPURI ParseSIPURI(string uri)
         {
             try

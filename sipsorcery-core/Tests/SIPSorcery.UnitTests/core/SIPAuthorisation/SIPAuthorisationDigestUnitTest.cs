@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SIPSorcery.SIP.Core.UnitTests
+namespace SIPSorcery.SIP.UnitTests
 {
     [TestClass]
     public class SIPAuthorisationDigestUnitTest

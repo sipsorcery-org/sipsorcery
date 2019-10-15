@@ -2,12 +2,10 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Net;
-using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SIPSorcery.SIP;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.SIP.Core.UnitTests
+namespace SIPSorcery.SIP.UnitTests
 {
     [TestClass]
     public class SIPRequestUnitTest

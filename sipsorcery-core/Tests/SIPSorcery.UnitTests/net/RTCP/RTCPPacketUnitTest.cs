@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SIPSorcery.Net.UnitTests.RTCP
+namespace SIPSorcery.Net.UnitTests
 {
     [TestClass]
     public class RTCPPacketUnitTest

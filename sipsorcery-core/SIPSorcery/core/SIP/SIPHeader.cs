@@ -1897,36 +1897,12 @@ namespace SIPSorcery.SIP
                             sipHeader.SwitchboardOriginalCallID = headerValue;
                         }
                         #endregion
-                        //#region Switchboard-OriginalTo.
-                        //else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_ORIGINAL_TO.ToLower())
-                        //{
-                        //    sipHeader.SwitchboardOriginalTo = headerValue;
-                        //}
-                        //#endregion
-                        //#region Switchboard-CallerDescription.
-                        //else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_CALLER_DESCRIPTION.ToLower())
-                        //{
-                        //    sipHeader.SwitchboardCallerDescription = headerValue;
-                        //}
-                        //#endregion
                         #region Switchboard-LineName.
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_LINE_NAME.ToLower())
                         {
                             sipHeader.SwitchboardLineName = headerValue;
                         }
                         #endregion
-                        //#region Switchboard-OriginalFrom.
-                        //else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_ORIGINAL_FROM.ToLower())
-                        //{
-                        //    sipHeader.SwitchboardOriginalFrom = headerValue;
-                        //}
-                        //#endregion
-                        //#region Switchboard-FromContactURL.
-                        //else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL.ToLower())
-                        //{
-                        //    sipHeader.SwitchboardFromContactURL = headerValue;
-                        //}
-                        //#endregion
                         #region Switchboard-Owner.
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_OWNER.ToLower())
                         {
@@ -1939,18 +1915,6 @@ namespace SIPSorcery.SIP
                             sipHeader.SwitchboardTerminate = headerValue;
                         }
                         #endregion
-                        //#region Switchboard-Token.
-                        //else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_TOKEN.ToLower())
-                        //{
-                        //    sipHeader.SwitchboardToken = headerValue;
-                        //}
-                        //#endregion
-                        //#region Switchboard-TokenRequest.
-                        //else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_TOKENREQUEST.ToLower())
-                        //{
-                        //    Int32.TryParse(headerValue, out sipHeader.SwitchboardTokenRequest);
-                        //}
-                        //#endregion
                         #region CRM-PersonName.
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_CRM_PERSON_NAME.ToLower())
                         {

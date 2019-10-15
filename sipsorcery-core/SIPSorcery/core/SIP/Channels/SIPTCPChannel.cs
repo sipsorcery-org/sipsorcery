@@ -5,11 +5,12 @@
 // 
 // History:
 // 19 Apr 2008	Aaron Clauson	Created.
+// 16 Oct 2019  Aaron Clauson   Added IPv6 support.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006-2009 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
+// Copyright (c) 2006-2019 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -58,6 +59,10 @@ namespace SIPSorcery.SIP
         private Dictionary<string, int> m_connectionFailureStrikes = new Dictionary<string, int>();     // Tracks the number of connection attempts made to a remote socket, three strikes and it's out.
         private Dictionary<string, DateTime> m_connectionFailures = new Dictionary<string, DateTime>(); // Tracks sockets that have had a connection failure on them to avoid endless re-connect attmepts.
         private static object m_writeLock = new object();
+
+        // Can be set to allow TCP channels hosted in the same process to send to each other. Useful for testing.
+        // By default sends between TCP channels in the same process are disabled to prevent resource exhaustion.
+        public bool DisableLocalTCPSocketsCheck;
 
         public SIPTCPChannel(IPEndPoint endPoint)
         {
@@ -239,7 +244,7 @@ namespace SIPSorcery.SIP
                 {
                     throw new ApplicationException("An empty buffer was specified to Send in SIPTCPChannel.");
                 }
-                else if (LocalTCPSockets.Contains(dstEndPoint.ToString()))
+                else if (DisableLocalTCPSocketsCheck == false && LocalTCPSockets.Contains(dstEndPoint.ToString()))
                 {
                     logger.LogError("SIPTCPChannel blocked Send to " + dstEndPoint.ToString() + " as it was identified as a locally hosted TCP socket.\r\n" + Encoding.UTF8.GetString(buffer));
                     throw new ApplicationException("A Send call was made in SIPTCPChannel to send to another local TCP socket.");
@@ -289,7 +294,7 @@ namespace SIPSorcery.SIP
                         {
                             logger.LogDebug("Attempting to establish TCP connection to " + dstEndPoint + ".");
 
-                            TcpClient tcpClient = new TcpClient();
+                            TcpClient tcpClient = new TcpClient(dstEndPoint.AddressFamily);
                             tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                             tcpClient.Client.Bind(m_localSIPEndPoint.GetIPEndPoint());
 

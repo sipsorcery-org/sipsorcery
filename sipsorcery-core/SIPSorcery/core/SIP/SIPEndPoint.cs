@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SIPEndPoint.cs
 //
-// Description: Represents what needs to be known about a SIP end point in order to be able communicate with it.
+// Description: Represents what needs to be known about a SIP end point for network communications.
 //
 // History:
 // 14 OCt 2019	Aaron Clauson	Added mssing header.
@@ -47,7 +47,6 @@ namespace SIPSorcery.SIP
     {
         private static ILogger logger = Log.Logger;
 
-        private static string m_transportParameterKey = SIPHeaderAncillary.SIP_HEADERANC_TRANSPORT;
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
 
@@ -74,7 +73,6 @@ namespace SIPSorcery.SIP
         public SIPEndPoint(SIPURI sipURI)
         {
             Protocol = sipURI.Protocol;
-            //IPEndPoint endPoint = IPSocket.ParseSocketString(sipURI.Host);
 
             if(!IPSocket.TryParseIPEndPoint(sipURI.Host, out var endPoint))
             {
@@ -92,7 +90,13 @@ namespace SIPSorcery.SIP
             Port = (endPoint.Port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : endPoint.Port;
         }
 
-        //TODO needs IPv6 fixing.
+        /// <summary>
+        /// Parses a SIP end point from either a serialised SIP end point string, format of:
+        /// (udp|tcp|tls):(IPEndpoint)
+        /// Or from a string that represents a SIP URI.
+        /// </summary>
+        /// <param name="sipEndPointStr">The string to parse to extract the SIP end point.</param>
+        /// <returns>If successful a SIPEndPoint object or null otherwise.</returns>
         public static SIPEndPoint ParseSIPEndPoint(string sipEndPointStr)
         {
             if (sipEndPointStr.IsNullOrBlank())
@@ -104,70 +108,11 @@ namespace SIPSorcery.SIP
             {
                 return ParseSerialisedSIPEndPoint(sipEndPointStr);
             }
-
-            string ipAddress = null;
-            int port = 0;
-            SIPProtocolsEnum protocol = SIPProtocolsEnum.udp;
-
-            if (sipEndPointStr.StartsWith("sip:"))
-            {
-                sipEndPointStr = sipEndPointStr.Substring(4);
-            }
-            else if (sipEndPointStr.StartsWith("sips:"))
-            {
-                sipEndPointStr = sipEndPointStr.Substring(5);
-                protocol = SIPProtocolsEnum.tls;
-            }
-
-            int colonIndex = sipEndPointStr.IndexOf(':');
-            int semiColonIndex = sipEndPointStr.IndexOf(';');
-            if (colonIndex == -1 && semiColonIndex == -1)
-            {
-                ipAddress = sipEndPointStr;
-            }
-            else if (colonIndex != -1 && semiColonIndex == -1)
-            {
-                ipAddress = sipEndPointStr.Substring(0, colonIndex);
-                port = Convert.ToInt32(sipEndPointStr.Substring(colonIndex + 1));
-            }
             else
             {
-                if (colonIndex != -1 && colonIndex < semiColonIndex)
-                {
-                    ipAddress = sipEndPointStr.Substring(0, colonIndex);
-                    port = Convert.ToInt32(sipEndPointStr.Substring(colonIndex + 1, semiColonIndex - colonIndex - 1));
-                }
-                else
-                {
-                    ipAddress = sipEndPointStr.Substring(0, semiColonIndex);
-                }
-
-                if (protocol != SIPProtocolsEnum.tls)
-                {
-                    sipEndPointStr = sipEndPointStr.Substring(semiColonIndex + 1);
-                    int transportIndex = sipEndPointStr.ToLower().IndexOf(m_transportParameterKey + "=");
-                    if (transportIndex != -1)
-                    {
-                        sipEndPointStr = sipEndPointStr.Substring(transportIndex + 10);
-                        semiColonIndex = sipEndPointStr.IndexOf(';');
-                        if (semiColonIndex != -1)
-                        {
-                            protocol = SIPProtocolsType.GetProtocolType(sipEndPointStr.Substring(0, semiColonIndex));
-                        }
-                        else
-                        {
-                            protocol = SIPProtocolsType.GetProtocolType(sipEndPointStr);
-                        }
-                    }
-                }
+                var sipUri = SIPURI.ParseSIPURIRelaxed(sipEndPointStr);
+                return sipUri.ToSIPEndPoint();
             }
-
-            if (port == 0)
-            {
-                port = (protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort;
-            }
-
-            return new SIPEndPoint(protocol, IPAddress.Parse(ipAddress), port);
         }
 
         public static SIPEndPoint TryParse(string sipEndPointStr)

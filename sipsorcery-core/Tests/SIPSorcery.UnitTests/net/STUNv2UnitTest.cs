@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Net;
 using System.Text;
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SIPSorcery.Net;
 
-namespace SIPSorcery.SIP.Core.UnitTests
+namespace SIPSorcery.Net.UnitTests
 {
     [TestClass]
     public class STUNv2UnitTest

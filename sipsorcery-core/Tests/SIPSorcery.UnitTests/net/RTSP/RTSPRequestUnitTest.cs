@@ -34,7 +34,7 @@ using System;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SIPSorcery.Net.UnitTests.RTSP
+namespace SIPSorcery.Net.UnitTests
 {
     [TestClass]
     public class RTSPRequestUnitTest

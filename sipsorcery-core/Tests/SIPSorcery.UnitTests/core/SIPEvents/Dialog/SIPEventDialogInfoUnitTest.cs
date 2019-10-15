@@ -4,7 +4,7 @@ using System.Xml.Linq;
 using System.Xml.Schema;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SIPSorcery.SIP.Core.UnitTests
+namespace SIPSorcery.SIP.UnitTests
 {
     [TestClass]
     public class SIPEventDialogInfoUnitTest
