@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Text;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SIPSorcery.SIP.Core.UnitTests
@@ -9,6 +7,8 @@ namespace SIPSorcery.SIP.Core.UnitTests
     [TestClass]
     public class SIPURIUnitTest
     {
+        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+
         [TestMethod]
         public void SampleTest()
         {
@@ -432,6 +432,21 @@ namespace SIPSorcery.SIP.Core.UnitTests
             SIPURI sipURI = SIPURI.ParseSIPURIRelaxed("sip:twolmsted@24.183.120.253, sip:5060");
             Console.WriteLine(sipURI.ToString());
             Console.WriteLine("-----------------------------------------");
+        }
+
+        [TestMethod]
+        public void NoPortIPv4CanonicalAddressToStringTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI sipURI = SIPURI.ParseSIPURI("sip:127.0.0.1");
+            logger.LogDebug($"SIP URI {sipURI.ToString()}");
+            logger.LogDebug($"Canonical address {sipURI.CanonicalAddress}");
+
+            Assert.AreEqual(sipURI.ToString(), "sip:127.0.0.1", "The SIP URI was not ToString'ed correctly.");
+            Assert.AreEqual(sipURI.CanonicalAddress, "sip:127.0.0.1:5060", "The SIP URI canonical address was not correct.");
+
+            logger.LogDebug("-----------------------------------------");
         }
     }
 }

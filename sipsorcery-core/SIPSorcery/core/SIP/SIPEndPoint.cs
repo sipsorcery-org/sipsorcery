@@ -89,7 +89,7 @@ namespace SIPSorcery.SIP
         {
             Protocol = protocol;
             Address = endPoint.Address;
-            Port = endPoint.Port;
+            Port = (endPoint.Port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : endPoint.Port;
         }
 
         //TODO needs IPv6 fixing.

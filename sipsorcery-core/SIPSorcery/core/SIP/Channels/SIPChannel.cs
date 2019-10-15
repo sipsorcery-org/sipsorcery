@@ -94,6 +94,30 @@ namespace SIPSorcery.SIP
             get { return m_isTLS; }
         }
 
+        /// <summary>
+        /// Returns true if the IP address the SIP channel is listening on is the IPv4 or IPv6 loopback address.
+        /// </summary>
+        public bool IsLoopbackAddress
+        {
+            get { return IPAddress.IsLoopback(m_localSIPEndPoint.Address); }
+        }
+
+        /// <summary>
+        /// The type of SIP protocol (udp, tcp or tls) for this channel.
+        /// </summary>
+        public SIPProtocolsEnum SIPProtocol
+        {
+            get { return m_localSIPEndPoint.Protocol; }
+        }
+
+        /// <summary>
+        /// Whether the channel is IPv4 or IPv6.
+        /// </summary>
+        public AddressFamily AddressFamily
+        {
+            get { return m_localSIPEndPoint.Address.AddressFamily; }
+        }
+
         protected bool Closed;
 
         public SIPMessageReceivedDelegate SIPMessageReceived;

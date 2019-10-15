@@ -31,9 +31,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
-using System.Collections.Specialized;
-using System.Net;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using SIPSorcery.Sys;

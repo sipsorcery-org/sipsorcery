@@ -29,9 +29,9 @@ namespace SIPSorcery.Sys
         Windows = 1,
         Linux = 2,
     }
-    
+
     public class NetServices
-	{
+    {
         public const int UDP_PORT_START = 1025;
         public const int UDP_PORT_END = 65535;
         private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
@@ -65,7 +65,7 @@ namespace SIPSorcery.Sys
                 var inUseUDPPorts = (from p in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners() where p.Port >= startPort && p.Port <= endPort && p.Address.ToString() == localAddress.ToString() select p.Port).OrderBy(x => x).ToList();
 
                 // Make the RTP port start on an even port. Some legacy systems require the RTP port to be an even port number.
-                if(startPort % 2 != 0)
+                if (startPort % 2 != 0)
                 {
                     startPort += 1;
                 }
@@ -113,7 +113,7 @@ namespace SIPSorcery.Sys
                         try
                         {
                             // The potential ports have been found now try and use them.
-                            rtpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                            rtpSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
                             rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                             rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
 
@@ -121,7 +121,7 @@ namespace SIPSorcery.Sys
 
                             if (controlPort != 0)
                             {
-                                controlSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                                controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
                                 controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
 
                                 logger.LogDebug("Successfully bound RTP socket " + localAddress + ":" + rtpPort + " and control socket " + localAddress + ":" + controlPort + ".");
@@ -202,138 +202,5 @@ namespace SIPSorcery.Sys
                 throw new ApplicationException("Unable to create a random UDP listener between " + start + " and " + end);
             }
         }
-
-        /// <summary>
-        /// Extracts the default gateway from the route print command
-        /// </summary>
-        /// <returns>The IP Address of the default gateway.</returns>
-        public static IPAddress GetDefaultGateway()
-        {
-            try
-            {
-                string routeTable = CallRoute();
-
-                if (routeTable != null)
-                {
-                    if (Platform == PlatformEnum.Windows)
-                    {
-                        Match gatewayMatch = Regex.Match(routeTable, @"Gateway\s*:\s*(?<gateway>(\d+\.){3}\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
-                        if (gatewayMatch.Success)
-                        {
-                            return IPAddress.Parse(gatewayMatch.Result("${gateway}"));
-                        }
-                    }
-                    else
-                    {
-                        Match gatewayMatch = Regex.Match(routeTable, @"default\s*(?<gateway>(\d+\.){3}\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
-                        if (gatewayMatch.Success)
-                        {
-                            return IPAddress.Parse(gatewayMatch.Result("${gateway}"));
-                        }
-                    }
-                }
-
-                return null;
-            }
-            catch
-            {
-                //logger.LogError("Exception GetDefaultGateway. " + excp.Message);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Attempts to get the local IP address that is being used with the default gateway and is therefore the one being used
-        /// to connect to the internet.
-        /// </summary>
-        /// <param name="defaultGateway"></param>
-        /// <returns></returns>
-        public static IPAddress GetDefaultIPAddress(IPAddress defaultGateway)
-        {
-            try
-            {
-                string[] gatewayOctets = Regex.Split(defaultGateway.ToString(), @"\.");
-
-                IPHostEntry hostEntry = Dns.GetHostEntry(Dns.GetHostName()); 
-
-                ArrayList possibleMatches = new ArrayList();
-                foreach (IPAddress localAddress in hostEntry.AddressList)
-                {
-                    possibleMatches.Add(localAddress);
-                }
-
-                for (int octetIndex = 0; octetIndex < 4; octetIndex++)
-                {
-                    IPAddress[] testAddresses = (IPAddress[])possibleMatches.ToArray(typeof(IPAddress));
-                    foreach (IPAddress localAddress in testAddresses)
-                    {
-                        string[] localOctets = Regex.Split(localAddress.ToString(), @"\.");
-                        if (gatewayOctets[octetIndex] != localOctets[octetIndex])
-                        {
-                            possibleMatches.Remove(localAddress);
-                        }
-
-                        if (possibleMatches.Count == 1)
-                        {
-                            return (IPAddress)possibleMatches[0];
-                        }
-                    }
-                }
-
-                return null;
-            }
-            catch
-            {
-                //logger.LogError("Exception GetDefaultIPAddress. " + excp.Message);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Calls the operating system command 'route print' to obtain the IP
-        /// routing information.
-        /// </summary>
-        /// <returns>A string holding the output of the command.</returns>
-        public static string CallRoute()
-        {
-            try
-            {
-                if (Platform == PlatformEnum.Windows)
-                {
-                    return CallShellCommand("route", "print");
-                }
-                else
-                {
-                    return CallShellCommand("route", "");
-                }
-            }
-            catch (Exception excp)
-            {
-                //logger.LogError("Exception call to 'route print': " + excp.Message);
-                throw new ApplicationException("An attempt to call 'route print' failed. " + excp.Message);
-            }
-        }
-
-        /// Creates a new process to execute a specified shell command and returns the output
-        /// to the caller as a string.
-        /// </summary>
-        public static string CallShellCommand(string command, string commandLine)
-        {
-            Process osProcess = new Process();
-            osProcess.StartInfo.CreateNoWindow = true;
-            osProcess.StartInfo.UseShellExecute = false;
-            //osProcess.StartInfo.UseShellExecute = true;
-            osProcess.StartInfo.RedirectStandardOutput = true;
-
-            osProcess.StartInfo.FileName = command;
-            osProcess.StartInfo.Arguments = commandLine;
-
-            osProcess.Start();
-
-            osProcess.WaitForExit();
-            return osProcess.StandardOutput.ReadToEnd();
-        }
-	}
+    }
 }

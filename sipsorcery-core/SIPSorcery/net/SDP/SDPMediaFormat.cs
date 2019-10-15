@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SIPSorcery.Net
@@ -19,9 +16,7 @@ namespace SIPSorcery.Net
 
     public class SDPMediaFormat
     {
-        private const int DEFAULT_CLOCK_RATE = 8000;
-
-        //private static Dictionary<int, string> m_defaultFormatNames = new Dictionary<int, string>();
+        private const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
 
         public int FormatID;
         public string FormatAttribute { get; private set; }
@@ -30,14 +25,6 @@ namespace SIPSorcery.Net
         public int ClockRate { get; private set; }
         public bool IsStandardAttribute { get; set; }           // If true this is a standard media format and the attribute line is not required.
 
-        static SDPMediaFormat()
-        {
-            //m_defaultFormatNames.Add((int)SDPMediaFormatsEnum.PCMU, "PCMU/8000");
-            //m_defaultFormatNames.Add((int)SDPMediaFormatsEnum.GSM, "GSM/8000");
-            //m_defaultFormatNames.Add((int)SDPMediaFormatsEnum.PCMA, "PCMA/8000");
-            //m_defaultFormatNames.Add((int)SDPMediaFormatsEnum.G723, "G723/8000");
-        }
-
         public SDPMediaFormat(int formatID)
         {
             FormatID = formatID;
@@ -45,7 +32,7 @@ namespace SIPSorcery.Net
             {
                 Name = Enum.Parse(typeof(SDPMediaFormatsEnum), formatID.ToString(), true).ToString();
             }
-            ClockRate = DEFAULT_CLOCK_RATE;
+            ClockRate = DEFAULT_AUDIO_CLOCK_RATE;
         }
 
         public SDPMediaFormat(int formatID, string name)
@@ -89,17 +76,5 @@ namespace SIPSorcery.Net
 		{
 			FormatParameterAttribute = attribute;
 		}
-
-        //public static string GetDefaultFormatAttribute(int mediaFormat)
-        //{
-        //    if (m_defaultFormats.ContainsKey(mediaFormat))
-        //    {
-        //        return m_defaultFormats[mediaFormat];
-        //    }
-        //    else
-        //    {
-        //        return null;
-        //    }
-        //}
     }
 }

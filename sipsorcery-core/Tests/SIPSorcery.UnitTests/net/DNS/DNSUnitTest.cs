@@ -31,8 +31,8 @@
 //-----------------------------------------------------------------------------
 
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Heijden.DNS;
 using SIPSorcery.SIP;
 

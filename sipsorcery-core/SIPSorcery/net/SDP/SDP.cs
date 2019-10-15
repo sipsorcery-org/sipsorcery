@@ -93,8 +93,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
@@ -387,29 +387,46 @@ namespace SIPSorcery.Net
             return sdp;
         }
 
+        /// <summary>
+        /// A convenience method to get the RTP end point for single audio offer SDP payloads.
+        /// </summary>
+        /// <param name="sdpMessage">A string representing the SDP payload.</param>
+        /// <returns>The RTP end point for the first media end point.</returns>
         public static IPEndPoint GetSDPRTPEndPoint(string sdpMessage)
         {
             // Process the SDP payload.
-            Match portMatch = Regex.Match(sdpMessage, @"m=audio (?<port>\d+)", RegexOptions.Singleline);
-            if (portMatch.Success)
+            //Match portMatch = Regex.Match(sdpMessage, @"m=audio (?<port>\d+)", RegexOptions.Singleline);
+            //if (portMatch.Success)
+            //{
+            //    int rtpServerPort = Convert.ToInt32(portMatch.Result("${port}"));
+
+            //    Match serverMatch = Regex.Match(sdpMessage, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", RegexOptions.Singleline);
+            //    if (serverMatch.Success)
+            //    {
+            //        string rtpServerAddress = serverMatch.Result("${ipaddress}");
+
+            //        if(IPAddress.TryParse(rtpServerAddress, out var ipAddress))
+            //        {
+            //            IPEndPoint serverEndPoint = new IPEndPoint(ipAddress, rtpServerPort);
+            //            return serverEndPoint;
+            //        }
+            //    }
+            //}
+
+            SDP sdp = SDP.ParseSDPDescription(sdpMessage);
+
+            // Find first media offer.
+            var sessionConnection = sdp?.Connection;
+            var firstMediaOffer = sdp?.Media.FirstOrDefault();
+
+            if (sessionConnection != null && firstMediaOffer != null)
             {
-                int rtpServerPort = Convert.ToInt32(portMatch.Result("${port}"));
-
-                Match serverMatch = Regex.Match(sdpMessage, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", RegexOptions.Singleline);
-                if (serverMatch.Success)
-                {
-                    string rtpServerAddress = serverMatch.Result("${ipaddress}");
-                    IPAddress ipAddress = null;
-                    
-                    if(IPAddress.TryParse(rtpServerAddress, out ipAddress))
-                    {
-                        IPEndPoint serverEndPoint = new IPEndPoint(ipAddress, rtpServerPort);
-                        return serverEndPoint;
-                    }
-                }
+                return new IPEndPoint(IPAddress.Parse(sessionConnection.ConnectionAddress), firstMediaOffer.Port);
             }
-
-            return null;
+            else
+            {
+                return null;
+            }
         }
     }
 }

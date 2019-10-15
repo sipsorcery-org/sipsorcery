@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SIPSorcery.SIP.Core.UnitTests
@@ -7,15 +8,7 @@ namespace SIPSorcery.SIP.Core.UnitTests
     [TestClass]
     public class SIPEndPointTest
     {
-        public SIPEndPointTest()
-        { }
-
-        [TestMethod]
-        public void SampleTest()
-        {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            Assert.IsTrue(true, "True was false.");
-        }
+        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         [TestMethod]
         public void AllFieldsParseTest()
@@ -47,8 +40,6 @@ namespace SIPSorcery.SIP.Core.UnitTests
             Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
             Assert.IsTrue(sipEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
-
-            Assert.IsTrue(true, "True was false.");
         }
 
         [TestMethod]
@@ -81,8 +72,6 @@ namespace SIPSorcery.SIP.Core.UnitTests
             Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
             Assert.IsTrue(sipEndPoint.Port == 5065, "The SIPEndPoint port was incorrectly parsed.");
-
-            Assert.IsTrue(true, "True was false.");
         }
 
         [TestMethod]
@@ -115,8 +104,6 @@ namespace SIPSorcery.SIP.Core.UnitTests
             Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tls, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
             Assert.IsTrue(sipEndPoint.Port == 5063, "The SIPEndPoint port was incorrectly parsed.");
-
-            Assert.IsTrue(true, "True was false.");
         }
 
         [TestMethod]
@@ -132,8 +119,6 @@ namespace SIPSorcery.SIP.Core.UnitTests
             Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
             Assert.IsTrue(sipEndPoint.Address.ToString() == "10.0.0.100", "The SIPEndPoint IP address was incorrectly parsed.");
             Assert.IsTrue(sipEndPoint.Port == 5063, "The SIPEndPoint port was incorrectly parsed.");
-
-            Assert.IsTrue(true, "True was false.");
         }
 
         [TestMethod]
@@ -166,6 +151,57 @@ namespace SIPSorcery.SIP.Core.UnitTests
             SIPEndPoint sipEP1 = SIPEndPoint.ParseSIPEndPoint("sip:10.0.0.100;lr");
             SIPEndPoint sipEP2 = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Parse("10.0.0.100"), 5060));
             Assert.IsTrue(sipEP1 == sipEP2, "The SIP end points should have been detected as equal.");
+        }
+
+        /// <summary>
+        /// Tests that a SIP end point with an IPv6 loopback address gets represented as astring correctly.
+        /// </summary>
+        [TestMethod]
+        public void IPv6LoopbackToStringTest()
+        {
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPEndPoint sipEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.IPv6Loopback, 0));
+
+            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+
+            Assert.AreEqual(sipEndPoint.ToString(), "udp:[::1]:5060", "The SIP end point string representation was not correct.");
+        }
+
+        /// <summary>
+        /// Tests that a SIP end point with an IPv6 loopback address gets parsed correctly.
+        /// </summary>
+        [TestMethod]
+        public void IPv6LoopbackAndSchemeParseTest()
+        {
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipEndPointStr = "udp:[::1]";
+            SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
+
+            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+
+            Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
+            Assert.IsTrue(sipEndPoint.Address.ToString() == "::1", "The SIPEndPoint IP address was incorrectly parsed.");
+            Assert.IsTrue(sipEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
+        }
+
+        /// <summary>
+        /// Tests that a SIP end point with an IPv6 loopback address and port gets parsed correctly.
+        /// </summary>
+        [TestMethod]
+        public void IPv6LoopbackAndPortParseTest()
+        {
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipEndPointStr = "tcp:[::1]:6060";
+            SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
+
+            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+
+            Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.tcp, "The SIPEndPoint protocol was incorrectly parsed.");
+            Assert.IsTrue(sipEndPoint.Address.ToString() == "::1", "The SIPEndPoint IP address was incorrectly parsed.");
+            Assert.IsTrue(sipEndPoint.Port == 6060, "The SIPEndPoint port was incorrectly parsed.");
         }
     }
 }

@@ -113,6 +113,35 @@ namespace SIPSorcery.Sys
             return localEndPoints;
         }
 
+        public static IPAddress GetDefaultIPv6Address()
+        {
+            var adapters = from adapter in NetworkInterface.GetAllNetworkInterfaces()
+                           where adapter.OperationalStatus == OperationalStatus.Up && adapter.Supports(NetworkInterfaceComponent.IPv6)
+                           && adapter.GetIPProperties().GatewayAddresses.Count > 0 
+                           select adapter;
+
+            if (adapters == null || adapters.Count() == 0)
+            {
+                throw new ApplicationException("The default IPv6 address could not be determined as there are were no interfaces with a gateway.");
+            }
+            else
+            {
+                UnicastIPAddressInformationCollection localIPs = adapters.First().GetIPProperties().UnicastAddresses;
+                foreach (UnicastIPAddressInformation localIP in localIPs)
+                {
+                    if (localIP.Address.AddressFamily == AddressFamily.InterNetworkV6 &&
+                        !IPAddress.IsLoopback(localIP.Address) &&
+                        localIP.Address.IsIPv6SiteLocal == false &&
+                        localIP.Address.IsIPv6LinkLocal == false)
+                    {
+                        return localIP.Address;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         public static List<IPEndPoint> ParseIPSockets(XmlNode socketNodes)
         {
             List<IPEndPoint> endPoints = new List<IPEndPoint>();

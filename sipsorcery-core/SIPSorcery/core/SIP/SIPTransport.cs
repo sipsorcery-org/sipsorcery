@@ -7,6 +7,7 @@
 // History:
 // 14 Feb 2006	Aaron Clauson	Created.
 // 26 Apr 2008  Aaron Clauson   Added TCP support.
+// 16 OCt 2019  Aaron Clauson   Added IPv6 support.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -112,7 +113,7 @@ namespace SIPSorcery.SIP
         {
             ResolveSIPEndPoint_External = SIPDNSManager.ResolveSIPService;
             m_transactionEngine = new SIPTransactionEngine();
-        } 
+        }
 
         public SIPTransport(ResolveSIPEndPointDelegate sipResolver, SIPTransactionEngine transactionEngine)
         {
@@ -289,18 +290,18 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Attempts to find the optimal SIP UDP channel connected to the internet. If the caller needs to send the SIP request on
-        /// a different channel (e.g. TCP. TLS or on a private network interface it must set the local end point manually).
+        /// Attempts to find the optimal SIP UDP IPv4 channel connected to the internet. If the caller needs to send the SIP request on
+        /// a different channel (e.g. TCP, TLS, IPv6 or on a private network interface it must set the local end point manually).
         /// </summary>
         /// <returns>A SIP channel.</returns>
         public SIPEndPoint GetDefaultSIPEndPoint()
         {
-            if(m_sipChannels == null)
+            if (m_sipChannels == null)
             {
                 throw new ApplicationException("No SIP channels available.");
             }
 
-            if(m_sipChannels.Count == 1)
+            if (m_sipChannels.Count == 1)
             {
                 return m_sipChannels.First().Value.SIPChannelEndPoint;
             }
@@ -329,44 +330,62 @@ namespace SIPSorcery.SIP
 
         public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
         {
-            foreach (SIPChannel sipChannel in m_sipChannels.Values)
+            var matchingChannels = m_sipChannels.Values.Where(x => x.SIPProtocol == protocol);
+
+            if(matchingChannels.Count() == 1)
             {
-                if (sipChannel.SIPChannelEndPoint.Protocol == protocol)
-                {
-                    return sipChannel.SIPChannelEndPoint;
-                }
+                return matchingChannels.First().SIPChannelEndPoint;
+            }
+            else
+            {
+                return matchingChannels.Where(x => x.IsLoopbackAddress == false).First().SIPChannelEndPoint;
             }
 
             return null;
         }
 
+        /// <summary>
+        /// Attempts to locate the SIP channel that can communicate with the destination end point.
+        /// </summary>
+        /// <param name="destinationEP">The remote SIP end point to find a SIP channel for.</param>
+        /// <returns>If successful the SIP end point of a SIP channel that can be used to communicate with the destination end point.</returns>
         public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
         {
-            if (m_sipChannels?.Count == 1)
+            if (m_sipChannels.Count == 0)
+            {
+                return null;
+            }
+            else if (m_sipChannels.Count == 1)
             {
                 return m_sipChannels.First().Value.SIPChannelEndPoint;
             }
-            else if(m_sipChannels?.Count > 1)
+            else if (IPAddress.IsLoopback(destinationEP.Address))
             {
-                bool isDestLoopback = IPAddress.IsLoopback(destinationEP.Address);
-                var localAddress = isDestLoopback == false ? GetLocalAddress(destinationEP.Address) : null;
+                // If destination is a loopback IP address look for a protocol and IP protocol match.
+                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol && 
+                    x.Value.IsLoopbackAddress &&
+                    x.Value.AddressFamily == destinationEP.Address.AddressFamily)
+                    .Select(x => x.Value.SIPChannelEndPoint).FirstOrDefault();
+            }
+            else if (m_sipChannels.Count(x => x.Value.SIPProtocol == destinationEP.Protocol && 
+                x.Value.AddressFamily == destinationEP.Address.AddressFamily && 
+                !x.Value.IsLoopbackAddress) == 1)
+            {
+                // If there is only one channel matching the required SIP protocol and IP protocol pair return it.
+                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol &&
+                    x.Value.AddressFamily == destinationEP.Address.AddressFamily &&
+                    !x.Value.IsLoopbackAddress).Select(x => x.Value.SIPChannelEndPoint).Single();
+            }
+            else
+            {
+                var localAddress = GetLocalAddress(destinationEP.Address);
 
                 foreach (SIPChannel sipChannel in m_sipChannels.Values)
                 {
                     if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
                         (localAddress == null || sipChannel.SIPChannelEndPoint.Address.ToString() == localAddress.ToString()))
                     {
-                        if (isDestLoopback)
-                        {
-                            if (IPAddress.IsLoopback(sipChannel.SIPChannelEndPoint.Address))
-                            {
-                                return sipChannel.SIPChannelEndPoint;
-                            }
-                        }
-                        else
-                        {
-                            return sipChannel.SIPChannelEndPoint;
-                        }
+                        return sipChannel.SIPChannelEndPoint;
                     }
                 }
             }
@@ -387,8 +406,8 @@ namespace SIPSorcery.SIP
 
                 localAddress = bestInterface.FirstOrDefault()?.GetIPProperties().UnicastAddresses.Where(x => x.Address.AddressFamily == destination.AddressFamily).FirstOrDefault()?.Address;
             }
-            
-            if(localAddress != null)
+
+            if (localAddress != null)
             {
                 foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
                 {
@@ -402,6 +421,14 @@ namespace SIPSorcery.SIP
                             long networkMask = unicastIPAddressInformation.IPv4Mask.Address & unicastIPAddressInformation.Address.Address;
 
                             if (mask == networkMask)
+                            {
+                                localAddress = unicastIPAddressInformation.Address;
+                                break;
+                            }
+                        }
+                        else if (unicastIPAddressInformation.Address.AddressFamily == AddressFamily.InterNetworkV6)
+                        {
+                            if (IPAddress.IsLoopback(unicastIPAddressInformation.Address) == false)
                             {
                                 localAddress = unicastIPAddressInformation.Address;
                                 break;
@@ -1258,7 +1285,7 @@ namespace SIPSorcery.SIP
                         if (STUNRequestReceived != null)
                         {
                             STUNRequestReceived(sipChannel.SIPChannelEndPoint.GetIPEndPoint(), remoteEndPoint.GetIPEndPoint(), buffer, buffer.Length);
-                            
+
                             // TODO: Provide a hook so consuming assemblies can get these stats.
                             //if (PerformanceMonitorPrefix != null)
                             //{
@@ -1549,7 +1576,7 @@ namespace SIPSorcery.SIP
                 if (sipChannel.SIPChannelEndPoint.Protocol == protocol)
                 {
                     return sipChannel;
-                }  
+                }
             }
 
             logger.LogWarning("No default SIP channel could be found for " + protocol + ".");

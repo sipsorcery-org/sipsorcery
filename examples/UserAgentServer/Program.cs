@@ -70,11 +70,12 @@ namespace SIPSorcery
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
 
             // Set up a default SIP transport.
-            IPAddress defaultAddr = LocalIPConfig.GetDefaultIPv4Address();
-            var sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
+            var sipTransport = new SIPTransport();
             int port = FreePort.FindNextAvailableUDPPort(SIPConstants.DEFAULT_SIP_PORT);
-            var sipChannel = new SIPUDPChannel(new IPEndPoint(defaultAddr, port));
-            sipTransport.AddSIPChannel(sipChannel);
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Loopback, port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv4Address(), port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv6Address(), port)));
 
             // To keep things a bit simpler this example only supports a single call at a time and the SIP server user agent
             // acts as a singleton
@@ -87,10 +88,11 @@ namespace SIPSorcery
                 if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
                     SIPSorcery.Sys.Log.Logger.LogInformation("Incoming call request: " + localSIPEndPoint + "<-" + remoteEndPoint + " " + sipRequest.URI.ToString() + ".");
+                    SIPSorcery.Sys.Log.Logger.LogDebug(sipRequest.ToString());
 
-                    // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
-                    // means this example can be kept a little it simpler.
-                    uas?.Hangup();
+                   // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
+                   // means this example can be kept a little it simpler.
+                   uas?.Hangup();
 
                     UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
                     uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
@@ -102,7 +104,7 @@ namespace SIPSorcery
                     // Initialise an RTP session to receive the RTP packets from the remote SIP server.
                     Socket rtpSocket = null;
                     Socket controlSocket = null;
-                    NetServices.CreateRtpSocket(defaultAddr, 49000, 49100, false, out rtpSocket, out controlSocket);
+                    NetServices.CreateRtpSocket(localSIPEndPoint.Address, 49000, 49100, false, out rtpSocket, out controlSocket);
 
                     IPEndPoint rtpEndPoint = rtpSocket.LocalEndPoint as IPEndPoint;
                     IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);

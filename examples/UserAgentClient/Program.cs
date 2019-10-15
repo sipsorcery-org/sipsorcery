@@ -74,16 +74,21 @@ namespace SIPSorcery
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
 
             // Set up a default SIP transport.
-            IPAddress defaultAddr = LocalIPConfig.GetDefaultIPv4Address();
-            var sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
-            int port = FreePort.FindNextAvailableUDPPort(SIPConstants.DEFAULT_SIP_PORT + 2);
-            var sipChannel = new SIPUDPChannel(new IPEndPoint(defaultAddr, port));
-            sipTransport.AddSIPChannel(sipChannel);
+            var sipTransport = new SIPTransport();
+            int port = SIPConstants.DEFAULT_SIP_PORT + 1000;
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Loopback, port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv4Address(), port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv6Address(), port)));
+
+            // Select the IP address to use for RTP based on the destination SIP URI.
+            SIPURI callURI = SIPURI.ParseSIPURIRelaxed(DESTINATION_SIP_URI);
+            var endPointForCall = callURI.ToSIPEndPoint() == null ? sipTransport.GetDefaultSIPEndPoint(callURI.Protocol) : sipTransport.GetDefaultSIPEndPoint(callURI.ToSIPEndPoint());
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
             Socket rtpSocket = null;
             Socket controlSocket = null;
-            NetServices.CreateRtpSocket(defaultAddr, 49000, 49100, false, out rtpSocket, out controlSocket);
+            NetServices.CreateRtpSocket(endPointForCall.Address, 49000, 49100, false, out rtpSocket, out controlSocket);
             var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
@@ -101,6 +106,8 @@ namespace SIPSorcery
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
                     SIPSorcery.Sys.Log.Logger.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
+                    SIPSorcery.Sys.Log.Logger.LogDebug(resp.ToString());
+
                     IPEndPoint remoteRtpEndPoint = SDP.GetSDPRTPEndPoint(resp.Body);
 
                     SIPSorcery.Sys.Log.Logger.LogDebug($"Sending initial RTP packet to remote RTP socket {remoteRtpEndPoint}.");
@@ -211,7 +218,7 @@ namespace SIPSorcery
                 byte[] buffer = new byte[512];
 
                 uint rtpSendTimestamp = 0;
-                IPEndPoint anyEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                IPEndPoint anyEndPoint = new IPEndPoint((rtpSocket.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any, 0);
 
                 SIPSorcery.Sys.Log.Logger.LogDebug($"Listening on RTP socket {rtpSocket.LocalEndPoint}.");
 
