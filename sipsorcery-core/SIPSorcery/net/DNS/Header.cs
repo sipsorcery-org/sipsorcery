@@ -9,21 +9,20 @@
 //
 // History:
 // 28 Mar 2008	Aaron Clauson   Added to sipwitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
+// 14 Oct 2019  Aaron Clauson   Synchronised with latest version of source from at https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 //
 // License:
-// http://www.opensource.org/licenses/gpl-license.php
+// The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ============================================================================
 
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 
 namespace Heijden.DNS
 {
-	#region RFC specification
-	/*
+    #region RFC specification
+    /*
 	4.1.1. Header section format
 
 	The header contains the following fields:
@@ -138,230 +137,230 @@ namespace Heijden.DNS
 						resource records in the additional records section.
 
 		*/
-	#endregion
+    #endregion
 
-	public class Header
-	{
-		/// <summary>
-		/// An identifier assigned by the program
-		/// </summary>
-		public ushort ID;
+    public class Header
+    {
+        /// <summary>
+        /// An identifier assigned by the program
+        /// </summary>
+        public ushort ID;
 
-		// internal flag
-		private ushort Flags;
+        // internal flag
+        private ushort Flags;
 
-		/// <summary>
-		/// the number of entries in the question section
-		/// </summary>
-		public ushort QDCOUNT;
+        /// <summary>
+        /// the number of entries in the question section
+        /// </summary>
+        public ushort QDCOUNT;
 
-		/// <summary>
-		/// the number of resource records in the answer section
-		/// </summary>
-		public ushort ANCOUNT;
+        /// <summary>
+        /// the number of resource records in the answer section
+        /// </summary>
+        public ushort ANCOUNT;
 
-		/// <summary>
-		/// the number of name server resource records in the authority records section
-		/// </summary>
-		public ushort NSCOUNT;
+        /// <summary>
+        /// the number of name server resource records in the authority records section
+        /// </summary>
+        public ushort NSCOUNT;
 
-		/// <summary>
-		/// the number of resource records in the additional records section
-		/// </summary>
-		public ushort ARCOUNT;
+        /// <summary>
+        /// the number of resource records in the additional records section
+        /// </summary>
+        public ushort ARCOUNT;
 
-		public Header()
-		{
-		}
+        public Header()
+        {
+        }
 
-		public Header(RecordReader rr)
-		{
-			ID = rr.ReadShort();
-			Flags = rr.ReadShort();
-			QDCOUNT = rr.ReadShort();
-			ANCOUNT = rr.ReadShort();
-			NSCOUNT = rr.ReadShort();
-			ARCOUNT = rr.ReadShort();
-		}
-
-
-		private ushort SetBits(ushort oldValue, int position, int length, bool blnValue)
-		{
-			return SetBits(oldValue, position, length, blnValue ? (ushort)1 : (ushort)0);
-		}
-
-		private ushort SetBits(ushort oldValue, int position, int length, ushort newValue)
-		{
-			// sanity check
-			if (length <= 0 || position >= 16)
-				return oldValue;
-
-			// get some mask to put on
-			int mask = (2 << (length - 1)) - 1;
-
-			// clear out value
-			oldValue &= (ushort)~(mask << position);
-
-			// set new value
-			oldValue |= (ushort)((newValue & mask) << position);
-			return oldValue;
-		}
-
-		private ushort GetBits(ushort oldValue, int position, int length)
-		{
-			// sanity check
-			if (length <= 0 || position >= 16)
-				return 0;
-
-			// get some mask to put on
-			int mask = (2 << (length - 1)) - 1;
-
-			// shift down to get some value and mask it
-			return (ushort)((oldValue >> position) & mask);
-		}
-
-		/// <summary>
-		/// Represents the header as a byte array
-		/// </summary>
-		public byte[] Data
-		{
-			get
-			{
-				List<byte> data = new List<byte>();
-				data.AddRange(WriteShort(ID));
-				data.AddRange(WriteShort(Flags));
-				data.AddRange(WriteShort(QDCOUNT));
-				data.AddRange(WriteShort(ANCOUNT));
-				data.AddRange(WriteShort(NSCOUNT));
-				data.AddRange(WriteShort(ARCOUNT));
-				return data.ToArray();
-			}
-		}
-
-		private byte[] WriteShort(ushort sValue)
-		{
-			return BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)sValue));
-		}
+        public Header(RecordReader rr)
+        {
+            ID = rr.ReadUInt16();
+            Flags = rr.ReadUInt16();
+            QDCOUNT = rr.ReadUInt16();
+            ANCOUNT = rr.ReadUInt16();
+            NSCOUNT = rr.ReadUInt16();
+            ARCOUNT = rr.ReadUInt16();
+        }
 
 
-		/// <summary>
-		/// query (false), or a response (true)
-		/// </summary>
-		public bool QR
-		{
-			get
-			{
-				return GetBits(Flags, 15, 1) == 1;
-			}
-			set
-			{
-				Flags = SetBits(Flags, 15, 1, value);
-			}
-		}
+        private ushort SetBits(ushort oldValue, int position, int length, bool blnValue)
+        {
+            return SetBits(oldValue, position, length, blnValue ? (ushort)1 : (ushort)0);
+        }
 
-		/// <summary>
-		/// Specifies kind of query
-		/// </summary>
-		public OPCode OPCODE
-		{
-			get
-			{
-				return (OPCode)GetBits(Flags, 11, 4);
-			}
-			set
-			{
-				Flags = SetBits(Flags, 11, 4, (ushort)value);
-			}
-		}
+        private ushort SetBits(ushort oldValue, int position, int length, ushort newValue)
+        {
+            // sanity check
+            if (length <= 0 || position >= 16)
+                return oldValue;
 
-		/// <summary>
-		/// Authoritative Answer
-		/// </summary>
-		public bool AA
-		{
-			get
-			{
-				return GetBits(Flags, 10, 1) == 1;
-			}
-			set
-			{
-				Flags = SetBits(Flags, 10, 1, value);
-			}
-		}
+            // get some mask to put on
+            int mask = (2 << (length - 1)) - 1;
 
-		/// <summary>
-		/// TrunCation
-		/// </summary>
-		public bool TC
-		{
-			get
-			{
-				return GetBits(Flags, 9, 1) == 1;
-			}
-			set
-			{
-				Flags = SetBits(Flags, 9, 1, value);
-			}
-		}
+            // clear out value
+            oldValue &= (ushort)~(mask << position);
 
-		/// <summary>
-		/// Recursion Desired
-		/// </summary>
-		public bool RD
-		{
-			get
-			{
-				return GetBits(Flags, 8, 1) == 1;
-			}
-			set
-			{
-				Flags = SetBits(Flags, 8, 1, value);
-			}
-		}
+            // set new value
+            oldValue |= (ushort)((newValue & mask) << position);
+            return oldValue;
+        }
 
-		/// <summary>
-		/// Recursion Available
-		/// </summary>
-		public bool RA
-		{
-			get
-			{
-				return GetBits(Flags, 7, 1) == 1;
-			}
-			set
-			{
-				Flags = SetBits(Flags, 7, 1, value);
-			}
-		}
+        private ushort GetBits(ushort oldValue, int position, int length)
+        {
+            // sanity check
+            if (length <= 0 || position >= 16)
+                return 0;
 
-		/// <summary>
-		/// Reserved for future use
-		/// </summary>
-		public ushort Z
-		{
-			get
-			{
-				return GetBits(Flags, 4, 3);
-			}
-			set
-			{
-				Flags = SetBits(Flags, 4, 3, value);
-			}
-		}
+            // get some mask to put on
+            int mask = (2 << (length - 1)) - 1;
 
-		/// <summary>
-		/// Response code
-		/// </summary>
-		public RCode RCODE
-		{
-			get
-			{
-				return (RCode)GetBits(Flags, 0, 4);
-			}
-			set
-			{
-				Flags = SetBits(Flags, 0, 4, (ushort)value);
-			}
-		}
-	}
+            // shift down to get some value and mask it
+            return (ushort)((oldValue >> position) & mask);
+        }
+
+        /// <summary>
+        /// Represents the header as a byte array
+        /// </summary>
+        public byte[] Data
+        {
+            get
+            {
+                List<byte> data = new List<byte>();
+                data.AddRange(WriteShort(ID));
+                data.AddRange(WriteShort(Flags));
+                data.AddRange(WriteShort(QDCOUNT));
+                data.AddRange(WriteShort(ANCOUNT));
+                data.AddRange(WriteShort(NSCOUNT));
+                data.AddRange(WriteShort(ARCOUNT));
+                return data.ToArray();
+            }
+        }
+
+        private byte[] WriteShort(ushort sValue)
+        {
+            return BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)sValue));
+        }
+
+
+        /// <summary>
+        /// query (false), or a response (true)
+        /// </summary>
+        public bool QR
+        {
+            get
+            {
+                return GetBits(Flags, 15, 1) == 1;
+            }
+            set
+            {
+                Flags = SetBits(Flags, 15, 1, value);
+            }
+        }
+
+        /// <summary>
+        /// Specifies kind of query
+        /// </summary>
+        public OPCode OPCODE
+        {
+            get
+            {
+                return (OPCode)GetBits(Flags, 11, 4);
+            }
+            set
+            {
+                Flags = SetBits(Flags, 11, 4, (ushort)value);
+            }
+        }
+
+        /// <summary>
+        /// Authoritative Answer
+        /// </summary>
+        public bool AA
+        {
+            get
+            {
+                return GetBits(Flags, 10, 1) == 1;
+            }
+            set
+            {
+                Flags = SetBits(Flags, 10, 1, value);
+            }
+        }
+
+        /// <summary>
+        /// TrunCation
+        /// </summary>
+        public bool TC
+        {
+            get
+            {
+                return GetBits(Flags, 9, 1) == 1;
+            }
+            set
+            {
+                Flags = SetBits(Flags, 9, 1, value);
+            }
+        }
+
+        /// <summary>
+        /// Recursion Desired
+        /// </summary>
+        public bool RD
+        {
+            get
+            {
+                return GetBits(Flags, 8, 1) == 1;
+            }
+            set
+            {
+                Flags = SetBits(Flags, 8, 1, value);
+            }
+        }
+
+        /// <summary>
+        /// Recursion Available
+        /// </summary>
+        public bool RA
+        {
+            get
+            {
+                return GetBits(Flags, 7, 1) == 1;
+            }
+            set
+            {
+                Flags = SetBits(Flags, 7, 1, value);
+            }
+        }
+
+        /// <summary>
+        /// Reserved for future use
+        /// </summary>
+        public ushort Z
+        {
+            get
+            {
+                return GetBits(Flags, 4, 3);
+            }
+            set
+            {
+                Flags = SetBits(Flags, 4, 3, value);
+            }
+        }
+
+        /// <summary>
+        /// Response code
+        /// </summary>
+        public RCode RCODE
+        {
+            get
+            {
+                return (RCode)GetBits(Flags, 0, 4);
+            }
+            set
+            {
+                Flags = SetBits(Flags, 0, 4, (ushort)value);
+            }
+        }
+    }
 }

@@ -9,9 +9,10 @@
 //
 // History:
 // 28 Mar 2008	Aaron Clauson   Added to sipwitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
+// 14 Oct 2019  Aaron Clauson   Synchronised with latest version of source from at https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 //
 // License:
-// http://www.opensource.org/licenses/gpl-license.php
+// The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ===========================================================================
 
 using System;
@@ -32,23 +33,24 @@ experimental extensions of the DNS.
 */
 namespace Heijden.DNS
 {
-	public class RecordNULL : Record
-	{
-		public byte[] ANYTHING;
+    public class RecordNULL : Record
+    {
+        public byte[] ANYTHING;
 
-		public RecordNULL(RecordReader rr)
-		{
-			rr.Position -= 2;
-			// re-read length
-			ushort RDLENGTH = rr.ReadShort();
-			ANYTHING = new byte[RDLENGTH];
-			ANYTHING = rr.ReadBytes(RDLENGTH);
-		}
+        public RecordNULL(RecordReader rr)
+        {
+            rr.Position -= 2;
+            // re-read length
+            ushort RDLENGTH = rr.ReadUInt16();
+            ANYTHING = new byte[RDLENGTH];
+            ANYTHING = rr.ReadBytes(RDLENGTH);
+        }
 
-		public override string ToString()
-		{
-			return string.Format("...binary data... ({0}) bytes",ANYTHING.Length);
-		}
+        public override string ToString()
+        {
+            return string.Format("...binary data... ({0}) bytes", ANYTHING.Length);
+        }
 
-	}
+    }
 }
+

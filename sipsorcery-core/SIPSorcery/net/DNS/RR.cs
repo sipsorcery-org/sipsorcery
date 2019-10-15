@@ -9,9 +9,10 @@
 //
 // History:
 // 28 Mar 2008	Aaron Clauson   Added to sipwitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
+// 14 Oct 2019  Aaron Clauson   Synchronised with latest version of source from at https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 //
 // License:
-// http://www.opensource.org/licenses/gpl-license.php
+// The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ============================================================================
 
 using System;
@@ -19,8 +20,8 @@ using System.Net;
 
 namespace Heijden.DNS
 {
-	#region RFC info
-	/*
+    #region RFC info
+    /*
 	3.2. RR definitions
 
 	3.2.1. Format
@@ -74,121 +75,117 @@ namespace Heijden.DNS
 					resource.  The format of this information varies
 					according to the TYPE and CLASS of the resource record.
 	*/
-	#endregion
+    #endregion
 
-	/// <summary>
-	/// Resource Record (rfc1034 3.6.)
-	/// </summary>
-	public class RR
-	{
-        private const int MIN_TTL = 60;     // Because SIP DNS lookups are async if the TTL is set to 0 it will never get used. To get around it if TTL comes back as 0 override it with this min value.
+    /// <summary>
+    /// Resource Record (rfc1034 3.6.)
+    /// </summary>
+    public class RR
+    {
+        /// <summary>
+        /// The name of the node to which this resource record pertains
+        /// </summary>
+        public string NAME;
 
-		/// <summary>
-		/// The name of the node to which this resource record pertains
-		/// </summary>
-		public string NAME;
+        /// <summary>
+        /// Specifies type of resource record
+        /// </summary>
+        public DnsType Type;
 
-		/// <summary>
-		/// Specifies type of resource record
-		/// </summary>
-        public DNSType Type;
+        /// <summary>
+        /// Specifies type class of resource record, mostly IN but can be CS, CH or HS 
+        /// </summary>
+        public Class Class;
 
-		/// <summary>
-		/// Specifies type class of resource record, mostly IN but can be CS, CH or HS 
-		/// </summary>
-		public Class Class;
-
-		/// <summary>
-		/// Time to live, the time interval that the resource record may be cached
-		/// </summary>
-		public int TTL
-		{
-			get
-			{
-				return Math.Max(0, m_TTL - TimeLived);
-			}
-			set
-			{
-				m_TTL = value;
-			}
-		}
-		private int m_TTL;
-
-		/// <summary>
-		/// 
-		/// </summary>
-		public ushort RDLENGTH;
-
-		/// <summary>
-		/// One of the Record* classes
-		/// </summary>
-		public Record RECORD;
-
-
-		public int TimeLived;
-
-		public RR(RecordReader rr)
-		{
-			TimeLived = 0;
-			NAME = rr.ReadDomainName();
-            Type = (DNSType)rr.ReadShort();
-			Class = (Class)rr.ReadShort();
-			TTL = rr.ReadInt();
-			RDLENGTH = rr.ReadShort();
-            //Console.WriteLine("RDLENGTH : " + RDLENGTH.ToString());
-            RECORD = rr.ReadRecord(Type);
-            //Console.WriteLine("Type : " + Type.ToString());
-			RECORD.RR = this;
-
-            //Console.WriteLine("TTL=" + TTL + ".");
-
-            if (TTL <= 0)
+        /// <summary>
+        /// Time to live, the time interval that the resource record may be cached
+        /// </summary>
+        public uint TTL
+        {
+            get
             {
-                TTL = MIN_TTL;
+                return (uint)Math.Max(0, m_TTL - TimeLived);
             }
-		}
+            set
+            {
+                m_TTL = value;
+            }
+        }
+        private uint m_TTL;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public ushort RDLENGTH;
+
+        /// <summary>
+        /// One of the Record* classes
+        /// </summary>
+        public Record RECORD;
+
+        public int TimeLived;
 
         public RR(IPAddress address)
         {
-            RECORD = new RecordA(address);
+            if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            {
+                RECORD = new RecordAAAA(address);
+            }
+            else
+            {
+                RECORD = new RecordA(address);
+            }
         }
 
-		public override string ToString()
-		{
-			return string.Format("{0,-32}{1}\t{2}\t{3}\t{4}",
-				NAME,
-				TTL,
-				Class,
-				Type,
-				RECORD);
-		}
-	}
+        public RR(RecordReader rr)
+        {
+            TimeLived = 0;
+            NAME = rr.ReadDomainName();
+            Type = (DnsType)rr.ReadUInt16();
+            Class = (Class)rr.ReadUInt16();
+            TTL = rr.ReadUInt32();
+            RDLENGTH = rr.ReadUInt16();
+            RECORD = rr.ReadRecord(Type, RDLENGTH);
+            RECORD.RR = this;
+        }
 
-	public class AnswerRR : RR
-	{
-		public AnswerRR(RecordReader br)
-			: base(br)
-		{
-		}
+        public override string ToString()
+        {
+            return string.Format("{0,-32} {1}\t{2}\t{3}\t{4}",
+                NAME,
+                TTL,
+                Class,
+                Type,
+                RECORD);
+        }
+    }
+
+    public class AnswerRR : RR
+    {
+        public AnswerRR(RecordReader br)
+            : base(br)
+        {
+        }
 
         public AnswerRR(IPAddress address)
             : base(address)
         { }
-	}
+    }
 
-	public class AuthorityRR : RR
-	{
-		public AuthorityRR(RecordReader br)
-			: base(br)
-		{
-		}
-	}
+    public class AuthorityRR : RR
+    {
+        public AuthorityRR(RecordReader br)
+            : base(br)
+        {
+        }
+    }
 
-	public class AdditionalRR : RR
-	{
-		public AdditionalRR(RecordReader br)
-			: base(br)
-		{
-		}
-	}
+    public class AdditionalRR : RR
+    {
+        public AdditionalRR(RecordReader br)
+            : base(br)
+        {
+        }
+    }
 }
+

@@ -14,18 +14,6 @@ namespace SIPSorcery.SIP.Core.UnitTests
     {
         private string CRLF = SIPConstants.CRLF;
 
-        public SIPConnectionUnitTest()
-        {
-            //log4net.Config.BasicConfigurator.Configure();
-        }
-
-        [TestMethod]
-        public void SampleTest()
-        {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            Assert.IsTrue(true, "True was false.");
-        }
-
         /// <summary>
         /// Tests that the Content-Length is correctly parsed.
         /// </summary>

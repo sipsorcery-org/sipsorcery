@@ -113,8 +113,6 @@ namespace SIPSorcery.SIP
 
 		public static SIPRequest ParseSIPRequest(SIPMessage sipMessage)
 		{
-            string uriStr = null;
-
             try
             {
                 SIPRequest sipRequest = new SIPRequest();
@@ -138,7 +136,7 @@ namespace SIPSorcery.SIP
 
                 if (secondSpacePosn != -1)
                 {
-                    uriStr = statusLine.Substring(0, secondSpacePosn);
+                    string uriStr = statusLine.Substring(0, secondSpacePosn);
 
                     sipRequest.URI = SIPURI.ParseSIPURI(uriStr);
                     sipRequest.SIPVersion = statusLine.Substring(secondSpacePosn, statusLine.Length - secondSpacePosn).Trim();

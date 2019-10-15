@@ -5,11 +5,12 @@
 // 
 // History:
 // 17 Oct 2005	Aaron Clauson	Created.
+// 14 Oct 2019  Aaron Clauson   Added IPv6 support.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
 //
-// Copyright (c) 2006 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
+// Copyright (c) 2005-2019 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
@@ -121,9 +122,7 @@ namespace SIPSorcery.SIP
                     }
                     catch (Exception listenExcp)
                     {
-                        // There is no point logging this as without processing the ICMP message it's not possible to know which socket the rejection came from.
                         logger.LogError("Exception listening on SIPUDPChannel. " + listenExcp.Message);
-
                         inEndPoint = new IPEndPoint(IPAddress.Any, 0);
                         continue;
                     }
@@ -136,10 +135,7 @@ namespace SIPSorcery.SIP
                     }
                     else
                     {
-                        if (SIPMessageReceived != null)
-                        {
-                            SIPMessageReceived(this, new SIPEndPoint(SIPProtocolsEnum.udp, inEndPoint), buffer);
-                        }
+                        SIPMessageReceived?.Invoke(this, new SIPEndPoint(SIPProtocolsEnum.udp, inEndPoint), buffer);
                     }
                 }
 

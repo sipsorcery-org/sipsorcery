@@ -13,7 +13,8 @@ namespace SIPSorcery.SIP.Core.UnitTests
             public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool async)
             {
                 // This assumes the input SIP URI has an IP address as the host!
-                return new SIPDNSLookupResult(sipURI, new SIPEndPoint(IPSocket.ParseSocketString(sipURI.Host)));
+                IPSocket.TryParseIPEndPoint(sipURI.Host, out var ipEndPoint);
+                return new SIPDNSLookupResult(sipURI, new SIPEndPoint(ipEndPoint));
             }
         }
 

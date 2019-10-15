@@ -42,13 +42,13 @@ namespace SIPSorcery.SIP
         public int Priority;                                // The priority value assigned to the NAPTR/SRV record. A client MUST attempt to contact the target host with the lowest-numbered priority it can
                                                             // reach; target hosts with the same priority SHOULD be tried in an order defined by the weight field.
         public int Weight;                                  // The weight value assigned to the SRV record. Larger weights SHOULD be given a proportionately higher probability of being selected.
-        public int TTL;                                     // The time-to-live in seconds for this record.
+        public uint TTL;                                    // The time-to-live in seconds for this record.
         public string Data;                                 // The SRV record for the NAPTR record and target for a SRV record.
         public int Port;                                    // The SRV record port.
         public DateTime? ResolvedAt;                        // Time this record was created.
         public DateTime? EndPointsResolvedAt;               // The time an attempt was made to resolve the A records for the SRV.
 
-        public SIPDNSServiceResult(SIPServicesEnum sipService, int priority, int weight, int ttl, string data, int port, DateTime resolvedAt)
+        public SIPDNSServiceResult(SIPServicesEnum sipService, int priority, int weight, uint ttl, string data, int port, DateTime resolvedAt)
         {
             SIPService = sipService;
             Priority = priority;
@@ -63,12 +63,12 @@ namespace SIPSorcery.SIP
     public class SIPDNSLookupEndPoint
     {
         public SIPEndPoint LookupEndPoint;
-        public int TTL;
+        public uint TTL;
         public DateTime ResolvedAt;
         public DateTime FailedAt;
         public string FailureReason;
 
-        public SIPDNSLookupEndPoint(SIPEndPoint sipEndPoint, int ttl)
+        public SIPDNSLookupEndPoint(SIPEndPoint sipEndPoint, uint ttl)
         {
             LookupEndPoint = sipEndPoint;
             TTL = ttl;
@@ -116,7 +116,7 @@ namespace SIPSorcery.SIP
         {
             //logger.LogDebug(" adding SIP end point result for " + URI.ToString() + " of " + lookupEndPoint.LookupEndPoint + ".");
 
-            if(EndPointResults == null)
+            if (EndPointResults == null)
             {
                 EndPointResults = new List<SIPDNSLookupEndPoint>() { lookupEndPoint };
             }
@@ -128,14 +128,14 @@ namespace SIPSorcery.SIP
 
         public void AddNAPTRResult(SIPDNSServiceResult sipNAPTRResult)
         {
-                if (SIPNAPTRResults == null)
-                {
-                    SIPNAPTRResults = new Dictionary<SIPServicesEnum, SIPDNSServiceResult>() { { sipNAPTRResult.SIPService, sipNAPTRResult } };
-                }
-                else
-                {
-                    SIPNAPTRResults.Add(sipNAPTRResult.SIPService, sipNAPTRResult);
-                }
+            if (SIPNAPTRResults == null)
+            {
+                SIPNAPTRResults = new Dictionary<SIPServicesEnum, SIPDNSServiceResult>() { { sipNAPTRResult.SIPService, sipNAPTRResult } };
+            }
+            else
+            {
+                SIPNAPTRResults.Add(sipNAPTRResult.SIPService, sipNAPTRResult);
+            }
         }
 
         public void AddSRVResult(SIPDNSServiceResult sipSRVResult)

@@ -140,7 +140,26 @@ namespace SIPSorcery.SIP
         {
             get
             {
-                if (Port != 0)
+                if(IPSocket.TryParseIPEndPoint(Host, out var ipEndPoint))
+                {
+                    if (ipEndPoint.Port == 0)
+                    {
+                        if (Port != 0)
+                        {
+                            ipEndPoint.Port = Port;
+                            return ipEndPoint.ToString();
+                        }
+                        else
+                        {
+                            return ipEndPoint.Address.ToString();
+                        }
+                    }
+                    else
+                    {
+                        return ipEndPoint.ToString();
+                    }
+                }
+                else if (Port != 0)
                 {
                     return Host + ":" + Port;
                 }
@@ -157,11 +176,13 @@ namespace SIPSorcery.SIP
             {
                 if (ReceivedFromIPAddress != null && ReceivedFromPort != 0)
                 {
-                    return ReceivedFromIPAddress + ":" + ReceivedFromPort;
+                    IPEndPoint ep = new IPEndPoint(IPAddress.Parse(ReceivedFromIPAddress), ReceivedFromPort);
+                    return ep.ToString();
                 }
                 else if (ReceivedFromIPAddress != null && Port != 0)
                 {
-                    return ReceivedFromIPAddress + ":" + Port;
+                    IPEndPoint ep = new IPEndPoint(IPAddress.Parse(ReceivedFromIPAddress), Port);
+                    return ep.ToString();
                 }
                 else if (ReceivedFromIPAddress != null)
                 {
@@ -204,11 +225,11 @@ namespace SIPSorcery.SIP
         { }
 
         public SIPViaHeader(SIPEndPoint localEndPoint, string branch) :
-            this(localEndPoint.Address.ToString(), localEndPoint.Port, branch, localEndPoint.Protocol)
+            this(localEndPoint.GetIPEndPoint(), branch, localEndPoint.Protocol)
         { }
 
         public SIPViaHeader(string contactEndPoint, string branch) :
-            this (IPSocket.GetIPEndPoint(contactEndPoint).Address.ToString(), IPSocket.GetIPEndPoint(contactEndPoint).Port, branch, SIPProtocolsEnum.udp)
+            this (IPSocket.ParseSocketString(contactEndPoint), branch, SIPProtocolsEnum.udp)
         { }
 
         public SIPViaHeader(IPEndPoint contactEndPoint, string branch, SIPProtocolsEnum protocol) :
@@ -287,23 +308,35 @@ namespace SIPSorcery.SIP
                             }
 
                             // Parse the contact address.
-                            int colonIndex = contactAddress.IndexOf(m_hostDelimChar);
-                            if (colonIndex != -1)
+                            if (IPSocket.TryParseIPEndPoint(contactAddress, out var ipEndPoint))
                             {
-                                viaHeader.Host = contactAddress.Substring(0, colonIndex);
-
-                                if (!Int32.TryParse(contactAddress.Substring(colonIndex + 1), out viaHeader.Port))
+                                viaHeader.Host = ipEndPoint.Address.ToString();
+                                if(ipEndPoint.Port != 0)
                                 {
-                                    throw new SIPValidationException(SIPValidationFieldsEnum.ViaHeader, "Non-numeric port for IP address.");
-                                }
-                                else if (viaHeader.Port > SIPConstants.MAX_SIP_PORT)
-                                {
-                                    throw new SIPValidationException(SIPValidationFieldsEnum.ViaHeader, "The port specified in a Via header exceeded the maximum allowed.");
+                                    viaHeader.Port = ipEndPoint.Port;
                                 }
                             }
                             else
                             {
-                                viaHeader.Host = contactAddress;
+                                // Now parsing non IP address contact addresses.
+                                int colonIndex = contactAddress.IndexOf(m_hostDelimChar);
+                                if (colonIndex != -1)
+                                {
+                                    viaHeader.Host = contactAddress.Substring(0, colonIndex);
+
+                                    if (!Int32.TryParse(contactAddress.Substring(colonIndex + 1), out viaHeader.Port))
+                                    {
+                                        throw new SIPValidationException(SIPValidationFieldsEnum.ViaHeader, "Non-numeric port for IP address.");
+                                    }
+                                    else if (viaHeader.Port > SIPConstants.MAX_SIP_PORT)
+                                    {
+                                        throw new SIPValidationException(SIPValidationFieldsEnum.ViaHeader, "The port specified in a Via header exceeded the maximum allowed.");
+                                    }
+                                }
+                                else
+                                {
+                                    viaHeader.Host = contactAddress;
+                                }
                             }
 
                             viaHeadersList.Add(viaHeader);

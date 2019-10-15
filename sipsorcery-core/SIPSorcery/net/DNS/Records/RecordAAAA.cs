@@ -9,12 +9,13 @@
 //
 // History:
 // 28 Mar 2008	Aaron Clauson   Added to sipwitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
+// 14 Oct 2019  Aaron Clauson   Synchronised with latest version of source from at https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 //
 // License:
-// http://www.opensource.org/licenses/gpl-license.php
+// The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ============================================================================
 
-using System;
+using System.Net;
 
 #region Rfc info
 /*
@@ -27,28 +28,34 @@ using System;
 
 namespace Heijden.DNS
 {
-	public class RecordAAAA : Record
-	{
-		public System.Net.IPAddress Address;
+    public class RecordAAAA : Record
+    {
+        public System.Net.IPAddress Address;
 
-		public RecordAAAA(RecordReader rr)
-		{
-			System.Net.IPAddress.TryParse(
-				string.Format("{0:x}:{1:x}:{2:x}:{3:x}:{4:x}:{5:x}:{6:x}:{7:x}", 
-				rr.ReadShort(),
-				rr.ReadShort(),
-				rr.ReadShort(), 
-				rr.ReadShort(),
-				rr.ReadShort(),
-				rr.ReadShort(),
-				rr.ReadShort(), 
-				rr.ReadShort()),out this.Address);
-		}
+        public RecordAAAA(RecordReader rr)
+        {
+            System.Net.IPAddress.TryParse(
+                string.Format("{0:x}:{1:x}:{2:x}:{3:x}:{4:x}:{5:x}:{6:x}:{7:x}",
+                rr.ReadUInt16(),
+                rr.ReadUInt16(),
+                rr.ReadUInt16(),
+                rr.ReadUInt16(),
+                rr.ReadUInt16(),
+                rr.ReadUInt16(),
+                rr.ReadUInt16(),
+                rr.ReadUInt16()), out this.Address);
+        }
 
-		public override string ToString()
-		{
-			return Address.ToString();
-		}
+        public RecordAAAA(IPAddress address)
+        {
+            Address = address;
+        }
 
-	}
+        public override string ToString()
+        {
+            return Address.ToString();
+        }
+
+    }
 }
+

@@ -243,9 +243,15 @@ namespace SIPSorcery.SIP
 
                 if (m_contactIPAddress != null)
                 {
-                    IPEndPoint contactEP = IPSocket.GetIPEndPoint(okResponse.Header.Contact.First().ContactURI.Host);
-                    contactEP.Address = m_contactIPAddress;
-                    okResponse.Header.Contact.First().ContactURI.Host = contactEP.ToString();
+                    if (IPSocket.TryParseIPEndPoint(okResponse.Header.Contact.First().ContactURI.Host, out var contactEP))
+                    {
+                        contactEP.Address = m_contactIPAddress;
+                        okResponse.Header.Contact.First().ContactURI.Host = contactEP.ToString();
+                    }
+                    else
+                    {
+                        throw new ApplicationException($"Could not parse IP end point from {okResponse.Header.Contact.First().ContactURI.Host} when parsing OK response.");
+                    }
                 }
 
                 okResponse.Header.To.ToTag = m_localTag;

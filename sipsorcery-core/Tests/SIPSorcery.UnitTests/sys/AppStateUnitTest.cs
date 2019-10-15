@@ -11,7 +11,8 @@ namespace SIPSorcery.Sys.UnitTests
         public void CheckLoggingTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            Log.Logger.LogDebug("CheckLoggingTest");
+            Log.Logger.LogDebug("LogDebug CheckLoggingTest");
+            Log.Logger.LogInformation("LogInfo CheckLoggingTest");
             Console.WriteLine("-----------------------------------------");
         }
     }

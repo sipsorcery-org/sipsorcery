@@ -14,8 +14,6 @@
 // http://www.opensource.org/licenses/gpl-license.php
 // ===========================================================================
 
-using System;
-
 namespace Heijden.DNS
 {
 	public class RecordUnknown : Record
@@ -24,7 +22,7 @@ namespace Heijden.DNS
 		{
 			rr.Position -=2;
 			// re-read length
-			ushort RDLENGTH = rr.ReadShort();
+			ushort RDLENGTH = rr.ReadUInt16();
 			// skip bytes
 			rr.ReadBytes(RDLENGTH);
 		}

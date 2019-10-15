@@ -266,6 +266,7 @@ namespace SIPSorcery.SIP
             }
         }
 
+        //TODO needs IPv6 fixing.
         public static SIPURI ParseSIPURI(string uri)
         {
             try
@@ -475,21 +476,23 @@ namespace SIPSorcery.SIP
 
         public SIPEndPoint ToSIPEndPoint()
         {
-            if (IPSocket.IsIPSocket(Host) || IPSocket.IsIPAddress(Host))
+            if (IPSocket.TryParseIPEndPoint(Host, out var ipEndPoint))
             {
-                if (Host.IndexOf(":") != -1)
+                if (ipEndPoint.Port != 0)
                 {
-                    return new SIPEndPoint(Protocol, IPSocket.GetIPEndPoint(Host));
+                    return new SIPEndPoint(Protocol, ipEndPoint);
                 }
                 else
                 {
                     if(Protocol == SIPProtocolsEnum.tls)
                     {
-                        return new SIPEndPoint(Protocol, IPSocket.GetIPEndPoint(Host + ":" + m_defaultSIPTLSPort));
+                        ipEndPoint.Port = m_defaultSIPTLSPort;
+                        return new SIPEndPoint(Protocol, ipEndPoint);
                     }
                     else
                     {
-                        return new SIPEndPoint(Protocol, IPSocket.GetIPEndPoint(Host + ":" + m_defaultSIPPort));
+                        ipEndPoint.Port = m_defaultSIPPort;
+                        return new SIPEndPoint(Protocol, ipEndPoint);
                     }
                 }
             }

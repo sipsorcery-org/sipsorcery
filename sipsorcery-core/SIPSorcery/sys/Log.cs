@@ -32,7 +32,6 @@ namespace SIPSorcery.Sys
                 _loggerFactory = value;
                 _logger = null;
             }
-
         }
 
         private static ILogger _logger;
@@ -46,6 +45,10 @@ namespace SIPSorcery.Sys
                 }
 
                 return _logger ?? NullLogger.Instance;
+            }
+            set
+            {
+                _logger = value;
             }
         }
     }

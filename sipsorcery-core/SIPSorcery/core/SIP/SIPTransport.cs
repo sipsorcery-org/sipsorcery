@@ -1942,7 +1942,6 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                //return GetURIEndPoint(sipRequest.URI, async);
                 return GetURIEndPoint(lookupURI, async);
             }
         }

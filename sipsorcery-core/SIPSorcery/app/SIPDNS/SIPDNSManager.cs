@@ -33,7 +33,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text.RegularExpressions;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using Heijden.DNS;
@@ -42,7 +41,7 @@ using Microsoft.Extensions.Logging;
 namespace SIPSorcery.SIP.App
 {
     /// <summary>
-    /// 
+    /// SIP specific DNS resolution.
     /// </summary>
     /// <remarks>
     /// 1. If transport parameter is specified it takes precedence,
@@ -64,7 +63,6 @@ namespace SIPSorcery.SIP.App
     {
         private const int DNS_LOOKUP_TIMEOUT = 5;                       // 2 second timeout for DNS lookups.
         private const int DNS_A_RECORD_LOOKUP_TIMEOUT = 15;              // 5 second timeout for crticial A record DNS lookups.
-        private const int CACHE_UNAVAILABLE_SRV_LOOKUP_PERIOD = 300;    // Period to cache timed or empty SRV lookups for.
 
         private static ILogger logger = Log.Logger;
 
@@ -96,79 +94,81 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                if (sipURI == null)
+                 if (sipURI == null)
                 {
                     throw new ArgumentNullException("sipURI", "Cannot resolve SIP service on a null URI.");
                 }
 
-                string host = sipURI.Host;
-                int port = (sipURI.Scheme == SIPSchemesEnum.sip) ? m_defaultSIPPort : m_defaultSIPSPort;
-                bool explicitPort = false;
-
-                if (sipURI.Host.IndexOf(':') != -1)
-                {
-                    host = sipURI.Host.Split(':')[0];
-                    Int32.TryParse(sipURI.Host.Split(':')[1], out port);
-                    explicitPort = true;
-                }
-
-                if (Regex.Match(host, @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$").Success)
+                if(IPSocket.TryParseIPEndPoint(sipURI.Host, out var ipEndPoint))
                 {
                     // Target is an IP address, no DNS lookup required.
-                    IPAddress hostIP = IPAddress.Parse(host);
-                    SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, new IPEndPoint(hostIP, port)), 0);
+                    //IPAddress hostIP = IPAddress.Parse(host);
+                    SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, ipEndPoint), 0);
                     SIPDNSLookupResult result = new SIPDNSLookupResult(sipURI);
                     result.AddLookupResult(sipLookupEndPoint);
                     return result;
                 }
-                else if (explicitPort)
-                {
-                    // Target is a hostname with an explicit port, DNS lookup for A or AAAA record.
-                    return DNSARecordLookup(host, port, async, sipURI);
-                }
                 else
                 {
-                    // Target is a hostname with no explicit port, use the whole NAPTR->SRV->A lookup procedure.
-                    SIPDNSLookupResult sipLookupResult = new SIPDNSLookupResult(sipURI);
+                    string host = sipURI.Host;
+                    int port = IPSocket.ParsePortFromSocket(sipURI.Host);
+                    bool explicitPort = (port != 0);
 
-                    // Do without the NAPTR lookup for the time being. Very few organisations appear to use them and it can cost up to 2.5s to get a failed resolution.
-                    /*SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS full lookup requested for " + sipURI.ToString() + ".", null));
-                    DNSNAPTRRecordLookup(host, async, ref sipLookupResult);
-                    if (sipLookupResult.Pending)
+                    if (!explicitPort)
                     {
-                        if (!m_inProgressSIPServiceLookups.Contains(sipURI.ToString()))
-                        {
-                            m_inProgressSIPServiceLookups.Add(sipURI.ToString());
-                            ThreadPool.QueueUserWorkItem(delegate { ResolveSIPService(sipURI, false); });
-                        }
-                        return sipLookupResult;
-                    }*/
+                        port = (sipURI.Scheme == SIPSchemesEnum.sip) ? m_defaultSIPPort : m_defaultSIPSPort;
+                    }
 
-                    DNSSRVRecordLookup(sipURI.Scheme, sipURI.Protocol, host, async, ref sipLookupResult);
-                    if (sipLookupResult.Pending)
+                    if (explicitPort)
                     {
-                        //logger.LogDebug("SIPDNSManager SRV lookup for " + host + " is pending.");
-                        return sipLookupResult;
+                        host = host.Substring(0, host.LastIndexOf(':'));
+                        // Target is a hostname with an explicit port, DNS lookup for A or AAAA record.
+                        return DNSARecordLookup(host, port, async, sipURI);
                     }
                     else
                     {
-                        //logger.LogDebug("SIPDNSManager SRV lookup for " + host + " is final.");
+                        // Target is a hostname with no explicit port, use the whole NAPTR->SRV->A lookup procedure.
+                        SIPDNSLookupResult sipLookupResult = new SIPDNSLookupResult(sipURI);
 
-                        // Add some custom logic to cope with sips SRV records using _sips._tcp (e.g. free.call.ciscospark.com).
-                        // By default only _sips._tls SRV records are checked for. THis block adds an additional check for _sips._tcp SRV records.
-                        //if ((sipLookupResult.SIPSRVResults == null || sipLookupResult.SIPSRVResults.Count == 0) && sipURI.Scheme == SIPSchemesEnum.sips)
-                        //{
-                        //    DNSSRVRecordLookup(sipURI.Scheme, SIPProtocolsEnum.tcp, host, async, ref sipLookupResult);
-                        //    SIPDNSServiceResult nextSRVRecord = sipLookupResult.GetNextUnusedSRV();
-                        //    int lookupPort = (nextSRVRecord != null) ? nextSRVRecord.Port : port;
-                        //    return DNSARecordLookup(nextSRVRecord, host, lookupPort, async, sipLookupResult.URI);
-                        //}
-                        //else
-                        //{
+                        // Do without the NAPTR lookup for the time being. Very few organisations appear to use them and it can cost up to 2.5s to get a failed resolution.
+                        /*SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS full lookup requested for " + sipURI.ToString() + ".", null));
+                        DNSNAPTRRecordLookup(host, async, ref sipLookupResult);
+                        if (sipLookupResult.Pending)
+                        {
+                            if (!m_inProgressSIPServiceLookups.Contains(sipURI.ToString()))
+                            {
+                                m_inProgressSIPServiceLookups.Add(sipURI.ToString());
+                                ThreadPool.QueueUserWorkItem(delegate { ResolveSIPService(sipURI, false); });
+                            }
+                            return sipLookupResult;
+                        }*/
+
+                        DNSSRVRecordLookup(sipURI.Scheme, sipURI.Protocol, host, async, ref sipLookupResult);
+                        if (sipLookupResult.Pending)
+                        {
+                            //logger.LogDebug("SIPDNSManager SRV lookup for " + host + " is pending.");
+                            return sipLookupResult;
+                        }
+                        else
+                        {
+                            //logger.LogDebug("SIPDNSManager SRV lookup for " + host + " is final.");
+
+                            // Add some custom logic to cope with sips SRV records using _sips._tcp (e.g. free.call.ciscospark.com).
+                            // By default only _sips._tls SRV records are checked for. THis block adds an additional check for _sips._tcp SRV records.
+                            //if ((sipLookupResult.SIPSRVResults == null || sipLookupResult.SIPSRVResults.Count == 0) && sipURI.Scheme == SIPSchemesEnum.sips)
+                            //{
+                            //    DNSSRVRecordLookup(sipURI.Scheme, SIPProtocolsEnum.tcp, host, async, ref sipLookupResult);
+                            //    SIPDNSServiceResult nextSRVRecord = sipLookupResult.GetNextUnusedSRV();
+                            //    int lookupPort = (nextSRVRecord != null) ? nextSRVRecord.Port : port;
+                            //    return DNSARecordLookup(nextSRVRecord, host, lookupPort, async, sipLookupResult.URI);
+                            //}
+                            //else
+                            //{
                             SIPDNSServiceResult nextSRVRecord = sipLookupResult.GetNextUnusedSRV();
                             int lookupPort = (nextSRVRecord != null) ? nextSRVRecord.Port : port;
                             return DNSARecordLookup(nextSRVRecord, host, lookupPort, async, sipLookupResult.URI);
-                        //}
+                            //}
+                        }
                     }
                 }
             }
@@ -185,7 +185,7 @@ namespace SIPSorcery.SIP.App
             SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS A record lookup requested for " + host + ".", null));
             SIPDNSLookupResult result = new SIPDNSLookupResult(uri);
 
-            DNSResponse aRecordResponse = DNSManager.Lookup(host, DNSQType.A, DNS_A_RECORD_LOOKUP_TIMEOUT, null, true, async);
+            DNSResponse aRecordResponse = DNSManager.Lookup(host, QType.A, DNS_A_RECORD_LOOKUP_TIMEOUT, null, true, async);
             if (aRecordResponse == null && async)
             {
                 result.Pending = true;
@@ -235,7 +235,7 @@ namespace SIPSorcery.SIP.App
             SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS NAPTR record lookup initiated for " + host + ".", null));
 
             // Target is a hostname with no explicit port, DNS lookup for NAPTR records.
-            DNSResponse naptrRecordResponse = DNSManager.Lookup(host, DNSQType.NAPTR, DNS_LOOKUP_TIMEOUT, null, true, async);
+            DNSResponse naptrRecordResponse = DNSManager.Lookup(host, QType.NAPTR, DNS_LOOKUP_TIMEOUT, null, true, async);
             if (naptrRecordResponse == null && async)
             {
                 lookupResult.Pending = true;
@@ -248,9 +248,9 @@ namespace SIPSorcery.SIP.App
             {
                 foreach (RecordNAPTR naptrRecord in naptrRecordResponse.RecordNAPTR)
                 {
-                    SIPDNSServiceResult sipNAPTRResult = new SIPDNSServiceResult(SIPServices.GetService(naptrRecord.Service), naptrRecord.Order, 0, naptrRecord.RR.TTL, naptrRecord.Replacement, 0, DateTime.Now);
+                    SIPDNSServiceResult sipNAPTRResult = new SIPDNSServiceResult(SIPServices.GetService(naptrRecord.SERVICES), naptrRecord.ORDER, 0, naptrRecord.RR.TTL, naptrRecord.REPLACEMENT, 0, DateTime.Now);
                     lookupResult.AddNAPTRResult(sipNAPTRResult);
-                    SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS NAPTR record found for " + host + ", result " + naptrRecord.Service + " " + naptrRecord.Replacement + ".", null));
+                    SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS NAPTR record found for " + host + ", result " + naptrRecord.SERVICES + " " + naptrRecord.REPLACEMENT + ".", null));
                 }
             }
             else
@@ -309,7 +309,7 @@ namespace SIPSorcery.SIP.App
 
             SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS SRV record lookup requested for " + srvLookup + ".", null));
 
-            DNSResponse srvRecordResponse = DNSManager.Lookup(srvLookup, DNSQType.SRV, DNS_LOOKUP_TIMEOUT, null, true, async);
+            DNSResponse srvRecordResponse = DNSManager.Lookup(srvLookup, QType.SRV, DNS_LOOKUP_TIMEOUT, null, true, async);
             if (srvRecordResponse == null && async)
             {
                 SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS SRV record lookup pending for " + srvLookup + ".", null));
@@ -328,9 +328,9 @@ namespace SIPSorcery.SIP.App
             {
                 foreach (RecordSRV srvRecord in srvRecordResponse.RecordSRV)
                 {
-                    SIPDNSServiceResult sipSRVResult = new SIPDNSServiceResult(reqdNAPTRService, srvRecord.Priority, srvRecord.Weight, srvRecord.RR.TTL, srvRecord.Target, srvRecord.Port, DateTime.Now);
+                    SIPDNSServiceResult sipSRVResult = new SIPDNSServiceResult(reqdNAPTRService, srvRecord.PRIORITY, srvRecord.WEIGHT, srvRecord.RR.TTL, srvRecord.TARGET, srvRecord.PORT, DateTime.Now);
                     lookupResult.AddSRVResult(sipSRVResult);
-                    SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS SRV record found for " + srvLookup + ", result " + srvRecord.Target + " " + srvRecord.Port + ".", null));
+                    SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS SRV record found for " + srvLookup + ", result " + srvRecord.TARGET + " " + srvRecord.PORT + ".", null));
                 }
             }
             else

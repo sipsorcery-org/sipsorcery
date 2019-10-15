@@ -7,14 +7,6 @@ namespace SIPSorcery.SIP.Core.UnitTests
     public class SIPAuthorisationDigestUnitTest
     {
         [TestMethod]
-        public void SampleTest()
-        {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            Assert.IsTrue(true, "True was false.");
-            Console.WriteLine("-----------------------------------------");
-        }
-
-        [TestMethod]
         public void KnownDigestTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);

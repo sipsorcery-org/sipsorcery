@@ -9,9 +9,10 @@
 //
 // History:
 // 28 Mar 2008	Aaron Clauson   Added to sipwitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
+// 14 Oct 2019  Aaron Clauson   Synchronised with latest version of source from at https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 //
 // License:
-// http://www.opensource.org/licenses/gpl-license.php
+// The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ===========================================================================
 
 using System;
@@ -85,37 +86,37 @@ change the SOA RR with known semantics.
 
 namespace Heijden.DNS
 {
-	public class RecordSOA : Record
-	{
-		public string MNAME;
-		public string RNAME;
-		public int SERIAL;
-		public int REFRESH;
-		public int RETRY;
-		public int EXPIRE;
-		public int MINIMUM;
+    public class RecordSOA : Record
+    {
+        public string MNAME;
+        public string RNAME;
+        public uint SERIAL;
+        public uint REFRESH;
+        public uint RETRY;
+        public uint EXPIRE;
+        public uint MINIMUM;
 
-		public RecordSOA(RecordReader rr)
-		{
-			MNAME = rr.ReadDomainName();
-			RNAME = rr.ReadDomainName();
-			SERIAL = rr.ReadInt();
-			REFRESH = rr.ReadInt();
-			RETRY = rr.ReadInt();
-			EXPIRE = rr.ReadInt();
-			MINIMUM = rr.ReadInt();
-		}
+        public RecordSOA(RecordReader rr)
+        {
+            MNAME = rr.ReadDomainName();
+            RNAME = rr.ReadDomainName();
+            SERIAL = rr.ReadUInt32();
+            REFRESH = rr.ReadUInt32();
+            RETRY = rr.ReadUInt32();
+            EXPIRE = rr.ReadUInt32();
+            MINIMUM = rr.ReadUInt32();
+        }
 
-		public override string ToString()
-		{
-			return string.Format("{0} {1} {2} {3} {4} {5} {6}",
-				MNAME,
-				RNAME,
-				SERIAL,
-				REFRESH,
-				RETRY,
-				EXPIRE,
-				MINIMUM);
-		}
-	}
+        public override string ToString()
+        {
+            return string.Format("{0} {1} {2} {3} {4} {5} {6}",
+                MNAME,
+                RNAME,
+                SERIAL,
+                REFRESH,
+                RETRY,
+                EXPIRE,
+                MINIMUM);
+        }
+    }
 }

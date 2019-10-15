@@ -10,18 +10,16 @@
 // History:
 // 28 Mar 2008	Aaron Clauson   Added to sipwitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
 // 28 Mar 2008  Aaron Clauson   Changed name of calls from Response to DNSResponse to avoid confusion.
-// 28 MAr 2008  Aaron Clauson   Left Error as null rather than "" to make it easier to check.
+// 28 Mar 2008  Aaron Clauson   Left Error as null rather than "" to make it easier to check.
+// 14 Oct 2019  Aaron Clauson   Synchronised with latest version of source from at https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 //
 // License:
-// http://www.opensource.org/licenses/gpl-license.php
+// The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ============================================================================
 
 using System;
-using System.IO;
 using System.Net;
-using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Heijden.DNS
 {
@@ -184,10 +182,10 @@ namespace Heijden.DNS
 			}
 		}
 
-		/// <summary>
-		/// List of RecordPTR in Response.Answers
-		/// </summary>
-		public RecordPTR[] RecordsPTR
+        /// <summary>
+        /// List of RecordPTR in Response.Answers
+        /// </summary>
+        public RecordPTR[] RecordsPTR
 		{
 			get
 			{

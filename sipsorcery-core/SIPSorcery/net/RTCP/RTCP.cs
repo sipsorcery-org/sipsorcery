@@ -73,6 +73,8 @@ namespace SIPSorcery.Net
     {
         public const int RTCPREPORT_BYTES_LENGTH = 84;
 
+        private static ILogger Logger = SIPSorcery.Sys.Log.Logger;
+
         public Guid RTPStreamId;
         public uint ReportNumber;
         public uint LastReceivedReportNumber;       // The report number of teh last RTCP report that was received from the remote agent.
@@ -177,23 +179,29 @@ namespace SIPSorcery.Net
 		}
 
         public string ToResultsString()
-		{		
-			IPEndPoint remoteEndPoint = IPSocket.GetIPEndPoint(RemoteEndPoint);
+		{
+            if (IPSocket.TryParseIPEndPoint(RemoteEndPoint, out var remoteEndPoint))
+            {
+                string results =
+                    "SourceIPAddress = " + remoteEndPoint.Address + "\r\n" +
+                    "SourceIPPort = " + remoteEndPoint.Port + "\r\n" +
+                    "StartTime = " + SampleStartTime.ToString("dd MMM yyyy HH:mm:ss:fff") + "\r\n" +
+                    "EndTime = " + SampleEndTime.ToString("dd MMM yyyy HH:mm:ss:fff") + "\r\n" +
+                    "Duration = " + SampleEndTime.Subtract(SampleStartTime).TotalSeconds.ToString("0.###") + "(s)\r\n" +
+                    "TotalPackets = " + TotalPackets + "\r\n" +
+                    "OutOfOrder = " + OutOfOrder + "\r\n" +
+                    //"AlreadyDropped = " + OutsideWindow + "\r\n" +
+                    "JitterDiscards = " + JitterDiscards + "\r\n" +
+                    "JitterMaximum = " + JitterMaximum + "(ms)\r\n" +
+                    "JitterAverage = " + JitterAverage.ToString("0.##") + "(ms)\r\n";
 
-			string results = 
-				"SourceIPAddress = " + remoteEndPoint.Address + "\r\n" +
-				"SourceIPPort = " + remoteEndPoint.Port + "\r\n" + 
-				"StartTime = " + SampleStartTime.ToString("dd MMM yyyy HH:mm:ss:fff") + "\r\n" +
-				"EndTime = " + SampleEndTime.ToString("dd MMM yyyy HH:mm:ss:fff") + "\r\n" +
-				"Duration = " + SampleEndTime.Subtract(SampleStartTime).TotalSeconds.ToString("0.###") + "(s)\r\n" +
-				"TotalPackets = " + TotalPackets + "\r\n" +
-				"OutOfOrder = " + OutOfOrder + "\r\n" +
-				//"AlreadyDropped = " + OutsideWindow + "\r\n" +
-				"JitterDiscards = " + JitterDiscards + "\r\n" +
-				"JitterMaximum = " + JitterMaximum + "(ms)\r\n" +
-				"JitterAverage = " + JitterAverage.ToString("0.##") + "(ms)\r\n";
-
-			return results;
+                return results;
+            }
+            else
+            {
+                Logger.LogWarning($"Could not parse {RemoteEndPoint} as IPEndPoint in RTCPReport.ToResultsString.");
+                return null;
+            }
 		}
 
         public byte[] GetBytes()

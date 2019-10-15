@@ -7,7 +7,6 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.SIP.Core.UnitTests
 {
     [TestClass]
-    [DeploymentItem("App.config")]
     public class SIPTransactionEngineUnitTest
     {
         private class MockSIPDNSManager

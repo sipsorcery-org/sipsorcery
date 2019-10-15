@@ -12,9 +12,10 @@
 // 28 Mar 2008  Aaron Clauson   Moved timeout from being class scoped field to parameter for individual DNS requests.
 // 28 Mar 2008  Aaron Clauson   Removed deprecated System.DNS methods.
 // 28 Mar 2008  Aaron Clauson   Added log4net logging.
+// 14 Oct 2019  Aaron Clauson   Synchronised (maintaining modifications) with latest version of source from at https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 //
 // License:
-// http://www.opensource.org/licenses/gpl-license.php
+// The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ============================================================================
 
 using System;
@@ -24,8 +25,6 @@ using System.Net;
 using System.Text;
 using System.Net.Sockets;
 using System.Net.NetworkInformation;
-//using System.Diagnostics;
-//using System.Runtime.Remoting.Messaging;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
@@ -48,27 +47,34 @@ namespace Heijden.DNS
         /// <summary>
         /// Version of this set of routines, when not in a library
         /// </summary>
-        public const string Version = "1.0.0.0";
+        public string Version
+        {
+            get
+            {
+                return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            }
+        }
 
         /// <summary>
         /// Default DNS port
         /// </summary>
         public const int DefaultPort = 53;
 
-        public const int DEFAULT_TIMEOUT = 2;               // Default timeout in seconds for DNS lookups.
-        private const int SWITCH_ACTIVE_TIMEOUT_COUNT = 5;  // The timeout in seconds that if no response is received on the active DNS server it will be switched.
-        private const int FAILURE_RETRY = 60;               // The timeout in seconds to retry DNS lookups that failed.
-
-        private static ILogger logger = Log.Logger;
-
         /// <summary>
         /// Gets list of OPENDNS servers
         /// </summary>
         public static readonly List<IPEndPoint> DefaultDnsServers = new List<IPEndPoint>()
-		{ 
-			new IPEndPoint(IPAddress.Parse("208.67.222.222"), DefaultPort), 
-			new IPEndPoint(IPAddress.Parse("208.67.220.220"), DefaultPort) 
-		};
+        {
+            new IPEndPoint(IPAddress.Parse("208.67.222.222"), DefaultPort),
+            new IPEndPoint(IPAddress.Parse("208.67.220.220"), DefaultPort)
+        };
+
+        public const int DEFAULT_TIMEOUT = 2;               // Default timeout in seconds for DNS lookups.
+        private const int SWITCH_ACTIVE_TIMEOUT_COUNT = 5; // The timeout in seconds that if no response is received on the active DNS server it will be switched.
+        private const int FAILURE_RETRY = 60;                // The timeout in seconds to retry DNS lookups that failed.
+        private const int MIN_CACHE_SECONDS = 60;           // A record will not be removed from the cache when it has been in less than this number of seconds irrespective of the DNS TTL.
+
+        private static ILogger logger = Log.Logger;
 
         private ushort m_Unique;
         private bool m_UseCache;
@@ -257,7 +263,7 @@ namespace Heijden.DNS
                     m_DnsServers.Add(new IPEndPoint(ip, DefaultPort));
                     return;
                 }
-                DNSResponse response = Query(value, DNSQType.A, DEFAULT_TIMEOUT);
+                DNSResponse response = Query(value, QType.A, DEFAULT_TIMEOUT);
                 if (response.RecordsA.Length > 0)
                 {
                     m_DnsServers.Clear();
@@ -298,15 +304,12 @@ namespace Heijden.DNS
             }
 
             string strKey = question.QClass + "-" + question.QType + "-" + question.QName;
-
-            //logger.LogDebug("Checking cache for " + strKey + ".");
+            //logger.LogDebug($"Searching DNS results cache for {strKey}.");
 
             lock (m_lookupFailures)
             {
                 if (m_lookupFailures.ContainsKey(strKey))
                 {
-                    //logger.LogDebug("DNS cache failed result found for " + strKey + ".");
-
                     if (DateTime.Now.Subtract(m_lookupFailures[strKey].TimeStamp).TotalSeconds < FAILURE_RETRY)
                     {
                         return m_lookupFailures[strKey];
@@ -325,7 +328,6 @@ namespace Heijden.DNS
             {
                 if (!m_ResponseCache.ContainsKey(strKey))
                 {
-                    //logger.LogDebug("DNS cache no result found for " + strKey + ".");
                     return null;
                 }
 
@@ -346,7 +348,7 @@ namespace Heijden.DNS
             {
                 //rr.TimeLived = TimeLived;
                 // The TTL property calculates its actual time to live
-                if (secondsLived >= rr.TTL)
+                if (secondsLived > MIN_CACHE_SECONDS && secondsLived >= rr.TTL)
                 {
                     //logger.LogDebug("DNS cache out of date result found for " + strKey + ".");
                     return null; // out of date
@@ -419,14 +421,10 @@ namespace Heijden.DNS
 
             IPEndPoint activeDNSServer = GetActiveDNSServer();
 
-            //for (int intAttempts = 0; intAttempts < m_Retries; intAttempts++)
-            //{
-            //    for (int intDnsServer = 0; intDnsServer < dnsServers.Count; intDnsServer++)
-            //	{
             string requestStr = request.Questions[0].QType + " " + request.Questions[0].QName;
             logger.LogDebug("Resolver sending UDP DNS request to " + activeDNSServer + " for " + requestStr + ".");
 
-            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            Socket socket = new Socket(activeDNSServer.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, timeout * 1000);
 
             try
@@ -437,16 +435,12 @@ namespace Heijden.DNS
                 byte[] data = new byte[intReceived];
                 Array.Copy(responseMessage, data, intReceived);
                 DNSResponse response = new DNSResponse(activeDNSServer, data);
-                //AddToCache(response);
-                //logger.LogDebug("Success in UdpRequest for " + requestStr + ".");
                 return response;
             }
             catch (SocketException sockExcp)
             {
-                //logger.LogDebug("SocketException UdpRequest for " + requestStr + ". " + sockExcp.Message);
                 IncrementTimeoutCount(activeDNSServer);
                 logger.LogWarning("Resolver connection to nameserver " + activeDNSServer + " failed. " + sockExcp.Message);
-                //continue; // next try
             }
             catch (Exception excp)
             {
@@ -459,8 +453,6 @@ namespace Heijden.DNS
                 // close the socket
                 socket.Close();
             }
-            //	}
-            //}
 
             logger.LogWarning("Resolver UDP request timed out for " + requestStr + ".");
             DNSResponse responseTimeout = new DNSResponse();
@@ -529,14 +521,14 @@ namespace Heijden.DNS
 
                             data = new byte[intLength];
                             bs.Read(data, 0, intLength);
-                            DNSResponse response = new DNSResponse(dnsServers[intDnsServer], data);
+                            DNSResponse response = new DNSResponse(m_DnsServers[intDnsServer], data);
 
                             //Debug.WriteLine("Received "+ (intLength+2)+" bytes in "+sw.ElapsedMilliseconds +" mS");
 
                             if (response.header.RCODE != RCode.NOERROR)
                                 return response;
 
-                            if (response.Questions[0].QType != DNSQType.AXFR)
+                            if (response.Questions[0].QType != QType.AXFR)
                             {
                                 //AddToCache(response);
                                 return response;
@@ -550,7 +542,7 @@ namespace Heijden.DNS
                             TransferResponse.Authorities.AddRange(response.Authorities);
                             TransferResponse.Additionals.AddRange(response.Additionals);
 
-                            if (response.Answers[0].Type == DNSType.SOA)
+                            if (response.Answers[0].Type == DnsType.SOA)
                                 intSoa++;
 
                             if (intSoa == 2)
@@ -578,7 +570,7 @@ namespace Heijden.DNS
                 }
             }
             DNSResponse responseTimeout = new DNSResponse();
-            responseTimeout.Timedout = true;
+            responseTimeout.Error = "Timeout Error";
             return responseTimeout;
         }
 
@@ -588,7 +580,7 @@ namespace Heijden.DNS
         /// <param name="name">Name to query</param>
         /// <param name="qtype">Question type</param>
         /// <returns>Response of the query</returns>
-        public DNSResponse QueryCache(string name, DNSQType qtype)
+        public DNSResponse QueryCache(string name, QType qtype)
         {
             Question question = new Question(name, qtype, QClass.IN);
             return SearchInCache(question);
@@ -600,7 +592,7 @@ namespace Heijden.DNS
         /// <param name="name">Name to query</param>
         /// <param name="qtype">Question type</param>
         /// <returns>Response of the query</returns>
-        public DNSResponse QueryCache(string name, DNSQType qtype, QClass qclass)
+        public DNSResponse QueryCache(string name, QType qtype, QClass qclass)
         {
             Question question = new Question(name, qtype, qclass);
             return SearchInCache(question);
@@ -614,7 +606,7 @@ namespace Heijden.DNS
         /// <param name="timeout">Timeout for lookup in seconds.</param>
         /// <param name="qclass">Class type</param>
         /// <returns>Response of the query</returns>
-        public DNSResponse Query(string name, DNSQType qtype, QClass qclass, int timeout)
+        public DNSResponse Query(string name, QType qtype, QClass qclass, int timeout)
         {
             Question question = new Question(name, qtype, qclass);
             DNSResponse response = SearchInCache(question);
@@ -633,7 +625,7 @@ namespace Heijden.DNS
         /// <param name="qtype">Question type</param>
         /// <param name="timeout">Timeout for lookup in seconds.</param>
         /// <returns>Response of the query</returns>
-        public DNSResponse Query(string name, DNSQType qtype, int timeout)
+        public DNSResponse Query(string name, QType qtype, int timeout)
         {
             Question question = new Question(name, qtype, QClass.IN);
             DNSResponse response = SearchInCache(question);
@@ -645,7 +637,7 @@ namespace Heijden.DNS
             return GetResponse(request, m_DnsServers, timeout);
         }
 
-        public DNSResponse Query(string name, DNSQType qtype, int timeout, List<IPEndPoint> dnsServers)
+        public DNSResponse Query(string name, QType qtype, int timeout, List<IPEndPoint> dnsServers)
         {
             Question question = new Question(name, qtype, QClass.IN);
             DNSResponse response = SearchInCache(question);
@@ -700,11 +692,21 @@ namespace Heijden.DNS
                 if (n.OperationalStatus == OperationalStatus.Up)
                 {
                     IPInterfaceProperties ipProps = n.GetIPProperties();
+                    // thanks to Jon Webster on May 20, 2008
                     foreach (IPAddress ipAddr in ipProps.DnsAddresses)
-                        if (ipAddr.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        // Exclude IPv6 site local addresses. Windows 10 adds default IPv6 DNS server addresses in the form of
+                        // fec0:0:0:ffff::1%1, fec0:0:0:ffff::2%1, fec0:0:0:ffff::3%1 to virtual adapters. TODO track down
+                        // what the purpose of setting such addresses is/was?
+                        if (!ipAddr.IsIPv6SiteLocal)
                         {
-                            list.Add(new IPEndPoint(ipAddr, DefaultPort));
+                            IPEndPoint entry = new IPEndPoint(ipAddr, DefaultPort);
+                            if (!list.Contains(entry))
+                            {
+                                list.Add(entry);
+                            }
                         }
+                    }
                 }
             }
             return list.ToArray();
@@ -716,14 +718,14 @@ namespace Heijden.DNS
 
             entry.HostName = HostName;
 
-            DNSResponse response = Query(HostName, DNSQType.A, QClass.IN, timeout);
+            DNSResponse response = Query(HostName, QType.A, QClass.IN, timeout);
 
             // fill AddressList and aliases
             List<IPAddress> AddressList = new List<IPAddress>();
             List<string> Aliases = new List<string>();
             foreach (AnswerRR answerRR in response.Answers)
             {
-                if (answerRR.Type == DNSType.A)
+                if (answerRR.Type == DnsType.A)
                 {
                     // answerRR.RECORD.ToString() == (answerRR.RECORD as RecordA).Address
                     AddressList.Add(IPAddress.Parse((answerRR.RECORD.ToString())));
@@ -731,7 +733,7 @@ namespace Heijden.DNS
                 }
                 else
                 {
-                    if (answerRR.Type == DNSType.CNAME)
+                    if (answerRR.Type == DnsType.CNAME)
                         Aliases.Add(answerRR.NAME);
                 }
             }
@@ -782,7 +784,7 @@ namespace Heijden.DNS
         ///</returns>
         public IPHostEntry GetHostEntry(IPAddress ip)
         {
-            DNSResponse response = Query(GetArpaFromIp(ip), DNSQType.PTR, QClass.IN, DEFAULT_TIMEOUT);
+            DNSResponse response = Query(GetArpaFromIp(ip), QType.PTR, QClass.IN, DEFAULT_TIMEOUT);
             if (response.RecordsPTR.Length > 0)
                 return MakeEntry(response.RecordsPTR[0].PTRDNAME, DEFAULT_TIMEOUT);
             else

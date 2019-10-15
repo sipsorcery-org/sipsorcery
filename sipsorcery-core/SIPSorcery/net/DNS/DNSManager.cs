@@ -9,6 +9,30 @@
 //
 // History:
 // 19 Oct 2007	Aaron Clauson	Created.
+// 14 Oct 2019  Aaron Clauson   Updatyes after synchronsing DNS classes with source from https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
+//
+// License: 
+// This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
+//
+// Copyright (c) 2008-2019 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland (www.sipsorcery.com)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
+// the following conditions are met:
+//
+// Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
+// Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following 
+// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of SIP Sorcery PTY LTD. 
+// nor the names of its contributors may be used to endorse or promote products derived from this software without specific 
+// prior written permission. 
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, 
+// BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+// IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
+// OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
+// OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// POSSIBILITY OF SUCH DAMAGE.
 // ============================================================================
 
 using System;
@@ -27,16 +51,16 @@ namespace SIPSorcery.Net
     {
         class LookupRequest
         {
-            public static LookupRequest Empty = new LookupRequest(null, DNSQType.NULL, DEFAULT_DNS_TIMEOUT, null, null);
+            public static LookupRequest Empty = new LookupRequest(null, QType.NULL, DEFAULT_DNS_TIMEOUT, null, null);
 
             public string Hostname;
-            public DNSQType QueryType;
+            public QType QueryType;
             public int Timeout;
             public List<IPEndPoint> DNSServers;
             public ManualResetEvent CompleteEvent;
             public List<LookupRequest> Duplicates;      // if any DNS lookup requests arrive with the same query they will be stored with the queued query.
 
-            public LookupRequest(string hostname, DNSQType queryType, int timeout, List<IPEndPoint> dnsServers, ManualResetEvent completeEvent)
+            public LookupRequest(string hostname, QType queryType, int timeout, List<IPEndPoint> dnsServers, ManualResetEvent completeEvent)
             {
                 Hostname = hostname;
                 QueryType = queryType;
@@ -69,6 +93,9 @@ namespace SIPSorcery.Net
                 if (osDNSServers != null && osDNSServers.Length > 0)
                 {
                     logger.LogDebug("Initialising DNS resolver with operating system DNS server entries.");
+
+                    osDNSServers.ToList().ForEach(x => logger.LogDebug($"DNS server {x.Address}:{x.Port}"));
+
                     m_resolver = new Resolver(osDNSServers);
                 }
                 else
@@ -110,12 +137,12 @@ namespace SIPSorcery.Net
         /// <returns>If null is returned it means this is the first lookup for this hostname. The caller should wait a few seconds and call the method again.</returns>
         public static DNSResponse LookupAsync(string hostname)
         {
-            return Lookup(hostname, DNSQType.A, DEFAULT_A_RECORD_DNS_TIMEOUT, null, true, true);
+            return Lookup(hostname, QType.A, DEFAULT_A_RECORD_DNS_TIMEOUT, null, true, true);
         }
 
-        public static DNSResponse LookupAsync(string hostname, DNSQType queryType)
+        public static DNSResponse LookupAsync(string hostname, QType queryType)
         {
-            int lookupTimeout = (queryType == DNSQType.A || queryType == DNSQType.AAAA) ? DEFAULT_A_RECORD_DNS_TIMEOUT : DEFAULT_DNS_TIMEOUT;
+            int lookupTimeout = (queryType == QType.A || queryType == QType.AAAA) ? DEFAULT_A_RECORD_DNS_TIMEOUT : DEFAULT_DNS_TIMEOUT;
             return Lookup(hostname, queryType, lookupTimeout, null, true, true);
         }
 
@@ -125,12 +152,12 @@ namespace SIPSorcery.Net
         /// <param name="hostname">The hostname of the A record to lookup in DNS.</param>
         /// <param name="timeout">Timeout in seconds for the lookup.</param>
         /// <returns></returns>
-        public static DNSResponse Lookup(string hostname, DNSQType queryType, int timeout, List<IPEndPoint> dnsServers)
+        public static DNSResponse Lookup(string hostname, QType queryType, int timeout, List<IPEndPoint> dnsServers)
         {
             return Lookup(hostname, queryType, timeout, dnsServers, true, false);
         }
 
-        public static DNSResponse Lookup(string hostname, DNSQType queryType, int timeout, List<IPEndPoint> dnsServers, bool useCache, bool async)
+        public static DNSResponse Lookup(string hostname, QType queryType, int timeout, List<IPEndPoint> dnsServers, bool useCache, bool async)
         {
             if (hostname == null || hostname.Trim().Length == 0)
             {
@@ -338,18 +365,29 @@ namespace SIPSorcery.Net
                             {
                                 logger.LogWarning("DNSManager resolution error for " + lookupRequest.QueryType + " " + lookupRequest.Hostname + ". " + dnsResponse.Error + ". Time taken=" + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds.ToString("0.##") + "ms.");
                             }
-                            else if (lookupRequest.QueryType == DNSQType.A)
+                            else if (lookupRequest.QueryType == QType.A)
                             {
-                                if (dnsResponse.RecordsA != null && dnsResponse.RecordsA.Length > 0)
+                                if (dnsResponse?.RecordsA.Length > 0)
                                 {
-                                    logger.LogDebug("DNSManager resolved A record for " + lookupRequest.Hostname + " to " + dnsResponse.RecordsA[0].Address.ToString() + " in " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds.ToString("0.##") + "ms.");
+                                    logger.LogDebug($"DNSManager resolved A record for {lookupRequest.Hostname} to {dnsResponse.RecordsA[0].Address.ToString()} with TTL {dnsResponse.RecordsA[0].RR.TTL} in {DateTime.Now.Subtract(startLookupTime).TotalMilliseconds.ToString("0.##")}ms.");
                                 }
                                 else
                                 {
                                     logger.LogWarning("DNSManager could not resolve A record for " + lookupRequest.Hostname + " in " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds.ToString("0.##") + "ms.");
                                 }
                             }
-                            else if (lookupRequest.QueryType == DNSQType.SRV)
+                            else if (lookupRequest.QueryType == QType.AAAA)
+                            {
+                                if (dnsResponse?.RecordsAAAA.Length > 0)
+                                {
+                                    logger.LogDebug($"DNSManager resolved AAAA record for {lookupRequest.Hostname} to {dnsResponse.RecordsAAAA[0].Address.ToString()} with TTL {dnsResponse.RecordsAAAA[0].RR.TTL} in {DateTime.Now.Subtract(startLookupTime).TotalMilliseconds.ToString("0.##")}ms.");
+                                }
+                                else
+                                {
+                                    logger.LogWarning("DNSManager could not resolve AAAA record for " + lookupRequest.Hostname + " in " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds.ToString("0.##") + "ms.");
+                                }
+                            }
+                            else if (lookupRequest.QueryType == QType.SRV)
                             {
                                 logger.LogDebug("DNSManager resolve time for " + lookupRequest.Hostname + " " + lookupRequest.QueryType + " " + DateTime.Now.Subtract(startLookupTime).TotalMilliseconds.ToString("0.##") + "ms.");
                                 if (dnsResponse.RecordsRR == null || dnsResponse.RecordsRR.Length == 0)
@@ -360,7 +398,7 @@ namespace SIPSorcery.Net
                                 {
                                     foreach (RecordSRV srvRecord in dnsResponse.RecordSRV)
                                     {
-                                        logger.LogDebug(" result: priority=" + srvRecord.Priority + ", weight=" + srvRecord.Weight + ", port=" + srvRecord.Port + ", target=" + srvRecord.Target + ".");
+                                        logger.LogDebug(" result: priority=" + srvRecord.PRIORITY + ", weight=" + srvRecord.WEIGHT + ", port=" + srvRecord.PORT + ", target=" + srvRecord.TARGET + ".");
                                     }
                                 }
                             }

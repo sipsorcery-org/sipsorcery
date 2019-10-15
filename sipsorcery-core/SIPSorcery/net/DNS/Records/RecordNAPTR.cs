@@ -5,13 +5,14 @@
 // 
 //
 // Author(s):
-// Guillaume Bonnet
+// Alphons van der Heijden
 //
 // History:
 // 28 Mar 2008	Aaron Clauson   Added to sipwitch code base.
+// 14 Oct 2019  Aaron Clauson   Synchronised with latest version of source from at https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 //
 // License:
-// http://www.opensource.org/licenses/gpl-license.php
+// The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ===========================================================================
 
 using System;
@@ -51,6 +52,48 @@ using System.Collections.Generic;
       ABNF of RFC 2396 [9].
  
  */
+
+/*
+* http://www.faqs.org/rfcs/rfc2915.html
+* 
+8. DNS Packet Format
+
+     The packet format for the NAPTR record is:
+
+                                      1  1  1  1  1  1
+        0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
+      +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+      |                     ORDER                     |
+      +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+      |                   PREFERENCE                  |
+      +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+      /                     FLAGS                     /
+      +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+      /                   SERVICES                    /
+      +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+      /                    REGEXP                     /
+      +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+      /                  REPLACEMENT                  /
+      /                                               /
+      +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+
+where:
+
+FLAGS A <character-string> which contains various flags.
+
+SERVICES A <character-string> which contains protocol and service
+  identifiers.
+
+REGEXP A <character-string> which contains a regular expression.
+
+REPLACEMENT A <domain-name> which specifies the new value in the
+  case where the regular expression is a simple replacement
+  operation.
+
+<character-string> and <domain-name> as used here are defined in
+RFC1035 [1].
+
+*/
 #endregion
 
 namespace Heijden.DNS
@@ -66,34 +109,32 @@ namespace Heijden.DNS
         public const char NAPTR_S_FLAG = 'S';
         public const char NAPTR_U_FLAG = 'U';
 
-        public ushort Order;
-		public ushort Preference;
-		public char Flag;
-        public string Service;
-        public string Rule;
-        public string Replacement;
+        public ushort ORDER;
+        public ushort PREFERENCE;
+        public string FLAGS;
+        public string SERVICES;
+        public string REGEXP;
+        public string REPLACEMENT;
 
         public RecordNAPTR(RecordReader rr)
         {
-            Order = rr.ReadShort();
-            Preference = rr.ReadShort();
-            rr.ReadChar();                      // 1 byte needs to be skipped since for ENUM lookups the flag should be single char only. 
-            Flag = rr.ReadChar();
-            Service = rr.ReadString();
-            Rule = rr.ReadString();
-            Rule = (Rule != null) ? Rule.Replace(@"\\", @"\") : null;
-            Replacement = rr.ReadDomainName();                  
- 		}
+            ORDER = rr.ReadUInt16();
+            PREFERENCE = rr.ReadUInt16();
+            FLAGS = rr.ReadString();
+            SERVICES = rr.ReadString();
+            REGEXP = rr.ReadString();
+            REPLACEMENT = rr.ReadDomainName();
+        }
 
-		public override string ToString()
-		{
-			return string.Format("{0} {1} {2} {3} {4} {5}",
-                Order,
-                Preference,
-                Flag,
-                Service,
-                Rule,
-                Replacement);
-		}
-	}
+        public override string ToString()
+        {
+            return string.Format("{0} {1} \"{2}\" \"{3}\" \"{4}\" {5}",
+                ORDER,
+                PREFERENCE,
+                FLAGS,
+                SERVICES,
+                REGEXP,
+                REPLACEMENT);
+        }
+    }
 }

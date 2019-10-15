@@ -9,12 +9,12 @@
 //
 // History:
 // 28 Mar 2008	Aaron Clauson   Added to sipwitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
+// 14 Oct 2019  Aaron Clauson   Synchronised with latest version of source from at https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 //
 // License:
-// http://www.opensource.org/licenses/gpl-license.php
+// The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ============================================================================
 
-using System;
 using System.Net;
 
 /*
@@ -34,27 +34,24 @@ records.
  */
 namespace Heijden.DNS
 {
-	public class RecordA : Record
-	{
-		public IPAddress Address;
+    public class RecordA : Record
+    {
+        public System.Net.IPAddress Address;
 
-		public RecordA(RecordReader rr)
-		{
-			System.Net.IPAddress.TryParse(string.Format("{0}.{1}.{2}.{3}",
-				rr.ReadByte(),
-				rr.ReadByte(),
-				rr.ReadByte(),
-				rr.ReadByte()), out this.Address);
-		}
+        public RecordA(RecordReader rr)
+        {
+            Address = new System.Net.IPAddress(rr.ReadBytes(4));
+        }
 
         public RecordA(IPAddress address)
         {
             Address = address;
         }
 
-		public override string ToString()
-		{
-			return Address.ToString();
-		}
-	}
+        public override string ToString()
+        {
+            return Address.ToString();
+        }
+
+    }
 }

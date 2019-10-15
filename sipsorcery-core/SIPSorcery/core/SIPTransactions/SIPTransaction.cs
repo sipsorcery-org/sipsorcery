@@ -89,8 +89,6 @@ namespace SIPSorcery.SIP
         protected static readonly int m_t6 = SIPTimings.T6;                     // SIP Timer T1 in milliseconds.
         protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for (typically 10 mins).    
 
-        private static string m_crLF = SIPConstants.CRLF;
-
         public int Retransmits = 0;
         public int AckRetransmits = 0;
         public DateTime InitialTransmit = DateTime.MinValue;

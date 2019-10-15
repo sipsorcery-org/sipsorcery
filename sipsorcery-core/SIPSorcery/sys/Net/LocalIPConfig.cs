@@ -133,7 +133,14 @@ namespace SIPSorcery.Sys
                 }
                 else
                 {
-                    endPoints.Add(IPSocket.ParseSocketString(socketString));
+                    if (IPSocket.TryParseIPEndPoint(socketString, out var ipEndPoint))
+                    {
+                        endPoints.Add(ipEndPoint);
+                    }
+                    else
+                    {
+                        logger.LogWarning($"Could not parse IP end point string {socketString} in LocalIPConfig.ParseIPSockets.");
+                    }
                 }
             }
 
