@@ -75,6 +75,7 @@ namespace SIPSorcery.SIP.App
         private bool m_exit;
         private int m_attempts;
         private ManualResetEvent m_waitForRegistrationMRE = new ManualResetEvent(false);
+        private Timer m_registrationTimer;
 
         public string UserAgent;                // If not null this value will replace the default user agent value in the REGISTER request.
 
@@ -87,7 +88,8 @@ namespace SIPSorcery.SIP.App
             SIPTransport sipTransport,
             string username,
             string password,
-            string server)
+            string server,
+            int expiry)
         {
             m_sipTransport = sipTransport;
             m_localEndPoint = sipTransport.GetDefaultSIPEndPoint();
@@ -96,7 +98,7 @@ namespace SIPSorcery.SIP.App
             m_password = password;
             m_registrarHost = server;
             m_contactURI = new SIPURI(SIPSchemesEnum.sip, m_localEndPoint);
-            m_expiry = DEFAULT_REGISTER_EXPIRY;
+            m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
             m_callID = Guid.NewGuid().ToString();
 
             Log_External = (ev) => logger.LogDebug(ev?.Message);
@@ -135,17 +137,25 @@ namespace SIPSorcery.SIP.App
 
         public void Start()
         {
-            ThreadPool.QueueUserWorkItem(delegate { StartRegistration(); });
+            if (m_registrationTimer != null)
+            {
+                throw new ApplicationException("SIPRegistrationUserAgent is already running, try Stop() at first!");
+            }
+
+            int callbackPeriod = (m_expiry - REGISTRATION_HEAD_TIME) * 1000;
+            logger.LogDebug($"Starting SIPRegistrationUserAgent for {m_sipAccountAOR.ToString()}, callback period {callbackPeriod}ms.");
+            
+            m_registrationTimer = new Timer(DoRegistration, null, 0, callbackPeriod);
         }
 
-        public void StartRegistration()
+        private void DoRegistration(object state)
         {
-            try
+            if (Monitor.TryEnter(m_waitForRegistrationMRE))
             {
-                logger.LogDebug("Starting SIPRegistrationUserAgent for " + m_sipAccountAOR.ToString() + ".");
-
-                while (!m_exit)
+                try
                 {
+                    logger.LogDebug("DoRegistration for " + m_sipAccountAOR.ToString() + ".");
+
                     m_waitForRegistrationMRE.Reset();
                     m_attempts = 0;
 
@@ -164,20 +174,22 @@ namespace SIPSorcery.SIP.App
                     if (!m_exit && m_isRegistered)
                     {
                         logger.LogDebug("SIPRegistrationUserAgent was successful, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + (m_expiry - REGISTRATION_HEAD_TIME) + "s.");
-                        Thread.Sleep((m_expiry - REGISTRATION_HEAD_TIME) * 1000);
+                        m_registrationTimer.Change((m_expiry - REGISTRATION_HEAD_TIME) * 1000, Timeout.Infinite);
                     }
                     else
                     {
                         logger.LogDebug("SIPRegistrationUserAgent temporarily failed, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + REGISTER_FAILURERETRY_INTERVAL + "s.");
-                        Thread.Sleep(REGISTER_FAILURERETRY_INTERVAL * 1000);
+                        m_registrationTimer.Change((m_expiry - REGISTRATION_HEAD_TIME) * 1000, Timeout.Infinite);
                     }
                 }
-
-                logger.LogDebug("SIPRegistrationUserAgent for " + m_sipAccountAOR.ToString() + " stopping.");
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPRegistrationUserAgent Start. " + excp.Message);
+                catch (Exception excp)
+                {
+                    logger.LogError("Exception DoRegistration Start. " + excp.Message);
+                }
+                finally
+                {
+                    Monitor.Exit(m_waitForRegistrationMRE);
+                }
             }
         }
 
