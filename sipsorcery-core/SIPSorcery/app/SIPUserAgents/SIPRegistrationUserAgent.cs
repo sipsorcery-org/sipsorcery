@@ -193,6 +193,25 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        /// <summary>
+        /// Allows the registration expiry setting to be adjusted after the instance has been created.
+        /// </summary>
+        /// <param name="expiry">The new expiry value.</param>
+        public void SetExpiry(int expiry)
+        {
+            int newExpiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
+
+            if(newExpiry != m_expiry)
+            {
+                logger.LogInformation($"Expiry for registration agent for {m_sipAccountAOR.ToString()} updated from {m_expiry} to {newExpiry}.");
+
+                m_expiry = newExpiry;
+
+                // Schedule an immediate registration for the new value.
+                m_registrationTimer.Change(0, Timeout.Infinite);
+            }
+        }
+
         public void Stop()
         {
             try
