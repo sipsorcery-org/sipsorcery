@@ -1,7 +1,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/github/sipsorcery/sipsorcery?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery) 
 
-This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261). In addition 
-there is partial support for the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550), Web Real-Time Communication [(WebRTC)](https://en.wikipedia.org/wiki/WebRTC) and a number of related protocols such as RTCP, STUN, SDP and RTSP. Work is ongoing to fully support RTP and add IPv6.
+This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261) including IPv6 support. In addition 
+there is partial support for the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550), Web Real-Time Communication [(WebRTC)](https://en.wikipedia.org/wiki/WebRTC) and a number of related protocols such as RTCP, STUN, SDP and RTSP. Work is ongoing to fully support RTP.
 
 This project does not provide any media (audio and video) handling. There are some limited capabilities in the separate [SIPSorcery.Media](https://github.com/sipsorcery/sipsorcery-media) project but they are Windows specific and not suitable for production. This project can be used for SIP signalling and to send and receive RTP packets but it does not have features to do anything with the payloads in the RTP packets.
 
