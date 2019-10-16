@@ -296,7 +296,7 @@ namespace SIPSorcery.SIP
         /// <returns>A SIP channel.</returns>
         public SIPEndPoint GetDefaultSIPEndPoint()
         {
-            if (m_sipChannels == null)
+            if (m_sipChannels == null || m_sipChannels.Count == 0)
             {
                 throw new ApplicationException("No SIP channels available.");
             }
@@ -330,6 +330,11 @@ namespace SIPSorcery.SIP
 
         public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
         {
+            if (m_sipChannels == null || m_sipChannels.Count == 0)
+            {
+                throw new ApplicationException("No SIP channels available.");
+            }
+
             var matchingChannels = m_sipChannels.Values.Where(x => x.SIPProtocol == protocol);
 
             if(matchingChannels.Count() == 1)
@@ -340,8 +345,6 @@ namespace SIPSorcery.SIP
             {
                 return matchingChannels.Where(x => x.IsLoopbackAddress == false).First().SIPChannelEndPoint;
             }
-
-            return null;
         }
 
         /// <summary>
@@ -351,7 +354,7 @@ namespace SIPSorcery.SIP
         /// <returns>If successful the SIP end point of a SIP channel that can be used to communicate with the destination end point.</returns>
         public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
         {
-            if (m_sipChannels.Count == 0)
+            if (m_sipChannels == null || m_sipChannels.Count == 0)
             {
                 return null;
             }

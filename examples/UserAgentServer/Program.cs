@@ -36,6 +36,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -76,6 +77,15 @@ namespace SIPSorcery
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Loopback, port)));
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv4Address(), port)));
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv6Address(), port)));
+            sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(IPAddress.Any, port)));
+            sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(IPAddress.IPv6Any, port)));
+
+            if(File.Exists("localhost.pfx"))
+            {
+                var certificate = new X509Certificate2(@"localhost.pfx", "");
+                sipTransport.AddSIPChannel(new SIPTLSChannel(certificate, new IPEndPoint(IPAddress.Any, SIPConstants.DEFAULT_SIP_TLS_PORT)));
+                sipTransport.AddSIPChannel(new SIPTLSChannel(certificate, new IPEndPoint(IPAddress.IPv6Any, SIPConstants.DEFAULT_SIP_TLS_PORT)));
+            }
 
             // To keep things a bit simpler this example only supports a single call at a time and the SIP server user agent
             // acts as a singleton
@@ -123,6 +133,12 @@ namespace SIPSorcery
                     byeTransaction.SendFinalResponse(byeResponse);
                     uas?.Hangup();
                     uasCts?.Cancel();
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
+                {
+                    SIPSorcery.Sys.Log.Logger.LogInformation($"OPTIONS request recieved {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
+                    SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    sipTransport.SendResponse(optionsResponse);
                 }
             };
 

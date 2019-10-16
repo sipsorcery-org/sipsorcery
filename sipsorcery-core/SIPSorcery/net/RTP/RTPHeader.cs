@@ -3,7 +3,6 @@
 //
 // Description: RTP Header as defined in RFC3550.
 // 
-//
 // RTP Header:
 // 0                   1                   2                   3
 // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -72,8 +71,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections;
-using System.Net;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -81,8 +78,6 @@ namespace SIPSorcery.Net
     public class RTPHeader
     {
         public const int MIN_HEADER_LEN = 12;
-
-        //public readonly static DateTime ZeroTime = new DateTime(2007, 1, 1).ToUniversalTime();
 
         public const int RTP_VERSION = 2;
 
