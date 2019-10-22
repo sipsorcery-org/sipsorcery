@@ -61,7 +61,7 @@ namespace SIPSorcery.SIP
         //private string m_certificatePath;
         private X509Certificate2 m_serverCertificate;
         private static object m_writeLock = new object();
-        
+
         private new ILogger logger = Log.Logger;
 
         // Can be set to allow TCP channels hosted in the same process to send to each other. Useful for testing.
@@ -87,7 +87,7 @@ namespace SIPSorcery.SIP
             Initialise();
         }
 
-        public SIPTLSChannel(X509Certificate2 serverCertificate, IPAddress listenAddress, int listenPort) : 
+        public SIPTLSChannel(X509Certificate2 serverCertificate, IPAddress listenAddress, int listenPort) :
             this(serverCertificate, new IPEndPoint(listenAddress, listenPort))
         { }
 
@@ -360,8 +360,8 @@ namespace SIPSorcery.SIP
                 SslStream sslStream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
                 //DisplayCertificateInformation(sslStream);
 
-                 SIPConnection callerConnection = new SIPConnection(this, tcpClient, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
-                 sslStream.BeginAuthenticateAsClient(serverCN, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
+                SIPConnection callerConnection = new SIPConnection(this, tcpClient, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
+                sslStream.BeginAuthenticateAsClient(serverCN, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
                 //sslStream.AuthenticateAsClient(serverCN);
 
                 //if (tcpClient != null && tcpClient.Connected)
@@ -387,13 +387,13 @@ namespace SIPSorcery.SIP
             {
                 logger.LogError("Exception SIPTLSChannel EndConnect. " + excp);
 
-                if(tcpClient != null)
+                if (tcpClient != null)
                 {
                     try
                     {
                         tcpClient.Close();
                     }
-                    catch(Exception closeExcp)
+                    catch (Exception closeExcp)
                     {
                         logger.LogWarning("Exception SIPTLSChannel EndConnect Close TCP Client. " + closeExcp);
                     }
@@ -632,16 +632,9 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void Dispose(bool disposing)
+        public override void Dispose()
         {
-            try
-            {
-                this.Close();
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception Disposing SIPTLSChannel. " + excp.Message);
-            }
+            this.Close();
         }
     }
 }

@@ -52,7 +52,7 @@ namespace SIPSorcery.SIP.App
         private SIPTransport m_sipTransport;
         private SIPNonInviteTransaction m_transaction;
         private SIPEndPoint m_outboundProxy;                   // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
-        private SIPDialogue m_sipDialogue;
+        //private SIPDialogue m_sipDialogue;
         private bool m_isAuthenticated;
 
         private string m_owner;
@@ -120,10 +120,12 @@ namespace SIPSorcery.SIP.App
             get { return m_owner; }
         }
 
+#pragma warning disable CS0067
         public event SIPUASDelegate CallCancelled;
         public event SIPUASDelegate NoRingTimeout;
         public event SIPUASDelegate TransactionComplete;
         public event SIPUASStateChangedDelegate UASStateChanged;
+#pragma warning restore CS0067
 
         public SIPNonInviteServerUserAgent(
             SIPTransport sipTransport,

@@ -119,10 +119,8 @@ namespace SIPSorcery.SIP
                         if (!Closed)
                         {
                             tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                            tcpClient.LingerState = new LingerOption(false, 0);
-                            //clientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                            //tcpClient.LingerState = new LingerOption(true, 0);
 
-                            //IPEndPoint remoteEndPoint = (IPEndPoint)clientSocket.RemoteEndPoint;
                             IPEndPoint remoteEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
                             logger.LogDebug("SIP TCP Channel connection accepted from " + remoteEndPoint + ".");
 
@@ -294,9 +292,18 @@ namespace SIPSorcery.SIP
                         {
                             logger.LogDebug("Attempting to establish TCP connection to " + dstEndPoint + ".");
 
-                            TcpClient tcpClient = new TcpClient(dstEndPoint.AddressFamily);
-                            tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                            tcpClient.Client.Bind(m_localSIPEndPoint.GetIPEndPoint());
+                            //TcpClient tcpClient = new TcpClient(dstEndPoint.AddressFamily);
+                            //tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                            //tcpClient.LingerState = new LingerOption(true, 0);
+                            //tcpClient.Client.Bind(m_localSIPEndPoint.GetIPEndPoint());
+                            
+                            Socket tcpSocket = new Socket(dstEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                            tcpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                            //tcpSocket.LingerState = new LingerOption(true, 0);
+                            tcpSocket.Bind(m_localSIPEndPoint.GetIPEndPoint());
+
+                            TcpClient tcpClient = new TcpClient();
+                            tcpClient.Client = tcpSocket;
 
                             m_connectingSockets.Add(dstEndPoint.ToString());
                             tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer });
@@ -335,6 +342,7 @@ namespace SIPSorcery.SIP
                 logger.LogError("Exception EndSend. " + excp.Message);
             }
         }
+        
         protected override void OnSendComplete(EventArgs args)
         {
             base.OnSendComplete(args);
@@ -451,7 +459,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void Dispose(bool disposing)
+        public override void Dispose()
         {
             try
             {

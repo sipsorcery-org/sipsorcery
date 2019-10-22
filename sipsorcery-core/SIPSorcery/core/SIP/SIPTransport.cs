@@ -781,11 +781,12 @@ namespace SIPSorcery.SIP
 
         public void SendResponse(SIPResponse sipResponse)
         {
-            if (sipResponse.LocalSIPEndPoint != null && sipResponse.LocalSIPEndPoint.Address.Equals(BlackholeAddress))
-            {
-                // Ignore packet, it's destined for the blackhole.
-                return;
-            }
+            // TODO: Testing channels listening on 0.0.0.0. Triple check removing this behaviour doesn't break anything major.
+            //if (sipResponse.LocalSIPEndPoint != null && sipResponse.LocalSIPEndPoint.Address.Equals(BlackholeAddress))
+            //{
+            //    // Ignore packet, it's destined for the blackhole.
+            //    return;
+            //}
 
             if (m_sipChannels.Count == 0)
             {
@@ -1489,7 +1490,6 @@ namespace SIPSorcery.SIP
                                             #endregion
 
                                             // Request has passed validity checks, adjust the client Via header to reflect the socket the request was received on.
-                                            //SIPViaHeader originalTopViaHeader = sipRequest.Header.Via.TopViaHeader;
                                             sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
 
                                             // Stateful cores should create a transaction once they receive this event, stateless cores should not.

@@ -73,18 +73,21 @@ namespace SIPSorcery
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
             int port = FreePort.FindNextAvailableUDPPort(SIPConstants.DEFAULT_SIP_PORT);
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, port)));
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Loopback, port)));
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv4Address(), port)));
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv6Address(), port)));
+            //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, port)));
+            //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Loopback, port)));
+            //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv4Address(), port)));
+            //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv6Address(), port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Any, port)));
             sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(IPAddress.Any, port)));
             sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(IPAddress.IPv6Any, port)));
 
             if(File.Exists("localhost.pfx"))
             {
                 var certificate = new X509Certificate2(@"localhost.pfx", "");
-                sipTransport.AddSIPChannel(new SIPTLSChannel(certificate, new IPEndPoint(IPAddress.Any, SIPConstants.DEFAULT_SIP_TLS_PORT)));
-                sipTransport.AddSIPChannel(new SIPTLSChannel(certificate, new IPEndPoint(IPAddress.IPv6Any, SIPConstants.DEFAULT_SIP_TLS_PORT)));
+                // TODO fix TLSChannel and uncomment 2 lines.
+                //sipTransport.AddSIPChannel(new SIPTLSChannel(certificate, new IPEndPoint(IPAddress.Any, SIPConstants.DEFAULT_SIP_TLS_PORT)));
+                //sipTransport.AddSIPChannel(new SIPTLSChannel(certificate, new IPEndPoint(IPAddress.IPv6Any, SIPConstants.DEFAULT_SIP_TLS_PORT)));
             }
 
             // To keep things a bit simpler this example only supports a single call at a time and the SIP server user agent
@@ -136,7 +139,8 @@ namespace SIPSorcery
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogInformation($"OPTIONS request recieved {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
+                    SIPSorcery.Sys.Log.Logger.LogInformation($"{localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
+                    SIPSorcery.Sys.Log.Logger.LogDebug(sipRequest.ToString());
                     SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     sipTransport.SendResponse(optionsResponse);
                 }
@@ -215,7 +219,11 @@ namespace SIPSorcery
                                     packetReceivedCount++;
                                     bytesReceivedCount += (uint)bytesRead;
 
-                                    rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
+                                    if (!dstRtpEndPoint.Address.Equals(IPAddress.Any))
+                                    {
+                                        rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
+                                    }
+
                                     timestamp += (uint)buffer.Length;
 
                                     if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
@@ -255,7 +263,12 @@ namespace SIPSorcery
 
                                         byte[] sample = new byte[bytesRead];
                                         Array.Copy(buffer, sample, bytesRead);
-                                        rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
+
+                                        if (dstRtpEndPoint.Address != IPAddress.Any)
+                                        {
+                                            rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
+                                        }
+
                                         timestamp += (uint)buffer.Length;
 
                                         if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)

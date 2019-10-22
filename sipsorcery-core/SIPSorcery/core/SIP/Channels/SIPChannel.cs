@@ -57,7 +57,7 @@ namespace SIPSorcery.SIP
 		}
 	}
 
-    public abstract class SIPChannel
+    public abstract class SIPChannel : IDisposable
     {
         private const int INITIALPRUNE_CONNECTIONS_DELAY = 60000;   // Wait this long before starting the prune checks, there will be no connections to prune initially and the CPU is needed elsewhere.
         private const int PRUNE_CONNECTIONS_INTERVAL = 60000;        // The period at which to prune the connections.
@@ -168,7 +168,7 @@ namespace SIPSorcery.SIP
 
                             if (inactiveConnection != null)
                             {
-                                logger.LogDebug("Pruning inactive connection on " + SIPChannelContactURI + " to remote end point " + inactiveConnection.RemoteEndPoint.ToString() + ".");
+                                logger.LogDebug($"Pruning inactive connection on {SIPChannelContactURI}to remote end point {inactiveConnection.RemoteEndPoint}.");
                                 inactiveConnection.Close();
                             }
                             else
@@ -203,5 +203,7 @@ namespace SIPSorcery.SIP
         {
             SendComplete?.Invoke(this, args);
         }
+
+        public abstract void Dispose();
     }
 }

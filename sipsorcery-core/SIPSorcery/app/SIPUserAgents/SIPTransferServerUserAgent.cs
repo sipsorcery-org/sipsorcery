@@ -115,10 +115,12 @@ namespace SIPSorcery.SIP.App
         private string m_callDestination;
         private SIPRequest m_dummyRequest;                      // Used to get the SDP for into the dialplan.
 
+#pragma warning disable CS0067
         public event SIPUASDelegate CallCancelled;
         public event SIPUASDelegate NoRingTimeout;
         public event SIPUASDelegate TransactionComplete;
         public event SIPUASStateChangedDelegate UASStateChanged;
+#pragma warning restore CS0067
 
         public SIPTransferServerUserAgent(            
             SIPMonitorLogDelegate logDelegate,

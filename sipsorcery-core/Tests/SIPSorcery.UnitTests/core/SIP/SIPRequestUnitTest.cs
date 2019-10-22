@@ -42,6 +42,9 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 throw new ApplicationException("This Send method is not available in the MockSIPChannel, please use an alternative overload.");
             }
+
+            public override void Dispose()
+            { }
         }
 
         private class MockSIPDNSManager

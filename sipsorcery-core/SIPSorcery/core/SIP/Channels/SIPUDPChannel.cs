@@ -203,5 +203,10 @@ namespace SIPSorcery.SIP
                 logger.LogWarning("Exception SIPUDPChannel Close. " + excp.Message);
             }
         }
+
+        public override void Dispose()
+        {
+            this.Close();
+        }
     }
 }

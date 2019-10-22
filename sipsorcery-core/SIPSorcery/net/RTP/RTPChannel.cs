@@ -128,8 +128,8 @@ namespace SIPSorcery.Net
         private int _lastBWCalcAt;
         private int _bytesSinceLastBWCalc;
         private int _framesSinceLastCalc;
-        private double _lastBWCalc;
-        private double _lastFrameRate;
+        //private double _lastBWCalc;
+        //private double _lastFrameRate;
 
         //public event Action<string, byte[]> OnRTPDataReceived;
         public event Action OnRTPQueueFull;                         // Occurs if the RTP queue fills up and needs to be purged.
