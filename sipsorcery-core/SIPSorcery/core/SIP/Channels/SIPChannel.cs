@@ -36,6 +36,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
@@ -69,7 +70,8 @@ namespace SIPSorcery.SIP
 
         protected SIPEndPoint m_localSIPEndPoint = null;
 
-        public event EventHandler SendComplete;
+        //public event EventHandler SendComplete;
+
         public SIPEndPoint SIPChannelEndPoint
         {
             get { return m_localSIPEndPoint; }
@@ -122,12 +124,19 @@ namespace SIPSorcery.SIP
 
         public SIPMessageReceivedDelegate SIPMessageReceived;
 
-        public abstract void Send(IPEndPoint destinationEndPoint, string message);
-        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer);
-        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName);
+        /// <summary>
+        /// Send a SIP message, represented as a string, to a remote end point.
+        /// </summary>
+        /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
+        /// <param name="message">The message to send.</param>
+        /// <param name="sendResult">An optional parameter that if set will allow the progress and result of the send
+        /// to be monitored by the caller.</param>
+        public abstract void Send(IPEndPoint destinationEndPoint, string message, TaskCompletionSource<SendResult> sendResult);
+        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, TaskCompletionSource<SendResult> sendResult);
+        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName, TaskCompletionSource<SendResult> sendResult);
         public abstract void Close();
         public abstract bool IsConnectionEstablished(IPEndPoint remoteEndPoint);
-        protected abstract Dictionary<string, SIPConnection> GetConnectionsList();
+        protected abstract Dictionary<string, SIPStreamConnection> GetConnectionsList();
 
         /// <summary>
         /// Periodically checks the established connections and closes any that have not had a transmission for a specified 
@@ -150,13 +159,13 @@ namespace SIPSorcery.SIP
                     {
                         try
                         {
-                            SIPConnection inactiveConnection = null;
-                            Dictionary<string, SIPConnection> connections = GetConnectionsList();
+                            SIPStreamConnection? inactiveConnection = null;
+                            Dictionary<string, SIPStreamConnection> connections = GetConnectionsList();
 
                             lock (connections)
                             {
                                 var inactiveConnectionKey = (from connection in connections
-                                                             where connection.Value.LastTransmission < DateTime.Now.AddMinutes(PRUNE_NOTRANSMISSION_MINUTES * -1)
+                                                             where connection.Value.ConnectionProps.LastTransmission < DateTime.Now.AddMinutes(PRUNE_NOTRANSMISSION_MINUTES * -1)
                                                              select connection.Key).FirstOrDefault();
 
                                 if (inactiveConnectionKey != null)
@@ -168,8 +177,8 @@ namespace SIPSorcery.SIP
 
                             if (inactiveConnection != null)
                             {
-                                logger.LogDebug($"Pruning inactive connection on {SIPChannelContactURI}to remote end point {inactiveConnection.RemoteEndPoint}.");
-                                inactiveConnection.Close();
+                                logger.LogDebug($"Pruning inactive connection on {SIPChannelContactURI}to remote end point {inactiveConnection.Value.ConnectionProps.RemoteEndPoint}.");
+                                inactiveConnection.Value.StreamSocket.Close();
                             }
                             else
                             {
@@ -197,11 +206,6 @@ namespace SIPSorcery.SIP
             {
                 logger.LogError("Exception SIPChannel PruneConnections. " + excp.Message);
             }
-        }
-
-        protected virtual void OnSendComplete(EventArgs args)
-        {
-            SendComplete?.Invoke(this, args);
         }
 
         public abstract void Dispose();

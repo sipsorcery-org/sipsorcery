@@ -2,7 +2,7 @@
 // Filename: SIPConnection.cs
 //
 // Description: Represents an established socket connection on a connection oriented SIP 
-// TCL or TLS.
+// TCP or TLS.
 //
 // History:
 // 31 Mar 2009	Aaron Clauson	Created.
@@ -32,7 +32,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -49,6 +49,18 @@ namespace SIPSorcery.SIP
         Caller = 2,     // Indicated the connection was initiated locally to a remote server socket.
     }
 
+    public struct SIPStreamConnection
+    {
+        public Socket StreamSocket;
+        public SIPConnection ConnectionProps;
+
+        public SIPStreamConnection(Socket streamSocket, SIPConnection connectionProps)
+        {
+            StreamSocket = streamSocket;
+            ConnectionProps = connectionProps;
+        }
+    }
+
     public class SIPConnection
     {
         private static ILogger logger = Log.Logger;
@@ -57,40 +69,31 @@ namespace SIPSorcery.SIP
         private static string m_sipEOL = SIPConstants.CRLF;
         private static string m_sipMessageDelimiter = SIPConstants.CRLF + SIPConstants.CRLF;
 
-        public Stream SIPStream;
-        //public Socket SIPSocket;
         public IPEndPoint RemoteEndPoint;
+        public SocketAsyncEventArgs RecvSocketArgs;
+        public SocketAsyncEventArgs SendSocketArgs;
+
         public SIPProtocolsEnum ConnectionProtocol;
         public SIPConnectionsEnum ConnectionType;
         public DateTime LastTransmission;           // Records when a SIP packet was last sent or received.
-        public byte[] SocketBuffer = new byte[2 * MaxSIPTCPMessageSize];
-        public int SocketBufferEndPosition = 0;
 
         private SIPChannel m_owningChannel;
-        private TcpClient _tcpClient;
 
+        public int SocketBufferEndPosition = 0;
         public event SIPMessageReceivedDelegate SIPMessageReceived;
-        public event SIPConnectionDisconnectedDelegate SIPSocketDisconnected = (ep) => { };
 
-        //public SIPConnection(SIPChannel channel, Socket sipSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
-        //{
-        //    LastTransmission = DateTime.Now;
-        //    m_owningChannel = channel;
-        //    SIPSocket = sipSocket;
-        //    RemoteEndPoint = remoteEndPoint;
-        //    ConnectionProtocol = connectionProtocol;
-        //    ConnectionType = connectionType;
-        //}
-
-        public SIPConnection(SIPChannel channel, TcpClient tcpClient, Stream sipStream, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
+        public SIPConnection(SIPChannel channel, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
         {
             LastTransmission = DateTime.Now;
             m_owningChannel = channel;
-            _tcpClient = tcpClient;
-            SIPStream = sipStream;
             RemoteEndPoint = remoteEndPoint;
             ConnectionProtocol = connectionProtocol;
             ConnectionType = connectionType;
+
+            RecvSocketArgs = new SocketAsyncEventArgs();
+            RecvSocketArgs.SetBuffer(new byte[2 * MaxSIPTCPMessageSize], 0, 2 * MaxSIPTCPMessageSize);
+
+            SendSocketArgs = new SocketAsyncEventArgs();
         }
 
         /// <summary>
@@ -102,69 +105,53 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (bytesRead > 0)
+                int endPosn = bytesRead;
+                int bytesSkipped = 0;
+
+                // Attempt to extract a SIP message from the receive buffer.
+                byte[] sipMsgBuffer = ProcessReceive(RecvSocketArgs.Buffer, 0, endPosn, out bytesSkipped);
+
+                if(sipMsgBuffer != null)
                 {
-                    SocketBufferEndPosition += bytesRead;
-                    int bytesSkipped = 0;
-
-                    // Attempt to extract a SIP message from the receive buffer.
-                    byte[] sipMsgBuffer = SIPConnection.ProcessReceive(SocketBuffer, 0, SocketBufferEndPosition, out bytesSkipped);
-
-                    while (sipMsgBuffer != null)
-                    {
-                        // A SIP message is available.
-                        if (SIPMessageReceived != null)
-                        {
-                            LastTransmission = DateTime.Now;
-                            SIPMessageReceived(m_owningChannel, new SIPEndPoint(SIPProtocolsEnum.tcp, RemoteEndPoint), sipMsgBuffer);
-                        }
-
-                        SocketBufferEndPosition -= (sipMsgBuffer.Length + bytesSkipped);
-
-                        if (SocketBufferEndPosition == 0)
-                        {
-                            //Array.Clear(SocketBuffer, 0, SocketBuffer.Length);
-                            break;
-                        }
-                        else
-                        {
-                            // Do a left shift on the receive array.
-                            Array.Copy(SocketBuffer, sipMsgBuffer.Length + bytesSkipped, SocketBuffer, 0, SocketBufferEndPosition);
-                            //Array.Clear(SocketBuffer, SocketBufferEndPosition, SocketBuffer.Length - SocketBufferEndPosition);
-
-                            // Try and extract another SIP message from the receive buffer.
-                            sipMsgBuffer = SIPConnection.ProcessReceive(SocketBuffer, 0, SocketBufferEndPosition, out bytesSkipped);
-                        }
-                    }
-
-                    return true;
+                    LastTransmission = DateTime.Now;
+                    SIPMessageReceived(m_owningChannel, new SIPEndPoint(SIPProtocolsEnum.tcp, RemoteEndPoint), sipMsgBuffer);
                 }
-                else
-                {
-                    //logger.LogDebug("SIP " + ConnectionProtocol + " socket to " + RemoteEndPoint + " was disconnected, closing.");
-                    //SIPStream.Close();
-                    Close();
-                    SIPSocketDisconnected(RemoteEndPoint);
 
-                    return false;
-                }
+                //while (sipMsgBuffer != null)
+                //{
+                //    // A SIP message is available.
+                //    if (SIPMessageReceived != null)
+                //    {
+                //        LastTransmission = DateTime.Now;
+                //        SIPMessageReceived(m_owningChannel, new SIPEndPoint(SIPProtocolsEnum.tcp, RemoteEndPoint), sipMsgBuffer);
+                //    }
+
+                //    int nextStartPosn = (sipMsgBuffer.Length + bytesSkipped);
+
+                //    if (nextStartPosn == endPosn)
+                //    {
+                //        SocketArgs
+                //        break;
+                //    }
+                //    else
+                //    {
+                //        // Do a left shift on the receive array.
+                //        //Array.Copy(SocketBuffer, sipMsgBuffer.Length + bytesSkipped, SocketBuffer, 0, SocketBufferEndPosition);
+                //        SocketArgs.SetBuffer(SocketArgs.Buffer.Skip(nextStartPosn).ToArray(), 0, endPosn - nextStartPosn);
+
+                //        // Try and extract another SIP message from the receive buffer.
+                //        sipMsgBuffer = ProcessReceive(SocketArgs.Buffer, 0, endPosn - nextStartPosn, out bytesSkipped);
+                //    }
+                //}
+
+                return true;
             }
-            catch (ObjectDisposedException)
-            {
-                // Will occur if the owning channel closed the connection.
-                SIPSocketDisconnected(RemoteEndPoint);
-                return false;
-            }
-            catch (SocketException)
-            {
-                // Will occur if the owning channel closed the connection.
-                SIPSocketDisconnected(RemoteEndPoint);
-                return false;
-            }
+
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPConnection SocketReadCompleted. " + excp.Message);
-                throw;
+                //throw;
+                return false;
             }
         }
 
@@ -322,29 +309,6 @@ namespace SIPSorcery.SIP
                 }
 
                 return 0;
-            }
-        }
-
-        public void Close()
-        {
-            try
-            {
-                //if (_tcpClient.GetStream() != null)
-                //{
-                //    _tcpClient.GetStream().Close(0);
-                //}
-
-                //if (_tcpClient.Client != null && _tcpClient.Client.Connected == true)
-                //{
-                //    _tcpClient.Client.Shutdown(SocketShutdown.Both);
-                //    _tcpClient.Client.Close(0);
-                //}
-
-                _tcpClient.Client.Close();
-            }
-            catch (Exception closeExcp)
-            {
-                logger.LogWarning("Exception closing socket in SIPConnection Close. " + closeExcp.Message);
             }
         }
     }

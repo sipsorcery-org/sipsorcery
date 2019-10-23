@@ -501,8 +501,8 @@ CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPConnection testConnection = new SIPConnection(null, null, null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
-            Array.Copy(testReceiveBytes, testConnection.SocketBuffer, testReceiveBytes.Length);
+            SIPConnection testConnection = new SIPConnection(null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+            testConnection.RecvSocketArgs.SetBuffer(testReceiveBytes, 0, testReceiveBytes.Length);
 
             bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
 
@@ -570,16 +570,16 @@ CRLF + CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPConnection testConnection = new SIPConnection(null, null, null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+            SIPConnection testConnection = new SIPConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
-            Array.Copy(testReceiveBytes, testConnection.SocketBuffer, testReceiveBytes.Length);
+            testConnection.RecvSocketArgs.SetBuffer(testReceiveBytes, 0, testReceiveBytes.Length);
 
             bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
 
             Assert.IsTrue(result, "The result from processing the socket read should have been true.");
             Assert.IsTrue(sipMessages == 1, "The number of SIP messages parsed was incorrect, was " + sipMessages + ".");
-            Assert.IsTrue(testConnection.SocketBufferEndPosition == 0, "The receive buffer end position was incorrect, was " + testConnection.SocketBufferEndPosition + ".");
+            Assert.IsTrue(testConnection.RecvSocketArgs.Buffer.Length == 0, $"The receive buffer end position was incorrect, was {testConnection.RecvSocketArgs.Buffer.Length}.");
         }
 
         /// <summary>
@@ -618,13 +618,13 @@ CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPConnection testConnection = new SIPConnection(null, null, null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+            SIPConnection testConnection = new SIPConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
-            Array.Copy(testReceiveBytes, testConnection.SocketBuffer, testReceiveBytes.Length);
+            testConnection.RecvSocketArgs.SetBuffer(testReceiveBytes, 0, testReceiveBytes.Length);
 
             bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
-            string remainingBytes = Encoding.UTF8.GetString(testConnection.SocketBuffer, 0, testConnection.SocketBufferEndPosition);
+            string remainingBytes = Encoding.UTF8.GetString(testConnection.RecvSocketArgs.Buffer, 0, testConnection.SocketBufferEndPosition);
 
             Console.WriteLine("SocketBufferEndPosition=" + testConnection.SocketBufferEndPosition + ".");
             Console.WriteLine("SocketBuffer=" + remainingBytes + ".");

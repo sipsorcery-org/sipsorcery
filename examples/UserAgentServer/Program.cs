@@ -72,7 +72,7 @@ namespace SIPSorcery
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            int port = FreePort.FindNextAvailableUDPPort(SIPConstants.DEFAULT_SIP_PORT);
+            int port = 6060; // FreePort.FindNextAvailableUDPPort(SIPConstants.DEFAULT_SIP_PORT);
             //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, port)));
             //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Loopback, port)));
             //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv4Address(), port)));
@@ -139,10 +139,17 @@ namespace SIPSorcery
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogInformation($"{localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
-                    SIPSorcery.Sys.Log.Logger.LogDebug(sipRequest.ToString());
-                    SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    sipTransport.SendResponse(optionsResponse);
+                    try
+                    {
+                        SIPSorcery.Sys.Log.Logger.LogInformation($"{localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
+                        SIPSorcery.Sys.Log.Logger.LogDebug(sipRequest.ToString());
+                        SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        sipTransport.SendResponse(optionsResponse);
+                    }
+                    catch(Exception optionsExcp)
+                    {
+                        SIPSorcery.Sys.Log.Logger.LogWarning($"Failed to send SIP OPTIONS response. {optionsExcp.Message}");
+                    }
                 }
             };
 

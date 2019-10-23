@@ -337,7 +337,7 @@ namespace SIPSorcery.SIP
 
             var matchingChannels = m_sipChannels.Values.Where(x => x.SIPProtocol == protocol);
 
-            if(matchingChannels.Count() == 1)
+            if (matchingChannels.Count() == 1)
             {
                 return matchingChannels.First().SIPChannelEndPoint;
             }
@@ -365,13 +365,13 @@ namespace SIPSorcery.SIP
             else if (IPAddress.IsLoopback(destinationEP.Address))
             {
                 // If destination is a loopback IP address look for a protocol and IP protocol match.
-                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol && 
+                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol &&
                     x.Value.IsLoopbackAddress &&
                     x.Value.AddressFamily == destinationEP.Address.AddressFamily)
                     .Select(x => x.Value.SIPChannelEndPoint).FirstOrDefault();
             }
-            else if (m_sipChannels.Count(x => x.Value.SIPProtocol == destinationEP.Protocol && 
-                x.Value.AddressFamily == destinationEP.Address.AddressFamily && 
+            else if (m_sipChannels.Count(x => x.Value.SIPProtocol == destinationEP.Protocol &&
+                x.Value.AddressFamily == destinationEP.Address.AddressFamily &&
                 !x.Value.IsLoopbackAddress) == 1)
             {
                 // If there is only one channel matching the required SIP protocol and IP protocol pair return it.
@@ -533,7 +533,7 @@ namespace SIPSorcery.SIP
             SIPChannel sendSIPChannel = FindSIPChannel(localSIPEndPoint);
             if (sendSIPChannel != null)
             {
-                sendSIPChannel.Send(destinationEndPoint.GetIPEndPoint(), buffer);
+                sendSIPChannel.Send(destinationEndPoint.GetIPEndPoint(), buffer, null);
             }
             else
             {
@@ -635,11 +635,11 @@ namespace SIPSorcery.SIP
 
                 if (sipChannel.IsTLS)
                 {
-                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host);
+                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host, sipRequest.SendTaskResult);
                 }
                 else
                 {
-                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()));
+                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.SendTaskResult);
                 }
 
                 if (SIPRequestOutTraceEvent != null)
@@ -818,12 +818,6 @@ namespace SIPSorcery.SIP
 
         private void SendResponse(SIPChannel sipChannel, SIPResponse sipResponse)
         {
-
-            if (m_sipChannels.Count == 0)
-            {
-                throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
-            }
-
             SIPViaHeader topVia = sipResponse.Header.Vias.TopViaHeader;
             SIPDNSLookupResult lookupResult = GetHostEndPoint(topVia.ReceivedFromAddress, false);
 
@@ -858,30 +852,22 @@ namespace SIPSorcery.SIP
 
         private void SendResponse(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPResponse sipResponse)
         {
-            try
+            if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
             {
-                if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
-                {
-                    // Ignore packet, it's destined for the blackhole.
-                    return;
-                }
-
-                if (m_sipChannels.Count == 0)
-                {
-                    throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
-                }
-
-                sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
-                sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
-
-                if (SIPRequestOutTraceEvent != null)
-                {
-                    FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipResponse);
-                }
+                // Ignore packet, it's destined for the blackhole.
+                return;
             }
-            catch (ApplicationException appExcp)
+            else if (sipChannel.IsReliable && !sipChannel.IsConnectionEstablished(dstEndPoint.GetIPEndPoint()))
             {
-                logger.LogWarning("ApplicationException SIPTransport SendResponse. " + appExcp.Message);
+                throw new ApplicationException($"A reliable SIP channel did not have an existing connection for {dstEndPoint}, SIP reponse cannot be sent.");
+            }
+
+            sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
+            sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()), sipResponse.SendTaskResult);
+
+            if (SIPRequestOutTraceEvent != null)
+            {
+                FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipResponse);
             }
         }
 

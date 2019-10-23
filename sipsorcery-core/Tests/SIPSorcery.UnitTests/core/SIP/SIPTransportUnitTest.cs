@@ -147,10 +147,10 @@ namespace SIPSorcery.SIP.UnitTests
             var clientChannel = new SIPTCPChannel(IPAddress.Loopback, 7061);
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
-            var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
+            Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(300000) }).Wait();
+            Task.WhenAny(new Task[] { clientTask, Task.Delay(10000) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -176,7 +176,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void IPv4TcpLoopbackConsecutiveSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
-            var serverChannel = new SIPTCPChannel(IPAddress.Loopback, 7062);
+            var serverChannel = new SIPTCPChannel(IPAddress.Loopback, 7064);
             serverChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
@@ -185,7 +185,7 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-                var clientChannel = new SIPTCPChannel(IPAddress.Any, 7063);
+                var clientChannel = new SIPTCPChannel(IPAddress.Any, 7065);
                 clientChannel.DisableLocalTCPSocketsCheck = true;
                 SIPURI serverUri = new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint);
                 //SIPURI serverUri = new SIPURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, IPAddress.Loopback, 7062));
@@ -208,7 +208,7 @@ namespace SIPSorcery.SIP.UnitTests
 
                 logger.LogDebug($"Completed for test run {i}.");
 
-                Task.Delay(1000).Wait();
+                Task.Delay(3000).Wait();
             }
 
             cancelServer.Cancel();

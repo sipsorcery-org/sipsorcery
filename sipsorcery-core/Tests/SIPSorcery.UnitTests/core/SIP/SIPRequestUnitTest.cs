@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -19,16 +20,16 @@ namespace SIPSorcery.SIP.UnitTests
                 m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, channelEndPoint);
             }
 
-            public override void Send(IPEndPoint destinationEndPoint, string message)
+            public override void Send(IPEndPoint destinationEndPoint, string message, TaskCompletionSource<SendResult> sendResult)
             { }
 
-            public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
+            public override void Send(IPEndPoint destinationEndPoint, byte[] buffer, TaskCompletionSource<SendResult> sendResult)
             { }
 
             public override void Close()
             { }
 
-            protected override Dictionary<string, SIPConnection> GetConnectionsList()
+            protected override Dictionary<string, SIPStreamConnection> GetConnectionsList()
             {
                 throw new NotImplementedException();
             }
@@ -38,7 +39,7 @@ namespace SIPSorcery.SIP.UnitTests
                 throw new NotImplementedException();
             }
 
-            public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCN)
+            public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCN, TaskCompletionSource<SendResult> sendResult)
             {
                 throw new ApplicationException("This Send method is not available in the MockSIPChannel, please use an alternative overload.");
             }

@@ -31,6 +31,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -77,7 +78,7 @@ namespace SIPSorcery.UnitTests
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            Console.WriteLine($"[{logLevel}] {formatter(state, exception)}");
+            Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss:fff")}] [{Thread.CurrentThread.ManagedThreadId}] [{logLevel}] {formatter(state, exception)}");
         }
     }
 

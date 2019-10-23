@@ -31,6 +31,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
@@ -73,6 +74,11 @@ namespace SIPSorcery.SIP
 		public DateTime Created = DateTime.Now;
 		public SIPEndPoint RemoteSIPEndPoint;               // The remote IP socket the request was received from or sent to.
         public SIPEndPoint LocalSIPEndPoint;                // The local SIP socket the request was received on or sent from.
+
+        // Optional property that can be set in order to monitor the result of sending a SIP request. Mainly useful
+        // for cases where the request is sent over connection oriented protocols such as TCP or TLS. Setting this 
+        // property does incur overhead so in most circumstances should be left as null.
+        public TaskCompletionSource<SendResult> SendTaskResult;
 
         public string StatusLine
         {

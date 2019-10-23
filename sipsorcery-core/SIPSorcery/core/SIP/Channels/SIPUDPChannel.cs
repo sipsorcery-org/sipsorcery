@@ -37,6 +37,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
@@ -148,13 +149,13 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override void Send(IPEndPoint destinationEndPoint, string message)
+        public override void Send(IPEndPoint destinationEndPoint, string message, TaskCompletionSource<SendResult> sendResult)
         {
             byte[] messageBuffer = Encoding.UTF8.GetBytes(message);
-            Send(destinationEndPoint, messageBuffer);
+            Send(destinationEndPoint, messageBuffer, sendResult);
         }
 
-        public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
+        public override void Send(IPEndPoint destinationEndPoint, byte[] buffer, TaskCompletionSource<SendResult> sendResult)
         {
             try
             {
@@ -174,7 +175,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, TaskCompletionSource<SendResult> sendResult)
         {
             throw new ApplicationException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }
@@ -184,7 +185,7 @@ namespace SIPSorcery.SIP
             throw new NotSupportedException("The SIP UDP channel does not support connections.");
         }
 
-        protected override Dictionary<string, SIPConnection> GetConnectionsList()
+        protected override Dictionary<string, SIPStreamConnection> GetConnectionsList()
         {
             throw new NotSupportedException("The SIP UDP channel does not support connections.");
         }
