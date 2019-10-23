@@ -250,7 +250,7 @@ namespace SIPSorcery.SIP
                             lock (m_writeLock)
                             {
                                 sipStreamConn.Value.ConnectionProps.LastTransmission = DateTime.Now;
-                                var args = sipStreamConn.Value.ConnectionProps.SendSocketArgs;
+                                var args = new SocketAsyncEventArgs();
                                 args.UserToken = sipStreamConn;
                                 args.SetBuffer(buffer, 0, buffer.Length);
                                 args.Completed += IO_Completed;

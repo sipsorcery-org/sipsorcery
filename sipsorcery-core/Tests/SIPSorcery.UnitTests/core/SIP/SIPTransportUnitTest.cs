@@ -61,7 +61,7 @@ namespace SIPSorcery.SIP.UnitTests
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
 
             if(testComplete.Task.IsCompleted == false)
             {
@@ -90,7 +90,7 @@ namespace SIPSorcery.SIP.UnitTests
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -120,7 +120,7 @@ namespace SIPSorcery.SIP.UnitTests
             var serverTask = Task.Run(() => {RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -150,7 +150,7 @@ namespace SIPSorcery.SIP.UnitTests
             Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint), testComplete); });
 
-            Task.WhenAny(new Task[] { clientTask, Task.Delay(10000) }).Wait();
+            Task.WhenAny(new Task[] { clientTask, Task.Delay(2000) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -196,7 +196,7 @@ namespace SIPSorcery.SIP.UnitTests
                 var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverUri, testComplete); });
 
                 //Task.WhenAny(new Task[] { clientTask, serverTask, Task.Delay(10000) }).Wait();
-                Task.WhenAny(new Task[] { clientTask, Task.Delay(5000) }).Wait();
+                Task.WhenAny(new Task[] { clientTask, Task.Delay(2000) }).Wait();
 
                 if (testComplete.Task.IsCompleted == false)
                 {
@@ -208,7 +208,7 @@ namespace SIPSorcery.SIP.UnitTests
 
                 logger.LogDebug($"Completed for test run {i}.");
 
-                Task.Delay(3000).Wait();
+                //Task.Delay(3000).Wait();
             }
 
             cancelServer.Cancel();

@@ -502,12 +502,12 @@ CRLF +
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
             SIPConnection testConnection = new SIPConnection(null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
-            testConnection.RecvSocketArgs.SetBuffer(testReceiveBytes, 0, testReceiveBytes.Length);
+            Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
 
             bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
 
             Assert.IsTrue(result, "The result of processing the receive should have been true.");
-            Assert.IsTrue(testConnection.SocketBufferEndPosition == 0, "The receive buffer end position should have been 0.");
+            Assert.IsTrue(testConnection.RecvEndPosition == 0, "The receive buffer end position should have been 0.");
         }
 
         /// <summary>
@@ -573,13 +573,14 @@ CRLF + CRLF +
             SIPConnection testConnection = new SIPConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
-            testConnection.RecvSocketArgs.SetBuffer(testReceiveBytes, 0, testReceiveBytes.Length);
+            Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
 
             bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
 
             Assert.IsTrue(result, "The result from processing the socket read should have been true.");
             Assert.IsTrue(sipMessages == 1, "The number of SIP messages parsed was incorrect, was " + sipMessages + ".");
-            Assert.IsTrue(testConnection.RecvSocketArgs.Buffer.Length == 0, $"The receive buffer end position was incorrect, was {testConnection.RecvSocketArgs.Buffer.Length}.");
+            Assert.IsTrue(testConnection.RecvStartPosition == 0, $"The receive buffer start position was incorrect, was {testConnection.RecvStartPosition}.");
+            Assert.IsTrue(testConnection.RecvEndPosition == 0, $"The receive buffer end position was incorrect, was {testConnection.RecvEndPosition}.");
         }
 
         /// <summary>
@@ -621,17 +622,18 @@ CRLF +
             SIPConnection testConnection = new SIPConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
-            testConnection.RecvSocketArgs.SetBuffer(testReceiveBytes, 0, testReceiveBytes.Length);
+            Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
 
             bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
-            string remainingBytes = Encoding.UTF8.GetString(testConnection.RecvSocketArgs.Buffer, 0, testConnection.SocketBufferEndPosition);
+            string remainingBytes = Encoding.UTF8.GetString(testConnection.RecvSocketArgs.Buffer, testConnection.RecvStartPosition, testConnection.RecvEndPosition - testConnection.RecvStartPosition);
 
-            Console.WriteLine("SocketBufferEndPosition=" + testConnection.SocketBufferEndPosition + ".");
+            Console.WriteLine("SocketBufferEndPosition=" + testConnection.RecvEndPosition + ".");
             Console.WriteLine("SocketBuffer=" + remainingBytes + ".");
 
             Assert.IsTrue(result, "The result from processing the socket read should have been true.");
             Assert.IsTrue(sipMessages == 2, "The number of SIP messages parsed was incorrect.");
-            Assert.AreEqual(26, testConnection.SocketBufferEndPosition, "The receive buffer end position was incorrect.");
+            Assert.AreEqual(708, testConnection.RecvStartPosition, $"The receive buffer start position was incorrect, was {testConnection.RecvStartPosition}.");
+            Assert.AreEqual(734, testConnection.RecvEndPosition, $"The receive buffer end position was incorrect, was {testConnection.RecvEndPosition}.");
             Assert.IsTrue(remainingBytes == "SUBSCRIBE sip:aaron@10.1.1", "The leftover bytes in the socket buffer were incorrect.");
         }
 

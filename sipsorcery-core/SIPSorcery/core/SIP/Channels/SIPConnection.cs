@@ -71,7 +71,6 @@ namespace SIPSorcery.SIP
 
         public IPEndPoint RemoteEndPoint;
         public SocketAsyncEventArgs RecvSocketArgs;
-        public SocketAsyncEventArgs SendSocketArgs;
 
         public SIPProtocolsEnum ConnectionProtocol;
         public SIPConnectionsEnum ConnectionType;
@@ -79,7 +78,8 @@ namespace SIPSorcery.SIP
 
         private SIPChannel m_owningChannel;
 
-        public int SocketBufferEndPosition = 0;
+        public int RecvStartPosition = 0;
+        public int RecvEndPosition = 0;
         public event SIPMessageReceivedDelegate SIPMessageReceived;
 
         public SIPConnection(SIPChannel channel, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
@@ -92,8 +92,6 @@ namespace SIPSorcery.SIP
 
             RecvSocketArgs = new SocketAsyncEventArgs();
             RecvSocketArgs.SetBuffer(new byte[2 * MaxSIPTCPMessageSize], 0, 2 * MaxSIPTCPMessageSize);
-
-            SendSocketArgs = new SocketAsyncEventArgs();
         }
 
         /// <summary>
@@ -105,52 +103,43 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                int endPosn = bytesRead;
+                RecvEndPosition += bytesRead;
                 int bytesSkipped = 0;
 
                 // Attempt to extract a SIP message from the receive buffer.
-                byte[] sipMsgBuffer = ProcessReceive(RecvSocketArgs.Buffer, 0, endPosn, out bytesSkipped);
+                byte[] sipMsgBuffer = SIPConnection.ProcessReceive(RecvSocketArgs.Buffer, RecvStartPosition, RecvEndPosition, out bytesSkipped);
 
-                if(sipMsgBuffer != null)
+                while (sipMsgBuffer != null)
                 {
-                    LastTransmission = DateTime.Now;
-                    SIPMessageReceived(m_owningChannel, new SIPEndPoint(SIPProtocolsEnum.tcp, RemoteEndPoint), sipMsgBuffer);
+                    // A SIP message is available.
+                    if (SIPMessageReceived != null)
+                    {
+                        LastTransmission = DateTime.Now;
+                        SIPMessageReceived(m_owningChannel, new SIPEndPoint(SIPProtocolsEnum.tcp, RemoteEndPoint), sipMsgBuffer);
+                    }
+
+                    RecvStartPosition += (sipMsgBuffer.Length + bytesSkipped);
+
+                    if (RecvStartPosition == RecvEndPosition)
+                    {
+                        // All data has been successfully extracted from the receive buffer.
+                        RecvStartPosition = RecvEndPosition = 0;
+                        break;
+                    }
+                    else
+                    {
+                        // Try and extract another SIP message from the receive buffer.
+                        sipMsgBuffer = SIPConnection.ProcessReceive(RecvSocketArgs.Buffer, RecvStartPosition, RecvEndPosition, out bytesSkipped);
+                    }
                 }
 
-                //while (sipMsgBuffer != null)
-                //{
-                //    // A SIP message is available.
-                //    if (SIPMessageReceived != null)
-                //    {
-                //        LastTransmission = DateTime.Now;
-                //        SIPMessageReceived(m_owningChannel, new SIPEndPoint(SIPProtocolsEnum.tcp, RemoteEndPoint), sipMsgBuffer);
-                //    }
-
-                //    int nextStartPosn = (sipMsgBuffer.Length + bytesSkipped);
-
-                //    if (nextStartPosn == endPosn)
-                //    {
-                //        SocketArgs
-                //        break;
-                //    }
-                //    else
-                //    {
-                //        // Do a left shift on the receive array.
-                //        //Array.Copy(SocketBuffer, sipMsgBuffer.Length + bytesSkipped, SocketBuffer, 0, SocketBufferEndPosition);
-                //        SocketArgs.SetBuffer(SocketArgs.Buffer.Skip(nextStartPosn).ToArray(), 0, endPosn - nextStartPosn);
-
-                //        // Try and extract another SIP message from the receive buffer.
-                //        sipMsgBuffer = ProcessReceive(SocketArgs.Buffer, 0, endPosn - nextStartPosn, out bytesSkipped);
-                //    }
-                //}
+                RecvSocketArgs.SetBuffer(RecvSocketArgs.Buffer, RecvEndPosition, RecvSocketArgs.Buffer.Length - RecvEndPosition);
 
                 return true;
             }
-
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPConnection SocketReadCompleted. " + excp.Message);
-                //throw;
                 return false;
             }
         }
