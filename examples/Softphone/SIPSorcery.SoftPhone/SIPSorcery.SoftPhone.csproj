@@ -93,11 +93,8 @@
     <Reference Include="NAudio, Version=1.9.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\NAudio.1.9.0\lib\net35\NAudio.dll</HintPath>
     </Reference>
-    <Reference Include="SIPSorcery, Version=3.0.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SIPSorcery.3.0.4\lib\net452\SIPSorcery.dll</HintPath>
-    </Reference>
-    <Reference Include="SIPSorceryMedia, Version=2.0.0.33779, Culture=neutral, processorArchitecture=x86">
-      <HintPath>..\packages\SIPSorceryMedia.2.0.0\lib\net47\SIPSorceryMedia.dll</HintPath>
+    <Reference Include="SIPSorcery, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SIPSorcery.3.2.0\lib\net452\SIPSorcery.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />

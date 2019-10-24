@@ -15,7 +15,7 @@ For .NET Core:
 dotnet add package SIPSorcery
 ````
 
-With Visual Studio Package Manager Console (or search for SIPSorcery on NuGet):
+With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](https://www.nuget.org/packages/SIPSorcery/)):
 
 ````
 Install-Package SIPSorcery

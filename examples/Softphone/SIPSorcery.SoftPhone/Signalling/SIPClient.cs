@@ -109,7 +109,7 @@ namespace SIPSorcery.SoftPhone
                     {
                         // Use a custom DNS server.
                         m_DnsServer = m_DnsServer.Contains(":") ? m_DnsServer : m_DnsServer + ":53";
-                        DNSManager.SetDNSServers(new List<IPEndPoint> { IPSocket.GetIPEndPoint(m_DnsServer) });
+                        DNSManager.SetDNSServers(new List<IPEndPoint> { IPSocket.ParseSocketString(m_DnsServer) });
                     }
 
                     // Configure the SIP transport layer.
@@ -258,7 +258,7 @@ namespace SIPSorcery.SoftPhone
             m_uac.CallFailed += CallFailed;
 
             // Get the SDP requesting that the public IP address be used if the host on the call destination is not a private IP address.
-            SDP sdp = _mediaManager.GetSDP(!(IPSocket.IsIPAddress(callURI.Host) && IPSocket.IsPrivateAddress(callURI.Host)));
+            SDP sdp = _mediaManager.GetSDP(!(IPAddress.TryParse(callURI.Host, out _) && IPSocket.IsPrivateAddress(callURI.Host)));
             System.Diagnostics.Debug.WriteLine(sdp.ToString());
             SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, sdp.ToString(), null);
             m_uac.Call(callDescriptor);
