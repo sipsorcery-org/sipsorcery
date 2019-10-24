@@ -94,10 +94,10 @@ namespace SIPSorcery
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var uac = new SIPClientUserAgent(sipTransport);
 
-            uac.CallTrying += (uac, resp) => 
+            uac.CallTrying += (uac, resp) =>
             {
                 SIPSorcery.Sys.Log.Logger.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
-            }
+            };
             uac.CallRinging += (uac, resp) => SIPSorcery.Sys.Log.Logger.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
             uac.CallFailed += (uac, err) =>
             {
