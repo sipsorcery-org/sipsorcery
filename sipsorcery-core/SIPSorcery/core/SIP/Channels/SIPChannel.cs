@@ -181,7 +181,7 @@ namespace SIPSorcery.SIP
                             lock (connections)
                             {
                                 var inactiveConnectionKey = (from connection in connections
-                                                             where connection.Value.ConnectionProps.LastTransmission < DateTime.Now.AddMinutes(PRUNE_NOTRANSMISSION_MINUTES * -1)
+                                                             where connection.Value.LastTransmission < DateTime.Now.AddMinutes(PRUNE_NOTRANSMISSION_MINUTES * -1)
                                                              select connection.Key).FirstOrDefault();
 
                                 if (inactiveConnectionKey != null)
@@ -193,7 +193,7 @@ namespace SIPSorcery.SIP
 
                             if (inactiveConnection != null)
                             {
-                                logger.LogDebug($"Pruning inactive connection on {SIPChannelContactURI}to remote end point {inactiveConnection.ConnectionProps.RemoteEndPoint}.");
+                                logger.LogDebug($"Pruning inactive connection on {SIPChannelContactURI}to remote end point {inactiveConnection.RemoteEndPoint}.");
                                 inactiveConnection.StreamSocket.Close();
                             }
                             else

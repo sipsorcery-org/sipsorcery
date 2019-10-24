@@ -273,7 +273,7 @@ namespace SIPSorcery.SIP.UnitTests
             var clientChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 8061);
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
-            var serverTask = Task.Run(async () => { RunServer(serverChannel, cancelServer); });
+            var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sips, serverChannel.SIPChannelEndPoint), testComplete); });
 
             Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();

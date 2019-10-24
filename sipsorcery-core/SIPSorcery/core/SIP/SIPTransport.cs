@@ -7,7 +7,8 @@
 // History:
 // 14 Feb 2006	Aaron Clauson	Created.
 // 26 Apr 2008  Aaron Clauson   Added TCP support.
-// 16 OCt 2019  Aaron Clauson   Added IPv6 support.
+// 16 Oct 2019  Aaron Clauson   Added IPv6 support.
+// 25 Oct 2019  Aaron Clauson   Added async options for sending requests and responses.
 //
 // License: 
 // This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
@@ -867,7 +868,16 @@ namespace SIPSorcery.SIP
         /// Attempts to send a SIP response back to the SIP request origin.
         /// </summary>
         /// <param name="sipResponse">The SIP response to send.</param>
-        public void SendResponse(SIPResponse sipResponse)
+        public async void SendResponse(SIPResponse sipResponse)
+        {
+            await SendResponseAsync(sipResponse);
+        }
+
+        /// <summary>
+        /// Attempts an asynchronous send of a SIP response back to the SIP request origin.
+        /// </summary>
+        /// <param name="sipResponse">The SIP response to send.</param>
+        public async Task<SocketError> SendResponseAsync(SIPResponse sipResponse)
         {
             // TODO: Testing channels listening on 0.0.0.0. Triple check removing this behaviour doesn't break anything major.
             //if (sipResponse.LocalSIPEndPoint != null && sipResponse.LocalSIPEndPoint.Address.Equals(BlackholeAddress))
@@ -889,6 +899,7 @@ namespace SIPSorcery.SIP
             if (topViaHeader == null)
             {
                 logger.LogWarning("There was no top Via header on a SIP response from " + sipResponse.RemoteSIPEndPoint + " when attempting to send it, response dropped.");
+                return SocketError.Fault;
             }
             else
             {
@@ -897,7 +908,7 @@ namespace SIPSorcery.SIP
 
                 if (sipChannel != null)
                 {
-                    SendResponse(sipChannel, sipResponse);
+                    return await SendResponseAsync(sipChannel, sipResponse);
                 }
                 else
                 {
@@ -911,7 +922,17 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="sipChannel">The SIP channel to send the SIP response on.</param>
         /// <param name="sipResponse">The SIP response to send.</param>
-        private void SendResponse(SIPChannel sipChannel, SIPResponse sipResponse)
+        private async void SendResponse(SIPChannel sipChannel, SIPResponse sipResponse)
+        {
+            await SendResponseAsync(sipChannel, sipResponse);
+        }
+
+        /// <summary>
+        /// Attempts an asynchronous send of a SIP response on a specific SIP channel.
+        /// </summary>
+        /// <param name="sipChannel">The SIP channel to send the SIP response on.</param>
+        /// <param name="sipResponse">The SIP response to send.</param>
+        private async Task<SocketError> SendResponseAsync(SIPChannel sipChannel, SIPResponse sipResponse)
         {
             if (sipResponse == null)
             {
@@ -932,7 +953,7 @@ namespace SIPSorcery.SIP
             else if (lookupResult.Pending)
             {
                 // Ignore this response transmission and wait for the transaction retransmit mechanism to try again when DNS will have hopefully resolved the end point.
-                return;
+                return SocketError.IOPending;
             }
             else
             {
@@ -941,11 +962,11 @@ namespace SIPSorcery.SIP
                 if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
                 {
                     // Ignore packet, it's destined for the blackhole.
-                    return;
+                    return SocketError.Success;
                 }
                 else if (dstEndPoint != null)
                 {
-                    SendResponse(sipChannel, new SIPEndPoint(topVia.Transport, dstEndPoint.GetIPEndPoint()), sipResponse);
+                    return await SendResponseAsync(sipChannel, new SIPEndPoint(topVia.Transport, dstEndPoint.GetIPEndPoint()), sipResponse);
                 }
                 else
                 {
@@ -960,7 +981,19 @@ namespace SIPSorcery.SIP
         /// <param name="sipChannel">The SIP channel to send the SIP response on.</param>
         /// <param name="dstEndPoint">The desintation end point to send the SIP response to.</param>
         /// <param name="sipResponse">The SIP response to send.</param>
-        private void SendResponse(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPResponse sipResponse)
+        private async void SendResponse(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPResponse sipResponse)
+        {
+            await SendResponseAsync(sipChannel, dstEndPoint, sipResponse);
+        }
+
+        /// <summary>
+        /// An asynchronouse SIP response send on a specific SIP channel to a specific SIP end point.
+        /// </summary>
+        /// <param name="sipChannel">The SIP channel to send the SIP response on.</param>
+        /// <param name="dstEndPoint">The desintation end point to send the SIP response to.</param>
+        /// <param name="sipResponse">The SIP response to send.</param>
+        /// <returns>A socket error value of Success or an error message with a failure condition.</returns>
+        private async Task<SocketError> SendResponseAsync(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPResponse sipResponse)
         {
             if (sipResponse == null)
             {
@@ -977,20 +1010,20 @@ namespace SIPSorcery.SIP
             else if (dstEndPoint.Address.Equals(BlackholeAddress))
             {
                 // Ignore packet, it's destined for the blackhole.
-                return;
+                return SocketError.Success;
             }
             else if (sipChannel.IsReliable && !sipChannel.IsConnectionEstablished(dstEndPoint.GetIPEndPoint()))
             {
                 throw new ApplicationException($"A reliable SIP channel did not have an existing connection for {dstEndPoint}, SIP reponse cannot be sent.");
             }
 
-            sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
-            sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
-
             if (SIPRequestOutTraceEvent != null)
             {
                 FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipResponse);
             }
+
+            sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
+            return await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
         }
 
         private void ProcessInMessage()

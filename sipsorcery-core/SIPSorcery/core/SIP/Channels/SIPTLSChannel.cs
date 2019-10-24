@@ -92,9 +92,9 @@ namespace SIPSorcery.SIP
             //sslStream.WriteTimeout = 5000;
 
             streamConnection.SslStream = sslStream;
-            streamConnection.SslStreamBuffer = new byte[2 * SIPConnection.MaxSIPTCPMessageSize];
+            streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
 
-            sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
+            sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
         }
 
         /// <summary>
@@ -113,11 +113,11 @@ namespace SIPSorcery.SIP
 
                 await sslStream.AuthenticateAsClientAsync(serverCertificateName);
                 streamConnection.SslStream = sslStream;
-                streamConnection.SslStreamBuffer = new byte[2 * SIPConnection.MaxSIPTCPMessageSize];
+                streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
 
                 logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {m_localSIPEndPoint.GetIPEndPoint()}->{streamConnection.StreamSocket.RemoteEndPoint}.");
 
-                sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
+                sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
 
                 await sslStream.WriteAsync(buffer, 0, buffer.Length);
             }
@@ -143,34 +143,33 @@ namespace SIPSorcery.SIP
                 {
                     // SSL stream was disconnected by the remote end pont sending a FIN or RST.
                     logger.LogDebug("TLS socket disconnected by {sipStreamConnection.ConnectionProps.RemoteEndPoint}.");
-                    OnSIPStreamDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint, SocketError.ConnectionReset);
+                    OnSIPStreamDisconnected(sipStreamConnection.RemoteEndPoint, SocketError.ConnectionReset);
                 }
-                else if (sipStreamConnection.ConnectionProps.SocketReadCompleted(bytesRead, sipStreamConnection.SslStreamBuffer))
-                {
-                    sipStreamConnection.SslStream.BeginRead(sipStreamConnection.SslStreamBuffer, sipStreamConnection.ConnectionProps.RecvEndPosition, sipStreamConnection.SslStreamBuffer.Length - sipStreamConnection.ConnectionProps.RecvEndPosition, new AsyncCallback(OnReadCallback), sipStreamConnection);
-                }
+                sipStreamConnection.ExtractSIPMessages(this, sipStreamConnection.SslStreamBuffer, bytesRead);    
+                sipStreamConnection.SslStream.BeginRead(sipStreamConnection.SslStreamBuffer, sipStreamConnection.RecvEndPosn, sipStreamConnection.SslStreamBuffer.Length - sipStreamConnection.RecvEndPosn, new AsyncCallback(OnReadCallback), sipStreamConnection);
+                
             }
             catch (SocketException sockExcp)  // Occurs if the remote end gets disconnected.
             {
                 //logger.LogWarning($"SocketException SIPTLSChannel ReceiveCallback. Error code {sockExcp.SocketErrorCode}. {sockExcp}");
-                OnSIPStreamDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint, sockExcp.SocketErrorCode);
+                OnSIPStreamDisconnected(sipStreamConnection.RemoteEndPoint, sockExcp.SocketErrorCode);
             }
             catch(IOException ioExcp)
             {
                 if (ioExcp.InnerException is SocketException)
                 {
-                    OnSIPStreamDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint, (ioExcp.InnerException as SocketException).SocketErrorCode);
+                    OnSIPStreamDisconnected(sipStreamConnection.RemoteEndPoint, (ioExcp.InnerException as SocketException).SocketErrorCode);
                 }
                 else
                 {
                     logger.LogWarning($"IOException SIPTLSChannel ReceiveCallback. {ioExcp.Message}");
-                    OnSIPStreamDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint, SocketError.Fault);
+                    OnSIPStreamDisconnected(sipStreamConnection.RemoteEndPoint, SocketError.Fault);
                 }
             }
             catch (Exception excp)
             {
                 logger.LogWarning($"Exception SIPTLSChannel ReceiveCallback. {excp.Message}");
-                OnSIPStreamDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint, SocketError.Fault);
+                OnSIPStreamDisconnected(sipStreamConnection.RemoteEndPoint, SocketError.Fault);
             }
         }
 
@@ -181,7 +180,7 @@ namespace SIPSorcery.SIP
         /// <param name="buffer">The data to send.</param>
         protected override async void SendOnConnected(SIPStreamConnection sipStreamConn, byte[] buffer)
         {
-            IPEndPoint dstEndPoint = sipStreamConn.ConnectionProps.RemoteEndPoint;
+            IPEndPoint dstEndPoint = sipStreamConn.RemoteEndPoint;
 
             try
             {
