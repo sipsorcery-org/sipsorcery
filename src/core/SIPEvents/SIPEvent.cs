@@ -1,7 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// ============================================================================
+// FileName: SIPEvent.cs
+//
+// Description: 
+//
+// Author(s):
+// Aaron Clauson
+//
+// History:
+// ??	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, London, UK (www.sipsorcery.com).
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// ============================================================================
+
+using System;
 
 namespace SIPSorcery.SIP
 {

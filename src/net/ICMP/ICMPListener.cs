@@ -3,16 +3,21 @@
 //
 // Description: Raw socket to receive ICMP packets. Mainly used as a means to
 // detect when transmissions to dead UDP sockets are attempted.
-// 
+//
+// Author(s):
+// Aaron Clauson
+//  
 // History:
 // ??           Aaron Clauson	Created.
 // 07 Feb 2012  Aaron Clauson   The listener never worked up until now. The trick was
 //                              adding the IOControl socket directive. Also to allow all
 //                              ICMP packets in a firewall rule had to be set.
-//  netsh advfirewall firewall add rule name="All ICPM v4" dir=in action=allow protocol=icmpv4:any,any
+//
+// Notes:
+// netsh advfirewall firewall add rule name="All ICPM v4" dir=in action=allow protocol=icmpv4:any,any
 //
 // License: 
-// Aaron Clauson
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;

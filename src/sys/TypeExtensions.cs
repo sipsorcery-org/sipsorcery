@@ -1,4 +1,19 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: TypeExtensions.cs
+//
+// Description: Helper methods.
+//
+// Author(s):
+// Aaron Clauson
+//
+// History:
+// ??	Aaron Clauson	Created.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 
 namespace SIPSorcery.Sys
 {

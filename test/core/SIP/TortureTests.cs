@@ -1,4 +1,15 @@
-﻿using System.IO;
+﻿//-----------------------------------------------------------------------------
+// Author(s):
+// Aaron Clauson
+// 
+// History:
+// 
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System.IO;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

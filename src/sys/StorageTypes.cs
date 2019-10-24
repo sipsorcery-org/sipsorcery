@@ -1,7 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿//-----------------------------------------------------------------------------
+// Filename: StorageTypes.cs
+//
+// Description: List of persistence store options.
+//
+// Author(s):
+// Aaron Clauson
+//
+// History:
+// ??	Aaron Clauson	Created.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Sys

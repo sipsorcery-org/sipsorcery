@@ -1,10 +1,16 @@
 //-----------------------------------------------------------------------------
-// Filename: ByteBuffer.cs
+// Filename: ByteBufferInfo.cs
 //
 // Description: Provides some useful methods for working with byte[] buffers.
 //
+// Author(s):
+// Aaron Clauson
+//
 // History:
 // 04 May 2006	Aaron Clauson	Created.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System.Text;

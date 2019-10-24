@@ -1,4 +1,19 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: SIPTransactionEngine.cs
+//
+// Description: SIP transaction manager.
+//
+// Author(s):
+// Aaron Clauson
+// 
+// History:
+// ??	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, Hobart, Australia (www.sipsorcery.com)
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;

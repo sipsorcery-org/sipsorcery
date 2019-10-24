@@ -1,19 +1,20 @@
-///----------------------------------------------------------------------------
-/// File Name: Log.cs
-/// 
-/// Description: 
-/// The Log class holds static application configuration settings for 
-/// objects requiring configuration information. Log provides a one stop
-/// shop for settings rather then have configuration functions in separate 
-/// classes.
-/// 
-/// History:
-/// 04 Nov 2004	Aaron Clauson	Created.
-/// 14 Sep 2019 Aaron Clauson   Added NetStandard support.
-///
-/// License:
-/// Public Domain.
-///----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// File Name: Log.cs
+// 
+// Description: 
+// Log provides a one stop shop for log settings rather then have configuration 
+// functions in separate classes.
+//
+// Author(s):
+// Aaron Clauson
+//
+// History:
+// 04 Nov 2004	Aaron Clauson   Created.
+// 14 Sep 2019  Aaron Clauson   Added NetStandard support.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//----------------------------------------------------------------------------
 
 using System;
 using Microsoft.Extensions.Logging;

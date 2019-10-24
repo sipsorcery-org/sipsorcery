@@ -1,16 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Resources;
-using System.Text;
-using System.Threading;
-using System.Xml;
+﻿// ============================================================================
+// FileName: SIPEventPresenceTuple.cs
+//
+// Description: 
+//
+// Author(s):
+// Aaron Clauson
+//
+// History:
+// ??	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, London, UK (www.sipsorcery.com).
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// ============================================================================
+
+using System;
 using System.Xml.Linq;
-using System.Xml.Schema;
-using SIPSorcery.Sys;
-using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {

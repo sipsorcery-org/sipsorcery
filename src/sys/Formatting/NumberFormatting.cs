@@ -9,6 +9,9 @@
 //
 // History:
 // 26 Feb 2006	Aaron Clauson	Created.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
 using System;

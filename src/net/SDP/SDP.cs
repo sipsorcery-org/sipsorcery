@@ -3,6 +3,14 @@
 //
 // Description: Session Description Protocol implementation as defined in RFC 2327.
 //
+// Author(s):
+// Aaron Clauson
+//
+// History:
+// 20 Oct 2005	Aaron Clauson	Created.
+//
+// Notes:
+//
 // Relevant Bits from the RFC:
 // "SDP is intended for describing mulitmedia sessions for the purposes of session
 // announcement, session inviatation, and other forms of multimedia session
@@ -85,11 +93,8 @@
 // m=application 32416 udp wb
 // a=orient:portrait
 // 
-// History:
-// 20 Oct 2005	Aaron Clauson	Created.
-//
 // License: 
-// Aaron Clauson
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;

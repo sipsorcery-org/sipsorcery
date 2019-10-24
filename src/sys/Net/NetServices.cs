@@ -10,15 +10,16 @@
 //
 // History:
 // 26 Dec 2005	Aaron Clauson	Created.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
 using System;
 using System.Collections;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text.RegularExpressions;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 

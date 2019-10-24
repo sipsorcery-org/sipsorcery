@@ -2,9 +2,12 @@
 // Filename: SIPTCPChannel.cs
 //
 // Description: SIP transport for TCP.
-// 
+//
+// Author(s):
+// Aaron Clauson
+//
 // History:
-// 19 Apr 2008	Aaron Clauson	Created.
+// 19 Apr 2008	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
 // 16 Oct 2019  Aaron Clauson   Added IPv6 support.
 // 24 Oct 2019  Aaron Clauson   Major refactor to avoid TIME_WAIT state on connection close.
 //
@@ -15,28 +18,13 @@
 // error and the end of a SIP message cannot be determined the only reliable way to recover is to close and 
 // re-establish the TCP connection.
 //
+// Additional background information on TIME_WAIT:
+// https://tools.ietf.org/html/draft-faber-time-wait-avoidance-00: RFC for mechanism to avoid TIME_WAIT state on busy web servers.
+// http://www.serverframework.com/asynchronousevents/2011/01/time-wait-and-its-design-implications-for-protocols-and-scalable-servers.html:
+// Explanation of TIME_WAIT state purpose.
+//
 // License: 
-// This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
-//
-// Copyright (c) 2006-2019 Aaron Clauson (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without modification, are permitted provided that 
-// the following conditions are met:
-//
-// Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
-// Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following 
-// disclaimer in the documentation and/or other materials provided with the distribution. Neither the name of SIP Sorcery PTY LTD. 
-// nor the names of its contributors may be used to endorse or promote products derived from this software without specific 
-// prior written permission. 
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, 
-// BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-// IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
-// OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
-// OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
-// POSSIBILITY OF SUCH DAMAGE.
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;

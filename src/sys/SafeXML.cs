@@ -3,9 +3,14 @@
 //
 // Description: Converts special characters in XML to their safe equivalent.
 //
+// Author(s):
+// Aaron Clauson
+//
 // History:
-// 22 jun 2005	Aaron Clauson	Created.
-// 
+// 22 Jun 2005	Aaron Clauson	Created.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;

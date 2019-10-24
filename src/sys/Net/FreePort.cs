@@ -5,6 +5,9 @@
 //
 // History:
 // 28 Mar 2012	Aaron Clauson	Copied from http://www.mattbrindley.com/developing/windows/net/detecting-the-next-available-free-tcp-port/.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;

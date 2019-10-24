@@ -1,4 +1,19 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: STUNClient.cs
+//
+// Description: 
+//
+// Author(s):
+// Aaron Clauson
+//
+// History:
+// ??	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;

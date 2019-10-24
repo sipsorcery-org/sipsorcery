@@ -3,12 +3,15 @@
 //
 // Description: Encrypts and decrypts data.
 //
+// Author(s):
+// Aaron Clauson
+//
 // History:
 // 16 Jul 2005	Aaron Clauson	Created.
 // 10 Sep 2009  Aaron Clauson   Updated to use RNGCryptoServiceProvider in place of Random.
 //
 // License:
-// Aaron Clauson
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;

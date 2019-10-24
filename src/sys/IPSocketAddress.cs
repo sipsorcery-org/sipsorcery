@@ -3,16 +3,21 @@
 //
 // Description: Converts special charatcers in XML to their safe equivalent.
 //
-// History:
-// 22 jun 2005	Aaron Clauson	Created.
+// Author(s):
+// Aaron Clauson
 //
+// History:
+// 22 Jun 2005	Aaron Clauson	Created.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
 using System.Net;
 using System.Text.RegularExpressions;
 
-namespace Aza.Configuration
+namespace SIPSorcery.Sys
 {
 	public class IPSocketAddress
 	{

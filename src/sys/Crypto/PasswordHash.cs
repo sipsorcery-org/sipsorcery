@@ -8,18 +8,15 @@
 // Aaron Clauson
 //
 // History:
-// 13 Jan 2012 Created. Borrowed some code snippets from http://code.google.com/p/stackid/source/browse/OpenIdProvider/Current.cs#1135.
+// 13 Jan 2012  Aaron Clauson   Created. Borrowed some code snippets from http://code.google.com/p/stackid/source/browse/OpenIdProvider/Current.cs#1135.
 //
 // License: 
-// Public Domain.
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // =============================================================================
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Web;
 
 namespace SIPSorcery.Sys
 {

@@ -1,4 +1,15 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Author(s):
+// Aaron Clauson
+// 
+// History:
+// 
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Net;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
