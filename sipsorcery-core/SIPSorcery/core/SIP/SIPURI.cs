@@ -246,7 +246,7 @@ namespace SIPSorcery.SIP
             ParseParamsAndHeaders(paramsAndHeaders);
             Scheme = scheme;
 
-            if (protocol != SIPProtocolsEnum.udp)
+            if (protocol != SIPProtocolsEnum.udp && scheme != SIPSchemesEnum.sips)
             {
                 Parameters.Set(m_uriParamTransportKey, protocol.ToString());
             }
@@ -257,7 +257,7 @@ namespace SIPSorcery.SIP
             Scheme = scheme;
             Host = sipEndPoint.GetIPEndPoint().ToString();
 
-            if (sipEndPoint.Protocol != SIPProtocolsEnum.udp)
+            if (sipEndPoint.Protocol != SIPProtocolsEnum.udp && scheme != SIPSchemesEnum.sips)
             {
                 Parameters.Set(m_uriParamTransportKey, sipEndPoint.Protocol.ToString());
             }

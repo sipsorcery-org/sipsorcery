@@ -129,11 +129,27 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
         /// <param name="message">The message to send.</param>
-        /// <param name="sendResult">An optional parameter that if set will allow the progress and result of the send
-        /// to be monitored by the caller.</param>
         public abstract void Send(IPEndPoint destinationEndPoint, string message);
         public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer);
         public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName);
+
+        /// <summary>
+        /// Asynchronous SIP message send to a remote end point.
+        /// </summary>
+        /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
+        /// <param name="buffer">The data to send.</param>
+        /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
+        public abstract Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer);
+
+        /// <summary>
+        /// Asynchronous SIP message send to a remote end point.
+        /// </summary>
+        /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
+        /// <param name="buffer">The data to send.</param>
+        /// <param name="serverCertificateName">If the send is over SSL the required common name of the server's X509 certificate.</param>
+        /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
+        public abstract Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName);
+
         public abstract void Close();
         public abstract bool IsConnectionEstablished(IPEndPoint remoteEndPoint);
         protected abstract Dictionary<string, SIPStreamConnection> GetConnectionsList();

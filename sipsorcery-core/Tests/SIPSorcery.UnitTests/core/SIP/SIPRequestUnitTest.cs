@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -25,6 +26,16 @@ namespace SIPSorcery.SIP.UnitTests
 
             public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
             { }
+
+            public override Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate)
+            {
+                throw new NotImplementedException();
+            }
 
             public override void Close()
             { }

@@ -32,26 +32,20 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
     public class SIPTLSChannel : SIPTCPChannel
     {
-        private const string ACCEPT_THREAD_NAME = "siptls-";
-        private const string PRUNE_THREAD_NAME = "siptlsprune-";
-
-        private const int MAX_TLS_CONNECTIONS = 1000;              // Maximum number of connections for the TLS listener.
+        protected override string m_acceptThreadName { get; set; } = "siptlsaccept-";
 
         private X509Certificate2 m_serverCertificate;
-        private static object m_writeLock = new object();
-
-        private new ILogger logger = Log.Logger;
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
             : base(endPoint, SIPProtocolsEnum.tls)
@@ -107,7 +101,9 @@ namespace SIPSorcery.SIP
         /// For the TLS channel once the TCP client socket is connected it needs to be wrapped up in an SSL stream.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly connected client socket.</param>
-        protected override async void OnClientConnect(SIPStreamConnection streamConnection, string serverCertificateName, byte[] buffer)
+        /// <param name="buffer">The data to send.</param>
+        /// <param name="serverCertificateName">The expected common name on the SSL certificate supplied by the server.</param>
+        protected override async void OnClientConnect(SIPStreamConnection streamConnection, byte[] buffer, string serverCertificateName)
         {
             try
             {
@@ -128,9 +124,13 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError($"Exception SIPTLSChannel OnClientConnect. {excp.Message}");
+                throw;
             }
         }
 
+        /// <summary>
+        /// Callback for read operations on the SSL stream. 
+        /// </summary>
         private void OnReadCallback(IAsyncResult ar)
         {
             SIPStreamConnection sipStreamConnection = (SIPStreamConnection)ar.AsyncState;
@@ -139,30 +139,49 @@ namespace SIPSorcery.SIP
             {
                 int bytesRead = sipStreamConnection.SslStream.EndRead(ar);
 
-                Console.WriteLine($"{bytesRead} for TLS channel.");
-
-                if (sipStreamConnection.ConnectionProps.SocketReadCompleted(bytesRead, sipStreamConnection.SslStreamBuffer))
+                if (bytesRead == 0)
+                {
+                    // SSL stream was disconnected by the remote end pont sending a FIN or RST.
+                    logger.LogDebug("TLS socket disconnected by {sipStreamConnection.ConnectionProps.RemoteEndPoint}.");
+                    OnSIPStreamDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint, SocketError.ConnectionReset);
+                }
+                else if (sipStreamConnection.ConnectionProps.SocketReadCompleted(bytesRead, sipStreamConnection.SslStreamBuffer))
                 {
                     sipStreamConnection.SslStream.BeginRead(sipStreamConnection.SslStreamBuffer, sipStreamConnection.ConnectionProps.RecvEndPosition, sipStreamConnection.SslStreamBuffer.Length - sipStreamConnection.ConnectionProps.RecvEndPosition, new AsyncCallback(OnReadCallback), sipStreamConnection);
                 }
             }
             catch (SocketException sockExcp)  // Occurs if the remote end gets disconnected.
             {
-                logger.LogWarning($"SocketException SIPTLSChannel ReceiveCallback. Error code {sockExcp.SocketErrorCode}. {sockExcp}");
-                SIPTCPSocketDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint);
+                //logger.LogWarning($"SocketException SIPTLSChannel ReceiveCallback. Error code {sockExcp.SocketErrorCode}. {sockExcp}");
+                OnSIPStreamDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint, sockExcp.SocketErrorCode);
+            }
+            catch(IOException ioExcp)
+            {
+                if (ioExcp.InnerException is SocketException)
+                {
+                    OnSIPStreamDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint, (ioExcp.InnerException as SocketException).SocketErrorCode);
+                }
+                else
+                {
+                    logger.LogWarning($"IOException SIPTLSChannel ReceiveCallback. {ioExcp.Message}");
+                    OnSIPStreamDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint, SocketError.Fault);
+                }
             }
             catch (Exception excp)
             {
-                logger.LogWarning($"Exception SIPTLSChannel ReceiveCallback. ${excp.Message}");
-                SIPTCPSocketDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint);
+                logger.LogWarning($"Exception SIPTLSChannel ReceiveCallback. {excp.Message}");
+                OnSIPStreamDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint, SocketError.Fault);
             }
         }
 
-        protected override async void DoSend(SIPStreamConnection sipStreamConn, byte[] buffer)
+        /// <summary>
+        /// Sends data using the connected SSL stream.
+        /// </summary>
+        /// <param name="sipStreamConn">The stream connection object that holds the SSL stream.</param>
+        /// <param name="buffer">The data to send.</param>
+        protected override async void SendOnConnected(SIPStreamConnection sipStreamConn, byte[] buffer)
         {
             IPEndPoint dstEndPoint = sipStreamConn.ConnectionProps.RemoteEndPoint;
-
-            Console.WriteLine($"SIP TLS Channel sending {buffer.Length} bytes to {dstEndPoint}.");
 
             try
             {
@@ -170,20 +189,48 @@ namespace SIPSorcery.SIP
             }
             catch (SocketException sockExcp)
             {
-                logger.LogWarning($"SocketException SIP TCP Channel sending to {dstEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
-                SIPTCPSocketDisconnected(dstEndPoint);
+                logger.LogWarning($"SocketException SIP TLS Channel sending to {dstEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
+                OnSIPStreamDisconnected(dstEndPoint, sockExcp.SocketErrorCode);
                 throw;
             }
         }
 
-        private X509Certificate GetServerCert()
+        /// <summary>
+        /// Attempt to retrieve a certificate from the Windows local machine certificate store.
+        /// </summary>
+        /// <param name="subjName">The subject name of the certificate to retrieve.</param>
+        /// <returns>If found an X509 certificate or null if not.</returns>
+        private X509Certificate GetServerCert(string subjName)
         {
             //X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
             X509Store store = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
             store.Open(OpenFlags.ReadOnly);
-            X509CertificateCollection cert = store.Certificates.Find(X509FindType.FindBySubjectName, "10.0.0.100", true);
+            X509CertificateCollection cert = store.Certificates.Find(X509FindType.FindBySubjectName, subjName, true);
             return cert[0];
         }
+
+        /// <summary>
+        /// Hook to do any validation required on the server certificate.
+        /// </summary>
+        private bool ValidateServerCertificate(
+            object sender,
+            X509Certificate certificate,
+            X509Chain chain,
+            SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors == SslPolicyErrors.None)
+            {
+                logger.LogDebug($"Successfully validated X509 certificate for {certificate.Subject}.");
+                return true;
+            }
+            else
+            {
+                logger.LogWarning(String.Format("Certificate error: {0}", sslPolicyErrors));
+                return true;
+            }
+        }
+
+        #region Certificate verbose logging.
 
         private void DisplayCertificateChain(X509Certificate2 certificate)
         {
@@ -277,22 +324,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private bool ValidateServerCertificate(
-            object sender,
-            X509Certificate certificate,
-            X509Chain chain,
-            SslPolicyErrors sslPolicyErrors)
-        {
-            if (sslPolicyErrors == SslPolicyErrors.None)
-            {
-                logger.LogDebug($"Successfully validated X509 certificate for {certificate.Subject}.");
-                return true;
-            }
-            else
-            {
-                logger.LogWarning(String.Format("Certificate error: {0}", sslPolicyErrors));
-                return true;
-            }
-        }
+        #endregion
     }
 }
