@@ -149,13 +149,13 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override void Send(IPEndPoint destinationEndPoint, string message, TaskCompletionSource<SendResult> sendResult)
+        public override void Send(IPEndPoint destinationEndPoint, string message)
         {
             byte[] messageBuffer = Encoding.UTF8.GetBytes(message);
-            Send(destinationEndPoint, messageBuffer, sendResult);
+            Send(destinationEndPoint, messageBuffer);
         }
 
-        public override void Send(IPEndPoint destinationEndPoint, byte[] buffer, TaskCompletionSource<SendResult> sendResult)
+        public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
         {
             try
             {
@@ -175,7 +175,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, TaskCompletionSource<SendResult> sendResult)
+        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
         {
             throw new ApplicationException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }

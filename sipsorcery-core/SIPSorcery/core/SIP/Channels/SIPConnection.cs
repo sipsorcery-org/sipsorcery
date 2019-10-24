@@ -32,8 +32,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
 using SIPSorcery.Sys;
@@ -49,10 +49,12 @@ namespace SIPSorcery.SIP
         Caller = 2,     // Indicated the connection was initiated locally to a remote server socket.
     }
 
-    public struct SIPStreamConnection
+    public class SIPStreamConnection
     {
         public Socket StreamSocket;
         public SIPConnection ConnectionProps;
+        public SslStream SslStream;
+        public byte[] SslStreamBuffer;
 
         public SIPStreamConnection(Socket streamSocket, SIPConnection connectionProps)
         {
@@ -94,12 +96,13 @@ namespace SIPSorcery.SIP
             RecvSocketArgs.SetBuffer(new byte[2 * MaxSIPTCPMessageSize], 0, 2 * MaxSIPTCPMessageSize);
         }
 
+        // RecvSocketArgs.Buffer
         /// <summary>
         /// Processes the receive buffer after a read from the connected socket.
         /// </summary>
         /// <param name="bytesRead">The number of bytes that were read into the receive buffer.</param>
         /// <returns>True if the receive was processed correctly, false if the socket returned 0 bytes or was disconnected.</returns>
-        public bool SocketReadCompleted(int bytesRead)
+        public bool SocketReadCompleted(int bytesRead, byte[] buffer)
         {
             try
             {
@@ -107,7 +110,7 @@ namespace SIPSorcery.SIP
                 int bytesSkipped = 0;
 
                 // Attempt to extract a SIP message from the receive buffer.
-                byte[] sipMsgBuffer = SIPConnection.ProcessReceive(RecvSocketArgs.Buffer, RecvStartPosition, RecvEndPosition, out bytesSkipped);
+                byte[] sipMsgBuffer = SIPConnection.ProcessReceive(buffer, RecvStartPosition, RecvEndPosition, out bytesSkipped);
 
                 while (sipMsgBuffer != null)
                 {
@@ -129,11 +132,9 @@ namespace SIPSorcery.SIP
                     else
                     {
                         // Try and extract another SIP message from the receive buffer.
-                        sipMsgBuffer = SIPConnection.ProcessReceive(RecvSocketArgs.Buffer, RecvStartPosition, RecvEndPosition, out bytesSkipped);
+                        sipMsgBuffer = SIPConnection.ProcessReceive(buffer, RecvStartPosition, RecvEndPosition, out bytesSkipped);
                     }
                 }
-
-                RecvSocketArgs.SetBuffer(RecvSocketArgs.Buffer, RecvEndPosition, RecvSocketArgs.Buffer.Length - RecvEndPosition);
 
                 return true;
             }

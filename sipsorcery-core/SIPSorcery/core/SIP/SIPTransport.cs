@@ -265,7 +265,6 @@ namespace SIPSorcery.SIP
                 }
 
                 m_inMessageArrived.Set();
-                m_inMessageArrived.Set();
 
                 logger.LogDebug("SIPTransport Shutdown Complete.");
             }
@@ -635,11 +634,11 @@ namespace SIPSorcery.SIP
 
                 if (sipChannel.IsTLS)
                 {
-                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host, sipRequest.SendTaskResult);
+                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host);
                 }
                 else
                 {
-                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.SendTaskResult);
+                    sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()));
                 }
 
                 if (SIPRequestOutTraceEvent != null)
@@ -863,7 +862,7 @@ namespace SIPSorcery.SIP
             }
 
             sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
-            sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()), sipResponse.SendTaskResult);
+            sipChannel.Send(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
 
             if (SIPRequestOutTraceEvent != null)
             {

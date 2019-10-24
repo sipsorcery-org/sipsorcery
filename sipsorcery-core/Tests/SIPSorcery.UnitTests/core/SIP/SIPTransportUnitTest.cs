@@ -32,7 +32,9 @@
 
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -63,7 +65,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
 
-            if(testComplete.Task.IsCompleted == false)
+            if (testComplete.Task.IsCompleted == false)
             {
                 // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
                 testComplete.SetResult(false);
@@ -117,7 +119,7 @@ namespace SIPSorcery.SIP.UnitTests
             var clientChannel = new SIPTCPChannel(IPAddress.IPv6Loopback, 7061);
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
-            var serverTask = Task.Run(() => {RunServer(serverChannel, cancelServer); });
+            var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint), testComplete); });
 
             Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
@@ -129,6 +131,7 @@ namespace SIPSorcery.SIP.UnitTests
             }
 
             Assert.IsTrue(testComplete.Task.Result);
+
             cancelServer.Cancel();
         }
 
@@ -188,8 +191,6 @@ namespace SIPSorcery.SIP.UnitTests
                 var clientChannel = new SIPTCPChannel(IPAddress.Any, 7065);
                 clientChannel.DisableLocalTCPSocketsCheck = true;
                 SIPURI serverUri = new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint);
-                //SIPURI serverUri = new SIPURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, IPAddress.Loopback, 7062));
-                //SIPURI serverUri = SIPURI.ParseSIPURI("sip:test@172.21.114.114;transport=tcp");
 
                 logger.LogDebug($"Server URI {serverUri.ToString()}.");
 
@@ -217,80 +218,154 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate TLS IPv6 sockets using the loopback address.
         /// </summary>
-        // TODO: Renable after TLSChannel sorted.
-        //[TestMethod]
-        //[TestCategory("Integration")]
-        //public void IPv6TlsLoopbackSendReceiveTest()
-        //{
-        //    TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
+        [TestMethod]
+        [TestCategory("Integration")]
+        public void IPv6TlsLoopbackSendReceiveTest()
+        {
+            CancellationTokenSource cancelServer = new CancellationTokenSource();
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-        //    Assert.IsTrue(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
+            Assert.IsTrue(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
-        //    var serverCertificate = new X509Certificate2(@"certs\localhost.pfx", "");
-        //    var verifyCert = serverCertificate.Verify();
-        //    logger.LogDebug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
+            var serverCertificate = new X509Certificate2(@"certs\localhost.pfx", "");
+            var verifyCert = serverCertificate.Verify();
+            logger.LogDebug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
 
-        //    var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.IPv6Loopback, 7060);
-        //    serverChannel.DisableLocalTCPSocketsCheck = true;
-        //    var clientChannel = new SIPTLSChannel(serverCertificate, IPAddress.IPv6Loopback, 7061);
-        //    clientChannel.DisableLocalTCPSocketsCheck = true;
+            var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.IPv6Loopback, 8062);
+            serverChannel.DisableLocalTCPSocketsCheck = true;
+            var clientChannel = new SIPTLSChannel(serverCertificate, IPAddress.IPv6Loopback, 8063);
+            clientChannel.DisableLocalTCPSocketsCheck = true;
 
-        //    var serverTask = Task.Run(async () => { await RunServer(serverChannel, testComplete); });
-        //    var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sips, serverChannel.SIPChannelEndPoint), testComplete); });
+            var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sips, serverChannel.SIPChannelEndPoint), testComplete); });
 
-        //    Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
 
-        //    if (testComplete.Task.IsCompleted == false)
-        //    {
-        //        // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
-        //        testComplete.SetResult(false);
-        //    }
+            if (testComplete.Task.IsCompleted == false)
+            {
+                // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
+                testComplete.SetResult(false);
+            }
 
-        //    Assert.IsTrue(testComplete.Task.Result);
-        //}
+            Assert.IsTrue(testComplete.Task.Result);
+
+            cancelServer.Cancel();
+        }
 
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate IPv4 TLS sockets using the loopback address.
         /// </summary>
-        // TODO: Renable after TLSChannel sorted.
-        //[TestMethod]
-        //[TestCategory("Integration")]
-        //public void IPv4TlsLoopbackSendReceiveTest()
-        //{
-        //    TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
+        [TestMethod]
+        [TestCategory("Integration")]
+        public void IPv4TlsLoopbackSendReceiveTest()
+        {
+            CancellationTokenSource cancelServer = new CancellationTokenSource();
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-        //    Assert.IsTrue(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
+            Assert.IsTrue(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
-        //    var serverCertificate = new X509Certificate2(@"certs\localhost.pfx", "");
-        //    var verifyCert = serverCertificate.Verify();
-        //    logger.LogDebug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
+            var serverCertificate = new X509Certificate2(@"certs\localhost.pfx", "");
+            var verifyCert = serverCertificate.Verify();
+            logger.LogDebug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
 
-        //    var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 8060);
-        //    serverChannel.DisableLocalTCPSocketsCheck = true;
-        //    var clientChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 8061);
-        //    clientChannel.DisableLocalTCPSocketsCheck = true;
+            var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 8060);
+            serverChannel.DisableLocalTCPSocketsCheck = true;
+            var clientChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 8061);
+            clientChannel.DisableLocalTCPSocketsCheck = true;
 
-        //    var serverTask = Task.Run(async () => { await RunServer(serverChannel, testComplete); });
-        //    var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sips, serverChannel.SIPChannelEndPoint), testComplete); });
+            var serverTask = Task.Run(async () => { RunServer(serverChannel, cancelServer); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sips, serverChannel.SIPChannelEndPoint), testComplete); });
 
-        //    Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
 
-        //    if (testComplete.Task.IsCompleted == false)
-        //    {
-        //        // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
-        //        testComplete.SetResult(false);
-        //    }
+            if (testComplete.Task.IsCompleted == false)
+            {
+                // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
+                testComplete.SetResult(false);
+            }
 
-        //    Assert.IsTrue(testComplete.Task.Result);
-        //}
+            Assert.IsTrue(testComplete.Task.Result);
+
+            cancelServer.Cancel();
+        }
+
+        /// <summary>
+        /// Tests that SIP messages can be correctly extracted from a TCP stream when arbitrarily fragmented.
+        /// </summary>
+        [TestMethod]
+        [TestCategory("Integration")]
+        public void TcpTrickleReceiveTest()
+        {
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
+
+            IPEndPoint listenEP = new IPEndPoint(IPAddress.Loopback, 9066);
+            var transport = new SIPTransport();
+            var tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Loopback, 9067));
+            tcpChannel.DisableLocalTCPSocketsCheck = true;
+            transport.AddSIPChannel(tcpChannel);
+
+            int requestCount = 10;
+            int recvdReqCount = 0;
+
+            Task.Run(() =>
+            {
+                TcpListener listener = new TcpListener(listenEP);
+                listener.Start();
+                var tcpClient = listener.AcceptTcpClient();
+                logger.LogDebug($"TCP listener accepted client with remote end point {tcpClient.Client.RemoteEndPoint}.");
+                for (int i = 0; i < requestCount; i++)
+                {
+                    logger.LogDebug($"Sending request {i}.");
+
+                    var req = transport.GetRequest(SIPMethodsEnum.OPTIONS, SIPURI.ParseSIPURIRelaxed($"{i}@sipsorcery.com"));
+                    byte[] reqBytes = Encoding.UTF8.GetBytes(req.ToString());
+
+                    tcpClient.GetStream().Write(reqBytes, 0, reqBytes.Length);
+                    tcpClient.GetStream().Flush();
+
+                    Task.Delay(30).Wait();
+                }
+                tcpClient.GetStream().Close();
+            });
+
+            transport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+            {
+                logger.LogDebug($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
+                logger.LogDebug(sipRequest.ToString());
+                Interlocked.Increment(ref recvdReqCount);
+
+                if(recvdReqCount == requestCount)
+                {
+                    testComplete.SetResult(true);
+                }
+            };
+
+            transport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
+            {
+                logger.LogDebug($"Response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
+                logger.LogDebug(sipResponse.ToString());
+            };
+
+            tcpChannel.ConnectClientAsync(listenEP, null, null).Wait();
+
+            Task.WhenAny(new Task[] { testComplete.Task, Task.Delay(5000) }).Wait();
+
+            transport.Shutdown();
+
+            Assert.IsTrue(testComplete.Task.IsCompleted);
+            Assert.IsTrue(testComplete.Task.Result);
+            Assert.AreEqual(requestCount, recvdReqCount, $"The count of {recvdReqCount} for the requests received did not match what was expected.");
+        }
 
         /// <summary>
         /// Initialises a SIP transport to act as a server in single request/response exchange.
         /// </summary>
         /// <param name="testServerChannel">The server SIP channel to test.</param>
-        /// <param name="tcs">The task completion source gets set when the client receives the expected response.</param>
+        /// <param name="cts">Cancellation token to tell the server when to shutdown.</param>
         private void RunServer(SIPChannel testServerChannel, CancellationTokenSource cts)
         {
+            logger.LogDebug($"Starting server task for {testServerChannel.SIPChannelEndPoint.ToString()}.");
+
             var serverSIPTransport = new SIPTransport();
 
             try
@@ -310,11 +385,12 @@ namespace SIPSorcery.SIP.UnitTests
                     }
                 };
 
-                WaitHandle.WaitAny(new[] { cts.Token.WaitHandle });
+                cts.Token.WaitHandle.WaitOne();
+                //WaitHandle.WaitAny(new[] { cts.Token.WaitHandle });
             }
             finally
             {
-                logger.LogDebug("Server task completed.");
+                logger.LogDebug($"Server task for completed for {testServerChannel.SIPChannelEndPoint.ToString()}.");
                 serverSIPTransport.Shutdown();
             }
         }
@@ -327,6 +403,8 @@ namespace SIPSorcery.SIP.UnitTests
         /// <param name="tcs">The task completion source that this method will set if it receives the expected response.</param>
         private async Task RunClient(SIPChannel testClientChannel, SIPURI serverUri, TaskCompletionSource<bool> tcs)
         {
+            logger.LogDebug($"Starting client task for {testClientChannel.SIPChannelEndPoint.ToString()}.");
+
             var clientSIPTransport = new SIPTransport();
 
             try
@@ -357,12 +435,9 @@ namespace SIPSorcery.SIP.UnitTests
             }
             finally
             {
-                logger.LogDebug("Client task completed.");
+                logger.LogDebug($"Client task completed for {testClientChannel.SIPChannelEndPoint.ToString()}.");
                 clientSIPTransport.Shutdown();
             }
-
-            // Wait for the SIP transport to shutdown.
-            await Task.Delay(1000);
         }
     }
 }

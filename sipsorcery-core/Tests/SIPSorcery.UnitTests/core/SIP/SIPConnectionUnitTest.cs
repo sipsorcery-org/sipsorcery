@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -159,9 +158,7 @@ namespace SIPSorcery.SIP.UnitTests
 "Event: dialog" + CRLF + CRLF; 
     
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
-
-            int skippedBytes = 0;
-            byte[] parsedNotifyBytes = SIPConnection.ProcessReceive(notifyRequestBytes, 0, notifyRequestBytes.Length, out skippedBytes);
+            byte[] parsedNotifyBytes = SIPConnection.ProcessReceive(notifyRequestBytes, 0, notifyRequestBytes.Length, out _);
 
             Assert.IsTrue(notifyRequestBytes.Length == parsedNotifyBytes.Length, "The length of the parsed byte array was incorrect.");
         }
@@ -266,11 +263,8 @@ CRLF +
 "  </dialog>" + CRLF +
 "</dialog-info>";
 
-            //byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
             byte[] notifyRequestBytes = Encoding.ASCII.GetBytes(notifyRequest);
-
-            int skippedBytes = 0;
-            byte[] parsedNotifyBytes = SIPConnection.ProcessReceive(notifyRequestBytes, 0, notifyRequestBytes.Length, out skippedBytes);
+            byte[] parsedNotifyBytes = SIPConnection.ProcessReceive(notifyRequestBytes, 0, notifyRequestBytes.Length, out _);
 
             Assert.IsTrue(notifyRequestBytes.Length == parsedNotifyBytes.Length, "The length of the parsed byte array was incorrect.");
         }
@@ -329,14 +323,13 @@ CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            int skippedBytes = 0;
-            byte[] request1Bytes = SIPConnection.ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length, out skippedBytes);
+            byte[] request1Bytes = SIPConnection.ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length, out _);
             Console.WriteLine("Request1=" + UTF8Encoding.UTF8.GetString(request1Bytes));
 
-            byte[] request2Bytes = SIPConnection.ProcessReceive(testReceiveBytes, request1Bytes.Length, testReceiveBytes.Length, out skippedBytes);
+            byte[] request2Bytes = SIPConnection.ProcessReceive(testReceiveBytes, request1Bytes.Length, testReceiveBytes.Length, out _);
             Console.WriteLine("Request2=" + UTF8Encoding.UTF8.GetString(request2Bytes));
 
-            byte[] response1Bytes = SIPConnection.ProcessReceive(testReceiveBytes, request1Bytes.Length + request2Bytes.Length, testReceiveBytes.Length, out skippedBytes);
+            byte[] response1Bytes = SIPConnection.ProcessReceive(testReceiveBytes, request1Bytes.Length + request2Bytes.Length, testReceiveBytes.Length, out _);
             Console.WriteLine("Response1=" + UTF8Encoding.UTF8.GetString(response1Bytes));
 
             Assert.IsTrue(request1Bytes.Length + request2Bytes.Length + response1Bytes.Length == testReceiveBytes.Length, "The length of the parsed requests and responses was incorrect.");
@@ -367,9 +360,7 @@ Event: dialog
 includesdp=tru";
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
-
-            int skippedBytes = 0;
-            byte[] request1Bytes = SIPConnection.ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length, out skippedBytes);
+            byte[] request1Bytes = SIPConnection.ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length, out _);
 
             Assert.IsNull(request1Bytes, "The parsed bytes should have been empty.");
         }
@@ -399,9 +390,7 @@ CRLF +
 "includesdp=true!";
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
-
-            int skippedBytes = 0;
-            byte[] request1Bytes = SIPConnection.ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length, out skippedBytes);
+            byte[] request1Bytes = SIPConnection.ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length, out _);
 
             Assert.IsTrue(request1Bytes.Length == testReceiveBytes.Length - 1, "The parsed bytes was an incorrect length.");
         }
@@ -433,9 +422,7 @@ Event: dialog
 include                                               ";
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
-
-            int skippedBytes = 0;
-            byte[] request1Bytes = SIPConnection.ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length - 100, out skippedBytes);
+            byte[] request1Bytes = SIPConnection.ProcessReceive(testReceiveBytes, 0, testReceiveBytes.Length - 100, out _);
 
             Assert.IsNull(request1Bytes, "A request array should not have been returned.");
         }
@@ -502,9 +489,9 @@ CRLF +
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
             SIPConnection testConnection = new SIPConnection(null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
-            Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
+            //Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
 
-            bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
+            bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length, testReceiveBytes);
 
             Assert.IsTrue(result, "The result of processing the receive should have been true.");
             Assert.IsTrue(testConnection.RecvEndPosition == 0, "The receive buffer end position should have been 0.");
@@ -573,9 +560,9 @@ CRLF + CRLF +
             SIPConnection testConnection = new SIPConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
-            Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
+            //Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
 
-            bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
+            bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length, testReceiveBytes);
 
             Assert.IsTrue(result, "The result from processing the socket read should have been true.");
             Assert.IsTrue(sipMessages == 1, "The number of SIP messages parsed was incorrect, was " + sipMessages + ".");
@@ -624,7 +611,7 @@ CRLF +
             testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
             Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
 
-            bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length);
+            bool result = testConnection.SocketReadCompleted(testReceiveBytes.Length, testConnection.RecvSocketArgs.Buffer);
             string remainingBytes = Encoding.UTF8.GetString(testConnection.RecvSocketArgs.Buffer, testConnection.RecvStartPosition, testConnection.RecvEndPosition - testConnection.RecvStartPosition);
 
             Console.WriteLine("SocketBufferEndPosition=" + testConnection.RecvEndPosition + ".");
@@ -634,7 +621,7 @@ CRLF +
             Assert.IsTrue(sipMessages == 2, "The number of SIP messages parsed was incorrect.");
             Assert.AreEqual(708, testConnection.RecvStartPosition, $"The receive buffer start position was incorrect, was {testConnection.RecvStartPosition}.");
             Assert.AreEqual(734, testConnection.RecvEndPosition, $"The receive buffer end position was incorrect, was {testConnection.RecvEndPosition}.");
-            Assert.IsTrue(remainingBytes == "SUBSCRIBE sip:aaron@10.1.1", "The leftover bytes in the socket buffer were incorrect.");
+            Assert.IsTrue(remainingBytes == "SUBSCRIBE sip:aaron@10.1.1", $"The leftover bytes in the socket buffer were incorrect {remainingBytes}.");
         }
 
         /// <summary>

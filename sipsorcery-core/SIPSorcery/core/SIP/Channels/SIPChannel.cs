@@ -131,9 +131,9 @@ namespace SIPSorcery.SIP
         /// <param name="message">The message to send.</param>
         /// <param name="sendResult">An optional parameter that if set will allow the progress and result of the send
         /// to be monitored by the caller.</param>
-        public abstract void Send(IPEndPoint destinationEndPoint, string message, TaskCompletionSource<SendResult> sendResult);
-        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, TaskCompletionSource<SendResult> sendResult);
-        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName, TaskCompletionSource<SendResult> sendResult);
+        public abstract void Send(IPEndPoint destinationEndPoint, string message);
+        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer);
+        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName);
         public abstract void Close();
         public abstract bool IsConnectionEstablished(IPEndPoint remoteEndPoint);
         protected abstract Dictionary<string, SIPStreamConnection> GetConnectionsList();
@@ -159,7 +159,7 @@ namespace SIPSorcery.SIP
                     {
                         try
                         {
-                            SIPStreamConnection? inactiveConnection = null;
+                            SIPStreamConnection inactiveConnection = null;
                             Dictionary<string, SIPStreamConnection> connections = GetConnectionsList();
 
                             lock (connections)
@@ -177,8 +177,8 @@ namespace SIPSorcery.SIP
 
                             if (inactiveConnection != null)
                             {
-                                logger.LogDebug($"Pruning inactive connection on {SIPChannelContactURI}to remote end point {inactiveConnection.Value.ConnectionProps.RemoteEndPoint}.");
-                                inactiveConnection.Value.StreamSocket.Close();
+                                logger.LogDebug($"Pruning inactive connection on {SIPChannelContactURI}to remote end point {inactiveConnection.ConnectionProps.RemoteEndPoint}.");
+                                inactiveConnection.StreamSocket.Close();
                             }
                             else
                             {

@@ -72,7 +72,7 @@ namespace SIPSorcery
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            int port = 6060; // FreePort.FindNextAvailableUDPPort(SIPConstants.DEFAULT_SIP_PORT);
+            int port = 5060; // FreePort.FindNextAvailableUDPPort(SIPConstants.DEFAULT_SIP_PORT);
             //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, port)));
             //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Loopback, port)));
             //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv4Address(), port)));
@@ -85,9 +85,8 @@ namespace SIPSorcery
             if(File.Exists("localhost.pfx"))
             {
                 var certificate = new X509Certificate2(@"localhost.pfx", "");
-                // TODO fix TLSChannel and uncomment 2 lines.
-                //sipTransport.AddSIPChannel(new SIPTLSChannel(certificate, new IPEndPoint(IPAddress.Any, SIPConstants.DEFAULT_SIP_TLS_PORT)));
-                //sipTransport.AddSIPChannel(new SIPTLSChannel(certificate, new IPEndPoint(IPAddress.IPv6Any, SIPConstants.DEFAULT_SIP_TLS_PORT)));
+                sipTransport.AddSIPChannel(new SIPTLSChannel(certificate, new IPEndPoint(IPAddress.Any, SIPConstants.DEFAULT_SIP_TLS_PORT)));
+                sipTransport.AddSIPChannel(new SIPTLSChannel(certificate, new IPEndPoint(IPAddress.IPv6Any, SIPConstants.DEFAULT_SIP_TLS_PORT)));
             }
 
             // To keep things a bit simpler this example only supports a single call at a time and the SIP server user agent

@@ -32,43 +32,29 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
-    public class SIPTLSChannel : SIPChannel
+    public class SIPTLSChannel : SIPTCPChannel
     {
         private const string ACCEPT_THREAD_NAME = "siptls-";
         private const string PRUNE_THREAD_NAME = "siptlsprune-";
 
         private const int MAX_TLS_CONNECTIONS = 1000;              // Maximum number of connections for the TLS listener.
-        //private const int MAX_TLS_CONNECTIONS_PER_IPADDRESS = 10;   // Maximum number of connections allowed for a single remote IP address.
-        private static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH;
 
-        private TcpListener m_tlsServerListener;
-        //private bool m_closed = false;
-        private Dictionary<string, SIPConnection> m_connectedSockets = new Dictionary<string, SIPConnection>();
-        private List<string> m_connectingSockets = new List<string>(); // List of connecting sockets to avoid SIP re-transmits initiating multiple connect attempts.
-
-        //private string m_certificatePath;
         private X509Certificate2 m_serverCertificate;
         private static object m_writeLock = new object();
 
         private new ILogger logger = Log.Logger;
 
-        // Can be set to allow TCP channels hosted in the same process to send to each other. Useful for testing.
-        // By default sends between TCP channels in the same process are disabled to prevent resource exhaustion.
-        public bool DisableLocalTCPSocketsCheck;
-
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
+            : base(endPoint, SIPProtocolsEnum.tls)
         {
             if (serverCertificate == null)
             {
@@ -80,403 +66,113 @@ namespace SIPSorcery.SIP
                 throw new ArgumentNullException("endPoint", "An IP end point must be supplied for a SIP TLS channel.");
             }
 
-            m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, endPoint);
-            m_isReliable = true;
             m_isTLS = true;
             m_serverCertificate = serverCertificate;
-            Initialise();
         }
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPAddress listenAddress, int listenPort) :
             this(serverCertificate, new IPEndPoint(listenAddress, listenPort))
         { }
 
-        private void Initialise()
+        /// <summary>
+        /// For the TLS channel the SSL stream must be created and any authentication actions undertaken.
+        /// </summary>
+        /// <param name="streamConnection">The stream connection holding the newly accepted client socket.</param>
+        protected override async void OnAccept(SIPStreamConnection streamConnection)
+        {
+            NetworkStream networkStream = new NetworkStream(streamConnection.StreamSocket, true);
+            SslStream sslStream = new SslStream(networkStream, false);
+
+            await sslStream.AuthenticateAsServerAsync(m_serverCertificate);
+
+            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {m_localSIPEndPoint.GetIPEndPoint()}->{streamConnection.StreamSocket.RemoteEndPoint}.");
+
+            //// Display the properties and settings for the authenticated stream.
+            ////DisplaySecurityLevel(sslStream);
+            ////DisplaySecurityServices(sslStream);
+            ////DisplayCertificateInformation(sslStream);
+            ////DisplayStreamProperties(sslStream);
+
+            //// Set timeouts for the read and write to 5 seconds.
+            //sslStream.ReadTimeout = 5000;
+            //sslStream.WriteTimeout = 5000;
+
+            streamConnection.SslStream = sslStream;
+            streamConnection.SslStreamBuffer = new byte[2 * SIPConnection.MaxSIPTCPMessageSize];
+
+            sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
+        }
+
+        /// <summary>
+        /// For the TLS channel once the TCP client socket is connected it needs to be wrapped up in an SSL stream.
+        /// </summary>
+        /// <param name="streamConnection">The stream connection holding the newly connected client socket.</param>
+        protected override async void OnClientConnect(SIPStreamConnection streamConnection, string serverCertificateName, byte[] buffer)
         {
             try
             {
-                m_tlsServerListener = new TcpListener(m_localSIPEndPoint.GetIPEndPoint());
-                m_tlsServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-
-                m_tlsServerListener.Start(MAX_TLS_CONNECTIONS);
-
-                if (m_localSIPEndPoint.Port == 0)
-                {
-                    m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.tls, (IPEndPoint)m_tlsServerListener.Server.LocalEndPoint);
-                }
-
-                LocalTCPSockets.Add(((IPEndPoint)m_tlsServerListener.Server.LocalEndPoint).ToString());
-
-                ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localSIPEndPoint.Port); });
-                ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localSIPEndPoint.Port); });
-
-                logger.LogDebug("SIP TLS Channel listener created " + m_localSIPEndPoint.GetIPEndPoint() + ".");
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPTLSChannel Initialise. " + excp);
-                throw;
-            }
-        }
-
-        private void AcceptConnections(string threadName)
-        {
-            try
-            {
-                Thread.CurrentThread.Name = threadName;
-
-                logger.LogDebug("SIPTLSChannel socket on " + m_localSIPEndPoint + " accept connections thread started.");
-
-                while (!Closed)
-                {
-                    try
-                    {
-                        TcpClient tcpClient = m_tlsServerListener.AcceptTcpClient();
-                        tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-
-                        IPEndPoint remoteEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
-                        logger.LogDebug("SIP TLS Channel connection accepted from " + remoteEndPoint + ".");
-
-                        SslStream sslStream = new SslStream(tcpClient.GetStream(), false);
-
-                        SIPConnection sipTLSConnection = new SIPConnection(this, tcpClient, sslStream, remoteEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Listener);
-
-                        sslStream.BeginAuthenticateAsServer(m_serverCertificate, EndAuthenticateAsServer, sipTLSConnection);
-
-                        //sslStream.AuthenticateAsServer(m_serverCertificate, false, SslProtocols.Tls, false);
-                        //// Display the properties and settings for the authenticated stream.
-                        ////DisplaySecurityLevel(sslStream);
-                        ////DisplaySecurityServices(sslStream);
-                        ////DisplayCertificateInformation(sslStream);
-                        ////DisplayStreamProperties(sslStream);
-
-                        //// Set timeouts for the read and write to 5 seconds.
-                        //sslStream.ReadTimeout = 5000;
-                        //sslStream.WriteTimeout = 5000;
-
-                        ////SIPConnection sipTLSConnection = new SIPConnection(this, sslStream, remoteEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Listener);
-                        //m_connectedSockets.Add(remoteEndPoint.ToString(), sipTLSConnection);
-
-                        //sipTLSConnection.SIPSocketDisconnected += SIPTLSSocketDisconnected;
-                        //sipTLSConnection.SIPMessageReceived += SIPTLSMessageReceived;
-                        ////byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
-                        //sipTLSConnection.SIPStream.BeginRead(sipTLSConnection.SocketBuffer, 0, MaxSIPTCPMessageSize, new AsyncCallback(ReceiveCallback), sipTLSConnection);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.LogError("SIPTLSChannel Accept Connection Exception. " + e);
-                        //sslStream.Close();
-                        //tcpClient.Close();
-                    }
-                }
-
-                logger.LogDebug("SIPTLSChannel socket on " + m_localSIPEndPoint + " listening halted.");
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPTLSChannel Listen. " + excp);
-                //throw excp;
-            }
-        }
-
-        public void EndAuthenticateAsServer(IAsyncResult ar)
-        {
-            try
-            {
-                SIPConnection sipTLSConnection = (SIPConnection)ar.AsyncState;
-                SslStream sslStream = (SslStream)sipTLSConnection.SIPStream;
-
-                sslStream.EndAuthenticateAsServer(ar);
-
-                // Set timeouts for the read and write to 5 seconds.
-                sslStream.ReadTimeout = 5000;
-                sslStream.WriteTimeout = 5000;
-
-                m_connectedSockets.Add(sipTLSConnection.RemoteEndPoint.ToString(), sipTLSConnection);
-
-                sipTLSConnection.SIPSocketDisconnected += SIPTLSSocketDisconnected;
-                sipTLSConnection.SIPMessageReceived += SIPTLSMessageReceived;
-                //byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
-                sipTLSConnection.SIPStream.BeginRead(sipTLSConnection.SocketBuffer, 0, MaxSIPTCPMessageSize, new AsyncCallback(ReceiveCallback), sipTLSConnection);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPTLSChannel EndAuthenticateAsServer. " + excp);
-                //throw excp;
-            }
-        }
-
-        public void ReceiveCallback(IAsyncResult ar)
-        {
-            SIPConnection sipTLSConnection = (SIPConnection)ar.AsyncState;
-
-            if (sipTLSConnection != null && sipTLSConnection.SIPStream != null && sipTLSConnection.SIPStream.CanRead)
-            {
-                try
-                {
-                    int bytesRead = sipTLSConnection.SIPStream.EndRead(ar);
-                    if (sipTLSConnection.SocketReadCompleted(bytesRead))
-                    {
-                        sipTLSConnection.SIPStream.BeginRead(sipTLSConnection.SocketBuffer, sipTLSConnection.SocketBufferEndPosition, MaxSIPTCPMessageSize - sipTLSConnection.SocketBufferEndPosition, new AsyncCallback(ReceiveCallback), sipTLSConnection);
-                    }
-                }
-                catch (SocketException sockExcp)  // Occurs if the remote end gets disconnected.
-                {
-                    logger.LogWarning("SocketException SIPTLSChannel ReceiveCallback. " + sockExcp);
-                }
-                catch (Exception excp)
-                {
-                    logger.LogWarning("Exception SIPTLSChannel ReceiveCallback. " + excp);
-                    SIPTLSSocketDisconnected(sipTLSConnection.RemoteEndPoint);
-                }
-            }
-        }
-
-        public override void Send(IPEndPoint destinationEndPoint, string message)
-        {
-            byte[] messageBuffer = Encoding.UTF8.GetBytes(message);
-            Send(destinationEndPoint, messageBuffer);
-        }
-
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer)
-        {
-            Send(dstEndPoint, buffer, null);
-        }
-
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
-        {
-            try
-            {
-                if (buffer == null)
-                {
-                    throw new ApplicationException("An empty buffer was specified to Send in SIPTLSChannel.");
-                }
-                else if (DisableLocalTCPSocketsCheck == false && LocalTCPSockets.Contains(dstEndPoint.ToString()))
-                {
-                    logger.LogError("SIPTLSChannel blocked Send to " + dstEndPoint.ToString() + " as it was identified as a locally hosted TLS socket.\r\n" + Encoding.UTF8.GetString(buffer));
-                    throw new ApplicationException("A Send call was made in SIPTLSChannel to send to another local TLS socket.");
-                }
-                else
-                {
-                    bool sent = false;
-                    bool existingConnection = false;
-
-                    // Lookup a client socket that is connected to the destination.
-                    //m_sipConn(buffer, buffer.Length, destinationEndPoint);
-                    if (m_connectedSockets.ContainsKey(dstEndPoint.ToString()))
-                    {
-                        existingConnection = true;
-                        SIPConnection sipTLSClient = m_connectedSockets[dstEndPoint.ToString()];
-
-                        try
-                        {
-                            lock (m_writeLock)
-                            {
-                                if (sipTLSClient.SIPStream != null && sipTLSClient.SIPStream.CanWrite)
-                                {
-                                    //sipTLSClient.SIPStream.Write(buffer, 0, buffer.Length);
-                                    sipTLSClient.SIPStream.BeginWrite(buffer, 0, buffer.Length, new AsyncCallback(EndSend), sipTLSClient);
-                                    sent = true;
-                                    sipTLSClient.LastTransmission = DateTime.Now;
-                                }
-                                else
-                                {
-                                    logger.LogWarning("A SIPTLSChannel write operation to " + dstEndPoint + " was dropped as the stream was null or could not be written to.");
-                                }
-                            }
-                        }
-                        catch (SocketException)
-                        {
-                            logger.LogWarning("Could not send to TLS socket " + dstEndPoint + ", closing and removing.");
-                            sipTLSClient.SIPStream.Close();
-                            m_connectedSockets.Remove(dstEndPoint.ToString());
-                        }
-                    }
-
-                    if (!sent && !existingConnection)
-                    {
-                        if (serverCertificateName.IsNullOrBlank())
-                        {
-                            throw new ApplicationException("The SIP TLS Channel must be provided with the name of the expected server certificate, please use alternative method.");
-                        }
-
-                        if (!m_connectingSockets.Contains(dstEndPoint.ToString()))
-                        {
-                            logger.LogDebug("Attempting to establish TLS connection to " + dstEndPoint + ".");
-                            TcpClient tcpClient = new TcpClient(dstEndPoint.AddressFamily);
-                            tcpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                            tcpClient.Client.Bind(m_localSIPEndPoint.GetIPEndPoint());
-
-                            m_connectingSockets.Add(dstEndPoint.ToString());
-                            tcpClient.BeginConnect(dstEndPoint.Address, dstEndPoint.Port, EndConnect, new object[] { tcpClient, dstEndPoint, buffer, serverCertificateName });
-                        }
-                        else
-                        {
-                            logger.LogWarning("Could not send SIP packet to TLS " + dstEndPoint + " and another connection was already in progress so dropping message.");
-                        }
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception (" + excp.GetType().ToString() + ") SIPTLSChannel Send (sendto=>" + dstEndPoint + "). " + excp);
-                throw excp;
-            }
-        }
-
-        private void EndSend(IAsyncResult ar)
-        {
-            try
-            {
-                SIPConnection sipConnection = (SIPConnection)ar.AsyncState;
-                sipConnection.SIPStream.EndWrite(ar);
-                OnSendComplete(EventArgs.Empty);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception EndSend. " + excp);
-            }
-        }
-
-        protected override void OnSendComplete(EventArgs args)
-        {
-            base.OnSendComplete(args);
-        }
-
-        private void EndConnect(IAsyncResult ar)
-        {
-            object[] stateObj = (object[])ar.AsyncState;
-            TcpClient tcpClient = (TcpClient)stateObj[0];
-            IPEndPoint dstEndPoint = (IPEndPoint)stateObj[1];
-            byte[] buffer = (byte[])stateObj[2];
-            string serverCN = (string)stateObj[3];
-
-            try
-            {
-                m_connectingSockets.Remove(dstEndPoint.ToString());
-
-                tcpClient.EndConnect(ar);
-
-                SslStream sslStream = new SslStream(tcpClient.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+                NetworkStream networkStream = new NetworkStream(streamConnection.StreamSocket, true);
+                SslStream sslStream = new SslStream(networkStream, false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
                 //DisplayCertificateInformation(sslStream);
 
-                SIPConnection callerConnection = new SIPConnection(this, tcpClient, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
-                sslStream.BeginAuthenticateAsClient(serverCN, EndAuthenticateAsClient, new object[] { tcpClient, dstEndPoint, buffer, callerConnection });
-                //sslStream.AuthenticateAsClient(serverCN);
+                await sslStream.AuthenticateAsClientAsync(serverCertificateName);
+                streamConnection.SslStream = sslStream;
+                streamConnection.SslStreamBuffer = new byte[2 * SIPConnection.MaxSIPTCPMessageSize];
 
-                //if (tcpClient != null && tcpClient.Connected)
-                //{
-                //    SIPConnection callerConnection = new SIPConnection(this, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
-                //    m_connectedSockets.Add(dstEndPoint.ToString(), callerConnection);
+                logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {m_localSIPEndPoint.GetIPEndPoint()}->{streamConnection.StreamSocket.RemoteEndPoint}.");
 
-                //    callerConnection.SIPSocketDisconnected += SIPTLSSocketDisconnected;
-                //    callerConnection.SIPMessageReceived += SIPTLSMessageReceived;
-                //    //byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
-                //    callerConnection.SIPStream.BeginRead(callerConnection.SocketBuffer, 0, MaxSIPTCPMessageSize, new AsyncCallback(ReceiveCallback), callerConnection);
+                sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
 
-                //    logger.LogDebug("Established TLS connection to " + dstEndPoint + ".");
-
-                //    callerConnection.SIPStream.BeginWrite(buffer, 0, buffer.Length, EndSend, callerConnection);
-                //}
-                //else
-                //{
-                //    logger.LogWarning("Could not establish TLS connection to " + dstEndPoint + ".");
-                //}
+                await sslStream.WriteAsync(buffer, 0, buffer.Length);
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPTLSChannel EndConnect. " + excp);
-
-                if (tcpClient != null)
-                {
-                    try
-                    {
-                        tcpClient.Close();
-                    }
-                    catch (Exception closeExcp)
-                    {
-                        logger.LogWarning("Exception SIPTLSChannel EndConnect Close TCP Client. " + closeExcp);
-                    }
-                }
+                logger.LogError($"Exception SIPTLSChannel OnClientConnect. {excp.Message}");
             }
         }
 
-        private void EndAuthenticateAsClient(IAsyncResult ar)
+        private void OnReadCallback(IAsyncResult ar)
         {
+            SIPStreamConnection sipStreamConnection = (SIPStreamConnection)ar.AsyncState;
+
             try
             {
-                object[] stateObj = (object[])ar.AsyncState;
-                TcpClient tcpClient = (TcpClient)stateObj[0];
-                IPEndPoint dstEndPoint = (IPEndPoint)stateObj[1];
-                byte[] buffer = (byte[])stateObj[2];
-                SIPConnection callerConnection = (SIPConnection)stateObj[3];
+                int bytesRead = sipStreamConnection.SslStream.EndRead(ar);
 
-                SslStream sslStream = (SslStream)callerConnection.SIPStream;
+                Console.WriteLine($"{bytesRead} for TLS channel.");
 
-                sslStream.EndAuthenticateAsClient(ar);
-
-                if (tcpClient != null && tcpClient.Connected)
+                if (sipStreamConnection.ConnectionProps.SocketReadCompleted(bytesRead, sipStreamConnection.SslStreamBuffer))
                 {
-                    //SIPConnection callerConnection = new SIPConnection(this, sslStream, dstEndPoint, SIPProtocolsEnum.tls, SIPConnectionsEnum.Caller);
-                    m_connectedSockets.Add(callerConnection.RemoteEndPoint.ToString(), callerConnection);
-
-                    callerConnection.SIPSocketDisconnected += SIPTLSSocketDisconnected;
-                    callerConnection.SIPMessageReceived += SIPTLSMessageReceived;
-                    //byte[] receiveBuffer = new byte[MaxSIPTCPMessageSize];
-                    callerConnection.SIPStream.BeginRead(callerConnection.SocketBuffer, 0, MaxSIPTCPMessageSize, new AsyncCallback(ReceiveCallback), callerConnection);
-
-                    logger.LogDebug("Established TLS connection to " + callerConnection.RemoteEndPoint + ".");
-
-                    callerConnection.SIPStream.BeginWrite(buffer, 0, buffer.Length, EndSend, callerConnection);
+                    sipStreamConnection.SslStream.BeginRead(sipStreamConnection.SslStreamBuffer, sipStreamConnection.ConnectionProps.RecvEndPosition, sipStreamConnection.SslStreamBuffer.Length - sipStreamConnection.ConnectionProps.RecvEndPosition, new AsyncCallback(OnReadCallback), sipStreamConnection);
                 }
-                else
-                {
-                    logger.LogWarning("Could not establish TLS connection to " + callerConnection.RemoteEndPoint + ".");
-                }
+            }
+            catch (SocketException sockExcp)  // Occurs if the remote end gets disconnected.
+            {
+                logger.LogWarning($"SocketException SIPTLSChannel ReceiveCallback. Error code {sockExcp.SocketErrorCode}. {sockExcp}");
+                SIPTCPSocketDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint);
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPTLSChannel EndAuthenticateAsClient. " + excp);
+                logger.LogWarning($"Exception SIPTLSChannel ReceiveCallback. ${excp.Message}");
+                SIPTCPSocketDisconnected(sipStreamConnection.ConnectionProps.RemoteEndPoint);
             }
         }
 
-        protected override Dictionary<string, SIPConnection> GetConnectionsList()
+        protected override async void DoSend(SIPStreamConnection sipStreamConn, byte[] buffer)
         {
-            return m_connectedSockets;
-        }
+            IPEndPoint dstEndPoint = sipStreamConn.ConnectionProps.RemoteEndPoint;
 
-        public override bool IsConnectionEstablished(IPEndPoint remoteEndPoint)
-        {
-            lock (m_connectedSockets)
-            {
-                return m_connectedSockets.ContainsKey(remoteEndPoint.ToString());
-            }
-        }
+            Console.WriteLine($"SIP TLS Channel sending {buffer.Length} bytes to {dstEndPoint}.");
 
-        private void SIPTLSSocketDisconnected(IPEndPoint remoteEndPoint)
-        {
             try
             {
-                logger.LogDebug("TLS socket from " + remoteEndPoint + " disconnected.");
-
-                lock (m_connectedSockets)
-                {
-                    m_connectedSockets.Remove(remoteEndPoint.ToString());
-                }
-
-                m_connectingSockets.Remove(remoteEndPoint.ToString());
+                await sipStreamConn.SslStream.WriteAsync(buffer, 0, buffer.Length);
             }
-            catch (Exception excp)
+            catch (SocketException sockExcp)
             {
-                logger.LogError("Exception SIPTLSClientDisconnected. " + excp);
-            }
-        }
-
-        private void SIPTLSMessageReceived(SIPChannel channel, SIPEndPoint remoteEndPoint, byte[] buffer)
-        {
-            if (SIPMessageReceived != null)
-            {
-                SIPMessageReceived(channel, remoteEndPoint, buffer);
+                logger.LogWarning($"SocketException SIP TCP Channel sending to {dstEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
+                SIPTCPSocketDisconnected(dstEndPoint);
+                throw;
             }
         }
 
@@ -589,6 +285,7 @@ namespace SIPSorcery.SIP
         {
             if (sslPolicyErrors == SslPolicyErrors.None)
             {
+                logger.LogDebug($"Successfully validated X509 certificate for {certificate.Subject}.");
                 return true;
             }
             else
@@ -596,45 +293,6 @@ namespace SIPSorcery.SIP
                 logger.LogWarning(String.Format("Certificate error: {0}", sslPolicyErrors));
                 return true;
             }
-        }
-
-        public override void Close()
-        {
-            if (!Closed == true)
-            {
-                logger.LogDebug("Closing SIP TLS Channel " + SIPChannelEndPoint + ".");
-
-                Closed = true;
-
-                try
-                {
-                    m_tlsServerListener.Stop();
-                }
-                catch (Exception listenerCloseExcp)
-                {
-                    logger.LogWarning("Exception SIPTLSChannel Close (shutting down listener). " + listenerCloseExcp.Message);
-                }
-
-                lock (m_connectedSockets)
-                {
-                    foreach (SIPConnection tcpConnection in m_connectedSockets.Values)
-                    {
-                        try
-                        {
-                            tcpConnection.SIPStream.Close();
-                        }
-                        catch (Exception connectionCloseExcp)
-                        {
-                            logger.LogWarning("Exception SIPTLSChannel Close (shutting down connection to " + tcpConnection.RemoteEndPoint + "). " + connectionCloseExcp.Message);
-                        }
-                    }
-                }
-            }
-        }
-
-        public override void Dispose()
-        {
-            this.Close();
         }
     }
 }
