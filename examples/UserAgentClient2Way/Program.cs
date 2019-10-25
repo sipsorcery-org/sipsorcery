@@ -1,11 +1,16 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An abbreviated example program of how to use the SIPSorcery core library to place a SIP call
-// and play the received audio. 
+// Description: An abbreviated example program of how to use the SIPSorcery core library to place a SIP call.
+// This example builds on the UserAgentClient example to add 2 way audio instead of only one way audio playback.
+// In order to add 2 way audio the default audio source (microphone) is used. If no audio source is available
+// then the example fallsback to on way audio.
+//
+// Author(s):
+// Aaron Clauson
 // 
 // History:
-// 08 Oct 2019	Aaron Clauson	Created.
+// 26 Oct 2019	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland (www.sipsorcery.com).
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -30,7 +35,7 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string DESTINATION_SIP_URI = "sip:500@sipsorcery.com";
+        private static readonly string DESTINATION_SIP_URI = "sip:50100@sipsorcery.com";
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
 
         static void Main()
@@ -56,10 +61,8 @@ namespace SIPSorcery
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
             int port = SIPConstants.DEFAULT_SIP_PORT + 1000;
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, port)));
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Loopback, port)));
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv4Address(), port)));
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv6Address(), port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Any, port)));
 
             // Select the IP address to use for RTP based on the destination SIP URI.
             SIPURI callURI = SIPURI.ParseSIPURIRelaxed(DESTINATION_SIP_URI);
