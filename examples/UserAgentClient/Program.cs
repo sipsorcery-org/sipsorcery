@@ -144,42 +144,45 @@ namespace SIPSorcery
             // At this point the call has been initiated and everything will be handled in an event handler or on the RTP
             // receive task. The code below is to gracefully exit.
             // Ctrl-c will gracefully exit the call at any point.
-            Console.CancelKeyPress += async delegate (object sender, ConsoleCancelEventArgs e)
+            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
                 cts.Cancel();
-
-                SIPSorcery.Sys.Log.Logger.LogInformation("Exiting...");
-
-                rtpSocket?.Close();
-                controlSocket?.Close();
-
-                if (!isCallHungup && uac != null)
-                {
-                    if (uac.IsUACAnswered)
-                    {
-                        SIPSorcery.Sys.Log.Logger.LogInformation($"Hanging up call to {uac.CallDescriptor.To}.");
-                        uac.Hangup();
-                    }
-                    else if (!hasCallFailed)
-                    {
-                        SIPSorcery.Sys.Log.Logger.LogInformation($"Cancelling call to {uac.CallDescriptor.To}.");
-                        uac.Cancel();
-                    }
-
-                    // Give the BYE or CANCEL request time to be transmitted.
-                    SIPSorcery.Sys.Log.Logger.LogInformation("Waiting 1s for call to clean up...");
-                    await Task.Delay(1000);
-                }
-
-                SIPSorcery.Net.DNSManager.Stop();
-
-                if (sipTransport != null)
-                {
-                    SIPSorcery.Sys.Log.Logger.LogInformation("Shutting down SIP transport...");
-                    sipTransport.Shutdown();
-                }
             };
+
+            // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
+            cts.Token.WaitHandle.WaitOne();
+
+            SIPSorcery.Sys.Log.Logger.LogInformation("Exiting...");
+
+            rtpSocket?.Close();
+            controlSocket?.Close();
+
+            if (!isCallHungup && uac != null)
+            {
+                if (uac.IsUACAnswered)
+                {
+                    SIPSorcery.Sys.Log.Logger.LogInformation($"Hanging up call to {uac.CallDescriptor.To}.");
+                    uac.Hangup();
+                }
+                else if (!hasCallFailed)
+                {
+                    SIPSorcery.Sys.Log.Logger.LogInformation($"Cancelling call to {uac.CallDescriptor.To}.");
+                    uac.Cancel();
+                }
+
+                // Give the BYE or CANCEL request time to be transmitted.
+                SIPSorcery.Sys.Log.Logger.LogInformation("Waiting 1s for call to clean up...");
+                Task.Delay(1000).Wait();
+            }
+
+            SIPSorcery.Net.DNSManager.Stop();
+
+            if (sipTransport != null)
+            {
+                SIPSorcery.Sys.Log.Logger.LogInformation("Shutting down SIP transport...");
+                sipTransport.Shutdown();
+            }
         }
 
         /// <summary>
