@@ -35,13 +35,16 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string DESTINATION_SIP_URI = "sip:50100@sipsorcery.com";
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:50100@sipsorcery.com";
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
 
-        static void Main()
+        private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+
+        static void Main(string[] args)
         {
             Console.WriteLine("SIPSorcery client user agent example.");
             Console.WriteLine("Press ctrl-c to exit.");
+            Console.WriteLine($"{Dns.GetHostName()}");
 
             // Plumbing code to facilitate a graceful exit.
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -58,15 +61,54 @@ namespace SIPSorcery
             loggerFactory.AddSerilog(loggerConfig);
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
 
+            SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
+            if(args != null && args.Length > 0)
+            {
+                if(!SIPURI.TryParse(args[0]))
+                {
+                    Log.LogWarning($"Command line argument could not be parsed as a SIP URI {args[0]}");
+                }
+                else
+                {
+                    callUri = SIPURI.ParseSIPURIRelaxed(args[0]);
+                }
+            }
+
+            Log.LogInformation($"Call destination {callUri}.");
+
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
             int port = SIPConstants.DEFAULT_SIP_PORT + 1000;
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, port)));
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Any, port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, port)));
+            //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, port)));
+            //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Any, port)));
+
+            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
+            {
+                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
+                Log.LogDebug(req.ToString());
+            };
+
+            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
+            {
+                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
+                Log.LogDebug(req.ToString());
+            };
+
+            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
+                Log.LogDebug(resp.ToString());
+            };
+
+            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
+                Log.LogDebug(resp.ToString());
+            };
 
             // Select the IP address to use for RTP based on the destination SIP URI.
-            SIPURI callURI = SIPURI.ParseSIPURIRelaxed(DESTINATION_SIP_URI);
-            var endPointForCall = callURI.ToSIPEndPoint() == null ? sipTransport.GetDefaultSIPEndPoint(callURI.Protocol) : sipTransport.GetDefaultSIPEndPoint(callURI.ToSIPEndPoint());
+            var endPointForCall = callUri.ToSIPEndPoint() == null ? sipTransport.GetDefaultSIPEndPoint(callUri.Protocol) : sipTransport.GetDefaultSIPEndPoint(callUri.ToSIPEndPoint());
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
             Socket rtpSocket = null;
@@ -92,7 +134,6 @@ namespace SIPSorcery
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
                     SIPSorcery.Sys.Log.Logger.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                    SIPSorcery.Sys.Log.Logger.LogDebug(resp.ToString());
 
                     IPEndPoint remoteRtpEndPoint = SDP.GetSDPRTPEndPoint(resp.Body);
 
@@ -134,7 +175,7 @@ namespace SIPSorcery
             SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
                 SIPConstants.SIP_DEFAULT_USERNAME,
                 null,
-                DESTINATION_SIP_URI,
+                callUri.ToString(),
                 SIPConstants.SIP_DEFAULT_FROMURI,
                 null, null, null, null,
                 SIPCallDirection.Out,
