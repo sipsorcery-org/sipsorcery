@@ -78,7 +78,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Parses a SIP end point from either a serialised SIP end point string, format of:
         /// (udp|tcp|tls):(IPEndpoint)
-        /// Or from a string that represents a SIP URI.
+        /// or from a string that represents a SIP URI.
         /// </summary>
         /// <param name="sipEndPointStr">The string to parse to extract the SIP end point.</param>
         /// <returns>If successful a SIPEndPoint object or null otherwise.</returns>
@@ -89,7 +89,7 @@ namespace SIPSorcery.SIP
                 return null;
             }
 
-            if (sipEndPointStr.StartsWith("udp") || sipEndPointStr.StartsWith("tcp") || sipEndPointStr.StartsWith("tls"))
+            if (sipEndPointStr.ToLower().StartsWith("udp:") || sipEndPointStr.ToLower().StartsWith("tcp:") || sipEndPointStr.ToLower().StartsWith("tls:"))
             {
                 return ParseSerialisedSIPEndPoint(sipEndPointStr);
             }
@@ -97,8 +97,15 @@ namespace SIPSorcery.SIP
             {
                 var sipUri = SIPURI.ParseSIPURIRelaxed(sipEndPointStr);
                 var sipEndPoint = sipUri.ToSIPEndPoint();
-                sipEndPoint.Scheme = sipUri.Scheme;
-                return sipEndPoint;
+                if (sipEndPoint != null)
+                {
+                    sipEndPoint.Scheme = sipUri.Scheme;
+                    return sipEndPoint;
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
 

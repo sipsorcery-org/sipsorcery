@@ -33,6 +33,10 @@ namespace SIPSorcery.SIP
         // Channel sockets.
         private UdpClient m_sipConn = null;
 
+        /// <summary>
+        /// Creates a SIP channel to listen for and send SIP messages over UDP.
+        /// </summary>
+        /// <param name="endPoint">The IP end point to listen on and send from.</param>
         public SIPUDPChannel(IPEndPoint endPoint)
         {
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, endPoint);
@@ -42,11 +46,16 @@ namespace SIPSorcery.SIP
         public SIPUDPChannel(IPAddress listenAddress, int listenPort) : this(new IPEndPoint(listenAddress, listenPort))
         { }
 
+        /// <summary>
+        /// Starts the UDP listener.
+        /// </summary>
         private void Initialise()
         {
             try
             {
                 m_sipConn = new UdpClient(m_localSIPEndPoint.GetIPEndPoint());
+                // TODO 26 Oct 2019: Look into why UDP sockets don't allow dual mode to be set.
+                //if (m_localSIPEndPoint.GetIPEndPoint().AddressFamily == AddressFamily.InterNetworkV6) m_sipConn.Client.DualMode = true;
 
                 if (m_localSIPEndPoint.Port == 0)
                 {
@@ -57,24 +66,12 @@ namespace SIPSorcery.SIP
                 listenThread.Name = THREAD_NAME + Crypto.GetRandomString(4);
                 listenThread.Start();
 
-                logger.LogDebug("SIPUDPChannel listener created " + m_localSIPEndPoint.GetIPEndPoint() + ".");
+                logger.LogDebug($"SIPUDPChannel listener created {m_localSIPEndPoint.GetIPEndPoint()}.");
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPUDPChannel Initialise. " + excp.Message);
                 throw excp;
-            }
-        }
-
-        private void Dispose(bool disposing)
-        {
-            try
-            {
-                this.Close();
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception Disposing SIPUDPChannel. " + excp.Message);
             }
         }
 
