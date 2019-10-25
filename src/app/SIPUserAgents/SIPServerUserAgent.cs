@@ -276,10 +276,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        if (UASStateChanged != null)
-                        {
-                            UASStateChanged(this, progressStatus, reasonPhrase);
-                        }
+                        UASStateChanged?.Invoke(this, progressStatus, reasonPhrase);
 
                         // Allow all Trying responses through as some may contain additional useful information on the call state for the caller. 
                         // Also if the response is a 183 Session Progress with audio forward it.
@@ -344,10 +341,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    if (UASStateChanged != null)
-                    {
-                        UASStateChanged(this, SIPResponseStatusCodesEnum.Ok, null);
-                    }
+                    UASStateChanged?.Invoke(this, SIPResponseStatusCodesEnum.Ok, null);
 
                     if (!toTag.IsNullOrBlank())
                     {
