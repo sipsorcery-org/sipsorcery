@@ -36,6 +36,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
@@ -57,7 +58,7 @@ namespace SIPSorcery.SIP
 		}
 	}
 
-    public abstract class SIPChannel
+    public abstract class SIPChannel : IDisposable
     {
         private const int INITIALPRUNE_CONNECTIONS_DELAY = 60000;   // Wait this long before starting the prune checks, there will be no connections to prune initially and the CPU is needed elsewhere.
         private const int PRUNE_CONNECTIONS_INTERVAL = 60000;        // The period at which to prune the connections.
@@ -69,7 +70,8 @@ namespace SIPSorcery.SIP
 
         protected SIPEndPoint m_localSIPEndPoint = null;
 
-        public event EventHandler SendComplete;
+        //public event EventHandler SendComplete;
+
         public SIPEndPoint SIPChannelEndPoint
         {
             get { return m_localSIPEndPoint; }
@@ -122,12 +124,35 @@ namespace SIPSorcery.SIP
 
         public SIPMessageReceivedDelegate SIPMessageReceived;
 
+        /// <summary>
+        /// Send a SIP message, represented as a string, to a remote end point.
+        /// </summary>
+        /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
+        /// <param name="message">The message to send.</param>
         public abstract void Send(IPEndPoint destinationEndPoint, string message);
         public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer);
         public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName);
+
+        /// <summary>
+        /// Asynchronous SIP message send to a remote end point.
+        /// </summary>
+        /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
+        /// <param name="buffer">The data to send.</param>
+        /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
+        public abstract Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer);
+
+        /// <summary>
+        /// Asynchronous SIP message send to a remote end point.
+        /// </summary>
+        /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
+        /// <param name="buffer">The data to send.</param>
+        /// <param name="serverCertificateName">If the send is over SSL the required common name of the server's X509 certificate.</param>
+        /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
+        public abstract Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName);
+
         public abstract void Close();
         public abstract bool IsConnectionEstablished(IPEndPoint remoteEndPoint);
-        protected abstract Dictionary<string, SIPConnection> GetConnectionsList();
+        protected abstract Dictionary<string, SIPStreamConnection> GetConnectionsList();
 
         /// <summary>
         /// Periodically checks the established connections and closes any that have not had a transmission for a specified 
@@ -150,8 +175,8 @@ namespace SIPSorcery.SIP
                     {
                         try
                         {
-                            SIPConnection inactiveConnection = null;
-                            Dictionary<string, SIPConnection> connections = GetConnectionsList();
+                            SIPStreamConnection inactiveConnection = null;
+                            Dictionary<string, SIPStreamConnection> connections = GetConnectionsList();
 
                             lock (connections)
                             {
@@ -168,8 +193,8 @@ namespace SIPSorcery.SIP
 
                             if (inactiveConnection != null)
                             {
-                                logger.LogDebug("Pruning inactive connection on " + SIPChannelContactURI + " to remote end point " + inactiveConnection.RemoteEndPoint.ToString() + ".");
-                                inactiveConnection.Close();
+                                logger.LogDebug($"Pruning inactive connection on {SIPChannelContactURI}to remote end point {inactiveConnection.RemoteEndPoint}.");
+                                inactiveConnection.StreamSocket.Close();
                             }
                             else
                             {
@@ -199,9 +224,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-        protected virtual void OnSendComplete(EventArgs args)
-        {
-            SendComplete?.Invoke(this, args);
-        }
+        public abstract void Dispose();
     }
 }

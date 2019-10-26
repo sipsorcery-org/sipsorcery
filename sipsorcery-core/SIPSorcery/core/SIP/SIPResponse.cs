@@ -31,11 +31,18 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
+    public class SendResult
+    {
+        public bool Success { get; set; }
+        public string ErrorMessage { get; set; }
+    }
+
     public enum SIPResponseParserError
     {
         None = 0,
@@ -56,7 +63,6 @@ namespace SIPSorcery.SIP
     ///  4xx: Client Error -- the request contains bad syntax or cannot be fulfilled at this server;
     ///  5xx: Server Error -- the server failed to fulfill an apparently valid request;
     ///  6xx: Global Failure -- the request cannot be fulfilled at any server.
-	///	 
 	/// </summary>
 	public class SIPResponse
 	{
@@ -75,7 +81,7 @@ namespace SIPSorcery.SIP
         public DateTime Created = DateTime.Now;
         public SIPEndPoint RemoteSIPEndPoint;               // The remote IP socket the response was received from or sent to.
         public SIPEndPoint LocalSIPEndPoint;                // The local SIP socket the response was received on or sent from.
-
+        
         public string ShortDescription
         {
             get { return Header?.CSeqMethod + " " + StatusCode + " " + ReasonPhrase; }

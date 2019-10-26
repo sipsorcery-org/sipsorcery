@@ -72,10 +72,12 @@ namespace SIPSorcery.SIP.App
         public UACInviteTransaction ServerTransaction { get { return m_uacTransaction; } }
         public SIPCallDescriptor CallDescriptor { get { return m_uacCallDescriptor; } }
 
+#pragma warning disable CS0067
         public event SIPCallResponseDelegate CallTrying;
+        public event SIPCallFailedDelegate CallFailed;
+#pragma warning restore CS0067
         public event SIPCallResponseDelegate CallRinging;
         public event SIPCallResponseDelegate CallAnswered;
-        public event SIPCallFailedDelegate CallFailed;
 
         // UAS fields.
         private UASInviteTransaction m_uasTransaction;
@@ -118,10 +120,12 @@ namespace SIPSorcery.SIP.App
             get { return m_uacTransaction != null && m_uacTransaction.TransactionFinalResponse != null; }
         }
 
+#pragma warning disable CS0067
         public event SIPUASDelegate CallCancelled;
+        public event SIPUASStateChangedDelegate UASStateChanged;
         public event SIPUASDelegate NoRingTimeout;
         public event SIPUASDelegate TransactionComplete;
-        public event SIPUASStateChangedDelegate UASStateChanged;
+#pragma warning restore CS0067
 
         // UAS and UAC field.
         private SIPDialogue m_sipDialogue;

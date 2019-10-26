@@ -37,6 +37,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
@@ -174,9 +175,36 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer)
+        {
+            if (dstEndPoint == null)
+            {
+                throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in SIPUDPChannel.");
+            }
+            else if(buffer == null || buffer.Length == 0)
+            {
+                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPUDPChannel.");
+            }
+
+            try
+            {
+                int bytesSent = await m_sipConn.SendAsync(buffer, buffer.Length, dstEndPoint);
+                return (bytesSent > 0) ? SocketError.Success : SocketError.ConnectionReset;
+            }
+            catch(SocketException sockExcp)
+            {
+                return sockExcp.SocketErrorCode;
+            }
+        }
+
         public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
         {
-            throw new ApplicationException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
+            throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
+        }
+
+        public override Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        {
+            throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }
 
         public override bool IsConnectionEstablished(IPEndPoint remoteEndPoint)
@@ -184,7 +212,7 @@ namespace SIPSorcery.SIP
             throw new NotSupportedException("The SIP UDP channel does not support connections.");
         }
 
-        protected override Dictionary<string, SIPConnection> GetConnectionsList()
+        protected override Dictionary<string, SIPStreamConnection> GetConnectionsList()
         {
             throw new NotSupportedException("The SIP UDP channel does not support connections.");
         }
@@ -202,6 +230,11 @@ namespace SIPSorcery.SIP
             {
                 logger.LogWarning("Exception SIPUDPChannel Close. " + excp.Message);
             }
+        }
+
+        public override void Dispose()
+        {
+            this.Close();
         }
     }
 }

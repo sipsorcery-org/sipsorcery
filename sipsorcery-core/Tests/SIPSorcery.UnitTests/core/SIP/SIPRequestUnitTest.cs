@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -25,10 +27,20 @@ namespace SIPSorcery.SIP.UnitTests
             public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
             { }
 
+            public override Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate)
+            {
+                throw new NotImplementedException();
+            }
+
             public override void Close()
             { }
 
-            protected override Dictionary<string, SIPConnection> GetConnectionsList()
+            protected override Dictionary<string, SIPStreamConnection> GetConnectionsList()
             {
                 throw new NotImplementedException();
             }
@@ -42,6 +54,9 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 throw new ApplicationException("This Send method is not available in the MockSIPChannel, please use an alternative overload.");
             }
+
+            public override void Dispose()
+            { }
         }
 
         private class MockSIPDNSManager

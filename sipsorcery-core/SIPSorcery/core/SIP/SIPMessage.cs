@@ -53,6 +53,7 @@ namespace SIPSorcery.SIP
         private static int m_sipFullVersionStrLen = SIPConstants.SIP_FULLVERSION_STRING.Length;
         private static int m_minFirstLineLength = 7;
         private static string m_CRLF = SIPConstants.CRLF;
+        private static string m_sipMessageDelimiter = SIPConstants.CRLF + SIPConstants.CRLF;    // The delimiting character sequence for messages in a stream.
 
         private static ILogger logger = Log.Logger;
 
@@ -67,6 +68,13 @@ namespace SIPSorcery.SIP
         public SIPEndPoint RemoteSIPEndPoint;               // The remote IP socket the message was received from or sent to.
         public SIPEndPoint LocalSIPEndPoint;                // The local SIP socket the message was received on or sent from.
 
+        /// <summary>
+        /// Attempts to parse a SIP message from a single buffer that can only contain a single message.
+        /// </summary>
+        /// <param name="buffer">The buffer rhat will be parsed for a SIP message.</param>
+        /// <param name="localSIPEndPoint">The end point the message was received on.</param>
+        /// <param name="remoteSIPEndPoint">The end point the message was received from.</param>
+        /// <returns>If successfull a SIP message or null if not.</returns>
         public static SIPMessage ParseSIPMessage(byte[] buffer, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)
         {
             string message = null;
@@ -112,6 +120,13 @@ namespace SIPSorcery.SIP
             }
         }
 
+        /// <summary>
+        /// Attempts to parse a SIP message from a string containing a single SIP request or response.
+        /// </summary>
+        /// <param name="message">The string to parse.</param>
+        /// <param name="localSIPEndPoint">The end point the message was received on.</param>
+        /// <param name="remoteSIPEndPoint">The end point the message was received from.</param>
+        /// <returns>If successfull a SIP message or null if not.</returns>
         public static SIPMessage ParseSIPMessage(string message, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)
         {
             try
@@ -166,6 +181,163 @@ namespace SIPSorcery.SIP
             {
                 logger.LogError("Exception ParseSIPMessage. " + excp.Message + "\nSIP Message=" + message + ".");
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Processes a buffer from a TCP read operation to extract the first full SIP message. If no full SIP 
+        /// messages are available it returns null which indicates the next read should be appended to the current
+        /// buffer and the process re-attempted.
+        /// </summary>
+        /// <param name="receiveBuffer">The buffer to check for the SIP message in.</param>
+        /// <param name="start">The position in the buffer to start parsing for a SIP message.</param>
+        /// <param name="length">The position in the buffer that indicates the end of the received bytes.</param>
+        /// <returns>A byte array holding a full SIP message or if no full SIP messages are available null.</returns>
+        public static byte[] ParseSIPMessageFromStream(byte[] receiveBuffer, int start, int length, out int bytesSkipped)
+        {
+            // NAT keep-alives can be interspersed between SIP messages. Treat any non-letter character
+            // at the start of a receive as a non SIP transmission and skip over it.
+            bytesSkipped = 0;
+            bool letterCharFound = false;
+            while (!letterCharFound && start < length)
+            {
+                if ((int)receiveBuffer[start] >= 65)
+                {
+                    break;
+                }
+                else
+                {
+                    start++;
+                    bytesSkipped++;
+                }
+            }
+
+            if (start < length)
+            {
+                int endMessageIndex = ByteBufferInfo.GetStringPosition(receiveBuffer, start, length, m_sipMessageDelimiter, null);
+                if (endMessageIndex != -1)
+                {
+                    int contentLength = GetContentLength(receiveBuffer, start, endMessageIndex);
+                    int messageLength = endMessageIndex - start + m_sipMessageDelimiter.Length + contentLength;
+
+                    if (length - start >= messageLength)
+                    {
+                        byte[] sipMsgBuffer = new byte[messageLength];
+                        Buffer.BlockCopy(receiveBuffer, start, sipMsgBuffer, 0, messageLength);
+                        return sipMsgBuffer;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Attempts to find the Content-Length header is a SIP header and extract it.
+        /// </summary>
+        /// <param name="buffer">The buffer to search in.</param>
+        /// <param name="start">The position in the buffer to start the search from.</param>
+        /// <param name="end">The position in the buffer to stop the search at.</param>
+        /// <returns>If the Content-Length header is found the value if contains otherwise 0.</returns>
+        public static int GetContentLength(byte[] buffer, int start, int end)
+        {
+            if (buffer == null || start > end || buffer.Length < end)
+            {
+                return 0;
+            }
+            else
+            {
+                byte[] contentHeaderBytes = Encoding.UTF8.GetBytes(m_CRLF + SIPSorcery.SIP.SIPHeaders.SIP_HEADER_CONTENTLENGTH.ToUpper());
+                byte[] compactContentHeaderBytes = Encoding.UTF8.GetBytes(m_CRLF + SIPSorcery.SIP.SIPHeaders.SIP_COMPACTHEADER_CONTENTLENGTH.ToUpper());
+
+                int inContentHeaderPosn = 0;
+                int inCompactContentHeaderPosn = 0;
+                bool possibleHeaderFound = false;
+                int contentLengthValueStartPosn = 0;
+
+                for (int index = start; index < end; index++)
+                {
+                    if (possibleHeaderFound)
+                    {
+                        // A possilbe match has been found for the Content-Length header. The next characters can only be whitespace or colon.
+                        if (buffer[index] == ':')
+                        {
+                            // The Content-Length header has been found.
+                            contentLengthValueStartPosn = index + 1;
+                            break;
+                        }
+                        else if (buffer[index] == ' ' || buffer[index] == '\t')
+                        {
+                            // Skip any whitespace between the header and the colon.
+                            continue;
+                        }
+                        else
+                        {
+                            // Additional characters indicate this is not the Content-Length header.
+                            possibleHeaderFound = false;
+                            inContentHeaderPosn = 0;
+                            inCompactContentHeaderPosn = 0;
+                        }
+                    }
+
+                    if (buffer[index] == contentHeaderBytes[inContentHeaderPosn] || buffer[index] == contentHeaderBytes[inContentHeaderPosn] + 32)
+                    {
+                        inContentHeaderPosn++;
+
+                        if (inContentHeaderPosn == contentHeaderBytes.Length)
+                        {
+                            possibleHeaderFound = true;
+                        }
+                    }
+                    else
+                    {
+                        inContentHeaderPosn = 0;
+                    }
+
+                    if (buffer[index] == compactContentHeaderBytes[inCompactContentHeaderPosn] || buffer[index] == compactContentHeaderBytes[inCompactContentHeaderPosn] + 32)
+                    {
+                        inCompactContentHeaderPosn++;
+
+                        if (inCompactContentHeaderPosn == compactContentHeaderBytes.Length)
+                        {
+                            possibleHeaderFound = true;
+                        }
+                    }
+                    else
+                    {
+                        inCompactContentHeaderPosn = 0;
+                    }
+                }
+
+                if (contentLengthValueStartPosn != 0)
+                {
+                    // The Content-Length header has been found, this block extracts the value of the header.
+                    string contentLengthValue = null;
+
+                    for (int index = contentLengthValueStartPosn; index < end; index++)
+                    {
+                        if (contentLengthValue == null && (buffer[index] == ' ' || buffer[index] == '\t'))
+                        {
+                            // Skip any whitespace at the start of the header value.
+                            continue;
+                        }
+                        else if (buffer[index] >= '0' && buffer[index] <= '9')
+                        {
+                            contentLengthValue += ((char)buffer[index]).ToString();
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    if (!contentLengthValue.IsNullOrBlank())
+                    {
+                        return Convert.ToInt32(contentLengthValue);
+                    }
+                }
+
+                return 0;
             }
         }
     }

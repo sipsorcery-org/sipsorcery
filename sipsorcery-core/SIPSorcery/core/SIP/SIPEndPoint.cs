@@ -33,11 +33,14 @@
 using System;
 using System.Net;
 using SIPSorcery.Sys;
-using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
     /// <summary>
+    /// This class is a more specific verions of the SIPURI class BUT is only concerned with the network and
+    /// transport properties. It contains all the information need to deliver a SIP request or response to
+    /// a remote end point.
+    /// 
     /// This class must remain immutable otherwise the SIP stack can develop problems. SIP end points can get
     /// passed amongst different servers for logging and forwarding SIP messages and a modification of the end point
     /// by one server can result in a problem for a different server. Instead a new SIP end point should be created
@@ -45,12 +48,11 @@ namespace SIPSorcery.SIP
     /// </summary>
     public class SIPEndPoint
     {
-        private static ILogger logger = Log.Logger;
-
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
 
-        public SIPProtocolsEnum Protocol { get; private set; }
+        public SIPSchemesEnum Scheme { get; private set; } = SIPSchemesEnum.sip;
+        public SIPProtocolsEnum Protocol { get; private set; } = SIPProtocolsEnum.udp;
         public IPAddress Address { get; private set; }
         public int Port { get; private set; }
 
@@ -111,7 +113,9 @@ namespace SIPSorcery.SIP
             else
             {
                 var sipUri = SIPURI.ParseSIPURIRelaxed(sipEndPointStr);
-                return sipUri.ToSIPEndPoint();
+                var sipEndPoint = sipUri.ToSIPEndPoint();
+                sipEndPoint.Scheme = sipUri.Scheme;
+                return sipEndPoint;
             }
         }
 
