@@ -202,13 +202,6 @@ namespace SIPSorcery.SIP.App
 
                     m_exit = true;
                     m_waitForRegistrationMRE.Set();
-
-                    if (m_isRegistered)
-                    {
-                        m_attempts = 0;
-                        m_expiry = 0;
-                        ThreadPool.QueueUserWorkItem(delegate { SendInitialRegister(); });
-                    }
                 }
             }
             catch (Exception excp)
