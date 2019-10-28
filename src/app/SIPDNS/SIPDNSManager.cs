@@ -5,6 +5,7 @@
 //
 // History:
 // 11 Mar 2009	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 28 Oct 2019  Aaron Clauson   Added lookup mechanism for local machine hostname. Useful for testing purposes.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -12,7 +13,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using Heijden.DNS;
@@ -79,10 +82,9 @@ namespace SIPSorcery.SIP.App
                     throw new ArgumentNullException("sipURI", "Cannot resolve SIP service on a null URI.");
                 }
 
-                if(IPSocket.TryParseIPEndPoint(sipURI.Host, out var ipEndPoint))
+                if (IPSocket.TryParseIPEndPoint(sipURI.Host, out var ipEndPoint))
                 {
                     // Target is an IP address, no DNS lookup required.
-                    //IPAddress hostIP = IPAddress.Parse(host);
                     SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, ipEndPoint), 0);
                     SIPDNSLookupResult result = new SIPDNSLookupResult(sipURI);
                     result.AddLookupResult(sipLookupEndPoint);
@@ -98,11 +100,38 @@ namespace SIPSorcery.SIP.App
                     {
                         port = (sipURI.Scheme == SIPSchemesEnum.sip) ? m_defaultSIPPort : m_defaultSIPSPort;
                     }
-
-                    if (explicitPort)
+                    
+                    if (host.Contains(".") == false)
                     {
+                        string hostOnly = IPSocket.ParseHostFromSocket(host);
+
+                        // If host is not fully qualified then assume there's no point using NAPTR or SRV record look ups and go straight to A's.
+                        if(hostOnly.ToLower() == System.Net.Dns.GetHostName()?.ToLower())
+                        {
+                            // The lookup is for the current machine.
+                            var addressList = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList;
+                            
+                            if(addressList?.Length == 0)
+                            {
+                                return new SIPDNSLookupResult(sipURI, $"Failed to resolve local machine hostname.");
+                            }
+                            else
+                            {
+                                // Preference for IPv4 IP address for local host anem lookup.
+                                IPAddress firstAddress = addressList.Where(x => x.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault() ?? addressList.FirstOrDefault();
+                                SIPEndPoint resultEp = new SIPEndPoint(sipURI.Protocol, new IPEndPoint(firstAddress, port));
+                                return new SIPDNSLookupResult(sipURI, resultEp);
+                            }
+                        }
+                        else
+                        {
+                            return DNSARecordLookup(hostOnly, port, async, sipURI);
+                        }
+                    }
+                    else if (explicitPort)
+                    {
+                        // If target is a hostname with an explicit port then SIP lookup rules state to use DNS lookup for A or AAAA record.
                         host = host.Substring(0, host.LastIndexOf(':'));
-                        // Target is a hostname with an explicit port, DNS lookup for A or AAAA record.
                         return DNSARecordLookup(host, port, async, sipURI);
                     }
                     else

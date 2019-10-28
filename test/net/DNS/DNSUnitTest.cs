@@ -77,5 +77,23 @@ namespace SIPSorcery.Net.UnitTests
             Assert.AreEqual(result.RecordSRV.Length, 1);
             Assert.AreEqual(result.RecordSRV.First().TARGET, "sip.sipsorcery.com.");
         }
+
+        /// <summary>
+        /// Test that a non qualified hostname can be looked up.
+        /// </summary>
+        [TestMethod]
+        [TestCategory("Integration")]
+        public void LookupCurrentHostNameMethod()
+        {
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            logger.LogDebug($"Current host name {System.Net.Dns.GetHostName()}");
+
+            var addressList = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList;
+
+            addressList.ToList().ForEach(x => logger.LogDebug(x.ToString()));
+
+            Assert.IsTrue(addressList.Count() > 0, "No address results were returned for a local hostname lookup.");
+        }
     }
 }

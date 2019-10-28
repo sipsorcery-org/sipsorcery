@@ -54,13 +54,14 @@ namespace SIPSorcery.SIP
         private static readonly int m_t2 = SIPTimings.T2;
         private static readonly int m_t6 = SIPTimings.T6;
         private static string m_looseRouteParameter = SIPConstants.SIP_LOOSEROUTER_PARAMETER;
-        public static IPAddress BlackholeAddress = IPAddress.Any;                               // (IPAddress.Any is 0.0.0.0) Any SIP messages with this IP address will be dropped.
+        public static IPAddress BlackholeAddress = IPAddress.Any;  // (IPAddress.Any is 0.0.0.0) Any SIP messages with this IP address will be dropped.
 
         private static ILogger logger = Log.Logger;
 
-        private bool m_queueIncoming = true;     // Dictates whether the transport later will queue incoming requests for processing on a separate thread of process immediately on the same thread.
+        // Dictates whether the transport later will queue incoming requests for processing on a separate thread of process immediately on the same thread.
         // Most SIP elements with the exception of Stateless Proxies will typically want to queue incoming SIP messages.
-
+        private bool m_queueIncoming = true;     
+        
         private bool m_transportThreadStarted = false;
         private Queue<IncomingMessage> m_inMessageQueue = new Queue<IncomingMessage>();
         private ManualResetEvent m_inMessageArrived = new ManualResetEvent(false);
@@ -82,9 +83,12 @@ namespace SIPSorcery.SIP
         public event SIPTransportSIPBadMessageDelegate SIPBadRequestInTraceEvent;
         public event SIPTransportSIPBadMessageDelegate SIPBadResponseInTraceEvent;
 
-        public string PerformanceMonitorPrefix;     // Allows an application to set the prefix for the performance monitor counter it wants to use for tracking the SIP transport metrics.
+        // Allows an application to set the prefix for the performance monitor counter it wants to use for tracking the SIP transport metrics.
+        public string PerformanceMonitorPrefix;     
 
-        public IPAddress ContactIPAddress;          // If set this address will be passed to the UAS Invite transaction so it can be used as the Contact address in Ok responses.
+        // If set this host name (or IP address) will be passed to the UAS Invite transaction so it
+        // can be used as the Contact address in Ok responses.
+        public string ContactHost;           
 
         // Contains a list of the SIP Requests/Response that are being monitored or responses and retransmitted on when none is recieved to attempt a more reliable delivery
         // rather then just relying on the initial request to get through.
@@ -2003,7 +2007,7 @@ namespace SIPSorcery.SIP
                 }
 
                 CheckTransactionEngineExists();
-                UASInviteTransaction uasInviteTransaction = new UASInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy, ContactIPAddress, noCDR);
+                UASInviteTransaction uasInviteTransaction = new UASInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy, ContactHost, noCDR);
                 m_transactionEngine.AddTransaction(uasInviteTransaction);
                 return uasInviteTransaction;
             }

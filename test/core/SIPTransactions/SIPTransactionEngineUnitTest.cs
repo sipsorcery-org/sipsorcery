@@ -53,7 +53,6 @@ namespace SIPSorcery.SIP.UnitTests
         [TestMethod]
         public void MatchOnRequestAndResponseTest()
         {
-
             SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
 
@@ -167,10 +166,8 @@ namespace SIPSorcery.SIP.UnitTests
 
             // Server has received the invite.
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
-            UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, dummySIPEndPoint, null, IPAddress.Loopback, true);
+            UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, dummySIPEndPoint, null, IPAddress.Loopback.ToString(), true);
             engine.AddTransaction(serverTransaction);
-
-            //SIPResponse errorResponse = SIPTransport.GetResponse(inviteRequest.Header, SIPResponseStatusCodesEnum.Decline, "Unit Test", null, null);
 
             string ackRequestStr =
                 "ACK sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +

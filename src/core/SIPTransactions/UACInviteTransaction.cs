@@ -75,15 +75,8 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (UACInviteTransactionTimedOut != null)
-                {
-                    UACInviteTransactionTimedOut(sipTransaction);
-                }
-
-                if (CDR != null)
-                {
-                    CDR.TimedOut();
-                }
+                UACInviteTransactionTimedOut?.Invoke(sipTransaction);
+                CDR?.TimedOut();
             }
             catch (Exception excp)
             {
@@ -96,10 +89,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (UACInviteTransactionInformationResponseReceived != null)
-                {
-                    UACInviteTransactionInformationResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
-                }
+                UACInviteTransactionInformationResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
 
                 if (CDR != null)
                 {
@@ -133,10 +123,7 @@ namespace SIPSorcery.SIP
                     base.SendRequest(RemoteEndPoint, ackRequest);
                 }
 
-                if (UACInviteTransactionFinalResponseReceived != null)
-                {
-                    UACInviteTransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
-                }
+                UACInviteTransactionFinalResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
 
                 if (CDR != null)
                 {
@@ -147,10 +134,15 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception UACInviteTransaction_TransactionFinalResponseReceived. " + excp.Message);
+                logger.LogError($"Exception UACInviteTransaction_TransactionFinalResponseReceived. {excp.Message}");
             }
         }
 
+        /// <summary>
+        /// Sends the ACK request as a new transaction. This is required for 2xx responses.
+        /// </summary>
+        /// <param name="content">The optional content body for the ACK request.</param>
+        /// <param name="contentType">The optional content type.</param>
         public void Send2xxAckRequest(string content, string contentType)
         {
             var sipResponse = m_transactionFinalResponse;
@@ -177,7 +169,7 @@ namespace SIPSorcery.SIP
             // ACK for 2xx response needs to be a new transaction and gets routed based on SIP request fields.
             var ackRequest = GetNewTransactionACKRequest(sipResponse, ackURI, LocalSIPEndPoint);
 
-            if(content.NotNullOrBlank())
+            if (content.NotNullOrBlank())
             {
                 ackRequest.Body = content;
                 ackRequest.Header.ContentLength = ackRequest.Body.Length;
@@ -191,29 +183,6 @@ namespace SIPSorcery.SIP
         /// New transaction ACK requests are for 2xx responses, i.e. INVITE accepted and dialogue being created.
         /// </summary>
         /// <remarks>
-        /// From RFC 3261 Chapter 17.1.1.3 - ACK for non-2xx final responses
-        /// 
-        /// IMPORTANT:
-        /// an ACK for a non-2xx response will also have the same branch ID as the INVITE whose response it acknowledges.
-        /// 
-        /// The ACK request constructed by the client transaction MUST contain
-        /// values for the Call-ID, From, and Request-URI that are equal to the
-        /// values of those header fields in the request passed to the transport
-        /// by the client transaction (call this the "original request").  The To
-        /// header field in the ACK MUST equal the To header field in the
-        /// response being acknowledged, and therefore will usually differ from
-        /// the To header field in the original request by the addition of the
-        /// tag parameter.  The ACK MUST contain a single Via header field, and
-        /// this MUST be equal to the top Via header field of the original
-        /// request.  The CSeq header field in the ACK MUST contain the same
-        /// value for the sequence number as was present in the original request,
-        /// but the method parameter MUST be equal to "ACK".
-        ///
-        /// If the INVITE request whose response is being acknowledged had Route
-        /// header fields, those header fields MUST appear in the ACK.  This is
-        /// to ensure that the ACK can be routed properly through any downstream
-        /// stateless proxies.
-        /// 
         /// From RFC 3261 Chapter 13.2.2.4 - ACK for 2xx final responses
         /// 
         /// IMPORTANT:
@@ -246,7 +215,7 @@ namespace SIPSorcery.SIP
             {
                 header.Routes = sipResponse.Header.RecordRoutes.Reversed();
             }
-            else if(base.TransactionRequest.Header.Routes != null)
+            else if (base.TransactionRequest.Header.Routes != null)
             {
                 header.Routes = base.TransactionRequest.Header.Routes;
             }
@@ -262,6 +231,30 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// In transaction ACK requests are for non-2xx responses, i.e. INVITE rejected and no dialogue being created.
         /// </summary>
+        /// <remarks>
+        /// From RFC 3261 Chapter 17.1.1.3 - ACK for non-2xx final responses
+        /// 
+        /// IMPORTANT:
+        /// an ACK for a non-2xx response will also have the same branch ID as the INVITE whose response it acknowledges.
+        /// 
+        /// The ACK request constructed by the client transaction MUST contain
+        /// values for the Call-ID, From, and Request-URI that are equal to the
+        /// values of those header fields in the request passed to the transport
+        /// by the client transaction (call this the "original request").  The To
+        /// header field in the ACK MUST equal the To header field in the
+        /// response being acknowledged, and therefore will usually differ from
+        /// the To header field in the original request by the addition of the
+        /// tag parameter.  The ACK MUST contain a single Via header field, and
+        /// this MUST be equal to the top Via header field of the original
+        /// request.  The CSeq header field in the ACK MUST contain the same
+        /// value for the sequence number as was present in the original request,
+        /// but the method parameter MUST be equal to "ACK".
+        ///
+        /// If the INVITE request whose response is being acknowledged had Route
+        /// header fields, those header fields MUST appear in the ACK.  This is
+        /// to ensure that the ACK can be routed properly through any downstream
+        /// stateless proxies.
+        /// </remarks>
         private SIPRequest GetInTransactionACKRequest(SIPResponse sipResponse, SIPURI ackURI, SIPEndPoint localSIPEndPoint)
         {
             SIPRequest ackRequest = new SIPRequest(SIPMethodsEnum.ACK, ackURI.ToString());
@@ -286,11 +279,7 @@ namespace SIPSorcery.SIP
             try
             {
                 base.Cancel();
-
-                if (CDR != null)
-                {
-                    CDR.Cancelled(cancelReason);
-                }
+                CDR?.Cancelled(cancelReason);
             }
             catch (Exception excp)
             {

@@ -29,7 +29,9 @@ namespace SIPSorcery.SIP
     {
         private static string m_sipServerAgent = SIPConstants.SIP_SERVER_STRING;
 
-        private IPAddress m_contactIPAddress;   // If set this IP address should be used in the Contact header of the Ok response so that ACK requests can be delivered correctly.
+        // If set this host  name(or IP address) that should be used in the Contact header of the Ok response so that ACK
+        // requests can be delivered correctly.
+        private string m_contactHost;                               
 
         public string LocalTag
         {
@@ -46,13 +48,13 @@ namespace SIPSorcery.SIP
             SIPEndPoint dstEndPoint,
             SIPEndPoint localSIPEndPoint,
             SIPEndPoint outboundProxy,
-            IPAddress contactIPAddress,
+            string contactHost,
             bool noCDR = false)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.Invite;
             m_remoteTag = sipRequest.Header.From.FromTag;
-            m_contactIPAddress = contactIPAddress;
+            m_contactHost = contactHost;
 
             if (sipRequest.Header.To.ToTag == null)
             {
@@ -224,17 +226,18 @@ namespace SIPSorcery.SIP
                 SIPHeader requestHeader = sipRequest.Header;
                 okResponse.Header = new SIPHeader(new SIPContactHeader(null, new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint)), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
 
-                if (m_contactIPAddress != null)
+                if (String.IsNullOrEmpty(m_contactHost) == false)
                 {
-                    if (IPSocket.TryParseIPEndPoint(okResponse.Header.Contact.First().ContactURI.Host, out var contactEP))
-                    {
-                        contactEP.Address = m_contactIPAddress;
-                        okResponse.Header.Contact.First().ContactURI.Host = contactEP.ToString();
-                    }
-                    else
-                    {
-                        throw new ApplicationException($"Could not parse IP end point from {okResponse.Header.Contact.First().ContactURI.Host} when parsing OK response.");
-                    }
+                    okResponse.Header.Contact.First().ContactURI.Host = m_contactHost;
+                    //if (IPSocket.TryParseIPEndPoint(okResponse.Header.Contact.First().ContactURI.Host, out var contactEP))
+                    //{
+                    //    contactEP.Address = m_contactIPAddress;
+                    //    okResponse.Header.Contact.First().ContactURI.Host = contactEP.ToString();
+                    //}
+                    //else
+                    //{
+                    //    throw new ApplicationException($"Could not parse IP end point from {okResponse.Header.Contact.First().ContactURI.Host} when parsing OK response.");
+                    //}
                 }
 
                 okResponse.Header.To.ToTag = m_localTag;

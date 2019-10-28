@@ -3,7 +3,10 @@
 //
 // Description: An abbreviated example program of how to use the SIPSorcery core library to place a SIP call
 // and play the received audio. 
-// 
+//
+// Author(s):
+// Aaron Clauson
+//  
 // History:
 // 08 Oct 2019	Aaron Clauson	Created.
 //
