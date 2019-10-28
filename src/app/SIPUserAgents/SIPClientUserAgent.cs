@@ -86,9 +86,21 @@ namespace SIPSorcery.SIP.App
 
         public SIPCallDescriptor SipCallDescriptor { get => m_sipCallDescriptor; set => m_sipCallDescriptor = value; }
 
-        public SIPClientUserAgent(SIPTransport sipTransport)
+        /// <summary>
+        /// Indicates whether this call supports reliable provisional responses as per RFC3262.
+        /// </summary>
+        public bool SupportPrack { get; set; } = false;
+
+        /// <summary>
+        /// Creates a new SIP user agent client to act as the client on a SIP INVITE transaction.
+        /// </summary>
+        /// <param name="sipTransport">The SIP transport this user agent will use for sending and receiving SIP messages.</param>
+        /// <param name="supportPrack">Optional parameter that can be set to true if support for reliable provisional responses
+        /// as per RFC3262 is desired.</param>
+        public SIPClientUserAgent(SIPTransport sipTransport, bool supportPrack = false)
         {
             m_sipTransport = sipTransport;
+            SupportPrack = supportPrack;
             Log_External = Log_External = (ev) => logger.LogDebug(ev?.Message);
         }
 
@@ -132,6 +144,10 @@ namespace SIPSorcery.SIP.App
             RtccUpdateCdr_External = rtccUpdateCdr;
         }
 
+        /// <summary>
+        /// Initiates the call to the remote user agent server.
+        /// </summary>
+        /// <param name="sipCallDescriptor">The descriptor for the call that describes how to reach the user agent server and other properties.</param>
         public void Call(SIPCallDescriptor sipCallDescriptor)
         {
             try
@@ -410,6 +426,9 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        /// <summary>
+        /// Cancels an in progress call. This method should be called prior to the remote user agent server answering the call.
+        /// </summary>
         public void Cancel()
         {
             try
@@ -514,13 +533,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                //if (Thread.CurrentThread.Name.IsNullOrBlank())
-                //{
-                //    Thread.CurrentThread.Name = THREAD_NAME + DateTime.Now.ToString("HHmmss") + "-" + Crypto.GetRandomString(3);
-                //}
-
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
-                //m_sipTrace += "Received " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + " " + localEndPoint + "<-" + remoteEndPoint + "\r\n" + sipResponse.ToString();
 
                 m_serverTransaction.UACInviteTransactionInformationResponseReceived -= ServerInformationResponseReceived;
                 m_serverTransaction.UACInviteTransactionFinalResponseReceived -= ServerFinalResponseReceived;
@@ -718,7 +731,6 @@ namespace SIPSorcery.SIP.App
                         m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
 
                         // Set switchboard dialogue values from the answered response or from dialplan set values.
-                        //m_sipDialogue.SwitchboardCallerDescription = sipResponse.Header.SwitchboardCallerDescription;
                         m_sipDialogue.SwitchboardLineName = sipResponse.Header.SwitchboardLineName;
                         m_sipDialogue.CRMPersonName = sipResponse.Header.CRMPersonName;
                         m_sipDialogue.CRMCompanyName = sipResponse.Header.CRMCompanyName;
@@ -726,17 +738,12 @@ namespace SIPSorcery.SIP.App
 
                         if (m_sipCallDescriptor.SwitchboardHeaders != null)
                         {
-                            //if (!m_sipCallDescriptor.SwitchboardHeaders.SwitchboardDialogueDescription.IsNullOrBlank())
-                            //{
-                            //    m_sipDialogue.SwitchboardDescription = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardDialogueDescription;
-                            //}
-
                             m_sipDialogue.SwitchboardLineName = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardLineName;
                             m_sipDialogue.SwitchboardOwner = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardOwner;
                         }
                     }
 
-                    FireCallAnswered(this, sipResponse);
+                    CallAnswered?.Invoke(this, sipResponse);
                 }
             }
             catch (Exception excp)
@@ -758,11 +765,11 @@ namespace SIPSorcery.SIP.App
             {
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.Ringing || sipResponse.Status == SIPResponseStatusCodesEnum.SessionProgress)
                 {
-                    FireCallRinging(this, sipResponse);
+                    CallRinging?.Invoke(this, sipResponse);
                 }
                 else
                 {
-                    FireCallTrying(this, sipResponse);
+                    CallTrying?.Invoke(this, sipResponse);
                 }
             }
         }
@@ -841,10 +848,7 @@ namespace SIPSorcery.SIP.App
             if (CallDescriptor.SwitchboardHeaders != null)
             {
                 inviteHeader.SwitchboardOriginalCallID = CallDescriptor.SwitchboardHeaders.SwitchboardOriginalCallID;
-                //inviteHeader.SwitchboardCallerDescription = CallDescriptor.SwitchboardHeaders.SwitchboardCallerDescription;
                 inviteHeader.SwitchboardLineName = CallDescriptor.SwitchboardHeaders.SwitchboardLineName;
-                //inviteHeader.SwitchboardOwner = CallDescriptor.SwitchboardHeaders.SwitchboardOwner;
-                //inviteHeader.SwitchboardOriginalFrom = CallDescriptor.SwitchboardHeaders.SwitchboardOriginalFrom;
             }
 
             // Add custom CRM headers.
@@ -960,30 +964,6 @@ namespace SIPSorcery.SIP.App
         private void TransactionTraceMessage(SIPTransaction sipTransaction, string message)
         {
             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.SIPTransaction, message, Owner));
-        }
-
-        private void FireCallTrying(SIPClientUserAgent uac, SIPResponse tryingResponse)
-        {
-            if (CallTrying != null)
-            {
-                CallTrying(uac, tryingResponse);
-            }
-        }
-
-        private void FireCallRinging(SIPClientUserAgent uac, SIPResponse ringingResponse)
-        {
-            if (CallRinging != null)
-            {
-                CallRinging(uac, ringingResponse);
-            }
-        }
-
-        private void FireCallAnswered(SIPClientUserAgent uac, SIPResponse answeredResponse)
-        {
-            if (CallAnswered != null)
-            {
-                CallAnswered(uac, answeredResponse);
-            }
         }
 
         private SIPEndPoint GetRemoteTargetEndpoint()

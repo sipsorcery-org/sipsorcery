@@ -112,7 +112,9 @@ namespace SIPSorcery
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
             Socket rtpSocket = null;
             Socket controlSocket = null;
-            NetServices.CreateRtpSocket(endPointForCall.Address, 49000, 49100, false, out rtpSocket, out controlSocket);
+            // TODO (find something better): If the SIP endpoint is using 0.0.0.0 for SIP use loopback for RTP.
+            IPAddress rtpAddress = IPAddress.Equals(IPAddress.Any, endPointForCall.Address) ? IPAddress.Loopback : endPointForCall.Address;
+            NetServices.CreateRtpSocket(rtpAddress, 49000, 49100, false, out rtpSocket, out controlSocket);
             var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
