@@ -181,10 +181,19 @@
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionRequest">SIPTransaction.TransactionRequest</a>
     </div>
     <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_ReliableProvisionalResponse">SIPTransaction.ReliableProvisionalResponse</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_ReliableProvisionalResponseAcked">SIPTransaction.ReliableProvisionalResponseAcked</a>
+    </div>
+    <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_transactionFinalResponse">SIPTransaction.m_transactionFinalResponse</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionFinalResponse">SIPTransaction.TransactionFinalResponse</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_PrackSupported">SIPTransaction.PrackSupported</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionRequestReceived">SIPTransaction.TransactionRequestReceived</a>
@@ -205,9 +214,6 @@
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionRequestRetransmit">SIPTransaction.TransactionRequestRetransmit</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionResponseRetransmit">SIPTransaction.TransactionResponseRetransmit</a>
-    </div>
-    <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionStateChanged">SIPTransaction.TransactionStateChanged</a>
     </div>
     <div>
@@ -215,12 +221,6 @@
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionRemoved">SIPTransaction.TransactionRemoved</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionsCreated">SIPTransaction.TransactionsCreated</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TransactionsDestroyed">SIPTransaction.TransactionsDestroyed</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_GetRequestTransactionId_System_String_SIPSorcery_SIP_SIPMethodsEnum_">SIPTransaction.GetRequestTransactionId(String, SIPMethodsEnum)</a>
@@ -235,10 +235,7 @@
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendFinalResponse_SIPSorcery_SIP_SIPResponse_">SIPTransaction.SendFinalResponse(SIPResponse)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendInformationalResponse_SIPSorcery_SIP_SIPResponse_System_Boolean_">SIPTransaction.SendInformationalResponse(SIPResponse, Boolean)</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_RetransmitFinalResponse">SIPTransaction.RetransmitFinalResponse()</a>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendProvisionalResponse_SIPSorcery_SIP_SIPResponse_">SIPTransaction.SendProvisionalResponse(SIPResponse)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_">SIPTransaction.SendRequest(SIPEndPoint, SIPRequest)</a>
@@ -253,22 +250,34 @@
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_GetInfoResponse_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPResponseStatusCodesEnum_">SIPTransaction.GetInfoResponse(SIPRequest, SIPResponseStatusCodesEnum)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_RequestRetransmit">SIPTransaction.RequestRetransmit()</a>
-    </div>
-    <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_ACKReceived_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_">SIPTransaction.ACKReceived(SIPEndPoint, SIPEndPoint, SIPRequest)</a>
     </div>
     <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_PRACKReceived_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_">SIPTransaction.PRACKReceived(SIPEndPoint, SIPEndPoint, SIPRequest)</a>
+    </div>
+    <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_ResendAckRequest">SIPTransaction.ResendAckRequest()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_Cancel">SIPTransaction.Cancel()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_RequestRetransmit">SIPTransaction.RequestRetransmit()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_OnRetransmitFinalResponse">SIPTransaction.OnRetransmitFinalResponse()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_OnRetransmitProvisionalResponse">SIPTransaction.OnRetransmitProvisionalResponse()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_OnTimedOutProvisionalResponse">SIPTransaction.OnTimedOutProvisionalResponse()</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_FireTransactionTimedOut">SIPTransaction.FireTransactionTimedOut()</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_FireTransactionRemoved">SIPTransaction.FireTransactionRemoved()</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_Cancel">SIPTransaction.Cancel()</a>
     </div>
     <div>
       <span class="xref">System.Object.Equals(System.Object)</span>

@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // Filename: UACInviteTransaction.cs
 //
-// Description: SIP Transaction that implements UAC (Sser Agent Client) functionality for
+// Description: SIP Transaction that implements UAC (User Agent Client) functionality for
 // an INVITE transaction.
 //
 // Author(s):
@@ -9,6 +9,7 @@
 //  
 // History:
 // 21 Nov 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com).
+// 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -38,7 +39,7 @@ namespace SIPSorcery.SIP
         internal UACInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy, bool sendOkAckManually = false)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
-            TransactionType = SIPTransactionTypesEnum.Invite;
+            TransactionType = SIPTransactionTypesEnum.InivteClient;
             m_localTag = sipRequest.Header.From.FromTag;
             SIPEndPoint localEP = SIPEndPoint.TryParse(sipRequest.Header.ProxySendFrom) ?? localSIPEndPoint;
             CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, localEP, dstEndPoint);

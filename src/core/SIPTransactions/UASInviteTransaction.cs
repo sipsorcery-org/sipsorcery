@@ -9,6 +9,7 @@
 //  
 // History:
 // 21 Nov 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -36,9 +37,6 @@ namespace SIPSorcery.SIP
         /// </summary>
         public string LocalTag { get; set; }
 
-        // If the client indicates RFC3262 support in the Require or Supported header we'll deliver reliable provisional responses.
-        private bool m_prackInUse = false;
-
         public event SIPTransactionCancelledDelegate UASInviteTransactionCancelled;
         public event SIPTransactionRequestReceivedDelegate NewCallReceived;
         public event SIPTransactionTimedOutDelegate UASInviteTransactionTimedOut;
@@ -53,7 +51,7 @@ namespace SIPSorcery.SIP
             bool noCDR = false)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
-            TransactionType = SIPTransactionTypesEnum.Invite;
+            TransactionType = SIPTransactionTypesEnum.InviteServer;
             m_remoteTag = sipRequest.Header.From.FromTag;
             m_contactHost = contactHost;
 
@@ -66,12 +64,6 @@ namespace SIPSorcery.SIP
             {
                 // This is a re-INVITE.
                 m_localTag = sipRequest.Header.To.ToTag;
-            }
-
-            if(sipRequest.Header.RequiredExtensions.Contains(SIPExtensions.Prack) ||
-                sipRequest.Header.SupportedExtensions.Contains(SIPExtensions.Prack))
-            {
-                m_prackInUse = true;
             }
 
             //logger.LogDebug("New UASTransaction (" + TransactionId + ") for " + TransactionRequest.URI.ToString() + " to " + RemoteEndPoint + ".");
@@ -127,7 +119,7 @@ namespace SIPSorcery.SIP
                     if (TransactionState != SIPTransactionStatesEnum.Trying)
                     {
                         SIPResponse tryingResponse = GetInfoResponse(m_transactionRequest, SIPResponseStatusCodesEnum.Trying);
-                        SendInformationalResponse(tryingResponse, m_prackInUse);
+                        SendProvisionalResponse(tryingResponse);
                     }
 
                     // Notify new call subscribers.
@@ -149,21 +141,16 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public void SendInformationalResponse(SIPResponse sipResponse)
-        {
-            SendInformationalResponse(sipResponse, m_prackInUse);
-        }
-
-        public override void SendInformationalResponse(SIPResponse sipResponse, bool prackSupport)
+        public override void SendProvisionalResponse(SIPResponse sipResponse)
         {
             try
             {
-                base.SendInformationalResponse(sipResponse, m_prackInUse);
+                base.SendProvisionalResponse(sipResponse);
                 CDR?.Progress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception UASInviteTransaction SendInformationalResponse. " + excp.Message);
+                logger.LogError("Exception UASInviteTransaction SendProvisionalResponse. " + excp.Message);
                 throw;
             }
         }
@@ -227,7 +214,7 @@ namespace SIPSorcery.SIP
                 okResponse.Header.Server = m_sipServerAgent;
                 okResponse.Header.MaxForwards = Int32.MinValue;
                 okResponse.Header.RecordRoutes = requestHeader.RecordRoutes;
-                okResponse.Header.Supported = (m_prackInUse == true) ? SIPExtensionHeaders.PRACK : null;
+                okResponse.Header.Supported = (PrackSupported == true) ? SIPExtensionHeaders.PRACK : null;
 
                 okResponse.Body = messageBody;
                 okResponse.Header.ContentType = contentType;

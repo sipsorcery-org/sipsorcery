@@ -7,7 +7,8 @@
 // Aaron Clauson
 // 
 // History:
-// ??	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, Hobart, Australia (www.sipsorcery.com)
+// ??	        Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, Hobart, Australia (www.sipsorcery.com)
+// 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -129,7 +130,8 @@ namespace SIPSorcery.SIP
                             // of collisions seemingly very slim. As a safeguard if there happen to be two transactions with the same Call-ID in the list the match will not be made.
                             // One case where the Call-Id match breaks down is for in-Dialogue requests in that case there will be multiple transactions with the same Call-ID and tags.
                             //if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionFinalResponse != null && transaction.TransactionState == SIPTransactionStatesEnum.Completed)
-                            if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionFinalResponse != null)
+                            if ((transaction.TransactionType == SIPTransactionTypesEnum.InivteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
+                                && transaction.TransactionFinalResponse != null)
                             {
                                 if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId &&
                                     transaction.TransactionFinalResponse.Header.To.ToTag == sipRequest.Header.To.ToTag &&
@@ -208,7 +210,7 @@ namespace SIPSorcery.SIP
 
                     foreach (SIPTransaction transaction in m_transactions.Values)
                     {
-                        if (transaction.TransactionType == SIPTransactionTypesEnum.Invite)
+                        if (transaction.TransactionType == SIPTransactionTypesEnum.InivteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
                         {
                             if (transaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
                             {
@@ -333,8 +335,6 @@ namespace SIPSorcery.SIP
             transaction.RemoveEventHandlers();
 
             RemoveTransaction(transaction.TransactionId);
-
-            transaction = null;
         }
 
         public void RemoveAll()
@@ -359,7 +359,7 @@ namespace SIPSorcery.SIP
             {
                 foreach (SIPTransaction transaction in m_transactions.Values)
                 {
-                    if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && 
+                    if ((transaction.TransactionType == SIPTransactionTypesEnum.InivteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer) && 
                         transaction.TransactionFinalResponse != null && 
                         transaction.TransactionState == SIPTransactionStatesEnum.Completed &&
                         transaction.TransactionRequest.Header.CallId == callId)

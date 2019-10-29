@@ -76,7 +76,7 @@ namespace SIPSorcery
             CancellationTokenSource uasCts = null;
 
             // Because this is a server user agent the SIP transport must start listening for client user agents.
-            sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+            sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
             {
                 if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
@@ -102,6 +102,9 @@ namespace SIPSorcery
                     {
                         uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
                         uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
+
+                        // Simulating answer delay to test provisional response retransmits.
+                        await Task.Delay(10000);
 
                         // Initialise an RTP session to receive the RTP packets from the remote SIP server.
                         Socket rtpSocket = null;

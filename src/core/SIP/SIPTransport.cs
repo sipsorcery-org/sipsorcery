@@ -12,6 +12,7 @@
 // 26 Apr 2008  Aaron Clauson   Added TCP support.
 // 16 Oct 2019  Aaron Clauson   Added IPv6 support.
 // 25 Oct 2019  Aaron Clauson   Added async options for sending requests and responses.
+// 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -60,8 +61,8 @@ namespace SIPSorcery.SIP
 
         // Dictates whether the transport later will queue incoming requests for processing on a separate thread of process immediately on the same thread.
         // Most SIP elements with the exception of Stateless Proxies will typically want to queue incoming SIP messages.
-        private bool m_queueIncoming = true;     
-        
+        private bool m_queueIncoming = true;
+
         private bool m_transportThreadStarted = false;
         private Queue<IncomingMessage> m_inMessageQueue = new Queue<IncomingMessage>();
         private ManualResetEvent m_inMessageArrived = new ManualResetEvent(false);
@@ -84,11 +85,11 @@ namespace SIPSorcery.SIP
         public event SIPTransportSIPBadMessageDelegate SIPBadResponseInTraceEvent;
 
         // Allows an application to set the prefix for the performance monitor counter it wants to use for tracking the SIP transport metrics.
-        public string PerformanceMonitorPrefix;     
+        public string PerformanceMonitorPrefix;
 
         // If set this host name (or IP address) will be passed to the UAS Invite transaction so it
         // can be used as the Contact address in Ok responses.
-        public string ContactHost;           
+        public string ContactHost;
 
         // Contains a list of the SIP Requests/Response that are being monitored or responses and retransmitted on when none is recieved to attempt a more reliable delivery
         // rather then just relying on the initial request to get through.
@@ -354,8 +355,8 @@ namespace SIPSorcery.SIP
             {
                 // If destination is a loopback IP address look for a protocol and IP protocol match.
                 return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol &&
-                    (x.Value.IsLoopbackAddress 
-                        || IPAddress.Equals(IPAddress.Any, x.Value.SIPChannelEndPoint.Address) 
+                    (x.Value.IsLoopbackAddress
+                        || IPAddress.Equals(IPAddress.Any, x.Value.SIPChannelEndPoint.Address)
                         || IPAddress.Equals(IPAddress.IPv6Any, x.Value.SIPChannelEndPoint.Address)) &&
                     x.Value.AddressFamily == destinationEP.Address.AddressFamily)
                     .Select(x => x.Value.SIPChannelEndPoint).FirstOrDefault();
@@ -763,15 +764,18 @@ namespace SIPSorcery.SIP
 
             //logger.LogDebug("SendSIPReliable transaction URI " + sipTransaction.TransactionRequest.URI.ToString() + ".");
 
-            if (sipTransaction.TransactionType == SIPTransactionTypesEnum.Invite &&
-                sipTransaction.TransactionState == SIPTransactionStatesEnum.Completed)
+            if (sipTransaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
             {
-                // This is an INVITE transaction that wants to send a reliable response.
+                // This is a user agent server INVITE transaction that wants to send a reliable provisional or final response.
                 if (sipTransaction.LocalSIPEndPoint == null)
                 {
                     throw new ApplicationException("The SIPTransport layer cannot send a reliable SIP response because the send from socket has not been set for the transaction.");
                 }
-                else
+                else if (sipTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                {
+                    SendResponse(sipTransaction.ReliableProvisionalResponse);
+                }
+                else if (sipTransaction.TransactionState == SIPTransactionStatesEnum.Completed)
                 {
                     SendResponse(sipTransaction.TransactionFinalResponse);
                 }
@@ -1005,7 +1009,7 @@ namespace SIPSorcery.SIP
             }
 
             FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipResponse);
-            
+
             sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
             return await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
         }
@@ -1316,11 +1320,21 @@ namespace SIPSorcery.SIP
                                     {
                                         //logger.LogDebug("Request timed out " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ".");
 
-                                        transaction.DeliveryPending = false;
-                                        transaction.DeliveryFailed = true;
-                                        transaction.TimedOutAt = DateTime.Now;
-                                        transaction.HasTimedOut = true;
-                                        transaction.FireTransactionTimedOut();
+                                        if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer && transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                                        {
+                                            // If the transaction is a UAS and still in the progress state then the timeout was for a provisional response
+                                            // and it should not set any transaction properties that will affect the delvery of any subsequent final response.
+                                            transaction.OnTimedOutProvisionalResponse();
+                                        }
+                                        else
+                                        {
+                                            transaction.DeliveryPending = false;
+                                            transaction.DeliveryFailed = true;
+                                            transaction.TimedOutAt = DateTime.Now;
+                                            transaction.HasTimedOut = true;
+                                            transaction.FireTransactionTimedOut();
+                                          }
+
                                         completedTransactions.Add(transaction.TransactionId);
                                     }
                                     else
@@ -1334,15 +1348,22 @@ namespace SIPSorcery.SIP
                                             transaction.Retransmits = transaction.Retransmits + 1;
                                             transaction.LastTransmit = DateTime.Now;
 
-                                            if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionState == SIPTransactionStatesEnum.Completed)
+                                            if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
                                             {
-                                                //logger.LogDebug("Retransmit " + transaction.Retransmits + "(" + transaction.TransactionId + ") for INVITE reponse " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
-
-                                                // This is an INVITE transaction that wants to send a reliable response, once the ACK is received it will change the transaction state to confirmed.
-                                                //SIPViaHeader topViaHeader = transaction.TransactionFinalResponse.Header.Vias.TopViaHeader;
-                                                //SendResponse(transaction.TransactionFinalResponse);
-                                                //transaction.ResponseRetransmit();
-                                                transaction.RetransmitFinalResponse();
+                                                if (transaction.TransactionState == SIPTransactionStatesEnum.Completed && transaction.TransactionFinalResponse != null)
+                                                {
+                                                    SendResponse(transaction.TransactionFinalResponse);
+                                                    transaction.Retransmits += 1;
+                                                    transaction.LastTransmit = DateTime.Now;
+                                                    transaction.OnRetransmitFinalResponse();
+                                                }
+                                                else if(transaction.TransactionState == SIPTransactionStatesEnum.Proceeding && transaction.ReliableProvisionalResponse != null)
+                                                {
+                                                    SendResponse(transaction.ReliableProvisionalResponse);
+                                                    transaction.Retransmits += 1;
+                                                    transaction.LastTransmit = DateTime.Now;
+                                                    transaction.OnRetransmitProvisionalResponse();
+                                                }
                                             }
                                             else
                                             {
@@ -1545,10 +1566,15 @@ namespace SIPSorcery.SIP
                                         SIPTransaction requestTransaction = (m_transactionEngine != null) ? m_transactionEngine.GetTransaction(sipRequest) : null;
                                         if (requestTransaction != null)
                                         {
-                                            if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed && sipRequest.Method != SIPMethodsEnum.ACK)
+                                            if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed && sipRequest.Method != SIPMethodsEnum.ACK 
+                                                && sipRequest.Method != SIPMethodsEnum.PRACK)
                                             {
-                                                logger.LogWarning("Resending final response for " + sipRequest.Method + ", " + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".");
-                                                requestTransaction.RetransmitFinalResponse();
+                                                if (requestTransaction.TransactionFinalResponse != null)
+                                                {
+                                                    logger.LogWarning("Resending final response for " + sipRequest.Method + ", " + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".");
+                                                    SendResponse(requestTransaction.TransactionFinalResponse);
+                                                    requestTransaction.OnRetransmitFinalResponse();
+                                                }
                                             }
                                             else if (sipRequest.Method == SIPMethodsEnum.ACK)
                                             {
@@ -1568,6 +1594,17 @@ namespace SIPSorcery.SIP
                                                 {
                                                     //logger.LogWarning("ACK recieved from " + remoteEndPoint.ToString() + " on " + requestTransaction.TransactionState + " transaction, ignoring.");
                                                     FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "ACK recieved on " + requestTransaction.TransactionState + " transaction, ignoring.", SIPValidationFieldsEnum.Request, null);
+                                                }
+                                            }
+                                            else if(sipRequest.Method == SIPMethodsEnum.PRACK)
+                                            {
+                                                if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                                                {
+                                                    requestTransaction.PRACKReceived(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipRequest);
+                                                }
+                                                else
+                                                {
+                                                    FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "PRACK recieved on " + requestTransaction.TransactionState + " transaction, ignoring.", SIPValidationFieldsEnum.Request, null);
                                                 }
                                             }
                                             else

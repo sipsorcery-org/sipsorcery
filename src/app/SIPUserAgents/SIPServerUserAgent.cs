@@ -310,7 +310,7 @@ namespace SIPSorcery.SIP.App
                                 }
                             }
 
-                            m_uasTransaction.SendInformationalResponse(progressResponse);
+                            m_uasTransaction.SendProvisionalResponse(progressResponse);
                         }
                     }
                 }

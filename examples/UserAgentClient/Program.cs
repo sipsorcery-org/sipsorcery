@@ -215,6 +215,7 @@ namespace SIPSorcery
                 using (var waveOutEvent = new WaveOutEvent())
                 {
                     var waveProvider = new BufferedWaveProvider(new WaveFormat(8000, 16, 1));
+                    waveProvider.DiscardOnBufferOverflow = true;
                     waveOutEvent.Init(waveProvider);
                     waveOutEvent.Play();
 
