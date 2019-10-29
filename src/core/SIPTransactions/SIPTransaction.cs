@@ -133,20 +133,13 @@ namespace SIPSorcery.SIP
             get { return m_transactionRequest; }
         }
 
-        #region Reliable provisional response fields.
-
         /// <summary>
         /// The most recent provisoinal response that was requested to be sent. If reliable provisional responses
         /// are being used then this response needs to be sent reliably in the same manner as the final response.
         /// </summary>
         public SIPResponse ReliableProvisionalResponse { get; private set; }
 
-        /// <summary>
-        /// Tracks whether the most recently sent provisional response has been acknowledged with a PRACK request.
-        /// </summary>
-        public bool ReliableProvisionalResponseAcked { get; private set; } = false;
-
-        #endregion
+        public int RSeq { get; private set; } = 0;
 
         protected SIPResponse m_transactionFinalResponse;   // This is the final response being sent by a UAS transaction or the one received by a UAC one.
         public SIPResponse TransactionFinalResponse
@@ -341,14 +334,25 @@ namespace SIPSorcery.SIP
 
                 if (PrackSupported == true)
                 {
+                    if(RSeq == 0)
+                    {
+                        RSeq = Crypto.GetRandomInt(1, Int32.MaxValue / 2 - 1);
+                    }
+                    else
+                    {
+                        RSeq++;
+                    }
+
+                    sipResponse.Header.RSeq = RSeq;
+                    sipResponse.Header.Require += SIPExtensionHeaders.PRACK;
+
                     // If reliable provisional responses are supported then need to send this response reliably.
-                    if (ReliableProvisionalResponse != null && ReliableProvisionalResponseAcked == false)
+                    if (ReliableProvisionalResponse != null)
                     {
                         logger.LogWarning("A new reliable provisional response is being sent but the previous one was not yet acknowledged.");
                     }
 
                     ReliableProvisionalResponse = sipResponse;
-                    ReliableProvisionalResponseAcked = false;
                     m_sipTransport.SendSIPReliable(this);
                 }
                 else
@@ -451,9 +455,24 @@ namespace SIPSorcery.SIP
             UpdateTransactionState(SIPTransactionStatesEnum.Confirmed);
         }
 
+        /// <summary>
+        /// PRACK request received to acknowledge the last provisional response that was sent.
+        /// </summary>
+        /// <param name="localSIPEndPoint">The SIP socket the request was received on.</param>
+        /// <param name="remoteEndPoint">The remote SIP socket the request originated from.</param>
+        /// <param name="sipRequest">The PRACK request.</param>
         public void PRACKReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            // TODO: Lookup the matching provisional response and mark it as confirmed.
+            if(m_transactionState == SIPTransactionStatesEnum.Proceeding && RSeq == sipRequest.Header.RAckRSeq)
+            {
+                logger.LogDebug("PRACK request matched the current outstanding provisional response, setting as delivered.");
+                DeliveryPending = false;
+            }
+
+            // We don't keep track of previous provisional response ACK's so always return OK if the request matched the 
+            // transaction and got this far.
+            var prackResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+            m_sipTransport.SendResponse(prackResponse);
         }
 
         public void ResendAckRequest()
@@ -492,24 +511,6 @@ namespace SIPSorcery.SIP
             //FireTransactionTraceMessage("Send Request retransmit " + Retransmits + " " + LocalSIPEndPoint.ToString() + "->" + this.RemoteEndPoint + m_crLF + this.TransactionRequest.ToString());
             FireTransactionTraceMessage($"Send Request retransmit {Retransmits} {LocalSIPEndPoint.ToString()}->{this.RemoteEndPoint}: {this.TransactionRequest.StatusLine}");
         }
-
-        //private void ResponseRetransmit()
-        //{
-        //    if (TransactionResponseRetransmit != null)
-        //    {
-        //        try
-        //        {
-        //            TransactionResponseRetransmit(this, this.TransactionFinalResponse, this.Retransmits);
-        //        }
-        //        catch (Exception excp)
-        //        {
-        //            logger.LogError("Exception TransactionResponseRetransmit. " + excp.Message);
-        //        }
-        //    }
-
-        //    //FireTransactionTraceMessage("Send Response retransmit " + LocalSIPEndPoint.ToString() + "->" + this.RemoteEndPoint + m_crLF + this.TransactionFinalResponse.ToString());
-        //    FireTransactionTraceMessage($"Send Response retransmit {Retransmits} {LocalSIPEndPoint.ToString()}->{this.RemoteEndPoint}: {this.TransactionFinalResponse.StatusCode} {this.TransactionFinalResponse.ReasonPhrase}");
-        //}
 
         public void OnRetransmitFinalResponse()
         {

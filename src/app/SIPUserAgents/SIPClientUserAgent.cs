@@ -22,7 +22,6 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPClientUserAgent : ISIPClientUserAgent
     {
-        private const int DNS_LOOKUP_TIMEOUT = 5000;
         private const char OUTBOUNDPROXY_AS_ROUTESET_CHAR = '<';    // If this character exists in the call descriptor OutboundProxy setting it gets treated as a Route set.
 
         private static ILogger logger = Log.Logger;

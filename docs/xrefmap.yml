@@ -19732,6 +19732,24 @@ references:
   commentId: F:SIPSorcery.SIP.SIPHeader.ProxySendFrom
   fullName: SIPSorcery.SIP.SIPHeader.ProxySendFrom
   nameWithType: SIPHeader.ProxySendFrom
+- uid: SIPSorcery.SIP.SIPHeader.RAckCSeq
+  name: RAckCSeq
+  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_RAckCSeq
+  commentId: F:SIPSorcery.SIP.SIPHeader.RAckCSeq
+  fullName: SIPSorcery.SIP.SIPHeader.RAckCSeq
+  nameWithType: SIPHeader.RAckCSeq
+- uid: SIPSorcery.SIP.SIPHeader.RAckCSeqMethod
+  name: RAckCSeqMethod
+  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_RAckCSeqMethod
+  commentId: F:SIPSorcery.SIP.SIPHeader.RAckCSeqMethod
+  fullName: SIPSorcery.SIP.SIPHeader.RAckCSeqMethod
+  nameWithType: SIPHeader.RAckCSeqMethod
+- uid: SIPSorcery.SIP.SIPHeader.RAckRSeq
+  name: RAckRSeq
+  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_RAckRSeq
+  commentId: F:SIPSorcery.SIP.SIPHeader.RAckRSeq
+  fullName: SIPSorcery.SIP.SIPHeader.RAckRSeq
+  nameWithType: SIPHeader.RAckRSeq
 - uid: SIPSorcery.SIP.SIPHeader.Reason
   name: Reason
   href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_Reason
@@ -19792,6 +19810,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPHeader.Routes
   fullName: SIPSorcery.SIP.SIPHeader.Routes
   nameWithType: SIPHeader.Routes
+- uid: SIPSorcery.SIP.SIPHeader.RSeq
+  name: RSeq
+  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_RSeq
+  commentId: F:SIPSorcery.SIP.SIPHeader.RSeq
+  fullName: SIPSorcery.SIP.SIPHeader.RSeq
+  nameWithType: SIPHeader.RSeq
 - uid: SIPSorcery.SIP.SIPHeader.Server
   name: Server
   href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader_Server
@@ -23402,19 +23426,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransaction.ReliableProvisionalResponse
   nameWithType: SIPTransaction.ReliableProvisionalResponse
-- uid: SIPSorcery.SIP.SIPTransaction.ReliableProvisionalResponseAcked
-  name: ReliableProvisionalResponseAcked
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_ReliableProvisionalResponseAcked
-  commentId: P:SIPSorcery.SIP.SIPTransaction.ReliableProvisionalResponseAcked
-  fullName: SIPSorcery.SIP.SIPTransaction.ReliableProvisionalResponseAcked
-  nameWithType: SIPTransaction.ReliableProvisionalResponseAcked
-- uid: SIPSorcery.SIP.SIPTransaction.ReliableProvisionalResponseAcked*
-  name: ReliableProvisionalResponseAcked
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_ReliableProvisionalResponseAcked_
-  commentId: Overload:SIPSorcery.SIP.SIPTransaction.ReliableProvisionalResponseAcked
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransaction.ReliableProvisionalResponseAcked
-  nameWithType: SIPTransaction.ReliableProvisionalResponseAcked
 - uid: SIPSorcery.SIP.SIPTransaction.RemoteEndPoint
   name: RemoteEndPoint
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_RemoteEndPoint
@@ -23453,6 +23464,19 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransaction.Retransmits
   fullName: SIPSorcery.SIP.SIPTransaction.Retransmits
   nameWithType: SIPTransaction.Retransmits
+- uid: SIPSorcery.SIP.SIPTransaction.RSeq
+  name: RSeq
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_RSeq
+  commentId: P:SIPSorcery.SIP.SIPTransaction.RSeq
+  fullName: SIPSorcery.SIP.SIPTransaction.RSeq
+  nameWithType: SIPTransaction.RSeq
+- uid: SIPSorcery.SIP.SIPTransaction.RSeq*
+  name: RSeq
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_RSeq_
+  commentId: Overload:SIPSorcery.SIP.SIPTransaction.RSeq
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransaction.RSeq
+  nameWithType: SIPTransaction.RSeq
 - uid: SIPSorcery.SIP.SIPTransaction.SendFinalResponse(SIPSorcery.SIP.SIPResponse)
   name: SendFinalResponse(SIPResponse)
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendFinalResponse_SIPSorcery_SIP_SIPResponse_
@@ -24037,12 +24061,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.CreateNonInviteTransaction
   nameWithType: SIPTransport.CreateNonInviteTransaction
-- uid: SIPSorcery.SIP.SIPTransport.CreateUACTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Boolean)
-  name: CreateUACTransaction(SIPRequest, SIPEndPoint, SIPEndPoint, SIPEndPoint, Boolean)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateUACTransaction_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Boolean_
-  commentId: M:SIPSorcery.SIP.SIPTransport.CreateUACTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Boolean)
-  fullName: SIPSorcery.SIP.SIPTransport.CreateUACTransaction(SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, System.Boolean)
-  nameWithType: SIPTransport.CreateUACTransaction(SIPRequest, SIPEndPoint, SIPEndPoint, SIPEndPoint, Boolean)
+- uid: SIPSorcery.SIP.SIPTransport.CreateUACTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Boolean,System.Boolean)
+  name: CreateUACTransaction(SIPRequest, SIPEndPoint, SIPEndPoint, SIPEndPoint, Boolean, Boolean)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateUACTransaction_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Boolean_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTransport.CreateUACTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Boolean,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTransport.CreateUACTransaction(SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, System.Boolean, System.Boolean)
+  nameWithType: SIPTransport.CreateUACTransaction(SIPRequest, SIPEndPoint, SIPEndPoint, SIPEndPoint, Boolean, Boolean)
 - uid: SIPSorcery.SIP.SIPTransport.CreateUACTransaction*
   name: CreateUACTransaction
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateUACTransaction_
@@ -25572,6 +25596,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest
   nameWithType: UACInviteTransaction.SendInviteRequest
+- uid: SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest(SIPSorcery.SIP.SIPResponse)
+  name: SendPRackRequest(SIPResponse)
+  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_SendPRackRequest_SIPSorcery_SIP_SIPResponse_
+  commentId: M:SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest(SIPSorcery.SIP.SIPResponse)
+  fullName: SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest(SIPSorcery.SIP.SIPResponse)
+  nameWithType: UACInviteTransaction.SendPRackRequest(SIPResponse)
+- uid: SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest*
+  name: SendPRackRequest
+  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_SendPRackRequest_
+  commentId: Overload:SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest
+  nameWithType: UACInviteTransaction.SendPRackRequest
 - uid: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionFinalResponseReceived
   name: UACInviteTransactionFinalResponseReceived
   href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionFinalResponseReceived

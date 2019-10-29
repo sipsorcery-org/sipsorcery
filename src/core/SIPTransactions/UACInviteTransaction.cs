@@ -34,9 +34,20 @@ namespace SIPSorcery.SIP
         public event SIPTransactionTimedOutDelegate UACInviteTransactionTimedOut;
 
         private bool _sendOkAckManually = false;
+        private bool _disablePrackSupport = false;
 
+        /// <summary>
+        /// Default constructor for user agent client INVITE transaction.
+        /// </summary>
         /// <param name="sendOkAckManually">If set an ACK request for the 2xx response will NOT be sent and it will be up to the application to explicitly call the SendACK request.</param>
-        internal UACInviteTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy, bool sendOkAckManually = false)
+        /// <param name="disablePrackSupport">If set to true then PRACK support will not be set in the initial INVITE reqeust.</param>
+        internal UACInviteTransaction(SIPTransport sipTransport, 
+            SIPRequest sipRequest, 
+            SIPEndPoint dstEndPoint, 
+            SIPEndPoint localSIPEndPoint, 
+            SIPEndPoint outboundProxy, 
+            bool sendOkAckManually = false,
+            bool disablePrackSupport = false)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.InivteClient;
@@ -44,6 +55,7 @@ namespace SIPSorcery.SIP
             SIPEndPoint localEP = SIPEndPoint.TryParse(sipRequest.Header.ProxySendFrom) ?? localSIPEndPoint;
             CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, localEP, dstEndPoint);
             _sendOkAckManually = sendOkAckManually;
+            _disablePrackSupport = disablePrackSupport;
 
             TransactionFinalResponseReceived += UACInviteTransaction_TransactionFinalResponseReceived;
             TransactionInformationResponseReceived += UACInviteTransaction_TransactionInformationResponseReceived;
@@ -91,6 +103,12 @@ namespace SIPSorcery.SIP
             try
             {
                 UACInviteTransactionInformationResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
+
+                if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199 && sipResponse.Header.RSeq > 0)
+                {
+                    // Send a PRACK for this provisional response.
+                    SendPRackRequest(sipResponse);
+                }
 
                 if (CDR != null)
                 {
@@ -168,7 +186,7 @@ namespace SIPSorcery.SIP
             }
 
             // ACK for 2xx response needs to be a new transaction and gets routed based on SIP request fields.
-            var ackRequest = GetNewTransactionACKRequest(sipResponse, ackURI, LocalSIPEndPoint);
+            var ackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.ACK, sipResponse, ackURI, LocalSIPEndPoint);
 
             if (content.NotNullOrBlank())
             {
@@ -201,13 +219,13 @@ namespace SIPSorcery.SIP
         /// acceptable, the UAC core MUST generate a valid answer in the ACK and
         /// then send a BYE immediately.
         /// </remarks>
-        private SIPRequest GetNewTransactionACKRequest(SIPResponse sipResponse, SIPURI ackURI, SIPEndPoint localSIPEndPoint)
+        private SIPRequest GetNewTransactionAcknowledgeRequest(SIPMethodsEnum method, SIPResponse sipResponse, SIPURI ackURI, SIPEndPoint localSIPEndPoint)
         {
-            SIPRequest ackRequest = new SIPRequest(SIPMethodsEnum.ACK, ackURI.ToString());
+            SIPRequest ackRequest = new SIPRequest(method, ackURI.ToString());
             ackRequest.LocalSIPEndPoint = localSIPEndPoint;
 
             SIPHeader header = new SIPHeader(TransactionRequest.Header.From, sipResponse.Header.To, sipResponse.Header.CSeq, sipResponse.Header.CallId);
-            header.CSeqMethod = SIPMethodsEnum.ACK;
+            header.CSeqMethod = method;
             header.AuthenticationHeader = TransactionRequest.Header.AuthenticationHeader;
             header.ProxySendFrom = base.TransactionRequest.Header.ProxySendFrom;
 
@@ -287,6 +305,22 @@ namespace SIPSorcery.SIP
                 logger.LogError("Exception UACInviteTransaction CancelCall. " + excp.Message);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Sends a PRACK request to acknowledge a provisional response as per RFC3262.
+        /// </summary>
+        /// <param name="progressResponse">The provisional response being acknowledged.</param>
+        public void SendPRackRequest(SIPResponse progressResponse)
+        {
+            // PRACK requests create a new transaction and get routed based on SIP request fields.
+            var prackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.PRACK, progressResponse, m_transactionRequest.URI, LocalSIPEndPoint);
+
+            prackRequest.Header.RAckRSeq = progressResponse.Header.RSeq;
+            prackRequest.Header.RAckCSeq = progressResponse.Header.CSeq;
+            prackRequest.Header.RAckCSeqMethod = progressResponse.Header.CSeqMethod;
+
+            base.SendRequest(prackRequest);
         }
     }
 }

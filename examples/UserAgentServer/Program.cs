@@ -40,6 +40,8 @@ namespace SIPSorcery
         private static int SIP_LISTEN_PORT = 5060;
         private static int SIPS_LISTEN_PORT = 5061;
 
+        private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+
         static void Main()
         {
             Console.WriteLine("SIPSorcery client user agent server example.");
@@ -75,13 +77,37 @@ namespace SIPSorcery
             SIPServerUserAgent uas = null;
             CancellationTokenSource uasCts = null;
 
+            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
+            {
+                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
+                Log.LogDebug(req.ToString());
+            };
+
+            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
+            {
+                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
+                Log.LogDebug(req.ToString());
+            };
+
+            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
+                Log.LogDebug(resp.ToString());
+            };
+
+            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
+                Log.LogDebug(resp.ToString());
+            };
+
             // Because this is a server user agent the SIP transport must start listening for client user agents.
             sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
             {
                 if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
                     SIPSorcery.Sys.Log.Logger.LogInformation("Incoming call request: " + localSIPEndPoint + "<-" + remoteEndPoint + " " + sipRequest.URI.ToString() + ".");
-                    SIPSorcery.Sys.Log.Logger.LogDebug(sipRequest.ToString());
+                    //SIPSorcery.Sys.Log.Logger.LogDebug(sipRequest.ToString());
 
                     // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
                     // means this example can be kept a little it simpler.
@@ -104,7 +130,7 @@ namespace SIPSorcery
                         uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
                         // Simulating answer delay to test provisional response retransmits.
-                        await Task.Delay(10000);
+                        await Task.Delay(20000);
 
                         // Initialise an RTP session to receive the RTP packets from the remote SIP server.
                         Socket rtpSocket = null;
@@ -135,7 +161,7 @@ namespace SIPSorcery
                     try
                     {
                         SIPSorcery.Sys.Log.Logger.LogInformation($"{localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
-                        SIPSorcery.Sys.Log.Logger.LogDebug(sipRequest.ToString());
+                        //SIPSorcery.Sys.Log.Logger.LogDebug(sipRequest.ToString());
                         SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         sipTransport.SendResponse(optionsResponse);
                     }

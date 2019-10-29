@@ -1333,7 +1333,7 @@ namespace SIPSorcery.SIP
                                             transaction.TimedOutAt = DateTime.Now;
                                             transaction.HasTimedOut = true;
                                             transaction.FireTransactionTimedOut();
-                                          }
+                                        }
 
                                         completedTransactions.Add(transaction.TransactionId);
                                     }
@@ -1357,7 +1357,7 @@ namespace SIPSorcery.SIP
                                                     transaction.LastTransmit = DateTime.Now;
                                                     transaction.OnRetransmitFinalResponse();
                                                 }
-                                                else if(transaction.TransactionState == SIPTransactionStatesEnum.Proceeding && transaction.ReliableProvisionalResponse != null)
+                                                else if (transaction.TransactionState == SIPTransactionStatesEnum.Proceeding && transaction.ReliableProvisionalResponse != null)
                                                 {
                                                     SendResponse(transaction.ReliableProvisionalResponse);
                                                     transaction.Retransmits += 1;
@@ -1566,7 +1566,7 @@ namespace SIPSorcery.SIP
                                         SIPTransaction requestTransaction = (m_transactionEngine != null) ? m_transactionEngine.GetTransaction(sipRequest) : null;
                                         if (requestTransaction != null)
                                         {
-                                            if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed && sipRequest.Method != SIPMethodsEnum.ACK 
+                                            if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed && sipRequest.Method != SIPMethodsEnum.ACK
                                                 && sipRequest.Method != SIPMethodsEnum.PRACK)
                                             {
                                                 if (requestTransaction.TransactionFinalResponse != null)
@@ -1584,11 +1584,8 @@ namespace SIPSorcery.SIP
                                                 {
                                                     //logger.LogDebug("ACK received for INVITE, setting state to Confirmed, " + sipRequest.URI.ToString() + " from " + sipRequest.Header.From.FromURI.User + " " + remoteEndPoint + ".");
                                                     //requestTransaction.UpdateTransactionState(SIPTransactionStatesEnum.Confirmed);
+                                                    sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
                                                     requestTransaction.ACKReceived(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipRequest);
-                                                }
-                                                else if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
-                                                {
-                                                    // ACK retransmit, ignore as a previous ACK was received and the transaction has already been confirmed.
                                                 }
                                                 else
                                                 {
@@ -1596,10 +1593,11 @@ namespace SIPSorcery.SIP
                                                     FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "ACK recieved on " + requestTransaction.TransactionState + " transaction, ignoring.", SIPValidationFieldsEnum.Request, null);
                                                 }
                                             }
-                                            else if(sipRequest.Method == SIPMethodsEnum.PRACK)
+                                            else if (sipRequest.Method == SIPMethodsEnum.PRACK)
                                             {
                                                 if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
                                                 {
+                                                    sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
                                                     requestTransaction.PRACKReceived(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipRequest);
                                                 }
                                                 else
@@ -2013,7 +2011,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public UACInviteTransaction CreateUACTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy, bool sendOkAckManually = false)
+        public UACInviteTransaction CreateUACTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy, bool sendOkAckManually = false, bool disablePrackSupport = false)
         {
             try
             {

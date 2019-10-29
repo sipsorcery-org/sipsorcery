@@ -1292,6 +1292,9 @@ namespace SIPSorcery.SIP
         public string Organization;
         public string Priority;
         public string ProxyRequire;
+        public int RAckCSeq = -1;                          // RFC3262 the CSeq number the PRACK request is acknowledging.
+        public SIPMethodsEnum RAckCSeqMethod;              // RFC3262 the CSeq method from the response the PRACK request is acknowledging.
+        public int RAckRSeq = -1;                          // RFC3262 the RSeq number the PRACK request is acknowledging.
         public string Reason;
         public SIPRouteSet RecordRoutes = new SIPRouteSet();
         public string ReferredBy;                           // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
@@ -1300,6 +1303,7 @@ namespace SIPSorcery.SIP
         public string ReplyTo;
         public string Require;
         public string RetryAfter;
+        public int RSeq = -1;                               // RFC3262 reliable provisional response sequence number.
         public SIPRouteSet Routes = new SIPRouteSet();
         public string Server;
         public string Subject;
@@ -1900,6 +1904,53 @@ namespace SIPSorcery.SIP
                             sipHeader.ETag = headerValue;
                         }
                         #endregion
+                        #region RAck
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_RELIABLE_ACK.ToLower())
+                        {
+                            string[] rackFields = headerValue.Split(' ');
+                            if (rackFields?.Length == 0)
+                            {
+                                logger.LogWarning("The " + SIPHeaders.SIP_HEADER_RELIABLE_ACK + " was empty.");
+                            }
+                            else
+                            {
+                                if (!Int32.TryParse(rackFields[0], out sipHeader.RAckRSeq))
+                                {
+                                    logger.LogWarning(SIPHeaders.SIP_HEADER_RELIABLE_ACK + " did not contain a valid integer for the RSeq being acknowledged, " + headerLine + ".");
+                                }
+
+                                if (rackFields?.Length > 1)
+                                {
+                                    if (!Int32.TryParse(rackFields[1], out sipHeader.RAckCSeq))
+                                    {
+                                        logger.LogWarning(SIPHeaders.SIP_HEADER_RELIABLE_ACK + " did not contain a valid integer for the CSeq being acknowledged, " + headerLine + ".");
+                                    }
+                                }
+                                else
+                                {
+                                    logger.LogWarning("There was no " + SIPHeaders.SIP_HEADER_RELIABLE_ACK + " method, " + headerLine + ".");
+                                }
+
+                                if (rackFields?.Length > 2)
+                                {
+                                    sipHeader.RAckCSeqMethod = SIPMethods.GetMethod(rackFields[2]);
+                                }
+                                else
+                                {
+                                    logger.LogWarning("There was no " + SIPHeaders.SIP_HEADER_RELIABLE_ACK + " method, " + headerLine + ".");
+                                }
+                            }
+                        }
+                        #endregion
+                        #region RSeq
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_RELIABLE_SEQ.ToLower())
+                        {
+                            if (!Int32.TryParse(headerValue, out sipHeader.RSeq))
+                            {
+                                logger.LogWarning("The Rseq value was not a valid integer, " + headerLine + ".");
+                            }
+                        }
+                        #endregion
                         else
                         {
                             sipHeader.UnknownHeaders.Add(headerLine);
@@ -2034,7 +2085,9 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((ReferTo != null) ? SIPHeaders.SIP_HEADER_REFERTO + ": " + ReferTo + m_CRLF : null);
                 headersBuilder.Append((ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
                 headersBuilder.Append((Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
-                
+                headersBuilder.Append((RSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_SEQ + ": " + RSeq + m_CRLF : null);
+                headersBuilder.Append((RAckRSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_ACK + ": " + RAckRSeq + " " + RAckCSeq + " " + RAckCSeqMethod + m_CRLF : null);
+
                 // Custom SIP headers.
                 headersBuilder.Append((ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
                 headersBuilder.Append((ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);

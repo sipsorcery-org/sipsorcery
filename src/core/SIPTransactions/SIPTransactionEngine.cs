@@ -73,9 +73,17 @@ namespace SIPSorcery.SIP
         /// ACK's:
         ///  - The ACK for a 2xx response will have the same CallId, From Tag and To Tag.
         ///  - An ACK for a non-2xx response will have the same branch ID as the INVITE whose response it acknowledges.
+        ///  
+        /// PRACK Requests:
+        /// (From RFC3262)
+        /// A matching PRACK is defined as one within the same dialog as the response, and
+        /// whose method, CSeq-num, and response-num in the RAck header field
+        /// match, respectively, the method from the CSeq, the sequence number
+        /// from the CSeq, and the sequence number from the RSeq of the reliable
+        /// provisional response.
         /// </summary>
-        /// <param name="sipRequest"></param>
-        /// <returns></returns>
+        /// <param name="sipRequest">The request to attempt to locate a matching transaction for.</param>
+        /// <returns>A matching transaction or null if no match found.</returns>
         public SIPTransaction GetTransaction(SIPRequest sipRequest)
         {
             // The branch is mandatory but it doesn't stop some UA's not setting it.
@@ -90,18 +98,8 @@ namespace SIPSorcery.SIP
 
             lock (m_transactions)
             {
-                //if (transactionMethod == SIPMethodsEnum.ACK)
-                //{
-                    //logger.LogInformation("Matching ACK with contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + ".");
-                //}
-
                 if (transactionId != null && m_transactions.ContainsKey(transactionId))
                 {
-                    //if (transactionMethod == SIPMethodsEnum.ACK)
-                    //{
-                        //logger.LogInformation("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by branchid.");
-                    //}
-
                     return m_transactions[transactionId];
                 }
                 else
@@ -142,7 +140,7 @@ namespace SIPSorcery.SIP
 
                                     return transaction;
                                 }
-                                else if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId && 
+                                else if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId &&
                                     transaction.TransactionFinalResponse.Header.CSeq == sipRequest.Header.CSeq &&
                                     IsCallIdUniqueForPending(sipRequest.Header.CallId))
                                 {
@@ -152,8 +150,34 @@ namespace SIPSorcery.SIP
                                 }
                             }
                         }
+                    }
+                    else if (sipRequest.Method == SIPMethodsEnum.PRACK)
+                    {
+                        foreach (SIPTransaction transaction in m_transactions.Values)
+                        {
+                            if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
+                            {
+                                if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId &&
+                                    //transaction.ReliableProvisionalResponse.Header.To.ToTag == sipRequest.Header.To.ToTag &&
+                                    transaction.ReliableProvisionalResponse.Header.From.FromTag == sipRequest.Header.From.FromTag &&
+                                    transaction.ReliableProvisionalResponse.Header.CSeq == sipRequest.Header.RAckCSeq &&
+                                    transaction.ReliableProvisionalResponse.Header.RSeq == sipRequest.Header.RAckRSeq &&
+                                    transaction.ReliableProvisionalResponse.Header.CSeqMethod == sipRequest.Header.RAckCSeqMethod)
+                                {
+                                    logger.LogInformation("PRACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by callid, tags and cseq.");
 
-                        //logger.LogInformation("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was not matched.");
+                                    return transaction;
+                                }
+                                //else if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId &&
+                                //    transaction.TransactionFinalResponse.Header.CSeq == sipRequest.Header.CSeq &&
+                                //    IsCallIdUniqueForPending(sipRequest.Header.CallId))
+                                //{
+                                //    string requestEndPoint = (sipRequest.RemoteSIPEndPoint != null) ? sipRequest.RemoteSIPEndPoint.ToString() : " ? ";
+                                //    //logger.LogInformation("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched using Call-ID mechanism (to tags: " + transaction.TransactionFinalResponse.Header.To.ToTag + "=" + sipRequest.Header.To.ToTag + ", from tags:" + transaction.TransactionFinalResponse.Header.From.FromTag + "=" + sipRequest.Header.From.FromTag + ").");
+                                //    return transaction;
+                                //}
+                            }
+                        }
                     }
 
                     return null;
