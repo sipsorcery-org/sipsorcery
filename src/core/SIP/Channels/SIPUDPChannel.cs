@@ -73,7 +73,7 @@ namespace SIPSorcery.SIP
                 try
                 {
                     var receiveResult = await m_sipConn.ReceiveAsync();
-                    if (receiveResult.Buffer != null && receiveResult.Buffer.Length > 0)
+                    if (receiveResult.Buffer?.Length > 0)
                     {
                         SIPMessageReceived?.Invoke(this, new SIPEndPoint(SIPProtocolsEnum.udp, receiveResult.RemoteEndPoint), receiveResult.Buffer);
                     }
