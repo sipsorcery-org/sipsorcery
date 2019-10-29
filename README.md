@@ -13,13 +13,13 @@ The library is compliant with .NET Standard 2.0 and .NET Framework 4.5.2. It is 
 
 For .NET Core:
 
-````
+````bash
 dotnet add package SIPSorcery
 ````
 
 With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](https://www.nuget.org/packages/SIPSorcery/)):
 
-````
+````ps1
 Install-Package SIPSorcery
 ````
 
@@ -27,7 +27,7 @@ Install-Package SIPSorcery
 
 The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examples) contains full sample code designed to demonstrate some common use cases. The [GetStarted](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted) example is the best place to start and the main program is shown below.
 
-````
+````csharp
 using System;
 using System.Net;
 using SIPSorcery.SIP;
@@ -70,7 +70,7 @@ The `SIPTransport` class can have multiple SIP channels added to it. A SIP chann
 
 The code below shows how to create a `SIPTransport` instance and add a single UDP channel to it.
 
-````
+````csharp
 var sipTransport = new SIPTransport();
 var sipChannel = new SIPUDPChannel(IPAddress.Loopback, 5060);
 sipTransport.AddSIPChannel(sipChannel);
@@ -78,7 +78,7 @@ sipTransport.AddSIPChannel(sipChannel);
 
 To shutdown the `SIPTransport` use:
 
-````
+````csharp
 sipTransport.Shutdown();
 ````
 
@@ -91,7 +91,7 @@ can be used for common client scenarios. See [Next Steps](#next-steps) for a des
 An example of the first approach of wiring up the `SIPTransport` event handlers is shown below. It will respond with a 200 OK response for OPTIONS requests 
 and will ignore all other request types.
 
-````
+````csharp
 sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
 {
   Console.WriteLine($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
@@ -109,7 +109,7 @@ sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEn
 A convenient tool to test SIP applications is [SIPp](https://github.com/SIPp/sipp). The OPTIONS request handling can be tested from Ubuntu or 
 [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) using the steps below.
 
-````
+````bash
 $ sudo apt install sip-tester
 $ wget https://raw.githubusercontent.com/saghul/sipp-scenarios/master/sipp_uac_options.xml
 $ sipp -sf sipp_uac_options.xml -m 3 127.0.0.1
@@ -117,7 +117,7 @@ $ sipp -sf sipp_uac_options.xml -m 3 127.0.0.1
 
 If working correctly the message below should appear on the SIPSorcery demo program console:
 
-```` 
+````bash
 SIPSorcery Getting Started Demo
 press any key to exit...
 Request received udp:127.0.0.1:5060<-udp:127.0.0.1:5061: OPTIONS sip:127.0.0.1:5060 SIP/2.0

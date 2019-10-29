@@ -1,0 +1,3966 @@
+{
+  "homepages": [],
+  "source_base_path": "C:/Dev/sipsorcery/sipsorcery-core/src",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "Conceptual",
+      "source_relative_path": "LICENSE.md",
+      "output": {
+        ".html": {
+          "relative_path": "LICENSE.html",
+          "hash": "C7lGJYXT5cLMQSkngbhxGA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.AdditionalRR.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.AdditionalRR.html",
+          "hash": "bgwwHu1w5dCpzoJBpuey4w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.AnswerRR.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.AnswerRR.html",
+          "hash": "8rZNl+0N2fzXffofG0n1gQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.AuthorityRR.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.AuthorityRR.html",
+          "hash": "z6iA7kCoYm1heY7kgrPsWQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.Class.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.Class.html",
+          "hash": "n/un/Vim1QusjW2JBBf5IA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.DNSRequest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.DNSRequest.html",
+          "hash": "WJjXOb2TWz61Az8Nit3KmQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.DNSResponse.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.DNSResponse.html",
+          "hash": "WrFNpwlOLhiSiuOzjf8KMw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.DnsType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.DnsType.html",
+          "hash": "k6UQuPEx0MMfFGugGL9HvA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.Header.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.Header.html",
+          "hash": "068a/camhdxq+dYfDou71A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.OPCode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.OPCode.html",
+          "hash": "qYqB+oKYGVuyFFw4hvTIew=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.QClass.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.QClass.html",
+          "hash": "E71YQ757JC3NIal0YW9cyQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.QType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.QType.html",
+          "hash": "Vql+x7+DJz+L+KlnE3cwxg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.Question.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.Question.html",
+          "hash": "g2ciauR1s/73usCLuRkeQA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RCode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RCode.html",
+          "hash": "0XYJ3+MH/yOvrjXseGFSfw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RR.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RR.html",
+          "hash": "I3UuCGbmYke5AB1xPQMdAQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.Record.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.Record.html",
+          "hash": "ZXoiiAG774026v1cLKipyQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordA.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordA.html",
+          "hash": "Hh+/kK245GFJwR3PhOb8tw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordAAAA.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordAAAA.html",
+          "hash": "dyrwFl6rQ/dTz5nDZBoIkw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordCNAME.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordCNAME.html",
+          "hash": "GeaDTuJwrY/vgT8Sz3JMMw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordMX.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordMX.html",
+          "hash": "FniSOqrq82JrqaG4rzkjcg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordNAPTR.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordNAPTR.html",
+          "hash": "ACUYL/czL4z0s898JPTYNQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordNS.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordNS.html",
+          "hash": "vfLlwCsW5T+FPRf06HD8tQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordNULL.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordNULL.html",
+          "hash": "Ih90WMjEqe8Tt2DUjqm92A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordPTR.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordPTR.html",
+          "hash": "LVZzmH/fz+YPVkzfMyfPxA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordReader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordReader.html",
+          "hash": "9cs0caT7kslPvO0ZJ1El6Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordSOA.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordSOA.html",
+          "hash": "zoMNfwAhwBTg2JUG3wVRAQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordSRV.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordSRV.html",
+          "hash": "9IJXBoabVupdXwra8mjciA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordTXT.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordTXT.html",
+          "hash": "upzeoH+PbNMHg7MjwEp9VA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.RecordUnknown.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.RecordUnknown.html",
+          "hash": "cwwhPGqj023HpCFTsSRy7Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.Resolver.VerboseEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.Resolver.VerboseEventArgs.html",
+          "hash": "1mtHQY8km6L23A+4jJ7GgA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.Resolver.VerboseEventHandler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.Resolver.VerboseEventHandler.html",
+          "hash": "VQwZkgFumnG7isY/SCYAYw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.Resolver.VerboseOutputEventArgs.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.Resolver.VerboseOutputEventArgs.html",
+          "hash": "bpml82W+fVx3lv8MVMpiVg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.Resolver.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.Resolver.html",
+          "hash": "f/SHaiUgxWy4hkfiOC0pAg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.TransportType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.TransportType.html",
+          "hash": "k0LGJ1lcybCm+Htibdbi+A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/Heijden.DNS.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Heijden.DNS.html",
+          "hash": "VDASdtgxkHQLT62G0OvSBw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.DNSManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.DNSManager.html",
+          "hash": "0ZmzYAzrpATfLWgjezpm7w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.FrameTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.FrameTypesEnum.html",
+          "hash": "1Z7zFB3Diixs7NfJPIASfQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.ICMP.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.ICMP.html",
+          "hash": "+fMHm/Zs2dt8a/0/mfsC5w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.ICMPListener.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.ICMPListener.html",
+          "hash": "miqKhce9hsw/YWN74J3fqg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.IceCandidate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.IceCandidate.html",
+          "hash": "G1rdnbdAkPB55njiUGNlaA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.IceCandidateTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.IceCandidateTypesEnum.html",
+          "hash": "434P54Z4tofD69fYZRa7EA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.IceConnectionStatesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.IceConnectionStatesEnum.html",
+          "hash": "W5HK0MlgynrV/8VhtnBVbA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.Mjpeg.Tags.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.Mjpeg.Tags.html",
+          "hash": "gE6PKe2CbPNUr+28kqhmAA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.Mjpeg.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.Mjpeg.html",
+          "hash": "n6DBoz/yN1zXkBB7eM9dlg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.ProtectRtpPacket.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.ProtectRtpPacket.html",
+          "hash": "bwVFQ0f7+OJzf2IBJlkg0g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCPHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCPHeader.html",
+          "hash": "pyUQG7b8KWy/iPWa6mE4HA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCPPacket.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCPPacket.html",
+          "hash": "GkiCN+a1KOtrFtjKUC5uug=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCPReport.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCPReport.html",
+          "hash": "IL0h1TD3RzcltdJaLWLUhg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCPReportHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCPReportHeader.html",
+          "hash": "js0zciIhANJIOnI3SgJyTA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCPReportPacket.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCPReportPacket.html",
+          "hash": "4TzxZowbeV9/pPxdrSvogQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCPReportRecievedDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCPReportRecievedDelegate.html",
+          "hash": "GMXQglAXgX5aU8VczHwvqg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCPReportSampler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCPReportSampler.html",
+          "hash": "TI4EgUStQpcleo9WD4U6bw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCPReportTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCPReportTypes.html",
+          "hash": "5SFtRs10OGJ8bi5/2Wb8yg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCPReportTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCPReportTypesEnum.html",
+          "hash": "RfXx0x/y8AEqZZfPTLXR2w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCPSampleReadyDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCPSampleReadyDelegate.html",
+          "hash": "Ax44X/b5O/FjZQsi5bEcSA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCPSenderReport.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCPSenderReport.html",
+          "hash": "1CDdrOnJ22anyTKyhWpZ9Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPChannel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPChannel.html",
+          "hash": "DvOSeqATcLRKQ0963Tw9Rg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPDataReceived.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPDataReceived.html",
+          "hash": "4F4fGBTFWoDCDLGUefJ+Qg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPDataSent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPDataSent.html",
+          "hash": "JPAmUB/HrWW9LD4CZnLmVw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPFrame.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPFrame.html",
+          "hash": "1SpmZpXnug/hw902ku7t8g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPHeader.html",
+          "hash": "W2wmdTjtEYw8HownuR7MSA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPPacket.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPPacket.html",
+          "hash": "jKJoU4HpQp5vjH0B+z7uPQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPPayloadTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPPayloadTypes.html",
+          "hash": "nsesg5jzYxoeRCti26jLYg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPPayloadTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPPayloadTypesEnum.html",
+          "hash": "92M7n8W3Idpungqq1vZF7g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPReceiveRecord.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPReceiveRecord.html",
+          "hash": "rdw5M9RA9PDHQ3N4MfVwng=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPRemoteEndPointChanged.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPRemoteEndPointChanged.html",
+          "hash": "VTvUG8GxY02iTcFh0jCaSw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPSession.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPSession.html",
+          "hash": "pLtqbOqNrLMP1IO2bClUaA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPSink.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPSink.html",
+          "hash": "29YlfymM/JjmFyq2O/NXtg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPSinkClosed.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPSinkClosed.html",
+          "hash": "v8JLJ1z9AesuDM2Kkv3nvw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTPVP8Header.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTPVP8Header.html",
+          "hash": "sGj6gkdGzLZ2oyQdGeEKPQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPClient.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPClient.html",
+          "hash": "WjECWkPlfhYST+B5oYb+Gg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPConnection.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPConnection.html",
+          "hash": "Xyog7oqsyNQ6Dt0xpq+Saw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPConstants.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPConstants.html",
+          "hash": "zQAYxTKCg0TOBZECXY1gWA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPEntityHeaders.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPEntityHeaders.html",
+          "hash": "Gt3R/YCaYBcS1NYiT7NG7A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPHeader.html",
+          "hash": "HN4rhGHb36L0MqUS/PTEPg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPHeaderError.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPHeaderError.html",
+          "hash": "ItiFvDcHy3HCRMalIfFLBw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPHeaderParserError.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPHeaderParserError.html",
+          "hash": "ZPt44gDWEBqiIwMRpOCeCw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPHeaders.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPHeaders.html",
+          "hash": "V29kV1NzrSeUSpxCXjzg2Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPMessage.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPMessage.html",
+          "hash": "3tBQA9vXIL5aBOXRYy/9Jg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPMessageTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPMessageTypesEnum.html",
+          "hash": "/KhI9PNXwWDZKX8n6wVonQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPMethods.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPMethods.html",
+          "hash": "gVh7J2ToWHIgyrlkv8BNlA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPMethodsEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPMethodsEnum.html",
+          "hash": "Q2xNkeNuPmHz1ELEJso9bw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPRequest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPRequest.html",
+          "hash": "kZNKuR98apI6Hp+0l2Q5Eg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPRequestParserError.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPRequestParserError.html",
+          "hash": "UqpB/dOPcqqj4SHB4+kq8A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPResponse.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPResponse.html",
+          "hash": "1nr/lUvpMnuO7xGx1GS/Gg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPResponseParserError.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPResponseParserError.html",
+          "hash": "kCCzGsAoHdQmHjVSgtLRQQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPResponseStatusCodes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPResponseStatusCodes.html",
+          "hash": "08le7enP1yKCkH+rqhcPXA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPResponseStatusCodesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPResponseStatusCodesEnum.html",
+          "hash": "ATJ4hbp7Ar+nTwy/DYiSMw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPServer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPServer.html",
+          "hash": "nJ3Zpg9g5vi+yH5zOnsOcQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPSession.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPSession.html",
+          "hash": "r5S9Jsr7TouvZlkrG2CAdQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPTransportHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPTransportHeader.html",
+          "hash": "GZlUZydNQxWGnh8kybu8lQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTSPURL.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTSPURL.html",
+          "hash": "pktnRuY2ODkmmBxlE983wQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RtpMediaTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RtpMediaTypesEnum.html",
+          "hash": "Zcf7T/RmUHptLbcb9rRD8A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.SDP.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.SDP.html",
+          "hash": "jOpKx1nbT3MEs/gsDkmyHg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.SDPConnectionInformation.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.SDPConnectionInformation.html",
+          "hash": "EAtEY/Wp2u5h+Fa9pUSQ2A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.SDPMediaAnnouncement.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.SDPMediaAnnouncement.html",
+          "hash": "JwZuX0aVbMUZxHdaleBeiQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.SDPMediaFormat.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.SDPMediaFormat.html",
+          "hash": "nmZJywJG0Eo5r6GWDSFfJw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.SDPMediaFormatsEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.SDPMediaFormatsEnum.html",
+          "hash": "KF5gMDU2VouNonuxP8iGjA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.SDPMediaTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.SDPMediaTypes.html",
+          "hash": "HC4GgJ2jx4W1MakZMHFl0Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.SDPMediaTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.SDPMediaTypesEnum.html",
+          "hash": "j5EQF/9oW6T5gDtcSbi97w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNAddressAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNAddressAttribute.html",
+          "hash": "5tSj61VrNheNAoByzzwEGw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNAttribute.html",
+          "hash": "CFUT50uQKUu51L6fTHJ5sQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNAttributeTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNAttributeTypes.html",
+          "hash": "/t4/Ksg19p0muW7YeX+zXw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNAttributeTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNAttributeTypesEnum.html",
+          "hash": "NybHdjp3pQM26syLp/1B2g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNChangeRequestAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNChangeRequestAttribute.html",
+          "hash": "ueNO2sfOJ/QfVY9DBvE78A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNClient.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNClient.html",
+          "hash": "8h9GXKnqU/r8NaZJfEhu3Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNHeader.html",
+          "hash": "12uHl3QJdTK8BxXjU0Csqw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNListener.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNListener.html",
+          "hash": "qgGLva2K5XLf7eVg/4iuzg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNMessage.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNMessage.html",
+          "hash": "7RsJYjyEVEKrWhT/n4iiFw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNMessageReceived.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNMessageReceived.html",
+          "hash": "FzPmZ1VKP6GWUruEdv44jg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNMessageTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNMessageTypes.html",
+          "hash": "qNCii+romXMEl52sLdHQNA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNMessageTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNMessageTypesEnum.html",
+          "hash": "9DxXViTOgirXYT9d85TCWQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNSendMessageDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNSendMessageDelegate.html",
+          "hash": "VSfJpjJvoLB8/OHKTQtohg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNServer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNServer.html",
+          "hash": "XOUvcOPH8Z2dfxt+0+20rw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNServerRequestInTraceDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNServerRequestInTraceDelegate.html",
+          "hash": "NUlllHiABZVsM8SCijIbTw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNServerResponseOutTraceDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNServerResponseOutTraceDelegate.html",
+          "hash": "BsRxoeB3ObfmLsl0fhkX8A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2AddressAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2AddressAttribute.html",
+          "hash": "FSte8J/BM4tQWtDZbBmiKw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2Attribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2Attribute.html",
+          "hash": "ZQUrmNAGrBqlGZtwLUbTfw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2AttributeConstants.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2AttributeConstants.html",
+          "hash": "tY1tiR+6OcMIv84VkKZWAQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2AttributeTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2AttributeTypes.html",
+          "hash": "uVYiS+j4cQsEfoNERHhK0g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2AttributeTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2AttributeTypesEnum.html",
+          "hash": "knMyaIVAYb2kDiHMtbA7qg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2ChangeRequestAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2ChangeRequestAttribute.html",
+          "hash": "6Q3YMET7peyyt6VSVc7uYw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2ClassTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2ClassTypesEnum.html",
+          "hash": "B8n+oZ/4PYYSjNCru/PsUw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2ErrorCodeAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2ErrorCodeAttribute.html",
+          "hash": "PiIXrNqMMY2EIXpB5WazLg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2Header.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2Header.html",
+          "hash": "/IJIvnVLBBYBMU/pi/p+tQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2Message.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2Message.html",
+          "hash": "c5USTTpGyxiRgGxGDyaADg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2MessageTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2MessageTypes.html",
+          "hash": "FpmqNsxKmK5SVB53CT2RgA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2MessageTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2MessageTypesEnum.html",
+          "hash": "y4AHxEXXUKuGyQDO6tX1jA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNv2XORAddressAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNv2XORAddressAttribute.html",
+          "hash": "G5d/BWF+sIyiAP3tCtX/XQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.SessionDescriptionTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.SessionDescriptionTypes.html",
+          "hash": "rBiWuV5RkRwrQH+d9zsOZg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.TurnServer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.TurnServer.html",
+          "hash": "lCerUEez0eUsfivq7PVwGg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.Utility.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.Utility.html",
+          "hash": "Dtt/TJA1HJvYVjBFKkPcKw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.WebRtc.WebRtcPeer.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.WebRtc.WebRtcPeer.html",
+          "hash": "Ka4D5kNy9WY+gU2Bw0gryw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.WebRtc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.WebRtc.html",
+          "hash": "iYjs9umH5vT6SKFMKGsVmg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.html",
+          "hash": "2KJhwTX4rtmOS8ydVDDd8Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.BlindTransferDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.BlindTransferDelegate.html",
+          "hash": "yabm46Z45JdLWNeBD1XNXw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.CRMHeaders.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.CRMHeaders.html",
+          "hash": "1B6DufaAzVKHsITSfIKt/w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.DialogueBridgeClosedDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.DialogueBridgeClosedDelegate.html",
+          "hash": "DIGlmtXG4FtdgMcO+A1fAQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.DialogueBridgeCreatedDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.DialogueBridgeCreatedDelegate.html",
+          "hash": "P1lIIbUa4mY2HywFA9J37g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.GetSIPAccountDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.GetSIPAccountDelegate.html",
+          "hash": "kiM6fGjToGBuVwItaFcf2A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.GetSIPAccountsForOwnerDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.GetSIPAccountsForOwnerDelegate.html",
+          "hash": "ec3qHL8I64X8W7hwBy+Mkw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.GetSIPAccountsForUserDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.GetSIPAccountsForUserDelegate.html",
+          "hash": "R6dApmYX1054oUI8LWbYLg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.IPAddressChangedDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.IPAddressChangedDelegate.html",
+          "hash": "t9cUJlM5EE0abAi/kRg5rA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.ISIPClientUserAgent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.ISIPClientUserAgent.html",
+          "hash": "p1Z7GPWdwSeH7HPhaRkyTw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.ISIPServerUserAgent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.ISIPServerUserAgent.html",
+          "hash": "z9A+++V8k4wobPXjIsvh5w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.QueueNewCallDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.QueueNewCallDelegate.html",
+          "hash": "SLM19z+K7CngR3e5RH83kg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.RtccCustomerAccount.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.RtccCustomerAccount.html",
+          "hash": "h3HT3Xs8x8eg9X8Z1AEDew=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.RtccGetBalanceDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.RtccGetBalanceDelegate.html",
+          "hash": "GoeM8b9n3SDZjaJU8ZcLAw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.RtccGetCustomerDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.RtccGetCustomerDelegate.html",
+          "hash": "DuTD4YK+hRRLgY+G6S9FCw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.RtccGetRateDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.RtccGetRateDelegate.html",
+          "hash": "IivaxSXTNrVi2kRIEMUKJw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.RtccRate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.RtccRate.html",
+          "hash": "UPfgaSmzAad0aRfY0JZoxA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.RtccReserveInitialCreditDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.RtccReserveInitialCreditDelegate.html",
+          "hash": "cBmBAeFqeLs62ovYPiYg7g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.RtccUpdateCdrDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.RtccUpdateCdrDelegate.html",
+          "hash": "Sn5riq/GnKos14HSoFaKhQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPAccount.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPAccount.html",
+          "hash": "2C3WJOlM7uyt3XBffxF+iw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPAssetGetPropertyByIdDelegate-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPAssetGetPropertyByIdDelegate-1.html",
+          "hash": "qmg5bmHLlgNybSdEBdRnJQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate.html",
+          "hash": "aGxRI9fypp6ZtsQDLIf7Dw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPB2BUserAgent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPB2BUserAgent.html",
+          "hash": "/64ChVtd1uxcoTVuInNTiQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPCallDescriptor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPCallDescriptor.html",
+          "hash": "gp7fnLCA/UGGquEjWouu9Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPCallFailedDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPCallFailedDelegate.html",
+          "hash": "LmXuuxhHC73/leSV0SavZw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPCallRedirectModesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPCallRedirectModesEnum.html",
+          "hash": "rjkeWTUjQyjwVYXO1pABGw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPCallResponseDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPCallResponseDelegate.html",
+          "hash": "PrWNiMEi6gphkplxWSZ2qA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPClientUserAgent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPClientUserAgent.html",
+          "hash": "fJELHL7BuXO72hLdt1HrZQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPDNSManager.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPDNSManager.html",
+          "hash": "wA6Po6eeXTmb8dQJeBROgQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorAuthenticationDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorAuthenticationDelegate.html",
+          "hash": "YimupbGVheDnYO+Tn6L84A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorClientTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorClientTypes.html",
+          "hash": "t8stwwRii4hlWdEBssetog=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorClientTypesEnum.html",
+          "hash": "9vt3ux9N9pq3omtWtyACKg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorConsoleEvent.html",
+          "hash": "QioQHRh2sKP7lQU1iNLe7A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEvent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEvent.html",
+          "hash": "2Axx/dFS4BPLlkbbL8OO8A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEventTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEventTypes.html",
+          "hash": "RnwQSs7xqKhn7GNaJO9Xvg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorEventTypesEnum.html",
+          "hash": "FR1Sn+yssqDtj1+GUr0CQg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorLogDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorLogDelegate.html",
+          "hash": "5BJ1cVwxSj5ikF2kiEP8PA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEvent.html",
+          "hash": "pRuSzxWO2CM19rw2WcLwfA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypes.html",
+          "hash": "T0n3GBNPWjU2EFNwJIANHQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum.html",
+          "hash": "nQEAZtLeZKA7ZhshC+LCcA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineLogDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorMachineLogDelegate.html",
+          "hash": "0/4f3zRBqalQdAas+tqVXg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorServerTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorServerTypes.html",
+          "hash": "A8LFgLOrxYV9vQLWARfMZw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.html",
+          "hash": "QKJjJNlNFuj3jzoG85hxXQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html",
+          "hash": "R9pylKS0h+IKdllLrzk96w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html",
+          "hash": "kWmD2pstkKKH3V3VIRId8g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPNotifierClient-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPNotifierClient-1.html",
+          "hash": "pieQttI/k06rngVzymRvTw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPPacketMangler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPPacketMangler.html",
+          "hash": "M6cifIrzRkUzpUDooE1Yhg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPRegistrarBindingsCountDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPRegistrarBindingsCountDelegate.html",
+          "hash": "OKpkxSRsV9SSRXNw/7AfJg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html",
+          "hash": "iw/yM8YZjwoHoUDx5wM0Gg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPRequestAuthenticator.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPRequestAuthenticator.html",
+          "hash": "dda3p5ooi2q4poRWzl4xFQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPServerUserAgent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPServerUserAgent.html",
+          "hash": "hjDmf6FEuNQnXKCqhkDr5Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html",
+          "hash": "mya8w6gzJzzRGu4a8zBEBw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPUASDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPUASDelegate.html",
+          "hash": "U0ZXA3qwHVPE578Y3alFvw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SIPUASStateChangedDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SIPUASStateChangedDelegate.html",
+          "hash": "zVg6KjEJzB6xl3lZwf7IOA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.SwitchboardHeaders.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.SwitchboardHeaders.html",
+          "hash": "2qbGE6YNb23kvN7k3SH9BQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.App.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.App.html",
+          "hash": "73StXA5Ck3I6Bpencbf6Dg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.AuthHeaders.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.AuthHeaders.html",
+          "hash": "fftE7ll5FbHa2AWaWYNhVA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.CDRReadyDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.CDRReadyDelegate.html",
+          "hash": "4ZVdylzlYG8mtyvXo6ZaUg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.CallProperties.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.CallProperties.html",
+          "hash": "hsSwaiSbULJwYQU54pdPoQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.HTTPDigest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.HTTPDigest.html",
+          "hash": "pnJnt1rUD2x2beC8NllNmA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.IncomingMessage.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.IncomingMessage.html",
+          "hash": "8HSa52yOFV6TMXGAQtF3kg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.ResolveSIPEndPointDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.ResolveSIPEndPointDelegate.html",
+          "hash": "apuijdsTbb3NqvX41NfH2A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPAuthenticationHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPAuthenticationHeader.html",
+          "hash": "Q7WT8Bg6PcTBmFBLkHNr9g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPAuthorisationDigest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPAuthorisationDigest.html",
+          "hash": "ZbZOUNRcxTBWNl22LBc2Qw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPAuthorisationHeadersEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPAuthorisationHeadersEnum.html",
+          "hash": "sX5yFJn+YsItLAYxWALuQg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPCDR.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPCDR.html",
+          "hash": "c29fTf5aa/C4wt8afOGnNA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPCallDirection.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPCallDirection.html",
+          "hash": "dHcJog97m2uislKm6Gq9/w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPCancelTransaction.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPCancelTransaction.html",
+          "hash": "2GiB+agX8BtfOQStQhQnEA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPChannel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPChannel.html",
+          "hash": "X1fKYFPnkNohEgGyrDl5Bw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPConnectionsEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPConnectionsEnum.html",
+          "hash": "az0azej2yGZQ0oeaP8XfRg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPConstants.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPConstants.html",
+          "hash": "DeImAoBC4dU1o3biZ+gY1w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPContactHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPContactHeader.html",
+          "hash": "NW1OJGCMHthmb5+WL3ujcg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPDNSConstants.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPDNSConstants.html",
+          "hash": "4brozowC1igTGNAHrt7wCA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPDNSLookupEndPoint.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html",
+          "hash": "N03GHvSijNkG0FLy9LN+Mw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPDNSLookupResult.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPDNSLookupResult.html",
+          "hash": "dc7iZASYvnBoMnwCXGfMeQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPDNSServiceResult.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPDNSServiceResult.html",
+          "hash": "U96ADx8F+uXbU8lFs4eA4w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPDialogue.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPDialogue.html",
+          "hash": "HEBw0AVyROevLl5VXsPINg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPDialogueStateEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPDialogueStateEnum.html",
+          "hash": "YMKG4EMMou+EcW+ITQqfOQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPDialogueTransferModesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPDialogueTransferModesEnum.html",
+          "hash": "D37HALJvcfc2dwu2lW4HAQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEndPoint.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEndPoint.html",
+          "hash": "AjdKWsDWY9geLE+QmLjmaQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEscape.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEscape.html",
+          "hash": "MD5zx+883MaJho+KJ/cygA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEvent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEvent.html",
+          "hash": "A5xm/7vjwsKHAUMGhe+2LA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventConsts.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventConsts.html",
+          "hash": "jL9SZb5JRFBZz9QHBf60aw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventDialog.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventDialog.html",
+          "hash": "HDL8Oqj5p6jDBDtm/NyJSg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventDialogDirectionEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventDialogDirectionEnum.html",
+          "hash": "yZsTqwOYiYOlU2dMlIawZQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventDialogInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventDialogInfo.html",
+          "hash": "f5q/21DZxOApeu0ak3wQVg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventDialogInfoStateEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventDialogInfoStateEnum.html",
+          "hash": "3XetpOTYF9O4IGQmtHHOwg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventDialogParticipant.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventDialogParticipant.html",
+          "hash": "Nc9OB0E5Sm6HPxkHZ7WCxw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventDialogStateEvent.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventDialogStateEvent.html",
+          "hash": "LXtGBmOigKjd+ILH3bhuGQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventFilters.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventFilters.html",
+          "hash": "sHGpcVRHmrjnJMpjRPfVvw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventPackage.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventPackage.html",
+          "hash": "YIzxTBbuMPs0LZl+rDIRRQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventPresence.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventPresence.html",
+          "hash": "GnA0eVmZqQFC3Ls8Hrp9IA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventPresenceStateEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventPresenceStateEnum.html",
+          "hash": "I/a/xNBRHChr8RzrbiveHQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPEventPresenceTuple.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPEventPresenceTuple.html",
+          "hash": "PYHzg/AtGwTvTpDKDKfeeQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPFromHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPFromHeader.html",
+          "hash": "GyMZE9cFyrFK2rtV6wyRpw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPHeader.html",
+          "hash": "YnIJb0ZJESQPAjUkKxHn/A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPHeaderAncillary.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPHeaderAncillary.html",
+          "hash": "lVybZpru/wcpt3Cg9pausg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPHeaders.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPHeaders.html",
+          "hash": "kIddwgGJItV88tG2+/t66g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPMIMETypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPMIMETypes.html",
+          "hash": "TrFGfqmX5hDaAqOyE8i5Ww=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPMessage.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPMessage.html",
+          "hash": "EU2cGfjREXAkQTqafybFvg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPMessageReceivedDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPMessageReceivedDelegate.html",
+          "hash": "Coc/nd3xaRxmVpeEPA8Gwg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPMessageSentDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPMessageSentDelegate.html",
+          "hash": "eunZMnaj+DU/OL2v0XE9jg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPMessageTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPMessageTypesEnum.html",
+          "hash": "HnWLBagIpStbuBYLkGWI+g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPMethods.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPMethods.html",
+          "hash": "UUbH2quIuHf/7AULdeNdzw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPMethodsEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPMethodsEnum.html",
+          "hash": "8AmFhBxvUmJ0WtgSnbicmg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPNonInviteTransaction.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPNonInviteTransaction.html",
+          "hash": "/TDiSORx2FcBC9jyZ9jeTQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPParameterlessURI.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPParameterlessURI.html",
+          "hash": "lRV/5A0TS0Vr52EJMi/Ltw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPParameters.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPParameters.html",
+          "hash": "mT7MUVMpKq2v8Dp+jy61WA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPProtocolsEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPProtocolsEnum.html",
+          "hash": "laMrAASPvVLtwTyxrvhvhw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPProtocolsType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPProtocolsType.html",
+          "hash": "nx58O+k4li/Ebfi9WBPaJw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPReplacesParameter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPReplacesParameter.html",
+          "hash": "o6DoD2YNPwSfsmPHqB6kvw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPRequest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPRequest.html",
+          "hash": "4e60Pf1Dexc7UtVrh95H/Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPRequestAuthenticationResult.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPRequestAuthenticationResult.html",
+          "hash": "bkWr+zwTeaoFt4uaUGmWcA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPRequestAuthorisationResult.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPRequestAuthorisationResult.html",
+          "hash": "CQKLU7eH6Y4qkkVS0H/tqg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPResponse.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPResponse.html",
+          "hash": "kDWxKVLKmmqJv9X2ggqj9A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPResponseParserError.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPResponseParserError.html",
+          "hash": "8lZZfo2AHJxohWV2JnvCdA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPResponseStatusCodes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPResponseStatusCodes.html",
+          "hash": "gwqps4qV9EQXgBFFcXJcNA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPResponseStatusCodesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPResponseStatusCodesEnum.html",
+          "hash": "8XpOEHS/geGXAOhaM7BHzA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPRoute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPRoute.html",
+          "hash": "gd3AkynAnPhRxelkrhz+/Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPRouteSet.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPRouteSet.html",
+          "hash": "J9DzQLr7bVzz57n9kIK75g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPSchemesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPSchemesEnum.html",
+          "hash": "DeLc46XMXwyB2CtkkuYi7w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPSchemesType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPSchemesType.html",
+          "hash": "swloQEQ+sxJQgcDs3Rl0rQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPServices.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPServices.html",
+          "hash": "kHPzjy+K6Y/ZBXwvB352uA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPServicesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPServicesEnum.html",
+          "hash": "o7kfHBKDzxPvokHA+ciIOQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPStreamConnection.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPStreamConnection.html",
+          "hash": "JQT4gYzpQViD8rHmn67Okw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTCPChannel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTCPChannel.html",
+          "hash": "IIQWARq3JLnF6tsWKg1Lrw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTLSChannel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTLSChannel.html",
+          "hash": "Yk8FGtSIJsVa240IPs+WQw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTimings.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTimings.html",
+          "hash": "Fcnl4IBerU+4Hb7RGnZbvg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPToHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPToHeader.html",
+          "hash": "1GIwVu2AxBHxv650iLA/6g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransaction.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransaction.html",
+          "hash": "0Dc1lrlUNZuulLjrin9sMQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionCancelledDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionCancelledDelegate.html",
+          "hash": "5PaUsjC2q+1A0H/HSLEdsg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionEngine.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionEngine.html",
+          "hash": "6x5rRdAX2PUWAGD+nM2Wkw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionRemovedDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionRemovedDelegate.html",
+          "hash": "J+oZMCXtV+4Wh29xz85FdQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionRequestReceivedDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionRequestReceivedDelegate.html",
+          "hash": "+mhOHG4L79Sj9oDgFbpyGw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionRequestRetransmitDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionRequestRetransmitDelegate.html",
+          "hash": "V5gQJgxzE+5eV57zdHS3SA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionResponseReceivedDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionResponseReceivedDelegate.html",
+          "hash": "HSlx0b0/daXzJNUc6BDjSQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionResponseRetransmitDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionResponseRetransmitDelegate.html",
+          "hash": "SCyT9nn7XG3Sxh5hvmD25A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionStateChangeDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionStateChangeDelegate.html",
+          "hash": "sJofw+VkZlXGsG2T7P/Zcw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionStatesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionStatesEnum.html",
+          "hash": "FOtNncLZQ6MAQ1UgE8mT1g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionTimedOutDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionTimedOutDelegate.html",
+          "hash": "X0zTA3qPP5CWTkGibqLHZA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionTraceMessageDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionTraceMessageDelegate.html",
+          "hash": "vmxZPWuYxAkoyAKr+4audQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransactionTypesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransactionTypesEnum.html",
+          "hash": "EoFHZ1FvSMhk2alMaT5p4A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransport.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransport.html",
+          "hash": "jpBKA3BSB5zAeAbzENWTiQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransportConfig.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransportConfig.html",
+          "hash": "DmUIbfJcGamNu1H93HruOg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransportRequestDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransportRequestDelegate.html",
+          "hash": "tIR5R+yxJ9wx7yvqAAKd+w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransportResponseDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransportResponseDelegate.html",
+          "hash": "bsUXnNe3t9ZUgYfvFQh+Tg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPTransportSIPBadMessageDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPTransportSIPBadMessageDelegate.html",
+          "hash": "j9cKKasVumQPlrlhQZPwmA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPUDPChannel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPUDPChannel.html",
+          "hash": "k9UqaZ8HW2lZVVhRdVdWEw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPURI.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPURI.html",
+          "hash": "E4MyJgQybrF2GzLuoQMVKg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPUserAgentRoles.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPUserAgentRoles.html",
+          "hash": "KETNUai5THWDM8S1eofhcw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPUserAgentRolesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPUserAgentRolesEnum.html",
+          "hash": "7DU9XwZa+xOL6x5SSIUkmw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPUserAgentRolesTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPUserAgentRolesTypes.html",
+          "hash": "E6+DsJnOfIu4KOaNDNKMdQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPUserField.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPUserField.html",
+          "hash": "wMsZiIweiM8uc8qk/d6Q3g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPValidationException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPValidationException.html",
+          "hash": "KVMq5LZyYGLAuWEGA9hBQA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPValidationFieldsEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPValidationFieldsEnum.html",
+          "hash": "h6C0vo+nhyt79rW98FHr6Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPViaHeader.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPViaHeader.html",
+          "hash": "4HhhCSN9VUviV/SqRi2Aag=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.SIPViaSet.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.SIPViaSet.html",
+          "hash": "mwBLHHndHG0PaeMHYWOpeg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.STUNRequestReceivedDelegate.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.STUNRequestReceivedDelegate.html",
+          "hash": "j22xOtBczbN4ip/pMQw5MA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.UACInviteTransaction.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.UACInviteTransaction.html",
+          "hash": "9OYn0ULK9czYONT6m2OfvQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.UASInviteTransaction.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.UASInviteTransaction.html",
+          "hash": "avg2LE81r3jpjS8FLArrFA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.SIP.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.SIP.html",
+          "hash": "wty6Kcca4P8fOoclEwWkNw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.ByteBufferInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.ByteBufferInfo.html",
+          "hash": "R+SrHlH/AgGVjd8Es6s6YQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.Crc32.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.Crc32.html",
+          "hash": "7ihwtbUtaqzRwIekSOPAog=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.Crypto.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.Crypto.html",
+          "hash": "jOugHDvPiCf1RKTkZtW5zA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.FreePort.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.FreePort.html",
+          "hash": "+oFhDsdUdnfe8QsS7sHzrw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.IPSocket.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.IPSocket.html",
+          "hash": "4pkz6iPqJWBD9pi2sk62hA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.IPSocketAddress.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.IPSocketAddress.html",
+          "hash": "pqueTpd6qfVz/bUQkwc7RA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.IPv4Header.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.IPv4Header.html",
+          "hash": "4/V30ca8GcidGbb0I8a6Bw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.IPv4Packet.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.IPv4Packet.html",
+          "hash": "3AmSM4k2ode3TaEiGgH+5w=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.LocalIPConfig.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.LocalIPConfig.html",
+          "hash": "mOV1xCJQNEuK+NgFJ3i9CQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.Log.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.Log.html",
+          "hash": "0Y1VFLhdwb5EK/cGZgIuCQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.NetConvert.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.NetConvert.html",
+          "hash": "92egYaPSx0Xj3xOlA9bZgg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.NetServices.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.NetServices.html",
+          "hash": "50qNanpuXVBEr2oy/c2mUw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.NullLogger.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.NullLogger.html",
+          "hash": "gdVP9MNOGvdVd1qszTIOGw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.NullScope.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.NullScope.html",
+          "hash": "rC05Z17GIeMohpc0q6DsoA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.NumberFormatter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.NumberFormatter.html",
+          "hash": "/GAiJEAqD5Tepw7DiLN/fQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.PasswordHash.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.PasswordHash.html",
+          "hash": "bwTbYdTTG5oAtmfSwd6Z7A=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.PlatformEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.PlatformEnum.html",
+          "hash": "9dlH5DXx7by8T2ypFenCXA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.RawSocket.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.RawSocket.html",
+          "hash": "dR05NBUr3AFzP5z4vyfhLA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.SafeXML.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.SafeXML.html",
+          "hash": "tUu3PMxW5fnfOYPV3f9Txg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.StorageTypes.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.StorageTypes.html",
+          "hash": "HfLou/8uRr6uLTKfR0S02Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.StorageTypesConverter.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.StorageTypesConverter.html",
+          "hash": "RjcspktvWmmZaI424lJ2DA=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.TypeExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.TypeExtensions.html",
+          "hash": "48Yw2iU4MDlmALAvDoFNVQ=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.UDPListener.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.UDPListener.html",
+          "hash": "w1KNJEhIVoTY7Lbiu0MB4Q=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.UDPPacket.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.UDPPacket.html",
+          "hash": "gHv2QpezHxvpMTd2erBAAw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Sys.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Sys.html",
+          "hash": "HcH1GWMTU+U47tW1axtWtg=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "api/index.md",
+      "output": {
+        ".html": {
+          "relative_path": "api/index.html",
+          "hash": "7wGkVDGVn1exZbKcMCxS/g=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "api/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/toc.html",
+          "hash": "baRolckTvdDp5NGBZp+GXQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "articles/intro.md",
+      "output": {
+        ".html": {
+          "relative_path": "articles/intro.html",
+          "hash": "U0s9I6SP//EaJM2GJTP2Tw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "articles/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "articles/toc.html",
+          "hash": "t7iiFrmuYmrKWisdq+lN6Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "index.md",
+      "output": {
+        ".html": {
+          "relative_path": "index.html",
+          "hash": "61KbXvv/RtvOWIAcmk6RSw=="
+        }
+      },
+      "is_incremental": true,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "toc.html",
+          "hash": "k+/dkjFuwAVS32HduMpmBw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    }
+  ],
+  "incremental_info": [
+    {
+      "status": {
+        "can_incremental": true,
+        "incrementalPhase": "build",
+        "total_file_count": 0,
+        "skipped_file_count": 0
+      },
+      "processors": {
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build",
+          "total_file_count": 319,
+          "skipped_file_count": 319
+        },
+        "ConceptualDocumentProcessor": {
+          "can_incremental": true,
+          "incrementalPhase": "build",
+          "total_file_count": 4,
+          "skipped_file_count": 4
+        },
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build",
+          "total_file_count": 0,
+          "skipped_file_count": 0
+        }
+      }
+    },
+    {
+      "status": {
+        "can_incremental": true,
+        "details": "Can support incremental post processing.",
+        "incrementalPhase": "postProcessing",
+        "total_file_count": 0,
+        "skipped_file_count": 0
+      },
+      "processors": {}
+    }
+  ],
+  "version_info": {},
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}
