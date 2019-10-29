@@ -815,7 +815,18 @@ namespace SIPSorcery.SIP.App
             inviteHeader.From.FromTag = CallProperties.CreateNewTag();
 
             // For incoming calls forwarded via the dial plan the username needs to go into the Contact header.
-            inviteHeader.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, new SIPURI(inviteRequest.URI.Scheme, localSIPEndPoint)) };
+            SIPURI contactUri = null;  
+            if (IPAddress.Equals(IPAddress.Any, localSIPEndPoint.Address) || IPAddress.Equals(IPAddress.IPv6Any, localSIPEndPoint.Address))
+            {
+                // No point using a contact address of 0.0.0.0.
+                contactUri = new SIPURI(null, Dns.GetHostName() + ":" + localSIPEndPoint.Port, null, inviteRequest.URI.Scheme);
+            }
+            else
+            {
+                contactUri = new SIPURI(inviteRequest.URI.Scheme, localSIPEndPoint);
+            }
+
+            inviteHeader.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, contactUri) };
             inviteHeader.Contact[0].ContactURI.User = sipCallDescriptor.Username;
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
             inviteHeader.UserAgent = m_userAgent;

@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 
@@ -201,12 +202,30 @@ namespace SIPSorcery.SIP
                 SIPResponse okResponse = new SIPResponse(SIPResponseStatusCodesEnum.Ok, null, sipRequest.LocalSIPEndPoint);
 
                 SIPHeader requestHeader = sipRequest.Header;
-                okResponse.Header = new SIPHeader(new SIPContactHeader(null, new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint)), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
+                SIPURI contactUri = null;
 
                 if (String.IsNullOrEmpty(m_contactHost) == false)
                 {
-                    okResponse.Header.Contact.First().ContactURI.Host = m_contactHost;
+                    if (m_contactHost.Contains(":"))
+                    {
+                        contactUri = new SIPURI(null, m_contactHost, null, sipRequest.URI.Scheme);
+                    }
+                    else
+                    {
+                        contactUri = new SIPURI(null, m_contactHost + ":" + localSIPEndPoint.Port, null, sipRequest.URI.Scheme);
+                    }
                 }
+                else if (IPAddress.Equals(IPAddress.Any, localSIPEndPoint.Address) || IPAddress.Equals(IPAddress.IPv6Any, localSIPEndPoint.Address))
+                {
+                    // No point using a contact address of 0.0.0.0.
+                    contactUri = new SIPURI(null, Dns.GetHostName() + ":" + localSIPEndPoint.Port, null, sipRequest.URI.Scheme);
+                }
+                else
+                {
+                    contactUri = new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint);
+                }
+
+                okResponse.Header = new SIPHeader(new SIPContactHeader(null, contactUri), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
 
                 okResponse.Header.To.ToTag = m_localTag;
                 okResponse.Header.CSeqMethod = requestHeader.CSeqMethod;

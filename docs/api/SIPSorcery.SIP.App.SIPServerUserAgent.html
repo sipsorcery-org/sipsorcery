@@ -768,19 +768,39 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Hangup.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Hangup%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_Hangup_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.Hangup(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L443">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L448">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_Hangup_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Hangup*"></a>
-  <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Hangup" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Hangup">Hangup()</h4>
-  <div class="markdown level1 summary"></div>
+  <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_Hangup_System_Boolean_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.Hangup(System.Boolean)">Hangup(Boolean)</h4>
+  <div class="markdown level1 summary"><p>Used to hangup the call or indicate that the client hungup.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void Hangup()</code></pre>
+    <pre><code class="lang-csharp hljs">public void Hangup(bool clientHungup)</code></pre>
   </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">clientHungup</span></td>
+        <td><p>True if the BYE request was received from the client. False if the hangup
+needs to originate from this agent.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_LoadSIPAccountForIncomingCall.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.LoadSIPAccountForIncomingCall%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
@@ -962,7 +982,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_SetDialPlanContextID_System_Guid_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID(System.Guid)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L547">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L558">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_SetDialPlanContextID_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_SetDialPlanContextID_System_Guid_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID(System.Guid)">SetDialPlanContextID(Guid)</h4>
@@ -994,7 +1014,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_App_SIPServerUserAgent_SetOwner_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPServerUserAgent.SetOwner(System.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L528">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/app/SIPUserAgents/SIPServerUserAgent.cs/#L539">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_SIPServerUserAgent_SetOwner_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SetOwner*"></a>
   <h4 id="SIPSorcery_SIP_App_SIPServerUserAgent_SetOwner_System_String_System_String_" data-uid="SIPSorcery.SIP.App.SIPServerUserAgent.SetOwner(System.String,System.String)">SetOwner(String, String)</h4>

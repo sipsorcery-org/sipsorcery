@@ -14909,12 +14909,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.CallRequest
   nameWithType: SIPServerUserAgent.CallRequest
-- uid: SIPSorcery.SIP.App.SIPServerUserAgent.Hangup
-  name: Hangup()
-  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Hangup
-  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.Hangup
-  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Hangup()
-  nameWithType: SIPServerUserAgent.Hangup()
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.Hangup(System.Boolean)
+  name: Hangup(Boolean)
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Hangup_System_Boolean_
+  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.Hangup(System.Boolean)
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Hangup(System.Boolean)
+  nameWithType: SIPServerUserAgent.Hangup(Boolean)
 - uid: SIPSorcery.SIP.App.SIPServerUserAgent.Hangup*
   name: Hangup
   href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Hangup_
@@ -24470,6 +24470,12 @@ references:
   commentId: E:SIPSorcery.SIP.SIPTransport.SIPRequestOutTraceEvent
   fullName: SIPSorcery.SIP.SIPTransport.SIPRequestOutTraceEvent
   nameWithType: SIPTransport.SIPRequestOutTraceEvent
+- uid: SIPSorcery.SIP.SIPTransport.SIPRequestRetransmitTraceEvent
+  name: SIPRequestRetransmitTraceEvent
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SIPRequestRetransmitTraceEvent
+  commentId: E:SIPSorcery.SIP.SIPTransport.SIPRequestRetransmitTraceEvent
+  fullName: SIPSorcery.SIP.SIPTransport.SIPRequestRetransmitTraceEvent
+  nameWithType: SIPTransport.SIPRequestRetransmitTraceEvent
 - uid: SIPSorcery.SIP.SIPTransport.SIPResponseInTraceEvent
   name: SIPResponseInTraceEvent
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SIPResponseInTraceEvent
@@ -24482,6 +24488,12 @@ references:
   commentId: E:SIPSorcery.SIP.SIPTransport.SIPResponseOutTraceEvent
   fullName: SIPSorcery.SIP.SIPTransport.SIPResponseOutTraceEvent
   nameWithType: SIPTransport.SIPResponseOutTraceEvent
+- uid: SIPSorcery.SIP.SIPTransport.SIPResponseRetransmitTraceEvent
+  name: SIPResponseRetransmitTraceEvent
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SIPResponseRetransmitTraceEvent
+  commentId: E:SIPSorcery.SIP.SIPTransport.SIPResponseRetransmitTraceEvent
+  fullName: SIPSorcery.SIP.SIPTransport.SIPResponseRetransmitTraceEvent
+  nameWithType: SIPTransport.SIPResponseRetransmitTraceEvent
 - uid: SIPSorcery.SIP.SIPTransport.SIPTransportRequestReceived
   name: SIPTransportRequestReceived
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SIPTransportRequestReceived

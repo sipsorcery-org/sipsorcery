@@ -83,6 +83,8 @@ namespace SIPSorcery.SIP
         public event SIPTransportResponseDelegate SIPResponseOutTraceEvent;
         public event SIPTransportSIPBadMessageDelegate SIPBadRequestInTraceEvent;
         public event SIPTransportSIPBadMessageDelegate SIPBadResponseInTraceEvent;
+        public event SIPTransactionRequestRetransmitDelegate SIPRequestRetransmitTraceEvent;
+        public event SIPTransactionResponseRetransmitDelegate SIPResponseRetransmitTraceEvent;
 
         // Allows an application to set the prefix for the performance monitor counter it wants to use for tracking the SIP transport metrics.
         public string PerformanceMonitorPrefix;
@@ -1356,6 +1358,8 @@ namespace SIPSorcery.SIP
                                                     transaction.Retransmits += 1;
                                                     transaction.LastTransmit = DateTime.Now;
                                                     transaction.OnRetransmitFinalResponse();
+
+                                                    FireSIPResponseRetransmitTraceEvent(transaction, transaction.TransactionFinalResponse, transaction.Retransmits);
                                                 }
                                                 else if (transaction.TransactionState == SIPTransactionStatesEnum.Proceeding && transaction.ReliableProvisionalResponse != null)
                                                 {
@@ -1363,11 +1367,14 @@ namespace SIPSorcery.SIP
                                                     transaction.Retransmits += 1;
                                                     transaction.LastTransmit = DateTime.Now;
                                                     transaction.OnRetransmitProvisionalResponse();
+
+                                                    FireSIPResponseRetransmitTraceEvent(transaction, transaction.ReliableProvisionalResponse, transaction.Retransmits);
                                                 }
                                             }
                                             else
                                             {
-                                                //logger.LogDebug("Retransmit " + transaction.Retransmits + " for request " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ", last=" + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + "ms, first=" + DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds + "ms.");
+                                                FireSIPRequestRetransmitTraceEvent(transaction, transaction.TransactionRequest, transaction.Retransmits);
+
                                                 if (transaction.OutboundProxy != null)
                                                 {
                                                     SendRequest(transaction.OutboundProxy, transaction.TransactionRequest);
@@ -1869,6 +1876,30 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception FireSIPBadResponseInTraceEvent. " + excp.Message);
+            }
+        }
+
+        private void FireSIPRequestRetransmitTraceEvent(SIPTransaction sipTransaction, SIPRequest sipRequest, int retransmitNumber)
+        {
+            try
+            {
+                SIPRequestRetransmitTraceEvent?.Invoke(sipTransaction, sipRequest, retransmitNumber);
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception FireSIPRequestRetransmitTraceEvent. " + excp.Message);
+            }
+        }
+
+        private void FireSIPResponseRetransmitTraceEvent(SIPTransaction sipTransaction, SIPResponse sipResponse, int retransmitNumber)
+        {
+            try
+            {
+                SIPResponseRetransmitTraceEvent?.Invoke(sipTransaction, sipResponse, retransmitNumber);
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception FireSIPResponseRetransmitTraceEvent. " + excp.Message);
             }
         }
 
