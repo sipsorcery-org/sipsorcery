@@ -345,7 +345,7 @@ namespace SIPSorcery.SIP.App
 
                     if (!toTag.IsNullOrBlank())
                     {
-                        m_uasTransaction.SetLocalTag(toTag);
+                        m_uasTransaction.LocalTag = toTag;
                     }
 
                     SIPResponse okResponse = m_uasTransaction.GetOkResponse(m_uasTransaction.TransactionRequest, m_uasTransaction.TransactionRequest.LocalSIPEndPoint, contentType, body);
@@ -389,10 +389,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        if (UASStateChanged != null)
-                        {
-                            UASStateChanged(this, failureStatus, reasonPhrase);
-                        }
+                        UASStateChanged?.Invoke(this, failureStatus, reasonPhrase);
 
                         string failureReason = (!reasonPhrase.IsNullOrBlank()) ? " and " + reasonPhrase : null;
 

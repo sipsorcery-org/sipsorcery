@@ -100,7 +100,6 @@ namespace SIPSorcery.SIP
                 }
                 else if(quotedString.IndexOf(delimiter) == -1)
                 {
-                    //return quotedString.Split(delimiter);
                     return new string[] {quotedString};
                 }
                 else

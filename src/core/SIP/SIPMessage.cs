@@ -139,12 +139,12 @@ namespace SIPSorcery.SIP
                     {
                         // Assume flakey implementation if message does not contain the required CRLFCRLF sequence and treat the message as having no body.
                         string headerString = message.Substring(endFistLinePosn + 2, message.Length - endFistLinePosn - 2);
-                        sipMessage.SIPHeaders = SIPHeader.SplitHeaders(headerString); //Regex.Split(headerString, m_CRLF);
+                        sipMessage.SIPHeaders = SIPHeader.SplitHeaders(headerString); 
                     }
                     else
                     {
                         string headerString = message.Substring(endFistLinePosn + 2, endHeaderPosn - endFistLinePosn - 2);
-                        sipMessage.SIPHeaders = SIPHeader.SplitHeaders(headerString); //Regex.Split(headerString, m_CRLF);
+                        sipMessage.SIPHeaders = SIPHeader.SplitHeaders(headerString);
 
                         if (message.Length > endHeaderPosn + 4)
                         {

@@ -54,28 +54,6 @@ namespace SIPSorcery.SIP.App
         }
     }
 
-    public class SwitchboardHeaders
-    {
-        public string SwitchboardOriginalCallID;        // If set holds a call identifier and is typically the SIP Call-ID of an associated INVITE.
-        //public string SwitchboardCallerDescription;     // If set holds a general description of the caller.
-        public string SwitchboardLineName;              // If set holds a name of the line that the original call was received on.
-        //public string SwitchboardDialogueDescription;   // Same as the SwitchboardDescription field but is used to differentiate when a SIP header should be set and when the value should only be recorded in the dialogue.
-        public string SwitchboardOwner;                 // If set indicates a specific SIP account is taking ownership of any call that gets established.
-        //public string SwitchboardOriginalFrom;          // If set indicates it should be used as the From header on calls to local extensions.
-
-        public SwitchboardHeaders()
-        { }
-
-        public SwitchboardHeaders(string callID, string callerDescription, string lineName, string owner)
-        {
-            SwitchboardOriginalCallID = callID;
-            //SwitchboardCallerDescription = callerDescription;
-            SwitchboardLineName = lineName;
-            SwitchboardOwner = owner;
-            //SwitchboardOriginalFrom = from;
-        }
-    }
-
     public class SIPCallDescriptor
     {
         private const int MAX_REINVITE_DELAY = 5;
@@ -129,9 +107,6 @@ namespace SIPSorcery.SIP.App
         public bool RequestCallerDetails;       // If true indicates the client agent would like to pass on any caller details if/when available.
         public Guid DialPlanContextID;
         public int ReinviteDelay = -1;          // If >= 0 a SIP re-INVITE request will be sent to the remote caller after this many seconds. This is an attempt to work around a bug with one way audio and early media on a particular SIP server.
-
-        // Custom headers for sipsorcery switchboard application.
-        public SwitchboardHeaders SwitchboardHeaders = new SwitchboardHeaders();
 
         // Real-time call control variables.
         public string AccountCode;          // If set indicates this is a billable call and this is the account code to bill the call against.
@@ -372,34 +347,6 @@ namespace SIPSorcery.SIP.App
                     {
                         TransferMode = SIPCallTransferModesEnum.Both;
                     }*/
-                }
-
-                // Parse the switchboard description value.
-                Match switchboardDescriptionMatch = Regex.Match(options, SWITCHBOARD_LINE_NAME_KEY + @"=(?<lineName>.+?)(,|$)");
-                if (switchboardDescriptionMatch.Success)
-                {
-                    SwitchboardHeaders.SwitchboardLineName = switchboardDescriptionMatch.Result("${lineName}").Trim();
-                }
-
-                // Parse the switchboard dialogue description value.
-                //Match switchboardDialogueDescriptionMatch = Regex.Match(options, SWITCHBOARD_DIALOGUE_DESCRIPTION_KEY + @"=(?<description>.+?)(,|$)");
-                //if (switchboardDialogueDescriptionMatch.Success)
-                //{
-                //    SwitchboardHeaders.SwitchboardDialogueDescription = switchboardDialogueDescriptionMatch.Result("${description}").Trim();
-                //}
-
-                // Parse the switchboard CallID value.
-                Match switchboardCallIDMatch = Regex.Match(options, SWITCHBOARD_CALLID_KEY + @"=(?<callid>.+?)(,|$)");
-                if (switchboardCallIDMatch.Success)
-                {
-                    SwitchboardHeaders.SwitchboardOriginalCallID = switchboardCallIDMatch.Result("${callid}").Trim();
-                }
-
-                // Parse the switchboard owner value.
-                Match switchboardOwnerMatch = Regex.Match(options, SWITCHBOARD_OWNER_KEY + @"=(?<owner>.+?)(,|$)");
-                if (switchboardOwnerMatch.Success)
-                {
-                    SwitchboardHeaders.SwitchboardOwner = switchboardOwnerMatch.Result("${owner}").Trim();
                 }
 
                 // Parse the request caller details option.

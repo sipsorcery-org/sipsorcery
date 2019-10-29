@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
@@ -472,19 +473,57 @@ namespace SIPSorcery.SIP
             }
             return result;
         }
+    }
 
-        // List of SIP extensions to RFC3262.
-        public enum SipExtensions
-        {
-            None = 0,
-            Prack = 1,  // Reliable provisional responses as per RFC3262.
-        }
+    ///<summary>
+    /// List of SIP extensions to RFC3262.
+    /// </summary> 
+    public enum SIPExtensions
+    {
+        None = 0,
+        Prack = 1,  // Reliable provisional responses as per RFC3262.
+    }
 
-        // Constants that can be placed in the SIP Supported or Required headers to indicate support or mandate for
-        // a particular SIP extension.
-        public class SipExtensionHeaders
+    /// <summary>
+    /// Constants that can be placed in the SIP Supported or Required headers to indicate support or mandate for
+    /// a particular SIP extension.
+    /// </summary>
+    public class SIPExtensionHeaders
+    {
+        public const string PRACK = "100rel";
+
+        /// <summary>
+        /// Parses a string containing a list of SIP extensions into a list of extensions that this library
+        /// understands.
+        /// </summary>
+        /// <param name="extensionList">The string containing the list of extensions to parse.</param>
+        /// <returns>A list of extensions that were understood and a boolean indicating whether any unknown extensions were present.</returns>
+        public static List<SIPExtensions> ParseSIPExtensions(string extensionList, out bool hadUnknownExtension)
         {
-            public const string PRACK = "100rel";
+            List<SIPExtensions> knownExtensions = new List<SIPExtensions>();
+            hadUnknownExtension = false;
+
+            if(String.IsNullOrEmpty(extensionList) == false)
+            {
+                string[] extensions = extensionList.Trim().Split(',');
+                
+                foreach(string extension in extensions)
+                {
+                    if(String.IsNullOrEmpty(extension) == false)
+                    {
+                        if(extension.Trim().ToLower() == PRACK)
+                        {
+                            knownExtensions.Add(SIPExtensions.Prack);
+                        }
+                        else
+                        {
+                            hadUnknownExtension = true;
+                        }
+                    }
+                }
+            }
+
+            return knownExtensions;
         }
     }
 }

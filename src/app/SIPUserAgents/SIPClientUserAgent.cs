@@ -87,20 +87,12 @@ namespace SIPSorcery.SIP.App
         public SIPCallDescriptor SipCallDescriptor { get => m_sipCallDescriptor; set => m_sipCallDescriptor = value; }
 
         /// <summary>
-        /// Indicates whether this call supports reliable provisional responses as per RFC3262.
-        /// </summary>
-        public bool SupportPrack { get; set; } = false;
-
-        /// <summary>
         /// Creates a new SIP user agent client to act as the client on a SIP INVITE transaction.
         /// </summary>
         /// <param name="sipTransport">The SIP transport this user agent will use for sending and receiving SIP messages.</param>
-        /// <param name="supportPrack">Optional parameter that can be set to true if support for reliable provisional responses
-        /// as per RFC3262 is desired.</param>
-        public SIPClientUserAgent(SIPTransport sipTransport, bool supportPrack = false)
+        public SIPClientUserAgent(SIPTransport sipTransport)
         {
             m_sipTransport = sipTransport;
-            SupportPrack = supportPrack;
             Log_External = Log_External = (ev) => logger.LogDebug(ev?.Message);
         }
 
@@ -730,17 +722,9 @@ namespace SIPSorcery.SIP.App
                         m_sipDialogue = new SIPDialogue(m_serverTransaction, Owner, AdminMemberId);
                         m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
 
-                        // Set switchboard dialogue values from the answered response or from dialplan set values.
-                        m_sipDialogue.SwitchboardLineName = sipResponse.Header.SwitchboardLineName;
                         m_sipDialogue.CRMPersonName = sipResponse.Header.CRMPersonName;
                         m_sipDialogue.CRMCompanyName = sipResponse.Header.CRMCompanyName;
                         m_sipDialogue.CRMPictureURL = sipResponse.Header.CRMPictureURL;
-
-                        if (m_sipCallDescriptor.SwitchboardHeaders != null)
-                        {
-                            m_sipDialogue.SwitchboardLineName = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardLineName;
-                            m_sipDialogue.SwitchboardOwner = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardOwner;
-                        }
                     }
 
                     CallAnswered?.Invoke(this, sipResponse);
@@ -830,6 +814,8 @@ namespace SIPSorcery.SIP.App
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
             inviteHeader.UserAgent = m_userAgent;
             inviteHeader.Routes = routeSet;
+            inviteHeader.Supported = SIPExtensionHeaders.PRACK; // Let the uas know we're happy to support reliable provisional responses.
+
             inviteRequest.Header = inviteHeader;
 
             if (!sipCallDescriptor.ProxySendFrom.IsNullOrBlank())
@@ -843,13 +829,6 @@ namespace SIPSorcery.SIP.App
             inviteRequest.Body = content;
             inviteRequest.Header.ContentLength = (inviteRequest.Body != null) ? inviteRequest.Body.Length : 0;
             inviteRequest.Header.ContentType = contentType;
-
-            // Add custom switchboard headers.
-            if (CallDescriptor.SwitchboardHeaders != null)
-            {
-                inviteHeader.SwitchboardOriginalCallID = CallDescriptor.SwitchboardHeaders.SwitchboardOriginalCallID;
-                inviteHeader.SwitchboardLineName = CallDescriptor.SwitchboardHeaders.SwitchboardLineName;
-            }
 
             // Add custom CRM headers.
             if (CallDescriptor.CRMHeaders != null)

@@ -243,10 +243,7 @@ namespace SIPSorcery.SIP
                     }
                 }
 
-                if (TransactionDuplicateResponse != null)
-                {
-                    TransactionDuplicateResponse(localSIPEndPoint, remoteEndPoint, this, sipResponse);
-                }
+                TransactionDuplicateResponse?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipResponse);
             }
             else
             {
@@ -303,20 +300,29 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public virtual void SendInformationalResponse(SIPResponse sipResponse)
+        public virtual void SendInformationalResponse(SIPResponse sipResponse, bool prackSupport)
         {
             FireTransactionTraceMessage($"Send Info Response {LocalSIPEndPoint.ToString()}->{this.RemoteEndPoint}: {sipResponse.ShortDescription}");
 
             if (sipResponse.StatusCode == 100)
             {
                 UpdateTransactionState(SIPTransactionStatesEnum.Trying);
+                m_sipTransport.SendResponse(sipResponse);
             }
             else if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
             {
                 UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
-            }
 
-            m_sipTransport.SendResponse(sipResponse);
+                if(prackSupport == true)
+                {
+                    // If reliable provisional responses are supported then need to send this response reliably.
+                    m_sipTransport.SendSIPReliable(this);
+                }
+                else
+                {
+                    m_sipTransport.SendResponse(sipResponse);
+                }
+            }
         }
 
         public void RetransmitFinalResponse()

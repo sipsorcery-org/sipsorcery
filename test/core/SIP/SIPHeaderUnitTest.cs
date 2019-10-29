@@ -711,5 +711,37 @@ namespace SIPSorcery.SIP.UnitTests
 
             Console.WriteLine("---------------------------------------------------");
         }
+
+        /// <summary>
+        /// Tests that the Require and Supported extensions get parsed correctly.
+        /// </summary>
+        [TestMethod]
+        public void ParseRequireAndSupportedExtensionsTest()
+        {
+            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string inviteHeaders =
+                "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
+                "From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136" + m_CRLF +
+                "To: <sip:303@sip.blueface.ie>" + m_CRLF +
+                "Contact: <sip:aaronxten@192.168.1.2:5065>" + m_CRLF +
+                "Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" + m_CRLF +
+                "CSeq: 49429 INVITE" + m_CRLF +
+                "Max-Forwards: 70" + m_CRLF +
+                "Content-Type: application/sdp" + m_CRLF +
+                "User-Agent: X-PRO release 1103v" + m_CRLF +
+                "Content-Length: 271" + m_CRLF +
+                "Require: abcd, 100rel, xyz" + m_CRLF +
+                "Supported: 100rel, other" + m_CRLF;
+
+            string[] headersCollection = Regex.Split(inviteHeaders, "\r\n");
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
+
+            Assert.IsTrue(sipHeader.RequiredExtensions.Contains(SIPExtensions.Prack), "The required header extensions was missing Prack.");
+            Assert.IsTrue(sipHeader.SupportedExtensions.Contains(SIPExtensions.Prack), "The supported header extensions was missing Prack.");
+            Assert.IsTrue(sipHeader.HasUnknownRequireExtension, "The had unknown required header extension was not correctly set.");
+
+            Console.WriteLine("---------------------------------------------------");
+        }
     }
 }
