@@ -235,7 +235,7 @@
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendFinalResponse_SIPSorcery_SIP_SIPResponse_">SIPTransaction.SendFinalResponse(SIPResponse)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendInformationalResponse_SIPSorcery_SIP_SIPResponse_">SIPTransaction.SendInformationalResponse(SIPResponse)</a>
+      <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendInformationalResponse_SIPSorcery_SIP_SIPResponse_System_Boolean_">SIPTransaction.SendInformationalResponse(SIPResponse, Boolean)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_RetransmitFinalResponse">SIPTransaction.RetransmitFinalResponse()</a>
@@ -302,10 +302,10 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/master/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_CancelCall_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.CancelCall(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_CancelCall_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.CancelCall(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/master/src/core/SIPTransactions/UACInviteTransaction.cs/#L284">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/core/SIPTransactions/UACInviteTransaction.cs/#L277">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_UACInviteTransaction_CancelCall_" data-uid="SIPSorcery.SIP.UACInviteTransaction.CancelCall*"></a>
   <h4 id="SIPSorcery_SIP_UACInviteTransaction_CancelCall_System_String_" data-uid="SIPSorcery.SIP.UACInviteTransaction.CancelCall(System.String)">CancelCall(String)</h4>
@@ -334,14 +334,15 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/master/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_Send2xxAckRequest_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.Send2xxAckRequest(System.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_Send2xxAckRequest_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.Send2xxAckRequest(System.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/master/src/core/SIPTransactions/UACInviteTransaction.cs/#L154">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/core/SIPTransactions/UACInviteTransaction.cs/#L146">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_UACInviteTransaction_Send2xxAckRequest_" data-uid="SIPSorcery.SIP.UACInviteTransaction.Send2xxAckRequest*"></a>
   <h4 id="SIPSorcery_SIP_UACInviteTransaction_Send2xxAckRequest_System_String_System_String_" data-uid="SIPSorcery.SIP.UACInviteTransaction.Send2xxAckRequest(System.String,System.String)">Send2xxAckRequest(String, String)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Sends the ACK request as a new transaction. This is required for 2xx responses.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -360,21 +361,23 @@
       <tr>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">content</span></td>
-        <td></td>
+        <td><p>The optional content body for the ACK request.</p>
+</td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">contentType</span></td>
-        <td></td>
+        <td><p>The optional content type.</p>
+</td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/master/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_SendInviteRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest(SIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPRequest)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_SendInviteRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest(SIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPRequest)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/master/src/core/SIPTransactions/UACInviteTransaction.cs/#L63">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/core/SIPTransactions/UACInviteTransaction.cs/#L63">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_UACInviteTransaction_SendInviteRequest_" data-uid="SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest*"></a>
   <h4 id="SIPSorcery_SIP_UACInviteTransaction_SendInviteRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_" data-uid="SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)">SendInviteRequest(SIPEndPoint, SIPRequest)</h4>
@@ -410,10 +413,10 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/master/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionFinalResponseReceived.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionFinalResponseReceived%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionFinalResponseReceived.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionFinalResponseReceived%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/master/src/core/SIPTransactions/UACInviteTransaction.cs/#L32">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/core/SIPTransactions/UACInviteTransaction.cs/#L32">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionFinalResponseReceived" data-uid="SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionFinalResponseReceived">UACInviteTransactionFinalResponseReceived</h4>
   <div class="markdown level1 summary"></div>
@@ -439,10 +442,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/master/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionInformationResponseReceived.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionInformationResponseReceived%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionInformationResponseReceived.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionInformationResponseReceived%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/master/src/core/SIPTransactions/UACInviteTransaction.cs/#L31">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/core/SIPTransactions/UACInviteTransaction.cs/#L31">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionInformationResponseReceived" data-uid="SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionInformationResponseReceived">UACInviteTransactionInformationResponseReceived</h4>
   <div class="markdown level1 summary"></div>
@@ -468,10 +471,10 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/master/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionTimedOut.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionTimedOut%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionTimedOut.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionTimedOut%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/master/src/core/SIPTransactions/UACInviteTransaction.cs/#L33">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/core/SIPTransactions/UACInviteTransaction.cs/#L33">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionTimedOut" data-uid="SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionTimedOut">UACInviteTransactionTimedOut</h4>
   <div class="markdown level1 summary"></div>
@@ -503,10 +506,10 @@
               <div class="contribution">
                 <ul class="nav">
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/new/master/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/prack/apiSpec/new?filename=SIPSorcery_SIP_UACInviteTransaction.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.UACInviteTransaction%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/master/src/core/SIPTransactions/UACInviteTransaction.cs/#L29" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/prack/src/core/SIPTransactions/UACInviteTransaction.cs/#L29" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
