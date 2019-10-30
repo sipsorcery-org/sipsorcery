@@ -78,7 +78,9 @@ namespace SIPSorcery
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
             int port = SIPConstants.DEFAULT_SIP_PORT + 1000;
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, port)));
+            IPAddress localAddress = sipTransport.GetLocalAddress(IPAddress.Parse("8.8.8.8"));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(localAddress, port)));
+            //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, port)));
             //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Any, port)));
 
             //EnableTraceLogs(sipTransport);
@@ -90,7 +92,7 @@ namespace SIPSorcery
             Socket rtpSocket = null;
             Socket controlSocket = null;
             // TODO (find something better): If the SIP endpoint is using 0.0.0.0 for SIP use loopback for RTP.
-            IPAddress rtpAddress = IPAddress.Any;
+            IPAddress rtpAddress = localAddress;
             NetServices.CreateRtpSocket(rtpAddress, 49000, 49100, false, out rtpSocket, out controlSocket);
             var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 
