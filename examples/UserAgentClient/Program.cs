@@ -34,7 +34,8 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:50100@sipsorcery.com";
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:500@sipsorcery.com";  // Talking Clock.
+        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:50100@sipsorcery.com"; // Echo Test.
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
@@ -89,7 +90,7 @@ namespace SIPSorcery
             Socket rtpSocket = null;
             Socket controlSocket = null;
             // TODO (find something better): If the SIP endpoint is using 0.0.0.0 for SIP use loopback for RTP.
-            IPAddress rtpAddress = IPAddress.Equals(IPAddress.Any, endPointForCall.Address) ? IPAddress.Loopback : endPointForCall.Address;
+            IPAddress rtpAddress = IPAddress.Any;
             NetServices.CreateRtpSocket(rtpAddress, 49000, 49100, false, out rtpSocket, out controlSocket);
             var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 
