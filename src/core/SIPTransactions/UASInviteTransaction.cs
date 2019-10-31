@@ -9,15 +9,15 @@
 //  
 // History:
 // 21 Nov 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
 using System.Net;
-using SIPSorcery.Sys;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
@@ -29,12 +29,14 @@ namespace SIPSorcery.SIP
     {
         private static string m_sipServerAgent = SIPConstants.SIP_SERVER_STRING;
 
-        private IPAddress m_contactIPAddress;   // If set this IP address should be used in the Contact header of the Ok response so that ACK requests can be delivered correctly.
+        // If set this host name (or IP address) that should be used in the Contact header of the Ok response so that ACK
+        // requests can be delivered correctly.
+        private string m_contactHost;
 
-        public string LocalTag
-        {
-            get { return m_localTag; }
-        }
+        /// <summary>
+        /// The local tag is set on the To SIP header and forms part of the information used to identify a SIP dialog.
+        /// </summary>
+        public string LocalTag { get; set; }
 
         public event SIPTransactionCancelledDelegate UASInviteTransactionCancelled;
         public event SIPTransactionRequestReceivedDelegate NewCallReceived;
@@ -46,13 +48,13 @@ namespace SIPSorcery.SIP
             SIPEndPoint dstEndPoint,
             SIPEndPoint localSIPEndPoint,
             SIPEndPoint outboundProxy,
-            IPAddress contactIPAddress,
+            string contactHost,
             bool noCDR = false)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
-            TransactionType = SIPTransactionTypesEnum.Invite;
+            TransactionType = SIPTransactionTypesEnum.InviteServer;
             m_remoteTag = sipRequest.Header.From.FromTag;
-            m_contactIPAddress = contactIPAddress;
+            m_contactHost = contactHost;
 
             if (sipRequest.Header.To.ToTag == null)
             {
@@ -73,8 +75,6 @@ namespace SIPSorcery.SIP
             {
                 CDR = new SIPCDR(SIPCallDirection.In, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, localEP, remoteEP);
             }
-
-            //UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
 
             TransactionRequestReceived += UASInviteTransaction_TransactionRequestReceived;
             TransactionInformationResponseReceived += UASInviteTransaction_TransactionResponseReceived;
@@ -120,7 +120,7 @@ namespace SIPSorcery.SIP
                     if (TransactionState != SIPTransactionStatesEnum.Trying)
                     {
                         SIPResponse tryingResponse = GetInfoResponse(m_transactionRequest, SIPResponseStatusCodesEnum.Trying);
-                        SendInformationalResponse(tryingResponse);
+                        SendProvisionalResponse(tryingResponse);
                     }
 
                     // Notify new call subscribers.
@@ -130,7 +130,7 @@ namespace SIPSorcery.SIP
                     }
                     else
                     {
-                        // Nobody wants the call so return an error response.
+                        // Nobody wants to answer this call so return an error response.
                         SIPResponse declinedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
                         SendFinalResponse(declinedResponse);
                     }
@@ -142,25 +142,16 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public void SetLocalTag(string localTag)
-        {
-            m_localTag = localTag;
-        }
-
-        public override void SendInformationalResponse(SIPResponse sipResponse)
+        public override void SendProvisionalResponse(SIPResponse sipResponse)
         {
             try
             {
-                base.SendInformationalResponse(sipResponse);
-
-                if (CDR != null)
-                {
-                    CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
-                }
+                base.SendProvisionalResponse(sipResponse);
+                CDR?.Progress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception UASInviteTransaction SendInformationalResponse. " + excp.Message);
+                logger.LogError("Exception UASInviteTransaction SendProvisionalResponse. " + excp.Message);
                 throw;
             }
         }
@@ -170,11 +161,7 @@ namespace SIPSorcery.SIP
             try
             {
                 base.SendFinalResponse(sipResponse);
-
-                if (CDR != null)
-                {
-                    CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase, null, null);
-                }
+                CDR?.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase, null, null);
             }
             catch (Exception excp)
             {
@@ -194,19 +181,12 @@ namespace SIPSorcery.SIP
                     SIPResponse cancelResponse = SIPTransport.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
                     SendFinalResponse(cancelResponse);
 
-                    if (UASInviteTransactionCancelled != null)
-                    {
-                        UASInviteTransactionCancelled(this);
-                    }
+                    UASInviteTransactionCancelled?.Invoke(this);
                 }
                 else
                 {
                     logger.LogWarning("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
                 }
-
-                //if (CDR != null) {
-                //    CDR.Cancelled();
-                //}
             }
             catch (Exception excp)
             {
@@ -222,20 +202,30 @@ namespace SIPSorcery.SIP
                 SIPResponse okResponse = new SIPResponse(SIPResponseStatusCodesEnum.Ok, null, sipRequest.LocalSIPEndPoint);
 
                 SIPHeader requestHeader = sipRequest.Header;
-                okResponse.Header = new SIPHeader(new SIPContactHeader(null, new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint)), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
+                SIPURI contactUri = null;
 
-                if (m_contactIPAddress != null)
+                if (String.IsNullOrEmpty(m_contactHost) == false)
                 {
-                    if (IPSocket.TryParseIPEndPoint(okResponse.Header.Contact.First().ContactURI.Host, out var contactEP))
+                    if (m_contactHost.Contains(":"))
                     {
-                        contactEP.Address = m_contactIPAddress;
-                        okResponse.Header.Contact.First().ContactURI.Host = contactEP.ToString();
+                        contactUri = new SIPURI(null, m_contactHost, null, sipRequest.URI.Scheme);
                     }
                     else
                     {
-                        throw new ApplicationException($"Could not parse IP end point from {okResponse.Header.Contact.First().ContactURI.Host} when parsing OK response.");
+                        contactUri = new SIPURI(null, m_contactHost + ":" + localSIPEndPoint.Port, null, sipRequest.URI.Scheme);
                     }
                 }
+                else if (IPAddress.Equals(IPAddress.Any, localSIPEndPoint.Address) || IPAddress.Equals(IPAddress.IPv6Any, localSIPEndPoint.Address))
+                {
+                    // No point using a contact address of 0.0.0.0.
+                    contactUri = new SIPURI(null, Dns.GetHostName() + ":" + localSIPEndPoint.Port, null, sipRequest.URI.Scheme);
+                }
+                else
+                {
+                    contactUri = new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint);
+                }
+
+                okResponse.Header = new SIPHeader(new SIPContactHeader(null, contactUri), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
 
                 okResponse.Header.To.ToTag = m_localTag;
                 okResponse.Header.CSeqMethod = requestHeader.CSeqMethod;
@@ -243,6 +233,8 @@ namespace SIPSorcery.SIP
                 okResponse.Header.Server = m_sipServerAgent;
                 okResponse.Header.MaxForwards = Int32.MinValue;
                 okResponse.Header.RecordRoutes = requestHeader.RecordRoutes;
+                okResponse.Header.Supported = (PrackSupported == true) ? SIPExtensionHeaders.PRACK : null;
+
                 okResponse.Body = messageBody;
                 okResponse.Header.ContentType = contentType;
                 okResponse.Header.ContentLength = (messageBody != null) ? messageBody.Length : 0;

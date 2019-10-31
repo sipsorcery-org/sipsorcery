@@ -276,10 +276,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        if (UASStateChanged != null)
-                        {
-                            UASStateChanged(this, progressStatus, reasonPhrase);
-                        }
+                        UASStateChanged?.Invoke(this, progressStatus, reasonPhrase);
 
                         // Allow all Trying responses through as some may contain additional useful information on the call state for the caller. 
                         // Also if the response is a 183 Session Progress with audio forward it.
@@ -313,7 +310,7 @@ namespace SIPSorcery.SIP.App
                                 }
                             }
 
-                            m_uasTransaction.SendInformationalResponse(progressResponse);
+                            m_uasTransaction.SendProvisionalResponse(progressResponse);
                         }
                     }
                 }
@@ -344,14 +341,11 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    if (UASStateChanged != null)
-                    {
-                        UASStateChanged(this, SIPResponseStatusCodesEnum.Ok, null);
-                    }
+                    UASStateChanged?.Invoke(this, SIPResponseStatusCodesEnum.Ok, null);
 
                     if (!toTag.IsNullOrBlank())
                     {
-                        m_uasTransaction.SetLocalTag(toTag);
+                        m_uasTransaction.LocalTag = toTag;
                     }
 
                     SIPResponse okResponse = m_uasTransaction.GetOkResponse(m_uasTransaction.TransactionRequest, m_uasTransaction.TransactionRequest.LocalSIPEndPoint, contentType, body);
@@ -395,10 +389,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        if (UASStateChanged != null)
-                        {
-                            UASStateChanged(this, failureStatus, reasonPhrase);
-                        }
+                        UASStateChanged?.Invoke(this, failureStatus, reasonPhrase);
 
                         string failureReason = (!reasonPhrase.IsNullOrBlank()) ? " and " + reasonPhrase : null;
 
@@ -449,29 +440,40 @@ namespace SIPSorcery.SIP.App
             m_uasTransaction.CDR = null;
         }
 
-        public void Hangup()
+        /// <summary>
+        /// Used to hangup the call or indicate that the client hungup.
+        /// </summary>
+        /// <param name="clientHungup">True if the BYE request was received from the client. False if the hangup
+        /// needs to originate from this agent.</param>
+        public void Hangup(bool clientHungup)
         {
             m_isHungup = true;
 
             if (m_sipDialogue == null)
+            {
                 return;
-
-            try
-            {
-                SIPEndPoint localEndPoint = (m_outboundProxy != null) ?
-                                m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy) :
-                                m_sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetEndpoint());
-
-                SIPRequest byeRequest = GetByeRequest(localEndPoint);
-
-                SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, m_outboundProxy);
-                byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
-                byeTransaction.SendReliableRequest();
             }
-            catch (Exception excp)
+
+            // Only need to send a BYE request if the client didn't already do so.
+            if (clientHungup == false)
             {
-                logger.LogError("Exception SIPServerUserAgent Hangup. " + excp.Message);
-                throw;
+                try
+                {
+                    SIPEndPoint localEndPoint = (m_outboundProxy != null) ?
+                                    m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy) :
+                                    m_sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetEndpoint());
+
+                    SIPRequest byeRequest = GetByeRequest(localEndPoint);
+
+                    SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, m_outboundProxy);
+                    byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
+                    byeTransaction.SendReliableRequest();
+                }
+                catch (Exception excp)
+                {
+                    logger.LogError("Exception SIPServerUserAgent Hangup. " + excp.Message);
+                    throw;
+                }
             }
         }
 

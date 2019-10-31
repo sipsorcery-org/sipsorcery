@@ -178,7 +178,7 @@ namespace SIPSorcery.Net
                     return cacheResult;
                 }
             }
-            
+
             if (async)
             {
                 //logger.LogDebug("DNS lookup cache miss for async lookup to " + queryType.ToString() + " " + hostname + ".");
@@ -344,10 +344,6 @@ namespace SIPSorcery.Net
                             lookups++;
                             logger.LogDebug("DNSManager thread " + threadName + " looking up " + queryType + " " + lookupRequest.Hostname + ".");
 
-                            //dnsEntry = new DNSEntry(hostname);
-                            //dnsEntry.LastLookup = DateTime.Now;
-
-                            //IPHostEntry ipHostEntry = Dns.GetHostEntry(hostname);
                             if (lookupRequest.DNSServers == null)
                             {
                                 dnsResponse = m_resolver.Query(lookupRequest.Hostname, lookupRequest.QueryType, lookupRequest.Timeout);

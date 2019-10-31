@@ -5,6 +5,7 @@
 // 
 // History:
 // 22 Feb 2008	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -21,7 +22,6 @@ namespace SIPSorcery.SIP.App
 {
     public class SIPClientUserAgent : ISIPClientUserAgent
     {
-        private const int DNS_LOOKUP_TIMEOUT = 5000;
         private const char OUTBOUNDPROXY_AS_ROUTESET_CHAR = '<';    // If this character exists in the call descriptor OutboundProxy setting it gets treated as a Route set.
 
         private static ILogger logger = Log.Logger;
@@ -86,6 +86,16 @@ namespace SIPSorcery.SIP.App
 
         public SIPCallDescriptor SipCallDescriptor { get => m_sipCallDescriptor; set => m_sipCallDescriptor = value; }
 
+        /// <summary>
+        /// Determines whether the agent will operate with support for reliable provisional responses as per RFC3262.
+        /// If support is not desired it should be set to false before the initial INVITE request is sent.
+        /// </summary>
+        public bool PrackSupported { get; set; } = true;
+
+        /// <summary>
+        /// Creates a new SIP user agent client to act as the client on a SIP INVITE transaction.
+        /// </summary>
+        /// <param name="sipTransport">The SIP transport this user agent will use for sending and receiving SIP messages.</param>
         public SIPClientUserAgent(SIPTransport sipTransport)
         {
             m_sipTransport = sipTransport;
@@ -132,6 +142,10 @@ namespace SIPSorcery.SIP.App
             RtccUpdateCdr_External = rtccUpdateCdr;
         }
 
+        /// <summary>
+        /// Initiates the call to the remote user agent server.
+        /// </summary>
+        /// <param name="sipCallDescriptor">The descriptor for the call that describes how to reach the user agent server and other properties.</param>
         public void Call(SIPCallDescriptor sipCallDescriptor)
         {
             try
@@ -410,6 +424,9 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        /// <summary>
+        /// Cancels an in progress call. This method should be called prior to the remote user agent server answering the call.
+        /// </summary>
         public void Cancel()
         {
             try
@@ -514,13 +531,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                //if (Thread.CurrentThread.Name.IsNullOrBlank())
-                //{
-                //    Thread.CurrentThread.Name = THREAD_NAME + DateTime.Now.ToString("HHmmss") + "-" + Crypto.GetRandomString(3);
-                //}
-
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
-                //m_sipTrace += "Received " + DateTime.Now.ToString("dd MMM yyyy HH:mm:ss") + " " + localEndPoint + "<-" + remoteEndPoint + "\r\n" + sipResponse.ToString();
 
                 m_serverTransaction.UACInviteTransactionInformationResponseReceived -= ServerInformationResponseReceived;
                 m_serverTransaction.UACInviteTransactionFinalResponseReceived -= ServerFinalResponseReceived;
@@ -717,26 +728,12 @@ namespace SIPSorcery.SIP.App
                         m_sipDialogue = new SIPDialogue(m_serverTransaction, Owner, AdminMemberId);
                         m_sipDialogue.CallDurationLimit = m_sipCallDescriptor.CallDurationLimit;
 
-                        // Set switchboard dialogue values from the answered response or from dialplan set values.
-                        //m_sipDialogue.SwitchboardCallerDescription = sipResponse.Header.SwitchboardCallerDescription;
-                        m_sipDialogue.SwitchboardLineName = sipResponse.Header.SwitchboardLineName;
                         m_sipDialogue.CRMPersonName = sipResponse.Header.CRMPersonName;
                         m_sipDialogue.CRMCompanyName = sipResponse.Header.CRMCompanyName;
                         m_sipDialogue.CRMPictureURL = sipResponse.Header.CRMPictureURL;
-
-                        if (m_sipCallDescriptor.SwitchboardHeaders != null)
-                        {
-                            //if (!m_sipCallDescriptor.SwitchboardHeaders.SwitchboardDialogueDescription.IsNullOrBlank())
-                            //{
-                            //    m_sipDialogue.SwitchboardDescription = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardDialogueDescription;
-                            //}
-
-                            m_sipDialogue.SwitchboardLineName = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardLineName;
-                            m_sipDialogue.SwitchboardOwner = m_sipCallDescriptor.SwitchboardHeaders.SwitchboardOwner;
-                        }
                     }
 
-                    FireCallAnswered(this, sipResponse);
+                    CallAnswered?.Invoke(this, sipResponse);
                 }
             }
             catch (Exception excp)
@@ -758,11 +755,11 @@ namespace SIPSorcery.SIP.App
             {
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.Ringing || sipResponse.Status == SIPResponseStatusCodesEnum.SessionProgress)
                 {
-                    FireCallRinging(this, sipResponse);
+                    CallRinging?.Invoke(this, sipResponse);
                 }
                 else
                 {
-                    FireCallTrying(this, sipResponse);
+                    CallTrying?.Invoke(this, sipResponse);
                 }
             }
         }
@@ -818,11 +815,24 @@ namespace SIPSorcery.SIP.App
             inviteHeader.From.FromTag = CallProperties.CreateNewTag();
 
             // For incoming calls forwarded via the dial plan the username needs to go into the Contact header.
-            inviteHeader.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, new SIPURI(inviteRequest.URI.Scheme, localSIPEndPoint)) };
+            SIPURI contactUri = null;  
+            if (IPAddress.Equals(IPAddress.Any, localSIPEndPoint.Address) || IPAddress.Equals(IPAddress.IPv6Any, localSIPEndPoint.Address))
+            {
+                // No point using a contact address of 0.0.0.0.
+                contactUri = new SIPURI(null, Dns.GetHostName() + ":" + localSIPEndPoint.Port, null, inviteRequest.URI.Scheme);
+            }
+            else
+            {
+                contactUri = new SIPURI(inviteRequest.URI.Scheme, localSIPEndPoint);
+            }
+
+            inviteHeader.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, contactUri) };
             inviteHeader.Contact[0].ContactURI.User = sipCallDescriptor.Username;
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
             inviteHeader.UserAgent = m_userAgent;
             inviteHeader.Routes = routeSet;
+            inviteHeader.Supported = (PrackSupported == true) ? SIPExtensionHeaders.PRACK : null; // Let the uas know whether or not we're supporting reliable provisional responses.
+
             inviteRequest.Header = inviteHeader;
 
             if (!sipCallDescriptor.ProxySendFrom.IsNullOrBlank())
@@ -836,16 +846,6 @@ namespace SIPSorcery.SIP.App
             inviteRequest.Body = content;
             inviteRequest.Header.ContentLength = (inviteRequest.Body != null) ? inviteRequest.Body.Length : 0;
             inviteRequest.Header.ContentType = contentType;
-
-            // Add custom switchboard headers.
-            if (CallDescriptor.SwitchboardHeaders != null)
-            {
-                inviteHeader.SwitchboardOriginalCallID = CallDescriptor.SwitchboardHeaders.SwitchboardOriginalCallID;
-                //inviteHeader.SwitchboardCallerDescription = CallDescriptor.SwitchboardHeaders.SwitchboardCallerDescription;
-                inviteHeader.SwitchboardLineName = CallDescriptor.SwitchboardHeaders.SwitchboardLineName;
-                //inviteHeader.SwitchboardOwner = CallDescriptor.SwitchboardHeaders.SwitchboardOwner;
-                //inviteHeader.SwitchboardOriginalFrom = CallDescriptor.SwitchboardHeaders.SwitchboardOriginalFrom;
-            }
 
             // Add custom CRM headers.
             if (CallDescriptor.CRMHeaders != null)
@@ -960,30 +960,6 @@ namespace SIPSorcery.SIP.App
         private void TransactionTraceMessage(SIPTransaction sipTransaction, string message)
         {
             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.SIPTransaction, message, Owner));
-        }
-
-        private void FireCallTrying(SIPClientUserAgent uac, SIPResponse tryingResponse)
-        {
-            if (CallTrying != null)
-            {
-                CallTrying(uac, tryingResponse);
-            }
-        }
-
-        private void FireCallRinging(SIPClientUserAgent uac, SIPResponse ringingResponse)
-        {
-            if (CallRinging != null)
-            {
-                CallRinging(uac, ringingResponse);
-            }
-        }
-
-        private void FireCallAnswered(SIPClientUserAgent uac, SIPResponse answeredResponse)
-        {
-            if (CallAnswered != null)
-            {
-                CallAnswered(uac, answeredResponse);
-            }
         }
 
         private SIPEndPoint GetRemoteTargetEndpoint()

@@ -40,5 +40,25 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             logger.LogDebug($"resolved to SIP end point {resultEP}");
         }
+
+        /// <summary>
+        /// Tests that an attempt to lookup the a hostname that's not fully qualified works correctly.
+        /// </summary>
+        [TestMethod]
+        [TestCategory("Integration")]
+        public void LookupLocalHostnameTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string hostname = System.Net.Dns.GetHostName();
+
+            var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed(hostname), false);
+
+            SIPEndPoint resultEP = result.GetSIPEndPoint();
+
+            Assert.IsNotNull(resultEP);
+
+            logger.LogDebug($"resolved to SIP end point {resultEP}");
+        }
     }
 }

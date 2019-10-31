@@ -35,6 +35,10 @@ namespace SIPSorcery.SIP
         // Channel sockets.
         private readonly UdpClient m_sipConn = null;
 
+        /// <summary>
+        /// Creates a SIP channel to listen for and send SIP messages over UDP.
+        /// </summary>
+        /// <param name="endPoint">The IP end point to listen on and send from.</param>
         public SIPUDPChannel(IPEndPoint endPoint)
         {
             m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, endPoint);

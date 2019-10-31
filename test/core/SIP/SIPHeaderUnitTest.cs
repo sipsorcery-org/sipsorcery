@@ -711,5 +711,94 @@ namespace SIPSorcery.SIP.UnitTests
 
             Console.WriteLine("---------------------------------------------------");
         }
+
+        /// <summary>
+        /// Tests that the Require and Supported extensions get parsed correctly.
+        /// </summary>
+        [TestMethod]
+        public void ParseRequireAndSupportedExtensionsTest()
+        {
+            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string inviteHeaders =
+                "Via: SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001" + m_CRLF +
+                "From: SER Test X <sip:aaronxten@sip.blueface.ie:5065>;tag=196468136" + m_CRLF +
+                "To: <sip:303@sip.blueface.ie>" + m_CRLF +
+                "Contact: <sip:aaronxten@192.168.1.2:5065>" + m_CRLF +
+                "Call-ID: A3DF9A04-0EFE-47E4-98B1-E18AA186F3D6@192.168.1.2" + m_CRLF +
+                "CSeq: 49429 INVITE" + m_CRLF +
+                "Max-Forwards: 70" + m_CRLF +
+                "Content-Type: application/sdp" + m_CRLF +
+                "User-Agent: X-PRO release 1103v" + m_CRLF +
+                "Content-Length: 271" + m_CRLF +
+                "Require: abcd, 100rel, xyz" + m_CRLF +
+                "Supported: 100rel, other" + m_CRLF;
+
+            string[] headersCollection = Regex.Split(inviteHeaders, "\r\n");
+            SIPHeader sipHeader = SIPHeader.ParseSIPHeaders(headersCollection);
+
+            Assert.IsTrue(sipHeader.RequiredExtensions.Contains(SIPExtensions.Prack), "The required header extensions was missing Prack.");
+            Assert.IsTrue(sipHeader.SupportedExtensions.Contains(SIPExtensions.Prack), "The supported header extensions was missing Prack.");
+            Assert.IsTrue(sipHeader.HasUnknownRequireExtension, "The had unknown required header extension was not correctly set.");
+
+            Console.WriteLine("---------------------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that the RSeq header get parsed correctly.
+        /// </summary>
+        [TestMethod]
+        public void ParseRSeqHeaderTest()
+        {
+            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string ringResponse =
+                "SIP/2.0 180 Ringing" + m_CRLF +
+                "Via: SIP/2.0/UDP 0.0.0.0:6060;branch=z9hG4bK299925765f7c4defb20cef3fde520172;rport=6060;received=127.0.0.1" + m_CRLF +
+                "To: <sip:127.0.0.1>" + m_CRLF +
+                "From: <sip:thisis@anonymous.invalid>;tag=NEEBBCYYZR" + m_CRLF +
+                "Call-ID: 9add71138b794dadbd709a2b8c0cfc89" + m_CRLF +
+                "CSeq: 1 INVITE" + m_CRLF +
+                "Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, REFER, REGISTER, SUBSCRIBE" + m_CRLF +
+                "Supported: 100rel" + m_CRLF +
+                "Content-Length: 0" + m_CRLF +
+                "RSeq: 266163001" + m_CRLF + m_CRLF;
+
+            var sipResponse = SIPResponse.ParseSIPResponse(ringResponse);
+
+            Assert.AreEqual(266163001, sipResponse.Header.RSeq, "The RSeq header was not parsed correctly.");
+
+            Console.WriteLine("---------------------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that the RAck header get parsed correctly.
+        /// </summary>
+        [TestMethod]
+        public void ParseRAckHeaderTest()
+        {
+            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string prackRequest =
+                "PRACK sip:127.0.0.1 SIP/2.0" + m_CRLF +
+                "Via: SIP/2.0/UDP 0.0.0.0:6060;branch=z9hG4bKed0553cb6e4b476990a34d7c98f58a14;rport" + m_CRLF +
+                "To: <sip:127.0.0.1>" + m_CRLF +
+                "From: <sip:thisis@anonymous.invalid>;tag=YPACUCOFBG" + m_CRLF +
+                "Call-ID: c22e9dc218a1423695b1f5ef33020b84" + m_CRLF +
+                "CSeq: 1 ACK" + m_CRLF +
+                "Max-Forwards: 70" + m_CRLF +
+                "Content-Length: 0" + m_CRLF +
+                "RAck: 423501656 1 INVITE" + m_CRLF + m_CRLF;
+
+            var sipRequest = SIPRequest.ParseSIPRequest(prackRequest);
+
+            Assert.AreEqual(423501656, sipRequest.Header.RAckRSeq, "The RAck sequence header value was not parsed correctly.");
+            Assert.AreEqual(1, sipRequest.Header.RAckCSeq, "The RAck cseq header value was not parsed correctly.");
+            Assert.AreEqual(SIPMethodsEnum.INVITE, sipRequest.Header.RAckCSeqMethod, "The RAck method header value was not parsed correctly.");
+
+            Console.WriteLine("---------------------------------------------------");
+        }
+
+        
     }
 }

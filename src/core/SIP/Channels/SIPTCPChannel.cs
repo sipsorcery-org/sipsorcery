@@ -55,6 +55,11 @@ namespace SIPSorcery.SIP
         // By default sends between TCP channels in the same process are disabled to prevent resource exhaustion.
         public bool DisableLocalTCPSocketsCheck;
 
+        /// <summary>
+        /// Creates a SIP channel to listen for and send SIP messages over TCP.
+        /// </summary>
+        /// <param name="endPoint">The IP end point to listen on and send from.</param>
+        /// <param name="protocol">Whether the channel is being used with TCP or TLS (TLS channels get upgraded once connected).</param>
         public SIPTCPChannel(IPEndPoint endPoint, SIPProtocolsEnum protocol)
         {
             m_localSIPEndPoint = new SIPEndPoint(protocol, endPoint);
@@ -82,6 +87,7 @@ namespace SIPSorcery.SIP
                 m_tcpServerListener = new TcpListener(listenEndPoint);
                 m_tcpServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 m_tcpServerListener.Server.LingerState = new LingerOption(true, 0);
+                if(listenEndPoint.AddressFamily == AddressFamily.InterNetworkV6) m_tcpServerListener.Server.DualMode = true;
                 m_tcpServerListener.Start(MAX_TCP_CONNECTIONS);
 
                 if (m_localSIPEndPoint.Port == 0)
@@ -94,7 +100,7 @@ namespace SIPSorcery.SIP
                 ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(); });
                 ThreadPool.QueueUserWorkItem(delegate { PruneConnections(m_pruneThreadName + m_localSIPEndPoint.Port); });
 
-                logger.LogDebug("SIP TCP Channel listener created " + m_localSIPEndPoint.GetIPEndPoint() + ".");
+                logger.LogDebug($"SIP TCP Channel listener created {m_localSIPEndPoint.GetIPEndPoint()}.");
             }
             catch (Exception excp)
             {
@@ -110,7 +116,7 @@ namespace SIPSorcery.SIP
         {
             Thread.CurrentThread.Name = m_acceptThreadName + m_localSIPEndPoint.Port;
 
-            logger.LogDebug("SIPTCPChannel socket on " + m_localSIPEndPoint + " accept connections thread started.");
+            logger.LogDebug($"SIPTCPChannel socket on {m_localSIPEndPoint} accept connections thread started.");
 
             while (!Closed)
             {

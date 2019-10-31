@@ -245,7 +245,7 @@ namespace SIPSorcery.SIP.App
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call progressing with " + progressStatus + ".", m_uacOwner));
                             SIPResponse uasProgressResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, progressStatus, reasonPhrase);
-                            m_uasTransaction.SendInformationalResponse(uasProgressResponse);
+                            m_uasTransaction.SendProvisionalResponse(uasProgressResponse);
 
                             SIPResponse uacProgressResponse = SIPTransport.GetResponse(m_uacTransaction.TransactionRequest, progressStatus, reasonPhrase);
                             if (!progressBody.IsNullOrBlank())

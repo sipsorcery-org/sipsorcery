@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
@@ -164,6 +165,7 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_PROXYAUTHENTICATION = "Proxy-Authenticate";
         public const string SIP_HEADER_PROXYAUTHORIZATION = "Proxy-Authorization";
         public const string SIP_HEADER_PROXY_REQUIRE = "Proxy-Require";
+        public const string SIP_HEADER_RELIABLE_ACK = "RAck";                       // RFC 3262 "The RAck header is sent in a PRACK request to support reliability of provisional responses."
         public const string SIP_HEADER_REASON = "Reason";
         public const string SIP_HEADER_RECORDROUTE = "Record-Route";
         public const string SIP_HEADER_REFERREDBY = "Referred-By";                  // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method".
@@ -172,6 +174,7 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_REPLY_TO = "Reply-To";
         public const string SIP_HEADER_REQUIRE = "Require";
         public const string SIP_HEADER_RETRY_AFTER = "Retry-After";
+        public const string SIP_HEADER_RELIABLE_SEQ = "RSeq";                     // RFC 3262 "The RSeq header is used in provisional responses in order to transmit them reliably."
         public const string SIP_HEADER_ROUTE = "Route";
         public const string SIP_HEADER_SERVER = "Server";
         public const string SIP_HEADER_SUBJECT = "Subject";
@@ -203,18 +206,6 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_PROXY_RECEIVEDON = "Proxy-ReceivedOn";
         public const string SIP_HEADER_PROXY_RECEIVEDFROM = "Proxy-ReceivedFrom";
         public const string SIP_HEADER_PROXY_SENDFROM = "Proxy-SendFrom";
-
-        // Custom SIP headers to interact with the SIP Sorcery switchboard.
-        public const string SIP_HEADER_SWITCHBOARD_ORIGINAL_CALLID = "Switchboard-OriginalCallID";
-        //public const string SIP_HEADER_SWITCHBOARD_CALLER_DESCRIPTION = "Switchboard-CallerDescription";
-        public const string SIP_HEADER_SWITCHBOARD_LINE_NAME = "Switchboard-LineName";
-        //public const string SIP_HEADER_SWITCHBOARD_ORIGINAL_FROM = "Switchboard-OriginalFrom";
-        //public const string SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL = "Switchboard-FromContactURL";
-        public const string SIP_HEADER_SWITCHBOARD_OWNER = "Switchboard-Owner";
-        //public const string SIP_HEADER_SWITCHBOARD_ORIGINAL_TO = "Switchboard-OriginalTo";
-        public const string SIP_HEADER_SWITCHBOARD_TERMINATE = "Switchboard-Terminate";
-        //public const string SIP_HEADER_SWITCHBOARD_TOKEN = "Switchboard-Token";
-        //public const string SIP_HEADER_SWITCHBOARD_TOKENREQUEST = "Switchboard-TokenRequest";
 
         // Custom SIP headers for CRM integration.
         public const string SIP_HEADER_CRM_PERSON_NAME = "CRM-PersonName";
@@ -410,7 +401,7 @@ namespace SIPSorcery.SIP
     /// user-unreserved  =  "&" / "=" / "+" / "$" / "," / ";" / "?" / "/"
     /// Leaving to be escaped = ":" / "@" 
     /// 
-    /// For SIP URI parameters different characters are unreserved (just to amke life difficult).
+    /// For SIP URI parameters different characters are unreserved (just to make life difficult).
     /// reserved    =  ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+"  / "$" / ","
     /// param-unreserved = "[" / "]" / "/" / ":" / "&" / "+" / "$"
     /// Leaving to be escaped =  ";" / "?" / "@" / "=" / ","
@@ -481,6 +472,58 @@ namespace SIPSorcery.SIP
                 result = result.Replace("%20", " ");
             }
             return result;
+        }
+    }
+
+    ///<summary>
+    /// List of SIP extensions to RFC3262.
+    /// </summary> 
+    public enum SIPExtensions
+    {
+        None = 0,
+        Prack = 1,  // Reliable provisional responses as per RFC3262.
+    }
+
+    /// <summary>
+    /// Constants that can be placed in the SIP Supported or Required headers to indicate support or mandate for
+    /// a particular SIP extension.
+    /// </summary>
+    public class SIPExtensionHeaders
+    {
+        public const string PRACK = "100rel";
+
+        /// <summary>
+        /// Parses a string containing a list of SIP extensions into a list of extensions that this library
+        /// understands.
+        /// </summary>
+        /// <param name="extensionList">The string containing the list of extensions to parse.</param>
+        /// <returns>A list of extensions that were understood and a boolean indicating whether any unknown extensions were present.</returns>
+        public static List<SIPExtensions> ParseSIPExtensions(string extensionList, out bool hadUnknownExtension)
+        {
+            List<SIPExtensions> knownExtensions = new List<SIPExtensions>();
+            hadUnknownExtension = false;
+
+            if(String.IsNullOrEmpty(extensionList) == false)
+            {
+                string[] extensions = extensionList.Trim().Split(',');
+                
+                foreach(string extension in extensions)
+                {
+                    if(String.IsNullOrEmpty(extension) == false)
+                    {
+                        if(extension.Trim().ToLower() == PRACK)
+                        {
+                            knownExtensions.Add(SIPExtensions.Prack);
+                        }
+                        else
+                        {
+                            hadUnknownExtension = true;
+                        }
+                    }
+                }
+            }
+
+            return knownExtensions;
         }
     }
 }

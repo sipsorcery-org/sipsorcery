@@ -381,7 +381,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public new string ToString()
+        public override string ToString()
         {
             try
             {

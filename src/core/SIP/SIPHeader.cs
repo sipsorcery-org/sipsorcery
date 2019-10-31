@@ -1292,6 +1292,9 @@ namespace SIPSorcery.SIP
         public string Organization;
         public string Priority;
         public string ProxyRequire;
+        public int RAckCSeq = -1;                          // RFC3262 the CSeq number the PRACK request is acknowledging.
+        public SIPMethodsEnum RAckCSeqMethod;              // RFC3262 the CSeq method from the response the PRACK request is acknowledging.
+        public int RAckRSeq = -1;                          // RFC3262 the RSeq number the PRACK request is acknowledging.
         public string Reason;
         public SIPRouteSet RecordRoutes = new SIPRouteSet();
         public string ReferredBy;                           // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
@@ -1300,6 +1303,7 @@ namespace SIPSorcery.SIP
         public string ReplyTo;
         public string Require;
         public string RetryAfter;
+        public int RSeq = -1;                               // RFC3262 reliable provisional response sequence number.
         public SIPRouteSet Routes = new SIPRouteSet();
         public string Server;
         public string Subject;
@@ -1316,25 +1320,17 @@ namespace SIPSorcery.SIP
         public string ProxyReceivedOn;          // The Proxy socket that the SIP message was received on.
         public string ProxyReceivedFrom;        // The remote socket that the Proxy received the SIP message on.
         public string ProxySendFrom;            // The Proxy socket that the SIP message should be transmitted from.
-        //public string ProxyOutboundProxy;       // The remote socket that the Proxy should send the SIP request to.
 
-        // Non-core custom SIP headers for use with the SIP Sorcery switchboard.
-        public string SwitchboardOriginalCallID;    // The original Call-ID header on the call that was forwarded to the switchboard.
-        //public string SwitchboardOriginalFrom;      // The original From header on the call that was forwarded to the switchboard.
-        //public string SwitchboardOriginalTo;        // The original To header on the call that was forwarded to the switchboard.
-        public string SwitchboardLineName;          // An optional name for the line the call was received on.
-        public string SwitchboardOwner;             // If a switchboard operator "grabs" a call then they will take exclusive ownership of it. This field records the owner.
-        public string SwitchboardTerminate;         // Can be set on a BYE request to indicate whether the switchboard is requesting both, current or opposite dialogues to be hungup.
-        //public string SwitchboardFromContactURL;
-        //public int SwitchboardTokenRequest;         // A user agent can request a token from a sipsorcery server and this value indicates the period the token is being requested for.
-        //public string SwitchboardToken;             // If a token is issued this header will be used to hold it in the response.
-
-        // Non-core custom headers for CMR integration.
+        // Non-core custom headers for CRM integration.
         public string CRMPersonName;                // The matching name from the CRM system for the caller.
         public string CRMCompanyName;               // The matching company name from the CRM system for the caller.
         public string CRMPictureURL;                 // If available a URL for a picture for the person or company from the CRM system for the caller.
 
         public List<string> UnknownHeaders = new List<string>();	// Holds any unrecognised headers.
+
+        public List<SIPExtensions> RequiredExtensions = new List<SIPExtensions>();
+        public bool HasUnknownRequireExtension = false;
+        public List<SIPExtensions> SupportedExtensions = new List<SIPExtensions>();
 
         public SIPHeader()
         { }
@@ -1721,6 +1717,11 @@ namespace SIPSorcery.SIP
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_REQUIRE.ToLower())
                         {
                             sipHeader.Require = headerValue;
+
+                            if(!String.IsNullOrEmpty(sipHeader.Require))
+                            {
+                                sipHeader.RequiredExtensions = SIPExtensionHeaders.ParseSIPExtensions(sipHeader.Require, out sipHeader.HasUnknownRequireExtension);
+                            }
                         }
                         #endregion
                         #region Reason.
@@ -1752,6 +1753,11 @@ namespace SIPSorcery.SIP
                             headerNameLower == SIPHeaders.SIP_HEADER_SUPPORTED.ToLower())
                         {
                             sipHeader.Supported = headerValue;
+
+                            if (!String.IsNullOrEmpty(sipHeader.Supported))
+                            {
+                                sipHeader.SupportedExtensions = SIPExtensionHeaders.ParseSIPExtensions(sipHeader.Supported, out _);
+                            }
                         }
                         #endregion
                         #region Authentication-Info
@@ -1874,30 +1880,6 @@ namespace SIPSorcery.SIP
                             sipHeader.Warning = headerValue;
                         }
                         #endregion
-                        #region Switchboard-OriginalCallID.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_ORIGINAL_CALLID.ToLower())
-                        {
-                            sipHeader.SwitchboardOriginalCallID = headerValue;
-                        }
-                        #endregion
-                        #region Switchboard-LineName.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_LINE_NAME.ToLower())
-                        {
-                            sipHeader.SwitchboardLineName = headerValue;
-                        }
-                        #endregion
-                        #region Switchboard-Owner.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_OWNER.ToLower())
-                        {
-                            sipHeader.SwitchboardOwner = headerValue;
-                        }
-                        #endregion
-                        #region Switchboard-Terminate.
-                        else if (headerNameLower == SIPHeaders.SIP_HEADER_SWITCHBOARD_TERMINATE.ToLower())
-                        {
-                            sipHeader.SwitchboardTerminate = headerValue;
-                        }
-                        #endregion
                         #region CRM-PersonName.
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_CRM_PERSON_NAME.ToLower())
                         {
@@ -1920,6 +1902,53 @@ namespace SIPSorcery.SIP
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_ETAG.ToLower())
                         {
                             sipHeader.ETag = headerValue;
+                        }
+                        #endregion
+                        #region RAck
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_RELIABLE_ACK.ToLower())
+                        {
+                            string[] rackFields = headerValue.Split(' ');
+                            if (rackFields?.Length == 0)
+                            {
+                                logger.LogWarning("The " + SIPHeaders.SIP_HEADER_RELIABLE_ACK + " was empty.");
+                            }
+                            else
+                            {
+                                if (!Int32.TryParse(rackFields[0], out sipHeader.RAckRSeq))
+                                {
+                                    logger.LogWarning(SIPHeaders.SIP_HEADER_RELIABLE_ACK + " did not contain a valid integer for the RSeq being acknowledged, " + headerLine + ".");
+                                }
+
+                                if (rackFields?.Length > 1)
+                                {
+                                    if (!Int32.TryParse(rackFields[1], out sipHeader.RAckCSeq))
+                                    {
+                                        logger.LogWarning(SIPHeaders.SIP_HEADER_RELIABLE_ACK + " did not contain a valid integer for the CSeq being acknowledged, " + headerLine + ".");
+                                    }
+                                }
+                                else
+                                {
+                                    logger.LogWarning("There was no " + SIPHeaders.SIP_HEADER_RELIABLE_ACK + " method, " + headerLine + ".");
+                                }
+
+                                if (rackFields?.Length > 2)
+                                {
+                                    sipHeader.RAckCSeqMethod = SIPMethods.GetMethod(rackFields[2]);
+                                }
+                                else
+                                {
+                                    logger.LogWarning("There was no " + SIPHeaders.SIP_HEADER_RELIABLE_ACK + " method, " + headerLine + ".");
+                                }
+                            }
+                        }
+                        #endregion
+                        #region RSeq
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_RELIABLE_SEQ.ToLower())
+                        {
+                            if (!Int32.TryParse(headerValue, out sipHeader.RSeq))
+                            {
+                                logger.LogWarning("The Rseq value was not a valid integer, " + headerLine + ".");
+                            }
                         }
                         #endregion
                         else
@@ -2056,21 +2085,13 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((ReferTo != null) ? SIPHeaders.SIP_HEADER_REFERTO + ": " + ReferTo + m_CRLF : null);
                 headersBuilder.Append((ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
                 headersBuilder.Append((Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
-                
+                headersBuilder.Append((RSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_SEQ + ": " + RSeq + m_CRLF : null);
+                headersBuilder.Append((RAckRSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_ACK + ": " + RAckRSeq + " " + RAckCSeq + " " + RAckCSeqMethod + m_CRLF : null);
+
                 // Custom SIP headers.
                 headersBuilder.Append((ProxyReceivedFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDFROM + ": " + ProxyReceivedFrom + m_CRLF : null);
                 headersBuilder.Append((ProxyReceivedOn != null) ? SIPHeaders.SIP_HEADER_PROXY_RECEIVEDON + ": " + ProxyReceivedOn + m_CRLF : null);
                 headersBuilder.Append((ProxySendFrom != null) ? SIPHeaders.SIP_HEADER_PROXY_SENDFROM + ": " + ProxySendFrom + m_CRLF : null);
-                headersBuilder.Append((SwitchboardOriginalCallID != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_ORIGINAL_CALLID + ": " + SwitchboardOriginalCallID + m_CRLF : null);
-                //headersBuilder.Append((SwitchboardOriginalTo != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_ORIGINAL_TO + ": " + SwitchboardOriginalTo + m_CRLF : null);
-                //headersBuilder.Append((SwitchboardCallerDescription != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_CALLER_DESCRIPTION + ": " + SwitchboardCallerDescription + m_CRLF : null);
-                headersBuilder.Append((SwitchboardLineName != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_LINE_NAME + ": " + SwitchboardLineName + m_CRLF : null);
-                //headersBuilder.Append((SwitchboardOriginalFrom != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_ORIGINAL_FROM + ": " + SwitchboardOriginalFrom + m_CRLF : null);
-                //headersBuilder.Append((SwitchboardFromContactURL != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_FROM_CONTACT_URL + ": " + SwitchboardFromContactURL + m_CRLF : null);
-                headersBuilder.Append((SwitchboardOwner != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_OWNER + ": " + SwitchboardOwner + m_CRLF : null);
-                headersBuilder.Append((SwitchboardTerminate != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TERMINATE + ": " + SwitchboardTerminate + m_CRLF : null);
-                //headersBuilder.Append((SwitchboardToken != null) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TOKEN + ": " + SwitchboardToken + m_CRLF : null);
-                //headersBuilder.Append((SwitchboardTokenRequest > 0) ? SIPHeaders.SIP_HEADER_SWITCHBOARD_TOKENREQUEST + ": " + SwitchboardTokenRequest + m_CRLF : null);
 
                 // CRM Headers.
                 headersBuilder.Append((CRMPersonName != null) ? SIPHeaders.SIP_HEADER_CRM_PERSON_NAME + ": " + CRMPersonName + m_CRLF : null);
