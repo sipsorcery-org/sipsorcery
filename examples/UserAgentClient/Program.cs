@@ -34,11 +34,13 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:500@sipsorcery.com";  // Talking Clock.
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:50100@sipsorcery.com"; // Echo Test.
+        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@sipsorcery.com";  // Talking Clock.
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:echo@sipsorcery.com"; // Echo Test.
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+
+        private static IPEndPoint _remoteRtpEndPoint = null;
 
         static void Main(string[] args)
         {
@@ -94,6 +96,7 @@ namespace SIPSorcery
             // TODO (find something better): If the SIP endpoint is using 0.0.0.0 for SIP use loopback for RTP.
             IPAddress rtpAddress = localAddress;
             NetServices.CreateRtpSocket(rtpAddress, 49000, 49100, false, out rtpSocket, out controlSocket);
+            var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
             var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
@@ -115,12 +118,9 @@ namespace SIPSorcery
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                    IPEndPoint remoteRtpEndPoint = SDP.GetSDPRTPEndPoint(resp.Body);
+                    _remoteRtpEndPoint = SDP.GetSDPRTPEndPoint(resp.Body);
 
-                    Log.LogDebug($"Sending initial RTP packet to remote RTP socket {remoteRtpEndPoint}.");
-
-                    // Send a dummy packet to open the NAT session on the RTP path.
-                    rtpSendSession.SendAudioFrame(rtpSocket, remoteRtpEndPoint, 0, new byte[] { 0x00 });
+                    Log.LogDebug($"Remote RTP socket {_remoteRtpEndPoint}.");
                 }
                 else
                 {
@@ -149,7 +149,8 @@ namespace SIPSorcery
             // It's a good idea to start the RTP receiving socket before the call request is sent.
             // A SIP server will generally start sending RTP as soon as it has processed the incoming call request and
             // being ready to receive will stop any ICMP error response being generated.
-            Task.Run(() => SendRecvRtp(rtpSocket, rtpSendSession, rtpCts));
+            Task.Run(() => RecvRtp(rtpSocket, rtpRecvSession, rtpCts));
+            Task.Run(() => SendRtp(rtpSocket, rtpSendSession, rtpCts));
 
             // Start the thread that places the call.
             SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
@@ -217,18 +218,15 @@ namespace SIPSorcery
         /// </summary>
         /// <param name="rtpSocket">The raw RTP socket.</param>
         /// <param name="rtpSendSession">The session infor for the RTP pakcets being sent.</param>
-        private static async void SendRecvRtp(Socket rtpSocket, RTPSession rtpSendSession, CancellationTokenSource cts)
+        private static async void RecvRtp(Socket rtpSocket, RTPSession rtpRecvSession, CancellationTokenSource cts)
         {
             try
             {
                 DateTime lastRecvReportAt = DateTime.Now;
                 uint packetReceivedCount = 0;
                 uint bytesReceivedCount = 0;
-                uint packetSentCount = 0;
-                uint bytesSentCount = 0;
                 byte[] buffer = new byte[512];
 
-                uint rtpSendTimestamp = 0;
                 IPEndPoint anyEndPoint = new IPEndPoint((rtpSocket.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any, 0);
 
                 Log.LogDebug($"Listening on RTP socket {rtpSocket.LocalEndPoint}.");
@@ -258,23 +256,15 @@ namespace SIPSorcery
                             waveProvider.AddSamples(pcmSample, 0, 2);
                         }
 
-                        // Periodically Send a dummy packet to keep any NAT session that may be on the media path open.
+                        recvResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, anyEndPoint);
+
                         if (DateTime.Now.Subtract(lastRecvReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
                         {
-                            // This is typically where RTCP reports would be sent. Omitted here for brevity.
+                            // This is typically where RTCP receiver (SR) reports would be sent. Omitted here for brevity.
                             lastRecvReportAt = DateTime.Now;
                             var remoteRtpEndPoint = recvResult.RemoteEndPoint as IPEndPoint;
-                            Log.LogDebug($"RTP recv {rtpSocket.LocalEndPoint}<-{remoteRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
-
-                            rtpSendSession.SendAudioFrame(rtpSocket, recvResult.RemoteEndPoint as IPEndPoint, rtpSendTimestamp, new byte[] { 0x00 });
-                            rtpSendTimestamp += 32000; // Arbitrary and not critical. Corresponds to 40ms payload at 25pps which means 4s for 100 packets.
-
-                            packetSentCount++;
-                            bytesSentCount++;
-                            Log.LogDebug($"RTP sent {rtpSocket.LocalEndPoint}->{remoteRtpEndPoint} pkts {packetSentCount} bytes {bytesSentCount}");
+                            Log.LogDebug($"RTP recv report {rtpSocket.LocalEndPoint}<-{remoteRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
                         }
-
-                        recvResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, anyEndPoint);
                     }
                 }
             }
@@ -282,6 +272,65 @@ namespace SIPSorcery
             catch (Exception excp)
             {
                 Log.LogError($"Exception processing RTP. {excp}");
+            }
+        }
+
+        private static void SendRtp(Socket rtpSocket, RTPSession rtpSendSession, CancellationTokenSource cts)
+        {
+            WaveFormat waveFormat = new WaveFormat(8000, 16, 1);   // The format that both the input and output audio streams will use, i.e. PCMU.
+
+            // Set up the input device that will provide audio samples that can be encoded, packaged into RTP and sent to
+            // the remote end of the call.
+            if (WaveInEvent.DeviceCount == 0)
+            {
+                Log.LogWarning("No audio input devices available. No audio will be sent.");
+            }
+            else
+            {
+                DateTime lastSendReportAt = DateTime.Now;
+                uint rtpSendTimestamp = 0;
+                uint packetSentCount = 0;
+                uint bytesSentCount = 0;
+
+                // Device used to get audio sample from, e.g. microphone.
+                using (WaveInEvent waveInEvent = new WaveInEvent())
+                {
+                    waveInEvent.BufferMilliseconds = 20;    // This sets the frequency of the RTP packets.
+                    waveInEvent.NumberOfBuffers = 1;
+                    waveInEvent.DeviceNumber = 0;
+                    waveInEvent.WaveFormat = waveFormat;
+                    waveInEvent.DataAvailable += (object sender, WaveInEventArgs args) =>
+                    {
+                        byte[] sample = new byte[args.Buffer.Length / 2];
+                        int sampleIndex = 0;
+
+                        for (int index = 0; index < args.BytesRecorded; index += 2)
+                        {
+                            var ulawByte = NAudio.Codecs.MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(args.Buffer, index));
+                            sample[sampleIndex++] = ulawByte;
+                        }
+
+                        if (_remoteRtpEndPoint != null)
+                        {
+                            rtpSendSession.SendAudioFrame(rtpSocket, _remoteRtpEndPoint, rtpSendTimestamp, sample);
+                            rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
+                            packetSentCount++;
+                            bytesSentCount += (uint)sample.Length;
+                        }
+
+                        if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
+                        {
+                            // This is typically where RTCP sender (SR) reports would be sent. Omitted here for brevity.
+                            lastSendReportAt = DateTime.Now;
+                            var remoteRtpEndPoint = _remoteRtpEndPoint as IPEndPoint;
+                            Log.LogDebug($"RTP send report {rtpSocket.LocalEndPoint}->{remoteRtpEndPoint} pkts {packetSentCount} bytes {bytesSentCount}");
+                        }
+                    };
+
+                    waveInEvent.StartRecording();
+
+                    cts.Token.WaitHandle.WaitOne();
+                }
             }
         }
 
