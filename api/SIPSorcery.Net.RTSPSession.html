@@ -80,11 +80,35 @@
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">RTSPSession</span></div>
   </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_RTSPSession_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class RTSPSession : object</code></pre>
+    <pre><code class="lang-csharp hljs">public class RTSPSession</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -105,13 +129,13 @@
   </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTSPSession__ctor_System_String_IPEndPoint_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTSPSession.%23ctor(System.String%2CIPEndPoint%2CIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTSPSession__ctor_System_String_System_Net_IPEndPoint_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTSPSession.%23ctor(System.String%2CSystem.Net.IPEndPoint%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTSP/RTSPSession.cs/#L189">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTSPSession__ctor_" data-uid="SIPSorcery.Net.RTSPSession.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_RTSPSession__ctor_System_String_IPEndPoint_IPEndPoint_" data-uid="SIPSorcery.Net.RTSPSession.#ctor(System.String,IPEndPoint,IPEndPoint)">RTSPSession(String, IPEndPoint, IPEndPoint)</h4>
+  <h4 id="SIPSorcery_Net_RTSPSession__ctor_System_String_System_Net_IPEndPoint_System_Net_IPEndPoint_" data-uid="SIPSorcery.Net.RTSPSession.#ctor(System.String,System.Net.IPEndPoint,System.Net.IPEndPoint)">RTSPSession(String, IPEndPoint, IPEndPoint)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -134,12 +158,12 @@
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">remoteEndPoint</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">rtcpRemoteEndPoint</span></td>
         <td></td>
       </tr>
@@ -159,7 +183,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int H264_RTP_HEADER_LENGTH = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const int H264_RTP_HEADER_LENGTH = 2</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -188,7 +212,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int JPEG_RTP_HEADER_LENGTH = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const int JPEG_RTP_HEADER_LENGTH = 8</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -229,7 +253,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<span class="xref">System.Byte</span>[], <span class="xref">System.Int32</span>, <span class="xref">Action</span>&lt;<span class="xref">System.Byte</span>[]&gt;&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Byte</span>[], <span class="xref">System.Int32</span>, <span class="xref">System.Action</span>&lt;<span class="xref">System.Byte</span>[]&gt;&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -258,7 +282,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Func</span>&lt;<span class="xref">System.Byte</span>[], <span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Func</span>&lt;<span class="xref">System.Byte</span>[], <span class="xref">System.Byte</span>[]&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -275,7 +299,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int VP8_RTP_HEADER_LENGTH = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const int VP8_RTP_HEADER_LENGTH = 3</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -319,7 +343,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -379,7 +403,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -469,7 +493,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -499,7 +523,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -529,7 +553,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -649,7 +673,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -674,13 +698,13 @@
   </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp_DateTime_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp(DateTime)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp_System_DateTime_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp(System.DateTime)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTSP/RTSPSession.cs/#L1070">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp_" data-uid="SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp*"></a>
-  <h4 id="SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp_DateTime_" data-uid="SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp(DateTime)">DateTimeToNptTimestamp(DateTime)</h4>
+  <h4 id="SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp_System_DateTime_" data-uid="SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp(System.DateTime)">DateTimeToNptTimestamp(DateTime)</h4>
   <div class="markdown level1 summary"><p>Converts specified DateTime value to long NPT time.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -699,7 +723,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td><span class="parametername">value</span></td>
         <td><p>DateTime value to convert. This value must be in local time.</p>
 </td>
@@ -724,13 +748,13 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp32_DateTime_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32(DateTime)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp32_System_DateTime_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32(System.DateTime)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTSP/RTSPSession.cs/#L1052">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp32_" data-uid="SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32*"></a>
-  <h4 id="SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp32_DateTime_" data-uid="SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32(DateTime)">DateTimeToNptTimestamp32(DateTime)</h4>
+  <h4 id="SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp32_System_DateTime_" data-uid="SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32(System.DateTime)">DateTimeToNptTimestamp32(DateTime)</h4>
   <div class="markdown level1 summary"><p>Recalculates the step that should be applied to the RTP timestamp based on the frame rate of the incoming samples.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -749,7 +773,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td><span class="parametername">value</span></td>
         <td></td>
       </tr>
@@ -772,13 +796,13 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp90K_DateTime_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K(DateTime)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp90K_System_DateTime_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K(System.DateTime)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTSP/RTSPSession.cs/#L1099">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp90K_" data-uid="SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K*"></a>
-  <h4 id="SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp90K_DateTime_" data-uid="SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K(DateTime)">DateTimeToNptTimestamp90K(DateTime)</h4>
+  <h4 id="SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp90K_System_DateTime_" data-uid="SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K(System.DateTime)">DateTimeToNptTimestamp90K(DateTime)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -796,7 +820,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td><span class="parametername">value</span></td>
         <td></td>
       </tr>
@@ -1102,7 +1126,7 @@ quality image is required since the header used in this method does not support 
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Byte</span>[]&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1131,7 +1155,7 @@ quality image is required since the header used in this method does not support 
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1160,7 +1184,7 @@ quality image is required since the header used in this method does not support 
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span></td>
+        <td><span class="xref">System.Action</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -1189,7 +1213,7 @@ quality image is required since the header used in this method does not support 
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>

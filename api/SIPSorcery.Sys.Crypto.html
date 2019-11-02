@@ -80,11 +80,35 @@
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">Crypto</span></div>
   </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Sys.html">SIPSorcery.Sys</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Sys_Crypto_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class Crypto : object</code></pre>
+    <pre><code class="lang-csharp hljs">public class Crypto</code></pre>
   </div>
   <h3 id="fields">Fields
   </h3>
@@ -100,7 +124,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int AES_IV_SIZE = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const int AES_IV_SIZE = 16</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -129,7 +153,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int AES_KEY_SIZE = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const int AES_KEY_SIZE = 32</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -158,7 +182,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int DEFAULT_RANDOM_LENGTH = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const int DEFAULT_RANDOM_LENGTH = 10</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -357,58 +381,6 @@ diferrent hashes across different platforms.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crypto_GetRandomInt_Int32_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crypto.GetRandomInt(Int32%2CInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Crypto/Crypto.cs/#L218">View Source</a>
-  </span>
-  <a id="SIPSorcery_Sys_Crypto_GetRandomInt_" data-uid="SIPSorcery.Sys.Crypto.GetRandomInt*"></a>
-  <h4 id="SIPSorcery_Sys_Crypto_GetRandomInt_Int32_Int32_" data-uid="SIPSorcery.Sys.Crypto.GetRandomInt(Int32,Int32)">GetRandomInt(Int32, Int32)</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Int32 GetRandomInt(Int32 minValue, Int32 maxValue)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">Int32</span></td>
-        <td><span class="parametername">minValue</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">Int32</span></td>
-        <td><span class="parametername">maxValue</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">Int32</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crypto_GetRandomInt_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crypto.GetRandomInt(System.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
@@ -436,6 +408,58 @@ diferrent hashes across different platforms.</p>
       <tr>
         <td><span class="xref">System.Int32</span></td>
         <td><span class="parametername">length</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crypto_GetRandomInt_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crypto.GetRandomInt(System.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Crypto/Crypto.cs/#L218">View Source</a>
+  </span>
+  <a id="SIPSorcery_Sys_Crypto_GetRandomInt_" data-uid="SIPSorcery.Sys.Crypto.GetRandomInt*"></a>
+  <h4 id="SIPSorcery_Sys_Crypto_GetRandomInt_System_Int32_System_Int32_" data-uid="SIPSorcery.Sys.Crypto.GetRandomInt(System.Int32,System.Int32)">GetRandomInt(Int32, Int32)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static int GetRandomInt(int minValue, int maxValue)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">minValue</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">maxValue</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -545,7 +569,7 @@ diferrent hashes across different platforms.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static UInt32 GetRandomUInt()</code></pre>
+    <pre><code class="lang-csharp hljs">public static uint GetRandomUInt()</code></pre>
   </div>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -557,7 +581,7 @@ diferrent hashes across different platforms.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">UInt32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -575,7 +599,7 @@ diferrent hashes across different platforms.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static UInt16 GetRandomUInt16()</code></pre>
+    <pre><code class="lang-csharp hljs">public static ushort GetRandomUInt16()</code></pre>
   </div>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -587,7 +611,7 @@ diferrent hashes across different platforms.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">UInt16</span></td>
+        <td><span class="xref">System.UInt16</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -634,7 +658,7 @@ diferrent hashes across different platforms.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">RSACryptoServiceProvider</span></td>
+        <td><span class="xref">System.Security.Cryptography.RSACryptoServiceProvider</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -786,13 +810,13 @@ the hash needs to only contain safe ASCII characters.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crypto_LoadCertificate_StoreLocation_System_String_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crypto.LoadCertificate(StoreLocation%2CSystem.String%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crypto_LoadCertificate_System_Security_Cryptography_X509Certificates_StoreLocation_System_String_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crypto.LoadCertificate(System.Security.Cryptography.X509Certificates.StoreLocation%2CSystem.String%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Crypto/Crypto.cs/#L381">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_Crypto_LoadCertificate_" data-uid="SIPSorcery.Sys.Crypto.LoadCertificate*"></a>
-  <h4 id="SIPSorcery_Sys_Crypto_LoadCertificate_StoreLocation_System_String_System_Boolean_" data-uid="SIPSorcery.Sys.Crypto.LoadCertificate(StoreLocation,System.String,System.Boolean)">LoadCertificate(StoreLocation, String, Boolean)</h4>
+  <h4 id="SIPSorcery_Sys_Crypto_LoadCertificate_System_Security_Cryptography_X509Certificates_StoreLocation_System_String_System_Boolean_" data-uid="SIPSorcery.Sys.Crypto.LoadCertificate(System.Security.Cryptography.X509Certificates.StoreLocation,System.String,System.Boolean)">LoadCertificate(StoreLocation, String, Boolean)</h4>
   <div class="markdown level1 summary"><p>Attempts to load an X509 certificate from a Windows OS certificate store.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -811,7 +835,7 @@ the hash needs to only contain safe ASCII characters.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">StoreLocation</span></td>
+        <td><span class="xref">System.Security.Cryptography.X509Certificates.StoreLocation</span></td>
         <td><span class="parametername">storeLocation</span></td>
         <td><p>The certificate store to load from, can be CurrentUser or LocalMachine.</p>
 </td>
@@ -841,7 +865,7 @@ set to false for self issued certificates.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">X509Certificate2</span></td>
+        <td><span class="xref">System.Security.Cryptography.X509Certificates.X509Certificate2</span></td>
         <td><p>A certificate object if the load is successful otherwise null.</p>
 </td>
       </tr>

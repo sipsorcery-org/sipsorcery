@@ -80,11 +80,35 @@
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">IPSocket</span></div>
   </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Sys.html">SIPSorcery.Sys</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Sys_IPSocket_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class IPSocket : object</code></pre>
+    <pre><code class="lang-csharp hljs">public class IPSocket</code></pre>
   </div>
   <h3 id="fields">Fields
   </h3>
@@ -96,12 +120,12 @@
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/IPSocket.cs/#L33">View Source</a>
   </span>
   <h4 id="SIPSorcery_Sys_IPSocket_MaxPort" data-uid="SIPSorcery.Sys.IPSocket.MaxPort">MaxPort</h4>
-  <div class="markdown level1 summary"><p>Specifies the maximum acceptable value for the <see cref="!:System.Net.IPEndPoint.Port"></see> property.</p>
+  <div class="markdown level1 summary"><p>Specifies the maximum acceptable value for the <span class="xref">System.Net.IPEndPoint.Port</span> property.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int MaxPort = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const int MaxPort = 65535</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -126,12 +150,12 @@
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/IPSocket.cs/#L28">View Source</a>
   </span>
   <h4 id="SIPSorcery_Sys_IPSocket_MinPort" data-uid="SIPSorcery.Sys.IPSocket.MinPort">MinPort</h4>
-  <div class="markdown level1 summary"><p>Specifies the minimum acceptable value for the <see cref="!:System.Net.IPEndPoint.Port"></see> property.</p>
+  <div class="markdown level1 summary"><p>Specifies the minimum acceptable value for the <span class="xref">System.Net.IPEndPoint.Port</span> property.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int MinPort = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const int MinPort = 0</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -152,13 +176,13 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_IPSocket_GetSocketString_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.IPSocket.GetSocketString(IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_IPSocket_GetSocketString_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.IPSocket.GetSocketString(System.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/IPSocket.cs/#L73">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_IPSocket_GetSocketString_" data-uid="SIPSorcery.Sys.IPSocket.GetSocketString*"></a>
-  <h4 id="SIPSorcery_Sys_IPSocket_GetSocketString_IPEndPoint_" data-uid="SIPSorcery.Sys.IPSocket.GetSocketString(IPEndPoint)">GetSocketString(IPEndPoint)</h4>
+  <h4 id="SIPSorcery_Sys_IPSocket_GetSocketString_System_Net_IPEndPoint_" data-uid="SIPSorcery.Sys.IPSocket.GetSocketString(System.Net.IPEndPoint)">GetSocketString(IPEndPoint)</h4>
   <div class="markdown level1 summary"><p>This code is based on the IPEndPoint.ToString method in the dotnet source code at
 <a href="https://github.com/dotnet/corefx/blob/master/src/System.Net.Primitives/src/System/Net/IPEndPoint.cs">https://github.com/dotnet/corefx/blob/master/src/System.Net.Primitives/src/System/Net/IPEndPoint.cs</a>.
 If/when that feature makes it into .NET Standard this method can be replaced.</p>
@@ -179,7 +203,7 @@ If/when that feature makes it into .NET Standard this method can be replaced.</p
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">endPoint</span></td>
         <td></td>
       </tr>
@@ -395,20 +419,20 @@ Without a port the form is:
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_IPSocket_TryParseIPEndPoint_System_String_IPEndPoint__.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String%2CIPEndPoint%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_IPSocket_TryParseIPEndPoint_System_String_System_Net_IPEndPoint__.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String%2CSystem.Net.IPEndPoint%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/IPSocket.cs/#L87">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_IPSocket_TryParseIPEndPoint_" data-uid="SIPSorcery.Sys.IPSocket.TryParseIPEndPoint*"></a>
-  <h4 id="SIPSorcery_Sys_IPSocket_TryParseIPEndPoint_System_String_IPEndPoint__" data-uid="SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String,IPEndPoint@)">TryParseIPEndPoint(String, out IPEndPoint)</h4>
+  <h4 id="SIPSorcery_Sys_IPSocket_TryParseIPEndPoint_System_String_System_Net_IPEndPoint__" data-uid="SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String,System.Net.IPEndPoint@)">TryParseIPEndPoint(String, out IPEndPoint)</h4>
   <div class="markdown level1 summary"><p>This code is based on the IPEndPoint.TryParse method in the dotnet source code at
 <a href="https://github.com/dotnet/corefx/blob/master/src/System.Net.Primitives/src/System/Net/IPEndPoint.cs">https://github.com/dotnet/corefx/blob/master/src/System.Net.Primitives/src/System/Net/IPEndPoint.cs</a>.
 If/when that feature makes it into .NET Standard this method can be replaced.</p>
@@ -435,7 +459,7 @@ If/when that feature makes it into .NET Standard this method can be replaced.</p
 </td>
       </tr>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">result</span></td>
         <td><p>If the parse is successfull this output parameter will contain the IPv4 or IPv6 end point.</p>
 </td>

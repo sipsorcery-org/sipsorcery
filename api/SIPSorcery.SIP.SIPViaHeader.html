@@ -80,11 +80,32 @@
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">SIPViaHeader</span></div>
   </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.html">SIPSorcery.SIP</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_SIPViaHeader_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class SIPViaHeader : object</code></pre>
+    <pre><code class="lang-csharp hljs">public class SIPViaHeader</code></pre>
   </div>
   <h5 id="SIPSorcery_SIP_SIPViaHeader_remarks"><strong>Remarks</strong></h5>
   <div class="markdown level0 remarks"><p>The Via header only has parameters, no headers. Parameters of from ...;name=value;name2=value2
@@ -118,85 +139,6 @@ class to reject any SIP requests that are missing the necessary branch.</p>
   </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPViaHeader__ctor_IPEndPoint_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPViaHeader.%23ctor(IPEndPoint%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPHeader.cs/#L206">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_SIPViaHeader__ctor_" data-uid="SIPSorcery.SIP.SIPViaHeader.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPViaHeader__ctor_IPEndPoint_System_String_" data-uid="SIPSorcery.SIP.SIPViaHeader.#ctor(IPEndPoint,System.String)">SIPViaHeader(IPEndPoint, String)</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPViaHeader(IPEndPoint contactEndPoint, string branch)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">IPEndPoint</span></td>
-        <td><span class="parametername">contactEndPoint</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">branch</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPViaHeader__ctor_IPEndPoint_System_String_SIPSorcery_SIP_SIPProtocolsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPViaHeader.%23ctor(IPEndPoint%2CSystem.String%2CSIPSorcery.SIP.SIPProtocolsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPHeader.cs/#L218">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_SIPViaHeader__ctor_" data-uid="SIPSorcery.SIP.SIPViaHeader.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPViaHeader__ctor_IPEndPoint_System_String_SIPSorcery_SIP_SIPProtocolsEnum_" data-uid="SIPSorcery.SIP.SIPViaHeader.#ctor(IPEndPoint,System.String,SIPSorcery.SIP.SIPProtocolsEnum)">SIPViaHeader(IPEndPoint, String, SIPProtocolsEnum)</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPViaHeader(IPEndPoint contactEndPoint, string branch, SIPProtocolsEnum protocol)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">IPEndPoint</span></td>
-        <td><span class="parametername">contactEndPoint</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">branch</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.SIPProtocolsEnum.html">SIPProtocolsEnum</a></td>
-        <td><span class="parametername">protocol</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPViaHeader__ctor_SIPSorcery_SIP_SIPEndPoint_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPViaHeader.%23ctor(SIPSorcery.SIP.SIPEndPoint%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
@@ -228,6 +170,85 @@ class to reject any SIP requests that are missing the necessary branch.</p>
       <tr>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">branch</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPViaHeader__ctor_System_Net_IPEndPoint_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPViaHeader.%23ctor(System.Net.IPEndPoint%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPHeader.cs/#L206">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPViaHeader__ctor_" data-uid="SIPSorcery.SIP.SIPViaHeader.#ctor*"></a>
+  <h4 id="SIPSorcery_SIP_SIPViaHeader__ctor_System_Net_IPEndPoint_System_String_" data-uid="SIPSorcery.SIP.SIPViaHeader.#ctor(System.Net.IPEndPoint,System.String)">SIPViaHeader(IPEndPoint, String)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPViaHeader(IPEndPoint contactEndPoint, string branch)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">contactEndPoint</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">branch</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPViaHeader__ctor_System_Net_IPEndPoint_System_String_SIPSorcery_SIP_SIPProtocolsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPViaHeader.%23ctor(System.Net.IPEndPoint%2CSystem.String%2CSIPSorcery.SIP.SIPProtocolsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPHeader.cs/#L218">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPViaHeader__ctor_" data-uid="SIPSorcery.SIP.SIPViaHeader.#ctor*"></a>
+  <h4 id="SIPSorcery_SIP_SIPViaHeader__ctor_System_Net_IPEndPoint_System_String_SIPSorcery_SIP_SIPProtocolsEnum_" data-uid="SIPSorcery.SIP.SIPViaHeader.#ctor(System.Net.IPEndPoint,System.String,SIPSorcery.SIP.SIPProtocolsEnum)">SIPViaHeader(IPEndPoint, String, SIPProtocolsEnum)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPViaHeader(IPEndPoint contactEndPoint, string branch, SIPProtocolsEnum protocol)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">contactEndPoint</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">branch</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPProtocolsEnum.html">SIPProtocolsEnum</a></td>
+        <td><span class="parametername">protocol</span></td>
         <td></td>
       </tr>
     </tbody>

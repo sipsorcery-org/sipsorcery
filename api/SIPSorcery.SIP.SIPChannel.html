@@ -82,6 +82,34 @@
       <div class="level2"><a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html">SIPTCPChannel</a></div>
       <div class="level2"><a class="xref" href="SIPSorcery.SIP.SIPUDPChannel.html">SIPUDPChannel</a></div>
   </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.IDisposable</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.html">SIPSorcery.SIP</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_SIPChannel_syntax">Syntax</h5>
@@ -143,7 +171,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">List</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -172,7 +200,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">ILogger</span></td>
+        <td><span class="xref">Microsoft.Extensions.Logging.ILogger</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -321,7 +349,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">AddressFamily</span></td>
+        <td><span class="xref">System.Net.Sockets.AddressFamily</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -566,20 +594,20 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Dictionary</span>&lt;<span class="xref">System.String</span>, <a class="xref" href="SIPSorcery.SIP.SIPStreamConnection.html">SIPStreamConnection</a>&gt;</td>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">System.String</span>, <a class="xref" href="SIPSorcery.SIP.SIPStreamConnection.html">SIPStreamConnection</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_IsConnectionEstablished_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.IsConnectionEstablished(IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_IsConnectionEstablished_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.IsConnectionEstablished(System.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPChannel.cs/#L138">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPChannel_IsConnectionEstablished_" data-uid="SIPSorcery.SIP.SIPChannel.IsConnectionEstablished*"></a>
-  <h4 id="SIPSorcery_SIP_SIPChannel_IsConnectionEstablished_IPEndPoint_" data-uid="SIPSorcery.SIP.SIPChannel.IsConnectionEstablished(IPEndPoint)">IsConnectionEstablished(IPEndPoint)</h4>
+  <h4 id="SIPSorcery_SIP_SIPChannel_IsConnectionEstablished_System_Net_IPEndPoint_" data-uid="SIPSorcery.SIP.SIPChannel.IsConnectionEstablished(System.Net.IPEndPoint)">IsConnectionEstablished(IPEndPoint)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -597,7 +625,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">remoteEndPoint</span></td>
         <td></td>
       </tr>
@@ -655,13 +683,13 @@ oriented channels such as TCP and TLS.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_Send_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.Send(IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_Send_System_Net_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPChannel.cs/#L117">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPChannel_Send_" data-uid="SIPSorcery.SIP.SIPChannel.Send*"></a>
-  <h4 id="SIPSorcery_SIP_SIPChannel_Send_IPEndPoint_System_Byte___" data-uid="SIPSorcery.SIP.SIPChannel.Send(IPEndPoint,System.Byte[])">Send(IPEndPoint, Byte[])</h4>
+  <h4 id="SIPSorcery_SIP_SIPChannel_Send_System_Net_IPEndPoint_System_Byte___" data-uid="SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint,System.Byte[])">Send(IPEndPoint, Byte[])</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -679,7 +707,7 @@ oriented channels such as TCP and TLS.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">destinationEndPoint</span></td>
         <td></td>
       </tr>
@@ -692,13 +720,13 @@ oriented channels such as TCP and TLS.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_Send_IPEndPoint_System_Byte___System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.Send(IPEndPoint%2CSystem.Byte%5B%5D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_Send_System_Net_IPEndPoint_System_Byte___System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint%2CSystem.Byte%5B%5D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPChannel.cs/#L118">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPChannel_Send_" data-uid="SIPSorcery.SIP.SIPChannel.Send*"></a>
-  <h4 id="SIPSorcery_SIP_SIPChannel_Send_IPEndPoint_System_Byte___System_String_" data-uid="SIPSorcery.SIP.SIPChannel.Send(IPEndPoint,System.Byte[],System.String)">Send(IPEndPoint, Byte[], String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPChannel_Send_System_Net_IPEndPoint_System_Byte___System_String_" data-uid="SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint,System.Byte[],System.String)">Send(IPEndPoint, Byte[], String)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -716,7 +744,7 @@ oriented channels such as TCP and TLS.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">destinationEndPoint</span></td>
         <td></td>
       </tr>
@@ -734,13 +762,13 @@ oriented channels such as TCP and TLS.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_Send_IPEndPoint_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.Send(IPEndPoint%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_Send_System_Net_IPEndPoint_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPChannel.cs/#L116">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPChannel_Send_" data-uid="SIPSorcery.SIP.SIPChannel.Send*"></a>
-  <h4 id="SIPSorcery_SIP_SIPChannel_Send_IPEndPoint_System_String_" data-uid="SIPSorcery.SIP.SIPChannel.Send(IPEndPoint,System.String)">Send(IPEndPoint, String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPChannel_Send_System_Net_IPEndPoint_System_String_" data-uid="SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint,System.String)">Send(IPEndPoint, String)</h4>
   <div class="markdown level1 summary"><p>Send a SIP message, represented as a string, to a remote end point.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -759,7 +787,7 @@ oriented channels such as TCP and TLS.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">destinationEndPoint</span></td>
         <td><p>The remote end point to send the message to.</p>
 </td>
@@ -774,13 +802,13 @@ oriented channels such as TCP and TLS.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_SendAsync_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_SendAsync_System_Net_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPChannel.cs/#L126">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPChannel_SendAsync_" data-uid="SIPSorcery.SIP.SIPChannel.SendAsync*"></a>
-  <h4 id="SIPSorcery_SIP_SIPChannel_SendAsync_IPEndPoint_System_Byte___" data-uid="SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint,System.Byte[])">SendAsync(IPEndPoint, Byte[])</h4>
+  <h4 id="SIPSorcery_SIP_SIPChannel_SendAsync_System_Net_IPEndPoint_System_Byte___" data-uid="SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[])">SendAsync(IPEndPoint, Byte[])</h4>
   <div class="markdown level1 summary"><p>Asynchronous SIP message send to a remote end point.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -799,7 +827,7 @@ oriented channels such as TCP and TLS.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">destinationEndPoint</span></td>
         <td><p>The remote end point to send the message to.</p>
 </td>
@@ -822,7 +850,7 @@ oriented channels such as TCP and TLS.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
         <td><p>If no errors SocketError.Success otherwise an error value.</p>
 </td>
       </tr>
@@ -830,13 +858,13 @@ oriented channels such as TCP and TLS.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_SendAsync_IPEndPoint_System_Byte___System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint%2CSystem.Byte%5B%5D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPChannel_SendAsync_System_Net_IPEndPoint_System_Byte___System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint%2CSystem.Byte%5B%5D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPChannel.cs/#L135">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPChannel_SendAsync_" data-uid="SIPSorcery.SIP.SIPChannel.SendAsync*"></a>
-  <h4 id="SIPSorcery_SIP_SIPChannel_SendAsync_IPEndPoint_System_Byte___System_String_" data-uid="SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint,System.Byte[],System.String)">SendAsync(IPEndPoint, Byte[], String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPChannel_SendAsync_System_Net_IPEndPoint_System_Byte___System_String_" data-uid="SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[],System.String)">SendAsync(IPEndPoint, Byte[], String)</h4>
   <div class="markdown level1 summary"><p>Asynchronous SIP message send to a remote end point.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -855,7 +883,7 @@ oriented channels such as TCP and TLS.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">destinationEndPoint</span></td>
         <td><p>The remote end point to send the message to.</p>
 </td>
@@ -884,12 +912,16 @@ oriented channels such as TCP and TLS.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
         <td><p>If no errors SocketError.Success otherwise an error value.</p>
 </td>
       </tr>
     </tbody>
   </table>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.IDisposable</span>
+  </div>
 </article>
           </div>
           

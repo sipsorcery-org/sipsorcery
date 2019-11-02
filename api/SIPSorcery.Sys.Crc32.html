@@ -78,13 +78,97 @@
   <div class="inheritance">
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
-    <div class="level1"><span class="xref">Crc32</span></div>
+    <div class="level1"><span class="xref">System.Security.Cryptography.HashAlgorithm</span></div>
+    <div class="level2"><span class="xref">Crc32</span></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.Security.Cryptography.ICryptoTransform</span></div>
+    <div><span class="xref">System.IDisposable</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.HashSizeValue</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.HashValue</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.State</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.Clear()</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.ComputeHash(System.Byte[])</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.ComputeHash(System.Byte[], System.Int32, System.Int32)</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.ComputeHash(System.IO.Stream)</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.Create()</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.Create(System.String)</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.Dispose()</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.Dispose(System.Boolean)</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.TransformBlock(System.Byte[], System.Int32, System.Int32, System.Byte[], System.Int32)</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.TransformFinalBlock(System.Byte[], System.Int32, System.Int32)</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.CanReuseTransform</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.CanTransformMultipleBlocks</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.Hash</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.InputBlockSize</span>
+    </div>
+    <div>
+      <span class="xref">System.Security.Cryptography.HashAlgorithm.OutputBlockSize</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Sys.html">SIPSorcery.Sys</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Sys_Crc32_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class Crc32 : HashAlgorithm</code></pre>
+    <pre><code class="lang-csharp hljs">public class Crc32 : HashAlgorithm, ICryptoTransform, IDisposable</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -105,18 +189,18 @@
   </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crc32__ctor_UInt32_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crc32.%23ctor(UInt32%2CUInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crc32__ctor_System_UInt32_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crc32.%23ctor(System.UInt32%2CSystem.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/CRC32.cs/#L25">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_Crc32__ctor_" data-uid="SIPSorcery.Sys.Crc32.#ctor*"></a>
-  <h4 id="SIPSorcery_Sys_Crc32__ctor_UInt32_UInt32_" data-uid="SIPSorcery.Sys.Crc32.#ctor(UInt32,UInt32)">Crc32(UInt32, UInt32)</h4>
+  <h4 id="SIPSorcery_Sys_Crc32__ctor_System_UInt32_System_UInt32_" data-uid="SIPSorcery.Sys.Crc32.#ctor(System.UInt32,System.UInt32)">Crc32(UInt32, UInt32)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Crc32(UInt32 polynomial, UInt32 seed)</code></pre>
+    <pre><code class="lang-csharp hljs">public Crc32(uint polynomial, uint seed)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -129,12 +213,12 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">UInt32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td><span class="parametername">polynomial</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">UInt32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td><span class="parametername">seed</span></td>
         <td></td>
       </tr>
@@ -154,7 +238,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const UInt32 DefaultPolynomial = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const uint DefaultPolynomial = 3988292384U</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -166,7 +250,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">UInt32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -183,7 +267,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const UInt32 DefaultSeed = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const uint DefaultSeed = 4294967295U</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -195,7 +279,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">UInt32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -232,6 +316,8 @@
       </tr>
     </tbody>
   </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Security.Cryptography.HashAlgorithm.HashSize</span></div>
   <h3 id="methods">Methods
   </h3>
   <span class="small pull-right mobile-hide">
@@ -247,7 +333,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static UInt32 Compute(byte[] buffer)</code></pre>
+    <pre><code class="lang-csharp hljs">public static uint Compute(byte[] buffer)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -276,25 +362,25 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">UInt32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crc32_Compute_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crc32.Compute(UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crc32_Compute_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crc32.Compute(System.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/CRC32.cs/#L59">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_Crc32_Compute_" data-uid="SIPSorcery.Sys.Crc32.Compute*"></a>
-  <h4 id="SIPSorcery_Sys_Crc32_Compute_UInt32_System_Byte___" data-uid="SIPSorcery.Sys.Crc32.Compute(UInt32,System.Byte[])">Compute(UInt32, Byte[])</h4>
+  <h4 id="SIPSorcery_Sys_Crc32_Compute_System_UInt32_System_Byte___" data-uid="SIPSorcery.Sys.Crc32.Compute(System.UInt32,System.Byte[])">Compute(UInt32, Byte[])</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static UInt32 Compute(UInt32 seed, byte[] buffer)</code></pre>
+    <pre><code class="lang-csharp hljs">public static uint Compute(uint seed, byte[] buffer)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -307,7 +393,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">UInt32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td><span class="parametername">seed</span></td>
         <td></td>
       </tr>
@@ -328,25 +414,25 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">UInt32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crc32_Compute_UInt32_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crc32.Compute(UInt32%2CUInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crc32_Compute_System_UInt32_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crc32.Compute(System.UInt32%2CSystem.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/CRC32.cs/#L64">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_Crc32_Compute_" data-uid="SIPSorcery.Sys.Crc32.Compute*"></a>
-  <h4 id="SIPSorcery_Sys_Crc32_Compute_UInt32_UInt32_System_Byte___" data-uid="SIPSorcery.Sys.Crc32.Compute(UInt32,UInt32,System.Byte[])">Compute(UInt32, UInt32, Byte[])</h4>
+  <h4 id="SIPSorcery_Sys_Crc32_Compute_System_UInt32_System_UInt32_System_Byte___" data-uid="SIPSorcery.Sys.Crc32.Compute(System.UInt32,System.UInt32,System.Byte[])">Compute(UInt32, UInt32, Byte[])</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static UInt32 Compute(UInt32 polynomial, UInt32 seed, byte[] buffer)</code></pre>
+    <pre><code class="lang-csharp hljs">public static uint Compute(uint polynomial, uint seed, byte[] buffer)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -359,12 +445,12 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">UInt32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td><span class="parametername">polynomial</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">UInt32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td><span class="parametername">seed</span></td>
         <td></td>
       </tr>
@@ -385,7 +471,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">UInt32</span></td>
+        <td><span class="xref">System.UInt32</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -432,6 +518,8 @@
       </tr>
     </tbody>
   </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Security.Cryptography.HashAlgorithm.HashCore(System.Byte[], System.Int32, System.Int32)</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crc32_HashFinal.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crc32.HashFinal%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
@@ -462,6 +550,8 @@
       </tr>
     </tbody>
   </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Security.Cryptography.HashAlgorithm.HashFinal()</span></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_Crc32_Initialize.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.Crc32.Initialize%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
@@ -476,6 +566,15 @@
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public override void Initialize()</code></pre>
+  </div>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Security.Cryptography.HashAlgorithm.Initialize()</span></div>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.Security.Cryptography.ICryptoTransform</span>
+  </div>
+  <div>
+      <span class="xref">System.IDisposable</span>
   </div>
 </article>
           </div>
