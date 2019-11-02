@@ -122,7 +122,15 @@ by one server can result in a problem for a different server. Instead a new SIP 
 wherever a modification is required.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEscape.html">SIPEscape</a></h4>
-      <section></section>
+      <section><p>For SIP URI user portion the reserved characters below need to be escaped.</p>
+<pre><code>reserved    =  &quot;;&quot; / &quot;/&quot; / &quot;?&quot; / &quot;:&quot; / &quot;@&quot; / &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot;  / &quot;$&quot; / &quot;,&quot;
+user-unreserved  =  &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot; / &quot;$&quot; / &quot;,&quot; / &quot;;&quot; / &quot;?&quot; / &quot;/&quot;
+Leaving to be escaped = &quot;:&quot; / &quot;@&quot; </code></pre>
+<p>For SIP URI parameters different characters are unreserved (just to make life difficult).</p>
+<pre><code>reserved    =  &quot;;&quot; / &quot;/&quot; / &quot;?&quot; / &quot;:&quot; / &quot;@&quot; / &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot;  / &quot;$&quot; / &quot;,&quot;
+param-unreserved = &quot;[&quot; / &quot;]&quot; / &quot;/&quot; / &quot;:&quot; / &quot;&amp;&quot; / &quot;+&quot; / &quot;$&quot;
+Leaving to be escaped =  &quot;;&quot; / &quot;?&quot; / &quot;@&quot; / &quot;=&quot; / &quot;,&quot;</code></pre>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEvent.html">SIPEvent</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEventConsts.html">SIPEventConsts</a></h4>
@@ -162,7 +170,21 @@ a particular SIP extension.</p>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPParameterlessURI.html">SIPParameterlessURI</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPParameters.html">SIPParameters</a></h4>
-      <section></section>
+      <section><p>Represents a series of name value pairs that are optionally included in SIP URIs and also as an additional
+optional setting on some SIP Headers (Contact, To, From, Via).
+This class also treats the header value of a SIP URI as a special case of a SIP parameter. The difference between
+a paramter and a SIP URI header is the start and delimiter characters used.</p>
+<pre><code>SIP URI with parameters:
+sip:1234@sip.com;key1=value1;key2=value2
+
+SIP URI with headers:
+sip:1234@sip.com?key1=value1&amp;key2=value2
+
+SIP URI with parameters and headers (paramters always come first):
+sip:1234@sip.com;key1=value1;key2=value2?key1=value1&amp;key2=value2</code></pre>
+<pre><code>generic-param  =  token [ EQUAL gen-value ]
+gen-value      =  token / host / quoted-string</code></pre>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPProtocolsType.html">SIPProtocolsType</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPReplacesParameter.html">SIPReplacesParameter</a></h4>
@@ -217,11 +239,83 @@ multiple packets.</p>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPUDPChannel.html">SIPUDPChannel</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a></h4>
-      <section></section>
+      <section><p>Implements the the absoluteURI structure from the SIP RFC (incomplete as at 17 nov 2006, AC).</p>
+<pre><code>absoluteURI    =  scheme &quot;:&quot; ( hier-part / opaque-part )
+hier-part      =  ( net-path / abs-path ) [ &quot;?&quot; query ]
+net-path       =  &quot;//&quot; authority [ abs-path ]
+abs-path       =  &quot;/&quot; path-segments
+
+opaque-part    =  uric-no-slash *uric
+uric           =  reserved / unreserved / escaped
+uric-no-slash  =  unreserved / escaped / &quot;;&quot; / &quot;?&quot; / &quot;:&quot; / &quot;@&quot; / &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot; / &quot;$&quot; / &quot;,&quot;
+path-segments  =  segment *( &quot;/&quot; segment )
+segment        =  *pchar *( &quot;;&quot; param )
+param          =  *pchar
+pchar          =  unreserved / escaped / &quot;:&quot; / &quot;@&quot; / &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot; / &quot;$&quot; / &quot;,&quot;
+scheme         =  ALPHA *( ALPHA / DIGIT / &quot;+&quot; / &quot;-&quot; / &quot;.&quot; )
+authority      =  srvr / reg-name
+srvr           =  [ [ userinfo &quot;@&quot; ] hostport ]
+reg-name       =  1*( unreserved / escaped / &quot;$&quot; / &quot;,&quot; / &quot;;&quot; / &quot;:&quot; / &quot;@&quot; / &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot; )
+query          =  *uric
+
+SIP-URI          =  &quot;sip:&quot; [ userinfo ] hostport uri-parameters [ headers ]
+SIPS-URI         =  &quot;sips:&quot; [ userinfo ] hostport uri-parameters [ headers ]
+userinfo         =  ( user / telephone-subscriber ) [ &quot;:&quot; password ] &quot;@&quot;
+user             =  1*( unreserved / escaped / user-unreserved )
+user-unreserved  =  &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot; / &quot;$&quot; / &quot;,&quot; / &quot;;&quot; / &quot;?&quot; / &quot;/&quot;
+password         =  *( unreserved / escaped / &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot; / &quot;$&quot; / &quot;,&quot; )
+hostport         =  host [ &quot;:&quot; port ]
+host             =  hostname / IPv4address / IPv6reference
+hostname         =  *( domainlabel &quot;.&quot; ) toplabel [ &quot;.&quot; ]
+domainlabel      =  alphanum / alphanum *( alphanum / &quot;-&quot; ) alphanum
+toplabel         =  ALPHA / ALPHA *( alphanum / &quot;-&quot; ) alphanum
+IPv4address    =  1*3DIGIT &quot;.&quot; 1*3DIGIT &quot;.&quot; 1*3DIGIT &quot;.&quot; 1*3DIGIT
+IPv6reference  =  &quot;[&quot; IPv6address &quot;]&quot;
+IPv6address    =  hexpart [ &quot;:&quot; IPv4address ]
+hexpart        =  hexseq / hexseq &quot;::&quot; [ hexseq ] / &quot;::&quot; [ hexseq ]
+hexseq         =  hex4 *( &quot;:&quot; hex4)
+hex4           =  1*4HEXDIG
+port           =  1*DIGIT
+
+The BNF for telephone-subscriber can be found in RFC 2806 [9].  Note,
+however, that any characters allowed there that are not allowed in
+the user part of the SIP URI MUST be escaped.
+
+uri-parameters    =  *( &quot;;&quot; uri-parameter)
+uri-parameter     =  transport-param / user-param / method-param / ttl-param / maddr-param / lr-param / other-param
+transport-param   =  &quot;transport=&quot; ( &quot;udp&quot; / &quot;tcp&quot; / &quot;sctp&quot; / &quot;tls&quot; / other-transport)
+other-transport   =  token
+user-param        =  &quot;user=&quot; ( &quot;phone&quot; / &quot;ip&quot; / other-user)
+other-user        =  token
+method-param      =  &quot;method=&quot; Method
+ttl-param         =  &quot;ttl=&quot; ttl
+maddr-param       =  &quot;maddr=&quot; host
+lr-param          =  &quot;lr&quot;
+other-param       =  pname [ &quot;=&quot; pvalue ]
+pname             =  1*paramchar
+pvalue            =  1*paramchar
+paramchar         =  param-unreserved / unreserved / escaped
+param-unreserved  =  &quot;[&quot; / &quot;]&quot; / &quot;/&quot; / &quot;:&quot; / &quot;&amp;&quot; / &quot;+&quot; / &quot;$&quot;
+
+headers         =  &quot;?&quot; header *( &quot;&amp;&quot; header )
+header          =  hname &quot;=&quot; hvalue
+hname           =  1*( hnv-unreserved / unreserved / escaped )
+hvalue          =  *( hnv-unreserved / unreserved / escaped )
+hnv-unreserved  =  &quot;[&quot; / &quot;]&quot; / &quot;/&quot; / &quot;?&quot; / &quot;:&quot; / &quot;+&quot; / &quot;$&quot;</code></pre>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPUserAgentRolesTypes.html">SIPUserAgentRolesTypes</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPUserField.html">SIPUserField</a></h4>
-      <section></section>
+      <section><pre><code>name-addr      =  [ display-name ] LAQUOT addr-spec RAQUOT
+addr-spec      =  SIP-URI / SIPS-URI / absoluteURI
+SIP-URI          =  &quot;sip:&quot; [ userinfo ] hostport
+uri-parameters [ headers ]
+SIPS-URI         =  &quot;sips:&quot; [ userinfo ] hostport
+uri-parameters [ headers ]
+userinfo         =  ( user / telephone-subscriber ) [ &quot;:&quot; password ] &quot;@&quot;</code></pre>
+<p>If no &quot;&lt;&quot; and &quot;&gt;&quot; are present, all parameters after the URI are header
+parameters, not URI parameters.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPValidationException.html">SIPValidationException</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPViaHeader.html">SIPViaHeader</a></h4>

@@ -111,6 +111,29 @@
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public class SIPEventDialogInfo : SIPEvent</code></pre>
   </div>
+  <h5 id="SIPSorcery_SIP_SIPEventDialogInfo_remarks"><strong>Remarks</strong></h5>
+  <div class="markdown level0 remarks"><p>RFC4235 on Dialog Event Packages:</p>
+<ul>
+<li>To estalish a subscription to a specific dialog the call-id, to-tag and from-tag must be specified,</li>
+<li>To establish a subscription to a set of dialogs the call-id and to-tag must be specified.
+Treatment of the Event header:</li>
+<li>If the Event header contains dialog identifiers a notification is sent for any dialogs that match them AND the user in the SUBSCRIBE URI.</li>
+<li>If the Event header does not contain any dialog identifiers then a notification is sent for every dialog that matches the user in the SUBSCRIBE URI.</li>
+<li>Notifications contain the identities of the dialog participants, the target URIs and the dialog identifiers.</li>
+<li>The format of the NOTIFY bodies must be in a format specified in a SUBSCRIBE Accept header or if omitted a default format of &quot;application/dialog-info+xml&quot;.</li>
+</ul>
+<p>Example of an empty dialog notification body:</p>
+<pre><code> &lt;?xml version=&quot;1.0&quot;?>
+ &lt;dialog-info xmlns=&quot;urn:ietf:params:xml:ns:dialog-info&quot; version=&quot;0&quot; notify-state=&quot;full&quot; entity=&quot;sip:alice@example.com&quot; /></code></pre>
+<p>Example of a single entry dialog notification body:</p>
+<pre><code>&lt;?xml version=&quot;1.0&quot;?>
+&lt;dialog-info xmlns=&quot;urn:ietf:params:xml:ns:dialog-info&quot; version=&quot;0&quot; state=&quot;partial&quot; entity=&quot;sip:alice@example.com&quot;>
+  &lt;dialog id=&quot;as7d900as8&quot; call-id=&quot;a84b4c76e66710&quot; local-tag=&quot;1928301774&quot; direction=&quot;initiator&quot;>
+   &lt;state event=&quot;rejected&quot; code=&quot;486&quot;>terminated&lt;/state> &lt;!-- The state element is the only mandatory child element for a dialog element. -->
+   &lt;duration>145&lt;/duration>
+  &lt;/dialog>
+ &lt;/dialog-info></code></pre>
+</div>
   <h3 id="constructors">Constructors
   </h3>
   <span class="small pull-right mobile-hide">
@@ -118,7 +141,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEventDialogInfo__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEventDialogInfo.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L71">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L80">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEventDialogInfo__ctor_" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPEventDialogInfo__ctor" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.#ctor">SIPEventDialogInfo()</h4>
@@ -133,7 +156,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEventDialogInfo__ctor_System_Int32_SIPSorcery_SIP_SIPEventDialogInfoStateEnum_SIPSorcery_SIP_SIPURI_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEventDialogInfo.%23ctor(System.Int32%2CSIPSorcery.SIP.SIPEventDialogInfoStateEnum%2CSIPSorcery.SIP.SIPURI)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L74">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L83">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEventDialogInfo__ctor_" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPEventDialogInfo__ctor_System_Int32_SIPSorcery_SIP_SIPEventDialogInfoStateEnum_SIPSorcery_SIP_SIPURI_" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.#ctor(System.Int32,SIPSorcery.SIP.SIPEventDialogInfoStateEnum,SIPSorcery.SIP.SIPURI)">SIPEventDialogInfo(Int32, SIPEventDialogInfoStateEnum, SIPURI)</h4>
@@ -177,7 +200,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEventDialogInfo_DialogItems.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEventDialogInfo.DialogItems%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L69">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L78">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPEventDialogInfo_DialogItems" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.DialogItems">DialogItems</h4>
   <div class="markdown level1 summary"></div>
@@ -206,7 +229,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEventDialogInfo_Entity.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEventDialogInfo.Entity%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L68">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L77">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPEventDialogInfo_Entity" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.Entity">Entity</h4>
   <div class="markdown level1 summary"></div>
@@ -235,7 +258,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEventDialogInfo_m_dialogXMLNS.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEventDialogInfo.m_dialogXMLNS%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L62">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L71">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPEventDialogInfo_m_dialogXMLNS" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.m_dialogXMLNS">m_dialogXMLNS</h4>
   <div class="markdown level1 summary"></div>
@@ -264,7 +287,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEventDialogInfo_State.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEventDialogInfo.State%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L67">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L76">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPEventDialogInfo_State" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.State">State</h4>
   <div class="markdown level1 summary"></div>
@@ -293,7 +316,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEventDialogInfo_Version.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEventDialogInfo.Version%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L66">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L75">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPEventDialogInfo_Version" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.Version">Version</h4>
   <div class="markdown level1 summary"></div>
@@ -324,7 +347,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEventDialogInfo_Load_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEventDialogInfo.Load(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L81">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L90">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEventDialogInfo_Load_" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.Load*"></a>
   <h4 id="SIPSorcery_SIP_SIPEventDialogInfo_Load_System_String_" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.Load(System.String)">Load(String)</h4>
@@ -358,7 +381,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEventDialogInfo_Parse_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEventDialogInfo.Parse(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L105">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L114">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEventDialogInfo_Parse_" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.Parse*"></a>
   <h4 id="SIPSorcery_SIP_SIPEventDialogInfo_Parse_System_String_" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.Parse(System.String)">Parse(String)</h4>
@@ -405,7 +428,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEventDialogInfo_ToXMLText.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEventDialogInfo.ToXMLText%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L112">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L121">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEventDialogInfo_ToXMLText_" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.ToXMLText*"></a>
   <h4 id="SIPSorcery_SIP_SIPEventDialogInfo_ToXMLText" data-uid="SIPSorcery.SIP.SIPEventDialogInfo.ToXMLText">ToXMLText()</h4>
@@ -443,7 +466,7 @@
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEventDialogInfo.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEventDialogInfo%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L58" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIPEvents/Dialog/SIPEventDialogInfo.cs/#L67" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
