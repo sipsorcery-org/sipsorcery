@@ -1,7 +1,7 @@
 version: 1.0.{build}
 environment:
   access_token:
-    secure: EXKwpl0EvC2cMU2qTRNTTSQ3Q/XgbCofTCiQgmOm83GkS7ZNM0CG1Fyafer+zGIM
+    secure: YgeP2B9ttGVqoi7DHyboUMR1OH8zRMvqyj7TjXMMj/BFsodehAvVOuCookI6bBEn
 image: Visual Studio 2019
 configuration: Release
 before_build:
