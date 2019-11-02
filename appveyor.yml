@@ -6,15 +6,14 @@ image: Visual Studio 2019
 configuration: Release
 before_build:
 - cmd: nuget restore -DisableParallelProcessing src\SIPSorcery.sln
-- cmd: echo Hello
 build:
   project: src\SIPSorcery.sln
   publish_nuget: true
   verbosity: normal
-test:
-  categories:
-    except:
-    - Integration
+#test:
+#  categories:
+#    except:
+#    - Integration
 on_success:
   - ps: |
         if(-Not $env:APPVEYOR_PULL_REQUEST_TITLE)
