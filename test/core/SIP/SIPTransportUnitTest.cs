@@ -35,6 +35,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
+        [TestCategory("IPv6")]
         public void IPv6LoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -92,6 +93,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
+        [TestCategory("IPv6")]
         public void IPv6TcpLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -136,7 +138,7 @@ namespace SIPSorcery.SIP.UnitTests
             Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint), testComplete); });
 
-            Task.WhenAny(new Task[] { clientTask, Task.Delay(2000) }).Wait();
+            Task.WhenAny(new Task[] { clientTask, Task.Delay(5000) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -178,9 +180,7 @@ namespace SIPSorcery.SIP.UnitTests
                 logger.LogDebug($"Server URI {serverUri.ToString()}.");
 
                 var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverUri, testComplete); });
-
-                //Task.WhenAny(new Task[] { clientTask, serverTask, Task.Delay(10000) }).Wait();
-                Task.WhenAny(new Task[] { clientTask, Task.Delay(2000) }).Wait();
+                Task.WhenAny(new Task[] { clientTask, Task.Delay(5000) }).Wait();
 
                 if (testComplete.Task.IsCompleted == false)
                 {
@@ -203,6 +203,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
+        [TestCategory("IPv6")]
         public void IPv6TlsLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -259,7 +260,7 @@ namespace SIPSorcery.SIP.UnitTests
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sips, serverChannel.SIPChannelEndPoint), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(5000) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
