@@ -24,7 +24,7 @@ on_success:
             git config --global user.email "aaron@sipsorcery.com"
             git config --global user.name "Aaron Clauson"
             git fetch
-            git checkout -b gh-pages
+            git checkout gh-pages
             git merge master
             choco install docfx -y
             & docfx docfx\docfx.json
