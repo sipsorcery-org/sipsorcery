@@ -33,5 +33,7 @@ on_success:
             }
             git add -A 2>&1
             git commit -m "CI Updates" -q
+            git status
+            git remote -v
             git push origin gh-pages
         }
