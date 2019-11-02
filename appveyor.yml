@@ -1,7 +1,7 @@
 version: 1.0.{build}
 environment:
   access_token:
-    secure: +T42HKo6DH6HiosiYuHugnjUfWb1NxvkL6CBIXz80lV09oqSe7SnqgtMcxbVIRuz
+    secure: EXKwpl0EvC2cMU2qTRNTTSQ3Q/XgbCofTCiQgmOm83GkS7ZNM0CG1Fyafer+zGIM
 image: Visual Studio 2019
 configuration: Release
 before_build:
@@ -24,7 +24,7 @@ on_success:
             git config --global user.email "aaron@sipsorcery.com"
             git config --global user.name "Aaron Clauson"
             git fetch
-            git checkout gh-pages
+            git checkout gh-pages -q
             git merge master
             choco install docfx -y
             & docfx docfx\docfx.json
