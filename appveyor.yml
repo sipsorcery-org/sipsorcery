@@ -1,0 +1,20 @@
+version: 1.0.{build}
+image: Visual Studio 2019
+configuration: Release
+before_build:
+- cmd: nuget restore -DisableParallelProcessing src\SIPSorcery.sln
+- cmd: echo Hello
+build:
+  project: src\SIPSorcery.sln
+  publish_nuget: true
+  verbosity: normal
+test:
+  categories:
+    except:
+    - Integration
+notifications:
+- provider: Email
+  to:
+  - aaron@sipsorcery.com
+  subject: sipsorcery-core build result
+  on_build_status_changed: true
