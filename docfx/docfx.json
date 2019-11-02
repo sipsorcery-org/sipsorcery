@@ -4,14 +4,19 @@
       "src": [
         {
           "files": [
-            "**.csproj"
+            "SIPSorcery.csproj"
           ],
-          "src": "C:\\Dev\\sipsorcery\\sipsorcery-core\\src"
+		  "src": "../src",
+		  "exclude": [
+		    "**/bin/**",
+            "**/obj/**",
+		  ]
         }
       ],
       "dest": "api",
       "disableGitFeatures": false,
-      "disableDefaultFilter": false
+      "disableDefaultFilter": false,
+	  "filter": "filterConfig.yml"
     }
   ],
   "build": {
@@ -25,7 +30,7 @@
       {
         "files": [
           "articles/**.md",
-          "articles/**/toc.yml",
+          "articles/**/toc.yml", 
           "toc.yml",
           "*.md"
         ]

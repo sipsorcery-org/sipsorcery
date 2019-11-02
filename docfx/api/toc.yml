@@ -1,0 +1,580 @@
+### YamlMime:TableOfContent
+- uid: SIPSorcery.Net
+  name: SIPSorcery.Net
+  items:
+  - uid: SIPSorcery.Net.DNSManager
+    name: DNSManager
+  - uid: SIPSorcery.Net.FrameTypesEnum
+    name: FrameTypesEnum
+  - uid: SIPSorcery.Net.IceCandidate
+    name: IceCandidate
+  - uid: SIPSorcery.Net.IceCandidateTypesEnum
+    name: IceCandidateTypesEnum
+  - uid: SIPSorcery.Net.IceConnectionStatesEnum
+    name: IceConnectionStatesEnum
+  - uid: SIPSorcery.Net.ICMP
+    name: ICMP
+  - uid: SIPSorcery.Net.ICMPListener
+    name: ICMPListener
+  - uid: SIPSorcery.Net.Mjpeg
+    name: Mjpeg
+  - uid: SIPSorcery.Net.Mjpeg.Tags
+    name: Mjpeg.Tags
+  - uid: SIPSorcery.Net.ProtectRtpPacket
+    name: ProtectRtpPacket
+  - uid: SIPSorcery.Net.RTCPHeader
+    name: RTCPHeader
+  - uid: SIPSorcery.Net.RTCPPacket
+    name: RTCPPacket
+  - uid: SIPSorcery.Net.RTCPReport
+    name: RTCPReport
+  - uid: SIPSorcery.Net.RTCPReportHeader
+    name: RTCPReportHeader
+  - uid: SIPSorcery.Net.RTCPReportPacket
+    name: RTCPReportPacket
+  - uid: SIPSorcery.Net.RTCPReportRecievedDelegate
+    name: RTCPReportRecievedDelegate
+  - uid: SIPSorcery.Net.RTCPReportSampler
+    name: RTCPReportSampler
+  - uid: SIPSorcery.Net.RTCPReportTypes
+    name: RTCPReportTypes
+  - uid: SIPSorcery.Net.RTCPReportTypesEnum
+    name: RTCPReportTypesEnum
+  - uid: SIPSorcery.Net.RTCPSampleReadyDelegate
+    name: RTCPSampleReadyDelegate
+  - uid: SIPSorcery.Net.RTCPSenderReport
+    name: RTCPSenderReport
+  - uid: SIPSorcery.Net.RTPChannel
+    name: RTPChannel
+  - uid: SIPSorcery.Net.RTPDataReceived
+    name: RTPDataReceived
+  - uid: SIPSorcery.Net.RTPDataSent
+    name: RTPDataSent
+  - uid: SIPSorcery.Net.RTPFrame
+    name: RTPFrame
+  - uid: SIPSorcery.Net.RTPHeader
+    name: RTPHeader
+  - uid: SIPSorcery.Net.RtpMediaTypesEnum
+    name: RtpMediaTypesEnum
+  - uid: SIPSorcery.Net.RTPPacket
+    name: RTPPacket
+  - uid: SIPSorcery.Net.RTPPayloadTypes
+    name: RTPPayloadTypes
+  - uid: SIPSorcery.Net.RTPPayloadTypesEnum
+    name: RTPPayloadTypesEnum
+  - uid: SIPSorcery.Net.RTPReceiveRecord
+    name: RTPReceiveRecord
+  - uid: SIPSorcery.Net.RTPRemoteEndPointChanged
+    name: RTPRemoteEndPointChanged
+  - uid: SIPSorcery.Net.RTPSession
+    name: RTPSession
+  - uid: SIPSorcery.Net.RTPSink
+    name: RTPSink
+  - uid: SIPSorcery.Net.RTPSinkClosed
+    name: RTPSinkClosed
+  - uid: SIPSorcery.Net.RTPVP8Header
+    name: RTPVP8Header
+  - uid: SIPSorcery.Net.RTSPClient
+    name: RTSPClient
+  - uid: SIPSorcery.Net.RTSPConnection
+    name: RTSPConnection
+  - uid: SIPSorcery.Net.RTSPConstants
+    name: RTSPConstants
+  - uid: SIPSorcery.Net.RTSPEntityHeaders
+    name: RTSPEntityHeaders
+  - uid: SIPSorcery.Net.RTSPHeader
+    name: RTSPHeader
+  - uid: SIPSorcery.Net.RTSPHeaderError
+    name: RTSPHeaderError
+  - uid: SIPSorcery.Net.RTSPHeaderParserError
+    name: RTSPHeaderParserError
+  - uid: SIPSorcery.Net.RTSPHeaders
+    name: RTSPHeaders
+  - uid: SIPSorcery.Net.RTSPMessage
+    name: RTSPMessage
+  - uid: SIPSorcery.Net.RTSPMessageTypesEnum
+    name: RTSPMessageTypesEnum
+  - uid: SIPSorcery.Net.RTSPMethods
+    name: RTSPMethods
+  - uid: SIPSorcery.Net.RTSPMethodsEnum
+    name: RTSPMethodsEnum
+  - uid: SIPSorcery.Net.RTSPRequest
+    name: RTSPRequest
+  - uid: SIPSorcery.Net.RTSPRequestParserError
+    name: RTSPRequestParserError
+  - uid: SIPSorcery.Net.RTSPResponse
+    name: RTSPResponse
+  - uid: SIPSorcery.Net.RTSPResponseParserError
+    name: RTSPResponseParserError
+  - uid: SIPSorcery.Net.RTSPResponseStatusCodes
+    name: RTSPResponseStatusCodes
+  - uid: SIPSorcery.Net.RTSPResponseStatusCodesEnum
+    name: RTSPResponseStatusCodesEnum
+  - uid: SIPSorcery.Net.RTSPServer
+    name: RTSPServer
+  - uid: SIPSorcery.Net.RTSPSession
+    name: RTSPSession
+  - uid: SIPSorcery.Net.RTSPTransportHeader
+    name: RTSPTransportHeader
+  - uid: SIPSorcery.Net.RTSPURL
+    name: RTSPURL
+  - uid: SIPSorcery.Net.SDP
+    name: SDP
+  - uid: SIPSorcery.Net.SDPConnectionInformation
+    name: SDPConnectionInformation
+  - uid: SIPSorcery.Net.SDPMediaAnnouncement
+    name: SDPMediaAnnouncement
+  - uid: SIPSorcery.Net.SDPMediaFormat
+    name: SDPMediaFormat
+  - uid: SIPSorcery.Net.SDPMediaFormatsEnum
+    name: SDPMediaFormatsEnum
+  - uid: SIPSorcery.Net.SDPMediaTypes
+    name: SDPMediaTypes
+  - uid: SIPSorcery.Net.SDPMediaTypesEnum
+    name: SDPMediaTypesEnum
+  - uid: SIPSorcery.Net.SessionDescriptionTypes
+    name: SessionDescriptionTypes
+  - uid: SIPSorcery.Net.STUNAddressAttribute
+    name: STUNAddressAttribute
+  - uid: SIPSorcery.Net.STUNAttribute
+    name: STUNAttribute
+  - uid: SIPSorcery.Net.STUNAttributeTypes
+    name: STUNAttributeTypes
+  - uid: SIPSorcery.Net.STUNAttributeTypesEnum
+    name: STUNAttributeTypesEnum
+  - uid: SIPSorcery.Net.STUNChangeRequestAttribute
+    name: STUNChangeRequestAttribute
+  - uid: SIPSorcery.Net.STUNClient
+    name: STUNClient
+  - uid: SIPSorcery.Net.STUNHeader
+    name: STUNHeader
+  - uid: SIPSorcery.Net.STUNListener
+    name: STUNListener
+  - uid: SIPSorcery.Net.STUNMessage
+    name: STUNMessage
+  - uid: SIPSorcery.Net.STUNMessageReceived
+    name: STUNMessageReceived
+  - uid: SIPSorcery.Net.STUNMessageTypes
+    name: STUNMessageTypes
+  - uid: SIPSorcery.Net.STUNMessageTypesEnum
+    name: STUNMessageTypesEnum
+  - uid: SIPSorcery.Net.STUNSendMessageDelegate
+    name: STUNSendMessageDelegate
+  - uid: SIPSorcery.Net.STUNServer
+    name: STUNServer
+  - uid: SIPSorcery.Net.STUNServerRequestInTraceDelegate
+    name: STUNServerRequestInTraceDelegate
+  - uid: SIPSorcery.Net.STUNServerResponseOutTraceDelegate
+    name: STUNServerResponseOutTraceDelegate
+  - uid: SIPSorcery.Net.STUNv2AddressAttribute
+    name: STUNv2AddressAttribute
+  - uid: SIPSorcery.Net.STUNv2Attribute
+    name: STUNv2Attribute
+  - uid: SIPSorcery.Net.STUNv2AttributeConstants
+    name: STUNv2AttributeConstants
+  - uid: SIPSorcery.Net.STUNv2AttributeTypes
+    name: STUNv2AttributeTypes
+  - uid: SIPSorcery.Net.STUNv2AttributeTypesEnum
+    name: STUNv2AttributeTypesEnum
+  - uid: SIPSorcery.Net.STUNv2ChangeRequestAttribute
+    name: STUNv2ChangeRequestAttribute
+  - uid: SIPSorcery.Net.STUNv2ClassTypesEnum
+    name: STUNv2ClassTypesEnum
+  - uid: SIPSorcery.Net.STUNv2ErrorCodeAttribute
+    name: STUNv2ErrorCodeAttribute
+  - uid: SIPSorcery.Net.STUNv2Header
+    name: STUNv2Header
+  - uid: SIPSorcery.Net.STUNv2Message
+    name: STUNv2Message
+  - uid: SIPSorcery.Net.STUNv2MessageTypes
+    name: STUNv2MessageTypes
+  - uid: SIPSorcery.Net.STUNv2MessageTypesEnum
+    name: STUNv2MessageTypesEnum
+  - uid: SIPSorcery.Net.STUNv2XORAddressAttribute
+    name: STUNv2XORAddressAttribute
+  - uid: SIPSorcery.Net.TurnServer
+    name: TurnServer
+  - uid: SIPSorcery.Net.Utility
+    name: Utility
+- uid: SIPSorcery.Net.WebRtc
+  name: SIPSorcery.Net.WebRtc
+  items:
+  - uid: SIPSorcery.Net.WebRtc.WebRtcPeer
+    name: WebRtcPeer
+- uid: SIPSorcery.SIP
+  name: SIPSorcery.SIP
+  items:
+  - uid: SIPSorcery.SIP.AuthHeaders
+    name: AuthHeaders
+  - uid: SIPSorcery.SIP.CallProperties
+    name: CallProperties
+  - uid: SIPSorcery.SIP.CDRReadyDelegate
+    name: CDRReadyDelegate
+  - uid: SIPSorcery.SIP.HTTPDigest
+    name: HTTPDigest
+  - uid: SIPSorcery.SIP.IncomingMessage
+    name: IncomingMessage
+  - uid: SIPSorcery.SIP.ResolveSIPEndPointDelegate
+    name: ResolveSIPEndPointDelegate
+  - uid: SIPSorcery.SIP.SIPAuthenticationHeader
+    name: SIPAuthenticationHeader
+  - uid: SIPSorcery.SIP.SIPAuthorisationDigest
+    name: SIPAuthorisationDigest
+  - uid: SIPSorcery.SIP.SIPAuthorisationHeadersEnum
+    name: SIPAuthorisationHeadersEnum
+  - uid: SIPSorcery.SIP.SIPCallDirection
+    name: SIPCallDirection
+  - uid: SIPSorcery.SIP.SIPCancelTransaction
+    name: SIPCancelTransaction
+  - uid: SIPSorcery.SIP.SIPCDR
+    name: SIPCDR
+  - uid: SIPSorcery.SIP.SIPChannel
+    name: SIPChannel
+  - uid: SIPSorcery.SIP.SIPConnectionsEnum
+    name: SIPConnectionsEnum
+  - uid: SIPSorcery.SIP.SIPConstants
+    name: SIPConstants
+  - uid: SIPSorcery.SIP.SIPContactHeader
+    name: SIPContactHeader
+  - uid: SIPSorcery.SIP.SIPDialogue
+    name: SIPDialogue
+  - uid: SIPSorcery.SIP.SIPDialogueStateEnum
+    name: SIPDialogueStateEnum
+  - uid: SIPSorcery.SIP.SIPDialogueTransferModesEnum
+    name: SIPDialogueTransferModesEnum
+  - uid: SIPSorcery.SIP.SIPDNSConstants
+    name: SIPDNSConstants
+  - uid: SIPSorcery.SIP.SIPDNSLookupEndPoint
+    name: SIPDNSLookupEndPoint
+  - uid: SIPSorcery.SIP.SIPDNSLookupResult
+    name: SIPDNSLookupResult
+  - uid: SIPSorcery.SIP.SIPDNSServiceResult
+    name: SIPDNSServiceResult
+  - uid: SIPSorcery.SIP.SIPEndPoint
+    name: SIPEndPoint
+  - uid: SIPSorcery.SIP.SIPEscape
+    name: SIPEscape
+  - uid: SIPSorcery.SIP.SIPEvent
+    name: SIPEvent
+  - uid: SIPSorcery.SIP.SIPEventConsts
+    name: SIPEventConsts
+  - uid: SIPSorcery.SIP.SIPEventDialog
+    name: SIPEventDialog
+  - uid: SIPSorcery.SIP.SIPEventDialogDirectionEnum
+    name: SIPEventDialogDirectionEnum
+  - uid: SIPSorcery.SIP.SIPEventDialogInfo
+    name: SIPEventDialogInfo
+  - uid: SIPSorcery.SIP.SIPEventDialogInfoStateEnum
+    name: SIPEventDialogInfoStateEnum
+  - uid: SIPSorcery.SIP.SIPEventDialogParticipant
+    name: SIPEventDialogParticipant
+  - uid: SIPSorcery.SIP.SIPEventDialogStateEvent
+    name: SIPEventDialogStateEvent
+  - uid: SIPSorcery.SIP.SIPEventFilters
+    name: SIPEventFilters
+  - uid: SIPSorcery.SIP.SIPEventPackage
+    name: SIPEventPackage
+  - uid: SIPSorcery.SIP.SIPEventPresence
+    name: SIPEventPresence
+  - uid: SIPSorcery.SIP.SIPEventPresenceStateEnum
+    name: SIPEventPresenceStateEnum
+  - uid: SIPSorcery.SIP.SIPEventPresenceTuple
+    name: SIPEventPresenceTuple
+  - uid: SIPSorcery.SIP.SIPExtensionHeaders
+    name: SIPExtensionHeaders
+  - uid: SIPSorcery.SIP.SIPExtensions
+    name: SIPExtensions
+  - uid: SIPSorcery.SIP.SIPFromHeader
+    name: SIPFromHeader
+  - uid: SIPSorcery.SIP.SIPHeader
+    name: SIPHeader
+  - uid: SIPSorcery.SIP.SIPHeaderAncillary
+    name: SIPHeaderAncillary
+  - uid: SIPSorcery.SIP.SIPHeaders
+    name: SIPHeaders
+  - uid: SIPSorcery.SIP.SIPMessage
+    name: SIPMessage
+  - uid: SIPSorcery.SIP.SIPMessageReceivedDelegate
+    name: SIPMessageReceivedDelegate
+  - uid: SIPSorcery.SIP.SIPMessageSentDelegate
+    name: SIPMessageSentDelegate
+  - uid: SIPSorcery.SIP.SIPMessageTypesEnum
+    name: SIPMessageTypesEnum
+  - uid: SIPSorcery.SIP.SIPMethods
+    name: SIPMethods
+  - uid: SIPSorcery.SIP.SIPMethodsEnum
+    name: SIPMethodsEnum
+  - uid: SIPSorcery.SIP.SIPMIMETypes
+    name: SIPMIMETypes
+  - uid: SIPSorcery.SIP.SIPNonInviteTransaction
+    name: SIPNonInviteTransaction
+  - uid: SIPSorcery.SIP.SIPParameterlessURI
+    name: SIPParameterlessURI
+  - uid: SIPSorcery.SIP.SIPParameters
+    name: SIPParameters
+  - uid: SIPSorcery.SIP.SIPProtocolsEnum
+    name: SIPProtocolsEnum
+  - uid: SIPSorcery.SIP.SIPProtocolsType
+    name: SIPProtocolsType
+  - uid: SIPSorcery.SIP.SIPReplacesParameter
+    name: SIPReplacesParameter
+  - uid: SIPSorcery.SIP.SIPRequest
+    name: SIPRequest
+  - uid: SIPSorcery.SIP.SIPRequestAuthenticationResult
+    name: SIPRequestAuthenticationResult
+  - uid: SIPSorcery.SIP.SIPRequestAuthorisationResult
+    name: SIPRequestAuthorisationResult
+  - uid: SIPSorcery.SIP.SIPResponse
+    name: SIPResponse
+  - uid: SIPSorcery.SIP.SIPResponseParserError
+    name: SIPResponseParserError
+  - uid: SIPSorcery.SIP.SIPResponseStatusCodes
+    name: SIPResponseStatusCodes
+  - uid: SIPSorcery.SIP.SIPResponseStatusCodesEnum
+    name: SIPResponseStatusCodesEnum
+  - uid: SIPSorcery.SIP.SIPRoute
+    name: SIPRoute
+  - uid: SIPSorcery.SIP.SIPRouteSet
+    name: SIPRouteSet
+  - uid: SIPSorcery.SIP.SIPSchemesEnum
+    name: SIPSchemesEnum
+  - uid: SIPSorcery.SIP.SIPSchemesType
+    name: SIPSchemesType
+  - uid: SIPSorcery.SIP.SIPServices
+    name: SIPServices
+  - uid: SIPSorcery.SIP.SIPServicesEnum
+    name: SIPServicesEnum
+  - uid: SIPSorcery.SIP.SIPStreamConnection
+    name: SIPStreamConnection
+  - uid: SIPSorcery.SIP.SIPTCPChannel
+    name: SIPTCPChannel
+  - uid: SIPSorcery.SIP.SIPTimings
+    name: SIPTimings
+  - uid: SIPSorcery.SIP.SIPTLSChannel
+    name: SIPTLSChannel
+  - uid: SIPSorcery.SIP.SIPToHeader
+    name: SIPToHeader
+  - uid: SIPSorcery.SIP.SIPTransaction
+    name: SIPTransaction
+  - uid: SIPSorcery.SIP.SIPTransactionCancelledDelegate
+    name: SIPTransactionCancelledDelegate
+  - uid: SIPSorcery.SIP.SIPTransactionEngine
+    name: SIPTransactionEngine
+  - uid: SIPSorcery.SIP.SIPTransactionRemovedDelegate
+    name: SIPTransactionRemovedDelegate
+  - uid: SIPSorcery.SIP.SIPTransactionRequestReceivedDelegate
+    name: SIPTransactionRequestReceivedDelegate
+  - uid: SIPSorcery.SIP.SIPTransactionRequestRetransmitDelegate
+    name: SIPTransactionRequestRetransmitDelegate
+  - uid: SIPSorcery.SIP.SIPTransactionResponseReceivedDelegate
+    name: SIPTransactionResponseReceivedDelegate
+  - uid: SIPSorcery.SIP.SIPTransactionResponseRetransmitDelegate
+    name: SIPTransactionResponseRetransmitDelegate
+  - uid: SIPSorcery.SIP.SIPTransactionStateChangeDelegate
+    name: SIPTransactionStateChangeDelegate
+  - uid: SIPSorcery.SIP.SIPTransactionStatesEnum
+    name: SIPTransactionStatesEnum
+  - uid: SIPSorcery.SIP.SIPTransactionTimedOutDelegate
+    name: SIPTransactionTimedOutDelegate
+  - uid: SIPSorcery.SIP.SIPTransactionTraceMessageDelegate
+    name: SIPTransactionTraceMessageDelegate
+  - uid: SIPSorcery.SIP.SIPTransactionTypesEnum
+    name: SIPTransactionTypesEnum
+  - uid: SIPSorcery.SIP.SIPTransport
+    name: SIPTransport
+  - uid: SIPSorcery.SIP.SIPTransportConfig
+    name: SIPTransportConfig
+  - uid: SIPSorcery.SIP.SIPTransportRequestDelegate
+    name: SIPTransportRequestDelegate
+  - uid: SIPSorcery.SIP.SIPTransportResponseDelegate
+    name: SIPTransportResponseDelegate
+  - uid: SIPSorcery.SIP.SIPTransportSIPBadMessageDelegate
+    name: SIPTransportSIPBadMessageDelegate
+  - uid: SIPSorcery.SIP.SIPUDPChannel
+    name: SIPUDPChannel
+  - uid: SIPSorcery.SIP.SIPURI
+    name: SIPURI
+  - uid: SIPSorcery.SIP.SIPUserAgentRoles
+    name: SIPUserAgentRoles
+  - uid: SIPSorcery.SIP.SIPUserAgentRolesEnum
+    name: SIPUserAgentRolesEnum
+  - uid: SIPSorcery.SIP.SIPUserAgentRolesTypes
+    name: SIPUserAgentRolesTypes
+  - uid: SIPSorcery.SIP.SIPUserField
+    name: SIPUserField
+  - uid: SIPSorcery.SIP.SIPValidationException
+    name: SIPValidationException
+  - uid: SIPSorcery.SIP.SIPValidationFieldsEnum
+    name: SIPValidationFieldsEnum
+  - uid: SIPSorcery.SIP.SIPViaHeader
+    name: SIPViaHeader
+  - uid: SIPSorcery.SIP.SIPViaSet
+    name: SIPViaSet
+  - uid: SIPSorcery.SIP.STUNRequestReceivedDelegate
+    name: STUNRequestReceivedDelegate
+  - uid: SIPSorcery.SIP.UACInviteTransaction
+    name: UACInviteTransaction
+  - uid: SIPSorcery.SIP.UASInviteTransaction
+    name: UASInviteTransaction
+- uid: SIPSorcery.SIP.App
+  name: SIPSorcery.SIP.App
+  items:
+  - uid: SIPSorcery.SIP.App.BlindTransferDelegate
+    name: BlindTransferDelegate
+  - uid: SIPSorcery.SIP.App.CRMHeaders
+    name: CRMHeaders
+  - uid: SIPSorcery.SIP.App.DialogueBridgeClosedDelegate
+    name: DialogueBridgeClosedDelegate
+  - uid: SIPSorcery.SIP.App.DialogueBridgeCreatedDelegate
+    name: DialogueBridgeCreatedDelegate
+  - uid: SIPSorcery.SIP.App.GetSIPAccountDelegate
+    name: GetSIPAccountDelegate
+  - uid: SIPSorcery.SIP.App.GetSIPAccountsForOwnerDelegate
+    name: GetSIPAccountsForOwnerDelegate
+  - uid: SIPSorcery.SIP.App.GetSIPAccountsForUserDelegate
+    name: GetSIPAccountsForUserDelegate
+  - uid: SIPSorcery.SIP.App.IPAddressChangedDelegate
+    name: IPAddressChangedDelegate
+  - uid: SIPSorcery.SIP.App.ISIPClientUserAgent
+    name: ISIPClientUserAgent
+  - uid: SIPSorcery.SIP.App.ISIPServerUserAgent
+    name: ISIPServerUserAgent
+  - uid: SIPSorcery.SIP.App.QueueNewCallDelegate
+    name: QueueNewCallDelegate
+  - uid: SIPSorcery.SIP.App.RtccCustomerAccount
+    name: RtccCustomerAccount
+  - uid: SIPSorcery.SIP.App.RtccGetBalanceDelegate
+    name: RtccGetBalanceDelegate
+  - uid: SIPSorcery.SIP.App.RtccGetCustomerDelegate
+    name: RtccGetCustomerDelegate
+  - uid: SIPSorcery.SIP.App.RtccGetRateDelegate
+    name: RtccGetRateDelegate
+  - uid: SIPSorcery.SIP.App.RtccRate
+    name: RtccRate
+  - uid: SIPSorcery.SIP.App.RtccReserveInitialCreditDelegate
+    name: RtccReserveInitialCreditDelegate
+  - uid: SIPSorcery.SIP.App.RtccUpdateCdrDelegate
+    name: RtccUpdateCdrDelegate
+  - uid: SIPSorcery.SIP.App.SIPAccount
+    name: SIPAccount
+  - uid: SIPSorcery.SIP.App.SIPAssetGetPropertyByIdDelegate`1
+    name: SIPAssetGetPropertyByIdDelegate<T>
+    name.vb: SIPAssetGetPropertyByIdDelegate(Of T)
+  - uid: SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate
+    name: SIPAuthenticateRequestDelegate
+  - uid: SIPSorcery.SIP.App.SIPB2BUserAgent
+    name: SIPB2BUserAgent
+  - uid: SIPSorcery.SIP.App.SIPCallDescriptor
+    name: SIPCallDescriptor
+  - uid: SIPSorcery.SIP.App.SIPCallFailedDelegate
+    name: SIPCallFailedDelegate
+  - uid: SIPSorcery.SIP.App.SIPCallRedirectModesEnum
+    name: SIPCallRedirectModesEnum
+  - uid: SIPSorcery.SIP.App.SIPCallResponseDelegate
+    name: SIPCallResponseDelegate
+  - uid: SIPSorcery.SIP.App.SIPClientUserAgent
+    name: SIPClientUserAgent
+  - uid: SIPSorcery.SIP.App.SIPDNSManager
+    name: SIPDNSManager
+  - uid: SIPSorcery.SIP.App.SIPMonitorAuthenticationDelegate
+    name: SIPMonitorAuthenticationDelegate
+  - uid: SIPSorcery.SIP.App.SIPMonitorClientTypes
+    name: SIPMonitorClientTypes
+  - uid: SIPSorcery.SIP.App.SIPMonitorClientTypesEnum
+    name: SIPMonitorClientTypesEnum
+  - uid: SIPSorcery.SIP.App.SIPMonitorConsoleEvent
+    name: SIPMonitorConsoleEvent
+  - uid: SIPSorcery.SIP.App.SIPMonitorEvent
+    name: SIPMonitorEvent
+  - uid: SIPSorcery.SIP.App.SIPMonitorEventTypes
+    name: SIPMonitorEventTypes
+  - uid: SIPSorcery.SIP.App.SIPMonitorEventTypesEnum
+    name: SIPMonitorEventTypesEnum
+  - uid: SIPSorcery.SIP.App.SIPMonitorLogDelegate
+    name: SIPMonitorLogDelegate
+  - uid: SIPSorcery.SIP.App.SIPMonitorMachineEvent
+    name: SIPMonitorMachineEvent
+  - uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypes
+    name: SIPMonitorMachineEventTypes
+  - uid: SIPSorcery.SIP.App.SIPMonitorMachineEventTypesEnum
+    name: SIPMonitorMachineEventTypesEnum
+  - uid: SIPSorcery.SIP.App.SIPMonitorMachineLogDelegate
+    name: SIPMonitorMachineLogDelegate
+  - uid: SIPSorcery.SIP.App.SIPMonitorServerTypes
+    name: SIPMonitorServerTypes
+  - uid: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum
+    name: SIPMonitorServerTypesEnum
+  - uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent
+    name: SIPNonInviteClientUserAgent
+  - uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent
+    name: SIPNonInviteServerUserAgent
+  - uid: SIPSorcery.SIP.App.SIPNotifierClient`1
+    name: SIPNotifierClient<T>
+    name.vb: SIPNotifierClient(Of T)
+  - uid: SIPSorcery.SIP.App.SIPPacketMangler
+    name: SIPPacketMangler
+  - uid: SIPSorcery.SIP.App.SIPRegistrarBindingsCountDelegate
+    name: SIPRegistrarBindingsCountDelegate
+  - uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent
+    name: SIPRegistrationUserAgent
+  - uid: SIPSorcery.SIP.App.SIPRequestAuthenticator
+    name: SIPRequestAuthenticator
+  - uid: SIPSorcery.SIP.App.SIPServerUserAgent
+    name: SIPServerUserAgent
+  - uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent
+    name: SIPTransferServerUserAgent
+  - uid: SIPSorcery.SIP.App.SIPUASDelegate
+    name: SIPUASDelegate
+  - uid: SIPSorcery.SIP.App.SIPUASStateChangedDelegate
+    name: SIPUASStateChangedDelegate
+- uid: SIPSorcery.Sys
+  name: SIPSorcery.Sys
+  items:
+  - uid: SIPSorcery.Sys.ByteBufferInfo
+    name: ByteBufferInfo
+  - uid: SIPSorcery.Sys.Crc32
+    name: Crc32
+  - uid: SIPSorcery.Sys.Crypto
+    name: Crypto
+  - uid: SIPSorcery.Sys.FreePort
+    name: FreePort
+  - uid: SIPSorcery.Sys.IPSocket
+    name: IPSocket
+  - uid: SIPSorcery.Sys.IPSocketAddress
+    name: IPSocketAddress
+  - uid: SIPSorcery.Sys.IPv4Header
+    name: IPv4Header
+  - uid: SIPSorcery.Sys.IPv4Packet
+    name: IPv4Packet
+  - uid: SIPSorcery.Sys.LocalIPConfig
+    name: LocalIPConfig
+  - uid: SIPSorcery.Sys.Log
+    name: Log
+  - uid: SIPSorcery.Sys.NetConvert
+    name: NetConvert
+  - uid: SIPSorcery.Sys.NetServices
+    name: NetServices
+  - uid: SIPSorcery.Sys.NullLogger
+    name: NullLogger
+  - uid: SIPSorcery.Sys.NullScope
+    name: NullScope
+  - uid: SIPSorcery.Sys.NumberFormatter
+    name: NumberFormatter
+  - uid: SIPSorcery.Sys.PasswordHash
+    name: PasswordHash
+  - uid: SIPSorcery.Sys.PlatformEnum
+    name: PlatformEnum
+  - uid: SIPSorcery.Sys.RawSocket
+    name: RawSocket
+  - uid: SIPSorcery.Sys.SafeXML
+    name: SafeXML
+  - uid: SIPSorcery.Sys.StorageTypes
+    name: StorageTypes
+  - uid: SIPSorcery.Sys.StorageTypesConverter
+    name: StorageTypesConverter
+  - uid: SIPSorcery.Sys.TypeExtensions
+    name: TypeExtensions
+  - uid: SIPSorcery.Sys.UDPListener
+    name: UDPListener
+  - uid: SIPSorcery.Sys.UDPPacket
+    name: UDPPacket
