@@ -23,8 +23,9 @@ on_success:
             Add-Content "$HOME\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`n"
             git config --global user.email "aaron@sipsorcery.com"
             git config --global user.name "Aaron Clauson"
-            git fetch
-            git checkout gh-pages -q
+            git clone https://github.com/sipsorcery/sipsorcery.git sipsorcery
+            cd sipsorcery
+            git checkout gh-pages
             git merge master
             choco install docfx -y
             & docfx docfx\docfx.json
