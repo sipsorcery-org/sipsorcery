@@ -1,4 +1,4 @@
-# **SIPSorcery Reference Documentation**
+# **SIPSorcery Reference**
 
 This site contains the reference documentation for the SIPSorcery library as well as articles to help with different use cases.
 
