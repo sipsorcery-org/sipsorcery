@@ -10,7 +10,7 @@
 // History:
 // 21 Apr 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
 // 04 Sep 2008  Aaron Clauson   Changed display name to always use quotes. Some SIP stacks were
-//                              found to have porblems with a comma in a non-quoted display name.
+//                              found to have problems with a comma in a non-quoted display name.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
