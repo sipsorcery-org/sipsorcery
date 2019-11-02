@@ -23,6 +23,10 @@ With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](
 Install-Package SIPSorcery
 ````
 
+## Documentation
+
+Class reference documentation and articles explaining common usage are available at [https://sipsorcery.github.io/sipsorcery/](https://sipsorcery.github.io/sipsorcery/).
+
 ## Getting Started
 
 The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examples) contains full sample code designed to demonstrate some common use cases. The [GetStarted](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted) example is the best place to start and the main program is shown below.
