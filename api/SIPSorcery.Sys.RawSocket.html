@@ -80,47 +80,23 @@
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">RawSocket</span></div>
   </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ToString()</span>
-    </div>
-  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Sys.html">SIPSorcery.Sys</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Sys_RawSocket_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class RawSocket</code></pre>
+    <pre><code class="lang-csharp hljs">public class RawSocket : object</code></pre>
   </div>
   <h3 id="methods">Methods
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_RawSocket_SendSpoofedPacket_System_Byte___System_Net_IPEndPoint_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte%5B%5D%2CSystem.Net.IPEndPoint%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_RawSocket_SendSpoofedPacket_System_Byte___IPEndPoint_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte%5B%5D%2CIPEndPoint%2CIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/RawSocket.cs/#L180">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_RawSocket_SendSpoofedPacket_" data-uid="SIPSorcery.Sys.RawSocket.SendSpoofedPacket*"></a>
-  <h4 id="SIPSorcery_Sys_RawSocket_SendSpoofedPacket_System_Byte___System_Net_IPEndPoint_System_Net_IPEndPoint_" data-uid="SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte[],System.Net.IPEndPoint,System.Net.IPEndPoint)">SendSpoofedPacket(Byte[], IPEndPoint, IPEndPoint)</h4>
+  <h4 id="SIPSorcery_Sys_RawSocket_SendSpoofedPacket_System_Byte___IPEndPoint_IPEndPoint_" data-uid="SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte[],IPEndPoint,IPEndPoint)">SendSpoofedPacket(Byte[], IPEndPoint, IPEndPoint)</h4>
   <div class="markdown level1 summary"><p>The goal of this method was to send a dummy packet through a NAT gateway in an attempt to create a rule for
 incoming packets. There are better ways to do this now, UPNP etc.</p>
 </div>
@@ -145,12 +121,12 @@ incoming packets. There are better ways to do this now, UPNP etc.</p>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="xref">IPEndPoint</span></td>
         <td><span class="parametername">sourceSocket</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="xref">IPEndPoint</span></td>
         <td><span class="parametername">destinationSocket</span></td>
         <td></td>
       </tr>

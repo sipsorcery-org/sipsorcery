@@ -13,22 +13,22 @@ references:
   commentId: T:SIPSorcery.Net.DNSManager
   fullName: SIPSorcery.Net.DNSManager
   nameWithType: DNSManager
-- uid: SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,System.Collections.Generic.List{System.Net.IPEndPoint})
+- uid: SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,List{IPEndPoint})
   name: Lookup(String, QType, Int32, List<IPEndPoint>)
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_Lookup_System_String_Heijden_DNS_QType_System_Int32_System_Collections_Generic_List_System_Net_IPEndPoint__
-  commentId: M:SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,System.Collections.Generic.List{System.Net.IPEndPoint})
+  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_Lookup_System_String_Heijden_DNS_QType_System_Int32_List_IPEndPoint__
+  commentId: M:SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,List{IPEndPoint})
   name.vb: Lookup(String, QType, Int32, List(Of IPEndPoint))
-  fullName: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, System.Collections.Generic.List<System.Net.IPEndPoint>)
-  fullName.vb: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, System.Collections.Generic.List(Of System.Net.IPEndPoint))
+  fullName: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, List<IPEndPoint>)
+  fullName.vb: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, List(Of IPEndPoint))
   nameWithType: DNSManager.Lookup(String, QType, Int32, List<IPEndPoint>)
   nameWithType.vb: DNSManager.Lookup(String, QType, Int32, List(Of IPEndPoint))
-- uid: SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,System.Collections.Generic.List{System.Net.IPEndPoint},System.Boolean,System.Boolean)
+- uid: SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,List{IPEndPoint},System.Boolean,System.Boolean)
   name: Lookup(String, QType, Int32, List<IPEndPoint>, Boolean, Boolean)
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_Lookup_System_String_Heijden_DNS_QType_System_Int32_System_Collections_Generic_List_System_Net_IPEndPoint__System_Boolean_System_Boolean_
-  commentId: M:SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,System.Collections.Generic.List{System.Net.IPEndPoint},System.Boolean,System.Boolean)
+  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_Lookup_System_String_Heijden_DNS_QType_System_Int32_List_IPEndPoint__System_Boolean_System_Boolean_
+  commentId: M:SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,List{IPEndPoint},System.Boolean,System.Boolean)
   name.vb: Lookup(String, QType, Int32, List(Of IPEndPoint), Boolean, Boolean)
-  fullName: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, System.Collections.Generic.List<System.Net.IPEndPoint>, System.Boolean, System.Boolean)
-  fullName.vb: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, System.Collections.Generic.List(Of System.Net.IPEndPoint), System.Boolean, System.Boolean)
+  fullName: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, List<IPEndPoint>, System.Boolean, System.Boolean)
+  fullName.vb: SIPSorcery.Net.DNSManager.Lookup(System.String, Heijden.DNS.QType, System.Int32, List(Of IPEndPoint), System.Boolean, System.Boolean)
   nameWithType: DNSManager.Lookup(String, QType, Int32, List<IPEndPoint>, Boolean, Boolean)
   nameWithType.vb: DNSManager.Lookup(String, QType, Int32, List(Of IPEndPoint), Boolean, Boolean)
 - uid: SIPSorcery.Net.DNSManager.Lookup*
@@ -57,13 +57,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DNSManager.LookupAsync
   nameWithType: DNSManager.LookupAsync
-- uid: SIPSorcery.Net.DNSManager.SetDNSServers(System.Collections.Generic.List{System.Net.IPEndPoint})
+- uid: SIPSorcery.Net.DNSManager.SetDNSServers(List{IPEndPoint})
   name: SetDNSServers(List<IPEndPoint>)
-  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_SetDNSServers_System_Collections_Generic_List_System_Net_IPEndPoint__
-  commentId: M:SIPSorcery.Net.DNSManager.SetDNSServers(System.Collections.Generic.List{System.Net.IPEndPoint})
+  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_SetDNSServers_List_IPEndPoint__
+  commentId: M:SIPSorcery.Net.DNSManager.SetDNSServers(List{IPEndPoint})
   name.vb: SetDNSServers(List(Of IPEndPoint))
-  fullName: SIPSorcery.Net.DNSManager.SetDNSServers(System.Collections.Generic.List<System.Net.IPEndPoint>)
-  fullName.vb: SIPSorcery.Net.DNSManager.SetDNSServers(System.Collections.Generic.List(Of System.Net.IPEndPoint))
+  fullName: SIPSorcery.Net.DNSManager.SetDNSServers(List<IPEndPoint>)
+  fullName.vb: SIPSorcery.Net.DNSManager.SetDNSServers(List(Of IPEndPoint))
   nameWithType: DNSManager.SetDNSServers(List<IPEndPoint>)
   nameWithType.vb: DNSManager.SetDNSServers(List(Of IPEndPoint))
 - uid: SIPSorcery.Net.DNSManager.SetDNSServers*
@@ -509,11 +509,11 @@ references:
   commentId: T:SIPSorcery.Net.ICMPListener
   fullName: SIPSorcery.Net.ICMPListener
   nameWithType: ICMPListener
-- uid: SIPSorcery.Net.ICMPListener.#ctor(System.Net.IPAddress)
+- uid: SIPSorcery.Net.ICMPListener.#ctor(IPAddress)
   name: ICMPListener(IPAddress)
-  href: api/SIPSorcery.Net.ICMPListener.html#SIPSorcery_Net_ICMPListener__ctor_System_Net_IPAddress_
-  commentId: M:SIPSorcery.Net.ICMPListener.#ctor(System.Net.IPAddress)
-  fullName: SIPSorcery.Net.ICMPListener.ICMPListener(System.Net.IPAddress)
+  href: api/SIPSorcery.Net.ICMPListener.html#SIPSorcery_Net_ICMPListener__ctor_IPAddress_
+  commentId: M:SIPSorcery.Net.ICMPListener.#ctor(IPAddress)
+  fullName: SIPSorcery.Net.ICMPListener.ICMPListener(IPAddress)
   nameWithType: ICMPListener.ICMPListener(IPAddress)
 - uid: SIPSorcery.Net.ICMPListener.#ctor*
   name: ICMPListener
@@ -560,13 +560,13 @@ references:
   commentId: T:SIPSorcery.Net.Mjpeg
   fullName: SIPSorcery.Net.Mjpeg
   nameWithType: Mjpeg
-- uid: SIPSorcery.Net.Mjpeg.ProcessMjpegFrame(System.Collections.Generic.List{SIPSorcery.Net.RTPPacket})
+- uid: SIPSorcery.Net.Mjpeg.ProcessMjpegFrame(List{SIPSorcery.Net.RTPPacket})
   name: ProcessMjpegFrame(List<RTPPacket>)
-  href: api/SIPSorcery.Net.Mjpeg.html#SIPSorcery_Net_Mjpeg_ProcessMjpegFrame_System_Collections_Generic_List_SIPSorcery_Net_RTPPacket__
-  commentId: M:SIPSorcery.Net.Mjpeg.ProcessMjpegFrame(System.Collections.Generic.List{SIPSorcery.Net.RTPPacket})
+  href: api/SIPSorcery.Net.Mjpeg.html#SIPSorcery_Net_Mjpeg_ProcessMjpegFrame_List_SIPSorcery_Net_RTPPacket__
+  commentId: M:SIPSorcery.Net.Mjpeg.ProcessMjpegFrame(List{SIPSorcery.Net.RTPPacket})
   name.vb: ProcessMjpegFrame(List(Of RTPPacket))
-  fullName: SIPSorcery.Net.Mjpeg.ProcessMjpegFrame(System.Collections.Generic.List<SIPSorcery.Net.RTPPacket>)
-  fullName.vb: SIPSorcery.Net.Mjpeg.ProcessMjpegFrame(System.Collections.Generic.List(Of SIPSorcery.Net.RTPPacket))
+  fullName: SIPSorcery.Net.Mjpeg.ProcessMjpegFrame(List<SIPSorcery.Net.RTPPacket>)
+  fullName.vb: SIPSorcery.Net.Mjpeg.ProcessMjpegFrame(List(Of SIPSorcery.Net.RTPPacket))
   nameWithType: Mjpeg.ProcessMjpegFrame(List<RTPPacket>)
   nameWithType.vb: Mjpeg.ProcessMjpegFrame(List(Of RTPPacket))
 - uid: SIPSorcery.Net.Mjpeg.ProcessMjpegFrame*
@@ -695,11 +695,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPHeader.GetBytes
   nameWithType: RTCPHeader.GetBytes
-- uid: SIPSorcery.Net.RTCPHeader.GetHeader(System.Int32,System.UInt16)
+- uid: SIPSorcery.Net.RTCPHeader.GetHeader(System.Int32,UInt16)
   name: GetHeader(Int32, UInt16)
-  href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader_GetHeader_System_Int32_System_UInt16_
-  commentId: M:SIPSorcery.Net.RTCPHeader.GetHeader(System.Int32,System.UInt16)
-  fullName: SIPSorcery.Net.RTCPHeader.GetHeader(System.Int32, System.UInt16)
+  href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader_GetHeader_System_Int32_UInt16_
+  commentId: M:SIPSorcery.Net.RTCPHeader.GetHeader(System.Int32,UInt16)
+  fullName: SIPSorcery.Net.RTCPHeader.GetHeader(System.Int32, UInt16)
   nameWithType: RTCPHeader.GetHeader(Int32, UInt16)
 - uid: SIPSorcery.Net.RTCPHeader.GetHeader*
   name: GetHeader
@@ -872,6 +872,18 @@ references:
   commentId: M:SIPSorcery.Net.RTCPReport.#ctor
   fullName: SIPSorcery.Net.RTCPReport.RTCPReport()
   nameWithType: RTCPReport.RTCPReport()
+- uid: SIPSorcery.Net.RTCPReport.#ctor(DataRow)
+  name: RTCPReport(DataRow)
+  href: api/SIPSorcery.Net.RTCPReport.html#SIPSorcery_Net_RTCPReport__ctor_DataRow_
+  commentId: M:SIPSorcery.Net.RTCPReport.#ctor(DataRow)
+  fullName: SIPSorcery.Net.RTCPReport.RTCPReport(DataRow)
+  nameWithType: RTCPReport.RTCPReport(DataRow)
+- uid: SIPSorcery.Net.RTCPReport.#ctor(Guid,System.UInt32,IPEndPoint)
+  name: RTCPReport(Guid, UInt32, IPEndPoint)
+  href: api/SIPSorcery.Net.RTCPReport.html#SIPSorcery_Net_RTCPReport__ctor_Guid_System_UInt32_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTCPReport.#ctor(Guid,System.UInt32,IPEndPoint)
+  fullName: SIPSorcery.Net.RTCPReport.RTCPReport(Guid, System.UInt32, IPEndPoint)
+  nameWithType: RTCPReport.RTCPReport(Guid, UInt32, IPEndPoint)
 - uid: SIPSorcery.Net.RTCPReport.#ctor(System.Byte[])
   name: RTCPReport(Byte[])
   href: api/SIPSorcery.Net.RTCPReport.html#SIPSorcery_Net_RTCPReport__ctor_System_Byte___
@@ -881,18 +893,6 @@ references:
   fullName.vb: SIPSorcery.Net.RTCPReport.RTCPReport(System.Byte())
   nameWithType: RTCPReport.RTCPReport(Byte[])
   nameWithType.vb: RTCPReport.RTCPReport(Byte())
-- uid: SIPSorcery.Net.RTCPReport.#ctor(System.Data.DataRow)
-  name: RTCPReport(DataRow)
-  href: api/SIPSorcery.Net.RTCPReport.html#SIPSorcery_Net_RTCPReport__ctor_System_Data_DataRow_
-  commentId: M:SIPSorcery.Net.RTCPReport.#ctor(System.Data.DataRow)
-  fullName: SIPSorcery.Net.RTCPReport.RTCPReport(System.Data.DataRow)
-  nameWithType: RTCPReport.RTCPReport(DataRow)
-- uid: SIPSorcery.Net.RTCPReport.#ctor(System.Guid,System.UInt32,System.Net.IPEndPoint)
-  name: RTCPReport(Guid, UInt32, IPEndPoint)
-  href: api/SIPSorcery.Net.RTCPReport.html#SIPSorcery_Net_RTCPReport__ctor_System_Guid_System_UInt32_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTCPReport.#ctor(System.Guid,System.UInt32,System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTCPReport.RTCPReport(System.Guid, System.UInt32, System.Net.IPEndPoint)
-  nameWithType: RTCPReport.RTCPReport(Guid, UInt32, IPEndPoint)
 - uid: SIPSorcery.Net.RTCPReport.#ctor*
   name: RTCPReport
   href: api/SIPSorcery.Net.RTCPReport.html#SIPSorcery_Net_RTCPReport__ctor_
@@ -1198,11 +1198,11 @@ references:
   commentId: M:SIPSorcery.Net.RTCPReportSampler.#ctor
   fullName: SIPSorcery.Net.RTCPReportSampler.RTCPReportSampler()
   nameWithType: RTCPReportSampler.RTCPReportSampler()
-- uid: SIPSorcery.Net.RTCPReportSampler.#ctor(System.Guid,System.UInt32,System.Net.IPEndPoint,System.UInt16,System.DateTime,System.Int64)
+- uid: SIPSorcery.Net.RTCPReportSampler.#ctor(Guid,System.UInt32,IPEndPoint,UInt16,DateTime,System.Int64)
   name: RTCPReportSampler(Guid, UInt32, IPEndPoint, UInt16, DateTime, Int64)
-  href: api/SIPSorcery.Net.RTCPReportSampler.html#SIPSorcery_Net_RTCPReportSampler__ctor_System_Guid_System_UInt32_System_Net_IPEndPoint_System_UInt16_System_DateTime_System_Int64_
-  commentId: M:SIPSorcery.Net.RTCPReportSampler.#ctor(System.Guid,System.UInt32,System.Net.IPEndPoint,System.UInt16,System.DateTime,System.Int64)
-  fullName: SIPSorcery.Net.RTCPReportSampler.RTCPReportSampler(System.Guid, System.UInt32, System.Net.IPEndPoint, System.UInt16, System.DateTime, System.Int64)
+  href: api/SIPSorcery.Net.RTCPReportSampler.html#SIPSorcery_Net_RTCPReportSampler__ctor_Guid_System_UInt32_IPEndPoint_UInt16_DateTime_System_Int64_
+  commentId: M:SIPSorcery.Net.RTCPReportSampler.#ctor(Guid,System.UInt32,IPEndPoint,UInt16,DateTime,System.Int64)
+  fullName: SIPSorcery.Net.RTCPReportSampler.RTCPReportSampler(Guid, System.UInt32, IPEndPoint, UInt16, DateTime, System.Int64)
   nameWithType: RTCPReportSampler.RTCPReportSampler(Guid, UInt32, IPEndPoint, UInt16, DateTime, Int64)
 - uid: SIPSorcery.Net.RTCPReportSampler.#ctor*
   name: RTCPReportSampler
@@ -1217,11 +1217,11 @@ references:
   commentId: F:SIPSorcery.Net.RTCPReportSampler.JitterBufferMilliseconds
   fullName: SIPSorcery.Net.RTCPReportSampler.JitterBufferMilliseconds
   nameWithType: RTCPReportSampler.JitterBufferMilliseconds
-- uid: SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive(System.DateTime,System.UInt16,System.Int64,System.UInt32)
+- uid: SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive(DateTime,UInt16,System.Int64,System.UInt32)
   name: RecordRTPReceive(DateTime, UInt16, Int64, UInt32)
-  href: api/SIPSorcery.Net.RTCPReportSampler.html#SIPSorcery_Net_RTCPReportSampler_RecordRTPReceive_System_DateTime_System_UInt16_System_Int64_System_UInt32_
-  commentId: M:SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive(System.DateTime,System.UInt16,System.Int64,System.UInt32)
-  fullName: SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive(System.DateTime, System.UInt16, System.Int64, System.UInt32)
+  href: api/SIPSorcery.Net.RTCPReportSampler.html#SIPSorcery_Net_RTCPReportSampler_RecordRTPReceive_DateTime_UInt16_System_Int64_System_UInt32_
+  commentId: M:SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive(DateTime,UInt16,System.Int64,System.UInt32)
+  fullName: SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive(DateTime, UInt16, System.Int64, System.UInt32)
   nameWithType: RTCPReportSampler.RecordRTPReceive(DateTime, UInt16, Int64, UInt32)
 - uid: SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive*
   name: RecordRTPReceive
@@ -1391,11 +1391,11 @@ references:
   commentId: M:SIPSorcery.Net.RTPChannel.#ctor
   fullName: SIPSorcery.Net.RTPChannel.RTPChannel()
   nameWithType: RTPChannel.RTPChannel()
-- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPEndPoint)
+- uid: SIPSorcery.Net.RTPChannel.#ctor(IPEndPoint)
   name: RTPChannel(IPEndPoint)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Net.IPEndPoint)
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(IPEndPoint)
+  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(IPEndPoint)
   nameWithType: RTPChannel.RTPChannel(IPEndPoint)
 - uid: SIPSorcery.Net.RTPChannel.#ctor*
   name: RTPChannel
@@ -1456,11 +1456,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.CreatedAt
   nameWithType: RTPChannel.CreatedAt
-- uid: SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32(System.DateTime)
+- uid: SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32(DateTime)
   name: DateTimeToNptTimestamp32(DateTime)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_DateTimeToNptTimestamp32_System_DateTime_
-  commentId: M:SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32(System.DateTime)
-  fullName: SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32(System.DateTime)
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_DateTimeToNptTimestamp32_DateTime_
+  commentId: M:SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32(DateTime)
+  fullName: SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32(DateTime)
   nameWithType: RTPChannel.DateTimeToNptTimestamp32(DateTime)
 - uid: SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32*
   name: DateTimeToNptTimestamp32
@@ -1937,11 +1937,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPHeader.GetBytes
   nameWithType: RTPHeader.GetBytes
-- uid: SIPSorcery.Net.RTPHeader.GetHeader(System.UInt16,System.UInt32,System.UInt32)
+- uid: SIPSorcery.Net.RTPHeader.GetHeader(UInt16,System.UInt32,System.UInt32)
   name: GetHeader(UInt16, UInt32, UInt32)
-  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_GetHeader_System_UInt16_System_UInt32_System_UInt32_
-  commentId: M:SIPSorcery.Net.RTPHeader.GetHeader(System.UInt16,System.UInt32,System.UInt32)
-  fullName: SIPSorcery.Net.RTPHeader.GetHeader(System.UInt16, System.UInt32, System.UInt32)
+  href: api/SIPSorcery.Net.RTPHeader.html#SIPSorcery_Net_RTPHeader_GetHeader_UInt16_System_UInt32_System_UInt32_
+  commentId: M:SIPSorcery.Net.RTPHeader.GetHeader(UInt16,System.UInt32,System.UInt32)
+  fullName: SIPSorcery.Net.RTPHeader.GetHeader(UInt16, System.UInt32, System.UInt32)
   nameWithType: RTPHeader.GetHeader(UInt16, UInt32, UInt32)
 - uid: SIPSorcery.Net.RTPHeader.GetHeader*
   name: GetHeader
@@ -2161,11 +2161,11 @@ references:
   commentId: T:SIPSorcery.Net.RTPReceiveRecord
   fullName: SIPSorcery.Net.RTPReceiveRecord
   nameWithType: RTPReceiveRecord
-- uid: SIPSorcery.Net.RTPReceiveRecord.#ctor(System.DateTime,System.UInt16,System.Int64,System.UInt32,System.Boolean,System.Boolean)
+- uid: SIPSorcery.Net.RTPReceiveRecord.#ctor(DateTime,UInt16,System.Int64,System.UInt32,System.Boolean,System.Boolean)
   name: RTPReceiveRecord(DateTime, UInt16, Int64, UInt32, Boolean, Boolean)
-  href: api/SIPSorcery.Net.RTPReceiveRecord.html#SIPSorcery_Net_RTPReceiveRecord__ctor_System_DateTime_System_UInt16_System_Int64_System_UInt32_System_Boolean_System_Boolean_
-  commentId: M:SIPSorcery.Net.RTPReceiveRecord.#ctor(System.DateTime,System.UInt16,System.Int64,System.UInt32,System.Boolean,System.Boolean)
-  fullName: SIPSorcery.Net.RTPReceiveRecord.RTPReceiveRecord(System.DateTime, System.UInt16, System.Int64, System.UInt32, System.Boolean, System.Boolean)
+  href: api/SIPSorcery.Net.RTPReceiveRecord.html#SIPSorcery_Net_RTPReceiveRecord__ctor_DateTime_UInt16_System_Int64_System_UInt32_System_Boolean_System_Boolean_
+  commentId: M:SIPSorcery.Net.RTPReceiveRecord.#ctor(DateTime,UInt16,System.Int64,System.UInt32,System.Boolean,System.Boolean)
+  fullName: SIPSorcery.Net.RTPReceiveRecord.RTPReceiveRecord(DateTime, UInt16, System.Int64, System.UInt32, System.Boolean, System.Boolean)
   nameWithType: RTPReceiveRecord.RTPReceiveRecord(DateTime, UInt16, Int64, UInt32, Boolean, Boolean)
 - uid: SIPSorcery.Net.RTPReceiveRecord.#ctor*
   name: RTPReceiveRecord
@@ -2287,13 +2287,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.PayloadType
   nameWithType: RTPSession.PayloadType
-- uid: SIPSorcery.Net.RTPSession.SendAudioFrame(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32,System.Byte[])
+- uid: SIPSorcery.Net.RTPSession.SendAudioFrame(Socket,IPEndPoint,System.UInt32,System.Byte[])
   name: SendAudioFrame(Socket, IPEndPoint, UInt32, Byte[])
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudioFrame_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_System_Byte___
-  commentId: M:SIPSorcery.Net.RTPSession.SendAudioFrame(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32,System.Byte[])
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudioFrame_Socket_IPEndPoint_System_UInt32_System_Byte___
+  commentId: M:SIPSorcery.Net.RTPSession.SendAudioFrame(Socket,IPEndPoint,System.UInt32,System.Byte[])
   name.vb: SendAudioFrame(Socket, IPEndPoint, UInt32, Byte())
-  fullName: SIPSorcery.Net.RTPSession.SendAudioFrame(System.Net.Sockets.Socket, System.Net.IPEndPoint, System.UInt32, System.Byte[])
-  fullName.vb: SIPSorcery.Net.RTPSession.SendAudioFrame(System.Net.Sockets.Socket, System.Net.IPEndPoint, System.UInt32, System.Byte())
+  fullName: SIPSorcery.Net.RTPSession.SendAudioFrame(Socket, IPEndPoint, System.UInt32, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTPSession.SendAudioFrame(Socket, IPEndPoint, System.UInt32, System.Byte())
   nameWithType: RTPSession.SendAudioFrame(Socket, IPEndPoint, UInt32, Byte[])
   nameWithType.vb: RTPSession.SendAudioFrame(Socket, IPEndPoint, UInt32, Byte())
 - uid: SIPSorcery.Net.RTPSession.SendAudioFrame*
@@ -2303,11 +2303,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SendAudioFrame
   nameWithType: RTPSession.SendAudioFrame
-- uid: SIPSorcery.Net.RTPSession.SendRtcpSenderReport(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32)
+- uid: SIPSorcery.Net.RTPSession.SendRtcpSenderReport(Socket,IPEndPoint,System.UInt32)
   name: SendRtcpSenderReport(Socket, IPEndPoint, UInt32)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpSenderReport_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_
-  commentId: M:SIPSorcery.Net.RTPSession.SendRtcpSenderReport(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32)
-  fullName: SIPSorcery.Net.RTPSession.SendRtcpSenderReport(System.Net.Sockets.Socket, System.Net.IPEndPoint, System.UInt32)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpSenderReport_Socket_IPEndPoint_System_UInt32_
+  commentId: M:SIPSorcery.Net.RTPSession.SendRtcpSenderReport(Socket,IPEndPoint,System.UInt32)
+  fullName: SIPSorcery.Net.RTPSession.SendRtcpSenderReport(Socket, IPEndPoint, System.UInt32)
   nameWithType: RTPSession.SendRtcpSenderReport(Socket, IPEndPoint, UInt32)
 - uid: SIPSorcery.Net.RTPSession.SendRtcpSenderReport*
   name: SendRtcpSenderReport
@@ -2316,13 +2316,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SendRtcpSenderReport
   nameWithType: RTPSession.SendRtcpSenderReport
-- uid: SIPSorcery.Net.RTPSession.SendVp8Frame(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32,System.Byte[])
+- uid: SIPSorcery.Net.RTPSession.SendVp8Frame(Socket,IPEndPoint,System.UInt32,System.Byte[])
   name: SendVp8Frame(Socket, IPEndPoint, UInt32, Byte[])
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVp8Frame_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_System_Byte___
-  commentId: M:SIPSorcery.Net.RTPSession.SendVp8Frame(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32,System.Byte[])
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVp8Frame_Socket_IPEndPoint_System_UInt32_System_Byte___
+  commentId: M:SIPSorcery.Net.RTPSession.SendVp8Frame(Socket,IPEndPoint,System.UInt32,System.Byte[])
   name.vb: SendVp8Frame(Socket, IPEndPoint, UInt32, Byte())
-  fullName: SIPSorcery.Net.RTPSession.SendVp8Frame(System.Net.Sockets.Socket, System.Net.IPEndPoint, System.UInt32, System.Byte[])
-  fullName.vb: SIPSorcery.Net.RTPSession.SendVp8Frame(System.Net.Sockets.Socket, System.Net.IPEndPoint, System.UInt32, System.Byte())
+  fullName: SIPSorcery.Net.RTPSession.SendVp8Frame(Socket, IPEndPoint, System.UInt32, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTPSession.SendVp8Frame(Socket, IPEndPoint, System.UInt32, System.Byte())
   nameWithType: RTPSession.SendVp8Frame(Socket, IPEndPoint, UInt32, Byte[])
   nameWithType.vb: RTPSession.SendVp8Frame(Socket, IPEndPoint, UInt32, Byte())
 - uid: SIPSorcery.Net.RTPSession.SendVp8Frame*
@@ -2390,17 +2390,17 @@ references:
   commentId: T:SIPSorcery.Net.RTPSink
   fullName: SIPSorcery.Net.RTPSink
   nameWithType: RTPSink
-- uid: SIPSorcery.Net.RTPSink.#ctor(System.Net.IPAddress,System.Collections.ArrayList)
+- uid: SIPSorcery.Net.RTPSink.#ctor(IPAddress,ArrayList)
   name: RTPSink(IPAddress, ArrayList)
-  href: api/SIPSorcery.Net.RTPSink.html#SIPSorcery_Net_RTPSink__ctor_System_Net_IPAddress_System_Collections_ArrayList_
-  commentId: M:SIPSorcery.Net.RTPSink.#ctor(System.Net.IPAddress,System.Collections.ArrayList)
-  fullName: SIPSorcery.Net.RTPSink.RTPSink(System.Net.IPAddress, System.Collections.ArrayList)
+  href: api/SIPSorcery.Net.RTPSink.html#SIPSorcery_Net_RTPSink__ctor_IPAddress_ArrayList_
+  commentId: M:SIPSorcery.Net.RTPSink.#ctor(IPAddress,ArrayList)
+  fullName: SIPSorcery.Net.RTPSink.RTPSink(IPAddress, ArrayList)
   nameWithType: RTPSink.RTPSink(IPAddress, ArrayList)
-- uid: SIPSorcery.Net.RTPSink.#ctor(System.Net.IPEndPoint)
+- uid: SIPSorcery.Net.RTPSink.#ctor(IPEndPoint)
   name: RTPSink(IPEndPoint)
-  href: api/SIPSorcery.Net.RTPSink.html#SIPSorcery_Net_RTPSink__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTPSink.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTPSink.RTPSink(System.Net.IPEndPoint)
+  href: api/SIPSorcery.Net.RTPSink.html#SIPSorcery_Net_RTPSink__ctor_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTPSink.#ctor(IPEndPoint)
+  fullName: SIPSorcery.Net.RTPSink.RTPSink(IPEndPoint)
   nameWithType: RTPSink.RTPSink(IPEndPoint)
 - uid: SIPSorcery.Net.RTPSink.#ctor*
   name: RTPSink
@@ -2701,11 +2701,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSink.StartListening
   nameWithType: RTPSink.StartListening
-- uid: SIPSorcery.Net.RTPSink.StartSending(System.Net.IPEndPoint)
+- uid: SIPSorcery.Net.RTPSink.StartSending(IPEndPoint)
   name: StartSending(IPEndPoint)
-  href: api/SIPSorcery.Net.RTPSink.html#SIPSorcery_Net_RTPSink_StartSending_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTPSink.StartSending(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTPSink.StartSending(System.Net.IPEndPoint)
+  href: api/SIPSorcery.Net.RTPSink.html#SIPSorcery_Net_RTPSink_StartSending_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTPSink.StartSending(IPEndPoint)
+  fullName: SIPSorcery.Net.RTPSink.StartSending(IPEndPoint)
   nameWithType: RTPSink.StartSending(IPEndPoint)
 - uid: SIPSorcery.Net.RTPSink.StartSending*
   name: StartSending
@@ -2903,13 +2903,13 @@ references:
   commentId: M:SIPSorcery.Net.RTSPClient.#ctor
   fullName: SIPSorcery.Net.RTSPClient.RTSPClient()
   nameWithType: RTSPClient.RTSPClient()
-- uid: SIPSorcery.Net.RTSPClient.#ctor(System.Action{System.String})
+- uid: SIPSorcery.Net.RTSPClient.#ctor(Action{System.String})
   name: RTSPClient(Action<String>)
-  href: api/SIPSorcery.Net.RTSPClient.html#SIPSorcery_Net_RTSPClient__ctor_System_Action_System_String__
-  commentId: M:SIPSorcery.Net.RTSPClient.#ctor(System.Action{System.String})
+  href: api/SIPSorcery.Net.RTSPClient.html#SIPSorcery_Net_RTSPClient__ctor_Action_System_String__
+  commentId: M:SIPSorcery.Net.RTSPClient.#ctor(Action{System.String})
   name.vb: RTSPClient(Action(Of String))
-  fullName: SIPSorcery.Net.RTSPClient.RTSPClient(System.Action<System.String>)
-  fullName.vb: SIPSorcery.Net.RTSPClient.RTSPClient(System.Action(Of System.String))
+  fullName: SIPSorcery.Net.RTSPClient.RTSPClient(Action<System.String>)
+  fullName.vb: SIPSorcery.Net.RTSPClient.RTSPClient(Action(Of System.String))
   nameWithType: RTSPClient.RTSPClient(Action<String>)
   nameWithType.vb: RTSPClient.RTSPClient(Action(Of String))
 - uid: SIPSorcery.Net.RTSPClient.#ctor*
@@ -3027,11 +3027,11 @@ references:
   commentId: T:SIPSorcery.Net.RTSPConnection
   fullName: SIPSorcery.Net.RTSPConnection
   nameWithType: RTSPConnection
-- uid: SIPSorcery.Net.RTSPConnection.#ctor(SIPSorcery.Net.RTSPServer,System.Net.Sockets.NetworkStream,System.Net.IPEndPoint)
+- uid: SIPSorcery.Net.RTSPConnection.#ctor(SIPSorcery.Net.RTSPServer,NetworkStream,IPEndPoint)
   name: RTSPConnection(RTSPServer, NetworkStream, IPEndPoint)
-  href: api/SIPSorcery.Net.RTSPConnection.html#SIPSorcery_Net_RTSPConnection__ctor_SIPSorcery_Net_RTSPServer_System_Net_Sockets_NetworkStream_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTSPConnection.#ctor(SIPSorcery.Net.RTSPServer,System.Net.Sockets.NetworkStream,System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTSPConnection.RTSPConnection(SIPSorcery.Net.RTSPServer, System.Net.Sockets.NetworkStream, System.Net.IPEndPoint)
+  href: api/SIPSorcery.Net.RTSPConnection.html#SIPSorcery_Net_RTSPConnection__ctor_SIPSorcery_Net_RTSPServer_NetworkStream_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTSPConnection.#ctor(SIPSorcery.Net.RTSPServer,NetworkStream,IPEndPoint)
+  fullName: SIPSorcery.Net.RTSPConnection.RTSPConnection(SIPSorcery.Net.RTSPServer, NetworkStream, IPEndPoint)
   nameWithType: RTSPConnection.RTSPConnection(RTSPServer, NetworkStream, IPEndPoint)
 - uid: SIPSorcery.Net.RTSPConnection.#ctor*
   name: RTSPConnection
@@ -3624,20 +3624,20 @@ references:
   commentId: F:SIPSorcery.Net.RTSPMessage.FirstLine
   fullName: SIPSorcery.Net.RTSPMessage.FirstLine
   nameWithType: RTSPMessage.FirstLine
-- uid: SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.Byte[],System.Net.IPEndPoint,System.Net.IPEndPoint)
+- uid: SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.Byte[],IPEndPoint,IPEndPoint)
   name: ParseRTSPMessage(Byte[], IPEndPoint, IPEndPoint)
-  href: api/SIPSorcery.Net.RTSPMessage.html#SIPSorcery_Net_RTSPMessage_ParseRTSPMessage_System_Byte___System_Net_IPEndPoint_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.Byte[],System.Net.IPEndPoint,System.Net.IPEndPoint)
+  href: api/SIPSorcery.Net.RTSPMessage.html#SIPSorcery_Net_RTSPMessage_ParseRTSPMessage_System_Byte___IPEndPoint_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.Byte[],IPEndPoint,IPEndPoint)
   name.vb: ParseRTSPMessage(Byte(), IPEndPoint, IPEndPoint)
-  fullName: SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.Byte[], System.Net.IPEndPoint, System.Net.IPEndPoint)
-  fullName.vb: SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.Byte(), System.Net.IPEndPoint, System.Net.IPEndPoint)
+  fullName: SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.Byte[], IPEndPoint, IPEndPoint)
+  fullName.vb: SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.Byte(), IPEndPoint, IPEndPoint)
   nameWithType: RTSPMessage.ParseRTSPMessage(Byte[], IPEndPoint, IPEndPoint)
   nameWithType.vb: RTSPMessage.ParseRTSPMessage(Byte(), IPEndPoint, IPEndPoint)
-- uid: SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.String,System.Net.IPEndPoint,System.Net.IPEndPoint)
+- uid: SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.String,IPEndPoint,IPEndPoint)
   name: ParseRTSPMessage(String, IPEndPoint, IPEndPoint)
-  href: api/SIPSorcery.Net.RTSPMessage.html#SIPSorcery_Net_RTSPMessage_ParseRTSPMessage_System_String_System_Net_IPEndPoint_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.String,System.Net.IPEndPoint,System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.String, System.Net.IPEndPoint, System.Net.IPEndPoint)
+  href: api/SIPSorcery.Net.RTSPMessage.html#SIPSorcery_Net_RTSPMessage_ParseRTSPMessage_System_String_IPEndPoint_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.String,IPEndPoint,IPEndPoint)
+  fullName: SIPSorcery.Net.RTSPMessage.ParseRTSPMessage(System.String, IPEndPoint, IPEndPoint)
   nameWithType: RTSPMessage.ParseRTSPMessage(String, IPEndPoint, IPEndPoint)
 - uid: SIPSorcery.Net.RTSPMessage.ParseRTSPMessage*
   name: ParseRTSPMessage
@@ -4266,11 +4266,11 @@ references:
   commentId: T:SIPSorcery.Net.RTSPServer
   fullName: SIPSorcery.Net.RTSPServer
   nameWithType: RTSPServer
-- uid: SIPSorcery.Net.RTSPServer.#ctor(System.Net.IPEndPoint)
+- uid: SIPSorcery.Net.RTSPServer.#ctor(IPEndPoint)
   name: RTSPServer(IPEndPoint)
-  href: api/SIPSorcery.Net.RTSPServer.html#SIPSorcery_Net_RTSPServer__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTSPServer.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTSPServer.RTSPServer(System.Net.IPEndPoint)
+  href: api/SIPSorcery.Net.RTSPServer.html#SIPSorcery_Net_RTSPServer__ctor_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTSPServer.#ctor(IPEndPoint)
+  fullName: SIPSorcery.Net.RTSPServer.RTSPServer(IPEndPoint)
   nameWithType: RTSPServer.RTSPServer(IPEndPoint)
 - uid: SIPSorcery.Net.RTSPServer.#ctor*
   name: RTSPServer
@@ -4298,11 +4298,11 @@ references:
   commentId: F:SIPSorcery.Net.RTSPServer.Closed
   fullName: SIPSorcery.Net.RTSPServer.Closed
   nameWithType: RTSPServer.Closed
-- uid: SIPSorcery.Net.RTSPServer.CreateRTSPSession(System.Net.IPEndPoint,System.Net.IPEndPoint)
+- uid: SIPSorcery.Net.RTSPServer.CreateRTSPSession(IPEndPoint,IPEndPoint)
   name: CreateRTSPSession(IPEndPoint, IPEndPoint)
-  href: api/SIPSorcery.Net.RTSPServer.html#SIPSorcery_Net_RTSPServer_CreateRTSPSession_System_Net_IPEndPoint_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTSPServer.CreateRTSPSession(System.Net.IPEndPoint,System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTSPServer.CreateRTSPSession(System.Net.IPEndPoint, System.Net.IPEndPoint)
+  href: api/SIPSorcery.Net.RTSPServer.html#SIPSorcery_Net_RTSPServer_CreateRTSPSession_IPEndPoint_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTSPServer.CreateRTSPSession(IPEndPoint,IPEndPoint)
+  fullName: SIPSorcery.Net.RTSPServer.CreateRTSPSession(IPEndPoint, IPEndPoint)
   nameWithType: RTSPServer.CreateRTSPSession(IPEndPoint, IPEndPoint)
 - uid: SIPSorcery.Net.RTSPServer.CreateRTSPSession*
   name: CreateRTSPSession
@@ -4311,11 +4311,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTSPServer.CreateRTSPSession
   nameWithType: RTSPServer.CreateRTSPSession
-- uid: SIPSorcery.Net.RTSPServer.IsConnectionEstablished(System.Net.IPEndPoint)
+- uid: SIPSorcery.Net.RTSPServer.IsConnectionEstablished(IPEndPoint)
   name: IsConnectionEstablished(IPEndPoint)
-  href: api/SIPSorcery.Net.RTSPServer.html#SIPSorcery_Net_RTSPServer_IsConnectionEstablished_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTSPServer.IsConnectionEstablished(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTSPServer.IsConnectionEstablished(System.Net.IPEndPoint)
+  href: api/SIPSorcery.Net.RTSPServer.html#SIPSorcery_Net_RTSPServer_IsConnectionEstablished_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTSPServer.IsConnectionEstablished(IPEndPoint)
+  fullName: SIPSorcery.Net.RTSPServer.IsConnectionEstablished(IPEndPoint)
   nameWithType: RTSPServer.IsConnectionEstablished(IPEndPoint)
 - uid: SIPSorcery.Net.RTSPServer.IsConnectionEstablished*
   name: IsConnectionEstablished
@@ -4349,20 +4349,20 @@ references:
   commentId: F:SIPSorcery.Net.RTSPServer.RTSPClientSocketDisconnected
   fullName: SIPSorcery.Net.RTSPServer.RTSPClientSocketDisconnected
   nameWithType: RTSPServer.RTSPClientSocketDisconnected
-- uid: SIPSorcery.Net.RTSPServer.Send(System.Net.IPEndPoint,System.Byte[])
+- uid: SIPSorcery.Net.RTSPServer.Send(IPEndPoint,System.Byte[])
   name: Send(IPEndPoint, Byte[])
-  href: api/SIPSorcery.Net.RTSPServer.html#SIPSorcery_Net_RTSPServer_Send_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.Net.RTSPServer.Send(System.Net.IPEndPoint,System.Byte[])
+  href: api/SIPSorcery.Net.RTSPServer.html#SIPSorcery_Net_RTSPServer_Send_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.Net.RTSPServer.Send(IPEndPoint,System.Byte[])
   name.vb: Send(IPEndPoint, Byte())
-  fullName: SIPSorcery.Net.RTSPServer.Send(System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.Net.RTSPServer.Send(System.Net.IPEndPoint, System.Byte())
+  fullName: SIPSorcery.Net.RTSPServer.Send(IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTSPServer.Send(IPEndPoint, System.Byte())
   nameWithType: RTSPServer.Send(IPEndPoint, Byte[])
   nameWithType.vb: RTSPServer.Send(IPEndPoint, Byte())
-- uid: SIPSorcery.Net.RTSPServer.Send(System.Net.IPEndPoint,System.String)
+- uid: SIPSorcery.Net.RTSPServer.Send(IPEndPoint,System.String)
   name: Send(IPEndPoint, String)
-  href: api/SIPSorcery.Net.RTSPServer.html#SIPSorcery_Net_RTSPServer_Send_System_Net_IPEndPoint_System_String_
-  commentId: M:SIPSorcery.Net.RTSPServer.Send(System.Net.IPEndPoint,System.String)
-  fullName: SIPSorcery.Net.RTSPServer.Send(System.Net.IPEndPoint, System.String)
+  href: api/SIPSorcery.Net.RTSPServer.html#SIPSorcery_Net_RTSPServer_Send_IPEndPoint_System_String_
+  commentId: M:SIPSorcery.Net.RTSPServer.Send(IPEndPoint,System.String)
+  fullName: SIPSorcery.Net.RTSPServer.Send(IPEndPoint, System.String)
   nameWithType: RTSPServer.Send(IPEndPoint, String)
 - uid: SIPSorcery.Net.RTSPServer.Send*
   name: Send
@@ -4383,11 +4383,11 @@ references:
   commentId: M:SIPSorcery.Net.RTSPSession.#ctor
   fullName: SIPSorcery.Net.RTSPSession.RTSPSession()
   nameWithType: RTSPSession.RTSPSession()
-- uid: SIPSorcery.Net.RTSPSession.#ctor(System.String,System.Net.IPEndPoint,System.Net.IPEndPoint)
+- uid: SIPSorcery.Net.RTSPSession.#ctor(System.String,IPEndPoint,IPEndPoint)
   name: RTSPSession(String, IPEndPoint, IPEndPoint)
-  href: api/SIPSorcery.Net.RTSPSession.html#SIPSorcery_Net_RTSPSession__ctor_System_String_System_Net_IPEndPoint_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTSPSession.#ctor(System.String,System.Net.IPEndPoint,System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTSPSession.RTSPSession(System.String, System.Net.IPEndPoint, System.Net.IPEndPoint)
+  href: api/SIPSorcery.Net.RTSPSession.html#SIPSorcery_Net_RTSPSession__ctor_System_String_IPEndPoint_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTSPSession.#ctor(System.String,IPEndPoint,IPEndPoint)
+  fullName: SIPSorcery.Net.RTSPSession.RTSPSession(System.String, IPEndPoint, IPEndPoint)
   nameWithType: RTSPSession.RTSPSession(String, IPEndPoint, IPEndPoint)
 - uid: SIPSorcery.Net.RTSPSession.#ctor*
   name: RTSPSession
@@ -4448,11 +4448,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTSPSession.CreatedAt
   nameWithType: RTSPSession.CreatedAt
-- uid: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp(System.DateTime)
+- uid: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp(DateTime)
   name: DateTimeToNptTimestamp(DateTime)
-  href: api/SIPSorcery.Net.RTSPSession.html#SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp_System_DateTime_
-  commentId: M:SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp(System.DateTime)
-  fullName: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp(System.DateTime)
+  href: api/SIPSorcery.Net.RTSPSession.html#SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp_DateTime_
+  commentId: M:SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp(DateTime)
+  fullName: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp(DateTime)
   nameWithType: RTSPSession.DateTimeToNptTimestamp(DateTime)
 - uid: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp*
   name: DateTimeToNptTimestamp
@@ -4461,11 +4461,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp
   nameWithType: RTSPSession.DateTimeToNptTimestamp
-- uid: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32(System.DateTime)
+- uid: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32(DateTime)
   name: DateTimeToNptTimestamp32(DateTime)
-  href: api/SIPSorcery.Net.RTSPSession.html#SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp32_System_DateTime_
-  commentId: M:SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32(System.DateTime)
-  fullName: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32(System.DateTime)
+  href: api/SIPSorcery.Net.RTSPSession.html#SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp32_DateTime_
+  commentId: M:SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32(DateTime)
+  fullName: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32(DateTime)
   nameWithType: RTSPSession.DateTimeToNptTimestamp32(DateTime)
 - uid: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32*
   name: DateTimeToNptTimestamp32
@@ -4474,11 +4474,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp32
   nameWithType: RTSPSession.DateTimeToNptTimestamp32
-- uid: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K(System.DateTime)
+- uid: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K(DateTime)
   name: DateTimeToNptTimestamp90K(DateTime)
-  href: api/SIPSorcery.Net.RTSPSession.html#SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp90K_System_DateTime_
-  commentId: M:SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K(System.DateTime)
-  fullName: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K(System.DateTime)
+  href: api/SIPSorcery.Net.RTSPSession.html#SIPSorcery_Net_RTSPSession_DateTimeToNptTimestamp90K_DateTime_
+  commentId: M:SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K(DateTime)
+  fullName: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K(DateTime)
   nameWithType: RTSPSession.DateTimeToNptTimestamp90K(DateTime)
 - uid: SIPSorcery.Net.RTSPSession.DateTimeToNptTimestamp90K*
   name: DateTimeToNptTimestamp90K
@@ -5383,13 +5383,13 @@ references:
   commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPConnectionInformation)
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPConnectionInformation)
   nameWithType: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPConnectionInformation)
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat})
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,List{SIPSorcery.Net.SDPMediaFormat})
   name: SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List<SDPMediaFormat>)
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__
-  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat})
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_List_SIPSorcery_Net_SDPMediaFormat__
+  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,List{SIPSorcery.Net.SDPMediaFormat})
   name.vb: SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List(Of SDPMediaFormat))
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormat>)
-  fullName.vb: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormat))
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, List<SIPSorcery.Net.SDPMediaFormat>)
+  fullName.vb: SIPSorcery.Net.SDPMediaAnnouncement.SDPMediaAnnouncement(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32, List(Of SIPSorcery.Net.SDPMediaFormat))
   nameWithType: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List<SDPMediaFormat>)
   nameWithType.vb: SDPMediaAnnouncement.SDPMediaAnnouncement(SDPMediaTypesEnum, Int32, List(Of SDPMediaFormat))
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.#ctor(System.Int32)
@@ -5830,11 +5830,11 @@ references:
   commentId: T:SIPSorcery.Net.STUNAddressAttribute
   fullName: SIPSorcery.Net.STUNAddressAttribute
   nameWithType: STUNAddressAttribute
-- uid: SIPSorcery.Net.STUNAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Int32,System.Net.IPAddress)
+- uid: SIPSorcery.Net.STUNAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Int32,IPAddress)
   name: STUNAddressAttribute(STUNAttributeTypesEnum, Int32, IPAddress)
-  href: api/SIPSorcery.Net.STUNAddressAttribute.html#SIPSorcery_Net_STUNAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Int32_System_Net_IPAddress_
-  commentId: M:SIPSorcery.Net.STUNAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Int32,System.Net.IPAddress)
-  fullName: SIPSorcery.Net.STUNAddressAttribute.STUNAddressAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Int32, System.Net.IPAddress)
+  href: api/SIPSorcery.Net.STUNAddressAttribute.html#SIPSorcery_Net_STUNAddressAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_Int32_IPAddress_
+  commentId: M:SIPSorcery.Net.STUNAddressAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.Int32,IPAddress)
+  fullName: SIPSorcery.Net.STUNAddressAttribute.STUNAddressAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Int32, IPAddress)
   nameWithType: STUNAddressAttribute.STUNAddressAttribute(STUNAttributeTypesEnum, Int32, IPAddress)
 - uid: SIPSorcery.Net.STUNAddressAttribute.#ctor(System.Byte[])
   name: STUNAddressAttribute(Byte[])
@@ -5920,13 +5920,13 @@ references:
   fullName.vb: SIPSorcery.Net.STUNAttribute.STUNAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Byte())
   nameWithType: STUNAttribute.STUNAttribute(STUNAttributeTypesEnum, Byte[])
   nameWithType.vb: STUNAttribute.STUNAttribute(STUNAttributeTypesEnum, Byte())
-- uid: SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.UInt16,System.Byte[])
+- uid: SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,UInt16,System.Byte[])
   name: STUNAttribute(STUNAttributeTypesEnum, UInt16, Byte[])
-  href: api/SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_System_UInt16_System_Byte___
-  commentId: M:SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,System.UInt16,System.Byte[])
+  href: api/SIPSorcery.Net.STUNAttribute.html#SIPSorcery_Net_STUNAttribute__ctor_SIPSorcery_Net_STUNAttributeTypesEnum_UInt16_System_Byte___
+  commentId: M:SIPSorcery.Net.STUNAttribute.#ctor(SIPSorcery.Net.STUNAttributeTypesEnum,UInt16,System.Byte[])
   name.vb: STUNAttribute(STUNAttributeTypesEnum, UInt16, Byte())
-  fullName: SIPSorcery.Net.STUNAttribute.STUNAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.UInt16, System.Byte[])
-  fullName.vb: SIPSorcery.Net.STUNAttribute.STUNAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.UInt16, System.Byte())
+  fullName: SIPSorcery.Net.STUNAttribute.STUNAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, UInt16, System.Byte[])
+  fullName.vb: SIPSorcery.Net.STUNAttribute.STUNAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, UInt16, System.Byte())
   nameWithType: STUNAttribute.STUNAttribute(STUNAttributeTypesEnum, UInt16, Byte[])
   nameWithType.vb: STUNAttribute.STUNAttribute(STUNAttributeTypesEnum, UInt16, Byte())
 - uid: SIPSorcery.Net.STUNAttribute.#ctor*
@@ -6289,11 +6289,11 @@ references:
   commentId: T:SIPSorcery.Net.STUNListener
   fullName: SIPSorcery.Net.STUNListener
   nameWithType: STUNListener
-- uid: SIPSorcery.Net.STUNListener.#ctor(System.Net.IPEndPoint)
+- uid: SIPSorcery.Net.STUNListener.#ctor(IPEndPoint)
   name: STUNListener(IPEndPoint)
-  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.STUNListener.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.STUNListener.STUNListener(System.Net.IPEndPoint)
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener__ctor_IPEndPoint_
+  commentId: M:SIPSorcery.Net.STUNListener.#ctor(IPEndPoint)
+  fullName: SIPSorcery.Net.STUNListener.STUNListener(IPEndPoint)
   nameWithType: STUNListener.STUNListener(IPEndPoint)
 - uid: SIPSorcery.Net.STUNListener.#ctor*
   name: STUNListener
@@ -6334,13 +6334,13 @@ references:
   commentId: E:SIPSorcery.Net.STUNListener.MessageReceived
   fullName: SIPSorcery.Net.STUNListener.MessageReceived
   nameWithType: STUNListener.MessageReceived
-- uid: SIPSorcery.Net.STUNListener.Send(System.Net.IPEndPoint,System.Byte[])
+- uid: SIPSorcery.Net.STUNListener.Send(IPEndPoint,System.Byte[])
   name: Send(IPEndPoint, Byte[])
-  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener_Send_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.Net.STUNListener.Send(System.Net.IPEndPoint,System.Byte[])
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener_Send_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.Net.STUNListener.Send(IPEndPoint,System.Byte[])
   name.vb: Send(IPEndPoint, Byte())
-  fullName: SIPSorcery.Net.STUNListener.Send(System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.Net.STUNListener.Send(System.Net.IPEndPoint, System.Byte())
+  fullName: SIPSorcery.Net.STUNListener.Send(IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.Net.STUNListener.Send(IPEndPoint, System.Byte())
   nameWithType: STUNListener.Send(IPEndPoint, Byte[])
   nameWithType.vb: STUNListener.Send(IPEndPoint, Byte())
 - uid: SIPSorcery.Net.STUNListener.Send*
@@ -6546,11 +6546,11 @@ references:
   commentId: T:SIPSorcery.Net.STUNServer
   fullName: SIPSorcery.Net.STUNServer
   nameWithType: STUNServer
-- uid: SIPSorcery.Net.STUNServer.#ctor(System.Net.IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate,System.Net.IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate)
+- uid: SIPSorcery.Net.STUNServer.#ctor(IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate,IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate)
   name: STUNServer(IPEndPoint, STUNSendMessageDelegate, IPEndPoint, STUNSendMessageDelegate)
-  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer__ctor_System_Net_IPEndPoint_SIPSorcery_Net_STUNSendMessageDelegate_System_Net_IPEndPoint_SIPSorcery_Net_STUNSendMessageDelegate_
-  commentId: M:SIPSorcery.Net.STUNServer.#ctor(System.Net.IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate,System.Net.IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate)
-  fullName: SIPSorcery.Net.STUNServer.STUNServer(System.Net.IPEndPoint, SIPSorcery.Net.STUNSendMessageDelegate, System.Net.IPEndPoint, SIPSorcery.Net.STUNSendMessageDelegate)
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer__ctor_IPEndPoint_SIPSorcery_Net_STUNSendMessageDelegate_IPEndPoint_SIPSorcery_Net_STUNSendMessageDelegate_
+  commentId: M:SIPSorcery.Net.STUNServer.#ctor(IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate,IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate)
+  fullName: SIPSorcery.Net.STUNServer.STUNServer(IPEndPoint, SIPSorcery.Net.STUNSendMessageDelegate, IPEndPoint, SIPSorcery.Net.STUNSendMessageDelegate)
   nameWithType: STUNServer.STUNServer(IPEndPoint, STUNSendMessageDelegate, IPEndPoint, STUNSendMessageDelegate)
 - uid: SIPSorcery.Net.STUNServer.#ctor*
   name: STUNServer
@@ -6572,13 +6572,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNServer.Stop
   nameWithType: STUNServer.Stop
-- uid: SIPSorcery.Net.STUNServer.STUNPrimaryReceived(System.Net.IPEndPoint,System.Net.IPEndPoint,System.Byte[],System.Int32)
+- uid: SIPSorcery.Net.STUNServer.STUNPrimaryReceived(IPEndPoint,IPEndPoint,System.Byte[],System.Int32)
   name: STUNPrimaryReceived(IPEndPoint, IPEndPoint, Byte[], Int32)
-  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNPrimaryReceived_System_Net_IPEndPoint_System_Net_IPEndPoint_System_Byte___System_Int32_
-  commentId: M:SIPSorcery.Net.STUNServer.STUNPrimaryReceived(System.Net.IPEndPoint,System.Net.IPEndPoint,System.Byte[],System.Int32)
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNPrimaryReceived_IPEndPoint_IPEndPoint_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.STUNServer.STUNPrimaryReceived(IPEndPoint,IPEndPoint,System.Byte[],System.Int32)
   name.vb: STUNPrimaryReceived(IPEndPoint, IPEndPoint, Byte(), Int32)
-  fullName: SIPSorcery.Net.STUNServer.STUNPrimaryReceived(System.Net.IPEndPoint, System.Net.IPEndPoint, System.Byte[], System.Int32)
-  fullName.vb: SIPSorcery.Net.STUNServer.STUNPrimaryReceived(System.Net.IPEndPoint, System.Net.IPEndPoint, System.Byte(), System.Int32)
+  fullName: SIPSorcery.Net.STUNServer.STUNPrimaryReceived(IPEndPoint, IPEndPoint, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.STUNServer.STUNPrimaryReceived(IPEndPoint, IPEndPoint, System.Byte(), System.Int32)
   nameWithType: STUNServer.STUNPrimaryReceived(IPEndPoint, IPEndPoint, Byte[], Int32)
   nameWithType.vb: STUNServer.STUNPrimaryReceived(IPEndPoint, IPEndPoint, Byte(), Int32)
 - uid: SIPSorcery.Net.STUNServer.STUNPrimaryReceived*
@@ -6600,13 +6600,13 @@ references:
   commentId: E:SIPSorcery.Net.STUNServer.STUNPrimaryResponseOutTraceEvent
   fullName: SIPSorcery.Net.STUNServer.STUNPrimaryResponseOutTraceEvent
   nameWithType: STUNServer.STUNPrimaryResponseOutTraceEvent
-- uid: SIPSorcery.Net.STUNServer.STUNSecondaryReceived(System.Net.IPEndPoint,System.Net.IPEndPoint,System.Byte[],System.Int32)
+- uid: SIPSorcery.Net.STUNServer.STUNSecondaryReceived(IPEndPoint,IPEndPoint,System.Byte[],System.Int32)
   name: STUNSecondaryReceived(IPEndPoint, IPEndPoint, Byte[], Int32)
-  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNSecondaryReceived_System_Net_IPEndPoint_System_Net_IPEndPoint_System_Byte___System_Int32_
-  commentId: M:SIPSorcery.Net.STUNServer.STUNSecondaryReceived(System.Net.IPEndPoint,System.Net.IPEndPoint,System.Byte[],System.Int32)
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNSecondaryReceived_IPEndPoint_IPEndPoint_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.STUNServer.STUNSecondaryReceived(IPEndPoint,IPEndPoint,System.Byte[],System.Int32)
   name.vb: STUNSecondaryReceived(IPEndPoint, IPEndPoint, Byte(), Int32)
-  fullName: SIPSorcery.Net.STUNServer.STUNSecondaryReceived(System.Net.IPEndPoint, System.Net.IPEndPoint, System.Byte[], System.Int32)
-  fullName.vb: SIPSorcery.Net.STUNServer.STUNSecondaryReceived(System.Net.IPEndPoint, System.Net.IPEndPoint, System.Byte(), System.Int32)
+  fullName: SIPSorcery.Net.STUNServer.STUNSecondaryReceived(IPEndPoint, IPEndPoint, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.STUNServer.STUNSecondaryReceived(IPEndPoint, IPEndPoint, System.Byte(), System.Int32)
   nameWithType: STUNServer.STUNSecondaryReceived(IPEndPoint, IPEndPoint, Byte[], Int32)
   nameWithType.vb: STUNServer.STUNSecondaryReceived(IPEndPoint, IPEndPoint, Byte(), Int32)
 - uid: SIPSorcery.Net.STUNServer.STUNSecondaryReceived*
@@ -6646,11 +6646,11 @@ references:
   commentId: T:SIPSorcery.Net.STUNv2AddressAttribute
   fullName: SIPSorcery.Net.STUNv2AddressAttribute
   nameWithType: STUNv2AddressAttribute
-- uid: SIPSorcery.Net.STUNv2AddressAttribute.#ctor(SIPSorcery.Net.STUNv2AttributeTypesEnum,System.Int32,System.Net.IPAddress)
+- uid: SIPSorcery.Net.STUNv2AddressAttribute.#ctor(SIPSorcery.Net.STUNv2AttributeTypesEnum,System.Int32,IPAddress)
   name: STUNv2AddressAttribute(STUNv2AttributeTypesEnum, Int32, IPAddress)
-  href: api/SIPSorcery.Net.STUNv2AddressAttribute.html#SIPSorcery_Net_STUNv2AddressAttribute__ctor_SIPSorcery_Net_STUNv2AttributeTypesEnum_System_Int32_System_Net_IPAddress_
-  commentId: M:SIPSorcery.Net.STUNv2AddressAttribute.#ctor(SIPSorcery.Net.STUNv2AttributeTypesEnum,System.Int32,System.Net.IPAddress)
-  fullName: SIPSorcery.Net.STUNv2AddressAttribute.STUNv2AddressAttribute(SIPSorcery.Net.STUNv2AttributeTypesEnum, System.Int32, System.Net.IPAddress)
+  href: api/SIPSorcery.Net.STUNv2AddressAttribute.html#SIPSorcery_Net_STUNv2AddressAttribute__ctor_SIPSorcery_Net_STUNv2AttributeTypesEnum_System_Int32_IPAddress_
+  commentId: M:SIPSorcery.Net.STUNv2AddressAttribute.#ctor(SIPSorcery.Net.STUNv2AttributeTypesEnum,System.Int32,IPAddress)
+  fullName: SIPSorcery.Net.STUNv2AddressAttribute.STUNv2AddressAttribute(SIPSorcery.Net.STUNv2AttributeTypesEnum, System.Int32, IPAddress)
   nameWithType: STUNv2AddressAttribute.STUNv2AddressAttribute(STUNv2AttributeTypesEnum, Int32, IPAddress)
 - uid: SIPSorcery.Net.STUNv2AddressAttribute.#ctor(System.Byte[])
   name: STUNv2AddressAttribute(Byte[])
@@ -7379,11 +7379,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNv2Message.AddUsernameAttribute
   nameWithType: STUNv2Message.AddUsernameAttribute
-- uid: SIPSorcery.Net.STUNv2Message.AddXORMappedAddressAttribute(System.Net.IPAddress,System.Int32)
+- uid: SIPSorcery.Net.STUNv2Message.AddXORMappedAddressAttribute(IPAddress,System.Int32)
   name: AddXORMappedAddressAttribute(IPAddress, Int32)
-  href: api/SIPSorcery.Net.STUNv2Message.html#SIPSorcery_Net_STUNv2Message_AddXORMappedAddressAttribute_System_Net_IPAddress_System_Int32_
-  commentId: M:SIPSorcery.Net.STUNv2Message.AddXORMappedAddressAttribute(System.Net.IPAddress,System.Int32)
-  fullName: SIPSorcery.Net.STUNv2Message.AddXORMappedAddressAttribute(System.Net.IPAddress, System.Int32)
+  href: api/SIPSorcery.Net.STUNv2Message.html#SIPSorcery_Net_STUNv2Message_AddXORMappedAddressAttribute_IPAddress_System_Int32_
+  commentId: M:SIPSorcery.Net.STUNv2Message.AddXORMappedAddressAttribute(IPAddress,System.Int32)
+  fullName: SIPSorcery.Net.STUNv2Message.AddXORMappedAddressAttribute(IPAddress, System.Int32)
   nameWithType: STUNv2Message.AddXORMappedAddressAttribute(IPAddress, Int32)
 - uid: SIPSorcery.Net.STUNv2Message.AddXORMappedAddressAttribute*
   name: AddXORMappedAddressAttribute
@@ -7610,11 +7610,11 @@ references:
   fullName.vb: SIPSorcery.Net.STUNv2XORAddressAttribute.STUNv2XORAddressAttribute(SIPSorcery.Net.STUNv2AttributeTypesEnum, System.Byte())
   nameWithType: STUNv2XORAddressAttribute.STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum, Byte[])
   nameWithType.vb: STUNv2XORAddressAttribute.STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum, Byte())
-- uid: SIPSorcery.Net.STUNv2XORAddressAttribute.#ctor(SIPSorcery.Net.STUNv2AttributeTypesEnum,System.Int32,System.Net.IPAddress)
+- uid: SIPSorcery.Net.STUNv2XORAddressAttribute.#ctor(SIPSorcery.Net.STUNv2AttributeTypesEnum,System.Int32,IPAddress)
   name: STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum, Int32, IPAddress)
-  href: api/SIPSorcery.Net.STUNv2XORAddressAttribute.html#SIPSorcery_Net_STUNv2XORAddressAttribute__ctor_SIPSorcery_Net_STUNv2AttributeTypesEnum_System_Int32_System_Net_IPAddress_
-  commentId: M:SIPSorcery.Net.STUNv2XORAddressAttribute.#ctor(SIPSorcery.Net.STUNv2AttributeTypesEnum,System.Int32,System.Net.IPAddress)
-  fullName: SIPSorcery.Net.STUNv2XORAddressAttribute.STUNv2XORAddressAttribute(SIPSorcery.Net.STUNv2AttributeTypesEnum, System.Int32, System.Net.IPAddress)
+  href: api/SIPSorcery.Net.STUNv2XORAddressAttribute.html#SIPSorcery_Net_STUNv2XORAddressAttribute__ctor_SIPSorcery_Net_STUNv2AttributeTypesEnum_System_Int32_IPAddress_
+  commentId: M:SIPSorcery.Net.STUNv2XORAddressAttribute.#ctor(SIPSorcery.Net.STUNv2AttributeTypesEnum,System.Int32,IPAddress)
+  fullName: SIPSorcery.Net.STUNv2XORAddressAttribute.STUNv2XORAddressAttribute(SIPSorcery.Net.STUNv2AttributeTypesEnum, System.Int32, IPAddress)
   nameWithType: STUNv2XORAddressAttribute.STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum, Int32, IPAddress)
 - uid: SIPSorcery.Net.STUNv2XORAddressAttribute.#ctor*
   name: STUNv2XORAddressAttribute
@@ -7753,17 +7753,17 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.Utility.PrintBuffer
   nameWithType: Utility.PrintBuffer
-- uid: SIPSorcery.Net.Utility.ReverseEndian(System.UInt16)
+- uid: SIPSorcery.Net.Utility.ReverseEndian(UInt16)
   name: ReverseEndian(UInt16)
-  href: api/SIPSorcery.Net.Utility.html#SIPSorcery_Net_Utility_ReverseEndian_System_UInt16_
-  commentId: M:SIPSorcery.Net.Utility.ReverseEndian(System.UInt16)
-  fullName: SIPSorcery.Net.Utility.ReverseEndian(System.UInt16)
+  href: api/SIPSorcery.Net.Utility.html#SIPSorcery_Net_Utility_ReverseEndian_UInt16_
+  commentId: M:SIPSorcery.Net.Utility.ReverseEndian(UInt16)
+  fullName: SIPSorcery.Net.Utility.ReverseEndian(UInt16)
   nameWithType: Utility.ReverseEndian(UInt16)
-- uid: SIPSorcery.Net.Utility.ReverseEndian(System.UInt32)
+- uid: SIPSorcery.Net.Utility.ReverseEndian(UInt32)
   name: ReverseEndian(UInt32)
-  href: api/SIPSorcery.Net.Utility.html#SIPSorcery_Net_Utility_ReverseEndian_System_UInt32_
-  commentId: M:SIPSorcery.Net.Utility.ReverseEndian(System.UInt32)
-  fullName: SIPSorcery.Net.Utility.ReverseEndian(System.UInt32)
+  href: api/SIPSorcery.Net.Utility.html#SIPSorcery_Net_Utility_ReverseEndian_UInt32_
+  commentId: M:SIPSorcery.Net.Utility.ReverseEndian(UInt32)
+  fullName: SIPSorcery.Net.Utility.ReverseEndian(UInt32)
   nameWithType: Utility.ReverseEndian(UInt32)
 - uid: SIPSorcery.Net.Utility.ReverseEndian*
   name: ReverseEndian
@@ -7828,13 +7828,13 @@ references:
   commentId: F:SIPSorcery.Net.WebRtc.WebRtcPeer.IceNegotiationStartedAt
   fullName: SIPSorcery.Net.WebRtc.WebRtcPeer.IceNegotiationStartedAt
   nameWithType: WebRtcPeer.IceNegotiationStartedAt
-- uid: SIPSorcery.Net.WebRtc.WebRtcPeer.Initialise(System.String,System.Net.IPEndPoint,System.Collections.Generic.List{SIPSorcery.Net.RtpMediaTypesEnum},System.Net.IPAddress,System.Boolean)
+- uid: SIPSorcery.Net.WebRtc.WebRtcPeer.Initialise(System.String,IPEndPoint,List{SIPSorcery.Net.RtpMediaTypesEnum},IPAddress,System.Boolean)
   name: Initialise(String, IPEndPoint, List<RtpMediaTypesEnum>, IPAddress, Boolean)
-  href: api/SIPSorcery.Net.WebRtc.WebRtcPeer.html#SIPSorcery_Net_WebRtc_WebRtcPeer_Initialise_System_String_System_Net_IPEndPoint_System_Collections_Generic_List_SIPSorcery_Net_RtpMediaTypesEnum__System_Net_IPAddress_System_Boolean_
-  commentId: M:SIPSorcery.Net.WebRtc.WebRtcPeer.Initialise(System.String,System.Net.IPEndPoint,System.Collections.Generic.List{SIPSorcery.Net.RtpMediaTypesEnum},System.Net.IPAddress,System.Boolean)
+  href: api/SIPSorcery.Net.WebRtc.WebRtcPeer.html#SIPSorcery_Net_WebRtc_WebRtcPeer_Initialise_System_String_IPEndPoint_List_SIPSorcery_Net_RtpMediaTypesEnum__IPAddress_System_Boolean_
+  commentId: M:SIPSorcery.Net.WebRtc.WebRtcPeer.Initialise(System.String,IPEndPoint,List{SIPSorcery.Net.RtpMediaTypesEnum},IPAddress,System.Boolean)
   name.vb: Initialise(String, IPEndPoint, List(Of RtpMediaTypesEnum), IPAddress, Boolean)
-  fullName: SIPSorcery.Net.WebRtc.WebRtcPeer.Initialise(System.String, System.Net.IPEndPoint, System.Collections.Generic.List<SIPSorcery.Net.RtpMediaTypesEnum>, System.Net.IPAddress, System.Boolean)
-  fullName.vb: SIPSorcery.Net.WebRtc.WebRtcPeer.Initialise(System.String, System.Net.IPEndPoint, System.Collections.Generic.List(Of SIPSorcery.Net.RtpMediaTypesEnum), System.Net.IPAddress, System.Boolean)
+  fullName: SIPSorcery.Net.WebRtc.WebRtcPeer.Initialise(System.String, IPEndPoint, List<SIPSorcery.Net.RtpMediaTypesEnum>, IPAddress, System.Boolean)
+  fullName.vb: SIPSorcery.Net.WebRtc.WebRtcPeer.Initialise(System.String, IPEndPoint, List(Of SIPSorcery.Net.RtpMediaTypesEnum), IPAddress, System.Boolean)
   nameWithType: WebRtcPeer.Initialise(String, IPEndPoint, List<RtpMediaTypesEnum>, IPAddress, Boolean)
   nameWithType.vb: WebRtcPeer.Initialise(String, IPEndPoint, List(Of RtpMediaTypesEnum), IPAddress, Boolean)
 - uid: SIPSorcery.Net.WebRtc.WebRtcPeer.Initialise*
@@ -8450,11 +8450,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.Reject
   nameWithType: ISIPServerUserAgent.Reject
-- uid: SIPSorcery.SIP.App.ISIPServerUserAgent.SetDialPlanContextID(System.Guid)
+- uid: SIPSorcery.SIP.App.ISIPServerUserAgent.SetDialPlanContextID(Guid)
   name: SetDialPlanContextID(Guid)
-  href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_SetDialPlanContextID_System_Guid_
-  commentId: M:SIPSorcery.SIP.App.ISIPServerUserAgent.SetDialPlanContextID(System.Guid)
-  fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.SetDialPlanContextID(System.Guid)
+  href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_SetDialPlanContextID_Guid_
+  commentId: M:SIPSorcery.SIP.App.ISIPServerUserAgent.SetDialPlanContextID(Guid)
+  fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.SetDialPlanContextID(Guid)
   nameWithType: ISIPServerUserAgent.SetDialPlanContextID(Guid)
 - uid: SIPSorcery.SIP.App.ISIPServerUserAgent.SetDialPlanContextID*
   name: SetDialPlanContextID
@@ -9312,11 +9312,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.ServerTransaction
   nameWithType: SIPB2BUserAgent.ServerTransaction
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID(System.Guid)
+- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID(Guid)
   name: SetDialPlanContextID(Guid)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SetDialPlanContextID_System_Guid_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID(System.Guid)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID(System.Guid)
+  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SetDialPlanContextID_Guid_
+  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID(Guid)
+  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID(Guid)
   nameWithType: SIPB2BUserAgent.SetDialPlanContextID(Guid)
 - uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID*
   name: SetDialPlanContextID
@@ -9427,19 +9427,19 @@ references:
   commentId: M:SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(SIPSorcery.SIP.App.SIPAccount,System.String,System.String,System.String,System.String)
   fullName: SIPSorcery.SIP.App.SIPCallDescriptor.SIPCallDescriptor(SIPSorcery.SIP.App.SIPAccount, System.String, System.String, System.String, System.String)
   nameWithType: SIPCallDescriptor.SIPCallDescriptor(SIPAccount, String, String, String, String)
-- uid: SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(System.String,System.String,System.String,System.String,System.String,System.Int32,System.String,System.String,System.Net.IPAddress)
+- uid: SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(System.String,System.String,System.String,System.String,System.String,System.Int32,System.String,System.String,IPAddress)
   name: SIPCallDescriptor(String, String, String, String, String, Int32, String, String, IPAddress)
-  href: api/SIPSorcery.SIP.App.SIPCallDescriptor.html#SIPSorcery_SIP_App_SIPCallDescriptor__ctor_System_String_System_String_System_String_System_String_System_String_System_Int32_System_String_System_String_System_Net_IPAddress_
-  commentId: M:SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(System.String,System.String,System.String,System.String,System.String,System.Int32,System.String,System.String,System.Net.IPAddress)
-  fullName: SIPSorcery.SIP.App.SIPCallDescriptor.SIPCallDescriptor(System.String, System.String, System.String, System.String, System.String, System.Int32, System.String, System.String, System.Net.IPAddress)
+  href: api/SIPSorcery.SIP.App.SIPCallDescriptor.html#SIPSorcery_SIP_App_SIPCallDescriptor__ctor_System_String_System_String_System_String_System_String_System_String_System_Int32_System_String_System_String_IPAddress_
+  commentId: M:SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(System.String,System.String,System.String,System.String,System.String,System.Int32,System.String,System.String,IPAddress)
+  fullName: SIPSorcery.SIP.App.SIPCallDescriptor.SIPCallDescriptor(System.String, System.String, System.String, System.String, System.String, System.Int32, System.String, System.String, IPAddress)
   nameWithType: SIPCallDescriptor.SIPCallDescriptor(String, String, String, String, String, Int32, String, String, IPAddress)
-- uid: SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.Collections.Generic.List{System.String},System.String,SIPSorcery.SIP.SIPCallDirection,System.String,System.String,System.Net.IPAddress)
+- uid: SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,List{System.String},System.String,SIPSorcery.SIP.SIPCallDirection,System.String,System.String,IPAddress)
   name: SIPCallDescriptor(String, String, String, String, String, String, List<String>, String, SIPCallDirection, String, String, IPAddress)
-  href: api/SIPSorcery.SIP.App.SIPCallDescriptor.html#SIPSorcery_SIP_App_SIPCallDescriptor__ctor_System_String_System_String_System_String_System_String_System_String_System_String_System_Collections_Generic_List_System_String__System_String_SIPSorcery_SIP_SIPCallDirection_System_String_System_String_System_Net_IPAddress_
-  commentId: M:SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.Collections.Generic.List{System.String},System.String,SIPSorcery.SIP.SIPCallDirection,System.String,System.String,System.Net.IPAddress)
+  href: api/SIPSorcery.SIP.App.SIPCallDescriptor.html#SIPSorcery_SIP_App_SIPCallDescriptor__ctor_System_String_System_String_System_String_System_String_System_String_System_String_List_System_String__System_String_SIPSorcery_SIP_SIPCallDirection_System_String_System_String_IPAddress_
+  commentId: M:SIPSorcery.SIP.App.SIPCallDescriptor.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,List{System.String},System.String,SIPSorcery.SIP.SIPCallDirection,System.String,System.String,IPAddress)
   name.vb: SIPCallDescriptor(String, String, String, String, String, String, List(Of String), String, SIPCallDirection, String, String, IPAddress)
-  fullName: SIPSorcery.SIP.App.SIPCallDescriptor.SIPCallDescriptor(System.String, System.String, System.String, System.String, System.String, System.String, System.Collections.Generic.List<System.String>, System.String, SIPSorcery.SIP.SIPCallDirection, System.String, System.String, System.Net.IPAddress)
-  fullName.vb: SIPSorcery.SIP.App.SIPCallDescriptor.SIPCallDescriptor(System.String, System.String, System.String, System.String, System.String, System.String, System.Collections.Generic.List(Of System.String), System.String, SIPSorcery.SIP.SIPCallDirection, System.String, System.String, System.Net.IPAddress)
+  fullName: SIPSorcery.SIP.App.SIPCallDescriptor.SIPCallDescriptor(System.String, System.String, System.String, System.String, System.String, System.String, List<System.String>, System.String, SIPSorcery.SIP.SIPCallDirection, System.String, System.String, IPAddress)
+  fullName.vb: SIPSorcery.SIP.App.SIPCallDescriptor.SIPCallDescriptor(System.String, System.String, System.String, System.String, System.String, System.String, List(Of System.String), System.String, SIPSorcery.SIP.SIPCallDirection, System.String, System.String, IPAddress)
   nameWithType: SIPCallDescriptor.SIPCallDescriptor(String, String, String, String, String, String, List<String>, String, SIPCallDirection, String, String, IPAddress)
   nameWithType.vb: SIPCallDescriptor.SIPCallDescriptor(String, String, String, String, String, String, List(Of String), String, SIPCallDirection, String, String, IPAddress)
 - uid: SIPSorcery.SIP.App.SIPCallDescriptor.#ctor*
@@ -11436,11 +11436,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject
   nameWithType: SIPNonInviteServerUserAgent.Reject
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID(System.Guid)
+- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID(Guid)
   name: SetDialPlanContextID(Guid)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SetDialPlanContextID_System_Guid_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID(System.Guid)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID(System.Guid)
+  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SetDialPlanContextID_Guid_
+  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID(Guid)
+  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID(Guid)
   nameWithType: SIPNonInviteServerUserAgent.SetDialPlanContextID(Guid)
 - uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID*
   name: SetDialPlanContextID
@@ -12168,11 +12168,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Reject
   nameWithType: SIPServerUserAgent.Reject
-- uid: SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID(System.Guid)
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID(Guid)
   name: SetDialPlanContextID(Guid)
-  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_SetDialPlanContextID_System_Guid_
-  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID(System.Guid)
-  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID(System.Guid)
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_SetDialPlanContextID_Guid_
+  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID(Guid)
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID(Guid)
   nameWithType: SIPServerUserAgent.SetDialPlanContextID(Guid)
 - uid: SIPSorcery.SIP.App.SIPServerUserAgent.SetDialPlanContextID*
   name: SetDialPlanContextID
@@ -12512,11 +12512,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Reject
   nameWithType: SIPTransferServerUserAgent.Reject
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID(System.Guid)
+- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID(Guid)
   name: SetDialPlanContextID(Guid)
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SetDialPlanContextID_System_Guid_
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID(System.Guid)
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID(System.Guid)
+  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SetDialPlanContextID_Guid_
+  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID(Guid)
+  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID(Guid)
   nameWithType: SIPTransferServerUserAgent.SetDialPlanContextID(Guid)
 - uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID*
   name: SetDialPlanContextID
@@ -13710,11 +13710,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPChannel.GetConnectionsList
   nameWithType: SIPChannel.GetConnectionsList
-- uid: SIPSorcery.SIP.SIPChannel.IsConnectionEstablished(System.Net.IPEndPoint)
+- uid: SIPSorcery.SIP.SIPChannel.IsConnectionEstablished(IPEndPoint)
   name: IsConnectionEstablished(IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_IsConnectionEstablished_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPChannel.IsConnectionEstablished(System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPChannel.IsConnectionEstablished(System.Net.IPEndPoint)
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_IsConnectionEstablished_IPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPChannel.IsConnectionEstablished(IPEndPoint)
+  fullName: SIPSorcery.SIP.SIPChannel.IsConnectionEstablished(IPEndPoint)
   nameWithType: SIPChannel.IsConnectionEstablished(IPEndPoint)
 - uid: SIPSorcery.SIP.SIPChannel.IsConnectionEstablished*
   name: IsConnectionEstablished
@@ -13805,29 +13805,29 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPChannel.PruneConnections
   nameWithType: SIPChannel.PruneConnections
-- uid: SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint,System.Byte[])
+- uid: SIPSorcery.SIP.SIPChannel.Send(IPEndPoint,System.Byte[])
   name: Send(IPEndPoint, Byte[])
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_Send_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint,System.Byte[])
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_Send_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.SIP.SIPChannel.Send(IPEndPoint,System.Byte[])
   name.vb: Send(IPEndPoint, Byte())
-  fullName: SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint, System.Byte())
+  fullName: SIPSorcery.SIP.SIPChannel.Send(IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.SIP.SIPChannel.Send(IPEndPoint, System.Byte())
   nameWithType: SIPChannel.Send(IPEndPoint, Byte[])
   nameWithType.vb: SIPChannel.Send(IPEndPoint, Byte())
-- uid: SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint,System.Byte[],System.String)
+- uid: SIPSorcery.SIP.SIPChannel.Send(IPEndPoint,System.Byte[],System.String)
   name: Send(IPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_Send_System_Net_IPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint,System.Byte[],System.String)
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_Send_IPEndPoint_System_Byte___System_String_
+  commentId: M:SIPSorcery.SIP.SIPChannel.Send(IPEndPoint,System.Byte[],System.String)
   name.vb: Send(IPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint, System.Byte(), System.String)
+  fullName: SIPSorcery.SIP.SIPChannel.Send(IPEndPoint, System.Byte[], System.String)
+  fullName.vb: SIPSorcery.SIP.SIPChannel.Send(IPEndPoint, System.Byte(), System.String)
   nameWithType: SIPChannel.Send(IPEndPoint, Byte[], String)
   nameWithType.vb: SIPChannel.Send(IPEndPoint, Byte(), String)
-- uid: SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint,System.String)
+- uid: SIPSorcery.SIP.SIPChannel.Send(IPEndPoint,System.String)
   name: Send(IPEndPoint, String)
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_Send_System_Net_IPEndPoint_System_String_
-  commentId: M:SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint,System.String)
-  fullName: SIPSorcery.SIP.SIPChannel.Send(System.Net.IPEndPoint, System.String)
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_Send_IPEndPoint_System_String_
+  commentId: M:SIPSorcery.SIP.SIPChannel.Send(IPEndPoint,System.String)
+  fullName: SIPSorcery.SIP.SIPChannel.Send(IPEndPoint, System.String)
   nameWithType: SIPChannel.Send(IPEndPoint, String)
 - uid: SIPSorcery.SIP.SIPChannel.Send*
   name: Send
@@ -13836,22 +13836,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPChannel.Send
   nameWithType: SIPChannel.Send
-- uid: SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[])
+- uid: SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint,System.Byte[])
   name: SendAsync(IPEndPoint, Byte[])
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendAsync_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[])
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendAsync_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint,System.Byte[])
   name.vb: SendAsync(IPEndPoint, Byte())
-  fullName: SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint, System.Byte())
+  fullName: SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint, System.Byte())
   nameWithType: SIPChannel.SendAsync(IPEndPoint, Byte[])
   nameWithType.vb: SIPChannel.SendAsync(IPEndPoint, Byte())
-- uid: SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[],System.String)
+- uid: SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint,System.Byte[],System.String)
   name: SendAsync(IPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendAsync_System_Net_IPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[],System.String)
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendAsync_IPEndPoint_System_Byte___System_String_
+  commentId: M:SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint,System.Byte[],System.String)
   name.vb: SendAsync(IPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPChannel.SendAsync(System.Net.IPEndPoint, System.Byte(), System.String)
+  fullName: SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint, System.Byte[], System.String)
+  fullName.vb: SIPSorcery.SIP.SIPChannel.SendAsync(IPEndPoint, System.Byte(), System.String)
   nameWithType: SIPChannel.SendAsync(IPEndPoint, Byte[], String)
   nameWithType.vb: SIPChannel.SendAsync(IPEndPoint, Byte(), String)
 - uid: SIPSorcery.SIP.SIPChannel.SendAsync*
@@ -14283,11 +14283,11 @@ references:
   commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(SIPSorcery.SIP.UASInviteTransaction,System.String,System.String)
   fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(SIPSorcery.SIP.UASInviteTransaction, System.String, System.String)
   nameWithType: SIPDialogue.SIPDialogue(UASInviteTransaction, String, String)
-- uid: SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String,System.String,System.String)
+- uid: SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,Guid,System.String,System.String,System.String,System.String)
   name: SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String, String, String)
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_System_String_SIPSorcery_SIP_SIPRouteSet_SIPSorcery_SIP_SIPUserField_SIPSorcery_SIP_SIPUserField_System_Int32_SIPSorcery_SIP_SIPURI_System_String_System_String_System_Guid_System_String_System_String_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,System.Guid,System.String,System.String,System.String,System.String)
-  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(System.String, SIPSorcery.SIP.SIPRouteSet, SIPSorcery.SIP.SIPUserField, SIPSorcery.SIP.SIPUserField, System.Int32, SIPSorcery.SIP.SIPURI, System.String, System.String, System.Guid, System.String, System.String, System.String, System.String)
+  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue__ctor_System_String_SIPSorcery_SIP_SIPRouteSet_SIPSorcery_SIP_SIPUserField_SIPSorcery_SIP_SIPUserField_System_Int32_SIPSorcery_SIP_SIPURI_System_String_System_String_Guid_System_String_System_String_System_String_System_String_
+  commentId: M:SIPSorcery.SIP.SIPDialogue.#ctor(System.String,SIPSorcery.SIP.SIPRouteSet,SIPSorcery.SIP.SIPUserField,SIPSorcery.SIP.SIPUserField,System.Int32,SIPSorcery.SIP.SIPURI,System.String,System.String,Guid,System.String,System.String,System.String,System.String)
+  fullName: SIPSorcery.SIP.SIPDialogue.SIPDialogue(System.String, SIPSorcery.SIP.SIPRouteSet, SIPSorcery.SIP.SIPUserField, SIPSorcery.SIP.SIPUserField, System.Int32, SIPSorcery.SIP.SIPURI, System.String, System.String, Guid, System.String, System.String, System.String, System.String)
   nameWithType: SIPDialogue.SIPDialogue(String, SIPRouteSet, SIPUserField, SIPUserField, Int32, SIPURI, String, String, Guid, String, String, String, String)
 - uid: SIPSorcery.SIP.SIPDialogue.#ctor*
   name: SIPDialogue
@@ -15016,11 +15016,11 @@ references:
   commentId: T:SIPSorcery.SIP.SIPDNSServiceResult
   fullName: SIPSorcery.SIP.SIPDNSServiceResult
   nameWithType: SIPDNSServiceResult
-- uid: SIPSorcery.SIP.SIPDNSServiceResult.#ctor(SIPSorcery.SIP.SIPServicesEnum,System.Int32,System.Int32,System.UInt32,System.String,System.Int32,System.DateTime)
+- uid: SIPSorcery.SIP.SIPDNSServiceResult.#ctor(SIPSorcery.SIP.SIPServicesEnum,System.Int32,System.Int32,System.UInt32,System.String,System.Int32,DateTime)
   name: SIPDNSServiceResult(SIPServicesEnum, Int32, Int32, UInt32, String, Int32, DateTime)
-  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult__ctor_SIPSorcery_SIP_SIPServicesEnum_System_Int32_System_Int32_System_UInt32_System_String_System_Int32_System_DateTime_
-  commentId: M:SIPSorcery.SIP.SIPDNSServiceResult.#ctor(SIPSorcery.SIP.SIPServicesEnum,System.Int32,System.Int32,System.UInt32,System.String,System.Int32,System.DateTime)
-  fullName: SIPSorcery.SIP.SIPDNSServiceResult.SIPDNSServiceResult(SIPSorcery.SIP.SIPServicesEnum, System.Int32, System.Int32, System.UInt32, System.String, System.Int32, System.DateTime)
+  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult__ctor_SIPSorcery_SIP_SIPServicesEnum_System_Int32_System_Int32_System_UInt32_System_String_System_Int32_DateTime_
+  commentId: M:SIPSorcery.SIP.SIPDNSServiceResult.#ctor(SIPSorcery.SIP.SIPServicesEnum,System.Int32,System.Int32,System.UInt32,System.String,System.Int32,DateTime)
+  fullName: SIPSorcery.SIP.SIPDNSServiceResult.SIPDNSServiceResult(SIPSorcery.SIP.SIPServicesEnum, System.Int32, System.Int32, System.UInt32, System.String, System.Int32, DateTime)
   nameWithType: SIPDNSServiceResult.SIPDNSServiceResult(SIPServicesEnum, Int32, Int32, UInt32, String, Int32, DateTime)
 - uid: SIPSorcery.SIP.SIPDNSServiceResult.#ctor*
   name: SIPDNSServiceResult
@@ -15083,17 +15083,23 @@ references:
   commentId: T:SIPSorcery.SIP.SIPEndPoint
   fullName: SIPSorcery.SIP.SIPEndPoint
   nameWithType: SIPEndPoint
-- uid: SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPAddress,System.Int32)
+- uid: SIPSorcery.SIP.SIPEndPoint.#ctor(IPEndPoint)
+  name: SIPEndPoint(IPEndPoint)
+  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint__ctor_IPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPEndPoint.#ctor(IPEndPoint)
+  fullName: SIPSorcery.SIP.SIPEndPoint.SIPEndPoint(IPEndPoint)
+  nameWithType: SIPEndPoint.SIPEndPoint(IPEndPoint)
+- uid: SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,IPAddress,System.Int32)
   name: SIPEndPoint(SIPProtocolsEnum, IPAddress, Int32)
-  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPAddress_System_Int32_
-  commentId: M:SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPAddress,System.Int32)
-  fullName: SIPSorcery.SIP.SIPEndPoint.SIPEndPoint(SIPSorcery.SIP.SIPProtocolsEnum, System.Net.IPAddress, System.Int32)
+  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_IPAddress_System_Int32_
+  commentId: M:SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,IPAddress,System.Int32)
+  fullName: SIPSorcery.SIP.SIPEndPoint.SIPEndPoint(SIPSorcery.SIP.SIPProtocolsEnum, IPAddress, System.Int32)
   nameWithType: SIPEndPoint.SIPEndPoint(SIPProtocolsEnum, IPAddress, Int32)
-- uid: SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPEndPoint)
+- uid: SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,IPEndPoint)
   name: SIPEndPoint(SIPProtocolsEnum, IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPEndPoint.SIPEndPoint(SIPSorcery.SIP.SIPProtocolsEnum, System.Net.IPEndPoint)
+  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_IPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,IPEndPoint)
+  fullName: SIPSorcery.SIP.SIPEndPoint.SIPEndPoint(SIPSorcery.SIP.SIPProtocolsEnum, IPEndPoint)
   nameWithType: SIPEndPoint.SIPEndPoint(SIPProtocolsEnum, IPEndPoint)
 - uid: SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPURI)
   name: SIPEndPoint(SIPURI)
@@ -15101,12 +15107,6 @@ references:
   commentId: M:SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPURI)
   fullName: SIPSorcery.SIP.SIPEndPoint.SIPEndPoint(SIPSorcery.SIP.SIPURI)
   nameWithType: SIPEndPoint.SIPEndPoint(SIPURI)
-- uid: SIPSorcery.SIP.SIPEndPoint.#ctor(System.Net.IPEndPoint)
-  name: SIPEndPoint(IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPEndPoint.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPEndPoint.SIPEndPoint(System.Net.IPEndPoint)
-  nameWithType: SIPEndPoint.SIPEndPoint(IPEndPoint)
 - uid: SIPSorcery.SIP.SIPEndPoint.#ctor*
   name: SIPEndPoint
   href: api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint__ctor_
@@ -15508,11 +15508,11 @@ references:
   commentId: M:SIPSorcery.SIP.SIPEventDialog.Parse(System.String)
   fullName: SIPSorcery.SIP.SIPEventDialog.Parse(System.String)
   nameWithType: SIPEventDialog.Parse(String)
-- uid: SIPSorcery.SIP.SIPEventDialog.Parse(System.Xml.Linq.XElement)
+- uid: SIPSorcery.SIP.SIPEventDialog.Parse(XElement)
   name: Parse(XElement)
-  href: api/SIPSorcery.SIP.SIPEventDialog.html#SIPSorcery_SIP_SIPEventDialog_Parse_System_Xml_Linq_XElement_
-  commentId: M:SIPSorcery.SIP.SIPEventDialog.Parse(System.Xml.Linq.XElement)
-  fullName: SIPSorcery.SIP.SIPEventDialog.Parse(System.Xml.Linq.XElement)
+  href: api/SIPSorcery.SIP.SIPEventDialog.html#SIPSorcery_SIP_SIPEventDialog_Parse_XElement_
+  commentId: M:SIPSorcery.SIP.SIPEventDialog.Parse(XElement)
+  fullName: SIPSorcery.SIP.SIPEventDialog.Parse(XElement)
   nameWithType: SIPEventDialog.Parse(XElement)
 - uid: SIPSorcery.SIP.SIPEventDialog.Parse*
   name: Parse
@@ -15767,11 +15767,11 @@ references:
   commentId: M:SIPSorcery.SIP.SIPEventDialogParticipant.Parse(System.String)
   fullName: SIPSorcery.SIP.SIPEventDialogParticipant.Parse(System.String)
   nameWithType: SIPEventDialogParticipant.Parse(String)
-- uid: SIPSorcery.SIP.SIPEventDialogParticipant.Parse(System.Xml.Linq.XElement)
+- uid: SIPSorcery.SIP.SIPEventDialogParticipant.Parse(XElement)
   name: Parse(XElement)
-  href: api/SIPSorcery.SIP.SIPEventDialogParticipant.html#SIPSorcery_SIP_SIPEventDialogParticipant_Parse_System_Xml_Linq_XElement_
-  commentId: M:SIPSorcery.SIP.SIPEventDialogParticipant.Parse(System.Xml.Linq.XElement)
-  fullName: SIPSorcery.SIP.SIPEventDialogParticipant.Parse(System.Xml.Linq.XElement)
+  href: api/SIPSorcery.SIP.SIPEventDialogParticipant.html#SIPSorcery_SIP_SIPEventDialogParticipant_Parse_XElement_
+  commentId: M:SIPSorcery.SIP.SIPEventDialogParticipant.Parse(XElement)
+  fullName: SIPSorcery.SIP.SIPEventDialogParticipant.Parse(XElement)
   nameWithType: SIPEventDialogParticipant.Parse(XElement)
 - uid: SIPSorcery.SIP.SIPEventDialogParticipant.Parse*
   name: Parse
@@ -16282,11 +16282,11 @@ references:
   commentId: M:SIPSorcery.SIP.SIPEventPresenceTuple.Parse(System.String)
   fullName: SIPSorcery.SIP.SIPEventPresenceTuple.Parse(System.String)
   nameWithType: SIPEventPresenceTuple.Parse(String)
-- uid: SIPSorcery.SIP.SIPEventPresenceTuple.Parse(System.Xml.Linq.XElement)
+- uid: SIPSorcery.SIP.SIPEventPresenceTuple.Parse(XElement)
   name: Parse(XElement)
-  href: api/SIPSorcery.SIP.SIPEventPresenceTuple.html#SIPSorcery_SIP_SIPEventPresenceTuple_Parse_System_Xml_Linq_XElement_
-  commentId: M:SIPSorcery.SIP.SIPEventPresenceTuple.Parse(System.Xml.Linq.XElement)
-  fullName: SIPSorcery.SIP.SIPEventPresenceTuple.Parse(System.Xml.Linq.XElement)
+  href: api/SIPSorcery.SIP.SIPEventPresenceTuple.html#SIPSorcery_SIP_SIPEventPresenceTuple_Parse_XElement_
+  commentId: M:SIPSorcery.SIP.SIPEventPresenceTuple.Parse(XElement)
+  fullName: SIPSorcery.SIP.SIPEventPresenceTuple.Parse(XElement)
   nameWithType: SIPEventPresenceTuple.Parse(XElement)
 - uid: SIPSorcery.SIP.SIPEventPresenceTuple.Parse*
   name: Parse
@@ -16494,6 +16494,15 @@ references:
   commentId: M:SIPSorcery.SIP.SIPHeader.#ctor
   fullName: SIPSorcery.SIP.SIPHeader.SIPHeader()
   nameWithType: SIPHeader.SIPHeader()
+- uid: SIPSorcery.SIP.SIPHeader.#ctor(List{SIPSorcery.SIP.SIPContactHeader},SIPSorcery.SIP.SIPFromHeader,SIPSorcery.SIP.SIPToHeader,System.Int32,System.String)
+  name: SIPHeader(List<SIPContactHeader>, SIPFromHeader, SIPToHeader, Int32, String)
+  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader__ctor_List_SIPSorcery_SIP_SIPContactHeader__SIPSorcery_SIP_SIPFromHeader_SIPSorcery_SIP_SIPToHeader_System_Int32_System_String_
+  commentId: M:SIPSorcery.SIP.SIPHeader.#ctor(List{SIPSorcery.SIP.SIPContactHeader},SIPSorcery.SIP.SIPFromHeader,SIPSorcery.SIP.SIPToHeader,System.Int32,System.String)
+  name.vb: SIPHeader(List(Of SIPContactHeader), SIPFromHeader, SIPToHeader, Int32, String)
+  fullName: SIPSorcery.SIP.SIPHeader.SIPHeader(List<SIPSorcery.SIP.SIPContactHeader>, SIPSorcery.SIP.SIPFromHeader, SIPSorcery.SIP.SIPToHeader, System.Int32, System.String)
+  fullName.vb: SIPSorcery.SIP.SIPHeader.SIPHeader(List(Of SIPSorcery.SIP.SIPContactHeader), SIPSorcery.SIP.SIPFromHeader, SIPSorcery.SIP.SIPToHeader, System.Int32, System.String)
+  nameWithType: SIPHeader.SIPHeader(List<SIPContactHeader>, SIPFromHeader, SIPToHeader, Int32, String)
+  nameWithType.vb: SIPHeader.SIPHeader(List(Of SIPContactHeader), SIPFromHeader, SIPToHeader, Int32, String)
 - uid: SIPSorcery.SIP.SIPHeader.#ctor(SIPSorcery.SIP.SIPContactHeader,SIPSorcery.SIP.SIPFromHeader,SIPSorcery.SIP.SIPToHeader,System.Int32,System.String)
   name: SIPHeader(SIPContactHeader, SIPFromHeader, SIPToHeader, Int32, String)
   href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader__ctor_SIPSorcery_SIP_SIPContactHeader_SIPSorcery_SIP_SIPFromHeader_SIPSorcery_SIP_SIPToHeader_System_Int32_System_String_
@@ -16506,15 +16515,6 @@ references:
   commentId: M:SIPSorcery.SIP.SIPHeader.#ctor(SIPSorcery.SIP.SIPFromHeader,SIPSorcery.SIP.SIPToHeader,System.Int32,System.String)
   fullName: SIPSorcery.SIP.SIPHeader.SIPHeader(SIPSorcery.SIP.SIPFromHeader, SIPSorcery.SIP.SIPToHeader, System.Int32, System.String)
   nameWithType: SIPHeader.SIPHeader(SIPFromHeader, SIPToHeader, Int32, String)
-- uid: SIPSorcery.SIP.SIPHeader.#ctor(System.Collections.Generic.List{SIPSorcery.SIP.SIPContactHeader},SIPSorcery.SIP.SIPFromHeader,SIPSorcery.SIP.SIPToHeader,System.Int32,System.String)
-  name: SIPHeader(List<SIPContactHeader>, SIPFromHeader, SIPToHeader, Int32, String)
-  href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader__ctor_System_Collections_Generic_List_SIPSorcery_SIP_SIPContactHeader__SIPSorcery_SIP_SIPFromHeader_SIPSorcery_SIP_SIPToHeader_System_Int32_System_String_
-  commentId: M:SIPSorcery.SIP.SIPHeader.#ctor(System.Collections.Generic.List{SIPSorcery.SIP.SIPContactHeader},SIPSorcery.SIP.SIPFromHeader,SIPSorcery.SIP.SIPToHeader,System.Int32,System.String)
-  name.vb: SIPHeader(List(Of SIPContactHeader), SIPFromHeader, SIPToHeader, Int32, String)
-  fullName: SIPSorcery.SIP.SIPHeader.SIPHeader(System.Collections.Generic.List<SIPSorcery.SIP.SIPContactHeader>, SIPSorcery.SIP.SIPFromHeader, SIPSorcery.SIP.SIPToHeader, System.Int32, System.String)
-  fullName.vb: SIPSorcery.SIP.SIPHeader.SIPHeader(System.Collections.Generic.List(Of SIPSorcery.SIP.SIPContactHeader), SIPSorcery.SIP.SIPFromHeader, SIPSorcery.SIP.SIPToHeader, System.Int32, System.String)
-  nameWithType: SIPHeader.SIPHeader(List<SIPContactHeader>, SIPFromHeader, SIPToHeader, Int32, String)
-  nameWithType.vb: SIPHeader.SIPHeader(List(Of SIPContactHeader), SIPFromHeader, SIPToHeader, Int32, String)
 - uid: SIPSorcery.SIP.SIPHeader.#ctor(System.String,System.String,System.Int32,System.String)
   name: SIPHeader(String, String, Int32, String)
   href: api/SIPSorcery.SIP.SIPHeader.html#SIPSorcery_SIP_SIPHeader__ctor_System_String_System_String_System_Int32_System_String_
@@ -19318,18 +19318,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPRouteSet.PopRoute
   nameWithType: SIPRouteSet.PopRoute
+- uid: SIPSorcery.SIP.SIPRouteSet.PushRoute(IPEndPoint,SIPSorcery.SIP.SIPSchemesEnum,SIPSorcery.SIP.SIPProtocolsEnum)
+  name: PushRoute(IPEndPoint, SIPSchemesEnum, SIPProtocolsEnum)
+  href: api/SIPSorcery.SIP.SIPRouteSet.html#SIPSorcery_SIP_SIPRouteSet_PushRoute_IPEndPoint_SIPSorcery_SIP_SIPSchemesEnum_SIPSorcery_SIP_SIPProtocolsEnum_
+  commentId: M:SIPSorcery.SIP.SIPRouteSet.PushRoute(IPEndPoint,SIPSorcery.SIP.SIPSchemesEnum,SIPSorcery.SIP.SIPProtocolsEnum)
+  fullName: SIPSorcery.SIP.SIPRouteSet.PushRoute(IPEndPoint, SIPSorcery.SIP.SIPSchemesEnum, SIPSorcery.SIP.SIPProtocolsEnum)
+  nameWithType: SIPRouteSet.PushRoute(IPEndPoint, SIPSchemesEnum, SIPProtocolsEnum)
 - uid: SIPSorcery.SIP.SIPRouteSet.PushRoute(SIPSorcery.SIP.SIPRoute)
   name: PushRoute(SIPRoute)
   href: api/SIPSorcery.SIP.SIPRouteSet.html#SIPSorcery_SIP_SIPRouteSet_PushRoute_SIPSorcery_SIP_SIPRoute_
   commentId: M:SIPSorcery.SIP.SIPRouteSet.PushRoute(SIPSorcery.SIP.SIPRoute)
   fullName: SIPSorcery.SIP.SIPRouteSet.PushRoute(SIPSorcery.SIP.SIPRoute)
   nameWithType: SIPRouteSet.PushRoute(SIPRoute)
-- uid: SIPSorcery.SIP.SIPRouteSet.PushRoute(System.Net.IPEndPoint,SIPSorcery.SIP.SIPSchemesEnum,SIPSorcery.SIP.SIPProtocolsEnum)
-  name: PushRoute(IPEndPoint, SIPSchemesEnum, SIPProtocolsEnum)
-  href: api/SIPSorcery.SIP.SIPRouteSet.html#SIPSorcery_SIP_SIPRouteSet_PushRoute_System_Net_IPEndPoint_SIPSorcery_SIP_SIPSchemesEnum_SIPSorcery_SIP_SIPProtocolsEnum_
-  commentId: M:SIPSorcery.SIP.SIPRouteSet.PushRoute(System.Net.IPEndPoint,SIPSorcery.SIP.SIPSchemesEnum,SIPSorcery.SIP.SIPProtocolsEnum)
-  fullName: SIPSorcery.SIP.SIPRouteSet.PushRoute(System.Net.IPEndPoint, SIPSorcery.SIP.SIPSchemesEnum, SIPSorcery.SIP.SIPProtocolsEnum)
-  nameWithType: SIPRouteSet.PushRoute(IPEndPoint, SIPSchemesEnum, SIPProtocolsEnum)
 - uid: SIPSorcery.SIP.SIPRouteSet.PushRoute(System.String)
   name: PushRoute(String)
   href: api/SIPSorcery.SIP.SIPRouteSet.html#SIPSorcery_SIP_SIPRouteSet_PushRoute_System_String_
@@ -19544,11 +19544,11 @@ references:
   commentId: T:SIPSorcery.SIP.SIPStreamConnection
   fullName: SIPSorcery.SIP.SIPStreamConnection
   nameWithType: SIPStreamConnection
-- uid: SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,SIPSorcery.SIP.SIPConnectionsEnum)
+- uid: SIPSorcery.SIP.SIPStreamConnection.#ctor(Socket,IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,SIPSorcery.SIP.SIPConnectionsEnum)
   name: SIPStreamConnection(Socket, IPEndPoint, SIPProtocolsEnum, SIPConnectionsEnum)
-  href: api/SIPSorcery.SIP.SIPStreamConnection.html#SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_SIPSorcery_SIP_SIPConnectionsEnum_
-  commentId: M:SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,SIPSorcery.SIP.SIPConnectionsEnum)
-  fullName: SIPSorcery.SIP.SIPStreamConnection.SIPStreamConnection(System.Net.Sockets.Socket, System.Net.IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum, SIPSorcery.SIP.SIPConnectionsEnum)
+  href: api/SIPSorcery.SIP.SIPStreamConnection.html#SIPSorcery_SIP_SIPStreamConnection__ctor_Socket_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_SIPSorcery_SIP_SIPConnectionsEnum_
+  commentId: M:SIPSorcery.SIP.SIPStreamConnection.#ctor(Socket,IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,SIPSorcery.SIP.SIPConnectionsEnum)
+  fullName: SIPSorcery.SIP.SIPStreamConnection.SIPStreamConnection(Socket, IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum, SIPSorcery.SIP.SIPConnectionsEnum)
   nameWithType: SIPStreamConnection.SIPStreamConnection(Socket, IPEndPoint, SIPProtocolsEnum, SIPConnectionsEnum)
 - uid: SIPSorcery.SIP.SIPStreamConnection.#ctor*
   name: SIPStreamConnection
@@ -19651,23 +19651,23 @@ references:
   commentId: T:SIPSorcery.SIP.SIPTCPChannel
   fullName: SIPSorcery.SIP.SIPTCPChannel
   nameWithType: SIPTCPChannel
-- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPAddress,System.Int32)
+- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(IPAddress,System.Int32)
   name: SIPTCPChannel(IPAddress, Int32)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPAddress_System_Int32_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPAddress,System.Int32)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPAddress, System.Int32)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_IPAddress_System_Int32_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(IPAddress,System.Int32)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(IPAddress, System.Int32)
   nameWithType: SIPTCPChannel.SIPTCPChannel(IPAddress, Int32)
-- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint)
+- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(IPEndPoint)
   name: SIPTCPChannel(IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_IPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(IPEndPoint)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(IPEndPoint)
   nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint)
-- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
+- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
   name: SIPTCPChannel(IPEndPoint, SIPProtocolsEnum)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum)
   nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint, SIPProtocolsEnum)
 - uid: SIPSorcery.SIP.SIPTCPChannel.#ctor*
   name: SIPTCPChannel
@@ -19689,13 +19689,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.Close
   nameWithType: SIPTCPChannel.Close
-- uid: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(System.Net.IPEndPoint,System.Byte[],System.String)
+- uid: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(IPEndPoint,System.Byte[],System.String)
   name: ConnectClientAsync(IPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_ConnectClientAsync_System_Net_IPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(System.Net.IPEndPoint,System.Byte[],System.String)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_ConnectClientAsync_IPEndPoint_System_Byte___System_String_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(IPEndPoint,System.Byte[],System.String)
   name.vb: ConnectClientAsync(IPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(System.Net.IPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(System.Net.IPEndPoint, System.Byte(), System.String)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(IPEndPoint, System.Byte[], System.String)
+  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(IPEndPoint, System.Byte(), System.String)
   nameWithType: SIPTCPChannel.ConnectClientAsync(IPEndPoint, Byte[], String)
   nameWithType.vb: SIPTCPChannel.ConnectClientAsync(IPEndPoint, Byte(), String)
 - uid: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync*
@@ -19737,11 +19737,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.GetConnectionsList
   nameWithType: SIPTCPChannel.GetConnectionsList
-- uid: SIPSorcery.SIP.SIPTCPChannel.IsConnectionEstablished(System.Net.IPEndPoint)
+- uid: SIPSorcery.SIP.SIPTCPChannel.IsConnectionEstablished(IPEndPoint)
   name: IsConnectionEstablished(IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_IsConnectionEstablished_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.IsConnectionEstablished(System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.IsConnectionEstablished(System.Net.IPEndPoint)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_IsConnectionEstablished_IPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.IsConnectionEstablished(IPEndPoint)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.IsConnectionEstablished(IPEndPoint)
   nameWithType: SIPTCPChannel.IsConnectionEstablished(IPEndPoint)
 - uid: SIPSorcery.SIP.SIPTCPChannel.IsConnectionEstablished*
   name: IsConnectionEstablished
@@ -19822,11 +19822,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.OnClientConnect
   nameWithType: SIPTCPChannel.OnClientConnect
-- uid: SIPSorcery.SIP.SIPTCPChannel.OnSIPStreamDisconnected(System.Net.IPEndPoint,System.Net.Sockets.SocketError)
+- uid: SIPSorcery.SIP.SIPTCPChannel.OnSIPStreamDisconnected(IPEndPoint,SocketError)
   name: OnSIPStreamDisconnected(IPEndPoint, SocketError)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_OnSIPStreamDisconnected_System_Net_IPEndPoint_System_Net_Sockets_SocketError_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.OnSIPStreamDisconnected(System.Net.IPEndPoint,System.Net.Sockets.SocketError)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.OnSIPStreamDisconnected(System.Net.IPEndPoint, System.Net.Sockets.SocketError)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_OnSIPStreamDisconnected_IPEndPoint_SocketError_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.OnSIPStreamDisconnected(IPEndPoint,SocketError)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.OnSIPStreamDisconnected(IPEndPoint, SocketError)
   nameWithType: SIPTCPChannel.OnSIPStreamDisconnected(IPEndPoint, SocketError)
 - uid: SIPSorcery.SIP.SIPTCPChannel.OnSIPStreamDisconnected*
   name: OnSIPStreamDisconnected
@@ -19835,29 +19835,29 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.OnSIPStreamDisconnected
   nameWithType: SIPTCPChannel.OnSIPStreamDisconnected
-- uid: SIPSorcery.SIP.SIPTCPChannel.Send(System.Net.IPEndPoint,System.Byte[])
+- uid: SIPSorcery.SIP.SIPTCPChannel.Send(IPEndPoint,System.Byte[])
   name: Send(IPEndPoint, Byte[])
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_Send_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.Send(System.Net.IPEndPoint,System.Byte[])
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_Send_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.Send(IPEndPoint,System.Byte[])
   name.vb: Send(IPEndPoint, Byte())
-  fullName: SIPSorcery.SIP.SIPTCPChannel.Send(System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.Send(System.Net.IPEndPoint, System.Byte())
+  fullName: SIPSorcery.SIP.SIPTCPChannel.Send(IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.Send(IPEndPoint, System.Byte())
   nameWithType: SIPTCPChannel.Send(IPEndPoint, Byte[])
   nameWithType.vb: SIPTCPChannel.Send(IPEndPoint, Byte())
-- uid: SIPSorcery.SIP.SIPTCPChannel.Send(System.Net.IPEndPoint,System.Byte[],System.String)
+- uid: SIPSorcery.SIP.SIPTCPChannel.Send(IPEndPoint,System.Byte[],System.String)
   name: Send(IPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_Send_System_Net_IPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.Send(System.Net.IPEndPoint,System.Byte[],System.String)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_Send_IPEndPoint_System_Byte___System_String_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.Send(IPEndPoint,System.Byte[],System.String)
   name.vb: Send(IPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.Send(System.Net.IPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.Send(System.Net.IPEndPoint, System.Byte(), System.String)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.Send(IPEndPoint, System.Byte[], System.String)
+  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.Send(IPEndPoint, System.Byte(), System.String)
   nameWithType: SIPTCPChannel.Send(IPEndPoint, Byte[], String)
   nameWithType.vb: SIPTCPChannel.Send(IPEndPoint, Byte(), String)
-- uid: SIPSorcery.SIP.SIPTCPChannel.Send(System.Net.IPEndPoint,System.String)
+- uid: SIPSorcery.SIP.SIPTCPChannel.Send(IPEndPoint,System.String)
   name: Send(IPEndPoint, String)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_Send_System_Net_IPEndPoint_System_String_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.Send(System.Net.IPEndPoint,System.String)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.Send(System.Net.IPEndPoint, System.String)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_Send_IPEndPoint_System_String_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.Send(IPEndPoint,System.String)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.Send(IPEndPoint, System.String)
   nameWithType: SIPTCPChannel.Send(IPEndPoint, String)
 - uid: SIPSorcery.SIP.SIPTCPChannel.Send*
   name: Send
@@ -19866,22 +19866,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.Send
   nameWithType: SIPTCPChannel.Send
-- uid: SIPSorcery.SIP.SIPTCPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[])
+- uid: SIPSorcery.SIP.SIPTCPChannel.SendAsync(IPEndPoint,System.Byte[])
   name: SendAsync(IPEndPoint, Byte[])
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendAsync_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[])
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendAsync_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.SendAsync(IPEndPoint,System.Byte[])
   name.vb: SendAsync(IPEndPoint, Byte())
-  fullName: SIPSorcery.SIP.SIPTCPChannel.SendAsync(System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.SendAsync(System.Net.IPEndPoint, System.Byte())
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SendAsync(IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.SendAsync(IPEndPoint, System.Byte())
   nameWithType: SIPTCPChannel.SendAsync(IPEndPoint, Byte[])
   nameWithType.vb: SIPTCPChannel.SendAsync(IPEndPoint, Byte())
-- uid: SIPSorcery.SIP.SIPTCPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[],System.String)
+- uid: SIPSorcery.SIP.SIPTCPChannel.SendAsync(IPEndPoint,System.Byte[],System.String)
   name: SendAsync(IPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendAsync_System_Net_IPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[],System.String)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendAsync_IPEndPoint_System_Byte___System_String_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.SendAsync(IPEndPoint,System.Byte[],System.String)
   name.vb: SendAsync(IPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.SendAsync(System.Net.IPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.SendAsync(System.Net.IPEndPoint, System.Byte(), System.String)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SendAsync(IPEndPoint, System.Byte[], System.String)
+  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.SendAsync(IPEndPoint, System.Byte(), System.String)
   nameWithType: SIPTCPChannel.SendAsync(IPEndPoint, Byte[], String)
   nameWithType.vb: SIPTCPChannel.SendAsync(IPEndPoint, Byte(), String)
 - uid: SIPSorcery.SIP.SIPTCPChannel.SendAsync*
@@ -19959,17 +19959,17 @@ references:
   commentId: T:SIPSorcery.SIP.SIPTLSChannel
   fullName: SIPSorcery.SIP.SIPTLSChannel
   nameWithType: SIPTLSChannel
-- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPAddress,System.Int32)
+- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(X509Certificate2,IPAddress,System.Int32)
   name: SIPTLSChannel(X509Certificate2, IPAddress, Int32)
-  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPAddress_System_Int32_
-  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPAddress,System.Int32)
-  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Security.Cryptography.X509Certificates.X509Certificate2, System.Net.IPAddress, System.Int32)
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_X509Certificate2_IPAddress_System_Int32_
+  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(X509Certificate2,IPAddress,System.Int32)
+  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPAddress, System.Int32)
   nameWithType: SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPAddress, Int32)
-- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint)
+- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(X509Certificate2,IPEndPoint)
   name: SIPTLSChannel(X509Certificate2, IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Security.Cryptography.X509Certificates.X509Certificate2, System.Net.IPEndPoint)
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_X509Certificate2_IPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(X509Certificate2,IPEndPoint)
+  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPEndPoint)
   nameWithType: SIPTLSChannel.SIPTLSChannel(X509Certificate2, IPEndPoint)
 - uid: SIPSorcery.SIP.SIPTLSChannel.#ctor*
   name: SIPTLSChannel
@@ -21073,21 +21073,21 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.SIPTransport
   nameWithType: SIPTransport.SIPTransport
+- uid: SIPSorcery.SIP.SIPTransport.AddSIPChannel(List{SIPSorcery.SIP.SIPChannel})
+  name: AddSIPChannel(List<SIPChannel>)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_AddSIPChannel_List_SIPSorcery_SIP_SIPChannel__
+  commentId: M:SIPSorcery.SIP.SIPTransport.AddSIPChannel(List{SIPSorcery.SIP.SIPChannel})
+  name.vb: AddSIPChannel(List(Of SIPChannel))
+  fullName: SIPSorcery.SIP.SIPTransport.AddSIPChannel(List<SIPSorcery.SIP.SIPChannel>)
+  fullName.vb: SIPSorcery.SIP.SIPTransport.AddSIPChannel(List(Of SIPSorcery.SIP.SIPChannel))
+  nameWithType: SIPTransport.AddSIPChannel(List<SIPChannel>)
+  nameWithType.vb: SIPTransport.AddSIPChannel(List(Of SIPChannel))
 - uid: SIPSorcery.SIP.SIPTransport.AddSIPChannel(SIPSorcery.SIP.SIPChannel)
   name: AddSIPChannel(SIPChannel)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_AddSIPChannel_SIPSorcery_SIP_SIPChannel_
   commentId: M:SIPSorcery.SIP.SIPTransport.AddSIPChannel(SIPSorcery.SIP.SIPChannel)
   fullName: SIPSorcery.SIP.SIPTransport.AddSIPChannel(SIPSorcery.SIP.SIPChannel)
   nameWithType: SIPTransport.AddSIPChannel(SIPChannel)
-- uid: SIPSorcery.SIP.SIPTransport.AddSIPChannel(System.Collections.Generic.List{SIPSorcery.SIP.SIPChannel})
-  name: AddSIPChannel(List<SIPChannel>)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_AddSIPChannel_System_Collections_Generic_List_SIPSorcery_SIP_SIPChannel__
-  commentId: M:SIPSorcery.SIP.SIPTransport.AddSIPChannel(System.Collections.Generic.List{SIPSorcery.SIP.SIPChannel})
-  name.vb: AddSIPChannel(List(Of SIPChannel))
-  fullName: SIPSorcery.SIP.SIPTransport.AddSIPChannel(System.Collections.Generic.List<SIPSorcery.SIP.SIPChannel>)
-  fullName.vb: SIPSorcery.SIP.SIPTransport.AddSIPChannel(System.Collections.Generic.List(Of SIPSorcery.SIP.SIPChannel))
-  nameWithType: SIPTransport.AddSIPChannel(List<SIPChannel>)
-  nameWithType.vb: SIPTransport.AddSIPChannel(List(Of SIPChannel))
 - uid: SIPSorcery.SIP.SIPTransport.AddSIPChannel*
   name: AddSIPChannel
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_AddSIPChannel_
@@ -21255,11 +21255,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.GetListeningSIPEndPoints
   nameWithType: SIPTransport.GetListeningSIPEndPoints
-- uid: SIPSorcery.SIP.SIPTransport.GetLocalAddress(System.Net.IPAddress)
+- uid: SIPSorcery.SIP.SIPTransport.GetLocalAddress(IPAddress)
   name: GetLocalAddress(IPAddress)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetLocalAddress_System_Net_IPAddress_
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetLocalAddress(System.Net.IPAddress)
-  fullName: SIPSorcery.SIP.SIPTransport.GetLocalAddress(System.Net.IPAddress)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetLocalAddress_IPAddress_
+  commentId: M:SIPSorcery.SIP.SIPTransport.GetLocalAddress(IPAddress)
+  fullName: SIPSorcery.SIP.SIPTransport.GetLocalAddress(IPAddress)
   nameWithType: SIPTransport.GetLocalAddress(IPAddress)
 - uid: SIPSorcery.SIP.SIPTransport.GetLocalAddress*
   name: GetLocalAddress
@@ -21596,11 +21596,11 @@ references:
   commentId: T:SIPSorcery.SIP.SIPTransportConfig
   fullName: SIPSorcery.SIP.SIPTransportConfig
   nameWithType: SIPTransportConfig
-- uid: SIPSorcery.SIP.SIPTransportConfig.ParseSIPChannelsNode(System.Xml.XmlNode,System.Int32)
+- uid: SIPSorcery.SIP.SIPTransportConfig.ParseSIPChannelsNode(XmlNode,System.Int32)
   name: ParseSIPChannelsNode(XmlNode, Int32)
-  href: api/SIPSorcery.SIP.SIPTransportConfig.html#SIPSorcery_SIP_SIPTransportConfig_ParseSIPChannelsNode_System_Xml_XmlNode_System_Int32_
-  commentId: M:SIPSorcery.SIP.SIPTransportConfig.ParseSIPChannelsNode(System.Xml.XmlNode,System.Int32)
-  fullName: SIPSorcery.SIP.SIPTransportConfig.ParseSIPChannelsNode(System.Xml.XmlNode, System.Int32)
+  href: api/SIPSorcery.SIP.SIPTransportConfig.html#SIPSorcery_SIP_SIPTransportConfig_ParseSIPChannelsNode_XmlNode_System_Int32_
+  commentId: M:SIPSorcery.SIP.SIPTransportConfig.ParseSIPChannelsNode(XmlNode,System.Int32)
+  fullName: SIPSorcery.SIP.SIPTransportConfig.ParseSIPChannelsNode(XmlNode, System.Int32)
   nameWithType: SIPTransportConfig.ParseSIPChannelsNode(XmlNode, Int32)
 - uid: SIPSorcery.SIP.SIPTransportConfig.ParseSIPChannelsNode*
   name: ParseSIPChannelsNode
@@ -21633,17 +21633,17 @@ references:
   commentId: T:SIPSorcery.SIP.SIPUDPChannel
   fullName: SIPSorcery.SIP.SIPUDPChannel
   nameWithType: SIPUDPChannel
-- uid: SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPAddress,System.Int32)
+- uid: SIPSorcery.SIP.SIPUDPChannel.#ctor(IPAddress,System.Int32)
   name: SIPUDPChannel(IPAddress, Int32)
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel__ctor_System_Net_IPAddress_System_Int32_
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPAddress,System.Int32)
-  fullName: SIPSorcery.SIP.SIPUDPChannel.SIPUDPChannel(System.Net.IPAddress, System.Int32)
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel__ctor_IPAddress_System_Int32_
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.#ctor(IPAddress,System.Int32)
+  fullName: SIPSorcery.SIP.SIPUDPChannel.SIPUDPChannel(IPAddress, System.Int32)
   nameWithType: SIPUDPChannel.SIPUDPChannel(IPAddress, Int32)
-- uid: SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPEndPoint)
+- uid: SIPSorcery.SIP.SIPUDPChannel.#ctor(IPEndPoint)
   name: SIPUDPChannel(IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPUDPChannel.SIPUDPChannel(System.Net.IPEndPoint)
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel__ctor_IPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.#ctor(IPEndPoint)
+  fullName: SIPSorcery.SIP.SIPUDPChannel.SIPUDPChannel(IPEndPoint)
   nameWithType: SIPUDPChannel.SIPUDPChannel(IPEndPoint)
 - uid: SIPSorcery.SIP.SIPUDPChannel.#ctor*
   name: SIPUDPChannel
@@ -21691,11 +21691,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPUDPChannel.GetConnectionsList
   nameWithType: SIPUDPChannel.GetConnectionsList
-- uid: SIPSorcery.SIP.SIPUDPChannel.IsConnectionEstablished(System.Net.IPEndPoint)
+- uid: SIPSorcery.SIP.SIPUDPChannel.IsConnectionEstablished(IPEndPoint)
   name: IsConnectionEstablished(IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_IsConnectionEstablished_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.IsConnectionEstablished(System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPUDPChannel.IsConnectionEstablished(System.Net.IPEndPoint)
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_IsConnectionEstablished_IPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.IsConnectionEstablished(IPEndPoint)
+  fullName: SIPSorcery.SIP.SIPUDPChannel.IsConnectionEstablished(IPEndPoint)
   nameWithType: SIPUDPChannel.IsConnectionEstablished(IPEndPoint)
 - uid: SIPSorcery.SIP.SIPUDPChannel.IsConnectionEstablished*
   name: IsConnectionEstablished
@@ -21704,29 +21704,29 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPUDPChannel.IsConnectionEstablished
   nameWithType: SIPUDPChannel.IsConnectionEstablished
-- uid: SIPSorcery.SIP.SIPUDPChannel.Send(System.Net.IPEndPoint,System.Byte[])
+- uid: SIPSorcery.SIP.SIPUDPChannel.Send(IPEndPoint,System.Byte[])
   name: Send(IPEndPoint, Byte[])
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_Send_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.Send(System.Net.IPEndPoint,System.Byte[])
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_Send_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.Send(IPEndPoint,System.Byte[])
   name.vb: Send(IPEndPoint, Byte())
-  fullName: SIPSorcery.SIP.SIPUDPChannel.Send(System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.Send(System.Net.IPEndPoint, System.Byte())
+  fullName: SIPSorcery.SIP.SIPUDPChannel.Send(IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.Send(IPEndPoint, System.Byte())
   nameWithType: SIPUDPChannel.Send(IPEndPoint, Byte[])
   nameWithType.vb: SIPUDPChannel.Send(IPEndPoint, Byte())
-- uid: SIPSorcery.SIP.SIPUDPChannel.Send(System.Net.IPEndPoint,System.Byte[],System.String)
+- uid: SIPSorcery.SIP.SIPUDPChannel.Send(IPEndPoint,System.Byte[],System.String)
   name: Send(IPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_Send_System_Net_IPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.Send(System.Net.IPEndPoint,System.Byte[],System.String)
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_Send_IPEndPoint_System_Byte___System_String_
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.Send(IPEndPoint,System.Byte[],System.String)
   name.vb: Send(IPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPUDPChannel.Send(System.Net.IPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.Send(System.Net.IPEndPoint, System.Byte(), System.String)
+  fullName: SIPSorcery.SIP.SIPUDPChannel.Send(IPEndPoint, System.Byte[], System.String)
+  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.Send(IPEndPoint, System.Byte(), System.String)
   nameWithType: SIPUDPChannel.Send(IPEndPoint, Byte[], String)
   nameWithType.vb: SIPUDPChannel.Send(IPEndPoint, Byte(), String)
-- uid: SIPSorcery.SIP.SIPUDPChannel.Send(System.Net.IPEndPoint,System.String)
+- uid: SIPSorcery.SIP.SIPUDPChannel.Send(IPEndPoint,System.String)
   name: Send(IPEndPoint, String)
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_Send_System_Net_IPEndPoint_System_String_
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.Send(System.Net.IPEndPoint,System.String)
-  fullName: SIPSorcery.SIP.SIPUDPChannel.Send(System.Net.IPEndPoint, System.String)
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_Send_IPEndPoint_System_String_
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.Send(IPEndPoint,System.String)
+  fullName: SIPSorcery.SIP.SIPUDPChannel.Send(IPEndPoint, System.String)
   nameWithType: SIPUDPChannel.Send(IPEndPoint, String)
 - uid: SIPSorcery.SIP.SIPUDPChannel.Send*
   name: Send
@@ -21735,22 +21735,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPUDPChannel.Send
   nameWithType: SIPUDPChannel.Send
-- uid: SIPSorcery.SIP.SIPUDPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[])
+- uid: SIPSorcery.SIP.SIPUDPChannel.SendAsync(IPEndPoint,System.Byte[])
   name: SendAsync(IPEndPoint, Byte[])
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_SendAsync_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[])
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_SendAsync_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.SendAsync(IPEndPoint,System.Byte[])
   name.vb: SendAsync(IPEndPoint, Byte())
-  fullName: SIPSorcery.SIP.SIPUDPChannel.SendAsync(System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.SendAsync(System.Net.IPEndPoint, System.Byte())
+  fullName: SIPSorcery.SIP.SIPUDPChannel.SendAsync(IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.SendAsync(IPEndPoint, System.Byte())
   nameWithType: SIPUDPChannel.SendAsync(IPEndPoint, Byte[])
   nameWithType.vb: SIPUDPChannel.SendAsync(IPEndPoint, Byte())
-- uid: SIPSorcery.SIP.SIPUDPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[],System.String)
+- uid: SIPSorcery.SIP.SIPUDPChannel.SendAsync(IPEndPoint,System.Byte[],System.String)
   name: SendAsync(IPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_SendAsync_System_Net_IPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.SendAsync(System.Net.IPEndPoint,System.Byte[],System.String)
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_SendAsync_IPEndPoint_System_Byte___System_String_
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.SendAsync(IPEndPoint,System.Byte[],System.String)
   name.vb: SendAsync(IPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPUDPChannel.SendAsync(System.Net.IPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.SendAsync(System.Net.IPEndPoint, System.Byte(), System.String)
+  fullName: SIPSorcery.SIP.SIPUDPChannel.SendAsync(IPEndPoint, System.Byte[], System.String)
+  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.SendAsync(IPEndPoint, System.Byte(), System.String)
   nameWithType: SIPUDPChannel.SendAsync(IPEndPoint, Byte[], String)
   nameWithType.vb: SIPUDPChannel.SendAsync(IPEndPoint, Byte(), String)
 - uid: SIPSorcery.SIP.SIPUDPChannel.SendAsync*
@@ -22348,24 +22348,24 @@ references:
   commentId: M:SIPSorcery.SIP.SIPViaHeader.#ctor
   fullName: SIPSorcery.SIP.SIPViaHeader.SIPViaHeader()
   nameWithType: SIPViaHeader.SIPViaHeader()
+- uid: SIPSorcery.SIP.SIPViaHeader.#ctor(IPEndPoint,System.String)
+  name: SIPViaHeader(IPEndPoint, String)
+  href: api/SIPSorcery.SIP.SIPViaHeader.html#SIPSorcery_SIP_SIPViaHeader__ctor_IPEndPoint_System_String_
+  commentId: M:SIPSorcery.SIP.SIPViaHeader.#ctor(IPEndPoint,System.String)
+  fullName: SIPSorcery.SIP.SIPViaHeader.SIPViaHeader(IPEndPoint, System.String)
+  nameWithType: SIPViaHeader.SIPViaHeader(IPEndPoint, String)
+- uid: SIPSorcery.SIP.SIPViaHeader.#ctor(IPEndPoint,System.String,SIPSorcery.SIP.SIPProtocolsEnum)
+  name: SIPViaHeader(IPEndPoint, String, SIPProtocolsEnum)
+  href: api/SIPSorcery.SIP.SIPViaHeader.html#SIPSorcery_SIP_SIPViaHeader__ctor_IPEndPoint_System_String_SIPSorcery_SIP_SIPProtocolsEnum_
+  commentId: M:SIPSorcery.SIP.SIPViaHeader.#ctor(IPEndPoint,System.String,SIPSorcery.SIP.SIPProtocolsEnum)
+  fullName: SIPSorcery.SIP.SIPViaHeader.SIPViaHeader(IPEndPoint, System.String, SIPSorcery.SIP.SIPProtocolsEnum)
+  nameWithType: SIPViaHeader.SIPViaHeader(IPEndPoint, String, SIPProtocolsEnum)
 - uid: SIPSorcery.SIP.SIPViaHeader.#ctor(SIPSorcery.SIP.SIPEndPoint,System.String)
   name: SIPViaHeader(SIPEndPoint, String)
   href: api/SIPSorcery.SIP.SIPViaHeader.html#SIPSorcery_SIP_SIPViaHeader__ctor_SIPSorcery_SIP_SIPEndPoint_System_String_
   commentId: M:SIPSorcery.SIP.SIPViaHeader.#ctor(SIPSorcery.SIP.SIPEndPoint,System.String)
   fullName: SIPSorcery.SIP.SIPViaHeader.SIPViaHeader(SIPSorcery.SIP.SIPEndPoint, System.String)
   nameWithType: SIPViaHeader.SIPViaHeader(SIPEndPoint, String)
-- uid: SIPSorcery.SIP.SIPViaHeader.#ctor(System.Net.IPEndPoint,System.String)
-  name: SIPViaHeader(IPEndPoint, String)
-  href: api/SIPSorcery.SIP.SIPViaHeader.html#SIPSorcery_SIP_SIPViaHeader__ctor_System_Net_IPEndPoint_System_String_
-  commentId: M:SIPSorcery.SIP.SIPViaHeader.#ctor(System.Net.IPEndPoint,System.String)
-  fullName: SIPSorcery.SIP.SIPViaHeader.SIPViaHeader(System.Net.IPEndPoint, System.String)
-  nameWithType: SIPViaHeader.SIPViaHeader(IPEndPoint, String)
-- uid: SIPSorcery.SIP.SIPViaHeader.#ctor(System.Net.IPEndPoint,System.String,SIPSorcery.SIP.SIPProtocolsEnum)
-  name: SIPViaHeader(IPEndPoint, String, SIPProtocolsEnum)
-  href: api/SIPSorcery.SIP.SIPViaHeader.html#SIPSorcery_SIP_SIPViaHeader__ctor_System_Net_IPEndPoint_System_String_SIPSorcery_SIP_SIPProtocolsEnum_
-  commentId: M:SIPSorcery.SIP.SIPViaHeader.#ctor(System.Net.IPEndPoint,System.String,SIPSorcery.SIP.SIPProtocolsEnum)
-  fullName: SIPSorcery.SIP.SIPViaHeader.SIPViaHeader(System.Net.IPEndPoint, System.String, SIPSorcery.SIP.SIPProtocolsEnum)
-  nameWithType: SIPViaHeader.SIPViaHeader(IPEndPoint, String, SIPProtocolsEnum)
 - uid: SIPSorcery.SIP.SIPViaHeader.#ctor(System.String,System.Int32,System.String)
   name: SIPViaHeader(String, Int32, String)
   href: api/SIPSorcery.SIP.SIPViaHeader.html#SIPSorcery_SIP_SIPViaHeader__ctor_System_String_System_Int32_System_String_
@@ -22609,11 +22609,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPViaSet.ToString
   nameWithType: SIPViaSet.ToString
-- uid: SIPSorcery.SIP.SIPViaSet.UpateTopViaHeader(System.Net.IPEndPoint)
+- uid: SIPSorcery.SIP.SIPViaSet.UpateTopViaHeader(IPEndPoint)
   name: UpateTopViaHeader(IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPViaSet.html#SIPSorcery_SIP_SIPViaSet_UpateTopViaHeader_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPViaSet.UpateTopViaHeader(System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPViaSet.UpateTopViaHeader(System.Net.IPEndPoint)
+  href: api/SIPSorcery.SIP.SIPViaSet.html#SIPSorcery_SIP_SIPViaSet_UpateTopViaHeader_IPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPViaSet.UpateTopViaHeader(IPEndPoint)
+  fullName: SIPSorcery.SIP.SIPViaSet.UpateTopViaHeader(IPEndPoint)
   nameWithType: SIPViaSet.UpateTopViaHeader(IPEndPoint)
 - uid: SIPSorcery.SIP.SIPViaSet.UpateTopViaHeader*
   name: UpateTopViaHeader
@@ -22862,11 +22862,11 @@ references:
   commentId: M:SIPSorcery.Sys.Crc32.#ctor
   fullName: SIPSorcery.Sys.Crc32.Crc32()
   nameWithType: Crc32.Crc32()
-- uid: SIPSorcery.Sys.Crc32.#ctor(System.UInt32,System.UInt32)
+- uid: SIPSorcery.Sys.Crc32.#ctor(UInt32,UInt32)
   name: Crc32(UInt32, UInt32)
-  href: api/SIPSorcery.Sys.Crc32.html#SIPSorcery_Sys_Crc32__ctor_System_UInt32_System_UInt32_
-  commentId: M:SIPSorcery.Sys.Crc32.#ctor(System.UInt32,System.UInt32)
-  fullName: SIPSorcery.Sys.Crc32.Crc32(System.UInt32, System.UInt32)
+  href: api/SIPSorcery.Sys.Crc32.html#SIPSorcery_Sys_Crc32__ctor_UInt32_UInt32_
+  commentId: M:SIPSorcery.Sys.Crc32.#ctor(UInt32,UInt32)
+  fullName: SIPSorcery.Sys.Crc32.Crc32(UInt32, UInt32)
   nameWithType: Crc32.Crc32(UInt32, UInt32)
 - uid: SIPSorcery.Sys.Crc32.#ctor*
   name: Crc32
@@ -22884,22 +22884,22 @@ references:
   fullName.vb: SIPSorcery.Sys.Crc32.Compute(System.Byte())
   nameWithType: Crc32.Compute(Byte[])
   nameWithType.vb: Crc32.Compute(Byte())
-- uid: SIPSorcery.Sys.Crc32.Compute(System.UInt32,System.Byte[])
+- uid: SIPSorcery.Sys.Crc32.Compute(UInt32,System.Byte[])
   name: Compute(UInt32, Byte[])
-  href: api/SIPSorcery.Sys.Crc32.html#SIPSorcery_Sys_Crc32_Compute_System_UInt32_System_Byte___
-  commentId: M:SIPSorcery.Sys.Crc32.Compute(System.UInt32,System.Byte[])
+  href: api/SIPSorcery.Sys.Crc32.html#SIPSorcery_Sys_Crc32_Compute_UInt32_System_Byte___
+  commentId: M:SIPSorcery.Sys.Crc32.Compute(UInt32,System.Byte[])
   name.vb: Compute(UInt32, Byte())
-  fullName: SIPSorcery.Sys.Crc32.Compute(System.UInt32, System.Byte[])
-  fullName.vb: SIPSorcery.Sys.Crc32.Compute(System.UInt32, System.Byte())
+  fullName: SIPSorcery.Sys.Crc32.Compute(UInt32, System.Byte[])
+  fullName.vb: SIPSorcery.Sys.Crc32.Compute(UInt32, System.Byte())
   nameWithType: Crc32.Compute(UInt32, Byte[])
   nameWithType.vb: Crc32.Compute(UInt32, Byte())
-- uid: SIPSorcery.Sys.Crc32.Compute(System.UInt32,System.UInt32,System.Byte[])
+- uid: SIPSorcery.Sys.Crc32.Compute(UInt32,UInt32,System.Byte[])
   name: Compute(UInt32, UInt32, Byte[])
-  href: api/SIPSorcery.Sys.Crc32.html#SIPSorcery_Sys_Crc32_Compute_System_UInt32_System_UInt32_System_Byte___
-  commentId: M:SIPSorcery.Sys.Crc32.Compute(System.UInt32,System.UInt32,System.Byte[])
+  href: api/SIPSorcery.Sys.Crc32.html#SIPSorcery_Sys_Crc32_Compute_UInt32_UInt32_System_Byte___
+  commentId: M:SIPSorcery.Sys.Crc32.Compute(UInt32,UInt32,System.Byte[])
   name.vb: Compute(UInt32, UInt32, Byte())
-  fullName: SIPSorcery.Sys.Crc32.Compute(System.UInt32, System.UInt32, System.Byte[])
-  fullName.vb: SIPSorcery.Sys.Crc32.Compute(System.UInt32, System.UInt32, System.Byte())
+  fullName: SIPSorcery.Sys.Crc32.Compute(UInt32, UInt32, System.Byte[])
+  fullName.vb: SIPSorcery.Sys.Crc32.Compute(UInt32, UInt32, System.Byte())
   nameWithType: Crc32.Compute(UInt32, UInt32, Byte[])
   nameWithType.vb: Crc32.Compute(UInt32, UInt32, Byte())
 - uid: SIPSorcery.Sys.Crc32.Compute*
@@ -23045,18 +23045,18 @@ references:
   commentId: M:SIPSorcery.Sys.Crypto.GetRandomInt
   fullName: SIPSorcery.Sys.Crypto.GetRandomInt()
   nameWithType: Crypto.GetRandomInt()
+- uid: SIPSorcery.Sys.Crypto.GetRandomInt(Int32,Int32)
+  name: GetRandomInt(Int32, Int32)
+  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_GetRandomInt_Int32_Int32_
+  commentId: M:SIPSorcery.Sys.Crypto.GetRandomInt(Int32,Int32)
+  fullName: SIPSorcery.Sys.Crypto.GetRandomInt(Int32, Int32)
+  nameWithType: Crypto.GetRandomInt(Int32, Int32)
 - uid: SIPSorcery.Sys.Crypto.GetRandomInt(System.Int32)
   name: GetRandomInt(Int32)
   href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_GetRandomInt_System_Int32_
   commentId: M:SIPSorcery.Sys.Crypto.GetRandomInt(System.Int32)
   fullName: SIPSorcery.Sys.Crypto.GetRandomInt(System.Int32)
   nameWithType: Crypto.GetRandomInt(Int32)
-- uid: SIPSorcery.Sys.Crypto.GetRandomInt(System.Int32,System.Int32)
-  name: GetRandomInt(Int32, Int32)
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_GetRandomInt_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Sys.Crypto.GetRandomInt(System.Int32,System.Int32)
-  fullName: SIPSorcery.Sys.Crypto.GetRandomInt(System.Int32, System.Int32)
-  nameWithType: Crypto.GetRandomInt(Int32, Int32)
 - uid: SIPSorcery.Sys.Crypto.GetRandomInt*
   name: GetRandomInt
   href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_GetRandomInt_
@@ -23170,11 +23170,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.Crypto.GetSHAHashAsString
   nameWithType: Crypto.GetSHAHashAsString
-- uid: SIPSorcery.Sys.Crypto.LoadCertificate(System.Security.Cryptography.X509Certificates.StoreLocation,System.String,System.Boolean)
+- uid: SIPSorcery.Sys.Crypto.LoadCertificate(StoreLocation,System.String,System.Boolean)
   name: LoadCertificate(StoreLocation, String, Boolean)
-  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_LoadCertificate_System_Security_Cryptography_X509Certificates_StoreLocation_System_String_System_Boolean_
-  commentId: M:SIPSorcery.Sys.Crypto.LoadCertificate(System.Security.Cryptography.X509Certificates.StoreLocation,System.String,System.Boolean)
-  fullName: SIPSorcery.Sys.Crypto.LoadCertificate(System.Security.Cryptography.X509Certificates.StoreLocation, System.String, System.Boolean)
+  href: api/SIPSorcery.Sys.Crypto.html#SIPSorcery_Sys_Crypto_LoadCertificate_StoreLocation_System_String_System_Boolean_
+  commentId: M:SIPSorcery.Sys.Crypto.LoadCertificate(StoreLocation,System.String,System.Boolean)
+  fullName: SIPSorcery.Sys.Crypto.LoadCertificate(StoreLocation, System.String, System.Boolean)
   nameWithType: Crypto.LoadCertificate(StoreLocation, String, Boolean)
 - uid: SIPSorcery.Sys.Crypto.LoadCertificate*
   name: LoadCertificate
@@ -23320,11 +23320,11 @@ references:
   commentId: T:SIPSorcery.Sys.IPSocket
   fullName: SIPSorcery.Sys.IPSocket
   nameWithType: IPSocket
-- uid: SIPSorcery.Sys.IPSocket.GetSocketString(System.Net.IPEndPoint)
+- uid: SIPSorcery.Sys.IPSocket.GetSocketString(IPEndPoint)
   name: GetSocketString(IPEndPoint)
-  href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_GetSocketString_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Sys.IPSocket.GetSocketString(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Sys.IPSocket.GetSocketString(System.Net.IPEndPoint)
+  href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_GetSocketString_IPEndPoint_
+  commentId: M:SIPSorcery.Sys.IPSocket.GetSocketString(IPEndPoint)
+  fullName: SIPSorcery.Sys.IPSocket.GetSocketString(IPEndPoint)
   nameWithType: IPSocket.GetSocketString(IPEndPoint)
 - uid: SIPSorcery.Sys.IPSocket.GetSocketString*
   name: GetSocketString
@@ -23397,13 +23397,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.IPSocket.ParseSocketString
   nameWithType: IPSocket.ParseSocketString
-- uid: SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String,System.Net.IPEndPoint@)
+- uid: SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String,IPEndPoint@)
   name: TryParseIPEndPoint(String, out IPEndPoint)
-  href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_TryParseIPEndPoint_System_String_System_Net_IPEndPoint__
-  commentId: M:SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String,System.Net.IPEndPoint@)
+  href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_TryParseIPEndPoint_System_String_IPEndPoint__
+  commentId: M:SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String,IPEndPoint@)
   name.vb: TryParseIPEndPoint(String, ByRef IPEndPoint)
-  fullName: SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String, out System.Net.IPEndPoint)
-  fullName.vb: SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String, ByRef System.Net.IPEndPoint)
+  fullName: SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String, out IPEndPoint)
+  fullName.vb: SIPSorcery.Sys.IPSocket.TryParseIPEndPoint(System.String, ByRef IPEndPoint)
   nameWithType: IPSocket.TryParseIPEndPoint(String, out IPEndPoint)
   nameWithType.vb: IPSocket.TryParseIPEndPoint(String, ByRef IPEndPoint)
 - uid: SIPSorcery.Sys.IPSocket.TryParseIPEndPoint*
@@ -23432,11 +23432,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.IPSocketAddress.GetIPEndPoint
   nameWithType: IPSocketAddress.GetIPEndPoint
-- uid: SIPSorcery.Sys.IPSocketAddress.GetSocketString(System.Net.IPEndPoint)
+- uid: SIPSorcery.Sys.IPSocketAddress.GetSocketString(IPEndPoint)
   name: GetSocketString(IPEndPoint)
-  href: api/SIPSorcery.Sys.IPSocketAddress.html#SIPSorcery_Sys_IPSocketAddress_GetSocketString_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Sys.IPSocketAddress.GetSocketString(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Sys.IPSocketAddress.GetSocketString(System.Net.IPEndPoint)
+  href: api/SIPSorcery.Sys.IPSocketAddress.html#SIPSorcery_Sys_IPSocketAddress_GetSocketString_IPEndPoint_
+  commentId: M:SIPSorcery.Sys.IPSocketAddress.GetSocketString(IPEndPoint)
+  fullName: SIPSorcery.Sys.IPSocketAddress.GetSocketString(IPEndPoint)
   nameWithType: IPSocketAddress.GetSocketString(IPEndPoint)
 - uid: SIPSorcery.Sys.IPSocketAddress.GetSocketString*
   name: GetSocketString
@@ -23451,11 +23451,11 @@ references:
   commentId: T:SIPSorcery.Sys.IPv4Header
   fullName: SIPSorcery.Sys.IPv4Header
   nameWithType: IPv4Header
-- uid: SIPSorcery.Sys.IPv4Header.#ctor(System.Net.Sockets.ProtocolType,System.Int32,System.Net.IPAddress,System.Net.IPAddress)
+- uid: SIPSorcery.Sys.IPv4Header.#ctor(ProtocolType,System.Int32,IPAddress,IPAddress)
   name: IPv4Header(ProtocolType, Int32, IPAddress, IPAddress)
-  href: api/SIPSorcery.Sys.IPv4Header.html#SIPSorcery_Sys_IPv4Header__ctor_System_Net_Sockets_ProtocolType_System_Int32_System_Net_IPAddress_System_Net_IPAddress_
-  commentId: M:SIPSorcery.Sys.IPv4Header.#ctor(System.Net.Sockets.ProtocolType,System.Int32,System.Net.IPAddress,System.Net.IPAddress)
-  fullName: SIPSorcery.Sys.IPv4Header.IPv4Header(System.Net.Sockets.ProtocolType, System.Int32, System.Net.IPAddress, System.Net.IPAddress)
+  href: api/SIPSorcery.Sys.IPv4Header.html#SIPSorcery_Sys_IPv4Header__ctor_ProtocolType_System_Int32_IPAddress_IPAddress_
+  commentId: M:SIPSorcery.Sys.IPv4Header.#ctor(ProtocolType,System.Int32,IPAddress,IPAddress)
+  fullName: SIPSorcery.Sys.IPv4Header.IPv4Header(ProtocolType, System.Int32, IPAddress, IPAddress)
   nameWithType: IPv4Header.IPv4Header(ProtocolType, Int32, IPAddress, IPAddress)
 - uid: SIPSorcery.Sys.IPv4Header.#ctor*
   name: IPv4Header
@@ -23694,11 +23694,11 @@ references:
   commentId: F:SIPSorcery.Sys.LocalIPConfig.LINK_LOCAL_BLOCK_PREFIX
   fullName: SIPSorcery.Sys.LocalIPConfig.LINK_LOCAL_BLOCK_PREFIX
   nameWithType: LocalIPConfig.LINK_LOCAL_BLOCK_PREFIX
-- uid: SIPSorcery.Sys.LocalIPConfig.ParseIPSockets(System.Xml.XmlNode)
+- uid: SIPSorcery.Sys.LocalIPConfig.ParseIPSockets(XmlNode)
   name: ParseIPSockets(XmlNode)
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_ParseIPSockets_System_Xml_XmlNode_
-  commentId: M:SIPSorcery.Sys.LocalIPConfig.ParseIPSockets(System.Xml.XmlNode)
-  fullName: SIPSorcery.Sys.LocalIPConfig.ParseIPSockets(System.Xml.XmlNode)
+  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_ParseIPSockets_XmlNode_
+  commentId: M:SIPSorcery.Sys.LocalIPConfig.ParseIPSockets(XmlNode)
+  fullName: SIPSorcery.Sys.LocalIPConfig.ParseIPSockets(XmlNode)
   nameWithType: LocalIPConfig.ParseIPSockets(XmlNode)
 - uid: SIPSorcery.Sys.LocalIPConfig.ParseIPSockets*
   name: ParseIPSockets
@@ -23751,12 +23751,6 @@ references:
   commentId: T:SIPSorcery.Sys.NetConvert
   fullName: SIPSorcery.Sys.NetConvert
   nameWithType: NetConvert
-- uid: SIPSorcery.Sys.NetConvert.DoReverseEndian(System.UInt16)
-  name: DoReverseEndian(UInt16)
-  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_DoReverseEndian_System_UInt16_
-  commentId: M:SIPSorcery.Sys.NetConvert.DoReverseEndian(System.UInt16)
-  fullName: SIPSorcery.Sys.NetConvert.DoReverseEndian(System.UInt16)
-  nameWithType: NetConvert.DoReverseEndian(UInt16)
 - uid: SIPSorcery.Sys.NetConvert.DoReverseEndian(System.UInt32)
   name: DoReverseEndian(UInt32)
   href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_DoReverseEndian_System_UInt32_
@@ -23769,6 +23763,12 @@ references:
   commentId: M:SIPSorcery.Sys.NetConvert.DoReverseEndian(System.UInt64)
   fullName: SIPSorcery.Sys.NetConvert.DoReverseEndian(System.UInt64)
   nameWithType: NetConvert.DoReverseEndian(UInt64)
+- uid: SIPSorcery.Sys.NetConvert.DoReverseEndian(UInt16)
+  name: DoReverseEndian(UInt16)
+  href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_DoReverseEndian_UInt16_
+  commentId: M:SIPSorcery.Sys.NetConvert.DoReverseEndian(UInt16)
+  fullName: SIPSorcery.Sys.NetConvert.DoReverseEndian(UInt16)
+  nameWithType: NetConvert.DoReverseEndian(UInt16)
 - uid: SIPSorcery.Sys.NetConvert.DoReverseEndian*
   name: DoReverseEndian
   href: api/SIPSorcery.Sys.NetConvert.html#SIPSorcery_Sys_NetConvert_DoReverseEndian_
@@ -23782,24 +23782,24 @@ references:
   commentId: T:SIPSorcery.Sys.NetServices
   fullName: SIPSorcery.Sys.NetServices
   nameWithType: NetServices
-- uid: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(System.Net.IPAddress,System.Int32,System.Int32,System.Collections.ArrayList,System.Net.IPEndPoint@)
-  name: CreateRandomUDPListener(IPAddress, Int32, Int32, ArrayList, out IPEndPoint)
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRandomUDPListener_System_Net_IPAddress_System_Int32_System_Int32_System_Collections_ArrayList_System_Net_IPEndPoint__
-  commentId: M:SIPSorcery.Sys.NetServices.CreateRandomUDPListener(System.Net.IPAddress,System.Int32,System.Int32,System.Collections.ArrayList,System.Net.IPEndPoint@)
-  name.vb: CreateRandomUDPListener(IPAddress, Int32, Int32, ArrayList, ByRef IPEndPoint)
-  fullName: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(System.Net.IPAddress, System.Int32, System.Int32, System.Collections.ArrayList, out System.Net.IPEndPoint)
-  fullName.vb: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(System.Net.IPAddress, System.Int32, System.Int32, System.Collections.ArrayList, ByRef System.Net.IPEndPoint)
-  nameWithType: NetServices.CreateRandomUDPListener(IPAddress, Int32, Int32, ArrayList, out IPEndPoint)
-  nameWithType.vb: NetServices.CreateRandomUDPListener(IPAddress, Int32, Int32, ArrayList, ByRef IPEndPoint)
-- uid: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(System.Net.IPAddress,System.Net.IPEndPoint@)
+- uid: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(IPAddress,IPEndPoint@)
   name: CreateRandomUDPListener(IPAddress, out IPEndPoint)
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRandomUDPListener_System_Net_IPAddress_System_Net_IPEndPoint__
-  commentId: M:SIPSorcery.Sys.NetServices.CreateRandomUDPListener(System.Net.IPAddress,System.Net.IPEndPoint@)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRandomUDPListener_IPAddress_IPEndPoint__
+  commentId: M:SIPSorcery.Sys.NetServices.CreateRandomUDPListener(IPAddress,IPEndPoint@)
   name.vb: CreateRandomUDPListener(IPAddress, ByRef IPEndPoint)
-  fullName: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(System.Net.IPAddress, out System.Net.IPEndPoint)
-  fullName.vb: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(System.Net.IPAddress, ByRef System.Net.IPEndPoint)
+  fullName: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(IPAddress, out IPEndPoint)
+  fullName.vb: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(IPAddress, ByRef IPEndPoint)
   nameWithType: NetServices.CreateRandomUDPListener(IPAddress, out IPEndPoint)
   nameWithType.vb: NetServices.CreateRandomUDPListener(IPAddress, ByRef IPEndPoint)
+- uid: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(IPAddress,System.Int32,System.Int32,ArrayList,IPEndPoint@)
+  name: CreateRandomUDPListener(IPAddress, Int32, Int32, ArrayList, out IPEndPoint)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRandomUDPListener_IPAddress_System_Int32_System_Int32_ArrayList_IPEndPoint__
+  commentId: M:SIPSorcery.Sys.NetServices.CreateRandomUDPListener(IPAddress,System.Int32,System.Int32,ArrayList,IPEndPoint@)
+  name.vb: CreateRandomUDPListener(IPAddress, Int32, Int32, ArrayList, ByRef IPEndPoint)
+  fullName: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(IPAddress, System.Int32, System.Int32, ArrayList, out IPEndPoint)
+  fullName.vb: SIPSorcery.Sys.NetServices.CreateRandomUDPListener(IPAddress, System.Int32, System.Int32, ArrayList, ByRef IPEndPoint)
+  nameWithType: NetServices.CreateRandomUDPListener(IPAddress, Int32, Int32, ArrayList, out IPEndPoint)
+  nameWithType.vb: NetServices.CreateRandomUDPListener(IPAddress, Int32, Int32, ArrayList, ByRef IPEndPoint)
 - uid: SIPSorcery.Sys.NetServices.CreateRandomUDPListener*
   name: CreateRandomUDPListener
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRandomUDPListener_
@@ -23807,13 +23807,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.CreateRandomUDPListener
   nameWithType: NetServices.CreateRandomUDPListener
-- uid: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Net.IPAddress,System.Int32,System.Int32,System.Boolean,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
+- uid: SIPSorcery.Sys.NetServices.CreateRtpSocket(IPAddress,System.Int32,System.Int32,System.Boolean,Socket@,Socket@)
   name: CreateRtpSocket(IPAddress, Int32, Int32, Boolean, out Socket, out Socket)
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Net_IPAddress_System_Int32_System_Int32_System_Boolean_System_Net_Sockets_Socket__System_Net_Sockets_Socket__
-  commentId: M:SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Net.IPAddress,System.Int32,System.Int32,System.Boolean,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_IPAddress_System_Int32_System_Int32_System_Boolean_Socket__Socket__
+  commentId: M:SIPSorcery.Sys.NetServices.CreateRtpSocket(IPAddress,System.Int32,System.Int32,System.Boolean,Socket@,Socket@)
   name.vb: CreateRtpSocket(IPAddress, Int32, Int32, Boolean, ByRef Socket, ByRef Socket)
-  fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Net.IPAddress, System.Int32, System.Int32, System.Boolean, out System.Net.Sockets.Socket, out System.Net.Sockets.Socket)
-  fullName.vb: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Net.IPAddress, System.Int32, System.Int32, System.Boolean, ByRef System.Net.Sockets.Socket, ByRef System.Net.Sockets.Socket)
+  fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket(IPAddress, System.Int32, System.Int32, System.Boolean, out Socket, out Socket)
+  fullName.vb: SIPSorcery.Sys.NetServices.CreateRtpSocket(IPAddress, System.Int32, System.Int32, System.Boolean, ByRef Socket, ByRef Socket)
   nameWithType: NetServices.CreateRtpSocket(IPAddress, Int32, Int32, Boolean, out Socket, out Socket)
   nameWithType.vb: NetServices.CreateRtpSocket(IPAddress, Int32, Int32, Boolean, ByRef Socket, ByRef Socket)
 - uid: SIPSorcery.Sys.NetServices.CreateRtpSocket*
@@ -23876,11 +23876,11 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NullLogger.Instance
   nameWithType: NullLogger.Instance
-- uid: SIPSorcery.Sys.NullLogger.IsEnabled(Microsoft.Extensions.Logging.LogLevel)
+- uid: SIPSorcery.Sys.NullLogger.IsEnabled(LogLevel)
   name: IsEnabled(LogLevel)
-  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_IsEnabled_Microsoft_Extensions_Logging_LogLevel_
-  commentId: M:SIPSorcery.Sys.NullLogger.IsEnabled(Microsoft.Extensions.Logging.LogLevel)
-  fullName: SIPSorcery.Sys.NullLogger.IsEnabled(Microsoft.Extensions.Logging.LogLevel)
+  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_IsEnabled_LogLevel_
+  commentId: M:SIPSorcery.Sys.NullLogger.IsEnabled(LogLevel)
+  fullName: SIPSorcery.Sys.NullLogger.IsEnabled(LogLevel)
   nameWithType: NullLogger.IsEnabled(LogLevel)
 - uid: SIPSorcery.Sys.NullLogger.IsEnabled*
   name: IsEnabled
@@ -23896,13 +23896,13 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NullLogger.Log
   nameWithType: NullLogger.Log
-- uid: SIPSorcery.Sys.NullLogger.Log``1(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,``0,System.Exception,System.Func{``0,System.Exception,System.String})
+- uid: SIPSorcery.Sys.NullLogger.Log``1(LogLevel,EventId,``0,Exception,Func{``0,Exception,System.String})
   name: Log<TState>(LogLevel, EventId, TState, Exception, Func<TState, Exception, String>)
-  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_Log__1_Microsoft_Extensions_Logging_LogLevel_Microsoft_Extensions_Logging_EventId___0_System_Exception_System_Func___0_System_Exception_System_String__
-  commentId: M:SIPSorcery.Sys.NullLogger.Log``1(Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,``0,System.Exception,System.Func{``0,System.Exception,System.String})
+  href: api/SIPSorcery.Sys.NullLogger.html#SIPSorcery_Sys_NullLogger_Log__1_LogLevel_EventId___0_Exception_Func___0_Exception_System_String__
+  commentId: M:SIPSorcery.Sys.NullLogger.Log``1(LogLevel,EventId,``0,Exception,Func{``0,Exception,System.String})
   name.vb: Log(Of TState)(LogLevel, EventId, TState, Exception, Func(Of TState, Exception, String))
-  fullName: SIPSorcery.Sys.NullLogger.Log<TState>(Microsoft.Extensions.Logging.LogLevel, Microsoft.Extensions.Logging.EventId, TState, System.Exception, System.Func<TState, System.Exception, System.String>)
-  fullName.vb: SIPSorcery.Sys.NullLogger.Log(Of TState)(Microsoft.Extensions.Logging.LogLevel, Microsoft.Extensions.Logging.EventId, TState, System.Exception, System.Func(Of TState, System.Exception, System.String))
+  fullName: SIPSorcery.Sys.NullLogger.Log<TState>(LogLevel, EventId, TState, Exception, Func<TState, Exception, System.String>)
+  fullName.vb: SIPSorcery.Sys.NullLogger.Log(Of TState)(LogLevel, EventId, TState, Exception, Func(Of TState, Exception, System.String))
   nameWithType: NullLogger.Log<TState>(LogLevel, EventId, TState, Exception, Func<TState, Exception, String>)
   nameWithType.vb: NullLogger.Log(Of TState)(LogLevel, EventId, TState, Exception, Func(Of TState, Exception, String))
 - uid: SIPSorcery.Sys.NullScope
@@ -24041,13 +24041,13 @@ references:
   commentId: T:SIPSorcery.Sys.RawSocket
   fullName: SIPSorcery.Sys.RawSocket
   nameWithType: RawSocket
-- uid: SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte[],System.Net.IPEndPoint,System.Net.IPEndPoint)
+- uid: SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte[],IPEndPoint,IPEndPoint)
   name: SendSpoofedPacket(Byte[], IPEndPoint, IPEndPoint)
-  href: api/SIPSorcery.Sys.RawSocket.html#SIPSorcery_Sys_RawSocket_SendSpoofedPacket_System_Byte___System_Net_IPEndPoint_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte[],System.Net.IPEndPoint,System.Net.IPEndPoint)
+  href: api/SIPSorcery.Sys.RawSocket.html#SIPSorcery_Sys_RawSocket_SendSpoofedPacket_System_Byte___IPEndPoint_IPEndPoint_
+  commentId: M:SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte[],IPEndPoint,IPEndPoint)
   name.vb: SendSpoofedPacket(Byte(), IPEndPoint, IPEndPoint)
-  fullName: SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte[], System.Net.IPEndPoint, System.Net.IPEndPoint)
-  fullName.vb: SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte(), System.Net.IPEndPoint, System.Net.IPEndPoint)
+  fullName: SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte[], IPEndPoint, IPEndPoint)
+  fullName.vb: SIPSorcery.Sys.RawSocket.SendSpoofedPacket(System.Byte(), IPEndPoint, IPEndPoint)
   nameWithType: RawSocket.SendSpoofedPacket(Byte[], IPEndPoint, IPEndPoint)
   nameWithType.vb: RawSocket.SendSpoofedPacket(Byte(), IPEndPoint, IPEndPoint)
 - uid: SIPSorcery.Sys.RawSocket.SendSpoofedPacket*
@@ -24185,11 +24185,11 @@ references:
   commentId: T:SIPSorcery.Sys.TypeExtensions
   fullName: SIPSorcery.Sys.TypeExtensions
   nameWithType: TypeExtensions
-- uid: SIPSorcery.Sys.TypeExtensions.GetEpoch(System.DateTime)
+- uid: SIPSorcery.Sys.TypeExtensions.GetEpoch(DateTime)
   name: GetEpoch(DateTime)
-  href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_GetEpoch_System_DateTime_
-  commentId: M:SIPSorcery.Sys.TypeExtensions.GetEpoch(System.DateTime)
-  fullName: SIPSorcery.Sys.TypeExtensions.GetEpoch(System.DateTime)
+  href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_GetEpoch_DateTime_
+  commentId: M:SIPSorcery.Sys.TypeExtensions.GetEpoch(DateTime)
+  fullName: SIPSorcery.Sys.TypeExtensions.GetEpoch(DateTime)
   nameWithType: TypeExtensions.GetEpoch(DateTime)
 - uid: SIPSorcery.Sys.TypeExtensions.GetEpoch*
   name: GetEpoch
@@ -24236,11 +24236,11 @@ references:
   commentId: T:SIPSorcery.Sys.UDPListener
   fullName: SIPSorcery.Sys.UDPListener
   nameWithType: UDPListener
-- uid: SIPSorcery.Sys.UDPListener.#ctor(System.Net.IPEndPoint)
+- uid: SIPSorcery.Sys.UDPListener.#ctor(IPEndPoint)
   name: UDPListener(IPEndPoint)
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Sys.UDPListener.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Sys.UDPListener.UDPListener(System.Net.IPEndPoint)
+  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener__ctor_IPEndPoint_
+  commentId: M:SIPSorcery.Sys.UDPListener.#ctor(IPEndPoint)
+  fullName: SIPSorcery.Sys.UDPListener.UDPListener(IPEndPoint)
   nameWithType: UDPListener.UDPListener(IPEndPoint)
 - uid: SIPSorcery.Sys.UDPListener.#ctor*
   name: UDPListener
@@ -24268,29 +24268,29 @@ references:
   commentId: F:SIPSorcery.Sys.UDPListener.PacketReceived
   fullName: SIPSorcery.Sys.UDPListener.PacketReceived
   nameWithType: UDPListener.PacketReceived
-- uid: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.Byte[])
+- uid: SIPSorcery.Sys.UDPListener.Send(IPEndPoint,System.Byte[])
   name: Send(IPEndPoint, Byte[])
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Send_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.Byte[])
+  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Send_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.Sys.UDPListener.Send(IPEndPoint,System.Byte[])
   name.vb: Send(IPEndPoint, Byte())
-  fullName: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint, System.Byte())
+  fullName: SIPSorcery.Sys.UDPListener.Send(IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.Sys.UDPListener.Send(IPEndPoint, System.Byte())
   nameWithType: UDPListener.Send(IPEndPoint, Byte[])
   nameWithType.vb: UDPListener.Send(IPEndPoint, Byte())
-- uid: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.Byte[],System.Int32)
+- uid: SIPSorcery.Sys.UDPListener.Send(IPEndPoint,System.Byte[],System.Int32)
   name: Send(IPEndPoint, Byte[], Int32)
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Send_System_Net_IPEndPoint_System_Byte___System_Int32_
-  commentId: M:SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.Byte[],System.Int32)
+  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Send_IPEndPoint_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Sys.UDPListener.Send(IPEndPoint,System.Byte[],System.Int32)
   name.vb: Send(IPEndPoint, Byte(), Int32)
-  fullName: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint, System.Byte[], System.Int32)
-  fullName.vb: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint, System.Byte(), System.Int32)
+  fullName: SIPSorcery.Sys.UDPListener.Send(IPEndPoint, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Sys.UDPListener.Send(IPEndPoint, System.Byte(), System.Int32)
   nameWithType: UDPListener.Send(IPEndPoint, Byte[], Int32)
   nameWithType.vb: UDPListener.Send(IPEndPoint, Byte(), Int32)
-- uid: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.String)
+- uid: SIPSorcery.Sys.UDPListener.Send(IPEndPoint,System.String)
   name: Send(IPEndPoint, String)
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Send_System_Net_IPEndPoint_System_String_
-  commentId: M:SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.String)
-  fullName: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint, System.String)
+  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Send_IPEndPoint_System_String_
+  commentId: M:SIPSorcery.Sys.UDPListener.Send(IPEndPoint,System.String)
+  fullName: SIPSorcery.Sys.UDPListener.Send(IPEndPoint, System.String)
   nameWithType: UDPListener.Send(IPEndPoint, String)
 - uid: SIPSorcery.Sys.UDPListener.Send*
   name: Send

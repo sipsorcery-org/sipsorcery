@@ -80,35 +80,11 @@
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">RTCPReportSampler</span></div>
   </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ToString()</span>
-    </div>
-  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_RTCPReportSampler_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class RTCPReportSampler</code></pre>
+    <pre><code class="lang-csharp hljs">public class RTCPReportSampler : object</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -129,18 +105,18 @@
   </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPReportSampler__ctor_System_Guid_System_UInt32_System_Net_IPEndPoint_System_UInt16_System_DateTime_System_Int64_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPReportSampler.%23ctor(System.Guid%2CSystem.UInt32%2CSystem.Net.IPEndPoint%2CSystem.UInt16%2CSystem.DateTime%2CSystem.Int64)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPReportSampler__ctor_Guid_System_UInt32_IPEndPoint_UInt16_DateTime_System_Int64_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPReportSampler.%23ctor(Guid%2CSystem.UInt32%2CIPEndPoint%2CUInt16%2CDateTime%2CSystem.Int64)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCP.cs/#L275">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPReportSampler__ctor_" data-uid="SIPSorcery.Net.RTCPReportSampler.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_RTCPReportSampler__ctor_System_Guid_System_UInt32_System_Net_IPEndPoint_System_UInt16_System_DateTime_System_Int64_" data-uid="SIPSorcery.Net.RTCPReportSampler.#ctor(System.Guid,System.UInt32,System.Net.IPEndPoint,System.UInt16,System.DateTime,System.Int64)">RTCPReportSampler(Guid, UInt32, IPEndPoint, UInt16, DateTime, Int64)</h4>
+  <h4 id="SIPSorcery_Net_RTCPReportSampler__ctor_Guid_System_UInt32_IPEndPoint_UInt16_DateTime_System_Int64_" data-uid="SIPSorcery.Net.RTCPReportSampler.#ctor(Guid,System.UInt32,IPEndPoint,UInt16,DateTime,System.Int64)">RTCPReportSampler(Guid, UInt32, IPEndPoint, UInt16, DateTime, Int64)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public RTCPReportSampler(Guid rtpStreamId, uint syncSource, IPEndPoint remoteEndPoint, ushort startSequenceNumber, DateTime startTime, long bytesReceived)</code></pre>
+    <pre><code class="lang-csharp hljs">public RTCPReportSampler(Guid rtpStreamId, uint syncSource, IPEndPoint remoteEndPoint, UInt16 startSequenceNumber, DateTime startTime, long bytesReceived)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -153,7 +129,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Guid</span></td>
+        <td><span class="xref">Guid</span></td>
         <td><span class="parametername">rtpStreamId</span></td>
         <td></td>
       </tr>
@@ -163,17 +139,17 @@
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="xref">IPEndPoint</span></td>
         <td><span class="parametername">remoteEndPoint</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.UInt16</span></td>
+        <td><span class="xref">UInt16</span></td>
         <td><span class="parametername">startSequenceNumber</span></td>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.DateTime</span></td>
+        <td><span class="xref">DateTime</span></td>
         <td><span class="parametername">startTime</span></td>
         <td></td>
       </tr>
@@ -248,19 +224,19 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPReportSampler_RecordRTPReceive_System_DateTime_System_UInt16_System_Int64_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive(System.DateTime%2CSystem.UInt16%2CSystem.Int64%2CSystem.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPReportSampler_RecordRTPReceive_DateTime_UInt16_System_Int64_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive(DateTime%2CUInt16%2CSystem.Int64%2CSystem.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCP.cs/#L307">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPReportSampler_RecordRTPReceive_" data-uid="SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive*"></a>
-  <h4 id="SIPSorcery_Net_RTCPReportSampler_RecordRTPReceive_System_DateTime_System_UInt16_System_Int64_System_UInt32_" data-uid="SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive(System.DateTime,System.UInt16,System.Int64,System.UInt32)">RecordRTPReceive(DateTime, UInt16, Int64, UInt32)</h4>
+  <h4 id="SIPSorcery_Net_RTCPReportSampler_RecordRTPReceive_DateTime_UInt16_System_Int64_System_UInt32_" data-uid="SIPSorcery.Net.RTCPReportSampler.RecordRTPReceive(DateTime,UInt16,System.Int64,System.UInt32)">RecordRTPReceive(DateTime, UInt16, Int64, UInt32)</h4>
   <div class="markdown level1 summary"><p>Records the arrival of a new RTP packet and periodically samples the mesaurements to record the characteristics of the RTP stream.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void RecordRTPReceive(DateTime receiveTime, ushort sequenceNumber, long bytesReceived, uint jitter)</code></pre>
+    <pre><code class="lang-csharp hljs">public void RecordRTPReceive(DateTime receiveTime, UInt16 sequenceNumber, long bytesReceived, uint jitter)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -273,13 +249,13 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.DateTime</span></td>
+        <td><span class="xref">DateTime</span></td>
         <td><span class="parametername">receiveTime</span></td>
         <td><p>The local time at which the RTP listener received the packet.</p>
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.UInt16</span></td>
+        <td><span class="xref">UInt16</span></td>
         <td><span class="parametername">sequenceNumber</span></td>
         <td><p>RTP header sequence number, monotonically increasing in RTP stream.</p>
 </td>
