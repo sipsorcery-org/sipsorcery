@@ -31,9 +31,9 @@ on_success:
             if ($lastexitcode -ne 0){
               throw [System.Exception] "docfx build failed with exit code $lastexitcode."
             }
-            git add -A 2>&1
-            git commit -m "CI Updates" -q
+            git add -A
+            git commit -am "Appveyor CI update"
             git status
             git remote -v
-            git push origin gh-pages
+            git push
         }
