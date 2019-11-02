@@ -21,6 +21,8 @@ namespace SIPSorcery.Net
 {
     /// <summary>
     /// RFC2326 3.2:
+    /// <code>
+    /// <![CDATA[
     /// rtsp_URL  =   ( "rtsp:" | "rtspu:" )
     ///             "//" host [ ":" port ] [ abs_path ]
     ///             host      =   <A legal Internet host domain name of IP address (in dotted decimal form), as defined by Section 2.1 of RFC 1123 cite{rfc1123}>
@@ -31,7 +33,8 @@ namespace SIPSorcery.Net
     ///            segment       = *pchar *( ";" param )
     ///            param         = *pchar
     ///            pchar         = unreserved | escaped | ":" | "@" | "&" | "=" | "+" | "$" | ","
-    ///
+    /// ]]>
+    /// </code>
     /// </summary>
     public class RTSPURL
 	{

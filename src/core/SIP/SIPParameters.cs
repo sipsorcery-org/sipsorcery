@@ -29,6 +29,8 @@ namespace SIPSorcery.SIP
     /// This class also treats the header value of a SIP URI as a special case of a SIP parameter. The difference between
     /// a paramter and a SIP URI header is the start and delimiter characters used.
     ///
+    /// <code>
+    /// <![CDATA[
     /// SIP URI with parameters:
     /// sip:1234@sip.com;key1=value1;key2=value2
     /// 
@@ -37,11 +39,14 @@ namespace SIPSorcery.SIP
     /// 
     /// SIP URI with parameters and headers (paramters always come first):
     /// sip:1234@sip.com;key1=value1;key2=value2?key1=value1&key2=value2
-    /// </summary>
-    /// <bnf>
+    /// ]]>
+    /// </code>
+    /// 
+    /// <code>
     /// generic-param  =  token [ EQUAL gen-value ]
     /// gen-value      =  token / host / quoted-string
-    /// </bnf>
+    /// </code>
+    /// </summary>
     [DataContract]
 	public class SIPParameters
 	{
