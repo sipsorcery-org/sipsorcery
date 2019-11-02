@@ -1,0 +1,360 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Namespace SIPSorcery.SIP
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Namespace SIPSorcery.SIP
+   ">
+    <meta name="generator" content="docfx 2.47.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.SIP">
+  
+  <h1 id="SIPSorcery_SIP" data-uid="SIPSorcery.SIP" class="text-break">Namespace SIPSorcery.SIP
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+    <h3 id="classes">Classes
+  </h3>
+      <h4><a class="xref" href="SIPSorcery.SIP.AuthHeaders.html">AuthHeaders</a></h4>
+      <section><p>Authorization Headers</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.SIP.CallProperties.html">CallProperties</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.HTTPDigest.html">HTTPDigest</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.IncomingMessage.html">IncomingMessage</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPAuthenticationHeader.html">SIPAuthenticationHeader</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPAuthorisationDigest.html">SIPAuthorisationDigest</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPCancelTransaction.html">SIPCancelTransaction</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPCDR.html">SIPCDR</a></h4>
+      <section><p>Call detail record for a SIP call.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPChannel.html">SIPChannel</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPConstants.html">SIPConstants</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPContactHeader.html">SIPContactHeader</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPDialogue.html">SIPDialogue</a></h4>
+      <section><p>See &quot;Chapter 12 Dialogs&quot; in RFC3261.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPDNSConstants.html">SIPDNSConstants</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPDNSLookupEndPoint.html">SIPDNSLookupEndPoint</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPDNSLookupResult.html">SIPDNSLookupResult</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPDNSServiceResult.html">SIPDNSServiceResult</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></h4>
+      <section><p>This class is a more specific verions of the SIPURI class BUT is only concerned with the network and
+transport properties. It contains all the information need to deliver a SIP request or response to
+a remote end point.</p>
+<p>This class must remain immutable otherwise the SIP stack can develop problems. SIP end points can get
+passed amongst different servers for logging and forwarding SIP messages and a modification of the end point
+by one server can result in a problem for a different server. Instead a new SIP end point should be created
+wherever a modification is required.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEscape.html">SIPEscape</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEvent.html">SIPEvent</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventConsts.html">SIPEventConsts</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialog.html">SIPEventDialog</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialogInfo.html">SIPEventDialogInfo</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialogParticipant.html">SIPEventDialogParticipant</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventFilters.html">SIPEventFilters</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventPresence.html">SIPEventPresence</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventPresenceTuple.html">SIPEventPresenceTuple</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPExtensionHeaders.html">SIPExtensionHeaders</a></h4>
+      <section><p>Constants that can be placed in the SIP Supported or Required headers to indicate support or mandate for
+a particular SIP extension.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPFromHeader.html">SIPFromHeader</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPHeader.html">SIPHeader</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPHeaderAncillary.html">SIPHeaderAncillary</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPHeaders.html">SIPHeaders</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPMessage.html">SIPMessage</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPMethods.html">SIPMethods</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPMIMETypes.html">SIPMIMETypes</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPNonInviteTransaction.html">SIPNonInviteTransaction</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPParameterlessURI.html">SIPParameterlessURI</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPParameters.html">SIPParameters</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPProtocolsType.html">SIPProtocolsType</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPReplacesParameter.html">SIPReplacesParameter</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPRequest.html">SIPRequest</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPRequestAuthenticationResult.html">SIPRequestAuthenticationResult</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPRequestAuthorisationResult.html">SIPRequestAuthorisationResult</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a></h4>
+      <section><p>Status Codes:	
+1xx: Provisional -- request received, continuing to process the request;
+2xx: Success -- the action was successfully received, understood, and accepted;
+3xx: Redirection -- further action needs to be taken in order to complete the request;
+4xx: Client Error -- the request contains bad syntax or cannot be fulfilled at this server;
+5xx: Server Error -- the server failed to fulfill an apparently valid request;
+6xx: Global Failure -- the request cannot be fulfilled at any server.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPResponseStatusCodes.html">SIPResponseStatusCodes</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPRoute.html">SIPRoute</a></h4>
+      <section><p>The SIPRoute class is used to represent both Route and Record-Route headers.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPRouteSet.html">SIPRouteSet</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPSchemesType.html">SIPSchemesType</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPServices.html">SIPServices</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPStreamConnection.html">SIPStreamConnection</a></h4>
+      <section><p>Represents a reliable stream connection (e.g. TCP or TLS) between two end points. Stream connections have a lot more
+overhead than UDP. The state of the connection has to be monitored and messages on the stream can be spread across
+multiple packets.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html">SIPTCPChannel</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTimings.html">SIPTimings</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTLSChannel.html">SIPTLSChannel</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPToHeader.html">SIPToHeader</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransaction.html">SIPTransaction</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionEngine.html">SIPTransactionEngine</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransport.html">SIPTransport</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransportConfig.html">SIPTransportConfig</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPUDPChannel.html">SIPUDPChannel</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPUserAgentRolesTypes.html">SIPUserAgentRolesTypes</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPUserField.html">SIPUserField</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPValidationException.html">SIPValidationException</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPViaHeader.html">SIPViaHeader</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPViaSet.html">SIPViaSet</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.UACInviteTransaction.html">UACInviteTransaction</a></h4>
+      <section><p>SIP transaction that initiates a call to a SIP User Agent Server. This transaction processes outgoing calls SENT by the application.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.SIP.UASInviteTransaction.html">UASInviteTransaction</a></h4>
+      <section><p>The server transaction for an INVITE request. This transaction processes incoming calls RECEIVED by the application.</p>
+</section>
+    <h3 id="structs">Structs
+  </h3>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialogStateEvent.html">SIPEventDialogStateEvent</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventPackage.html">SIPEventPackage</a></h4>
+      <section></section>
+    <h3 id="enums">Enums
+  </h3>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPAuthorisationHeadersEnum.html">SIPAuthorisationHeadersEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPCallDirection.html">SIPCallDirection</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPConnectionsEnum.html">SIPConnectionsEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPDialogueStateEnum.html">SIPDialogueStateEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPDialogueTransferModesEnum.html">SIPDialogueTransferModesEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialogDirectionEnum.html">SIPEventDialogDirectionEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventDialogInfoStateEnum.html">SIPEventDialogInfoStateEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPEventPresenceStateEnum.html">SIPEventPresenceStateEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPExtensions.html">SIPExtensions</a></h4>
+      <section><p>List of SIP extensions to RFC3262.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPMessageTypesEnum.html">SIPMessageTypesEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPMethodsEnum.html">SIPMethodsEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPProtocolsEnum.html">SIPProtocolsEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPResponseParserError.html">SIPResponseParserError</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPResponseStatusCodesEnum.html">SIPResponseStatusCodesEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPSchemesEnum.html">SIPSchemesEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPServicesEnum.html">SIPServicesEnum</a></h4>
+      <section><p>A list of the different combinations of SIP schemes and transports.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionStatesEnum.html">SIPTransactionStatesEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionTypesEnum.html">SIPTransactionTypesEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPUserAgentRoles.html">SIPUserAgentRoles</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPUserAgentRolesEnum.html">SIPUserAgentRolesEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPValidationFieldsEnum.html">SIPValidationFieldsEnum</a></h4>
+      <section></section>
+    <h3 id="delegates">Delegates
+  </h3>
+      <h4><a class="xref" href="SIPSorcery.SIP.CDRReadyDelegate.html">CDRReadyDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.ResolveSIPEndPointDelegate.html">ResolveSIPEndPointDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPMessageReceivedDelegate.html">SIPMessageReceivedDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPMessageSentDelegate.html">SIPMessageSentDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionCancelledDelegate.html">SIPTransactionCancelledDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionRemovedDelegate.html">SIPTransactionRemovedDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionRequestReceivedDelegate.html">SIPTransactionRequestReceivedDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionRequestRetransmitDelegate.html">SIPTransactionRequestRetransmitDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionResponseReceivedDelegate.html">SIPTransactionResponseReceivedDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionResponseRetransmitDelegate.html">SIPTransactionResponseRetransmitDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionStateChangeDelegate.html">SIPTransactionStateChangeDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionTimedOutDelegate.html">SIPTransactionTimedOutDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionTraceMessageDelegate.html">SIPTransactionTraceMessageDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransportRequestDelegate.html">SIPTransportRequestDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransportResponseDelegate.html">SIPTransportResponseDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransportSIPBadMessageDelegate.html">SIPTransportSIPBadMessageDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.STUNRequestReceivedDelegate.html">STUNRequestReceivedDelegate</a></h4>
+      <section></section>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
