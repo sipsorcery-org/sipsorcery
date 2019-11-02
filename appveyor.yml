@@ -1,7 +1,7 @@
 version: 1.0.{build}
 environment:
   access_token:
-    secure: YgeP2B9ttGVqoi7DHyboUMR1OH8zRMvqyj7TjXMMj/BFsodehAvVOuCookI6bBEn
+    secure: 21m76jAVvcu7oACAHFnfCBltcwon+r5ZI3avfRmrNFAqJMn6RfLXwpBhPcJ617tD
 image: Visual Studio 2019
 configuration: Release
 before_build:
@@ -23,18 +23,15 @@ on_success:
             Add-Content "$HOME\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`n"
             git config --global user.email "aaron@sipsorcery.com"
             git config --global user.name "Aaron Clauson"
-            git clone https://github.com/sipsorcery/sipsorcery.git sipsorcery
-            cd sipsorcery
-            git checkout gh-pages
+            git fetch
+            git checkout gh-pages -q
             git merge master
             choco install docfx -y
             & docfx docfx\docfx.json
             if ($lastexitcode -ne 0){
               throw [System.Exception] "docfx build failed with exit code $lastexitcode."
             }
-            git add -A
-            git commit -am "Appveyor CI update"
-            git status
-            git remote -v
-            git push
+            git add -A 2>&1
+            git commit -am "Appveyor CI updates"
+            git push origin gh-pages -q
         }
