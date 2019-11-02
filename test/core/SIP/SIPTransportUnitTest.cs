@@ -35,6 +35,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
+        [TestCategory("IPv6")]
         public void IPv6LoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -92,6 +93,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
+        [TestCategory("IPv6")]
         public void IPv6TcpLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -203,6 +205,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// </summary>
         [TestMethod]
         [TestCategory("Integration")]
+        [TestCategory("IPv6")]
         public void IPv6TlsLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();

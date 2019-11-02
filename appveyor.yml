@@ -10,9 +10,10 @@ build:
   project: src\SIPSorcery.sln
   publish_nuget: true
   verbosity: normal
-#test:
-#  categories:
-#    except:
+test:
+  categories:
+    except:
+     - IPv6
 #    - Integration
 on_success:
   - ps: |
