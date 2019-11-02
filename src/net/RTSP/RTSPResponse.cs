@@ -28,14 +28,12 @@ namespace SIPSorcery.Net
     /// <summary>
     /// RFC2326 7.1:
     /// Status-Line =   RTSP-Version SP Status-Code SP Reason-Phrase CRLF
-
     /// </summary>
     public class RTSPResponse
     {
         private static ILogger logger = Log.Logger;
 		
 		private static string m_CRLF = RTSPConstants.CRLF;
-		//private static string m_rtspFullVersion = RTSPConstants.RTSP_FULLVERSION_STRING;
 		private static string m_rtspVersion = RTSPConstants.RTSP_VERSION_STRING;
 		private static int m_rtspMajorVersion = RTSPConstants.RTSP_MAJOR_VERSION;
 		private static int m_rtspMinorVersion = RTSPConstants.RTSP_MINOR_VERSION;
@@ -92,8 +90,6 @@ namespace SIPSorcery.Net
 
                 rtspResponse.Header = RTSPHeader.ParseRTSPHeaders(rtspMessage.RTSPHeaders);
                 rtspResponse.Body = rtspMessage.Body;
-
-                //rtspResponse.Valid = rtspResponse.Validate(out sipResponse.ValidationError);
 
                 return rtspResponse;
     		}

@@ -397,14 +397,23 @@ namespace SIPSorcery.SIP
     }
     /// <summary>
     /// For SIP URI user portion the reserved characters below need to be escaped.
+    /// 
+    /// <code>
+    /// <![CDATA[
     /// reserved    =  ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+"  / "$" / ","
     /// user-unreserved  =  "&" / "=" / "+" / "$" / "," / ";" / "?" / "/"
     /// Leaving to be escaped = ":" / "@" 
+    /// ]]>
+    /// </code>
     /// 
     /// For SIP URI parameters different characters are unreserved (just to make life difficult).
+    /// <code>
+    /// <![CDATA[
     /// reserved    =  ";" / "/" / "?" / ":" / "@" / "&" / "=" / "+"  / "$" / ","
     /// param-unreserved = "[" / "]" / "/" / ":" / "&" / "+" / "$"
     /// Leaving to be escaped =  ";" / "?" / "@" / "=" / ","
+    /// ]]>
+    /// </code>
     /// </summary>
     public static class SIPEscape
     {

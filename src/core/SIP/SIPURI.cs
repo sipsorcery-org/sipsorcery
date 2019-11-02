@@ -23,8 +23,9 @@ namespace SIPSorcery.SIP
 {
     /// <summary>
     /// Implements the the absoluteURI structure from the SIP RFC (incomplete as at 17 nov 2006, AC).
-    /// </summary>
-    /// <bnf>
+    ///
+    /// <code>
+    /// <![CDATA[
     /// absoluteURI    =  scheme ":" ( hier-part / opaque-part )
     /// hier-part      =  ( net-path / abs-path ) [ "?" query ]
     /// net-path       =  "//" authority [ abs-path ]
@@ -87,7 +88,9 @@ namespace SIPSorcery.SIP
     /// hname           =  1*( hnv-unreserved / unreserved / escaped )
     /// hvalue          =  *( hnv-unreserved / unreserved / escaped )
     /// hnv-unreserved  =  "[" / "]" / "/" / "?" / ":" / "+" / "$"
-    /// </bnf>
+    /// ]]>
+    /// </code>
+    /// </summary>
     /// <remarks>
     /// Specific parameters for URIs: transport, maddr, ttl, user, method, lr.
     /// </remarks>

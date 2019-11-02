@@ -65,7 +65,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Transaction matching see RFC3261 17.1.3 & 17.2.3 for matching client and server transactions respectively. 
+        /// Transaction matching see RFC3261 17.1.3 &amp; 17.2.3 for matching client and server transactions respectively. 
         /// IMPORTANT NOTE this transaction matching applies to all requests and responses EXCEPT ACK requests to 2xx responses see 13.2.2.4. 
         /// For ACK's to 2xx responses the ACK represents a separate transaction. However for a UAS sending an INVITE response the ACK still has to be 
         /// matched to an existing server transaction in order to transition it to a Confirmed state.

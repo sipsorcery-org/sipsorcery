@@ -42,10 +42,18 @@ namespace SIPSorcery.SIP
     /// - The format of the NOTIFY bodies must be in a format specified in a SUBSCRIBE Accept header or if omitted a default format of "application/dialog-info+xml".
     /// 
     /// Example of an empty dialog notification body:
+    /// 
+    /// <code>
+    /// <![CDATA[
     ///  <?xml version="1.0"?>
     ///  <dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0" notify-state="full" entity="sip:alice@example.com" />
+    ///  ]]>
+    /// </code>
     /// 
     /// Example of a single entry dialog notification body:
+    /// 
+    /// <code>
+    /// <![CDATA[
     /// <?xml version="1.0"?>
     /// <dialog-info xmlns="urn:ietf:params:xml:ns:dialog-info" version="0" state="partial" entity="sip:alice@example.com">
     ///   <dialog id="as7d900as8" call-id="a84b4c76e66710" local-tag="1928301774" direction="initiator">
@@ -53,7 +61,8 @@ namespace SIPSorcery.SIP
     ///    <duration>145</duration>
     ///   </dialog>
     ///  </dialog-info>
-    /// 
+    ///  ]]>
+    /// </code>
     /// </remarks>
     public class SIPEventDialogInfo : SIPEvent
     {

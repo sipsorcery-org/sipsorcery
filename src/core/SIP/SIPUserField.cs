@@ -23,18 +23,22 @@ using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
-	/// <summary>
-	/// name-addr      =  [ display-name ] LAQUOT addr-spec RAQUOT
-	/// addr-spec      =  SIP-URI / SIPS-URI / absoluteURI
-	/// SIP-URI          =  "sip:" [ userinfo ] hostport
-	/// uri-parameters [ headers ]
-	/// SIPS-URI         =  "sips:" [ userinfo ] hostport
-	/// uri-parameters [ headers ]
-	/// userinfo         =  ( user / telephone-subscriber ) [ ":" password ] "@"
-	///
-	/// If no "<" and ">" are present, all parameters after the URI are header
-	/// parameters, not URI parameters.
-	/// </summary>
+    /// <summary>
+    /// <code>
+    /// <![CDATA[
+    /// name-addr      =  [ display-name ] LAQUOT addr-spec RAQUOT
+    /// addr-spec      =  SIP-URI / SIPS-URI / absoluteURI
+    /// SIP-URI          =  "sip:" [ userinfo ] hostport
+    /// uri-parameters [ headers ]
+    /// SIPS-URI         =  "sips:" [ userinfo ] hostport
+    /// uri-parameters [ headers ]
+    /// userinfo         =  ( user / telephone-subscriber ) [ ":" password ] "@"
+    /// ]]>
+    /// </code>
+    ///
+    /// If no "&lt;" and "&gt;" are present, all parameters after the URI are header
+    /// parameters, not URI parameters.
+    /// </summary>
     [DataContract]
     public class SIPUserField
     {
