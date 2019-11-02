@@ -10,9 +10,6 @@
 // 09 Nov 2007	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
 //
 // License: 
-// This software is licensed under the BSD License http://www.opensource.org/licenses/bsd-license.php
-//
-// License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
