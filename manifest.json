@@ -1,6 +1,6 @@
 {
   "homepages": [],
-  "source_base_path": "C:/projects/sipsorcery/docfx",
+  "source_base_path": "c:/Dev/sipsorcery/sipsorcery-core/docfx",
   "xrefmap": "xrefmap.yml",
   "files": [
     {
@@ -3489,7 +3489,7 @@
       "output": {
         ".html": {
           "relative_path": "index.html",
-          "hash": "ST1LLZ5irh3c9OS6cXdwiw=="
+          "hash": "3snR+b4p3CEgDzZJhIkqOA=="
         }
       },
       "is_incremental": false,
@@ -3526,16 +3526,16 @@
           "total_file_count": 0,
           "skipped_file_count": 0
         },
-        "ConceptualDocumentProcessor": {
-          "can_incremental": false,
-          "incrementalPhase": "build",
-          "total_file_count": 3,
-          "skipped_file_count": 0
-        },
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
           "total_file_count": 286,
+          "skipped_file_count": 0
+        },
+        "ConceptualDocumentProcessor": {
+          "can_incremental": false,
+          "incrementalPhase": "build",
+          "total_file_count": 3,
           "skipped_file_count": 0
         }
       }
