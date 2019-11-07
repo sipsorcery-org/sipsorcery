@@ -4,3 +4,5 @@
   href: howto-call.md
 - name: How to Register
   href: howto-register.md
+- name: Web Socket SIP Channel
+  href: websocket-sipchannel.md
