@@ -449,7 +449,7 @@ namespace SIPSorcery.SIP
         /// <param name="connectionID">The ID of the specific TCP connection that the message must be sent on.</param>
         /// <param name="buffer">The data to send.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override async Task<SocketError> SendAsync(string connectionID, byte[] buffer)
+        public override Task<SocketError> SendAsync(string connectionID, byte[] buffer)
         {
             if (String.IsNullOrEmpty(connectionID))
             {
@@ -468,16 +468,16 @@ namespace SIPSorcery.SIP
                 if (sipStreamConn != null)
                 {
                     SendOnConnected(sipStreamConn, buffer);
-                    return SocketError.Success;
+                    return Task.FromResult(SocketError.Success);
                 }
                 else
                 {
-                    return SocketError.ConnectionReset;
+                    return Task.FromResult(SocketError.ConnectionReset);
                 }
             }
             catch (SocketException sockExcp)
             {
-                return sockExcp.SocketErrorCode;
+                return Task.FromResult(sockExcp.SocketErrorCode);
             }
         }
 
