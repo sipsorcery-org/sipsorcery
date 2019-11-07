@@ -118,6 +118,12 @@ namespace SIPSorcery.SIP
                 sipMessage.LocalSIPEndPoint = localSIPEndPoint;
                 sipMessage.RemoteSIPEndPoint = remoteSIPEndPoint;
 
+                // For connection oriented transports the same connection should be used for responses and susequent requests.
+                if (!String.IsNullOrEmpty(remoteSIPEndPoint?.ConnectionID))
+                {
+                    sipMessage.LocalSIPEndPoint.ConnectionID = remoteSIPEndPoint.ConnectionID;
+                }
+
                 sipMessage.RawMessage = message;
                 int endFistLinePosn = message.IndexOf(m_CRLF);
 

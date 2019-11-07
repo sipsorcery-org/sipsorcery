@@ -51,16 +51,6 @@ namespace SIPSorcery.SIP.UnitTests
             public override void Close()
             { }
 
-            protected override Dictionary<string, SIPStreamConnection> GetConnectionsList()
-            {
-                throw new NotImplementedException();
-            }
-
-            public override bool IsConnectionEstablished(IPEndPoint remoteEndPoint)
-            {
-                throw new NotImplementedException();
-            }
-
             public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCN)
             {
                 throw new ApplicationException("This Send method is not available in the MockSIPChannel, please use an alternative overload.");
@@ -68,6 +58,21 @@ namespace SIPSorcery.SIP.UnitTests
 
             public override void Dispose()
             { }
+
+            public override Task<SocketError> SendAsync(string connectionID, byte[] buffer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override bool HasConnection(string connectionID)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override bool HasConnection(IPEndPoint remoteEndPoint)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         private class MockSIPDNSManager

@@ -56,5 +56,39 @@ namespace SIPSorcery.Sys
 
             return Convert.ToInt64(unixTime.TotalSeconds);
         }
+
+        /// <summary>
+        /// Returns a slice from a string that is delimited by the first instance of a 
+        /// start and end character. The delimiting characters are not included.
+        /// 
+        /// <code>
+        /// "sip:127.0.0.1:5060;connid=1234".slice(':', ';') => "127.0.0.1:5060"
+        /// </code>
+        /// </summary>
+        /// <param name="s">The input string to extract the slice from.</param>
+        /// <param name="startDelimiter">The character to start the slice from. The first instance of the character found is used.</param>
+        /// <param name="endDelimeter">The character to end the slice on. The first instance of the character found is used.</param>
+        /// <returns>A slice fo the input string or null if the slcie is not possible.</returns>
+        public static string Slice(this string s, char startDelimiter, char endDelimeter)
+        {
+            if (String.IsNullOrEmpty(s))
+            {
+                return null;
+            }
+            else
+            {
+                int startPosn = s.IndexOf(startDelimiter);
+                int endPosn = s.IndexOf(endDelimeter);
+
+                if(endPosn > startPosn)
+                {
+                    return s.Substring(startPosn + 1, endPosn - startPosn);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
     }
 }

@@ -14,8 +14,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
-using System;
-using System.Collections.Generic;
 using System.Net;
 
 namespace SIPSorcery.SIP

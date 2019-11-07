@@ -285,6 +285,70 @@
       </tr>
     </tbody>
   </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_TypeExtensions_Slice_System_String_System_Char_System_Char_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.TypeExtensions.Slice(System.String%2CSystem.Char%2CSystem.Char)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/TypeExtensions.cs/#L72">View Source</a>
+  </span>
+  <a id="SIPSorcery_Sys_TypeExtensions_Slice_" data-uid="SIPSorcery.Sys.TypeExtensions.Slice*"></a>
+  <h4 id="SIPSorcery_Sys_TypeExtensions_Slice_System_String_System_Char_System_Char_" data-uid="SIPSorcery.Sys.TypeExtensions.Slice(System.String,System.Char,System.Char)">Slice(String, Char, Char)</h4>
+  <div class="markdown level1 summary"><p>Returns a slice from a string that is delimited by the first instance of a
+start and end character. The delimiting characters are not included.</p>
+<pre><code>&quot;sip:127.0.0.1:5060;connid=1234&quot;.slice(&apos;:&apos;, &apos;;&apos;) => &quot;127.0.0.1:5060&quot;</code></pre>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static string Slice(this string s, char startDelimiter, char endDelimeter)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">s</span></td>
+        <td><p>The input string to extract the slice from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Char</span></td>
+        <td><span class="parametername">startDelimiter</span></td>
+        <td><p>The character to start the slice from. The first instance of the character found is used.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Char</span></td>
+        <td><span class="parametername">endDelimeter</span></td>
+        <td><p>The character to end the slice on. The first instance of the character found is used.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>A slice fo the input string or null if the slcie is not possible.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
 </article>
           </div>
           

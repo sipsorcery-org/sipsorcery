@@ -117,18 +117,19 @@ multiple packets.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_SIPSorcery_SIP_SIPConnectionsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.%23ctor(System.Net.Sockets.Socket%2CSystem.Net.IPEndPoint%2CSIPSorcery.SIP.SIPProtocolsEnum%2CSIPSorcery.SIP.SIPConnectionsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.%23ctor(System.Net.Sockets.Socket%2CSystem.Net.IPEndPoint%2CSIPSorcery.SIP.SIPProtocolsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L61">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L95">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPStreamConnection__ctor_" data-uid="SIPSorcery.SIP.SIPStreamConnection.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_SIPSorcery_SIP_SIPConnectionsEnum_" data-uid="SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,SIPSorcery.SIP.SIPConnectionsEnum)">SIPStreamConnection(Socket, IPEndPoint, SIPProtocolsEnum, SIPConnectionsEnum)</h4>
-  <div class="markdown level1 summary"></div>
+  <h4 id="SIPSorcery_SIP_SIPStreamConnection__ctor_System_Net_Sockets_Socket_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_" data-uid="SIPSorcery.SIP.SIPStreamConnection.#ctor(System.Net.Sockets.Socket,System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)">SIPStreamConnection(Socket, IPEndPoint, SIPProtocolsEnum)</h4>
+  <div class="markdown level1 summary"><p>Records the crucial stream connection properties and initialises teh required buffers.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPStreamConnection(Socket streamSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPStreamConnection(Socket streamSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -143,22 +144,20 @@ multiple packets.</p>
       <tr>
         <td><span class="xref">System.Net.Sockets.Socket</span></td>
         <td><span class="parametername">streamSocket</span></td>
-        <td></td>
+        <td><p>The local socket the stream is using.</p>
+</td>
       </tr>
       <tr>
         <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">remoteEndPoint</span></td>
-        <td></td>
+        <td><p>The remote network end point of this connection.</p>
+</td>
       </tr>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPProtocolsEnum.html">SIPProtocolsEnum</a></td>
         <td><span class="parametername">connectionProtocol</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.SIPConnectionsEnum.html">SIPConnectionsEnum</a></td>
-        <td><span class="parametername">connectionType</span></td>
-        <td></td>
+        <td><p>Whether the stream is TCP or TLS.</p>
+</td>
       </tr>
     </tbody>
   </table>
@@ -169,10 +168,11 @@ multiple packets.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_ConnectionProtocol.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.ConnectionProtocol%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L52">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L61">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPStreamConnection_ConnectionProtocol" data-uid="SIPSorcery.SIP.SIPStreamConnection.ConnectionProtocol">ConnectionProtocol</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>The connection protocol in use for this stream (TCP or TLS).</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -195,42 +195,14 @@ multiple packets.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_ConnectionType.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.ConnectionType%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L53">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_SIP_SIPStreamConnection_ConnectionType" data-uid="SIPSorcery.SIP.SIPStreamConnection.ConnectionType">ConnectionType</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPConnectionsEnum ConnectionType</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.SIPConnectionsEnum.html">SIPConnectionsEnum</a></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_LastTransmission.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.LastTransmission%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L54">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L66">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPStreamConnection_LastTransmission" data-uid="SIPSorcery.SIP.SIPStreamConnection.LastTransmission">LastTransmission</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Records when a transmission was last sent or received on this stream.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -256,7 +228,7 @@ multiple packets.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_MaxSIPTCPMessageSize.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.MaxSIPTCPMessageSize%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L39">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L33">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPStreamConnection_MaxSIPTCPMessageSize" data-uid="SIPSorcery.SIP.SIPStreamConnection.MaxSIPTCPMessageSize">MaxSIPTCPMessageSize</h4>
   <div class="markdown level1 summary"></div>
@@ -282,39 +254,10 @@ multiple packets.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_RecvEndPosn.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.RecvEndPosn%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L57">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_SIP_SIPStreamConnection_RecvEndPosn" data-uid="SIPSorcery.SIP.SIPStreamConnection.RecvEndPosn">RecvEndPosn</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int RecvEndPosn</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_RecvSocketArgs.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.RecvSocketArgs%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L44">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L40">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPStreamConnection_RecvSocketArgs" data-uid="SIPSorcery.SIP.SIPStreamConnection.RecvSocketArgs">RecvSocketArgs</h4>
   <div class="markdown level1 summary"></div>
@@ -340,42 +283,14 @@ multiple packets.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_RecvStartPosn.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.RecvStartPosn%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_RemoteEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.RemoteEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L56">View Source</a>
   </span>
-  <h4 id="SIPSorcery_SIP_SIPStreamConnection_RecvStartPosn" data-uid="SIPSorcery.SIP.SIPStreamConnection.RecvStartPosn">RecvStartPosn</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int RecvStartPosn</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_RemoteEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.RemoteEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L51">View Source</a>
-  </span>
   <h4 id="SIPSorcery_SIP_SIPStreamConnection_RemoteEndPoint" data-uid="SIPSorcery.SIP.SIPStreamConnection.RemoteEndPoint">RemoteEndPoint</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>The remote end point for the stream.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -401,10 +316,12 @@ multiple packets.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_SslStream.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.SslStream%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L48">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L46">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPStreamConnection_SslStream" data-uid="SIPSorcery.SIP.SIPStreamConnection.SslStream">SslStream</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>For secure streams the TCP connection will be upgraded to an SSL stream and the SslStreamBuffer will
+be used for receives.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -430,10 +347,11 @@ multiple packets.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_SslStreamBuffer.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.SslStreamBuffer%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L49">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L51">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPStreamConnection_SslStreamBuffer" data-uid="SIPSorcery.SIP.SIPStreamConnection.SslStreamBuffer">SslStreamBuffer</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>The receive buffer to use for SSL streams.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -459,10 +377,12 @@ multiple packets.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_StreamSocket.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.StreamSocket%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L43">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L39">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPStreamConnection_StreamSocket" data-uid="SIPSorcery.SIP.SIPStreamConnection.StreamSocket">StreamSocket</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>The underlying TCP socket for the stream connection. To take adavantage of newer async TCP IO operations the
+RecvSocketArgs is used for TCP channel receives.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -483,6 +403,102 @@ multiple packets.</p>
       </tr>
     </tbody>
   </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_ConnectionID.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.ConnectionID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L82">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPStreamConnection_ConnectionID_" data-uid="SIPSorcery.SIP.SIPStreamConnection.ConnectionID*"></a>
+  <h4 id="SIPSorcery_SIP_SIPStreamConnection_ConnectionID" data-uid="SIPSorcery.SIP.SIPStreamConnection.ConnectionID">ConnectionID</h4>
+  <div class="markdown level1 summary"><p>A unique ID for this connection. It will be recorded on any received messages to allow responses to quickly
+identify the same connection.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string ConnectionID { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_RecvEndPosn.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.RecvEndPosn%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L76">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPStreamConnection_RecvEndPosn_" data-uid="SIPSorcery.SIP.SIPStreamConnection.RecvEndPosn*"></a>
+  <h4 id="SIPSorcery_SIP_SIPStreamConnection_RecvEndPosn" data-uid="SIPSorcery.SIP.SIPStreamConnection.RecvEndPosn">RecvEndPosn</h4>
+  <div class="markdown level1 summary"><p>The current end position of unprocessed data in the recceive buffer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int RecvEndPosn { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_RecvStartPosn.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.RecvStartPosn%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L71">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPStreamConnection_RecvStartPosn_" data-uid="SIPSorcery.SIP.SIPStreamConnection.RecvStartPosn*"></a>
+  <h4 id="SIPSorcery_SIP_SIPStreamConnection_RecvStartPosn" data-uid="SIPSorcery.SIP.SIPStreamConnection.RecvStartPosn">RecvStartPosn</h4>
+  <div class="markdown level1 summary"><p>The current start position of unprocessed data in the recceive buffer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int RecvStartPosn { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="methods">Methods
   </h3>
   <span class="small pull-right mobile-hide">
@@ -490,7 +506,7 @@ multiple packets.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_ExtractSIPMessages_SIPSorcery_SIP_SIPChannel_System_Byte___System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.ExtractSIPMessages(SIPSorcery.SIP.SIPChannel%2CSystem.Byte%5B%5D%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L83">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L117">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPStreamConnection_ExtractSIPMessages_" data-uid="SIPSorcery.SIP.SIPStreamConnection.ExtractSIPMessages*"></a>
   <h4 id="SIPSorcery_SIP_SIPStreamConnection_ExtractSIPMessages_SIPSorcery_SIP_SIPChannel_System_Byte___System_Int32_" data-uid="SIPSorcery.SIP.SIPStreamConnection.ExtractSIPMessages(SIPSorcery.SIP.SIPChannel,System.Byte[],System.Int32)">ExtractSIPMessages(SIPChannel, Byte[], Int32)</h4>
@@ -539,10 +555,11 @@ stretch over multiple receives.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection_SIPMessageReceived.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection.SIPMessageReceived%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L59">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L87">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_SIPStreamConnection_SIPMessageReceived" data-uid="SIPSorcery.SIP.SIPStreamConnection.SIPMessageReceived">SIPMessageReceived</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Event for new SIP requests or responses becoming available.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -574,7 +591,7 @@ stretch over multiple receives.</p>
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPStreamConnection.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPStreamConnection%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L37" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPStreamConnection.cs/#L31" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

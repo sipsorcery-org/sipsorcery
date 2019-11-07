@@ -33,7 +33,7 @@ namespace SIPSorcery.Net
 
         private const int MAX_FRAMES_QUEUE_LENGTH = 1000;
         private const int RTP_KEEP_ALIVE_INTERVAL = 30;         // The interval at which to send RTP keep-alive packets to keep the RTSP server from closing the connection.
-        private const int RTP_TIMEOUT_SECONDS = 60;             // If no RTP pakcets are received during this interval then assume the connection has failed.
+        private const int RTP_TIMEOUT_SECONDS = 60;             // If no RTP packets are received during this interval then assume the connection has failed.
 
         private const int RFC_2435_FREQUENCY_BASELINE = 90000;
         private const int RTP_MAX_PAYLOAD = 1400; //1452;
@@ -997,6 +997,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Utility function to create RtpJpegHeader either for initial packet or template for further packets
         /// 
+        /// <code>
         /// 0                   1                   2                   3
         /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -1004,6 +1005,7 @@ namespace SIPSorcery.Net
         /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
         /// |      Type     |       Q       |     Width     |     Height    |
         /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// </code>
         /// </summary>
         /// <param name="fragmentOffset"></param>
         /// <param name="quality"></param>
