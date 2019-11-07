@@ -85,7 +85,9 @@
       <h4><a class="xref" href="SIPSorcery.SIP.HTTPDigest.html">HTTPDigest</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.IncomingMessage.html">IncomingMessage</a></h4>
-      <section></section>
+      <section><p>Represents a message received on a SIP channel prior to any attempt to identify
+whether it represents a SIP request, response or something else.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPAuthenticationHeader.html">SIPAuthenticationHeader</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPAuthorisationDigest.html">SIPAuthorisationDigest</a></h4>
@@ -96,7 +98,9 @@
       <section><p>Call detail record for a SIP call.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPChannel.html">SIPChannel</a></h4>
-      <section></section>
+      <section><p>The SIPChannel abstract class encapsulates the common properties and methods required of a SIP channel.
+A SIP channel's primary responsibility is sending and receiving messages from the network.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPConstants.html">SIPConstants</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPContactHeader.html">SIPContactHeader</a></h4>
@@ -114,8 +118,8 @@
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></h4>
       <section><p>This class is a more specific verions of the SIPURI class BUT is only concerned with the network and
-transport properties. It contains all the information need to deliver a SIP request or response to
-a remote end point.</p>
+transport properties. It contains all the information needed to determine the remote end point to
+deliver a SIP request or response to.</p>
 <p>This class must remain immutable otherwise the SIP stack can develop problems. SIP end points can get
 passed amongst different servers for logging and forwarding SIP messages and a modification of the end point
 by one server can result in a problem for a different server. Instead a new SIP end point should be created
@@ -196,13 +200,19 @@ gen-value      =  token / host / quoted-string</code></pre>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPRequestAuthorisationResult.html">SIPRequestAuthorisationResult</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a></h4>
-      <section><p>Status Codes:	
+      <section><p>Represents a SIP Response.</p>
+<p>Status Codes:	
 1xx: Provisional -- request received, continuing to process the request;
 2xx: Success -- the action was successfully received, understood, and accepted;
 3xx: Redirection -- further action needs to be taken in order to complete the request;
 4xx: Client Error -- the request contains bad syntax or cannot be fulfilled at this server;
 5xx: Server Error -- the server failed to fulfill an apparently valid request;
 6xx: Global Failure -- the request cannot be fulfilled at any server.</p>
+<pre><code>Backus-Naur Form:
+SIP-Version SP Status-Code SP Reason-Phrase CRLF
+*message-header
+CRLF
+[ message-body ]</code></pre>
 </section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPResponseStatusCodes.html">SIPResponseStatusCodes</a></h4>
       <section></section>
@@ -322,6 +332,17 @@ parameters, not URI parameters.</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPViaSet.html">SIPViaSet</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.SIPWebSocketChannel.html">SIPWebSocketChannel</a></h4>
+      <section><p>A SIP transport Channel for transmitting SIP over a Web Socket communications layer as per RFC7118.</p>
+<pre><code>var sipTransport = new SIPTransport();
+var wsSipChannel = new SIPWebSocketChannel(IPAddress.Loopback, 80);
+
+var wssCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(&quot;localhost.pfx&quot;);
+var wssSipChannel = new SIPWebSocketChannel(IPAddress.Loopback, 433, wssCertificate);
+
+sipTransport.AddSIPChannel(wsSipChannel);
+sipTransport.AddSIPChannel(wssSipChannel);</code></pre>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.UACInviteTransaction.html">UACInviteTransaction</a></h4>
       <section><p>SIP transaction that initiates a call to a SIP User Agent Server. This transaction processes outgoing calls SENT by the application.</p>
 </section>
@@ -340,8 +361,6 @@ parameters, not URI parameters.</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPCallDirection.html">SIPCallDirection</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.SIP.SIPConnectionsEnum.html">SIPConnectionsEnum</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPDialogueStateEnum.html">SIPDialogueStateEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPDialogueTransferModesEnum.html">SIPDialogueTransferModesEnum</a></h4>
@@ -358,9 +377,12 @@ parameters, not URI parameters.</p>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPMessageTypesEnum.html">SIPMessageTypesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPMethodsEnum.html">SIPMethodsEnum</a></h4>
-      <section></section>
+      <section><p>A list of the different SIP request methods that are supported.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPProtocolsEnum.html">SIPProtocolsEnum</a></h4>
-      <section></section>
+      <section><p>A list of the transport layer protocols that are supported (the network layers
+supported are IPv4 amd IPv6).</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPResponseParserError.html">SIPResponseParserError</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPResponseStatusCodesEnum.html">SIPResponseStatusCodesEnum</a></h4>
