@@ -154,3 +154,5 @@ Additional example programs are provided to demonstrate how to use the SIPSorcer
  
 * [SoftPhone](https://github.com/sipsorcery/sipsorcery/tree/master/examples/Softphone): A very rudimentary SIP softphone implementation.
 
+* [Get Started Web Socket](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStartedWebSocket): An example of how to create a web socket listener to send and receive SIP messages. An brief intro article is also available [here](https://sipsorcery.github.io/sipsorcery/articles/intro.html).
+
