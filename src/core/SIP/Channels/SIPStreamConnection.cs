@@ -23,12 +23,6 @@ using System.Net.Sockets;
 
 namespace SIPSorcery.SIP
 {
-    public enum SIPConnectionsEnum
-    {
-        Listener = 1,   // Indicates the connection was initiated by the remote client to a local server socket.
-        Caller = 2,     // Indicated the connection was initiated locally to a remote server socket.
-    }
-
     /// <summary>
     /// Represents a reliable stream connection (e.g. TCP or TLS) between two end points. Stream connections have a lot more
     /// overhead than UDP. The state of the connection has to be monitored and messages on the stream can be spread across
@@ -38,33 +32,73 @@ namespace SIPSorcery.SIP
     {
         public static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH;
 
-        // The underlying TCP socket for the stream connection. To take adavantage of newer async TCP IO operations the
-        // RecvSocketArgs is used for TCP channel receives. 
+        /// <summary>
+        /// The underlying TCP socket for the stream connection. To take adavantage of newer async TCP IO operations the
+        /// RecvSocketArgs is used for TCP channel receives. 
+        /// </summary>
         public Socket StreamSocket;
         public SocketAsyncEventArgs RecvSocketArgs;
 
-        // For secure streams the TCP connection will be upgraded to an SSL stream and the SslStreamBuffer will
-        // be used for receives.
+        /// <summary>
+        /// For secure streams the TCP connection will be upgraded to an SSL stream and the SslStreamBuffer will
+        /// be used for receives.
+        /// </summary>
         public SslStream SslStream;
+
+        /// <summary>
+        /// The receive buffer to use for SSL streams.
+        /// </summary>
         public byte[] SslStreamBuffer;
 
-        public IPEndPoint RemoteEndPoint;           // The remote end point for the stream.
-        public SIPProtocolsEnum ConnectionProtocol; // The stream protocol.
-        public SIPConnectionsEnum ConnectionType;   // Indicates whether the connection was initiated by us or the remote party.
-        public DateTime LastTransmission;           // Records when a SIP packet was last sent or received.
+        /// <summary>
+        /// The remote end point for the stream.
+        /// </summary>
+        public IPEndPoint RemoteEndPoint;
 
-        public int RecvStartPosn = 0;               // The current start position of unprocessed data in the recceive buffer.
-        public int RecvEndPosn = 0;                 // The current end position of unprocessed data in the recceive buffer.
+        /// <summary>
+        /// The connection protocol in use for this stream (TCP or TLS).
+        /// </summary>
+        public SIPProtocolsEnum ConnectionProtocol;
+
+        /// <summary>
+        /// Records when a transmission was last sent or received on this stream.
+        /// </summary>
+        public DateTime LastTransmission;
+
+        /// <summary>
+        /// The current start position of unprocessed data in the recceive buffer.
+        /// </summary>
+        public int RecvStartPosn { get; private set; }
+
+        /// <summary>
+        /// The current end position of unprocessed data in the recceive buffer.
+        /// </summary>
+        public int RecvEndPosn { get; private set; }
         
-        public event SIPMessageReceivedDelegate SIPMessageReceived; // Event for new SIP requests or responses becoming available.
+        /// <summary>
+        /// A unique ID for this connection. It will be recorded on any received messages to allow responses to quickly
+        /// identify the same connection.
+        /// </summary>
+        public string ConnectionID { get; private set; }
 
-        public SIPStreamConnection(Socket streamSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol, SIPConnectionsEnum connectionType)
+        /// <summary>
+        /// Event for new SIP requests or responses becoming available.
+        /// </summary>
+        public event SIPMessageReceivedDelegate SIPMessageReceived;
+
+        /// <summary>
+        /// Records the crucial stream connection properties and initialises teh required buffers.
+        /// </summary>
+        /// <param name="streamSocket">The local socket the stream is using.</param>
+        /// <param name="remoteEndPoint">The remote network end point of this connection.</param>
+        /// <param name="connectionProtocol">Whether the stream is TCP or TLS.</param>
+        public SIPStreamConnection(Socket streamSocket, IPEndPoint remoteEndPoint, SIPProtocolsEnum connectionProtocol)
         {
             StreamSocket = streamSocket;
             LastTransmission = DateTime.Now;
             RemoteEndPoint = remoteEndPoint;
             ConnectionProtocol = connectionProtocol;
-            ConnectionType = connectionType;
+            ConnectionID = Guid.NewGuid().ToString();
 
             if (ConnectionProtocol == SIPProtocolsEnum.tcp)
             {
@@ -93,7 +127,7 @@ namespace SIPSorcery.SIP
                 if (SIPMessageReceived != null)
                 {
                     LastTransmission = DateTime.Now;
-                    SIPMessageReceived(recvChannel, new SIPEndPoint(ConnectionProtocol, RemoteEndPoint), sipMsgBuffer);
+                    SIPMessageReceived(recvChannel, new SIPEndPoint(ConnectionProtocol, RemoteEndPoint, ConnectionID), sipMsgBuffer);
                 }
 
                 RecvStartPosn += (sipMsgBuffer.Length + bytesSkipped);

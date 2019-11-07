@@ -15,11 +15,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
@@ -28,8 +26,6 @@ namespace SIPSorcery.SIP
 {
     public class SIPUDPChannel : SIPChannel
     {
-        private const string THREAD_NAME = "sipchanneludp-";
-
         private readonly Task m_mainLoop;
 
         // Channel sockets.
@@ -55,18 +51,6 @@ namespace SIPSorcery.SIP
 
         public SIPUDPChannel(IPAddress listenAddress, int listenPort) : this(new IPEndPoint(listenAddress, listenPort))
         { }
-
-        private void Dispose(bool disposing)
-        {
-            try
-            {
-                this.Close();
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception Disposing SIPUDPChannel. " + excp.Message);
-            }
-        }
 
         private async Task Listen()
         {
@@ -155,24 +139,44 @@ namespace SIPSorcery.SIP
             }
         }
 
+        /// <summary>
+        /// This method is not implemented for the SIP UDP channel.
+        /// </summary>
         public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
         {
             throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }
 
+        /// <summary>
+        /// This method is not implemented for the SIP UDP channel.
+        /// </summary>
         public override Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
         {
             throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }
 
-        public override bool IsConnectionEstablished(IPEndPoint remoteEndPoint)
+        /// <summary>
+        /// This method is not implemented for the SIP UDP channel.
+        /// </summary>
+        public override Task<SocketError> SendAsync(string connectionID, byte[] buffer)
         {
-            throw new NotSupportedException("The SIP UDP channel does not support connections.");
+            throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }
 
-        protected override Dictionary<string, SIPStreamConnection> GetConnectionsList()
+        /// <summary>
+        /// The UDP channel does not support connections. Always returns false.
+        /// </summary>
+        public override bool HasConnection(string connectionID)
         {
-            throw new NotSupportedException("The SIP UDP channel does not support connections.");
+            return false;
+        }
+
+        /// <summary>
+        /// The UDP channel does not support connections. Always returns false.
+        /// </summary>
+        public override bool HasConnection(IPEndPoint remoteEndPoint)
+        {
+            return false;
         }
 
         public override void Close()

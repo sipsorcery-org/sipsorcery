@@ -696,7 +696,7 @@ namespace SIPSorcery.SIP
 
             sipRequest.Header.ContentLength = (sipRequest.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipRequest.Body) : 0;
 
-            if (sipChannel.IsTLS)
+            if (sipChannel.IsSecure)
             {
                 return await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host);
             }
@@ -818,46 +818,6 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Attempts to send a SIP response to a destination end point.
-        /// </summary>
-        /// <param name="dstEndPoint">The destination end point to send the SIP response to.</param>
-        /// <param name="sipResponse">The SIP response to send.</param>
-        public void SendResponse(SIPEndPoint dstEndPoint, SIPResponse sipResponse)
-        {
-            if (dstEndPoint == null)
-            {
-                throw new ArgumentNullException("dstEndPoint", "The destination end point must be set for SendResponse.");
-            }
-            else if (sipResponse == null)
-            {
-                throw new ArgumentNullException("sipResponse", "The SIP response must be set for SendResponse.");
-            }
-            else if (dstEndPoint.Address.Equals(BlackholeAddress))
-            {
-                // Ignore packet, it's destined for the blackhole.
-                return;
-            }
-            else if (m_sipChannels.Count == 0)
-            {
-                throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
-            }
-            else
-            {
-                SIPChannel sipChannel = FindSIPChannel(sipResponse.LocalSIPEndPoint);
-                sipChannel = sipChannel ?? GetDefaultChannel(dstEndPoint);
-
-                if (sipChannel != null)
-                {
-                    SendResponse(sipChannel, dstEndPoint, sipResponse);
-                }
-                else
-                {
-                    logger.LogWarning("Could not find channel to send SIP Response in SendResponse.");
-                }
-            }
-        }
-
-        /// <summary>
         /// Attempts to send a SIP response back to the SIP request origin.
         /// </summary>
         /// <param name="sipResponse">The SIP response to send.</param>
@@ -872,32 +832,33 @@ namespace SIPSorcery.SIP
         /// <param name="sipResponse">The SIP response to send.</param>
         public async Task<SocketError> SendResponseAsync(SIPResponse sipResponse)
         {
-            // TODO: Testing channels listening on 0.0.0.0. Triple check removing this behaviour doesn't break anything major.
-            //if (sipResponse.LocalSIPEndPoint != null && sipResponse.LocalSIPEndPoint.Address.Equals(BlackholeAddress))
-            //{
-            //    // Ignore packet, it's destined for the blackhole.
-            //    return;
-            //}
-
             if (sipResponse == null)
             {
-                throw new ArgumentNullException("sipResponse", "The SIP response must be set for SendResponse.");
+                throw new ArgumentNullException("sipResponse", "The SIP response must be set for SendResponseAsync.");
             }
             else if (m_sipChannels.Count == 0)
             {
                 throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
             }
 
-            SIPViaHeader topViaHeader = sipResponse.Header.Vias.TopViaHeader;
-            if (topViaHeader == null)
+            string connectionID = sipResponse.LocalSIPEndPoint?.ConnectionID ?? sipResponse.RemoteSIPEndPoint?.ConnectionID;
+
+            if (!String.IsNullOrEmpty(connectionID))
             {
-                logger.LogWarning("There was no top Via header on a SIP response from " + sipResponse.RemoteSIPEndPoint + " when attempting to send it, response dropped.");
-                return SocketError.Fault;
+                // This reponse needs to be sent on a specific connection.
+                var sipChannel = FindSIPChannel(connectionID);
+
+                FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, sipResponse.RemoteSIPEndPoint, sipResponse);
+
+                sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
+                return await sipChannel.SendAsync(connectionID, Encoding.UTF8.GetBytes(sipResponse.ToString()));
             }
             else
             {
+                // Need to determine the desintation from the SIP response headers. If possible the SIP response should be sent out from
+                // the same local SIP end point as the SIP request it's for.
                 SIPChannel sipChannel = FindSIPChannel(sipResponse.LocalSIPEndPoint);
-                sipChannel = sipChannel ?? GetDefaultChannel(topViaHeader.Transport);
+                sipChannel = sipChannel ?? GetDefaultChannel(sipResponse.LocalSIPEndPoint.Protocol);
 
                 if (sipChannel != null)
                 {
@@ -905,7 +866,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    throw new ApplicationException("Could not find a SIP channel to send SIP Response to " + topViaHeader.ReceivedFromAddress + ".");
+                    throw new ApplicationException($"Could not find a SIP channel to send SIP Response for transport protcol {sipResponse.LocalSIPEndPoint.Protocol}.");
                 }
             }
         }
@@ -921,7 +882,9 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Attempts an asynchronous send of a SIP response on a specific SIP channel.
+        /// Attempts an asynchronous send of a SIP response on a specific SIP channel. This method attempts to resolve the
+        /// desintation end point from the top SIP Via header. Normally the address in the header will be an IP address but
+        /// the standard does permit a host which will require a DNS resolution.
         /// </summary>
         /// <param name="sipChannel">The SIP channel to send the SIP response on.</param>
         /// <param name="sipResponse">The SIP response to send.</param>
@@ -929,91 +892,54 @@ namespace SIPSorcery.SIP
         {
             if (sipResponse == null)
             {
-                throw new ArgumentNullException("sipResponse", "The SIP response must be set for SendResponse.");
+                throw new ArgumentNullException("sipResponse", "The SIP response must be set for SendResponseAsync.");
             }
             else if (sipChannel == null)
             {
-                throw new ArgumentNullException("sipChannel", "The SIP channel must be set for SendResponse.");
+                throw new ArgumentNullException("sipChannel", "The SIP channel must be set for SendResponseAsync.");
             }
 
-            SIPViaHeader topVia = sipResponse.Header.Vias.TopViaHeader;
-            SIPDNSLookupResult lookupResult = GetHostEndPoint(topVia.ReceivedFromAddress, false);
-
-            if (lookupResult.LookupError != null)
+            SIPViaHeader topViaHeader = sipResponse.Header.Vias.TopViaHeader;
+            if (topViaHeader == null)
             {
-                throw new ApplicationException("Could not resolve destination for response.\n" + sipResponse.ToString());
-            }
-            else if (lookupResult.Pending)
-            {
-                // Ignore this response transmission and wait for the transaction retransmit mechanism to try again when DNS will have hopefully resolved the end point.
-                return SocketError.IOPending;
+                logger.LogWarning($"There was no top Via header on a SIP response from {sipResponse.RemoteSIPEndPoint} in SendResponseAsync, response dropped.");
+                return SocketError.Fault;
             }
             else
             {
-                SIPEndPoint dstEndPoint = lookupResult.GetSIPEndPoint();
+                SIPDNSLookupResult lookupResult = GetHostEndPoint(topViaHeader.ReceivedFromAddress, false);
 
-                if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
+                if (lookupResult.LookupError != null)
                 {
-                    // Ignore packet, it's destined for the blackhole.
-                    return SocketError.Success;
+                    throw new ApplicationException("Could not resolve destination for response.\n" + sipResponse.ToString());
                 }
-                else if (dstEndPoint != null)
+                else if (lookupResult.Pending)
                 {
-                    return await SendResponseAsync(sipChannel, new SIPEndPoint(topVia.Transport, dstEndPoint.GetIPEndPoint()), sipResponse);
+                    // Ignore this response transmission and wait for the transaction retransmit mechanism to try again when DNS will have hopefully resolved the end point.
+                    return SocketError.IOPending;
                 }
                 else
                 {
-                    throw new ApplicationException("SendResponse could not send a response as no end point was resolved.\n" + sipResponse.ToString());
+                    SIPEndPoint dstEndPoint = lookupResult.GetSIPEndPoint();
+
+                    if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
+                    {
+                        // Ignore packet, it's destined for the blackhole.
+                        return SocketError.Success;
+                    }
+                    else if (dstEndPoint != null)
+                    {
+                        FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipResponse);
+
+                        sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
+                        return await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
+                    }
+                    else
+                    {
+                        throw new ApplicationException("SendResponse could not send a response as no end point was resolved.\n" + sipResponse.ToString());
+                    }
                 }
             }
-        }
-
-        /// <summary>
-        /// Attempts to send a SIP response on a specific SIP channel to a specific SIP end point.
-        /// </summary>
-        /// <param name="sipChannel">The SIP channel to send the SIP response on.</param>
-        /// <param name="dstEndPoint">The desintation end point to send the SIP response to.</param>
-        /// <param name="sipResponse">The SIP response to send.</param>
-        private async void SendResponse(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPResponse sipResponse)
-        {
-            await SendResponseAsync(sipChannel, dstEndPoint, sipResponse);
-        }
-
-        /// <summary>
-        /// An asynchronouse SIP response send on a specific SIP channel to a specific SIP end point.
-        /// </summary>
-        /// <param name="sipChannel">The SIP channel to send the SIP response on.</param>
-        /// <param name="dstEndPoint">The desintation end point to send the SIP response to.</param>
-        /// <param name="sipResponse">The SIP response to send.</param>
-        /// <returns>A socket error value of Success or an error message with a failure condition.</returns>
-        private async Task<SocketError> SendResponseAsync(SIPChannel sipChannel, SIPEndPoint dstEndPoint, SIPResponse sipResponse)
-        {
-            if (sipResponse == null)
-            {
-                throw new ArgumentNullException("sipResponse", "The SIP response must be set for SendResponse.");
-            }
-            else if (dstEndPoint == null)
-            {
-                throw new ArgumentNullException("dstEndPoint", "The destination end point must be set for SendResponse.");
-            }
-            else if (sipChannel == null)
-            {
-                throw new ArgumentNullException("sipChannel", "The SIP channel must be set for SendResponse.");
-            }
-            else if (dstEndPoint.Address.Equals(BlackholeAddress))
-            {
-                // Ignore packet, it's destined for the blackhole.
-                return SocketError.Success;
-            }
-            else if (sipChannel.IsReliable && !sipChannel.IsConnectionEstablished(dstEndPoint.GetIPEndPoint()))
-            {
-                throw new ApplicationException($"A reliable SIP channel did not have an existing connection for {dstEndPoint}, SIP reponse cannot be sent.");
-            }
-
-            FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, dstEndPoint, sipResponse);
-
-            sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
-            return await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
         }
 
         private void ProcessInMessage()
@@ -1040,7 +966,6 @@ namespace SIPSorcery.SIP
                     }
 
                     m_inMessageArrived.Reset();
-                    //m_inMessageArrived.WaitOne(MAX_QUEUEWAIT_PERIOD, false);
                     m_inMessageArrived.WaitOne(MAX_QUEUEWAIT_PERIOD);
                 }
             }
@@ -1049,237 +974,6 @@ namespace SIPSorcery.SIP
                 logger.LogError("Exception SIPTransport ProcessInMessage. " + excp.Message);
             }
         }
-
-        /*private void ProcessMetrics()
-        {
-            try
-            {
-                logger.LogDebug("SIPTransport ProcessMetrics thread started.");
-                
-                while (!m_closed)
-                {
-                    string sampleTimeString = DateTime.Now.ToString("dd MMM yyyy HH:mm:ss");
-                    
-                    if (m_sipTransportMeasurements.Count > 0)
-                    {
-                        lock (m_sipTransportMeasurements)
-                        {
-                            // Remove all samples older than current sample period.
-                            while (m_sipTransportMeasurements.Count > 0 && DateTime.Now.Subtract(m_sipTransportMeasurements.Peek().ReceivedAt).TotalSeconds > METRICS_SAMPLE_PERIOD)
-                            {
-                                m_sipTransportMeasurements.Dequeue();
-                            }
-
-                            if (m_sipTransportMeasurements.Count > 0)
-                            {
-                                #region Collate samples into single measurement.
-
-                                // Take sample.
-                                DateTime startSampleDate = DateTime.Now.AddSeconds(-1 * METRICS_SAMPLE_PERIOD);
-                                DateTime endSampleDate = DateTime.Now;
-                                int totalPackets = 0;
-                                double totalParsedPackets = 0;
-                                double totalParseTime = 0;
-                                int sipMessageCount = 0;
-                                int sipRequestCount = 0;
-                                int sipResponseCount = 0;
-                                int sipRequestSentCount = 0;
-                                int sipResponseSentCount = 0;
-                                int discardsCount = 0;
-                                int badSIPCount = 0;
-                                int tooLargeCount = 0;
-                                int stunRequestsCount = 0;
-                                int unrecognisedCount = 0;
-                                Dictionary<string, int> topTalkers = new Dictionary<string, int>();
-                                Dictionary<SIPMethodsEnum, int> sipMessageTypes = new Dictionary<SIPMethodsEnum, int>();
-
-                                SIPTransportMetric[] measurements = m_sipTransportMeasurements.ToArray();
-                                foreach (SIPTransportMetric measurement in measurements)
-                                {
-                                    totalPackets++;
-
-                                    if (measurement.RemoteEndPoint != null)
-                                    {
-                                        string talker = measurement.RemoteEndPoint.ToString();
-                                        if(topTalkers.ContainsKey(talker))
-                                        {
-                                            topTalkers[talker] = topTalkers[talker] + 1;
-                                        }
-                                        else
-                                        {
-                                            topTalkers.Add(talker, 1);
-                                        }
-                                    }
-
-                                    if (!measurement.Originated && !measurement.Discard)
-                                    {
-                                        totalParsedPackets++;
-                                        totalParseTime += measurement.ParseDuration;
-                                    }
-
-                                    if (measurement.Discard)
-                                    {
-                                        discardsCount++;
-                                    }
-                                    else if (measurement.BadSIPMessage)
-                                    {
-                                        badSIPCount++;
-                                    }
-                                    else if (measurement.UnrecognisedPacket)
-                                    {
-                                        unrecognisedCount++;
-                                    }
-                                    else if (measurement.STUNRequest)
-                                    {
-                                        stunRequestsCount++;
-                                    }
-                                    else if (measurement.TooLarge)
-                                    {
-                                        tooLargeCount++;
-                                    }
-                                    else
-                                    {
-                                        sipMessageCount++;
-
-                                        if (sipMessageTypes.ContainsKey(measurement.SIPMethod))
-                                        {
-                                            sipMessageTypes[measurement.SIPMethod] = sipMessageTypes[measurement.SIPMethod] + 1;
-                                        }
-                                        else
-                                        {
-                                            sipMessageTypes.Add(measurement.SIPMethod, 1);
-                                        }
-
-                                        if (measurement.SIPMessageType == SIPMessageTypesEnum.Request)
-                                        {
-                                            if (measurement.Originated)
-                                            {
-                                                sipRequestSentCount++;
-                                            }
-                                            else
-                                            {
-                                                sipRequestCount++;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if (measurement.Originated)
-                                            {
-                                                sipResponseSentCount++;
-                                            }
-                                            else
-                                            {
-                                                sipResponseCount++;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                #endregion
-                                
-                                double avgParseTime = 0;
-                                if (totalParsedPackets > 0)
-                                {
-                                    avgParseTime = totalParseTime / totalParsedPackets;
-                                }
-
-                                metricslogger.LogInformation(
-                                    SIPTransportMetric.PACKET_VOLUMES_KEY + "," +
-                                    sampleTimeString + "," +
-                                    METRICS_SAMPLE_PERIOD + "," +
-                                    totalPackets + "," +
-                                    sipRequestCount + "," +
-                                    sipResponseCount + "," +
-                                    sipRequestSentCount + "," +
-                                    sipResponseSentCount + "," +
-                                    //SIPTransaction.Count + "," +
-                                    unrecognisedCount + "," +
-                                    badSIPCount + "," +
-                                    stunRequestsCount + "," +
-                                    discardsCount + "," +
-                                    tooLargeCount + "," +
-                                    totalParseTime.ToString("0.###") + "," +
-                                    avgParseTime.ToString("0.###"));
-
-                                #region Build SIP methods metric string.
-
-                                if (sipMessageTypes.Count > 0)
-                                {
-                                    string methodCountStr = SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString  + "," + METRICS_SAMPLE_PERIOD;
-                                    foreach (KeyValuePair<SIPMethodsEnum, int> methodCount in sipMessageTypes)
-                                    {
-                                        methodCountStr += "," + methodCount.Key + "=" + methodCount.Value;
-                                    }
-                                    metricslogger.LogInformation(methodCountStr);
-                                }
-                                else
-                                {
-                                    metricslogger.LogInformation(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                                }
-
-                                #endregion
-
-                                #region Build top talkers metric string.
-
-                                if (topTalkers.Count > 0)
-                                {
-                                    string topTalkersStr = SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD;
-
-                                    for (int index = 0; index < 10; index++)
-                                    {
-                                        if (topTalkers.Count == 0)
-                                        {
-                                            break;
-                                        }
-
-                                        string curTopTalker = null;
-                                        int curTopTalkerCount = 0;
-                                        foreach (KeyValuePair<string, int> topTalker in topTalkers)
-                                        {
-                                            if (topTalker.Value > curTopTalkerCount)
-                                            {
-                                                curTopTalker = topTalker.Key;
-                                                curTopTalkerCount = topTalker.Value;
-                                            }
-                                        }
-                                        topTalkersStr += "," + curTopTalker + "=" + curTopTalkerCount;
-                                        topTalkers.Remove(curTopTalker);
-                                    }
-                                    metricslogger.LogInformation(topTalkersStr);
-                                }
-                                else
-                                {
-                                    metricslogger.LogInformation(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                                }
-
-                                #endregion
-                            }
-                            else
-                            {
-                                //metricslogger.LogInformation(SIPTransportMetric.PACKET_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD + ",0,0,0,0,0,0," + SIPTransaction.Count + ",0,0,0,0,0,0");
-                                metricslogger.LogInformation(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                                metricslogger.LogInformation(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                            }
-                        }
-                    }
-                    else
-                    {
-                       // metricslogger.LogInformation(SIPTransportMetric.PACKET_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD + ",0,0,0,0,0,0," + SIPTransaction.Count + ",0,0,0,0,0,0");
-                        metricslogger.LogInformation(SIPTransportMetric.SIPMETHOD_VOLUMES_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                        metricslogger.LogInformation(SIPTransportMetric.TOPTALKERS_VOLUME_KEY + "," + sampleTimeString + "," + METRICS_SAMPLE_PERIOD);
-                    }
-
-                    //m_stopMetrics.WaitOne(METRICS_SAMPLE_PERIOD * 1000, false);
-                    m_stopMetrics.WaitOne(METRICS_SAMPLE_PERIOD * 1000);
-                }
-
-                logger.LogDebug("SIPTransport ProcessMetrics thread stopped.");
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPTransport ProcessMetrics. " + excp.Message);
-            }
-        }*/
 
         private void ProcessPendingReliableTransactions()
         {
@@ -1437,16 +1131,7 @@ namespace SIPSorcery.SIP
                     if ((buffer[0] == 0x0 || buffer[0] == 0x1) && buffer.Length >= 20)
                     {
                         // Treat any messages that cannot be SIP as STUN requests.
-                        if (STUNRequestReceived != null)
-                        {
-                            STUNRequestReceived(sipChannel.SIPChannelEndPoint.GetIPEndPoint(), remoteEndPoint.GetIPEndPoint(), buffer, buffer.Length);
-
-                            // TODO: Provide a hook so consuming assemblies can get these stats.
-                            //if (PerformanceMonitorPrefix != null)
-                            //{
-                            //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_STUN_REQUESTS_PER_SECOND_SUFFIX);
-                            //}
-                        }
+                        STUNRequestReceived?.Invoke(sipChannel.SIPChannelEndPoint.GetIPEndPoint(), remoteEndPoint.GetIPEndPoint(), buffer, buffer.Length);
                     }
                     else
                     {
@@ -1457,12 +1142,6 @@ namespace SIPSorcery.SIP
                             FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "SIP message too large, " + buffer.Length + " bytes, maximum allowed is " + SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH + " bytes.", SIPValidationFieldsEnum.Request, rawErrorMessage);
                             SIPResponse tooLargeResponse = GetResponse(sipChannel.SIPChannelEndPoint, remoteEndPoint, SIPResponseStatusCodesEnum.MessageTooLarge, null);
                             SendResponse(tooLargeResponse);
-
-                            // TODO: Provide a hook so consuming assemblies can get these stats.
-                            //if (PerformanceMonitorPrefix != null)
-                            //{
-                            //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
-                            //}
                         }
                         else
                         {
@@ -1470,20 +1149,11 @@ namespace SIPSorcery.SIP
                             if (rawSIPMessage.IsNullOrBlank())
                             {
                                 // An emptry transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
-                                //FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "No printable characters, length " + buffer.Length + " bytes.", SIPValidationFieldsEnum.Unknown, null);
-
                                 return;
                             }
                             else if (!rawSIPMessage.Contains("SIP"))
                             {
                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Missing SIP string.", SIPValidationFieldsEnum.NoSIPString, rawSIPMessage);
-
-                                // TODO: Provide a hook so consuming assemblies can get these stats.
-                                //if (PerformanceMonitorPrefix != null)
-                                //{
-                                //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
-                                //}
-
                                 return;
                             }
 
@@ -1674,12 +1344,6 @@ namespace SIPSorcery.SIP
                             else
                             {
                                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Not parseable as SIP message.", SIPValidationFieldsEnum.Unknown, rawSIPMessage);
-
-                                // TODO: Provide a hook so consuming assemblies can get these stats.
-                                //if (PerformanceMonitorPrefix != null)
-                                //{
-                                //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
-                                //}
                             }
                         }
                     }
@@ -1688,24 +1352,33 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "Exception SIPTransport. " + excp.Message, SIPValidationFieldsEnum.Unknown, rawSIPMessage);
-
-                // TODO: Provide a hook so consuming assemblies can get these stats.
-                //if (PerformanceMonitorPrefix != null)
-                //{
-                //    SIPSorceryPerformanceMonitor.IncrementCounter(PerformanceMonitorPrefix + SIPSorceryPerformanceMonitor.SIP_TRANSPORT_SIP_BAD_MESSAGES_PER_SECOND_SUFFIX);
-                //}
             }
         }
 
         /// <summary>
-        /// Attempts to match a SIPChannel for this process that has the specified local end point and protocol.
+        /// Attempts to find a connection oriented SIPChannel that matches the specified connection ID.
+        /// </summary>
+        /// <param name="connectionID">The connection ID of the SIPChannel to find.</param>
+        /// <returns>A matching SIPChannel if found otherwise null.</returns>
+        public SIPChannel FindSIPChannel(string connectionID)
+        {
+            if (String.IsNullOrEmpty(connectionID))
+            {
+                return null;
+            }
+            else
+            {
+                return m_sipChannels.Where(x => x.Value.HasConnection(connectionID)).FirstOrDefault().Value;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to match a SIPChannel that is listening on the specified local end point.
         /// </summary>
         /// <param name="localEndPoint">The local socket endpoint of the SIPChannel to find.</param>
         /// <returns>A matching SIPChannel if found otherwise null.</returns>
         public SIPChannel FindSIPChannel(SIPEndPoint localSIPEndPoint)
         {
-            //bool isEqual = (localSIPEndPoint == m_sipChannels.Keys.First<SIPEndPoint>());
-            //logger.LogDebug("Searching for SIP channel for endpoint " + localSIPEndPoint.ToString() + ". First channel in transport list is " + m_sipChannels.Keys.First().ToString() + ". " + m_sipChannels.Keys.Contains(localSIPEndPoint) + ", " + isEqual);
             if (localSIPEndPoint == null)
             {
                 return null;

@@ -47,11 +47,11 @@ namespace SIPSorcery.SIP
 		public const int DEFAULT_REGISTEREXPIRY_SECONDS = 600;
 		public const int DEFAULT_SIP_PORT = 5060;
         public const int DEFAULT_SIP_TLS_PORT = 5061;
+        public const int DEFAULT_SIP_WEBSOCKET_PORT = 80;
+        public const int DEFAULT_SIPS_WEBSOCKET_PORT = 443;
         public const int MAX_SIP_PORT = 65535;
  
         public const string NAT_SENDKEEPALIVES_VALUE = "y";
-
-        //public const string SWITCHBOARD_USER_AGENT_PREFIX = "sipsorcery-switchboard";
 	}
 
 	public enum SIPMessageTypesEnum
@@ -96,12 +96,32 @@ namespace SIPSorcery.SIP
         }
     }
 
+    /// <summary>
+    /// A list of the transport layer protocols that are supported (the network layers
+    /// supported are IPv4 amd IPv6).
+    /// </summary>
     public enum SIPProtocolsEnum
     {
+        /// <summary>
+        /// User Datagram Protocol.
+        /// </summary>
         udp = 1,
+        /// <summary>.
+        /// Transmission Control Protocol
+        /// </summary>
         tcp = 2,
+        /// <summary>
+        /// Transport Layer Security.
+        /// </summary>
         tls = 3,
-        // sctp = 4,    // Not supported.
+        /// <summary>
+        /// Web Socket.
+        /// </summary>
+        ws  = 4,
+        /// <summary>
+        /// Web Socket over TLS.
+        /// </summary>
+        wss = 5,    
     }
 
     public class SIPProtocolsType
@@ -247,6 +267,9 @@ namespace SIPSorcery.SIP
         public const string AUTH_OPAQUE_KEY = "opaque";
 	}
 
+    /// <summary>
+    /// A list of the different SIP request methods that are supported.
+    /// </summary>
 	public enum SIPMethodsEnum
 	{
 		NONE = 0,

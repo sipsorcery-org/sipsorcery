@@ -20,11 +20,15 @@ namespace SIPSorcery.SIP
         public const string NAPTR_SIP_UDP_SERVICE = "SIP+D2U";
         public const string NAPTR_SIP_TCP_SERVICE = "SIP+D2T";
         public const string NAPTR_SIPS_TCP_SERVICE = "SIPS+D2T";
+        public const string NAPTR_SIP_WEBSOCKET_SERVICE = "SIP+D2W";
+        public const string NAPTR_SIPS_WEBSOCKET_SERVICE = "SIPS+D2W";
 
         public const string SRV_SIP_TCP_QUERY_PREFIX = "_sip._tcp.";
         public const string SRV_SIP_UDP_QUERY_PREFIX = "_sip._udp.";
         public const string SRV_SIP_TLS_QUERY_PREFIX = "_sip._tls.";
         public const string SRV_SIPS_TCP_QUERY_PREFIX = "_sips._tcp.";
+        public const string SRV_SIP_WEBSOCKET_QUERY_PREFIX = "_sip._ws.";
+        public const string SRV_SIPS_WEBSOCKET_QUERY_PREFIX = "_sips._ws.";
     }
 
     /// <summary>
@@ -39,6 +43,8 @@ namespace SIPSorcery.SIP
         siptls = 4,     // sip over tls. _sip._tls.
         sipstcp = 5,    // sips over tcp. SIPS+D2T and _sips._tcp
         sipssctp = 6,   // sips over sctp. SIPS+D2S and _sips._sctp
+        sipws = 7,      // sip over web socket.
+        sipsws = 8,     // sips over web socket.
     }
 
     public class SIPServices
