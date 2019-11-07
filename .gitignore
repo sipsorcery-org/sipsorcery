@@ -169,5 +169,3 @@ bower_components
 /.vs
 *.dll
 *.vs
-
-docfx/*
