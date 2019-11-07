@@ -43,7 +43,7 @@ namespace SIPSorcery.SIP
                 throw new ArgumentNullException("endPoint", "An IP end point must be supplied for a SIP TLS channel.");
             }
 
-            m_isTLS = true;
+            m_isSecure = true;
             m_serverCertificate = serverCertificate;
         }
 
@@ -126,7 +126,7 @@ namespace SIPSorcery.SIP
                 {
                     // SSL stream was disconnected by the remote end pont sending a FIN or RST.
                     logger.LogDebug("TLS socket disconnected by {sipStreamConnection.ConnectionProps.RemoteEndPoint}.");
-                    OnSIPStreamDisconnected(sipStreamConnection.RemoteEndPoint, SocketError.ConnectionReset);
+                    OnSIPStreamDisconnected(sipStreamConnection, SocketError.ConnectionReset);
                 }
                 sipStreamConnection.ExtractSIPMessages(this, sipStreamConnection.SslStreamBuffer, bytesRead);    
                 sipStreamConnection.SslStream.BeginRead(sipStreamConnection.SslStreamBuffer, sipStreamConnection.RecvEndPosn, sipStreamConnection.SslStreamBuffer.Length - sipStreamConnection.RecvEndPosn, new AsyncCallback(OnReadCallback), sipStreamConnection);
@@ -135,24 +135,24 @@ namespace SIPSorcery.SIP
             catch (SocketException sockExcp)  // Occurs if the remote end gets disconnected.
             {
                 //logger.LogWarning($"SocketException SIPTLSChannel ReceiveCallback. Error code {sockExcp.SocketErrorCode}. {sockExcp}");
-                OnSIPStreamDisconnected(sipStreamConnection.RemoteEndPoint, sockExcp.SocketErrorCode);
+                OnSIPStreamDisconnected(sipStreamConnection, sockExcp.SocketErrorCode);
             }
             catch(IOException ioExcp)
             {
                 if (ioExcp.InnerException is SocketException)
                 {
-                    OnSIPStreamDisconnected(sipStreamConnection.RemoteEndPoint, (ioExcp.InnerException as SocketException).SocketErrorCode);
+                    OnSIPStreamDisconnected(sipStreamConnection, (ioExcp.InnerException as SocketException).SocketErrorCode);
                 }
                 else
                 {
                     logger.LogWarning($"IOException SIPTLSChannel ReceiveCallback. {ioExcp.Message}");
-                    OnSIPStreamDisconnected(sipStreamConnection.RemoteEndPoint, SocketError.Fault);
+                    OnSIPStreamDisconnected(sipStreamConnection, SocketError.Fault);
                 }
             }
             catch (Exception excp)
             {
                 logger.LogWarning($"Exception SIPTLSChannel ReceiveCallback. {excp.Message}");
-                OnSIPStreamDisconnected(sipStreamConnection.RemoteEndPoint, SocketError.Fault);
+                OnSIPStreamDisconnected(sipStreamConnection, SocketError.Fault);
             }
         }
 
@@ -172,7 +172,7 @@ namespace SIPSorcery.SIP
             catch (SocketException sockExcp)
             {
                 logger.LogWarning($"SocketException SIP TLS Channel sending to {dstEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
-                OnSIPStreamDisconnected(dstEndPoint, sockExcp.SocketErrorCode);
+                OnSIPStreamDisconnected(sipStreamConn, sockExcp.SocketErrorCode);
                 throw;
             }
         }

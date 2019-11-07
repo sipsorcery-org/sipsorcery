@@ -50,7 +50,7 @@ CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPStreamConnection testConnection = new SIPStreamConnection(null, null, SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+            SIPStreamConnection testConnection = new SIPStreamConnection(null, null, SIPProtocolsEnum.tcp);
             //Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
 
             testConnection.ExtractSIPMessages(null, testReceiveBytes, testReceiveBytes.Length);
@@ -85,7 +85,7 @@ CRLF + CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPStreamConnection testConnection = new SIPStreamConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+            SIPStreamConnection testConnection = new SIPStreamConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
             //Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
@@ -133,7 +133,7 @@ CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPStreamConnection testConnection = new SIPStreamConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp, SIPConnectionsEnum.Caller);
+            SIPStreamConnection testConnection = new SIPStreamConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
             Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
