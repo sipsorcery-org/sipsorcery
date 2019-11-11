@@ -1,0 +1,367 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Call Transfer </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Call Transfer ">
+    <meta name="generator" content="docfx 2.47.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h2 id="call-transfer">Call Transfer</h2>
+
+<p>The <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/CallTransfer">Call Transfer example</a> contains a demonstration of how to use a REFER request to transfer an established call to a different destination.</p>
+<p>The example uses REFER requests as specified in <a href="https://tools.ietf.org/html/rfc3515">RFC3515</a>.</p>
+<p>The example is the same as the <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/UserAgentClient">Client User Agent example</a> up until the point the call is answered. In the transfer example once the call is answered there is a brief pause before a REFER request is constructed and used to request that the remote call party transfer to a different SIP URI.</p>
+<p>The key piece of code is:</p>
+<pre><code class="lang-csharp">// At this point the call is established. We'll wait for a few seconds and then transfer.
+Task.Delay(DELAY_UNTIL_TRANSFER_MILLISECONDS).Wait();
+
+SIPRequest referRequest = GetReferRequest(uac, SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI));
+SIPNonInviteTransaction referTx = sipTransport.CreateNonInviteTransaction(referRequest, referRequest.RemoteSIPEndPoint, referRequest.LocalSIPEndPoint, null);
+
+referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =&gt;
+{
+	if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER &amp;&amp; sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
+	{
+		Log.LogInformation(&quot;Call transfer was accepted by remote server.&quot;);
+		isCallHungup = true;
+		rtpCts.Cancel();
+	}
+};
+
+referTx.SendReliableRequest();
+
+// At this point the call transfer has been initiated and everything will be handled in an event handler or on the RTP
+// receive task. The code below is to gracefully exit.
+</code></pre>
+<p>The method used to construct the REFER request is:</p>
+<pre><code class="lang-csharp">private static SIPRequest GetReferRequest(SIPClientUserAgent uac, SIPURI referToUri)
+{
+	SIPDialogue sipDialogue = uac.SIPDialogue;
+
+	SIPRequest referRequest = new SIPRequest(SIPMethodsEnum.REFER, sipDialogue.RemoteTarget);
+	SIPFromHeader referFromHeader = SIPFromHeader.ParseFromHeader(sipDialogue.LocalUserField.ToString());
+	SIPToHeader referToHeader = SIPToHeader.ParseToHeader(sipDialogue.RemoteUserField.ToString());
+	int cseq = sipDialogue.CSeq + 1;
+	sipDialogue.CSeq++;
+
+	SIPHeader referHeader = new SIPHeader(referFromHeader, referToHeader, cseq, sipDialogue.CallId);
+	referHeader.CSeqMethod = SIPMethodsEnum.REFER;
+	referRequest.Header = referHeader;
+	referRequest.Header.Routes = sipDialogue.RouteSet;
+	referRequest.Header.ProxySendFrom = sipDialogue.ProxySendFrom;
+
+	SIPViaHeader viaHeader = new SIPViaHeader(uac.ServerTransaction.LocalSIPEndPoint, CallProperties.CreateBranchId());
+	referRequest.Header.Vias.PushViaHeader(viaHeader);
+
+	referRequest.Header.ReferTo = referToUri.ToString();
+	referRequest.Header.Contact = new List&lt;SIPContactHeader&gt;() { new SIPContactHeader(null, uac.ServerTransaction.TransactionRequest.Header.Contact.First().ContactURI) };
+	referRequest.RemoteSIPEndPoint = uac.ServerTransaction.RemoteEndPoint;
+
+	return referRequest;
+}
+</code></pre>
+<p>Within that method the most important part is the setting of the <code>ReferTo</code> header. It's what determines where the remote user agent will is being asked to place a new call to.</p>
+<p><strong>It's important to note that a REFER request &quot;asks&quot; the remote user agent to try placing a new call to the SIP URI specified. There is no guarantee it will or that the call will succeed. It's important to deal with cases where the REFER request is rejected.</strong></p>
+<p>Below is the console output of a successful call transfer using the exmaple code and a local Asterisk\FreePBX server.</p>
+<pre><code class="lang-cmd">C:\Dev\sipsorcery\sipsorcery-core\examples\CallTransfer&gt;dotnet run
+SIPSorcery client user agent example.
+Press ctrl-c to exit.
+[21:41:05 INF] Call destination sip:100@192.168.11.48.
+[21:41:05 DBG] SIPUDPChannel listener created 0.0.0.0:6060.
+[21:41:05 DBG] SIPUDPChannel socket on udp:0.0.0.0:6060 listening started.
+[21:41:05 DBG] Request sent: udp:0.0.0.0:6060-&gt;udp:192.168.11.48:5060
+[21:41:05 DBG] OPTIONS sip:100@192.168.11.48 SIP/2.0
+Via: SIP/2.0/UDP 0.0.0.0:6060;branch=z9hG4bK606f5c765d9d430a9ac6a7325cb8fe0c;rport
+To: &lt;sip:100@192.168.11.48&gt;
+From: &lt;sip:0.0.0.0:6060&gt;;tag=HYSDCANLXD
+Call-ID: db3bbb46071c41968c623a3d7ab01489
+CSeq: 1 OPTIONS
+Contact: &lt;sip:0.0.0.0:6060&gt;
+Max-Forwards: 70
+Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, REFER, REGISTER, SUBSCRIBE
+Content-Length: 0
+
+
+[21:41:05 DBG] Response received: udp:0.0.0.0:6060&lt;-udp:192.168.11.48:5060
+[21:41:05 DBG] SIP/2.0 200 OK
+Via: SIP/2.0/UDP 0.0.0.0:6060;rport=6060;received=192.168.11.50;branch=z9hG4bK606f5c765d9d430a9ac6a7325cb8fe0c
+To: &lt;sip:100@192.168.11.48&gt;;tag=z9hG4bK606f5c765d9d430a9ac6a7325cb8fe0c
+From: &lt;sip:0.0.0.0&gt;;tag=HYSDCANLXD
+Call-ID: db3bbb46071c41968c623a3d7ab01489
+CSeq: 1 OPTIONS
+Accept: application/dialog-info+xml, application/xpidf+xml, application/cpim-pidf+xml, application/simple-message-summary, application/pidf+xml, application/pidf+xml, application/dialog-info+xml, application/simple-message-summary, application/sdp, message/sipfrag;version=2.0
+Accept-Encoding: text/plain
+Accept-Language: en
+Allow: OPTIONS, REGISTER, SUBSCRIBE, NOTIFY, PUBLISH, INVITE, ACK, BYE, CANCEL, UPDATE, PRACK, MESSAGE, REFER
+Supported: 100rel, timer, replaces, norefersub
+Content-Length: 0
+Server: FPBX-15.0.16.20(16.4.1)
+
+
+[21:41:05 DBG] Response received udp:0.0.0.0:6060&lt;-udp:192.168.11.48:5060: OPTIONS 200 OK
+[21:41:05 DBG] Successfully bound RTP socket 192.168.11.50:49000.
+[21:41:05 DBG] Listening on RTP socket 192.168.11.50:49000.
+[21:41:05 DBG] Attempting to resolve 192.168.11.48.
+[21:41:05 DBG] Switching to sip:100@192.168.11.48:5060 via udp:192.168.11.48:5060.
+[21:41:05 DBG] SDP on UAC could not be mangled, using original RTP socket of 192.168.11.50:49000.
+[21:41:05 DBG] Send Request reliable udp:0.0.0.0:6060-&gt;udp:192.168.11.48:5060: INVITE sip:100@192.168.11.48 SIP/2.0
+[21:41:05 DBG] Request sent: udp:0.0.0.0:6060-&gt;udp:192.168.11.48:5060
+[21:41:05 DBG] INVITE sip:100@192.168.11.48 SIP/2.0
+Via: SIP/2.0/UDP 0.0.0.0:6060;branch=z9hG4bK76c11432449d48e6805fb89adb686752;rport
+To: &lt;sip:100@192.168.11.48&gt;
+From: &lt;sip:thisis@anonymous.invalid&gt;;tag=FEDPDHKAQK
+Call-ID: a5b30d51d07d42dfb39b4fe8d02f6f6a
+CSeq: 1 INVITE
+Contact: &lt;sip:Anonymous@pcdodo:6060&gt;
+Max-Forwards: 70
+User-Agent: www.sipsorcery.com
+Supported: 100rel
+Content-Length: 143
+Content-Type: application/sdp
+
+v=0
+o=- 49124 0 IN IP4 192.168.11.50
+s=sipsorcery
+c=IN IP4 192.168.11.50
+t=0 0
+m=audio 49000 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=sendrecv
+
+[21:41:06 DBG] Response received: udp:0.0.0.0:6060&lt;-udp:192.168.11.48:5060
+[21:41:06 DBG] SIP/2.0 100 Trying
+Via: SIP/2.0/UDP 0.0.0.0:6060;rport=6060;received=192.168.11.50;branch=z9hG4bK76c11432449d48e6805fb89adb686752
+To: &lt;sip:100@192.168.11.48&gt;
+From: &lt;sip:thisis@anonymous.invalid&gt;;tag=FEDPDHKAQK
+Call-ID: a5b30d51d07d42dfb39b4fe8d02f6f6a
+CSeq: 1 INVITE
+Content-Length: 0
+Server: FPBX-15.0.16.20(16.4.1)
+
+
+[21:41:06 DBG] Received Response udp:0.0.0.0:6060&lt;-udp:192.168.11.48:5060: INVITE 100 Trying
+[21:41:06 DBG] Information response 100 Trying for sip:100@192.168.11.48.
+[21:41:06 INF] sip:100@192.168.11.48 Trying: 100 Trying.
+[21:41:06 DBG] SIP/2.0 100 Trying
+Via: SIP/2.0/UDP 0.0.0.0:6060;rport=6060;received=192.168.11.50;branch=z9hG4bK76c11432449d48e6805fb89adb686752
+To: &lt;sip:100@192.168.11.48&gt;
+From: &lt;sip:thisis@anonymous.invalid&gt;;tag=FEDPDHKAQK
+Call-ID: a5b30d51d07d42dfb39b4fe8d02f6f6a
+CSeq: 1 INVITE
+Content-Length: 0
+Server: FPBX-15.0.16.20(16.4.1)
+
+
+[21:41:06 DBG] Response received: udp:0.0.0.0:6060&lt;-udp:192.168.11.48:5060
+[21:41:06 DBG] SIP/2.0 180 Ringing
+Via: SIP/2.0/UDP 0.0.0.0:6060;rport=6060;received=192.168.11.50;branch=z9hG4bK76c11432449d48e6805fb89adb686752
+To: &lt;sip:100@192.168.11.48&gt;;tag=b2b886e3-84f5-4bbc-8c05-74b115d7edcb
+From: &lt;sip:thisis@anonymous.invalid&gt;;tag=FEDPDHKAQK
+Call-ID: a5b30d51d07d42dfb39b4fe8d02f6f6a
+CSeq: 1 INVITE
+Contact: &lt;sip:192.168.11.48:5060&gt;
+Allow: OPTIONS, REGISTER, SUBSCRIBE, NOTIFY, PUBLISH, INVITE, ACK, BYE, CANCEL, UPDATE, PRACK, MESSAGE, REFER
+Content-Length: 0
+Server: FPBX-15.0.16.20(16.4.1)
+
+
+[21:41:06 DBG] Received Response udp:0.0.0.0:6060&lt;-udp:192.168.11.48:5060: INVITE 180 Ringing
+[21:41:06 DBG] Information response 180 Ringing for sip:100@192.168.11.48.
+[21:41:06 INF] sip:100@192.168.11.48 Ringing: 180 Ringing.
+[21:41:06 DBG] Response received: udp:0.0.0.0:6060&lt;-udp:192.168.11.48:5060
+[21:41:06 DBG] SIP/2.0 180 Ringing
+Via: SIP/2.0/UDP 0.0.0.0:6060;rport=6060;received=192.168.11.50;branch=z9hG4bK76c11432449d48e6805fb89adb686752
+To: &lt;sip:100@192.168.11.48&gt;;tag=b2b886e3-84f5-4bbc-8c05-74b115d7edcb
+From: &lt;sip:thisis@anonymous.invalid&gt;;tag=FEDPDHKAQK
+Call-ID: a5b30d51d07d42dfb39b4fe8d02f6f6a
+CSeq: 1 INVITE
+Contact: &lt;sip:192.168.11.48:5060&gt;
+Allow: OPTIONS, REGISTER, SUBSCRIBE, NOTIFY, PUBLISH, INVITE, ACK, BYE, CANCEL, UPDATE, PRACK, MESSAGE, REFER
+Content-Length: 0
+Server: FPBX-15.0.16.20(16.4.1)
+
+
+[21:41:06 DBG] Received Response udp:0.0.0.0:6060&lt;-udp:192.168.11.48:5060: INVITE 180 Ringing
+[21:41:06 DBG] Information response 180 Ringing for sip:100@192.168.11.48.
+[21:41:06 INF] sip:100@192.168.11.48 Ringing: 180 Ringing.
+[21:41:10 DBG] Response received: udp:0.0.0.0:6060&lt;-udp:192.168.11.48:5060
+[21:41:10 DBG] Initial RTP packet recieved from 192.168.11.48:15300.
+[21:41:10 DBG] SIP/2.0 200 OK
+Via: SIP/2.0/UDP 0.0.0.0:6060;rport=6060;received=192.168.11.50;branch=z9hG4bK76c11432449d48e6805fb89adb686752
+To: &lt;sip:100@192.168.11.48&gt;;tag=b2b886e3-84f5-4bbc-8c05-74b115d7edcb
+From: &lt;sip:thisis@anonymous.invalid&gt;;tag=FEDPDHKAQK
+Call-ID: a5b30d51d07d42dfb39b4fe8d02f6f6a
+CSeq: 1 INVITE
+Contact: &lt;sip:192.168.11.48:5060&gt;
+Allow: OPTIONS, REGISTER, SUBSCRIBE, NOTIFY, PUBLISH, INVITE, ACK, BYE, CANCEL, UPDATE, PRACK, MESSAGE, REFER
+Supported: 100rel, timer, replaces, norefersub
+Content-Length: 169
+Content-Type: application/sdp
+Server: FPBX-15.0.16.20(16.4.1)
+
+v=0
+o=- 49124 2 IN IP4 192.168.11.48
+s=Asterisk
+c=IN IP4 192.168.11.48
+t=0 0
+m=audio 15300 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=ptime:20
+a=maxptime:150
+a=sendrecv
+
+[21:41:10 DBG] Received Response udp:0.0.0.0:6060&lt;-udp:192.168.11.48:5060: INVITE 200 OK
+[21:41:10 DBG] Send Request udp:0.0.0.0:6060-&gt;udp:192.168.11.48:5060: ACK sip:192.168.11.48:5060 SIP/2.0
+[21:41:10 DBG] Request sent: udp:0.0.0.0:6060-&gt;udp:192.168.11.48:5060
+[21:41:10 DBG] ACK sip:192.168.11.48:5060 SIP/2.0
+Via: SIP/2.0/UDP 0.0.0.0:6060;branch=z9hG4bK26032492c2af40f9963efa80577642e9;rport
+To: &lt;sip:100@192.168.11.48&gt;;tag=b2b886e3-84f5-4bbc-8c05-74b115d7edcb
+From: &lt;sip:thisis@anonymous.invalid&gt;;tag=FEDPDHKAQK
+Call-ID: a5b30d51d07d42dfb39b4fe8d02f6f6a
+CSeq: 1 ACK
+Max-Forwards: 70
+Content-Length: 0
+
+
+[21:41:10 DBG] Response 200 OK for sip:100@192.168.11.48.
+[21:41:10 DBG] SDP on UAC response could not be mangled, RTP socket 192.168.11.48:15300.
+[21:41:11 INF] sip:100@192.168.11.48 Answered: 200 OK.
+[21:41:11 DBG] Remote RTP socket 192.168.11.48:15300.
+[21:41:16 DBG] Request sent: udp:0.0.0.0:6060-&gt;udp:192.168.11.48:5060
+[21:41:16 DBG] REFER sip:192.168.11.48:5060 SIP/2.0
+Via: SIP/2.0/UDP 0.0.0.0:6060;branch=z9hG4bKcb147fd53f5149678c0c52908f2f5d9c;rport
+To: &lt;sip:100@192.168.11.48&gt;;tag=b2b886e3-84f5-4bbc-8c05-74b115d7edcb
+From: &lt;sip:thisis@anonymous.invalid&gt;;tag=FEDPDHKAQK
+Call-ID: a5b30d51d07d42dfb39b4fe8d02f6f6a
+CSeq: 2 REFER
+Contact: &lt;sip:Anonymous@pcdodo:6060&gt;
+Max-Forwards: 70
+Content-Length: 0
+Refer-To: sip:*60@192.168.11.48
+
+
+[21:41:16 DBG] Response received: udp:0.0.0.0:6060&lt;-udp:192.168.11.48:5060
+[21:41:16 DBG] SIP/2.0 202 Accepted
+Via: SIP/2.0/UDP 0.0.0.0:6060;rport=6060;received=192.168.11.50;branch=z9hG4bKcb147fd53f5149678c0c52908f2f5d9c
+To: &lt;sip:100@192.168.11.48&gt;;tag=b2b886e3-84f5-4bbc-8c05-74b115d7edcb
+From: &lt;sip:thisis@anonymous.invalid&gt;;tag=FEDPDHKAQK
+Call-ID: a5b30d51d07d42dfb39b4fe8d02f6f6a
+CSeq: 2 REFER
+Contact: &lt;sip:192.168.11.48:5060&gt;
+Expires: 600
+Allow: OPTIONS, REGISTER, SUBSCRIBE, NOTIFY, PUBLISH, INVITE, ACK, BYE, CANCEL, UPDATE, PRACK, MESSAGE, REFER
+Supported: 100rel, timer, replaces, norefersub
+Content-Length: 0
+Server: FPBX-15.0.16.20(16.4.1)
+
+
+[21:41:16 INF] Call transfer was accepted by remote server.
+[21:41:16 INF] Exiting...
+[21:41:16 DBG] Initialising DNS resolver with operating system DNS server entries.
+[21:41:16 DBG] DNS server 8.8.8.8:53
+[21:41:16 DBG] DNS server 192.168.0.1:53
+[21:41:16 DBG] DNSManager Stopping.
+[21:41:16 INF] Shutting down SIP transport...
+[21:41:16 DBG] Closing SIP UDP Channel udp:0.0.0.0:6060.
+[21:41:16 DBG] SIPUDPChannel socket on udp:0.0.0.0:6060 listening halted.
+</code></pre>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/docfx/articles/calltransfer.md/#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
