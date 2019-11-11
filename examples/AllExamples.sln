@@ -15,7 +15,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.UserAgentServer"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetStartedWebSocket", "GetStartedWebSocket\GetStartedWebSocket.csproj", "{A79E3033-09CB-46BD-BAC2-8A38199B4FAC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StunServer", "StunServer\StunServer.csproj", "{8AE1D68D-AC0A-48F6-8933-DF6D988CDAEC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StunServer", "StunServer\StunServer.csproj", "{8AE1D68D-AC0A-48F6-8933-DF6D988CDAEC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallTransfer", "CallTransfer\CallTransfer.csproj", "{A307DF9E-A089-437D-BF81-B0AEB0EA5B46}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sipcmdline", "sipcmdline\sipcmdline.csproj", "{4E7907DC-52E7-4DE7-9EAE-31F279748C71}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,6 +85,22 @@ Global
 		{8AE1D68D-AC0A-48F6-8933-DF6D988CDAEC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8AE1D68D-AC0A-48F6-8933-DF6D988CDAEC}.Release|x64.ActiveCfg = Release|Any CPU
 		{8AE1D68D-AC0A-48F6-8933-DF6D988CDAEC}.Release|x64.Build.0 = Release|Any CPU
+		{A307DF9E-A089-437D-BF81-B0AEB0EA5B46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A307DF9E-A089-437D-BF81-B0AEB0EA5B46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A307DF9E-A089-437D-BF81-B0AEB0EA5B46}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A307DF9E-A089-437D-BF81-B0AEB0EA5B46}.Debug|x64.Build.0 = Debug|Any CPU
+		{A307DF9E-A089-437D-BF81-B0AEB0EA5B46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A307DF9E-A089-437D-BF81-B0AEB0EA5B46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A307DF9E-A089-437D-BF81-B0AEB0EA5B46}.Release|x64.ActiveCfg = Release|Any CPU
+		{A307DF9E-A089-437D-BF81-B0AEB0EA5B46}.Release|x64.Build.0 = Release|Any CPU
+		{4E7907DC-52E7-4DE7-9EAE-31F279748C71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E7907DC-52E7-4DE7-9EAE-31F279748C71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E7907DC-52E7-4DE7-9EAE-31F279748C71}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4E7907DC-52E7-4DE7-9EAE-31F279748C71}.Debug|x64.Build.0 = Debug|Any CPU
+		{4E7907DC-52E7-4DE7-9EAE-31F279748C71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E7907DC-52E7-4DE7-9EAE-31F279748C71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E7907DC-52E7-4DE7-9EAE-31F279748C71}.Release|x64.ActiveCfg = Release|Any CPU
+		{4E7907DC-52E7-4DE7-9EAE-31F279748C71}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

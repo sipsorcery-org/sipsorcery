@@ -181,7 +181,7 @@ namespace SIPSorcery
             {
                 SIPSorcery.Sys.Log.Logger.LogDebug($"Sending from RTP socket {rtpSocket.LocalEndPoint} to {dstRtpEndPoint}.");
 
-                // Nothing is being done with the data being received from the client. But if the remote socket data socket will
+                // Nothing is being done with the data being received from the client. But the remote rtp socket will
                 // be switched if it differs from the one in the SDP. This helps cope with NAT.
                 var rtpRecvTask = Task.Run(async () =>
                 {
