@@ -158,5 +158,5 @@ Additional example programs are provided to demonstrate how to use the SIPSorcer
 
 * [STUN Server](https://github.com/sipsorcery/sipsorcery/tree/master/examples/StunServer): An example of how to create a basic STUN ([RFC3849](https://tools.ietf.org/html/rfc3489)) server. An explanation of the example is available [here](https://sipsorcery.github.io/sipsorcery/articles/stunserver.html).
 
-* [Call Transfer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/CallTransfer): An example of how to transfer a call using a REFER request as specified in [RFC](https://tools.ietf.org/html/rfc3515). An explanation of the example is available [here](https://sipsorcery.github.io/sipsorcery/articles/calltransfer.html)
+* [Call Transfer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/CallTransfer): An example of how to transfer a call using a REFER request as specified in [RFC3515](https://tools.ietf.org/html/rfc3515). An explanation of the example is available [here](https://sipsorcery.github.io/sipsorcery/articles/calltransfer.html).
 
