@@ -389,6 +389,11 @@ namespace SIPSorcery.SIP
             return null;
         }
 
+        /// <summary>
+        /// TODO: Look at UnicastIPAddressInformation.PrefixLength instead of IPv4Mask.
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <returns></returns>
         public IPAddress GetLocalAddress(IPAddress destination)
         {
             uint bestInterfaceIndex = 0;
