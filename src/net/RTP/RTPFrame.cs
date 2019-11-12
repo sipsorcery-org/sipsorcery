@@ -4,10 +4,10 @@
 // Description: Represents a series of RTP packets that combine together to make a single media frame.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 29 Jan 2014	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com).
+// 29 Jan 2014	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -31,7 +31,6 @@ namespace SIPSorcery.Net
         public uint Timestamp;
         public bool HasMarker;
         public bool HasBeenProcessed;
-        //public int FrameHeaderLength = 0;   // Some media types, such as VP8 video, have a header at the start of each RTP data payload. It needs to be stripped.
         public FrameTypesEnum FrameType;
 
         private List<RTPPacket> _packets = new List<RTPPacket>();
@@ -94,11 +93,6 @@ namespace SIPSorcery.Net
         public void AddRTPPacket(RTPPacket rtpPacket)
         {
             _packets.Add(rtpPacket);
-
-            //if (HasMarker && FramePayload == null)
-            //{
-            //    FramePayload = IsComplete(_packets, payloadHeaderLength);
-            //}
         }
 
         public bool IsComplete()
@@ -116,8 +110,6 @@ namespace SIPSorcery.Net
                 if (previousSeqNum == 0)
                 {
                     previousSeqNum = rtpPacket.Header.SequenceNumber;
-                    //payload.AddRange(rtpPacket.Payload.Skip(payloadHeaderLength));
-                    //payloadPackets.Add(rtpPacket);
                 }
                 else if (previousSeqNum != rtpPacket.Header.SequenceNumber - 1)
                 {
@@ -127,14 +119,9 @@ namespace SIPSorcery.Net
                 else
                 {
                     previousSeqNum = rtpPacket.Header.SequenceNumber;
-                    //payload.AddRange(rtpPacket.Payload.Skip(payloadHeaderLength));
-                    //payloadPackets.Add(rtpPacket);
                 }
             }
 
-            //return payload.ToArray();
-
-            //return Mjpeg.ProcessMjpegFrame(payloadPackets);
             return true;
         }
 

@@ -4,10 +4,10 @@
 // Description: Encapsulation of an RTP packet.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 24 May 2005	Aaron Clauson	Created (aaron@sipsorcery.com), Montreux, Switzerland (www.sipsorcery.com).
+// 24 May 2005	Aaron Clauson 	Created, Dublin, Ireland.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
 //
 // License: 

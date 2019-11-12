@@ -1,16 +1,29 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An exmaple of using a REFER request to transfer an established call.
+// Description: An example of how top send DTMF tones in band (with specific RTP
+// packets) as specified in RFC2833.
 //
 // Author(s):
 // Aaron Clauson
 // 
 // History:
-// 11 Nov 2019	Aaron Clauson (aaron@sipsorcery.com)    Created, Dublin, Ireland.
+// 12 Nov 2019	Aaron Clauson (aaron@sipsorcery.com)    Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Example Aterisk dialplan snippet to repeat back any DTMF tones received:
+//
+// exten => *63,1(start),Gotoif($[ "${LEN(${extensao})}" < "5"]?collect:bye)
+// exten => *63,n(collect),Read(digito,,1)
+// exten => *63,n,SayDigits(${digito})
+// exten => *63,n,Set(extensao=${extensao}${digito})
+// exten => *63,n,GoTo(start)
+// exten => *63,n(bye),Playback("vm-goodbye")
+// exten => *63,n,hangup()
 //-----------------------------------------------------------------------------
 
 using System;
@@ -32,16 +45,15 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:100@192.168.11.48";   // SIP URI to transfer the call to.
-        private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.48";  // Talking Clock English.
-        private static readonly int SIP_REQUEST_TIMEOUT_MILLISECONDS = 5000;                   //  Timeout period for SIP requests sent by us. 
-        private static readonly int DELAY_UNTIL_TRANSFER_MILLISECONDS = 10000;                // Delay after the initial call is answered before initiating the transfer.
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*63@192.168.11.48";   // Custom Asterisk dialplan to speak back DTMF tones.
+        private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;                           // Period at which to write RTP stats.
+        private static readonly int SIP_REQUEST_TIMEOUT_MILLISECONDS = 5000;                   //  Timeout period for SIP requests sent by us.
 
         /// <summary>
         /// PCMU encoding for silence, http://what-when-how.com/voip/g-711-compression-voip/
         /// </summary>
         private static readonly byte PCMU_SILENCE_BYTE_ZERO = 0x7F;
-        private static readonly byte PCMU_SILENCE_BYTE_ONE  = 0xFF;
+        private static readonly byte PCMU_SILENCE_BYTE_ONE = 0xFF;
         private static readonly int SILENCE_SAMPLE_PERIOD = 20; // In milliseconds (PCM is 64kbit/s).
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
@@ -87,6 +99,7 @@ namespace SIPSorcery
                 // Initialise an RTP session to receive the RTP packets from the remote SIP server.
                 Socket rtpSocket = null;
                 Socket controlSocket = null;
+
                 NetServices.CreateRtpSocket(localIPAddress, 49000, 49100, false, out rtpSocket, out controlSocket);
                 var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
                 var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
@@ -97,7 +110,6 @@ namespace SIPSorcery
                 uac.CallTrying += (uac, resp) =>
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
-                    Log.LogDebug(resp.ToString());
                 };
                 uac.CallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
                 uac.CallFailed += (uac, err) =>
@@ -166,25 +178,7 @@ namespace SIPSorcery
                     rtpCts.Cancel();
                 };
 
-                // At this point the call is established. We'll wait for a few seconds and then transfer.
-                Task.Delay(DELAY_UNTIL_TRANSFER_MILLISECONDS).Wait();
-
-                SIPRequest referRequest = GetReferRequest(uac, SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI));
-                SIPNonInviteTransaction referTx = sipTransport.CreateNonInviteTransaction(referRequest, referRequest.RemoteSIPEndPoint, referRequest.LocalSIPEndPoint, null);
-
-                referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =>
-                {
-                    if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
-                    {
-                        Log.LogInformation("Call transfer was accepted by remote server.");
-                        isCallHungup = true;
-                        rtpCts.Cancel();
-                    }
-                };
-
-                referTx.SendReliableRequest();
-
-                // At this point the call transfer has been initiated and everything will be handled in an event handler or on the RTP
+                // At this point the call has been initiated and everything will be handled in an event handler or on the RTP
                 // receive task. The code below is to gracefully exit.
 
                 // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
@@ -280,7 +274,7 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        /// Handling packets received on the RTP socket. One of the simplest, if not the simplest, cases is
+        /// Handling packets received on the RTP socket. One of the simplest, if not the simplest, cases, is
         /// PCMU audio packets. THe handling can get substantially more complicated if the RTP socket is being
         /// used to multiplex different protocols. This is what WebRTC does with STUN, RTP and RTCP.
         /// </summary>
@@ -325,6 +319,14 @@ namespace SIPSorcery
                         }
 
                         recvResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, anyEndPoint);
+
+                        if (DateTime.Now.Subtract(lastRecvReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
+                        {
+                            // This is typically where RTCP receiver (SR) reports would be sent. Omitted here for brevity.
+                            lastRecvReportAt = DateTime.Now;
+                            var remoteRtpEndPoint = recvResult.RemoteEndPoint as IPEndPoint;
+                            Log.LogDebug($"RTP recv report {rtpSocket.LocalEndPoint}<-{remoteRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
+                        }
                     }
                 }
             }
@@ -373,11 +375,6 @@ namespace SIPSorcery
             }
         }
 
-        /// <summary>
-        /// Get the SDP payload for an INVITE request.
-        /// </summary>
-        /// <param name="rtpSocket">The RTP socket end point that will be used to receive and send RTP.</param>
-        /// <returns>An SDP object.</returns>
         private static SDP GetSDP(IPEndPoint rtpSocket)
         {
             var sdp = new SDP()
@@ -396,41 +393,10 @@ namespace SIPSorcery
             };
             audioAnnouncement.Port = rtpSocket.Port;
             audioAnnouncement.ExtraAttributes.Add("a=sendrecv");
+            audioAnnouncement.ExtraAttributes.Add("a=fmtp:100 0-15");
             sdp.Media.Add(audioAnnouncement);
 
             return sdp;
-        }
-
-        /// <summary>
-        /// Builds the REFER request to transfer an established call.
-        /// </summary>
-        /// <param name="sipDialogue">A SIP dialogue object representing the established call.</param>
-        /// <param name="referToUri">The SIP URI to transfer the call to.</param>
-        /// <returns>A SIP REFER request.</returns>
-        private static SIPRequest GetReferRequest(SIPClientUserAgent uac, SIPURI referToUri)
-        {
-            SIPDialogue sipDialogue = uac.SIPDialogue;
-
-            SIPRequest referRequest = new SIPRequest(SIPMethodsEnum.REFER, sipDialogue.RemoteTarget);
-            SIPFromHeader referFromHeader = SIPFromHeader.ParseFromHeader(sipDialogue.LocalUserField.ToString());
-            SIPToHeader referToHeader = SIPToHeader.ParseToHeader(sipDialogue.RemoteUserField.ToString());
-            int cseq = sipDialogue.CSeq + 1;
-            sipDialogue.CSeq++;
-
-            SIPHeader referHeader = new SIPHeader(referFromHeader, referToHeader, cseq, sipDialogue.CallId);
-            referHeader.CSeqMethod = SIPMethodsEnum.REFER;
-            referRequest.Header = referHeader;
-            referRequest.Header.Routes = sipDialogue.RouteSet;
-            referRequest.Header.ProxySendFrom = sipDialogue.ProxySendFrom;
-
-            SIPViaHeader viaHeader = new SIPViaHeader(uac.ServerTransaction.LocalSIPEndPoint, CallProperties.CreateBranchId());
-            referRequest.Header.Vias.PushViaHeader(viaHeader);
-
-            referRequest.Header.ReferTo = referToUri.ToString();
-            referRequest.Header.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, uac.ServerTransaction.TransactionRequest.Header.Contact.First().ContactURI) };
-            referRequest.RemoteSIPEndPoint = uac.ServerTransaction.RemoteEndPoint;
-
-            return referRequest;
         }
 
         /// <summary>
