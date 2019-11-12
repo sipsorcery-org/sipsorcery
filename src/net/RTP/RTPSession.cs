@@ -5,10 +5,10 @@
 // does not control the sockets as they may be shared by multiple sessions.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 25 Aug 2019	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery Pty Ltd, Montreux, Switzerland (www.sipsorcery.com).
+// 25 Aug 2019	Aaron Clauson	Created, Montreux, Switzerland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

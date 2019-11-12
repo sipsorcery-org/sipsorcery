@@ -5,10 +5,10 @@
 // http://tools.ietf.org/html/draft-ietf-payload-vp8-12.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 11 Nov 2014	Aaron Clauson	Created (aaron@sipsorcery.com), Montreux, Switzerland (www.sipsorcery.com).
+// 11 Nov 2014	Aaron Clauson	Created, Hobart, Australia.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
 //
 // License: 

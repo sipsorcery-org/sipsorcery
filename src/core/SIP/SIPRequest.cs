@@ -4,10 +4,10 @@
 // Description: SIP Request.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 20 Oct 2005	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery Ltd, (www.sipsorcery.com).
+// 20 Oct 2005	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

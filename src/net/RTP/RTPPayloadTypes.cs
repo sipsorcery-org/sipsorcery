@@ -4,10 +4,10 @@
 // Description: Stuctures and helper functions for RTP Payload types.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 23 May 2005	Aaron Clauson	Created (aaron@sipsorcery.com), Montreux, Switzerland (www.sipsorcery.com).
+// 23 May 2005	Aaron Clauson	Created, Montreux, Switzerland.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
 //
 // License: 

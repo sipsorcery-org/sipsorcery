@@ -4,51 +4,11 @@
 // Description: RTP Header as defined in RFC3550.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 22 May 2005	Aaron Clauson	Created (aaron@sipsorcery.com), Montreux, Switzerland (www.sipsorcery.com).
+// 22 May 2005	Aaron Clauson	Created, Dublin, Ireland.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
-//
-// Notes:
-// RTP Header:
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |V=2|P|X|  CC   |M|     PT      |       sequence number         |
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |                           timestamp                           |
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |           synchronization source (SSRC) identifier            |
-// +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-// |            contributing source (CSRC) identifiers             |
-// |                             ....                              |
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//
-// (V)ersion (2 bits) = 2
-// (P)adding (1 bit) = Indicates whether the packet contains additional padding octets.
-// e(X)tension (1 bit) = If set the fixed header must be followed by exactly one header extension.
-// CSRC Count (CC) (4 bits) = Number of Contributing Source identifiers following fixed header.
-// (M)arker (1 bit) = Used by profiles to enable marks to be set in the data.
-// Payload Type (PT) (7 bits) = RTP payload type.
-//  - GSM: 000 0011 (3)
-//  - PCMU (G711): 000 0000 (0)
-// Sequence Number (16 bits) = Increments by one for each RTP packet sent, initial value random.
-// Timestamp (32 bits) = The sampling instant of the first bit in the RTP data packet.
-// Synchronisation Source Id (SSRC) (32 bits) = The unique synchronisation source for the data stream.
-// Contributing Source Identifier Ids (0 to 15 items 32 bits each, see CC) = List of contributing sources for the payload in this field.
-//
-//
-// Wallclock time (absolute date and time) is represented using the
-// timestamp format of the Network Time Protocol (NTP), which is in
-// seconds relative to 0h UTC on 1 January 1900 [4].  The full
-// resolution NTP timestamp is a 64-bit unsigned fixed-point number with
-// the integer part in the first 32 bits and the fractional part in the
-// last 32 bits.  In some fields where a more compact representation is
-// appropriate, only the middle 32 bits are used; that is, the low 16
-// bits of the integer part and the high 16 bits of the fractional part.
-// The high 16 bits of the integer part must be determined
-// independently.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -76,7 +36,7 @@ namespace SIPSorcery.Net
         public uint SyncSource;									// 32 bits.
         public int[] CSRCList;									// 32 bits.
         public UInt16 ExtensionProfile;                         // 16 bits.
-        public UInt16 ExtensionLength;                          // 16 bits,  length of the header extensions in 32 bit words.
+        public UInt16 ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
         public byte[] ExtensionPayload;
 
         public int Length
@@ -197,20 +157,5 @@ namespace SIPSorcery.Net
 
             return header;
         }
-
-        /*public static uint GetWallclockUTCStamp(DateTime time)
-        {
-            return Convert.ToUInt32(time.ToUniversalTime().Subtract(DateTime.Now.Date).TotalMilliseconds);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="timestamp"></param>
-        /// <returns>The timestamp as a UTC DateTime object.</returns>
-        public static DateTime GetWallclockUTCTimeFromStamp(uint timestamp)
-        {
-            return DateTime.Now.Date.AddMilliseconds(timestamp);
-        }*/
     }
 }
