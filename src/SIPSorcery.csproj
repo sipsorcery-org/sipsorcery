@@ -9,7 +9,7 @@
 
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
-	<Version>3.4.0.0</Version>
+	<Version>3.5.0.0</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -34,10 +34,12 @@
 - Version 3.2.0: Added method to change registation agent expiry while registrations are in progress. Major refactor of TCP/TLS channel. Added async methods for send request and response.
 
 - Version 3.3.0: Support for RFC3262 "Reliability of Provisional Responses".
-- Version 3.4.0: Added web socket SIP channel.</PackageReleaseNotes>
+- Version 3.4.0: Added web socket SIP channel.
+
+- Version 3.5.0: Added ability to send RTP DTMF events as per RFC2833.</PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
-	<AssemblyVersion>3.4.0.0</AssemblyVersion>
-	<FileVersion>3.4.0.0</FileVersion>
+	<AssemblyVersion>3.5.0.0</AssemblyVersion>
+	<FileVersion>3.5.0.0</FileVersion>
   </PropertyGroup>    
 
 </Project>

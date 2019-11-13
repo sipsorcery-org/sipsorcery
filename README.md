@@ -160,3 +160,5 @@ Additional example programs are provided to demonstrate how to use the SIPSorcer
 
 * [Call Transfer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/CallTransfer): An example of how to transfer a call using a REFER request as specified in [RFC3515](https://tools.ietf.org/html/rfc3515). An explanation of the example is available [here](https://sipsorcery.github.io/sipsorcery/articles/calltransfer.html).
 
+* [Send DTMF (as RTP events)](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SendDtmf): An example of how to send DTMF tones using RTP events as specified in [RFC2833](https://tools.ietf.org/html/rfc2833). An explanation of the example is available [here](https://sipsorcery.github.io/sipsorcery/articles/senddtmf.html).
+
