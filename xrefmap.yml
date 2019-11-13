@@ -1732,6 +1732,128 @@ references:
   commentId: T:SIPSorcery.Net.RTPDataSent
   fullName: SIPSorcery.Net.RTPDataSent
   nameWithType: RTPDataSent
+- uid: SIPSorcery.Net.RTPEvent
+  name: RTPEvent
+  href: api/SIPSorcery.Net.RTPEvent.html
+  commentId: T:SIPSorcery.Net.RTPEvent
+  fullName: SIPSorcery.Net.RTPEvent
+  nameWithType: RTPEvent
+- uid: SIPSorcery.Net.RTPEvent.#ctor(System.Byte,System.Boolean,System.UInt16,System.UInt16,System.Int32)
+  name: RTPEvent(Byte, Boolean, UInt16, UInt16, Int32)
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent__ctor_System_Byte_System_Boolean_System_UInt16_System_UInt16_System_Int32_
+  commentId: M:SIPSorcery.Net.RTPEvent.#ctor(System.Byte,System.Boolean,System.UInt16,System.UInt16,System.Int32)
+  fullName: SIPSorcery.Net.RTPEvent.RTPEvent(System.Byte, System.Boolean, System.UInt16, System.UInt16, System.Int32)
+  nameWithType: RTPEvent.RTPEvent(Byte, Boolean, UInt16, UInt16, Int32)
+- uid: SIPSorcery.Net.RTPEvent.#ctor*
+  name: RTPEvent
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent__ctor_
+  commentId: Overload:SIPSorcery.Net.RTPEvent.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPEvent.RTPEvent
+  nameWithType: RTPEvent.RTPEvent
+- uid: SIPSorcery.Net.RTPEvent.DEFAULT_VOLUME
+  name: DEFAULT_VOLUME
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_DEFAULT_VOLUME
+  commentId: F:SIPSorcery.Net.RTPEvent.DEFAULT_VOLUME
+  fullName: SIPSorcery.Net.RTPEvent.DEFAULT_VOLUME
+  nameWithType: RTPEvent.DEFAULT_VOLUME
+- uid: SIPSorcery.Net.RTPEvent.DUPLICATE_COUNT
+  name: DUPLICATE_COUNT
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_DUPLICATE_COUNT
+  commentId: F:SIPSorcery.Net.RTPEvent.DUPLICATE_COUNT
+  fullName: SIPSorcery.Net.RTPEvent.DUPLICATE_COUNT
+  nameWithType: RTPEvent.DUPLICATE_COUNT
+- uid: SIPSorcery.Net.RTPEvent.Duration
+  name: Duration
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_Duration
+  commentId: P:SIPSorcery.Net.RTPEvent.Duration
+  fullName: SIPSorcery.Net.RTPEvent.Duration
+  nameWithType: RTPEvent.Duration
+- uid: SIPSorcery.Net.RTPEvent.Duration*
+  name: Duration
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_Duration_
+  commentId: Overload:SIPSorcery.Net.RTPEvent.Duration
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPEvent.Duration
+  nameWithType: RTPEvent.Duration
+- uid: SIPSorcery.Net.RTPEvent.EndOfEvent
+  name: EndOfEvent
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_EndOfEvent
+  commentId: P:SIPSorcery.Net.RTPEvent.EndOfEvent
+  fullName: SIPSorcery.Net.RTPEvent.EndOfEvent
+  nameWithType: RTPEvent.EndOfEvent
+- uid: SIPSorcery.Net.RTPEvent.EndOfEvent*
+  name: EndOfEvent
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_EndOfEvent_
+  commentId: Overload:SIPSorcery.Net.RTPEvent.EndOfEvent
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPEvent.EndOfEvent
+  nameWithType: RTPEvent.EndOfEvent
+- uid: SIPSorcery.Net.RTPEvent.EventID
+  name: EventID
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_EventID
+  commentId: P:SIPSorcery.Net.RTPEvent.EventID
+  fullName: SIPSorcery.Net.RTPEvent.EventID
+  nameWithType: RTPEvent.EventID
+- uid: SIPSorcery.Net.RTPEvent.EventID*
+  name: EventID
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_EventID_
+  commentId: Overload:SIPSorcery.Net.RTPEvent.EventID
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPEvent.EventID
+  nameWithType: RTPEvent.EventID
+- uid: SIPSorcery.Net.RTPEvent.GetEventPayload
+  name: GetEventPayload()
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_GetEventPayload
+  commentId: M:SIPSorcery.Net.RTPEvent.GetEventPayload
+  fullName: SIPSorcery.Net.RTPEvent.GetEventPayload()
+  nameWithType: RTPEvent.GetEventPayload()
+- uid: SIPSorcery.Net.RTPEvent.GetEventPayload*
+  name: GetEventPayload
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_GetEventPayload_
+  commentId: Overload:SIPSorcery.Net.RTPEvent.GetEventPayload
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPEvent.GetEventPayload
+  nameWithType: RTPEvent.GetEventPayload
+- uid: SIPSorcery.Net.RTPEvent.PayloadTypeID
+  name: PayloadTypeID
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_PayloadTypeID
+  commentId: P:SIPSorcery.Net.RTPEvent.PayloadTypeID
+  fullName: SIPSorcery.Net.RTPEvent.PayloadTypeID
+  nameWithType: RTPEvent.PayloadTypeID
+- uid: SIPSorcery.Net.RTPEvent.PayloadTypeID*
+  name: PayloadTypeID
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_PayloadTypeID_
+  commentId: Overload:SIPSorcery.Net.RTPEvent.PayloadTypeID
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPEvent.PayloadTypeID
+  nameWithType: RTPEvent.PayloadTypeID
+- uid: SIPSorcery.Net.RTPEvent.TotalDuration
+  name: TotalDuration
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_TotalDuration
+  commentId: P:SIPSorcery.Net.RTPEvent.TotalDuration
+  fullName: SIPSorcery.Net.RTPEvent.TotalDuration
+  nameWithType: RTPEvent.TotalDuration
+- uid: SIPSorcery.Net.RTPEvent.TotalDuration*
+  name: TotalDuration
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_TotalDuration_
+  commentId: Overload:SIPSorcery.Net.RTPEvent.TotalDuration
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPEvent.TotalDuration
+  nameWithType: RTPEvent.TotalDuration
+- uid: SIPSorcery.Net.RTPEvent.Volume
+  name: Volume
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_Volume
+  commentId: P:SIPSorcery.Net.RTPEvent.Volume
+  fullName: SIPSorcery.Net.RTPEvent.Volume
+  nameWithType: RTPEvent.Volume
+- uid: SIPSorcery.Net.RTPEvent.Volume*
+  name: Volume
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_Volume_
+  commentId: Overload:SIPSorcery.Net.RTPEvent.Volume
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPEvent.Volume
+  nameWithType: RTPEvent.Volume
 - uid: SIPSorcery.Net.RTPFrame
   name: RTPFrame
   href: api/SIPSorcery.Net.RTPFrame.html
@@ -2118,19 +2240,19 @@ references:
   commentId: T:SIPSorcery.Net.RTPPayloadTypes
   fullName: SIPSorcery.Net.RTPPayloadTypes
   nameWithType: RTPPayloadTypes
-- uid: SIPSorcery.Net.RTPPayloadTypes.#ctor
-  name: RTPPayloadTypes()
-  href: api/SIPSorcery.Net.RTPPayloadTypes.html#SIPSorcery_Net_RTPPayloadTypes__ctor
-  commentId: M:SIPSorcery.Net.RTPPayloadTypes.#ctor
-  fullName: SIPSorcery.Net.RTPPayloadTypes.RTPPayloadTypes()
-  nameWithType: RTPPayloadTypes.RTPPayloadTypes()
-- uid: SIPSorcery.Net.RTPPayloadTypes.#ctor*
-  name: RTPPayloadTypes
-  href: api/SIPSorcery.Net.RTPPayloadTypes.html#SIPSorcery_Net_RTPPayloadTypes__ctor_
-  commentId: Overload:SIPSorcery.Net.RTPPayloadTypes.#ctor
+- uid: SIPSorcery.Net.RTPPayloadTypes.GetSamplingFrequency(SIPSorcery.Net.RTPPayloadTypesEnum)
+  name: GetSamplingFrequency(RTPPayloadTypesEnum)
+  href: api/SIPSorcery.Net.RTPPayloadTypes.html#SIPSorcery_Net_RTPPayloadTypes_GetSamplingFrequency_SIPSorcery_Net_RTPPayloadTypesEnum_
+  commentId: M:SIPSorcery.Net.RTPPayloadTypes.GetSamplingFrequency(SIPSorcery.Net.RTPPayloadTypesEnum)
+  fullName: SIPSorcery.Net.RTPPayloadTypes.GetSamplingFrequency(SIPSorcery.Net.RTPPayloadTypesEnum)
+  nameWithType: RTPPayloadTypes.GetSamplingFrequency(RTPPayloadTypesEnum)
+- uid: SIPSorcery.Net.RTPPayloadTypes.GetSamplingFrequency*
+  name: GetSamplingFrequency
+  href: api/SIPSorcery.Net.RTPPayloadTypes.html#SIPSorcery_Net_RTPPayloadTypes_GetSamplingFrequency_
+  commentId: Overload:SIPSorcery.Net.RTPPayloadTypes.GetSamplingFrequency
   isSpec: "True"
-  fullName: SIPSorcery.Net.RTPPayloadTypes.RTPPayloadTypes
-  nameWithType: RTPPayloadTypes.RTPPayloadTypes
+  fullName: SIPSorcery.Net.RTPPayloadTypes.GetSamplingFrequency
+  nameWithType: RTPPayloadTypes.GetSamplingFrequency
 - uid: SIPSorcery.Net.RTPPayloadTypesEnum
   name: RTPPayloadTypesEnum
   href: api/SIPSorcery.Net.RTPPayloadTypesEnum.html
@@ -2143,12 +2265,12 @@ references:
   commentId: F:SIPSorcery.Net.RTPPayloadTypesEnum.Dynamic
   fullName: SIPSorcery.Net.RTPPayloadTypesEnum.Dynamic
   nameWithType: RTPPayloadTypesEnum.Dynamic
-- uid: SIPSorcery.Net.RTPPayloadTypesEnum.GSM
-  name: GSM
-  href: api/SIPSorcery.Net.RTPPayloadTypesEnum.html#SIPSorcery_Net_RTPPayloadTypesEnum_GSM
-  commentId: F:SIPSorcery.Net.RTPPayloadTypesEnum.GSM
-  fullName: SIPSorcery.Net.RTPPayloadTypesEnum.GSM
-  nameWithType: RTPPayloadTypesEnum.GSM
+- uid: SIPSorcery.Net.RTPPayloadTypesEnum.PCMA
+  name: PCMA
+  href: api/SIPSorcery.Net.RTPPayloadTypesEnum.html#SIPSorcery_Net_RTPPayloadTypesEnum_PCMA
+  commentId: F:SIPSorcery.Net.RTPPayloadTypesEnum.PCMA
+  fullName: SIPSorcery.Net.RTPPayloadTypesEnum.PCMA
+  nameWithType: RTPPayloadTypesEnum.PCMA
 - uid: SIPSorcery.Net.RTPPayloadTypesEnum.PCMU
   name: PCMU
   href: api/SIPSorcery.Net.RTPPayloadTypesEnum.html#SIPSorcery_Net_RTPPayloadTypesEnum_PCMU
@@ -2235,12 +2357,12 @@ references:
   commentId: T:SIPSorcery.Net.RTPSession
   fullName: SIPSorcery.Net.RTPSession
   nameWithType: RTPSession
-- uid: SIPSorcery.Net.RTPSession.#ctor(System.Int32,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
-  name: RTPSession(Int32, ProtectRtpPacket, ProtectRtpPacket)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Int32_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_
-  commentId: M:SIPSorcery.Net.RTPSession.#ctor(System.Int32,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
-  fullName: SIPSorcery.Net.RTPSession.RTPSession(System.Int32, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket)
-  nameWithType: RTPSession.RTPSession(Int32, ProtectRtpPacket, ProtectRtpPacket)
+- uid: SIPSorcery.Net.RTPSession.#ctor(SIPSorcery.Net.RTPPayloadTypesEnum,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
+  name: RTPSession(RTPPayloadTypesEnum, ProtectRtpPacket, ProtectRtpPacket)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_SIPSorcery_Net_RTPPayloadTypesEnum_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_
+  commentId: M:SIPSorcery.Net.RTPSession.#ctor(SIPSorcery.Net.RTPPayloadTypesEnum,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
+  fullName: SIPSorcery.Net.RTPSession.RTPSession(SIPSorcery.Net.RTPPayloadTypesEnum, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket)
+  nameWithType: RTPSession.RTPSession(RTPPayloadTypesEnum, ProtectRtpPacket, ProtectRtpPacket)
 - uid: SIPSorcery.Net.RTPSession.#ctor*
   name: RTPSession
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_
@@ -2287,6 +2409,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.PayloadType
   nameWithType: RTPSession.PayloadType
+- uid: SIPSorcery.Net.RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
+  name: RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
+  commentId: F:SIPSorcery.Net.RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
+  fullName: SIPSorcery.Net.RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
+  nameWithType: RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
 - uid: SIPSorcery.Net.RTPSession.SendAudioFrame(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32,System.Byte[])
   name: SendAudioFrame(Socket, IPEndPoint, UInt32, Byte[])
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudioFrame_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_System_Byte___
@@ -2303,6 +2431,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SendAudioFrame
   nameWithType: RTPSession.SendAudioFrame
+- uid: SIPSorcery.Net.RTPSession.SendDtmfEvent(System.Net.Sockets.Socket,System.Net.IPEndPoint,SIPSorcery.Net.RTPEvent,System.UInt32,System.UInt16,System.UInt16,System.Threading.CancellationTokenSource)
+  name: SendDtmfEvent(Socket, IPEndPoint, RTPEvent, UInt32, UInt16, UInt16, CancellationTokenSource)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_System_Net_Sockets_Socket_System_Net_IPEndPoint_SIPSorcery_Net_RTPEvent_System_UInt32_System_UInt16_System_UInt16_System_Threading_CancellationTokenSource_
+  commentId: M:SIPSorcery.Net.RTPSession.SendDtmfEvent(System.Net.Sockets.Socket,System.Net.IPEndPoint,SIPSorcery.Net.RTPEvent,System.UInt32,System.UInt16,System.UInt16,System.Threading.CancellationTokenSource)
+  fullName: SIPSorcery.Net.RTPSession.SendDtmfEvent(System.Net.Sockets.Socket, System.Net.IPEndPoint, SIPSorcery.Net.RTPEvent, System.UInt32, System.UInt16, System.UInt16, System.Threading.CancellationTokenSource)
+  nameWithType: RTPSession.SendDtmfEvent(Socket, IPEndPoint, RTPEvent, UInt32, UInt16, UInt16, CancellationTokenSource)
+- uid: SIPSorcery.Net.RTPSession.SendDtmfEvent*
+  name: SendDtmfEvent
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_
+  commentId: Overload:SIPSorcery.Net.RTPSession.SendDtmfEvent
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.SendDtmfEvent
+  nameWithType: RTPSession.SendDtmfEvent
 - uid: SIPSorcery.Net.RTPSession.SendRtcpSenderReport(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32)
   name: SendRtcpSenderReport(Socket, IPEndPoint, UInt32)
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpSenderReport_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_
