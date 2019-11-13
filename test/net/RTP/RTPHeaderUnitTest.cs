@@ -76,7 +76,7 @@ namespace SIPSorcery.Net.UnitTests
             src.HeaderExtensionFlag = 1;
             src.MarkerBit = 1;
             src.CSRCCount = 3;
-            src.PayloadType = (int)RTPPayloadTypesEnum.GSM;
+            src.PayloadType = (int)RTPPayloadTypesEnum.PCMA;
 
             byte[] headerBuffer = src.GetHeader(1, 0, 1);
 

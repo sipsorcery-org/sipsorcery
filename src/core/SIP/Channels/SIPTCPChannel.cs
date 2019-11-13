@@ -633,7 +633,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-
         public override void Dispose()
         {
             this.Close();
