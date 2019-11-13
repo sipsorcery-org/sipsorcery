@@ -10,3 +10,5 @@
   href: stunserver.md
 - name: Call Transfer
   href: calltransfer.md
+- name: Send DTMF
+  href: senddtmf.md
