@@ -2,9 +2,12 @@
 // Filename: UIHelper.cs
 //
 // Description: This class contains some helper and utility methods for WPF applications.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 01 Jan 2015	Aaron Clauson	Added to softphone project, (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 01 Jan 2015	Aaron Clauson	Added to softphone project, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

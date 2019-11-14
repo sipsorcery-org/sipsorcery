@@ -2,9 +2,12 @@
 // Filename: Softphone.xaml.cs
 //
 // Description: The user interface for the softphone. 
-// 
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//  
 // History:
-// 11 Mar 2012	Aaron Clauson	Refactored,  (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 11 Mar 2012	Aaron Clauson	Refactored, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -97,7 +100,8 @@ namespace SIPSorcery.SoftPhone
 
         private void OnWindowLoaded(object sender, System.Windows.RoutedEventArgs e)
         {
-            Task.Run(() => { 
+            Task.Run(() =>
+            {
                 _mediaManager = new MediaManager();
                 logger.Debug("Media Manager Initialised.");
                 _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
@@ -249,7 +253,7 @@ namespace SIPSorcery.SoftPhone
 
                 // SIP call.
                 _activeClient = _sipClient;
-                Task.Run (() => { _sipClient.Call(_mediaManager, destination); });
+                Task.Run(() => { _sipClient.Call(_mediaManager, destination); });
             }
         }
 
@@ -353,19 +357,19 @@ namespace SIPSorcery.SoftPhone
                         _localBitmapFullRectangle = new Int32Rect(0, 0, Convert.ToInt32(_localWriteableBitmap.Width), Convert.ToInt32(_localWriteableBitmap.Height));
                     }
 
-                        // Reserve the back buffer for updates.
-                        _localWriteableBitmap.Lock();
+                    // Reserve the back buffer for updates.
+                    _localWriteableBitmap.Lock();
 
                     Marshal.Copy(sample, 0, _localWriteableBitmap.BackBuffer, sample.Length);
 
-                        // Specify the area of the bitmap that changed.
-                        _localWriteableBitmap.AddDirtyRect(_localBitmapFullRectangle);
+                    // Specify the area of the bitmap that changed.
+                    _localWriteableBitmap.AddDirtyRect(_localBitmapFullRectangle);
 
-                        // Release the back buffer and make it available for display.
-                        _localWriteableBitmap.Unlock();
+                    // Release the back buffer and make it available for display.
+                    _localWriteableBitmap.Unlock();
 
                 }), System.Windows.Threading.DispatcherPriority.Normal);
-            }   
+            }
         }
 
         private void RemoteVideoSampleReady(byte[] sample, int width, int height)

@@ -3,18 +3,19 @@
 //
 // Description: Translation class for the Windows Media Foundation video sub type GUIDs.
 // http://msdn.microsoft.com/en-us/library/windows/desktop/aa370819(v=vs.85).aspx
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
 // 02 Jan 2015	Aaron Clauson	Created.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using NAudio.Utils;
 
 namespace SIPSorcery.SoftPhone
 {

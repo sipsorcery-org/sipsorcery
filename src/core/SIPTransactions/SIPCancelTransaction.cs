@@ -89,7 +89,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                SIPResponse cancelResponse = new SIPResponse(sipResponseCode, null, sipRequest.LocalSIPEndPoint);
+                SIPResponse cancelResponse = new SIPResponse(sipResponseCode, null, sipRequest.LocalSIPEndPoint, null);
 
                 SIPHeader requestHeader = sipRequest.Header;
                 cancelResponse.Header = new SIPHeader(requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);

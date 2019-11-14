@@ -6,10 +6,10 @@
 // system.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 26 Dec 2005	Aaron Clauson	Created.
+// 26 Dec 2005	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -57,13 +57,10 @@ namespace SIPSorcery.Sys
 
             lock (_allocatePortsMutex)
             {
-                //if (_nextMediaPort >= MEDIA_PORT_END)
-                //{
-                //    // The media port range has been used go back to the start. Some connections have most likely been closed.
-                //    _nextMediaPort = MEDIA_PORT_START;
-                //}
-
-                var inUseUDPPorts = (from p in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners() where p.Port >= startPort && p.Port <= endPort && p.Address.ToString() == localAddress.ToString() select p.Port).OrderBy(x => x).ToList();
+                // TODO: This call results ina a OverflowException on WSL.
+                //var inUseUDPPorts = (from p in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners() 
+                //                     where p.Port >= startPort && p.Port <= endPort && p.Address.ToString() == localAddress.ToString() 
+                //                     select p.Port).OrderBy(x => x).ToList();
 
                 // Make the RTP port start on an even port. Some legacy systems require the RTP port to be an even port number.
                 if (startPort % 2 != 0)
@@ -74,36 +71,36 @@ namespace SIPSorcery.Sys
                 int rtpPort = startPort;
                 int controlPort = (createControlSocket == true) ? rtpPort + 1 : 0;
 
-                if (inUseUDPPorts.Count > 0)
-                {
-                    // Find the first two available for the RTP socket.
-                    for (int index = startPort; index <= endPort; index += 2)
-                    {
-                        if (!inUseUDPPorts.Contains(index))
-                        {
-                            rtpPort = index;
+                //if (inUseUDPPorts.Count > 0)
+                //{
+                //    // Find the first two available for the RTP socket.
+                //    for (int index = startPort; index <= endPort; index += 2)
+                //    {
+                //        if (!inUseUDPPorts.Contains(index))
+                //        {
+                //            rtpPort = index;
 
-                            if (!createControlSocket)
-                            {
-                                break;
-                            }
-                            else if (!inUseUDPPorts.Contains(index + 1))
-                            {
-                                controlPort = index + 1;
-                                break;
-                            }
-                        }
-                    }
-                }
-                else
-                {
+                //            if (!createControlSocket)
+                //            {
+                //                break;
+                //            }
+                //            else if (!inUseUDPPorts.Contains(index + 1))
+                //            {
+                //                controlPort = index + 1;
+                //                break;
+                //            }
+                //        }
+                //    }
+                //}
+                //else
+                //{
                     rtpPort = startPort;
 
                     if (createControlSocket)
                     {
                         controlPort = rtpPort + 1;
                     }
-                }
+                //}
 
                 if (rtpPort != 0)
                 {
@@ -125,26 +122,26 @@ namespace SIPSorcery.Sys
                                 controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
                                 controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
 
-                                logger.LogDebug("Successfully bound RTP socket " + localAddress + ":" + rtpPort + " and control socket " + localAddress + ":" + controlPort + ".");
+                                logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort} and control socket {localAddress}:{controlPort}.");
                             }
                             else
                             {
-                                logger.LogDebug("Successfully bound RTP socket " + localAddress + ":" + rtpPort + ".");
+                                logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort}.");
                             }
 
                             bindSuccess = true;
 
                             break;
                         }
-                        catch (System.Net.Sockets.SocketException)
+                        catch (System.Net.Sockets.SocketException sockExcp)
                         {
                             if (controlPort != 0)
                             {
-                                logger.LogWarning("Failed to bind on address " + localAddress + " to RTP port " + rtpPort + " and/or control port of " + controlPort + ", attempt " + bindAttempts + ".");
+                                logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort} and/or control port of {controlPort}, attempt {bindAttempts}.");
                             }
                             else
                             {
-                                logger.LogWarning("Failed to bind on address " + localAddress + " to RTP port " + rtpPort + ", attempt " + bindAttempts + ".");
+                                logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort}, attempt {bindAttempts}.");
                             }
 
                             // Increment the port range in case there is an OS/network issue closing/cleaning up already used ports.

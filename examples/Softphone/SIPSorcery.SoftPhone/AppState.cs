@@ -1,19 +1,22 @@
-///----------------------------------------------------------------------------
-/// File Name: AppState.cs
-/// 
-/// Description: 
-/// The AppState class holds static application configuration settings for 
-/// objects requiring configuration information. AppState provides a one stop
-/// shop for settings rather then have configuration functions in separate 
-/// classes.
-/// 
-/// History:
-/// 04 Nov 2004	Aaron Clauson	Created.
-/// 14 Sep 2019 Aaron Clauson   Added NetStandard support.
-///
-/// License:
-/// Public Domain.
-///----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+// File Name: AppState.cs
+// 
+// Description: 
+// The AppState class holds static application configuration settings for 
+// objects requiring configuration information. AppState provides a one stop
+// shop for settings rather then have configuration functions in separate 
+// classes.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//  
+// History:
+// 04 Nov 2004	Aaron Clauson	Created.
+// 14 Sep 2019 Aaron Clauson   Added NetStandard support.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//----------------------------------------------------------------------------
 
 using System;
 using System.Collections.Specialized;

@@ -417,7 +417,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                SIPResponse informationalResponse = new SIPResponse(sipResponseCode, null, sipRequest.LocalSIPEndPoint);
+                SIPResponse informationalResponse = new SIPResponse(sipResponseCode, null, sipRequest.LocalSIPEndPoint, sipRequest.RemoteSIPEndPoint);
 
                 SIPHeader requestHeader = sipRequest.Header;
                 informationalResponse.Header = new SIPHeader(requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);

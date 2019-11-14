@@ -5,7 +5,7 @@
 // packets) as specified in RFC2833.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
 // 12 Nov 2019	Aaron Clauson (aaron@sipsorcery.com)    Created, Dublin, Ireland.
