@@ -72,7 +72,7 @@ namespace SIPSorcery.SIP.App
             int expiry)
         {
             m_sipTransport = sipTransport;
-            m_localEndPoint = sipTransport.GetDefaultSIPEndPoint();
+            m_localEndPoint = sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp);
             m_sipAccountAOR = new SIPURI(username, server, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
             m_authUsername = username;
             m_password = password;

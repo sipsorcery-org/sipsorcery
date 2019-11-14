@@ -13,6 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -282,9 +283,9 @@ namespace SIPSorcery.SIP.UnitTests
         {
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-            IPEndPoint listenEP = new IPEndPoint(IPAddress.Loopback, 9066);
+            IPEndPoint listenEP = new IPEndPoint(IPAddress.Loopback, 9067);
             var transport = new SIPTransport();
-            var tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Loopback, 9067));
+            var tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Loopback, 9066));
             tcpChannel.DisableLocalTCPSocketsCheck = true;
             transport.AddSIPChannel(tcpChannel);
 
@@ -293,23 +294,31 @@ namespace SIPSorcery.SIP.UnitTests
 
             Task.Run(() =>
             {
-                TcpListener listener = new TcpListener(listenEP);
-                listener.Start();
-                var tcpClient = listener.AcceptTcpClient();
-                logger.LogDebug($"TCP listener accepted client with remote end point {tcpClient.Client.RemoteEndPoint}.");
-                for (int i = 0; i < requestCount; i++)
+                try
                 {
-                    logger.LogDebug($"Sending request {i}.");
+                    TcpListener listener = new TcpListener(listenEP);
+                    listener.Start();
+                    var tcpClient = listener.AcceptTcpClient();
+                    logger.LogDebug($"Dummy TCP listener accepted client with remote end point {tcpClient.Client.RemoteEndPoint}.");
+                    for (int i = 0; i < requestCount; i++)
+                    {
+                        logger.LogDebug($"Sending request {i}.");
 
-                    var req = transport.GetRequest(SIPMethodsEnum.OPTIONS, SIPURI.ParseSIPURIRelaxed($"{i}@sipsorcery.com"));
-                    byte[] reqBytes = Encoding.UTF8.GetBytes(req.ToString());
+                        var req = transport.GetRequest(SIPMethodsEnum.OPTIONS, SIPURI.ParseSIPURIRelaxed($"{i}@sipsorcery.com;transport=tcp"));
+                        byte[] reqBytes = Encoding.UTF8.GetBytes(req.ToString());
 
-                    tcpClient.GetStream().Write(reqBytes, 0, reqBytes.Length);
-                    tcpClient.GetStream().Flush();
+                        tcpClient.GetStream().Write(reqBytes, 0, reqBytes.Length);
+                        tcpClient.GetStream().Flush();
 
-                    Task.Delay(30).Wait();
+                        Task.Delay(30).Wait();
+                    }
+                    tcpClient.GetStream().Close();
                 }
-                tcpClient.GetStream().Close();
+                catch(Exception excp)
+                {
+                    logger.LogError($"Exception on dummy TCP listener task. {excp.Message}");
+                    testComplete.SetResult(false);
+                }
             });
 
             transport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -333,6 +342,7 @@ namespace SIPSorcery.SIP.UnitTests
             tcpChannel.ConnectClientAsync(listenEP, null, null).Wait();
 
             Task.WhenAny(new Task[] { testComplete.Task, Task.Delay(5000) }).Wait();
+            //Task.WhenAny(new Task[] { testComplete.Task }).Wait();
 
             transport.Shutdown();
 
@@ -348,7 +358,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// <param name="cts">Cancellation token to tell the server when to shutdown.</param>
         private void RunServer(SIPChannel testServerChannel, CancellationTokenSource cts)
         {
-            logger.LogDebug($"Starting server task for {testServerChannel.SIPChannelEndPoint.ToString()}.");
+            logger.LogDebug($"RunServer test channel created on {testServerChannel.SIPChannelEndPoint}.");
 
             var serverSIPTransport = new SIPTransport();
 
@@ -356,7 +366,7 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 serverSIPTransport.AddSIPChannel(testServerChannel);
 
-                logger.LogDebug(serverSIPTransport.GetDefaultSIPEndPoint().ToString());
+                logger.LogDebug(serverSIPTransport.GetDefaultSIPEndPoint(testServerChannel.SIPChannelEndPoint.Protocol).ToString());
 
                 serverSIPTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
                 {
@@ -395,7 +405,7 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 clientSIPTransport.AddSIPChannel(testClientChannel);
 
-                logger.LogDebug(clientSIPTransport.GetDefaultSIPEndPoint().ToString());
+                logger.LogDebug($"RunClient test channel created on {testClientChannel.SIPChannelEndPoint}.");
 
                 clientSIPTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
                 {
