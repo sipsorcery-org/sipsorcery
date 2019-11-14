@@ -21413,12 +21413,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.FindSIPChannel
   nameWithType: SIPTransport.FindSIPChannel
-- uid: SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint
-  name: GetDefaultSIPEndPoint()
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetDefaultSIPEndPoint
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint
-  fullName: SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint()
-  nameWithType: SIPTransport.GetDefaultSIPEndPoint()
 - uid: SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint(SIPSorcery.SIP.SIPEndPoint)
   name: GetDefaultSIPEndPoint(SIPEndPoint)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetDefaultSIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
@@ -21477,19 +21471,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.GetListeningSIPEndPoints
   nameWithType: SIPTransport.GetListeningSIPEndPoints
-- uid: SIPSorcery.SIP.SIPTransport.GetLocalAddress(System.Net.IPAddress)
-  name: GetLocalAddress(IPAddress)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetLocalAddress_System_Net_IPAddress_
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetLocalAddress(System.Net.IPAddress)
-  fullName: SIPSorcery.SIP.SIPTransport.GetLocalAddress(System.Net.IPAddress)
-  nameWithType: SIPTransport.GetLocalAddress(IPAddress)
-- uid: SIPSorcery.SIP.SIPTransport.GetLocalAddress*
-  name: GetLocalAddress
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetLocalAddress_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.GetLocalAddress
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.GetLocalAddress
-  nameWithType: SIPTransport.GetLocalAddress
 - uid: SIPSorcery.SIP.SIPTransport.GetRequest(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI)
   name: GetRequest(SIPMethodsEnum, SIPURI)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetRequest_SIPSorcery_SIP_SIPMethodsEnum_SIPSorcery_SIP_SIPURI_
@@ -24188,12 +24169,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket
   nameWithType: NetServices.CreateRtpSocket
-- uid: SIPSorcery.Sys.NetServices.Platform
-  name: Platform
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_Platform
-  commentId: F:SIPSorcery.Sys.NetServices.Platform
-  fullName: SIPSorcery.Sys.NetServices.Platform
-  nameWithType: NetServices.Platform
+- uid: SIPSorcery.Sys.NetServices.GetLocalAddress(System.Net.IPAddress)
+  name: GetLocalAddress(IPAddress)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddress_System_Net_IPAddress_
+  commentId: M:SIPSorcery.Sys.NetServices.GetLocalAddress(System.Net.IPAddress)
+  fullName: SIPSorcery.Sys.NetServices.GetLocalAddress(System.Net.IPAddress)
+  nameWithType: NetServices.GetLocalAddress(IPAddress)
+- uid: SIPSorcery.Sys.NetServices.GetLocalAddress*
+  name: GetLocalAddress
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddress_
+  commentId: Overload:SIPSorcery.Sys.NetServices.GetLocalAddress
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetServices.GetLocalAddress
+  nameWithType: NetServices.GetLocalAddress
 - uid: SIPSorcery.Sys.NetServices.UDP_PORT_END
   name: UDP_PORT_END
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_UDP_PORT_END
@@ -24382,24 +24370,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.PasswordHash.Hash
   nameWithType: PasswordHash.Hash
-- uid: SIPSorcery.Sys.PlatformEnum
-  name: PlatformEnum
-  href: api/SIPSorcery.Sys.PlatformEnum.html
-  commentId: T:SIPSorcery.Sys.PlatformEnum
-  fullName: SIPSorcery.Sys.PlatformEnum
-  nameWithType: PlatformEnum
-- uid: SIPSorcery.Sys.PlatformEnum.Linux
-  name: Linux
-  href: api/SIPSorcery.Sys.PlatformEnum.html#SIPSorcery_Sys_PlatformEnum_Linux
-  commentId: F:SIPSorcery.Sys.PlatformEnum.Linux
-  fullName: SIPSorcery.Sys.PlatformEnum.Linux
-  nameWithType: PlatformEnum.Linux
-- uid: SIPSorcery.Sys.PlatformEnum.Windows
-  name: Windows
-  href: api/SIPSorcery.Sys.PlatformEnum.html#SIPSorcery_Sys_PlatformEnum_Windows
-  commentId: F:SIPSorcery.Sys.PlatformEnum.Windows
-  fullName: SIPSorcery.Sys.PlatformEnum.Windows
-  nameWithType: PlatformEnum.Windows
 - uid: SIPSorcery.Sys.RawSocket
   name: RawSocket
   href: api/SIPSorcery.Sys.RawSocket.html
