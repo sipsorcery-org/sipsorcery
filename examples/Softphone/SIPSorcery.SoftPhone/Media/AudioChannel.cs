@@ -3,9 +3,12 @@
 //
 // Description: This class manages the coding and decoding of audio from physical
 // devices into and for RTP packets. 
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 27 Mar 2012	Aaron Clauson	Refactored, (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 27 Mar 2012	Aaron Clauson	Refactored, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

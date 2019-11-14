@@ -4,7 +4,7 @@
 // Description: An exmaple of using a REFER request to transfer an established call.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
 // 11 Nov 2019	Aaron Clauson (aaron@sipsorcery.com)    Created, Dublin, Ireland.

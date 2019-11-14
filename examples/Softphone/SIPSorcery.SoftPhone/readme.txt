@@ -4,14 +4,11 @@ Date: 18 Feb 2016
 Author: Aaron Clauson
 URL: https://github.com/sipsorcery/sipsorcery
 
-The SIPSorcery softphone is a demo (note the "demo") application to prototype
+The SIPSorcery softphone is a demo application to prototype
 using .Net as a suitable runtime environment for a softphone application requiring
-deterministic audio sampling and playback, it's not. And also to prototype placing
-calls via Google Voice's XMPP gateway, this works well.
+deterministic audio sampling and playback, it's not.
 
-As far as using the softphone goes there are settings that can be entered in the
-sipsorcery-softphone.exe.config (sorry I was too lazy to do a menu screen for the
-settings so you'll have to use a text editor).
+Settings that can be adjusted in the softphone.exe.config.
 
 Audio:
 ------
@@ -24,7 +21,7 @@ jump from a 20ms period up to a 100 or 200ms period. The softphone supplied audi
 will still be usable at the remote end of the call but it will be jumpy and possibly
 have clicks and static.
 
-I've only implemented support for the PCMU (G711 UALW) codec so if the remote SIP 
+I've only implemented support for the PCMU (G711 ULAW) codec so if the remote SIP 
 device doesn't support it a call will not be possible.
 As far as audio devices go the default input and output devices are used and there
 is no user interface option facility to change that. Can be done via code.

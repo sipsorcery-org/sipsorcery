@@ -2,9 +2,12 @@
 // Filename: RTPManager.cs
 //
 // Description: This class manages the RTP transmission and reception for VoIP clients.
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 12 Dec 2014	Aaron Clauson	Refactored from MediaManager,  (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 12 Dec 2014	Aaron Clauson	Refactored from MediaManager, Hobart, Australia.
 // 10 Feb 2015  Aaron Clauson   Switched from using internal RTP channel to use http://net7mma.codeplex.com/ (and then back again).
 //
 // License: 

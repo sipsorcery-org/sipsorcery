@@ -199,7 +199,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                SIPResponse okResponse = new SIPResponse(SIPResponseStatusCodesEnum.Ok, null, sipRequest.LocalSIPEndPoint);
+                SIPResponse okResponse = new SIPResponse(SIPResponseStatusCodesEnum.Ok, null, sipRequest.LocalSIPEndPoint, sipRequest.RemoteSIPEndPoint);
 
                 SIPHeader requestHeader = sipRequest.Header;
                 SIPURI contactUri = null;

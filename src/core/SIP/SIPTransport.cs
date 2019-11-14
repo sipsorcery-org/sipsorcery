@@ -1589,7 +1589,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                SIPResponse response = new SIPResponse(responseCode, reasonPhrase, sipRequest.LocalSIPEndPoint);
+                SIPResponse response = new SIPResponse(responseCode, reasonPhrase, sipRequest.LocalSIPEndPoint, sipRequest.RemoteSIPEndPoint);
 
                 if (reasonPhrase != null)
                 {
@@ -1638,7 +1638,7 @@ namespace SIPSorcery.SIP
                     localSIPEndPoint = GetDefaultSIPEndPoint();
                 }
 
-                SIPResponse response = new SIPResponse(responseCode, reasonPhrase, localSIPEndPoint);
+                SIPResponse response = new SIPResponse(responseCode, reasonPhrase, localSIPEndPoint, remoteEndPoint);
                 SIPSchemesEnum sipScheme = (localSIPEndPoint.Protocol == SIPProtocolsEnum.tls) ? SIPSchemesEnum.sips : SIPSchemesEnum.sip;
                 SIPFromHeader from = new SIPFromHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
                 SIPToHeader to = new SIPToHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
