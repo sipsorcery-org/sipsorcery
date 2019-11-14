@@ -18710,12 +18710,12 @@ references:
   commentId: T:SIPSorcery.SIP.SIPResponse
   fullName: SIPSorcery.SIP.SIPResponse
   nameWithType: SIPResponse
-- uid: SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,SIPSorcery.SIP.SIPEndPoint)
-  name: SIPResponse(SIPResponseStatusCodesEnum, String, SIPEndPoint)
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse__ctor_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,SIPSorcery.SIP.SIPEndPoint)
-  fullName: SIPSorcery.SIP.SIPResponse.SIPResponse(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPResponse.SIPResponse(SIPResponseStatusCodesEnum, String, SIPEndPoint)
+- uid: SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  name: SIPResponse(SIPResponseStatusCodesEnum, String, SIPEndPoint, SIPEndPoint)
+  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse__ctor_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  fullName: SIPSorcery.SIP.SIPResponse.SIPResponse(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: SIPResponse.SIPResponse(SIPResponseStatusCodesEnum, String, SIPEndPoint, SIPEndPoint)
 - uid: SIPSorcery.SIP.SIPResponse.#ctor*
   name: SIPResponse
   href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse__ctor_
@@ -24608,75 +24608,6 @@ references:
   commentId: F:SIPSorcery.Sys.TypeExtensions.WhiteSpaceChars
   fullName: SIPSorcery.Sys.TypeExtensions.WhiteSpaceChars
   nameWithType: TypeExtensions.WhiteSpaceChars
-- uid: SIPSorcery.Sys.UDPListener
-  name: UDPListener
-  href: api/SIPSorcery.Sys.UDPListener.html
-  commentId: T:SIPSorcery.Sys.UDPListener
-  fullName: SIPSorcery.Sys.UDPListener
-  nameWithType: UDPListener
-- uid: SIPSorcery.Sys.UDPListener.#ctor(System.Net.IPEndPoint)
-  name: UDPListener(IPEndPoint)
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Sys.UDPListener.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Sys.UDPListener.UDPListener(System.Net.IPEndPoint)
-  nameWithType: UDPListener.UDPListener(IPEndPoint)
-- uid: SIPSorcery.Sys.UDPListener.#ctor*
-  name: UDPListener
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener__ctor_
-  commentId: Overload:SIPSorcery.Sys.UDPListener.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.UDPListener.UDPListener
-  nameWithType: UDPListener.UDPListener
-- uid: SIPSorcery.Sys.UDPListener.Close
-  name: Close()
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Close
-  commentId: M:SIPSorcery.Sys.UDPListener.Close
-  fullName: SIPSorcery.Sys.UDPListener.Close()
-  nameWithType: UDPListener.Close()
-- uid: SIPSorcery.Sys.UDPListener.Close*
-  name: Close
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Close_
-  commentId: Overload:SIPSorcery.Sys.UDPListener.Close
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.UDPListener.Close
-  nameWithType: UDPListener.Close
-- uid: SIPSorcery.Sys.UDPListener.PacketReceived
-  name: PacketReceived
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_PacketReceived
-  commentId: F:SIPSorcery.Sys.UDPListener.PacketReceived
-  fullName: SIPSorcery.Sys.UDPListener.PacketReceived
-  nameWithType: UDPListener.PacketReceived
-- uid: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.Byte[])
-  name: Send(IPEndPoint, Byte[])
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Send_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.Byte[])
-  name.vb: Send(IPEndPoint, Byte())
-  fullName: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint, System.Byte())
-  nameWithType: UDPListener.Send(IPEndPoint, Byte[])
-  nameWithType.vb: UDPListener.Send(IPEndPoint, Byte())
-- uid: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.Byte[],System.Int32)
-  name: Send(IPEndPoint, Byte[], Int32)
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Send_System_Net_IPEndPoint_System_Byte___System_Int32_
-  commentId: M:SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.Byte[],System.Int32)
-  name.vb: Send(IPEndPoint, Byte(), Int32)
-  fullName: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint, System.Byte[], System.Int32)
-  fullName.vb: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint, System.Byte(), System.Int32)
-  nameWithType: UDPListener.Send(IPEndPoint, Byte[], Int32)
-  nameWithType.vb: UDPListener.Send(IPEndPoint, Byte(), Int32)
-- uid: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.String)
-  name: Send(IPEndPoint, String)
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Send_System_Net_IPEndPoint_System_String_
-  commentId: M:SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint,System.String)
-  fullName: SIPSorcery.Sys.UDPListener.Send(System.Net.IPEndPoint, System.String)
-  nameWithType: UDPListener.Send(IPEndPoint, String)
-- uid: SIPSorcery.Sys.UDPListener.Send*
-  name: Send
-  href: api/SIPSorcery.Sys.UDPListener.html#SIPSorcery_Sys_UDPListener_Send_
-  commentId: Overload:SIPSorcery.Sys.UDPListener.Send
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.UDPListener.Send
-  nameWithType: UDPListener.Send
 - uid: SIPSorcery.Sys.UDPPacket
   name: UDPPacket
   href: api/SIPSorcery.Sys.UDPPacket.html

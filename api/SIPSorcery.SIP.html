@@ -201,13 +201,6 @@ gen-value      =  token / host / quoted-string</code></pre>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a></h4>
       <section><p>Represents a SIP Response.</p>
-<p>Status Codes:	
-1xx: Provisional -- request received, continuing to process the request;
-2xx: Success -- the action was successfully received, understood, and accepted;
-3xx: Redirection -- further action needs to be taken in order to complete the request;
-4xx: Client Error -- the request contains bad syntax or cannot be fulfilled at this server;
-5xx: Server Error -- the server failed to fulfill an apparently valid request;
-6xx: Global Failure -- the request cannot be fulfilled at any server.</p>
 <pre><code>Backus-Naur Form:
 SIP-Version SP Status-Code SP Reason-Phrase CRLF
 *message-header
