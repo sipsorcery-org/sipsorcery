@@ -26,96 +26,98 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Used to check the conformance of blocks of XML text to the schema in RFC 4235.
         /// </summary>
-        [TestMethod]
-        [Ignore("Use this method to validate dialog XML packages against the RFC schema. It takes a little bit of time to load the schema.")]
-        [ExpectedException(typeof(XmlSchemaValidationException))]
-        public void InvalidXMLUnitTest()
-        {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //[TestMethod]
+        //[Ignore("Use this method to validate dialog XML packages against the RFC schema. It takes a little bit of time to load the schema.")]
+        //[ExpectedException(typeof(XmlSchemaValidationException))]
+        /// Commented out due to excluding xsd resources files that were breaking the WSL build. AC 14 Nov 2019
+        //public void InvalidXMLUnitTest()
+        //{
+        //    Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            if (m_eventDialogSchema == null)
-            {
-                Console.WriteLine("Loading XSD schema for dialog event package, takes a while...");
+        //    if (m_eventDialogSchema == null)
+        //    {
+        //        Console.WriteLine("Loading XSD schema for dialog event package, takes a while...");
 
-                m_eventDialogSchema = new XmlSchemaSet();
-                XmlReader schemaReader = new XmlTextReader(SIPSorcery.SIP.Properties.Resources.EventDialogSchema, XmlNodeType.Document, null);
-                m_eventDialogSchema.Add(m_dialogXMLNS, schemaReader);
-            }
+        //        m_eventDialogSchema = new XmlSchemaSet();
+        //        XmlReader schemaReader = new XmlTextReader(SIPSorcery.SIP.Properties.Resources.EventDialogSchema, XmlNodeType.Document, null);
+        //        m_eventDialogSchema.Add(m_dialogXMLNS, schemaReader);
+        //    }
 
-            // The mandatory version attribue on dialog-info is missing.
-            string invalidDialogInfoXMLStr =
-                 "<?xml version='1.0' encoding='utf-16'?>" +
-                 "<dialog-info state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'>" +
-                 " <dialog id='as7d900as8' call-id='a84b4c76e66710' local-tag='1928301774' direction='initiator'>" +
-                 "  <state event='rejected' code='486'>terminated</state>" +
-                 " </dialog>" +
-                 "</dialog-info>";
+        //    // The mandatory version attribue on dialog-info is missing.
+        //    string invalidDialogInfoXMLStr =
+        //         "<?xml version='1.0' encoding='utf-16'?>" +
+        //         "<dialog-info state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'>" +
+        //         " <dialog id='as7d900as8' call-id='a84b4c76e66710' local-tag='1928301774' direction='initiator'>" +
+        //         "  <state event='rejected' code='486'>terminated</state>" +
+        //         " </dialog>" +
+        //         "</dialog-info>";
 
-            XDocument eventDialogDoc = XDocument.Parse(invalidDialogInfoXMLStr);
-            eventDialogDoc.Validate(m_eventDialogSchema, (o, e) =>
-            {
-                Console.WriteLine("XSD validation " + e.Severity + " event: " + e.Message);
+        //    XDocument eventDialogDoc = XDocument.Parse(invalidDialogInfoXMLStr);
+        //    eventDialogDoc.Validate(m_eventDialogSchema, (o, e) =>
+        //    {
+        //        Console.WriteLine("XSD validation " + e.Severity + " event: " + e.Message);
 
-                if (e.Severity == XmlSeverityType.Error)
-                {
-                    throw e.Exception;
-                }
-            });
+        //        if (e.Severity == XmlSeverityType.Error)
+        //        {
+        //            throw e.Exception;
+        //        }
+        //    });
 
-            Console.WriteLine("-----------------------------------------");
-        }
+        //    Console.WriteLine("-----------------------------------------");
+        //}
 
         /// <summary>
         /// Used to check the conformance of blocks of XML text to the schema in RFC 4235.
         /// </summary>
-        [TestMethod]
-        [Ignore("Use this method to validate dialog XML packages against the RFC schema. It takes a little bit of time to load the schema.")]
-        public void ValidXMLUnitTest()
-        {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        /// Commented out due to excluding xsd resources files that were breaking the WSL build. AC 14 Nov 2019
+        //[TestMethod]
+        //[Ignore("Use this method to validate dialog XML packages against the RFC schema. It takes a little bit of time to load the schema.")]
+        //public void ValidXMLUnitTest()
+        //{
+        //    Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            if (m_eventDialogSchema == null)
-            {
-                Console.WriteLine("Loading XSD schema for dialog event package, takes a while...");
+        //    if (m_eventDialogSchema == null)
+        //    {
+        //        Console.WriteLine("Loading XSD schema for dialog event package, takes a while...");
 
-                m_eventDialogSchema = new XmlSchemaSet();
-                XmlReader schemaReader = new XmlTextReader(SIPSorcery.SIP.Properties.Resources.EventDialogSchema, XmlNodeType.Document, null);
-                m_eventDialogSchema.Add(m_dialogXMLNS, schemaReader);
-            }
+        //        m_eventDialogSchema = new XmlSchemaSet();
+        //        XmlReader schemaReader = new XmlTextReader(SIPSorcery.SIP.Properties.Resources.EventDialogSchema, XmlNodeType.Document, null);
+        //        m_eventDialogSchema.Add(m_dialogXMLNS, schemaReader);
+        //    }
 
-            string validDialogInfoXMLStr =
-                "<?xml version='1.0' encoding='utf-16'?>" +
-                 "<dialog-info version='1' state='full' entity='sip:test@test.com'" +
-                 "  xmlns='urn:ietf:params:xml:ns:dialog-info' xmlns:ss='sipsorcery:dialog-info'>" +
-                 " <dialog id='as7d900as8' call-id='a84b4c76e66710' local-tag='1928301774' direction='initiator'>" +
-                 "  <state event='remote-bye' code='486'>terminated</state>" +
-                 "  <duration>13</duration>" +
-                 "  <local>" +
-                 "   <identity>sip:109@sipsorcery.com;user=phone</identity>" +
-                 "   <cseq>2</cseq>" +
-                 "  </local>" +
-                 "  <remote>" +
-                 "   <identity display-name='Joe Bloggs'>sip:thisis@anonymous.invalid</identity>" +
-                 "   <target uri='sip:user@10.1.1.7:5070' />" +
-                 "   <cseq>1</cseq>" +
-                 "   <ss:sdp/>" +
-                 "  </remote>" +
-                 " </dialog>" +
-                 "</dialog-info>";
+        //    string validDialogInfoXMLStr =
+        //        "<?xml version='1.0' encoding='utf-16'?>" +
+        //         "<dialog-info version='1' state='full' entity='sip:test@test.com'" +
+        //         "  xmlns='urn:ietf:params:xml:ns:dialog-info' xmlns:ss='sipsorcery:dialog-info'>" +
+        //         " <dialog id='as7d900as8' call-id='a84b4c76e66710' local-tag='1928301774' direction='initiator'>" +
+        //         "  <state event='remote-bye' code='486'>terminated</state>" +
+        //         "  <duration>13</duration>" +
+        //         "  <local>" +
+        //         "   <identity>sip:109@sipsorcery.com;user=phone</identity>" +
+        //         "   <cseq>2</cseq>" +
+        //         "  </local>" +
+        //         "  <remote>" +
+        //         "   <identity display-name='Joe Bloggs'>sip:thisis@anonymous.invalid</identity>" +
+        //         "   <target uri='sip:user@10.1.1.7:5070' />" +
+        //         "   <cseq>1</cseq>" +
+        //         "   <ss:sdp/>" +
+        //         "  </remote>" +
+        //         " </dialog>" +
+        //         "</dialog-info>";
 
-            XDocument eventDialogDoc = XDocument.Parse(validDialogInfoXMLStr);
-            eventDialogDoc.Validate(m_eventDialogSchema, (o, e) =>
-            {
-                Console.WriteLine("XSD validation " + e.Severity + " event: " + e.Message);
+        //    XDocument eventDialogDoc = XDocument.Parse(validDialogInfoXMLStr);
+        //    eventDialogDoc.Validate(m_eventDialogSchema, (o, e) =>
+        //    {
+        //        Console.WriteLine("XSD validation " + e.Severity + " event: " + e.Message);
 
-                if (e.Severity == XmlSeverityType.Error)
-                {
-                    throw e.Exception;
-                }
-            });
+        //        if (e.Severity == XmlSeverityType.Error)
+        //        {
+        //            throw e.Exception;
+        //        }
+        //    });
 
-            Console.WriteLine("-----------------------------------------");
-        }
+        //    Console.WriteLine("-----------------------------------------");
+        //}
 
         /// <summary>
         /// Tests that a SIPEventDialogInfo will generate an XML text representation of itself without throwing any exceptions.
