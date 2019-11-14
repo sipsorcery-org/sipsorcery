@@ -7,10 +7,10 @@
 // RFC4235 "An INVITE-Initiated Dialog Event Package for the Session Initiation Protocol (SIP)".
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 28 Feb 2010	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, London, UK (www.sipsorcery.com).
+// 28 Feb 2010	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
