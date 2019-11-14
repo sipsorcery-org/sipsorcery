@@ -21,6 +21,7 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 
@@ -211,42 +212,45 @@ namespace SIPSorcery.Sys
         /// <returns>If a match is found an IPAddress otherwise null.</returns>
         public static IPAddress GetLocalAddress(IPAddress destination)
         {
-            foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                var adapterIPProperties = adapter.GetIPProperties();
-
-                foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapterIPProperties.UnicastAddresses
-                    .Where(x => x.Address.AddressFamily == destination.AddressFamily))
+                foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
                 {
-                    byte[] localAddressBytes = unicastIPAddressInformation.Address.GetAddressBytes();
-                    byte[] dstAddressBytes = destination.GetAddressBytes();
+                    var adapterIPProperties = adapter.GetIPProperties();
 
-                    int prefixBits = unicastIPAddressInformation.PrefixLength;
-                    int index = 0;
-                    for (; prefixBits >= 8; prefixBits -= 8)
+                    foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapterIPProperties.UnicastAddresses
+                        .Where(x => x.Address.AddressFamily == destination.AddressFamily))
                     {
-                        if (localAddressBytes[index] != dstAddressBytes[index])
+                        byte[] localAddressBytes = unicastIPAddressInformation.Address.GetAddressBytes();
+                        byte[] dstAddressBytes = destination.GetAddressBytes();
+
+                        int prefixBits = unicastIPAddressInformation.PrefixLength;
+                        int index = 0;
+                        for (; prefixBits >= 8; prefixBits -= 8)
                         {
-                            continue;
+                            if (localAddressBytes[index] != dstAddressBytes[index])
+                            {
+                                continue;
+                            }
+                            ++index;
                         }
-                        ++index;
-                    }
 
-                    if (prefixBits > 0)
-                    {
-                        int mask = (byte)~(255 >> prefixBits);
-                        if ((localAddressBytes[index] & mask) != (dstAddressBytes[index] & mask))
+                        if (prefixBits > 0)
                         {
-                            continue;
+                            int mask = (byte)~(255 >> prefixBits);
+                            if ((localAddressBytes[index] & mask) != (dstAddressBytes[index] & mask))
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                return unicastIPAddressInformation.Address;
+                            }
                         }
                         else
                         {
                             return unicastIPAddressInformation.Address;
                         }
-                    }
-                    else
-                    {
-                        return unicastIPAddressInformation.Address;
                     }
                 }
             }
