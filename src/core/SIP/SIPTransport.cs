@@ -20,10 +20,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -36,10 +34,6 @@ namespace SIPSorcery.SIP
 {
     public class SIPTransport
     {
-        // TODO investigate whether there's a better .Net way to do this in 2019.
-        [DllImport("iphlpapi.dll", SetLastError = true)]
-        static extern int GetBestInterface(UInt32 DestAddr, out UInt32 BestIfIndex);    // For IPv6 will need to switch to GetBestInterfaceEx.
-
         private const int NO_ERROR = 0;
 
         private const string RECEIVE_THREAD_NAME = "siptransport-receive";
@@ -281,44 +275,10 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Attempts to find the optimal SIP UDP IPv4 channel connected to the internet. If the caller needs to send the SIP request on
-        /// a different channel (e.g. TCP, TLS, IPv6 or on a private network interface it must set the local end point manually).
+        /// Attempts to find the a matching SIP channel for the specified protocol. Preference is given to non-loopback
+        /// channels.
         /// </summary>
         /// <returns>A SIP channel.</returns>
-        public SIPEndPoint GetDefaultSIPEndPoint()
-        {
-            if (m_sipChannels == null || m_sipChannels.Count == 0)
-            {
-                throw new ApplicationException("No SIP channels available.");
-            }
-
-            if (m_sipChannels.Count == 1)
-            {
-                return m_sipChannels.First().Value.SIPChannelEndPoint;
-            }
-
-            var internetAddress = GetLocalAddress(IPAddress.Parse("1.1.1.1"));
-
-            var internetChannel = m_sipChannels.Values.Where(x => x.SIPChannelEndPoint.Address.Equals(internetAddress) && x.SIPChannelEndPoint.Protocol == SIPProtocolsEnum.udp).FirstOrDefault();
-
-            if (internetChannel != null)
-            {
-                return internetChannel.SIPChannelEndPoint;
-            }
-            else
-            {
-                foreach (SIPChannel sipChannel in m_sipChannels.Values)
-                {
-                    if (sipChannel.SIPChannelEndPoint.Protocol == SIPProtocolsEnum.udp)
-                    {
-                        return sipChannel.SIPChannelEndPoint;
-                    }
-                }
-
-                return m_sipChannels.First().Value.SIPChannelEndPoint;
-            }
-        }
-
         public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
         {
             if (m_sipChannels == null || m_sipChannels.Count == 0)
@@ -328,13 +288,17 @@ namespace SIPSorcery.SIP
 
             var matchingChannels = m_sipChannels.Values.Where(x => x.SIPProtocol == protocol);
 
-            if (matchingChannels.Count() == 1)
+            if(matchingChannels.Count() == 0)
+            {
+                throw new ApplicationException($"The SIP transport layer does not have any SIP channels available for protocol {protocol}.");
+            }
+            else if (matchingChannels.Count() == 1)
             {
                 return matchingChannels.First().SIPChannelEndPoint;
             }
             else
             {
-                return matchingChannels.Where(x => x.IsLoopbackAddress == false).First().SIPChannelEndPoint;
+                return matchingChannels.OrderBy(x => x.IsLoopbackAddress).First().SIPChannelEndPoint;
             }
         }
 
@@ -342,7 +306,8 @@ namespace SIPSorcery.SIP
         /// Attempts to locate the SIP channel that can communicate with the destination end point.
         /// </summary>
         /// <param name="destinationEP">The remote SIP end point to find a SIP channel for.</param>
-        /// <returns>If successful the SIP end point of a SIP channel that can be used to communicate with the destination end point.</returns>
+        /// <returns>If successful the SIP end point of a SIP channel that can be used to communicate 
+        /// with the destination end point.</returns>
         public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
         {
             if (m_sipChannels == null || m_sipChannels.Count == 0)
@@ -374,12 +339,12 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                var localAddress = GetLocalAddress(destinationEP.Address);
+                var localAddress = NetServices.GetLocalAddress(destinationEP.Address);
 
                 foreach (SIPChannel sipChannel in m_sipChannels.Values)
                 {
                     if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
-                        (localAddress == null || sipChannel.SIPChannelEndPoint.Address.ToString() == localAddress.ToString()))
+                        (localAddress == null || sipChannel.SIPChannelEndPoint.Address.Equals(localAddress)))
                     {
                         return sipChannel.SIPChannelEndPoint;
                     }
@@ -387,59 +352,6 @@ namespace SIPSorcery.SIP
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// TODO: Look at UnicastIPAddressInformation.PrefixLength instead of IPv4Mask.
-        /// </summary>
-        /// <param name="destination"></param>
-        /// <returns></returns>
-        public IPAddress GetLocalAddress(IPAddress destination)
-        {
-            uint bestInterfaceIndex = 0;
-            int result = GetBestInterface(BitConverter.ToUInt32(destination.GetAddressBytes(), 0), out bestInterfaceIndex);
-
-            IPAddress localAddress = null;
-
-            if (result == NO_ERROR)
-            {
-                var bestInterface = from ni in NetworkInterface.GetAllNetworkInterfaces() where ni.GetIPProperties().GetIPv4Properties().Index == bestInterfaceIndex select ni;
-
-                localAddress = bestInterface.FirstOrDefault()?.GetIPProperties().UnicastAddresses.Where(x => x.Address.AddressFamily == destination.AddressFamily).FirstOrDefault()?.Address;
-            }
-
-            if (localAddress != null)
-            {
-                foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
-                {
-                    var adapterIPProperties = adapter.GetIPProperties();
-
-                    foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapterIPProperties.UnicastAddresses.Where(x => x.Address.AddressFamily == destination.AddressFamily))
-                    {
-                        if (unicastIPAddressInformation.Address.AddressFamily == AddressFamily.InterNetwork)
-                        {
-                            long mask = unicastIPAddressInformation.IPv4Mask.Address & destination.Address;
-                            long networkMask = unicastIPAddressInformation.IPv4Mask.Address & unicastIPAddressInformation.Address.Address;
-
-                            if (mask == networkMask)
-                            {
-                                localAddress = unicastIPAddressInformation.Address;
-                                break;
-                            }
-                        }
-                        else if (unicastIPAddressInformation.Address.AddressFamily == AddressFamily.InterNetworkV6)
-                        {
-                            if (IPAddress.IsLoopback(unicastIPAddressInformation.Address) == false)
-                            {
-                                localAddress = unicastIPAddressInformation.Address;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            return localAddress;
         }
 
         /// <summary>
@@ -1635,7 +1547,7 @@ namespace SIPSorcery.SIP
             {
                 if (localSIPEndPoint == null)
                 {
-                    localSIPEndPoint = GetDefaultSIPEndPoint();
+                    localSIPEndPoint = GetDefaultSIPEndPoint(remoteEndPoint != null ? remoteEndPoint.Protocol : SIPProtocolsEnum.udp);
                 }
 
                 SIPResponse response = new SIPResponse(responseCode, reasonPhrase, localSIPEndPoint, remoteEndPoint);
@@ -1668,7 +1580,7 @@ namespace SIPSorcery.SIP
         {
             if (localSIPEndPoint == null)
             {
-                localSIPEndPoint = GetDefaultSIPEndPoint();
+                localSIPEndPoint = GetDefaultSIPEndPoint(uri.Protocol);
             }
 
             SIPRequest request = new SIPRequest(method, uri);
@@ -1705,7 +1617,7 @@ namespace SIPSorcery.SIP
             {
                 if (localSIPEndPoint == null)
                 {
-                    localSIPEndPoint = GetDefaultSIPEndPoint();
+                    localSIPEndPoint = GetDefaultSIPEndPoint(localSIPEndPoint);
                 }
 
                 CheckTransactionEngineExists();
@@ -1726,7 +1638,7 @@ namespace SIPSorcery.SIP
             {
                 if (localSIPEndPoint == null)
                 {
-                    localSIPEndPoint = GetDefaultSIPEndPoint();
+                    localSIPEndPoint = GetDefaultSIPEndPoint(dstEndPoint != null ? dstEndPoint.Protocol : SIPProtocolsEnum.udp);
                 }
 
                 CheckTransactionEngineExists();
@@ -1747,7 +1659,7 @@ namespace SIPSorcery.SIP
             {
                 if (localSIPEndPoint == null)
                 {
-                    localSIPEndPoint = GetDefaultSIPEndPoint();
+                    localSIPEndPoint = GetDefaultSIPEndPoint(dstEndPoint != null ? dstEndPoint.Protocol : SIPProtocolsEnum.udp);
                 }
 
                 CheckTransactionEngineExists();
@@ -1768,7 +1680,7 @@ namespace SIPSorcery.SIP
             {
                 if (localSIPEndPoint == null)
                 {
-                    localSIPEndPoint = GetDefaultSIPEndPoint();
+                    localSIPEndPoint = GetDefaultSIPEndPoint(dstEndPoint != null ? dstEndPoint.Protocol : SIPProtocolsEnum.udp);
                 }
 
                 CheckTransactionEngineExists();

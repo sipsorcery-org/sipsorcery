@@ -19,18 +19,16 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Sys
 {
-    public enum PlatformEnum
-    {
-        Windows = 1,
-        Linux = 2,
-    }
-
+    /// <summary>
+    /// Helper class to provide network services.
+    /// </summary>
     public class NetServices
     {
         public const int UDP_PORT_START = 1025;
@@ -40,8 +38,6 @@ namespace SIPSorcery.Sys
         private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 5;               // The maximum number of re-attempts that will be made when trying to bind the RTP port.
 
         private static ILogger logger = Log.Logger;
-
-        public static PlatformEnum Platform = PlatformEnum.Windows;
 
         private static Mutex _allocatePortsMutex = new Mutex();
 
@@ -94,12 +90,12 @@ namespace SIPSorcery.Sys
                 //}
                 //else
                 //{
-                    rtpPort = startPort;
+                rtpPort = startPort;
 
-                    if (createControlSocket)
-                    {
-                        controlPort = rtpPort + 1;
-                    }
+                if (createControlSocket)
+                {
+                    controlPort = rtpPort + 1;
+                }
                 //}
 
                 if (rtpPort != 0)
@@ -199,6 +195,63 @@ namespace SIPSorcery.Sys
             {
                 throw new ApplicationException("Unable to create a random UDP listener between " + start + " and " + end);
             }
+        }
+
+        /// <summary>
+        /// This method "attempts" to determine the local IPv4 address that should be used to connection to a destination IPv4 address.
+        /// The problem it is attempting to solve is selecting the correct local interface to use when communicating with another device
+        /// on the same private network compared to a device on the Internet.
+        /// The mechanism used it to compare address prefixes. This mechanism is not reliable as it cannot deal with routes where the 
+        /// remote network prefix could be compeletely different to the prefix on the local interface.
+        /// An alternative approach being explored is to use a local address of IPAddress.Any and send a SIP OPTIONS request to the destination
+        /// address in order to determine what local address should be placed in SIP Contact headers etc.
+        /// TODO: Look at UnicastIPAddressInformation.PrefixLength instead of IPv4Mask.
+        /// </summary>
+        /// <param name="destination">The IPv4 address that a send from local address is attempting to be determined for.</param>
+        /// <returns>If a match is found an IPAddress otherwise null.</returns>
+        public static IPAddress GetLocalAddress(IPAddress destination)
+        {
+            foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                var adapterIPProperties = adapter.GetIPProperties();
+
+                foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapterIPProperties.UnicastAddresses
+                    .Where(x => x.Address.AddressFamily == destination.AddressFamily))
+                {
+                    byte[] localAddressBytes = unicastIPAddressInformation.Address.GetAddressBytes();
+                    byte[] dstAddressBytes = destination.GetAddressBytes();
+
+                    int prefixBits = unicastIPAddressInformation.PrefixLength;
+                    int index = 0;
+                    for (; prefixBits >= 8; prefixBits -= 8)
+                    {
+                        if (localAddressBytes[index] != dstAddressBytes[index])
+                        {
+                            continue;
+                        }
+                        ++index;
+                    }
+
+                    if (prefixBits > 0)
+                    {
+                        int mask = (byte)~(255 >> prefixBits);
+                        if ((localAddressBytes[index] & mask) != (dstAddressBytes[index] & mask))
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            return unicastIPAddressInformation.Address;
+                        }
+                    }
+                    else
+                    {
+                        return unicastIPAddressInformation.Address;
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

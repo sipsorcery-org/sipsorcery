@@ -61,7 +61,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 SIPRequest req = GetRequest(method);
-                SIPNonInviteTransaction tran = m_sipTransport.CreateNonInviteTransaction(req, null, m_sipTransport.GetDefaultSIPEndPoint(), m_outboundProxy);
+                SIPNonInviteTransaction tran = m_sipTransport.CreateNonInviteTransaction(req, null, m_sipTransport.GetDefaultSIPEndPoint(req.URI.Protocol), m_outboundProxy);
                 
                 ManualResetEvent waitForResponse = new ManualResetEvent(false);
                 tran.NonInviteTransactionTimedOut += RequestTimedOut;
@@ -164,7 +164,7 @@ namespace SIPSorcery.SIP.App
                 header.UserAgent = m_userAgent;
                 request.Header = header;
 
-                SIPViaHeader viaHeader = new SIPViaHeader(m_sipTransport.GetDefaultSIPEndPoint(), CallProperties.CreateBranchId());
+                SIPViaHeader viaHeader = new SIPViaHeader(m_sipTransport.GetDefaultSIPEndPoint(uri.Protocol), CallProperties.CreateBranchId());
                 request.Header.Vias.PushViaHeader(viaHeader);
 
                 try

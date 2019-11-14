@@ -10,9 +10,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Xml;
-using System.Xml.Linq;
-using System.Xml.Schema;
+//using System.Xml;
+//using System.Xml.Linq;
+//using System.Xml.Schema;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -21,7 +21,7 @@ namespace SIPSorcery.SIP.UnitTests
     public class SIPEventDialogInfoUnitTest
     {
         private static string m_dialogXMLNS = SIPEventDialogInfo.m_dialogXMLNS;
-        private static XmlSchemaSet m_eventDialogSchema;
+        //private static XmlSchemaSet m_eventDialogSchema;
 
         /// <summary>
         /// Used to check the conformance of blocks of XML text to the schema in RFC 4235.
