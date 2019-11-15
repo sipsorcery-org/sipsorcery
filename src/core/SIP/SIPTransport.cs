@@ -19,6 +19,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -34,10 +35,6 @@ namespace SIPSorcery.SIP
 {
     public class SIPTransport
     {
-        private const int NO_ERROR = 0;
-
-        private const string RECEIVE_THREAD_NAME = "siptransport-receive";
-        private const string RELIABLES_THREAD_NAME = "siptransport-reliables";
         private const int MAX_QUEUEWAIT_PERIOD = 2000;              // Maximum time to wait to check the message received queue if no events are received.
         private const int PENDINGREQUESTS_CHECK_PERIOD = 500;       // Time between checking the pending requests queue to resend reliable requests that have not been responded to.
         private const int MAX_INMESSAGE_QUEUECOUNT = 5000;          // The maximum number of messages that can be stored in the incoming message queue.
@@ -89,7 +86,7 @@ namespace SIPSorcery.SIP
 
         // Contains a list of the SIP Requests/Response that are being monitored or responses and retransmitted on when none is recieved to attempt a more reliable delivery
         // rather then just relying on the initial request to get through.
-        private Dictionary<string, SIPTransaction> m_reliableTransmissions = new Dictionary<string, SIPTransaction>();
+        private ConcurrentDictionary<string, SIPTransaction> m_reliableTransmissions = new ConcurrentDictionary<string, SIPTransaction>();
         private bool m_reliablesThreadRunning = false;   // Only gets started when a request is made to send a reliable request.
 
         /// <summary>
@@ -188,20 +185,17 @@ namespace SIPSorcery.SIP
             if (!m_transportThreadStarted)
             {
                 m_transportThreadStarted = true;
-
-                Thread inMessageThread = new Thread(new ThreadStart(ProcessInMessage));
-                inMessageThread.Name = RECEIVE_THREAD_NAME;
-                inMessageThread.Start();
+                Task.Run(ProcessInMessage);
             }
         }
 
         private void StartReliableTransmissionsThread()
         {
-            m_reliablesThreadRunning = true;
-
-            Thread reliableTransmissionsThread = new Thread(new ThreadStart(ProcessPendingReliableTransactions));
-            reliableTransmissionsThread.Name = RELIABLES_THREAD_NAME;
-            reliableTransmissionsThread.Start();
+            if (!m_reliablesThreadRunning)
+            {
+                m_reliablesThreadRunning = true;
+                Task.Run(ProcessTransactions);
+            }
         }
 
         public void ReceiveMessage(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer)
@@ -288,7 +282,7 @@ namespace SIPSorcery.SIP
 
             var matchingChannels = m_sipChannels.Values.Where(x => x.SIPProtocol == protocol);
 
-            if(matchingChannels.Count() == 0)
+            if (matchingChannels.Count() == 0)
             {
                 throw new ApplicationException($"The SIP transport layer does not have any SIP channels available for protocol {protocol}.");
             }
@@ -622,36 +616,6 @@ namespace SIPSorcery.SIP
             {
                 return await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()));
             }
-
-            //}
-            //catch (ApplicationException appExcp)
-            //{
-            //    logger.LogWarning("ApplicationException SIPTransport SendRequest. " + appExcp.Message);
-
-            //    SIPResponse errorResponse = GetResponse(sipRequest, SIPResponseStatusCodesEnum.InternalServerError, appExcp.Message);
-
-            //    // Remove any Via headers, other than the last one, that are for sockets hosted by this process.
-            //    while (errorResponse.Header.Vias.Length > 0)
-            //    {
-            //        if (IsLocalSIPEndPoint(SIPEndPoint.ParseSIPEndPoint(errorResponse.Header.Vias.TopViaHeader.ReceivedFromAddress)))
-            //        {
-            //            errorResponse.Header.Vias.PopTopViaHeader();
-            //        }
-            //        else
-            //        {
-            //            break;
-            //        }
-            //    }
-
-            //    if (errorResponse.Header.Vias.Length == 0)
-            //    {
-            //        logger.LogWarning("Could not send error response for " + appExcp.Message + " as no non-local Via headers were available.");
-            //    }
-            //    else
-            //    {
-            //        SendResponse(errorResponse);
-            //    }
-            //}
         }
 
         /// <summary>
@@ -723,10 +687,7 @@ namespace SIPSorcery.SIP
 
             if (!m_reliableTransmissions.ContainsKey(sipTransaction.TransactionId))
             {
-                lock (m_reliableTransmissions)
-                {
-                    m_reliableTransmissions.Add(sipTransaction.TransactionId, sipTransaction);
-                }
+                m_reliableTransmissions.TryAdd(sipTransaction.TransactionId, sipTransaction);
             }
 
             if (!m_reliablesThreadRunning)
@@ -766,10 +727,18 @@ namespace SIPSorcery.SIP
                 // This reponse needs to be sent on a specific connection.
                 var sipChannel = FindSIPChannel(connectionID);
 
-                FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, sipResponse.RemoteSIPEndPoint, sipResponse);
+                if (sipChannel != null)
+                {
+                    FireSIPResponseOutTraceEvent(sipChannel.SIPChannelEndPoint, sipResponse.RemoteSIPEndPoint, sipResponse);
 
-                sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
-                return await sipChannel.SendAsync(connectionID, Encoding.UTF8.GetBytes(sipResponse.ToString()));
+                    sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
+                    return await sipChannel.SendAsync(connectionID, Encoding.UTF8.GetBytes(sipResponse.ToString()));
+                }
+                else
+                {
+                    logger.LogWarning($"Could not find a SIP channel to send SIP Response for connection ID {connectionID}.");
+                    return SocketError.NotConnected;
+                }
             }
             else
             {
@@ -893,7 +862,11 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void ProcessPendingReliableTransactions()
+        /// <summary>
+        /// A long running method that monitors and processes a list of transactions that need to send a reliable
+        /// request or response.
+        /// </summary>
+        private async void ProcessTransactions()
         {
             try
             {
@@ -908,129 +881,130 @@ namespace SIPSorcery.SIP
                         break;
                     }
 
-                    try
-                    {
-                        List<string> completedTransactions = new List<string>();
+                    List<string> completedTransactions = new List<string>();
 
-                        lock (m_reliableTransmissions)
+                    foreach (SIPTransaction transaction in m_reliableTransmissions.Values)
+                    {
+                        try
                         {
-                            foreach (SIPTransaction transaction in m_reliableTransmissions.Values)
+                            if (!transaction.DeliveryPending)
                             {
-                                if (!transaction.DeliveryPending)
+                                completedTransactions.Add(transaction.TransactionId);
+                            }
+                            else if (transaction.TransactionState == SIPTransactionStatesEnum.Terminated ||
+                                    transaction.TransactionState == SIPTransactionStatesEnum.Confirmed ||
+                                    transaction.TransactionState == SIPTransactionStatesEnum.Cancelled ||
+                                    transaction.HasTimedOut)
+                            {
+                                transaction.DeliveryPending = false;
+                                completedTransactions.Add(transaction.TransactionId);
+                            }
+                            else
+                            {
+                                if (DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds >= m_t6)
                                 {
-                                    completedTransactions.Add(transaction.TransactionId);
-                                }
-                                else if (transaction.TransactionState == SIPTransactionStatesEnum.Terminated ||
-                                        transaction.TransactionState == SIPTransactionStatesEnum.Confirmed ||
-                                        transaction.TransactionState == SIPTransactionStatesEnum.Cancelled ||
-                                        transaction.HasTimedOut)
-                                {
-                                    transaction.DeliveryPending = false;
+                                    //logger.LogDebug("Request timed out " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ".");
+
+                                    if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer && transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                                    {
+                                        // If the transaction is a UAS and still in the progress state then the timeout was for a provisional response
+                                        // and it should not set any transaction properties that will affect the delvery of any subsequent final response.
+                                        transaction.OnTimedOutProvisionalResponse();
+                                    }
+                                    else
+                                    {
+                                        transaction.DeliveryPending = false;
+                                        transaction.DeliveryFailed = true;
+                                        transaction.TimedOutAt = DateTime.Now;
+                                        transaction.HasTimedOut = true;
+                                        transaction.FireTransactionTimedOut();
+                                    }
+
                                     completedTransactions.Add(transaction.TransactionId);
                                 }
                                 else
                                 {
-                                    if (DateTime.Now.Subtract(transaction.InitialTransmit).TotalMilliseconds >= m_t6)
-                                    {
-                                        //logger.LogDebug("Request timed out " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + ".");
+                                    double nextTransmitMilliseconds = Math.Pow(2, transaction.Retransmits - 1) * m_t1;
+                                    nextTransmitMilliseconds = (nextTransmitMilliseconds > m_t2) ? m_t2 : nextTransmitMilliseconds;
 
-                                        if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer && transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                                    if (DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds >= nextTransmitMilliseconds)
+                                    {
+                                        transaction.Retransmits = transaction.Retransmits + 1;
+                                        transaction.LastTransmit = DateTime.Now;
+
+                                        if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
                                         {
-                                            // If the transaction is a UAS and still in the progress state then the timeout was for a provisional response
-                                            // and it should not set any transaction properties that will affect the delvery of any subsequent final response.
-                                            transaction.OnTimedOutProvisionalResponse();
+                                            SocketError result = SocketError.Success;
+
+                                            if (transaction.TransactionState == SIPTransactionStatesEnum.Completed && transaction.TransactionFinalResponse != null)
+                                            {
+                                                transaction.OnRetransmitFinalResponse();
+                                                FireSIPResponseRetransmitTraceEvent(transaction, transaction.TransactionFinalResponse, transaction.Retransmits);
+                                                result = await SendResponseAsync(transaction.TransactionFinalResponse);
+                                            }
+                                            else if (transaction.TransactionState == SIPTransactionStatesEnum.Proceeding && transaction.ReliableProvisionalResponse != null)
+                                            {
+                                                transaction.OnRetransmitProvisionalResponse();
+                                                FireSIPResponseRetransmitTraceEvent(transaction, transaction.ReliableProvisionalResponse, transaction.Retransmits);
+                                                result = await SendResponseAsync(transaction.ReliableProvisionalResponse);
+                                            }
+
+                                            if(result == SocketError.NotConnected)
+                                            {
+                                                // This response transmission required a connection that no longer exists.
+                                                transaction.DeliveryPending = false;
+                                                transaction.DeliveryFailed = true;
+                                                completedTransactions.Add(transaction.TransactionId);
+                                            }
                                         }
                                         else
                                         {
-                                            transaction.DeliveryPending = false;
-                                            transaction.DeliveryFailed = true;
-                                            transaction.TimedOutAt = DateTime.Now;
-                                            transaction.HasTimedOut = true;
-                                            transaction.FireTransactionTimedOut();
-                                        }
+                                            FireSIPRequestRetransmitTraceEvent(transaction, transaction.TransactionRequest, transaction.Retransmits);
 
-                                        completedTransactions.Add(transaction.TransactionId);
-                                    }
-                                    else
-                                    {
-                                        double nextTransmitMilliseconds = Math.Pow(2, transaction.Retransmits - 1) * m_t1;
-                                        nextTransmitMilliseconds = (nextTransmitMilliseconds > m_t2) ? m_t2 : nextTransmitMilliseconds;
-                                        //logger.LogDebug("Time since retransmit " + transaction.Retransmits + " for " + transaction.TransactionRequest.Method + " " + transaction.TransactionRequest.URI.ToString() + " " + DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds + ".");
-
-                                        if (DateTime.Now.Subtract(transaction.LastTransmit).TotalMilliseconds >= nextTransmitMilliseconds)
-                                        {
-                                            transaction.Retransmits = transaction.Retransmits + 1;
-                                            transaction.LastTransmit = DateTime.Now;
-
-                                            if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
+                                            if (transaction.OutboundProxy != null)
                                             {
-                                                if (transaction.TransactionState == SIPTransactionStatesEnum.Completed && transaction.TransactionFinalResponse != null)
-                                                {
-                                                    SendResponse(transaction.TransactionFinalResponse);
-                                                    transaction.Retransmits += 1;
-                                                    transaction.LastTransmit = DateTime.Now;
-                                                    transaction.OnRetransmitFinalResponse();
-
-                                                    FireSIPResponseRetransmitTraceEvent(transaction, transaction.TransactionFinalResponse, transaction.Retransmits);
-                                                }
-                                                else if (transaction.TransactionState == SIPTransactionStatesEnum.Proceeding && transaction.ReliableProvisionalResponse != null)
-                                                {
-                                                    SendResponse(transaction.ReliableProvisionalResponse);
-                                                    transaction.Retransmits += 1;
-                                                    transaction.LastTransmit = DateTime.Now;
-                                                    transaction.OnRetransmitProvisionalResponse();
-
-                                                    FireSIPResponseRetransmitTraceEvent(transaction, transaction.ReliableProvisionalResponse, transaction.Retransmits);
-                                                }
+                                                await SendRequestAsync(transaction.OutboundProxy, transaction.TransactionRequest);
+                                            }
+                                            else if (transaction.RemoteEndPoint != null)
+                                            {
+                                                await SendRequestAsync(transaction.RemoteEndPoint, transaction.TransactionRequest);
                                             }
                                             else
                                             {
-                                                FireSIPRequestRetransmitTraceEvent(transaction, transaction.TransactionRequest, transaction.Retransmits);
-
-                                                if (transaction.OutboundProxy != null)
-                                                {
-                                                    SendRequest(transaction.OutboundProxy, transaction.TransactionRequest);
-                                                }
-                                                else if (transaction.RemoteEndPoint != null)
-                                                {
-                                                    SendRequest(transaction.RemoteEndPoint, transaction.TransactionRequest);
-                                                }
-                                                else
-                                                {
-                                                    SendRequest(transaction.TransactionRequest);
-                                                }
-
-                                                transaction.RequestRetransmit();
+                                                await SendRequestAsync(transaction.TransactionRequest);
                                             }
-                                        }
-                                    }
-                                }
-                            }
 
-                            // Remove timed out or complete transactions from reliable transmissions list.
-                            if (completedTransactions.Count > 0)
-                            {
-                                foreach (string transactionId in completedTransactions)
-                                {
-                                    if (m_reliableTransmissions.ContainsKey(transactionId))
-                                    {
-                                        m_reliableTransmissions.Remove(transactionId);
+                                            transaction.RequestRetransmit();
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    catch (Exception excp)
-                    {
-                        logger.LogError("Exception SIPTransport ProcessPendingRequests checking pendings. " + excp.Message);
+                        catch (Exception excp)
+                        {
+                            logger.LogError($"Exception processing reliable transaction. {excp.Message}");
+                        }
                     }
 
-                    Thread.Sleep(PENDINGREQUESTS_CHECK_PERIOD);
+                    // Remove timed out or complete transactions from reliable transmissions list.
+                    if (completedTransactions.Count > 0)
+                    {
+                        foreach (string transactionId in completedTransactions)
+                        {
+                            if (m_reliableTransmissions.ContainsKey(transactionId))
+                            {
+                                m_reliableTransmissions.TryRemove(transactionId, out _);
+                            }
+                        }
+                    }
                 }
+
+                await Task.Delay(PENDINGREQUESTS_CHECK_PERIOD);
+
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPTransport ProcessPendingRequests. " + excp.Message);
+                logger.LogError("Exception SIPTransport ProcessTransactions. " + excp.Message);
             }
             finally
             {
@@ -1107,10 +1081,7 @@ namespace SIPSorcery.SIP
                                                 transaction.DeliveryPending = false;
                                                 if (m_reliableTransmissions.ContainsKey(transaction.TransactionId))
                                                 {
-                                                    lock (m_reliableTransmissions)
-                                                    {
-                                                        m_reliableTransmissions.Remove(transaction.TransactionId);
-                                                    }
+                                                    m_reliableTransmissions.TryRemove(transaction.TransactionId, out _);
                                                 }
                                             }
 
@@ -1190,15 +1161,15 @@ namespace SIPSorcery.SIP
                                             }
                                             else if (sipRequest.Method == SIPMethodsEnum.PRACK)
                                             {
-                                                if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
-                                                {
-                                                    sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
-                                                    requestTransaction.PRACKReceived(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipRequest);
-                                                }
-                                                else
-                                                {
-                                                    FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "PRACK recieved on " + requestTransaction.TransactionState + " transaction, ignoring.", SIPValidationFieldsEnum.Request, null);
-                                                }
+                                                //if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                                                //{
+                                                sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
+                                                requestTransaction.PRACKReceived(sipChannel.SIPChannelEndPoint, remoteEndPoint, sipRequest);
+                                                //}
+                                                //else
+                                                //{
+                                                //    FireSIPBadRequestInTraceEvent(sipChannel.SIPChannelEndPoint, remoteEndPoint, "PRACK recieved on " + requestTransaction.TransactionState + " transaction, ignoring.", SIPValidationFieldsEnum.Request, null);
+                                                //}
                                             }
                                             else
                                             {

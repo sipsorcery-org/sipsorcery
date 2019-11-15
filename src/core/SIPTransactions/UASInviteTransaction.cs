@@ -215,11 +215,11 @@ namespace SIPSorcery.SIP
                         contactUri = new SIPURI(null, m_contactHost + ":" + localSIPEndPoint.Port, null, sipRequest.URI.Scheme);
                     }
                 }
-                else if (IPAddress.Equals(IPAddress.Any, localSIPEndPoint.Address) || IPAddress.Equals(IPAddress.IPv6Any, localSIPEndPoint.Address))
-                {
-                    // No point using a contact address of 0.0.0.0.
-                    contactUri = new SIPURI(null, Dns.GetHostName() + ":" + localSIPEndPoint.Port, null, sipRequest.URI.Scheme);
-                }
+                //else if (IPAddress.Equals(IPAddress.Any, localSIPEndPoint.Address) || IPAddress.Equals(IPAddress.IPv6Any, localSIPEndPoint.Address))
+                //{
+                //    // No point using a contact address of 0.0.0.0.
+                //    contactUri = new SIPURI(null, Dns.GetHostName() + ":" + localSIPEndPoint.Port, null, sipRequest.URI.Scheme);
+                //}
                 else
                 {
                     contactUri = new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint);
