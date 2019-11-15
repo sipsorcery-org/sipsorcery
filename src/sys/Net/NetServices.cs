@@ -210,52 +210,52 @@ namespace SIPSorcery.Sys
         /// </summary>
         /// <param name="destination">The IPv4 address that a send from local address is attempting to be determined for.</param>
         /// <returns>If a match is found an IPAddress otherwise null.</returns>
-        public static IPAddress GetLocalAddress(IPAddress destination)
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
-                {
-                    var adapterIPProperties = adapter.GetIPProperties();
+        //public static IPAddress GetLocalAddress(IPAddress destination)
+        //{
+        //    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        //    {
+        //        foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
+        //        {
+        //            var adapterIPProperties = adapter.GetIPProperties();
 
-                    foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapterIPProperties.UnicastAddresses
-                        .Where(x => x.Address.AddressFamily == destination.AddressFamily))
-                    {
-                        byte[] localAddressBytes = unicastIPAddressInformation.Address.GetAddressBytes();
-                        byte[] dstAddressBytes = destination.GetAddressBytes();
+        //            foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapterIPProperties.UnicastAddresses
+        //                .Where(x => x.Address.AddressFamily == destination.AddressFamily))
+        //            {
+        //                byte[] localAddressBytes = unicastIPAddressInformation.Address.GetAddressBytes();
+        //                byte[] dstAddressBytes = destination.GetAddressBytes();
 
-                        int prefixBits = unicastIPAddressInformation.PrefixLength;
-                        int index = 0;
-                        for (; prefixBits >= 8; prefixBits -= 8)
-                        {
-                            if (localAddressBytes[index] != dstAddressBytes[index])
-                            {
-                                continue;
-                            }
-                            ++index;
-                        }
+        //                int prefixBits = unicastIPAddressInformation.PrefixLength;
+        //                int index = 0;
+        //                for (; prefixBits >= 8; prefixBits -= 8)
+        //                {
+        //                    if (localAddressBytes[index] != dstAddressBytes[index])
+        //                    {
+        //                        continue;
+        //                    }
+        //                    ++index;
+        //                }
 
-                        if (prefixBits > 0)
-                        {
-                            int mask = (byte)~(255 >> prefixBits);
-                            if ((localAddressBytes[index] & mask) != (dstAddressBytes[index] & mask))
-                            {
-                                continue;
-                            }
-                            else
-                            {
-                                return unicastIPAddressInformation.Address;
-                            }
-                        }
-                        else
-                        {
-                            return unicastIPAddressInformation.Address;
-                        }
-                    }
-                }
-            }
+        //                if (prefixBits > 0)
+        //                {
+        //                    int mask = (byte)~(255 >> prefixBits);
+        //                    if ((localAddressBytes[index] & mask) != (dstAddressBytes[index] & mask))
+        //                    {
+        //                        continue;
+        //                    }
+        //                    else
+        //                    {
+        //                        return unicastIPAddressInformation.Address;
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    return unicastIPAddressInformation.Address;
+        //                }
+        //            }
+        //        }
+        //    }
 
-            return null;
-        }
+        //    return null;
+        //}
     }
 }

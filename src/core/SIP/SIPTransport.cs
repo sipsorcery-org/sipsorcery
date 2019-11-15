@@ -339,19 +339,20 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                var localAddress = NetServices.GetLocalAddress(destinationEP.Address);
+                //var localAddress = NetServices.GetLocalAddress(destinationEP.Address);
 
-                foreach (SIPChannel sipChannel in m_sipChannels.Values)
-                {
-                    if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
-                        (localAddress == null || sipChannel.SIPChannelEndPoint.Address.Equals(localAddress)))
-                    {
-                        return sipChannel.SIPChannelEndPoint;
-                    }
-                }
+                //foreach (SIPChannel sipChannel in m_sipChannels.Values)
+                //{
+                //    if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
+                //        (localAddress == null || sipChannel.SIPChannelEndPoint.Address.Equals(localAddress)))
+                //    {
+                //        return sipChannel.SIPChannelEndPoint;
+                //    }
+                //}
+
+                // Return teh first matching end point for the destination end point's protocol.
+                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol).Select(y => y.Value).FirstOrDefault()?.SIPChannelEndPoint;
             }
-
-            return null;
         }
 
         /// <summary>
