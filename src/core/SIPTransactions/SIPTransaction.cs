@@ -4,10 +4,10 @@
 // Description: SIP Transaction.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 14 Feb 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, Hobart, Australia (www.sipsorcery.com).
+// 14 Feb 2006	Aaron Clauson	Created, Dublin, Ireland.
 // 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 
@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 

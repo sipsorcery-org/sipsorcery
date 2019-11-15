@@ -83,7 +83,7 @@ namespace SIPSorcery
             int port = SIPConstants.DEFAULT_SIP_PORT + 1000;
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, port)));
 
-            //EnableTraceLogs(sipTransport);
+            EnableTraceLogs(sipTransport);
 
             var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
             Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
@@ -106,8 +106,7 @@ namespace SIPSorcery
                 // Initialise an RTP session to receive the RTP packets from the remote SIP server.
                 Socket rtpSocket = null;
                 Socket controlSocket = null;
-                IPAddress rtpAddress = localIPAddress;
-                NetServices.CreateRtpSocket(rtpAddress, 48000, 48100, false, out rtpSocket, out controlSocket);
+                NetServices.CreateRtpSocket(localIPAddress, 48000, 48100, false, out rtpSocket, out controlSocket);
                 var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
                 var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 

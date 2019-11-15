@@ -168,14 +168,6 @@ namespace SIPSorcery.SIP
 
                                     return transaction;
                                 }
-                                //else if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId &&
-                                //    transaction.TransactionFinalResponse.Header.CSeq == sipRequest.Header.CSeq &&
-                                //    IsCallIdUniqueForPending(sipRequest.Header.CallId))
-                                //{
-                                //    string requestEndPoint = (sipRequest.RemoteSIPEndPoint != null) ? sipRequest.RemoteSIPEndPoint.ToString() : " ? ";
-                                //    //logger.LogInformation("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched using Call-ID mechanism (to tags: " + transaction.TransactionFinalResponse.Header.To.ToTag + "=" + sipRequest.Header.To.ToTag + ", from tags:" + transaction.TransactionFinalResponse.Header.From.FromTag + "=" + sipRequest.Header.From.FromTag + ").");
-                                //    return transaction;
-                                //}
                             }
                         }
                     }
