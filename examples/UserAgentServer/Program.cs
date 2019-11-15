@@ -79,9 +79,11 @@ namespace SIPSorcery
             // acts as a singleton
             SIPServerUserAgent uas = null;
             CancellationTokenSource rtpCts = null; // Cancellation token to stop the RTP stream.
+            Socket rtpSocket = null;
+            Socket controlSocket = null;
 
             // Because this is a server user agent the SIP transport must start listening for client user agents.
-            sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+            sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
             {
                 if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
@@ -109,12 +111,7 @@ namespace SIPSorcery
                         uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
                         uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
-                        // Simulating answer delay to test provisional response retransmits.
-                        await Task.Delay(2000);
-
                         // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-                        Socket rtpSocket = null;
-                        Socket controlSocket = null;
                         NetServices.CreateRtpSocket(localSIPEndPoint.Address, 49000, 49100, false, out rtpSocket, out controlSocket);
 
                         IPEndPoint rtpEndPoint = rtpSocket.LocalEndPoint as IPEndPoint;
@@ -135,6 +132,8 @@ namespace SIPSorcery
                     byeTransaction.SendFinalResponse(byeResponse);
                     uas?.Hangup(true);
                     rtpCts?.Cancel();
+                    rtpSocket.Close();
+                    controlSocket.Close();
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                 {
@@ -166,6 +165,8 @@ namespace SIPSorcery
                     SIPSorcery.Sys.Log.Logger.LogInformation("Waiting 1s for call to hangup...");
                     Task.Delay(1000).Wait();
                 }
+                rtpSocket?.Close();
+                controlSocket?.Close();
 
                 if (sipTransport != null)
                 {

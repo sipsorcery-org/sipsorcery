@@ -1,14 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <Compile Remove="core\Properties\**" />
-    <EmbeddedResource Remove="core\Properties\**" />
-    <None Remove="core\Properties\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="core\SIPEvents\Dialog\EventDialogSchema.xsd" />
     <None Remove="core\SIPEvents\Presence\PIDFSchema.xsd" />
+    <None Include="icon.png" Pack="true" PackagePath=""/>
   </ItemGroup>
 
   <ItemGroup>
@@ -18,10 +13,10 @@
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
   </ItemGroup>
-
+  
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
-	<Version>3.5.0.0</Version>
+	<Version>3.6.0.0</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -32,8 +27,11 @@
 	<Product>SIPSorcery</Product>
 	<PackageId>SIPSorcery</PackageId>
 	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-	<PackageProjectUrl>https://www.sipsorcery.com</PackageProjectUrl>
-	<PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
+	<PackageProjectUrl>https://sipsorcery.github.io/sipsorcery/</PackageProjectUrl>
+  <!-- Note PackageIcon generates a build warning. Can be removed once Visual Studio supports the nuget "Icon" setting.
+       Watch https://github.com/NuGet/Home/issues/8189.-->
+  <PackageIconUrl>http://www.sipsorcery.com/mainsite/favicon.ico</PackageIconUrl>
+	<PackageIcon>icon.png</PackageIcon>
 	<RepositoryUrl>https://github.com/sipsorcery/sipsorcery</RepositoryUrl>
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
@@ -48,10 +46,11 @@
 - Version 3.3.0: Support for RFC3262 "Reliability of Provisional Responses".
 - Version 3.4.0: Added web socket SIP channel.
 
-- Version 3.5.0: Added ability to send RTP DTMF events as per RFC2833.</PackageReleaseNotes>
+- Version 3.5.0: Added ability to send RTP DTMF events as per RFC2833.
+- Version 3.6.0: Added conditional around Windows specific network calls. Added SIPEndPoint to SIPResponse ctor.</PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
-	<AssemblyVersion>3.5.0.0</AssemblyVersion>
-	<FileVersion>3.5.0.0</FileVersion>
+	<AssemblyVersion>3.6.0.0</AssemblyVersion>
+	<FileVersion>3.6.0.0</FileVersion>
   </PropertyGroup>    
 
 </Project>

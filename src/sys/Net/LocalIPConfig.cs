@@ -4,10 +4,10 @@
 // Description: Provides information about the Internet Protocol configuration of the local machine.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 25 Mar 2009	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
+// 25 Mar 2009	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -58,8 +58,9 @@ namespace SIPSorcery.Sys
         {
             var adapters = from adapter in NetworkInterface.GetAllNetworkInterfaces()
                            where adapter.OperationalStatus == OperationalStatus.Up && adapter.Supports(NetworkInterfaceComponent.IPv4)
-                           && adapter.GetIPProperties().GatewayAddresses.Count > 0 &&
-                           adapter.GetIPProperties().GatewayAddresses[0].Address.ToString() != "0.0.0.0"
+                           //&& adapter.GetIPProperties().GatewayAddresses.Count > 0 &&
+                           //!adapter.GetIPProperties().GatewayAddresses[0].Address.Equals(IPAddress.Any)
+                           //&& adapter.GetIPProperties().GetIPv4Properties().IsForwardingEnabled
                            select adapter;
 
             if (adapters == null || adapters.Count() == 0)
@@ -100,7 +101,7 @@ namespace SIPSorcery.Sys
         {
             var adapters = from adapter in NetworkInterface.GetAllNetworkInterfaces()
                            where adapter.OperationalStatus == OperationalStatus.Up && adapter.Supports(NetworkInterfaceComponent.IPv6)
-                           && adapter.GetIPProperties().GatewayAddresses.Count > 0 
+                           //&& adapter.GetIPProperties().GatewayAddresses.Count > 0 
                            select adapter;
 
             if (adapters == null || adapters.Count() == 0)
