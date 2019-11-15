@@ -2913,7 +2913,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTransport.html",
-          "hash": "V16kHa3ahZADGg4VdtGDrg=="
+          "hash": "wupC3R3naF23yA6y1JMhwg=="
         }
       },
       "is_incremental": false,
@@ -3185,18 +3185,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Sys.FreePort.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Sys.FreePort.html",
-          "hash": "tNpU7TstbFUg4l+8u4NZdA=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Sys.IPSocket.yml",
       "output": {
         ".html": {
@@ -3249,7 +3237,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Sys.LocalIPConfig.html",
-          "hash": "hBD4M2cBh4oGCrGwAnXknA=="
+          "hash": "EEYMfb9Y1+vefdQyZZGdwA=="
         }
       },
       "is_incremental": false,
@@ -3285,7 +3273,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Sys.NetServices.html",
-          "hash": "ZJGxgkp8uWDh4ui3kbQxJg=="
+          "hash": "NECtCc+hvOecJbqnj3fwHQ=="
         }
       },
       "is_incremental": false,
@@ -3417,7 +3405,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Sys.html",
-          "hash": "2So1+nKIR7LH0NC2VSzjXA=="
+          "hash": "795ZvVokGEoFuiOYAfg/Ow=="
         }
       },
       "is_incremental": false,
@@ -3441,7 +3429,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "8QHKVewhu1JLiWPopyqGCA=="
+          "hash": "3zYLicX5AnnYvlJ50ITX2g=="
         }
       },
       "is_incremental": false,
@@ -3595,7 +3583,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 285,
+          "total_file_count": 284,
           "skipped_file_count": 0
         }
       }

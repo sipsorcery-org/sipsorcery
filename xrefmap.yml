@@ -23628,38 +23628,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.Crypto.SymmetricEncrypt
   nameWithType: Crypto.SymmetricEncrypt
-- uid: SIPSorcery.Sys.FreePort
-  name: FreePort
-  href: api/SIPSorcery.Sys.FreePort.html
-  commentId: T:SIPSorcery.Sys.FreePort
-  fullName: SIPSorcery.Sys.FreePort
-  nameWithType: FreePort
-- uid: SIPSorcery.Sys.FreePort.FindNextAvailableTCPPort(System.Int32)
-  name: FindNextAvailableTCPPort(Int32)
-  href: api/SIPSorcery.Sys.FreePort.html#SIPSorcery_Sys_FreePort_FindNextAvailableTCPPort_System_Int32_
-  commentId: M:SIPSorcery.Sys.FreePort.FindNextAvailableTCPPort(System.Int32)
-  fullName: SIPSorcery.Sys.FreePort.FindNextAvailableTCPPort(System.Int32)
-  nameWithType: FreePort.FindNextAvailableTCPPort(Int32)
-- uid: SIPSorcery.Sys.FreePort.FindNextAvailableTCPPort*
-  name: FindNextAvailableTCPPort
-  href: api/SIPSorcery.Sys.FreePort.html#SIPSorcery_Sys_FreePort_FindNextAvailableTCPPort_
-  commentId: Overload:SIPSorcery.Sys.FreePort.FindNextAvailableTCPPort
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.FreePort.FindNextAvailableTCPPort
-  nameWithType: FreePort.FindNextAvailableTCPPort
-- uid: SIPSorcery.Sys.FreePort.FindNextAvailableUDPPort(System.Int32)
-  name: FindNextAvailableUDPPort(Int32)
-  href: api/SIPSorcery.Sys.FreePort.html#SIPSorcery_Sys_FreePort_FindNextAvailableUDPPort_System_Int32_
-  commentId: M:SIPSorcery.Sys.FreePort.FindNextAvailableUDPPort(System.Int32)
-  fullName: SIPSorcery.Sys.FreePort.FindNextAvailableUDPPort(System.Int32)
-  nameWithType: FreePort.FindNextAvailableUDPPort(Int32)
-- uid: SIPSorcery.Sys.FreePort.FindNextAvailableUDPPort*
-  name: FindNextAvailableUDPPort
-  href: api/SIPSorcery.Sys.FreePort.html#SIPSorcery_Sys_FreePort_FindNextAvailableUDPPort_
-  commentId: Overload:SIPSorcery.Sys.FreePort.FindNextAvailableUDPPort
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.FreePort.FindNextAvailableUDPPort
-  nameWithType: FreePort.FindNextAvailableUDPPort
 - uid: SIPSorcery.Sys.IPSocket
   name: IPSocket
   href: api/SIPSorcery.Sys.IPSocket.html
@@ -24169,19 +24137,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket
   nameWithType: NetServices.CreateRtpSocket
-- uid: SIPSorcery.Sys.NetServices.GetLocalAddress(System.Net.IPAddress)
-  name: GetLocalAddress(IPAddress)
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddress_System_Net_IPAddress_
-  commentId: M:SIPSorcery.Sys.NetServices.GetLocalAddress(System.Net.IPAddress)
-  fullName: SIPSorcery.Sys.NetServices.GetLocalAddress(System.Net.IPAddress)
-  nameWithType: NetServices.GetLocalAddress(IPAddress)
-- uid: SIPSorcery.Sys.NetServices.GetLocalAddress*
-  name: GetLocalAddress
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddress_
-  commentId: Overload:SIPSorcery.Sys.NetServices.GetLocalAddress
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.NetServices.GetLocalAddress
-  nameWithType: NetServices.GetLocalAddress
 - uid: SIPSorcery.Sys.NetServices.UDP_PORT_END
   name: UDP_PORT_END
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_UDP_PORT_END
