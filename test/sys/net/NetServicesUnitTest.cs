@@ -83,7 +83,7 @@ namespace SIPSorcery.Sys.UnitTests
         /// Tests that a local IPv6 interface is matched against a destination address on the same network.
         /// </summary>
         [TestMethod]
-        [TestCategory("IPv6")]
+        //[TestCategory("IPv6")]
         public void GetLocalIPv6AddressUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -99,7 +99,7 @@ namespace SIPSorcery.Sys.UnitTests
         /// Tests that the a local address is returned for an Internet IPv6 destination.
         /// </summary>
         [TestMethod]
-        [TestCategory("IPv6")]
+        //[TestCategory("IPv6")]
         public void GetLocalForInternetIPv6AdressUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
