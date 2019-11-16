@@ -80,7 +80,7 @@ namespace SIPSorcery.SoftPhone
         /// <returns>An SDP packet that can be used by a VoIP client when initiating a call.</returns>
         public SDP GetSDP(bool usePublicIP)
         {
-            IPAddress rtpIPAddress = (usePublicIP && SoftphoneSTUNClient.PublicIPAddress != null) ? SoftphoneSTUNClient.PublicIPAddress : _defaultLocalAddress;
+            IPAddress rtpIPAddress = (usePublicIP && SIPSoftPhoneState.PublicIPAddress != null) ? SIPSoftPhoneState.PublicIPAddress : _defaultLocalAddress;
 
             var sdp = new SDP()
             {

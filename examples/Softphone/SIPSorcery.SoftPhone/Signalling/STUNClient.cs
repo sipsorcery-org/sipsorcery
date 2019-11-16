@@ -25,70 +25,74 @@ namespace SIPSorcery.SoftPhone
 {
     public class SoftphoneSTUNClient
     {
-        private const string STUN_CLIENT_THREAD_NAME = "stunclient";
-
         private ILog logger = AppState.logger;
 
-        private string m_stunServerHostname = SIPSoftPhoneState.STUNServerHostname;
+        private Timer updateTimer;
+
+        private readonly TimeSpan updateIntervalNormal = TimeSpan.FromMinutes(1);
+
+        private readonly TimeSpan updateIntervalShort = TimeSpan.FromSeconds(5);
+
+        private readonly string m_stunServerHostname;
         
-        private ManualResetEvent m_stunClientMRE = new ManualResetEvent(false);     // Used to set the interval on the STUN lookups and also allow the thread to be stopped.
-        private bool m_stop;
+        private volatile bool m_stop;
 
-        public static IPAddress PublicIPAddress;
+        public event Action<IPAddress> PublicIPAddressDetected;
 
-        public SoftphoneSTUNClient()
+        public SoftphoneSTUNClient(string stunServerHostname)
         {
-            if (!m_stunServerHostname.IsNullOrBlank())
+            m_stunServerHostname = stunServerHostname;
+        }
+
+        public void Run()
+        {
+            m_stop = false;
+            updateTimer = new Timer(e =>
             {
-                // If a STUN server hostname has been specified start the STUN client thread.
-                ThreadPool.QueueUserWorkItem(delegate { StartSTUNClient(); });
-            }
+                if (!m_stop)
+                {
+                    var publicIPAddress = GetPublicIPAddress();
+                    if (publicIPAddress != null)
+                    {
+                        PublicIPAddressDetected?.Invoke(publicIPAddress);
+                    }
+
+                    var timerInterval = (publicIPAddress == null) ? updateIntervalShort : updateIntervalNormal;
+                    updateTimer.Change(timerInterval, timerInterval);
+                }
+            }, null, TimeSpan.Zero, updateIntervalNormal);
+
+            logger.Debug("STUN client started.");
         }
 
         public void Stop()
         {
             m_stop = true;
-            m_stunClientMRE.Set();
+            updateTimer.Change(Timeout.Infinite, Timeout.Infinite);
+
+            logger.Warn("STUN client stopped.");
         }
 
-        private void StartSTUNClient()
+        private IPAddress GetPublicIPAddress()
         {
             try
             {
-                Thread.CurrentThread.Name = STUN_CLIENT_THREAD_NAME;
-
-                logger.Debug("STUN client started.");
-
-                while (!m_stop)
+                var publicIP = STUNClient.GetPublicIPAddress(m_stunServerHostname);
+                if (publicIP != null)
                 {
-                    try
-                    {
-                        IPAddress publicIP = STUNClient.GetPublicIPAddress(m_stunServerHostname);
-                        if (publicIP != null)
-                        {
-                            logger.Debug("The STUN client was able to determine the public IP address as " + publicIP.ToString() + ".");
-                            PublicIPAddress = publicIP;
-                        }
-                        else
-                        {
-                            logger.Debug("The STUN client could not determine the public IP address.");
-                            PublicIPAddress = null;
-                        }
-                    }
-                    catch (Exception getAddrExcp)
-                    {
-                        logger.Error("Exception StartSTUNClient GetPublicIPAddress. " + getAddrExcp.Message);
-                    }
-
-                    m_stunClientMRE.Reset();
-                    m_stunClientMRE.WaitOne(60000);
+                    logger.Debug($"The STUN client was able to determine the public IP address as {publicIP}");
+                }
+                else
+                {
+                    logger.Debug("The STUN client could not determine the public IP address.");
                 }
 
-                logger.Warn("STUN client thread stopped.");
+                return publicIP;
             }
-            catch (Exception excp)
+            catch (Exception getAddrExcp)
             {
-                logger.Error("Exception StartSTUNClient. " + excp.Message);
+                logger.Error("Exception GetPublicIPAddress. " + getAddrExcp.Message);
+                return null;
             }
         }
     }

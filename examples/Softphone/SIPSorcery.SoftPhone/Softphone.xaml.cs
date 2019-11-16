@@ -71,8 +71,20 @@ namespace SIPSorcery.SoftPhone
             _sipClient.CallEnded += ResetToCallStartState;
             _sipClient.StatusMessage += (message) => { SetStatusText(m_signallingStatus, message); };
 
-            // Lookup and periodically check the public IP address of the host machine.
-            _stunClient = new SoftphoneSTUNClient();
+            // If a STUN server hostname has been specified start the STUN client to lookup and periodically update the public IP address of the host machine.
+            if (!SIPSoftPhoneState.STUNServerHostname.IsNullOrBlank())
+            {
+                _stunClient = new SoftphoneSTUNClient(SIPSoftPhoneState.STUNServerHostname);
+                _stunClient.PublicIPAddressDetected += (ip) =>
+                { 
+                    SIPSoftPhoneState.PublicIPAddress = ip;
+                    UIHelper.DoOnUIThread(this, delegate
+                    {
+                        publicIPAddress.Content = $"Public IP: {ip}";
+                    });
+                };
+                _stunClient.Run();
+            }
 
             Initialise();
         }
@@ -90,6 +102,7 @@ namespace SIPSorcery.SoftPhone
                 m_sipPassword,
                 null,
                 m_sipServer,
+                // TODO: Fix GetDefaultSIPEndPoint() to use SIPSorcery 3.6.0 Nuget package.
                 new SIPURI(m_sipUsername, _sipClient.SIPClientTransport.GetDefaultSIPEndPoint().GetIPEndPoint().ToString(), null),
                 180,
                 null,
@@ -122,7 +135,11 @@ namespace SIPSorcery.SoftPhone
         {
             _mediaManager.Close();
             _sipClient.Shutdown();
-            _stunClient.Stop();
+
+            if (_stunClient != null)
+            {
+                _stunClient.Stop();
+            }
         }
 
         /// <summary>
