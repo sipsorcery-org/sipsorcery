@@ -36,7 +36,7 @@ namespace SIPSorcery
         private static readonly string AUDIO_FILE = "the_simplicity.ulaw";
         //private static readonly string AUDIO_FILE = "the_simplicity.mp3";
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
-        private static int SIP_LISTEN_PORT = 5060;
+        private static int SIP_LISTEN_PORT = 6060;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -68,7 +68,8 @@ namespace SIPSorcery
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
 
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
+            //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
+            sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
 
             //EnableTraceLogs(sipTransport);
 
