@@ -24137,6 +24137,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket
   nameWithType: NetServices.CreateRtpSocket
+- uid: SIPSorcery.Sys.NetServices.GetLocalAddress(System.Net.IPAddress)
+  name: GetLocalAddress(IPAddress)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddress_System_Net_IPAddress_
+  commentId: M:SIPSorcery.Sys.NetServices.GetLocalAddress(System.Net.IPAddress)
+  fullName: SIPSorcery.Sys.NetServices.GetLocalAddress(System.Net.IPAddress)
+  nameWithType: NetServices.GetLocalAddress(IPAddress)
+- uid: SIPSorcery.Sys.NetServices.GetLocalAddress*
+  name: GetLocalAddress
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddress_
+  commentId: Overload:SIPSorcery.Sys.NetServices.GetLocalAddress
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetServices.GetLocalAddress
+  nameWithType: NetServices.GetLocalAddress
 - uid: SIPSorcery.Sys.NetServices.UDP_PORT_END
   name: UDP_PORT_END
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_UDP_PORT_END
