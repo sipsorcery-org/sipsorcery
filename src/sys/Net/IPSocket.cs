@@ -1,13 +1,16 @@
 //-----------------------------------------------------------------------------
 // Filename: IPSocket.cs
 //
-// Description: Converts special charatcers in XML to their safe equivalent.
+// Description: Helper functions for socket strings and IP end points.
+// Note that as of 16 Nov 2019 a number of equivalent functions are now
+// contained in the System.Net.IPEndPoint v4 class BUT are missing from
+// the Net Standard version.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 22 jun 2005	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 22 jun 2005	Aaron Clauson   Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

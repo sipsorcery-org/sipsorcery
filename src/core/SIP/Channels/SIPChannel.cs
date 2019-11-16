@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -27,12 +28,19 @@ namespace SIPSorcery.SIP
     /// Represents a message received on a SIP channel prior to any attempt to identify
     /// whether it represents a SIP request, response or something else.
     /// </summary>
-	public class IncomingMessage
+	internal class IncomingMessage
 	{
         /// <summary>
         /// The SIP channel we received the message on.
         /// </summary>
     	public SIPChannel LocalSIPChannel;
+
+        /// <summary>
+        /// The local end point that the message was received on. If a SIP channel
+        /// is listening on IPAddress.Any then this property will hold the actual 
+        /// IP address that was used for the receive.
+        /// </summary>
+        public SIPEndPoint LocalEndPoint;
 
         /// <summary>
         /// The next hop remote SIP end point the message came from.
@@ -49,9 +57,10 @@ namespace SIPSorcery.SIP
         /// </summary>
         public DateTime ReceivedAt;
 
-        public IncomingMessage(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer)
+        public IncomingMessage(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
 		{
             LocalSIPChannel = sipChannel;
+            LocalEndPoint = localEndPoint;
             RemoteEndPoint = remoteEndPoint;
 			Buffer = buffer;
             ReceivedAt = DateTime.Now;
@@ -67,65 +76,78 @@ namespace SIPSorcery.SIP
     {
         protected ILogger logger = Log.Logger;
 
-        protected SIPEndPoint m_localSIPEndPoint;
+        [Obsolete("Please use alternative DefaultSIPChannelEndPoint.", true)]
+        public SIPEndPoint LocalSIPEndPoint;
 
-        /// <summary>
-        /// The local SIP end point that the channel is listening on and sending from.
-        /// </summary>
-        public SIPEndPoint SIPChannelEndPoint
-        {
-            get { return m_localSIPEndPoint; }
-        }
-
-        /// <summary>
-        /// This is the URI to be used for contacting this SIP channel.
-        /// </summary>
+        [Obsolete("Please use alternative GetDefaultContactURI.", true)]
         public string SIPChannelContactURI
         {
-            get { return m_localSIPEndPoint.ToString(); }
+            get { return LocalSIPEndPoint.ToString(); }
         }
 
-        protected bool m_isReliable;
+        /// <summary>
+        /// A unique ID for the channel. Useful for ensuring a transmission can occur
+        /// on a specific channel without having to match listening addresses.
+        /// </summary>
+        public string ID { get; protected set; }
+
+        /// <summary>
+        /// The list of IP addresses that this SIP channel is listening on. The only mechansim
+        /// for a channel to have mutliple addresses is if it's socket address is set to 
+        /// IPAddress.Any.
+        /// </summary>
+        public List<IPAddress> LocalIPAddresses { get; protected set; }
+
+        /// <summary>
+        /// In the case where a channel has mutliple IP addresses one will be selected as the 
+        /// default.
+        /// </summary>
+        public IPAddress DefaultIPAddress { get; protected set; }
+
+        /// <summary>
+        /// The port that this SIP channel is listening on.
+        /// </summary>
+        public int Port { get; protected set; }
+
+        /// <summary>
+        /// The default local SIP end point that the channel is listening on and sending from.
+        /// A single SIP channel can potentially be listening on multiple IP addresses if
+        /// IPAddress.Any is used. One of the addresses will be chosen as the default.
+        /// </summary>
+        public SIPEndPoint DefaultSIPChannelEndPoint 
+        {
+            get { return new SIPEndPoint(SIPProtocol, DefaultIPAddress, Port, null); }
+        }
 
         /// <summary>
         /// If the underlying transport channel is reliable, such as TCP, this will be set to true.
         /// </summary>
-        public bool IsReliable
-        {
-            get { return m_isReliable; }
-        }
-
-        protected bool m_isSecure;
+        public bool IsReliable { get; protected set; } = false;
 
         /// <summary>
         /// If the underlying transport channel is using transport layer security (e.g. TLS or WSS) this will be set to true.
         /// </summary>
-        public bool IsSecure {
-            get { return m_isSecure; }
-        }
+        public bool IsSecure { get; protected set; } = false;
 
         /// <summary>
-        /// Returns true if the IP address the SIP channel is listening on is the IPv4 or IPv6 loopback address.
+        /// Returns true if the sole IP address the SIP channel is listening on is the IPv4 or IPv6 loopback address.
         /// </summary>
         public bool IsLoopbackAddress
         {
-            get { return IPAddress.IsLoopback(m_localSIPEndPoint.Address); }
+            get { return LocalIPAddresses.Count == 1 && IPAddress.IsLoopback(DefaultIPAddress); }
         }
 
         /// <summary>
         /// The type of SIP protocol (udp, tcp, tls or web socket) for this channel.
         /// </summary>
-        public SIPProtocolsEnum SIPProtocol
-        {
-            get { return m_localSIPEndPoint.Protocol; }
-        }
+        public SIPProtocolsEnum SIPProtocol { get; protected set; }
 
         /// <summary>
         /// Whether the channel is IPv4 or IPv6.
         /// </summary>
         public AddressFamily AddressFamily
         {
-            get { return m_localSIPEndPoint.Address.AddressFamily; }
+            get { return DefaultIPAddress.AddressFamily; }
         }
 
         /// <summary>
@@ -189,6 +211,14 @@ namespace SIPSorcery.SIP
         /// <param name="remoteEndPoint">The remote end point to check for an existing connection.</param>
         /// <returns>True if a match is found or false if not.</returns>
         public abstract bool HasConnection(IPEndPoint remoteEndPoint);
+
+        /// <summary>
+        /// The default URI to be used for contacting this SIP channel.
+        /// </summary>
+        public SIPURI GetDefaultContactURI(SIPSchemesEnum scheme)
+        {
+            return new SIPURI(scheme, DefaultSIPChannelEndPoint);
+        }
 
         /// <summary>
         /// Closes the SIP channel. Closing stops the SIP channel from receiving or sending and typically

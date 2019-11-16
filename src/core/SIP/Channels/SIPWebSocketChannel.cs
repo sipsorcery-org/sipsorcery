@@ -86,7 +86,8 @@ namespace SIPSorcery.SIP
 
                 if (e.RawData?.Length > 0)
                 {
-                    Channel.SIPMessageReceived?.Invoke(Channel, new SIPEndPoint(_sipProtocol, _remoteEndPoint, this.ID), e.RawData);
+                    // TODO: Check what happens if web socket server asked to listen on IPAddress.Any.
+                    Channel.SIPMessageReceived?.Invoke(Channel, Channel.DefaultSIPChannelEndPoint, new SIPEndPoint(_sipProtocol, _remoteEndPoint, this.ID), e.RawData);
                 }
             }
 
@@ -125,24 +126,29 @@ namespace SIPSorcery.SIP
         /// <param name="endPoint">The IP end point to listen on and send from.</param>
         public SIPWebSocketChannel(IPEndPoint endPoint, X509Certificate2 certificate)
         {
+            LocalIPAddresses = new List<IPAddress>() { endPoint.Address };
+            Port = endPoint.Port;
+            DefaultIPAddress = endPoint.Address;
+            IsReliable = true;
+
             if (certificate == null)
             {
+                SIPProtocol = SIPProtocolsEnum.ws;
                 m_webSocketServer = new WebSocketServer(endPoint.Address, endPoint.Port, false);
-                m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.ws, endPoint);
             }
             else
             {
+                SIPProtocol = SIPProtocolsEnum.wss;
                 m_webSocketServer = new WebSocketServer(endPoint.Address, endPoint.Port, true);
                 var sslConfig = m_webSocketServer.SslConfiguration;
                 sslConfig.ServerCertificate = certificate;
                 sslConfig.CheckCertificateRevocation = false;
-                m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.wss, endPoint);
-                m_isSecure = true;
+                IsSecure = true;
             }
 
             //m_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
 
-            logger.LogDebug("SIWebSocketChannel listener created " + m_localSIPEndPoint.GetIPEndPoint() + ".");
+            logger.LogDebug($"SIWebSocketChannel listener created {DefaultSIPChannelEndPoint}.");
 
             m_webSocketServer.AddWebSocketService<SIPMessagWebSocketBehavior>("/", (behaviour) => {
                 behaviour.Channel = this;
@@ -337,7 +343,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                logger.LogDebug("Closing SIP Web Socket Channel " + SIPChannelEndPoint + ".");
+                logger.LogDebug($"Closing SIP Web Socket Channel {DefaultSIPChannelEndPoint}.");
 
                 Closed = true;
                 m_webSocketServer.Stop();

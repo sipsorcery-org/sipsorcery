@@ -4,10 +4,10 @@
 // Description: SIP transport for UDP.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 17 Oct 2005	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 17 Oct 2005	Aaron Clauson	Created, Dublin, Ireland.
 // 14 Oct 2019  Aaron Clauson   Added IPv6 support.
 //
 // License: 
@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -26,7 +27,7 @@ namespace SIPSorcery.SIP
 {
     public class SIPUDPChannel : SIPChannel
     {
-        private readonly Task m_mainLoop;
+        private readonly Task m_receiveTask;
 
         // Channel sockets.
         private readonly UdpClient m_sipConn = null;
@@ -37,16 +38,23 @@ namespace SIPSorcery.SIP
         /// <param name="endPoint">The IP end point to listen on and send from.</param>
         public SIPUDPChannel(IPEndPoint endPoint)
         {
-            m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, endPoint);
+            // TODO: Deal with IPAddress.Any....
 
-            m_sipConn = new UdpClient(m_localSIPEndPoint.GetIPEndPoint());
-            if (m_localSIPEndPoint.Port == 0)
+            LocalIPAddresses = new List<IPAddress>() { endPoint.Address };
+            Port = endPoint.Port;
+            DefaultIPAddress = endPoint.Address;
+            SIPProtocol = SIPProtocolsEnum.udp;
+            IsReliable = true;
+
+            m_sipConn = new UdpClient(endPoint);
+            if (endPoint.Port == 0)
             {
-                m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, (IPEndPoint)m_sipConn.Client.LocalEndPoint);
+                Port = (m_sipConn.Client.LocalEndPoint as IPEndPoint).Port;
             }
-            logger.LogDebug("SIPUDPChannel listener created " + m_localSIPEndPoint.GetIPEndPoint() + ".");
+            
+            logger.LogDebug($"SIPUDPChannel listener created on {DefaultSIPChannelEndPoint}.");
 
-            m_mainLoop = Task.Run(Listen);
+            m_receiveTask = Task.Run(Listen);
         }
 
         public SIPUDPChannel(IPAddress listenAddress, int listenPort) : this(new IPEndPoint(listenAddress, listenPort))
@@ -54,7 +62,7 @@ namespace SIPSorcery.SIP
 
         private async Task Listen()
         {
-            logger.LogDebug("SIPUDPChannel socket on " + m_localSIPEndPoint.ToString() + " listening started.");
+            logger.LogDebug($"SIPUDPChannel socket on {DefaultSIPChannelEndPoint} listening started.");
 
             while (!Closed)
             {
@@ -63,7 +71,8 @@ namespace SIPSorcery.SIP
                     var receiveResult = await m_sipConn.ReceiveAsync();
                     if (receiveResult.Buffer?.Length > 0)
                     {
-                        SIPMessageReceived?.Invoke(this, new SIPEndPoint(SIPProtocolsEnum.udp, receiveResult.RemoteEndPoint), receiveResult.Buffer);
+                        // TODO: Work out how to get the specific local end point for a receive when IPAddress.Any is being used.
+                        SIPMessageReceived?.Invoke(this, DefaultSIPChannelEndPoint, new SIPEndPoint(SIPProtocolsEnum.udp, receiveResult.RemoteEndPoint), receiveResult.Buffer);
                     }
                 }
                 catch (ObjectDisposedException)
@@ -88,7 +97,7 @@ namespace SIPSorcery.SIP
                 }
             }
 
-            logger.LogDebug("SIPUDPChannel socket on " + m_localSIPEndPoint + " listening halted.");
+            logger.LogDebug($"SIPUDPChannel socket on {DefaultSIPChannelEndPoint} listening halted.");
         }
 
         public override void Send(IPEndPoint destinationEndPoint, string message)
@@ -183,11 +192,11 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                logger.LogDebug("Closing SIP UDP Channel " + SIPChannelEndPoint + ".");
+                logger.LogDebug($"Closing SIP UDP Channel {DefaultSIPChannelEndPoint}.");
 
                 Closed = true;
                 m_sipConn.Close();
-                m_mainLoop.GetAwaiter().GetResult();
+                m_receiveTask.GetAwaiter().GetResult();
             }
             catch (Exception excp)
             {

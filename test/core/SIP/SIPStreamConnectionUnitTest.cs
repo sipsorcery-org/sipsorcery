@@ -13,6 +13,7 @@ using System;
 using System.Net;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SIPSorcery.UnitTests;
 
 namespace SIPSorcery.SIP.UnitTests
 {
@@ -87,10 +88,10 @@ CRLF + CRLF +
 
             SIPStreamConnection testConnection = new SIPStreamConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
-            testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
-            //Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
+            testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; };
 
-            testConnection.ExtractSIPMessages(null, testReceiveBytes, testReceiveBytes.Length);
+            MockSIPChannel mockChannel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
+            testConnection.ExtractSIPMessages(mockChannel, testReceiveBytes, testReceiveBytes.Length);
 
             Assert.IsTrue(sipMessages == 1, "The number of SIP messages parsed was incorrect, was " + sipMessages + ".");
             Assert.IsTrue(testConnection.RecvStartPosn == 0, $"The receive buffer start position was incorrect, was {testConnection.RecvStartPosn}.");
@@ -135,10 +136,11 @@ CRLF +
 
             SIPStreamConnection testConnection = new SIPStreamConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
-            testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
+            testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; };
             Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
 
-            testConnection.ExtractSIPMessages(null, testConnection.RecvSocketArgs.Buffer, testReceiveBytes.Length);
+            MockSIPChannel mockChannel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
+            testConnection.ExtractSIPMessages(mockChannel, testConnection.RecvSocketArgs.Buffer, testReceiveBytes.Length);
             string remainingBytes = Encoding.UTF8.GetString(testConnection.RecvSocketArgs.Buffer, testConnection.RecvStartPosn, testConnection.RecvEndPosn - testConnection.RecvStartPosn);
 
             Console.WriteLine("SocketBufferEndPosition=" + testConnection.RecvEndPosn + ".");

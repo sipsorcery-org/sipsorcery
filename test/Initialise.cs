@@ -14,9 +14,14 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SIPSorcery.SIP;
 
 namespace SIPSorcery.UnitTests
 {
@@ -42,7 +47,7 @@ namespace SIPSorcery.UnitTests
     /// simple console logger proved to be a lot easier. Can be revisited if mstest logging ever goes back to 
     /// just working OOTB.
     /// </summary>
-    public class SimpleConsoleLogger : ILogger
+    internal class SimpleConsoleLogger : ILogger
     {
         public static SimpleConsoleLogger Instance { get; } = new SimpleConsoleLogger();
 
@@ -65,7 +70,7 @@ namespace SIPSorcery.UnitTests
         }
     }
 
-    public class SimpleConsoleLoggerScope : IDisposable
+    internal class SimpleConsoleLoggerScope : IDisposable
     {
         public static SimpleConsoleLoggerScope Instance { get; } = new SimpleConsoleLoggerScope();
 
@@ -74,5 +79,58 @@ namespace SIPSorcery.UnitTests
 
         public void Dispose()
         {}
+    }
+
+    internal class MockSIPChannel : SIPChannel
+    {
+        public MockSIPChannel(IPEndPoint channelEndPoint)
+        {
+            LocalIPAddresses = new List<IPAddress>() { channelEndPoint.Address };
+            DefaultIPAddress = channelEndPoint.Address;
+            Port = channelEndPoint.Port;
+            SIPProtocol = SIPProtocolsEnum.udp;
+        }
+
+        public override void Send(IPEndPoint destinationEndPoint, string message)
+        { }
+
+        public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
+        { }
+
+        public override Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Close()
+        { }
+
+        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCN)
+        {
+            throw new ApplicationException("This Send method is not available in the MockSIPChannel, please use an alternative overload.");
+        }
+
+        public override void Dispose()
+        { }
+
+        public override Task<SocketError> SendAsync(string connectionID, byte[] buffer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool HasConnection(string connectionID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool HasConnection(IPEndPoint remoteEndPoint)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

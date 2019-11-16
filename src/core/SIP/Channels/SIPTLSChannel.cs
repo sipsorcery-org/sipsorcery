@@ -26,8 +26,6 @@ namespace SIPSorcery.SIP
 {
     public class SIPTLSChannel : SIPTCPChannel
     {
-        protected override string m_acceptThreadName { get; set; } = "siptlsaccept-";
-
         private X509Certificate2 m_serverCertificate;
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
@@ -43,7 +41,7 @@ namespace SIPSorcery.SIP
                 throw new ArgumentNullException("endPoint", "An IP end point must be supplied for a SIP TLS channel.");
             }
 
-            m_isSecure = true;
+            IsSecure = true;
             m_serverCertificate = serverCertificate;
         }
 
@@ -62,7 +60,7 @@ namespace SIPSorcery.SIP
 
             await sslStream.AuthenticateAsServerAsync(m_serverCertificate);
 
-            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {m_localSIPEndPoint.GetIPEndPoint()}->{streamConnection.StreamSocket.RemoteEndPoint}.");
+            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {DefaultSIPChannelEndPoint}->{streamConnection.StreamSocket.RemoteEndPoint}.");
 
             //// Display the properties and settings for the authenticated stream.
             ////DisplaySecurityLevel(sslStream);
@@ -98,7 +96,7 @@ namespace SIPSorcery.SIP
                 streamConnection.SslStream = sslStream;
                 streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
 
-                logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {m_localSIPEndPoint.GetIPEndPoint()}->{streamConnection.StreamSocket.RemoteEndPoint}.");
+                logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {DefaultSIPChannelEndPoint}->{streamConnection.StreamSocket.RemoteEndPoint}.");
 
                 sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
 
@@ -128,16 +126,16 @@ namespace SIPSorcery.SIP
                     logger.LogDebug("TLS socket disconnected by {sipStreamConnection.ConnectionProps.RemoteEndPoint}.");
                     OnSIPStreamDisconnected(sipStreamConnection, SocketError.ConnectionReset);
                 }
-                sipStreamConnection.ExtractSIPMessages(this, sipStreamConnection.SslStreamBuffer, bytesRead);    
+                sipStreamConnection.ExtractSIPMessages(this, sipStreamConnection.SslStreamBuffer, bytesRead);
                 sipStreamConnection.SslStream.BeginRead(sipStreamConnection.SslStreamBuffer, sipStreamConnection.RecvEndPosn, sipStreamConnection.SslStreamBuffer.Length - sipStreamConnection.RecvEndPosn, new AsyncCallback(OnReadCallback), sipStreamConnection);
-                
+
             }
             catch (SocketException sockExcp)  // Occurs if the remote end gets disconnected.
             {
                 //logger.LogWarning($"SocketException SIPTLSChannel ReceiveCallback. Error code {sockExcp.SocketErrorCode}. {sockExcp}");
                 OnSIPStreamDisconnected(sipStreamConnection, sockExcp.SocketErrorCode);
             }
-            catch(IOException ioExcp)
+            catch (IOException ioExcp)
             {
                 if (ioExcp.InnerException is SocketException)
                 {

@@ -45,15 +45,7 @@ namespace SIPSorcery
             Console.WriteLine("SIPSorcery client user agent server example.");
             Console.WriteLine("Press ctrl-c to exit.");
 
-            // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console()
-                .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            EnableConsoleLogger();
 
             IPAddress listenAddress = IPAddress.Any;
             if (args != null && args.Length > 0)
@@ -68,10 +60,10 @@ namespace SIPSorcery
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
 
-            //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
 
-            //EnableTraceLogs(sipTransport);
+            EnableTraceLogs(sipTransport);
 
             // To keep things a bit simpler this example only supports a single call at a time and the SIP server user agent
             // acts as a singleton
@@ -88,7 +80,6 @@ namespace SIPSorcery
                     if (sipRequest.Method == SIPMethodsEnum.INVITE)
                     {
                         SIPSorcery.Sys.Log.Logger.LogInformation("Incoming call request: " + localSIPEndPoint + "<-" + remoteEndPoint + " " + sipRequest.URI.ToString() + ".");
-                        //SIPSorcery.Sys.Log.Logger.LogDebug(sipRequest.ToString());
 
                         // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
                         // means this example can be kept simpler.
@@ -112,7 +103,6 @@ namespace SIPSorcery
                             uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
                             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-                            //NetServices.CreateRtpSocket(localSIPEndPoint.Address, 49000, 49100, false, out rtpSocket, out controlSocket);
                             NetServices.CreateRtpSocket(localSIPEndPoint.Address, 49000, 49100, false, out rtpSocket, out controlSocket);
 
                             IPEndPoint rtpEndPoint = rtpSocket.LocalEndPoint as IPEndPoint;
@@ -341,6 +331,22 @@ namespace SIPSorcery
             return sdp;
         }
 
+        /// <summary>
+        /// Wires up the dotnet logging infrastructure to STDOUT.
+        /// </summary>
+        private static void EnableConsoleLogger()
+        {
+            // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
+            var loggerConfig = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console()
+                .CreateLogger();
+            loggerFactory.AddSerilog(loggerConfig);
+            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+        }
+        
         /// <summary>
         /// Enable detailed SIP log messages.
         /// </summary>

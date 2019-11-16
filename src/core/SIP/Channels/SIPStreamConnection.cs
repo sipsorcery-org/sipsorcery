@@ -127,7 +127,7 @@ namespace SIPSorcery.SIP
                 if (SIPMessageReceived != null)
                 {
                     LastTransmission = DateTime.Now;
-                    SIPMessageReceived(recvChannel, new SIPEndPoint(ConnectionProtocol, RemoteEndPoint, ConnectionID), sipMsgBuffer);
+                    SIPMessageReceived(recvChannel, recvChannel.DefaultSIPChannelEndPoint, new SIPEndPoint(ConnectionProtocol, RemoteEndPoint, ConnectionID), sipMsgBuffer);
                 }
 
                 RecvStartPosn += (sipMsgBuffer.Length + bytesSkipped);

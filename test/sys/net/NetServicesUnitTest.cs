@@ -100,6 +100,7 @@ namespace SIPSorcery.Sys.UnitTests
         /// </summary>
         [TestMethod]
         [TestCategory("IPv6")]
+        [Ignore] // Only works if machine running the test has a public IPv6 address assigned.
         public void GetLocalForInternetIPv6AdressUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);

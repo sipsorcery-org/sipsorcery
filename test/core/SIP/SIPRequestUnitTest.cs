@@ -10,13 +10,12 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Net;
+using System.Text;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SIPSorcery.Sys;
+using SIPSorcery.UnitTests;
 
 namespace SIPSorcery.SIP.UnitTests
 {
@@ -24,56 +23,6 @@ namespace SIPSorcery.SIP.UnitTests
     public class SIPRequestUnitTest
     {
         private static string m_CRLF = SIPConstants.CRLF;
-
-        private class MockSIPChannel : SIPChannel
-        {
-            public MockSIPChannel(IPEndPoint channelEndPoint)
-            {
-                m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, channelEndPoint);
-            }
-
-            public override void Send(IPEndPoint destinationEndPoint, string message)
-            { }
-
-            public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
-            { }
-
-            public override Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override void Close()
-            { }
-
-            public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCN)
-            {
-                throw new ApplicationException("This Send method is not available in the MockSIPChannel, please use an alternative overload.");
-            }
-
-            public override void Dispose()
-            { }
-
-            public override Task<SocketError> SendAsync(string connectionID, byte[] buffer)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override bool HasConnection(string connectionID)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override bool HasConnection(IPEndPoint remoteEndPoint)
-            {
-                throw new NotImplementedException();
-            }
-        }
 
         private class MockSIPDNSManager
         {
@@ -711,8 +660,8 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
 
             SIPTransport mockSIPTransport = new SIPTransport(MockSIPDNSManager.Resolve, null, false);
-            mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5061")));
-            mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5062")));
+            mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPEndPoint.Parse("82.195.148.216:5061")));
+            mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPEndPoint.Parse("82.195.148.216:5062")));
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
 

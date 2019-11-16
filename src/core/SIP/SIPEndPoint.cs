@@ -65,6 +65,11 @@ namespace SIPSorcery.SIP
         /// </summary>
         public string ConnectionID { get; set; }
 
+        /// <summary>
+        /// If set represents the SIP channel ID that this SIP end point was created from.
+        /// </summary>
+        public string ChannelID { get; set; }
+
         private SIPEndPoint() { }
 
         /// <summary>
