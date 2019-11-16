@@ -75,7 +75,14 @@ namespace SIPSorcery.SoftPhone
             if (!SIPSoftPhoneState.STUNServerHostname.IsNullOrBlank())
             {
                 _stunClient = new SoftphoneSTUNClient(SIPSoftPhoneState.STUNServerHostname);
-                _stunClient.PublicIPAddressDetected += (ip) => { SIPSoftPhoneState.PublicIPAddress = ip; };
+                _stunClient.PublicIPAddressDetected += (ip) =>
+                { 
+                    SIPSoftPhoneState.PublicIPAddress = ip;
+                    UIHelper.DoOnUIThread(this, delegate
+                    {
+                        publicIPAddress.Content = $"Public IP: {ip}";
+                    });
+                };
                 _stunClient.Run();
             }
 
