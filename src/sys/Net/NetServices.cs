@@ -17,11 +17,8 @@
 
 using System;
 using System.Collections;
-using System.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 
@@ -54,12 +51,8 @@ namespace SIPSorcery.Sys
 
             lock (_allocatePortsMutex)
             {
-                // TODO: This call results ina a OverflowException on WSL.
-                //var inUseUDPPorts = (from p in System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners() 
-                //                     where p.Port >= startPort && p.Port <= endPort && p.Address.ToString() == localAddress.ToString() 
-                //                     select p.Port).OrderBy(x => x).ToList();
-
-                // Make the RTP port start on an even port. Some legacy systems require the RTP port to be an even port number.
+                // Make the RTP port start on an even port as the specification mandates. 
+                // Some legacy systems require the RTP port to be an even port number.
                 if (startPort % 2 != 0)
                 {
                     startPort += 1;
@@ -68,29 +61,6 @@ namespace SIPSorcery.Sys
                 int rtpPort = startPort;
                 int controlPort = (createControlSocket == true) ? rtpPort + 1 : 0;
 
-                //if (inUseUDPPorts.Count > 0)
-                //{
-                //    // Find the first two available for the RTP socket.
-                //    for (int index = startPort; index <= endPort; index += 2)
-                //    {
-                //        if (!inUseUDPPorts.Contains(index))
-                //        {
-                //            rtpPort = index;
-
-                //            if (!createControlSocket)
-                //            {
-                //                break;
-                //            }
-                //            else if (!inUseUDPPorts.Contains(index + 1))
-                //            {
-                //                controlPort = index + 1;
-                //                break;
-                //            }
-                //        }
-                //    }
-                //}
-                //else
-                //{
                 rtpPort = startPort;
 
                 if (createControlSocket)
@@ -199,63 +169,18 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
-        /// This method "attempts" to determine the local IPv4 address that should be used to connection to a destination IPv4 address.
+        /// This method utilises the OS routing table to determine the local IP address to connection to a destination end point.
         /// The problem it is attempting to solve is selecting the correct local interface to use when communicating with another device
         /// on the same private network compared to a device on the Internet.
-        /// The mechanism used it to compare address prefixes. This mechanism is not reliable as it cannot deal with routes where the 
-        /// remote network prefix could be compeletely different to the prefix on the local interface.
-        /// An alternative approach being explored is to use a local address of IPAddress.Any and send a SIP OPTIONS request to the destination
-        /// address in order to determine what local address should be placed in SIP Contact headers etc.
-        /// TODO: Look at UnicastIPAddressInformation.PrefixLength instead of IPv4Mask.
+        /// See https://github.com/sipsorcery/sipsorcery/issues/97 for elaboration.
         /// </summary>
-        /// <param name="destination">The IPv4 address that a send from local address is attempting to be determined for.</param>
-        /// <returns>If a match is found an IPAddress otherwise null.</returns>
-        //public static IPAddress GetLocalAddress(IPAddress destination)
-        //{
-        //    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        //    {
-        //        foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
-        //        {
-        //            var adapterIPProperties = adapter.GetIPProperties();
-
-        //            foreach (UnicastIPAddressInformation unicastIPAddressInformation in adapterIPProperties.UnicastAddresses
-        //                .Where(x => x.Address.AddressFamily == destination.AddressFamily))
-        //            {
-        //                byte[] localAddressBytes = unicastIPAddressInformation.Address.GetAddressBytes();
-        //                byte[] dstAddressBytes = destination.GetAddressBytes();
-
-        //                int prefixBits = unicastIPAddressInformation.PrefixLength;
-        //                int index = 0;
-        //                for (; prefixBits >= 8; prefixBits -= 8)
-        //                {
-        //                    if (localAddressBytes[index] != dstAddressBytes[index])
-        //                    {
-        //                        continue;
-        //                    }
-        //                    ++index;
-        //                }
-
-        //                if (prefixBits > 0)
-        //                {
-        //                    int mask = (byte)~(255 >> prefixBits);
-        //                    if ((localAddressBytes[index] & mask) != (dstAddressBytes[index] & mask))
-        //                    {
-        //                        continue;
-        //                    }
-        //                    else
-        //                    {
-        //                        return unicastIPAddressInformation.Address;
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    return unicastIPAddressInformation.Address;
-        //                }
-        //            }
-        //        }
-        //    }
-
-        //    return null;
-        //}
+        /// <param name="destination">The remote destination to find a local IP address for.</param>
+        /// <returns>The local IP address to use to connect to the remote end point.</returns>
+        public static IPAddress GetLocalAddress(IPAddress destination)
+        {
+            UdpClient udpClient = new UdpClient(destination.AddressFamily);
+            udpClient.Connect(destination, 0);
+            return (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+        }
     }
 }
