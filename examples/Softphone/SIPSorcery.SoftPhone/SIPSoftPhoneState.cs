@@ -44,6 +44,8 @@ namespace SIPSorcery.SoftPhone
 
         public static IPAddress DefaultLocalAddress;
 
+        public static IPAddress PublicIPAddress;
+
         static SIPSoftPhoneState()
         {
             try
