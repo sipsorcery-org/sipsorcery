@@ -54,5 +54,10 @@
             <Button x:Name="_stopLocalVideoButton" Content="Stop Video" HorizontalAlignment="Left" Height="30" VerticalAlignment="Center" Width="70" Grid.Row="1" IsEnabled="False" Click="StopLocalVideo" Grid.ColumnSpan="2" Margin="295,0,0,0" />
             <ComboBox x:Name="_localVideoDevices" DisplayMemberPath="Key" SelectedValuePath="Value" HorizontalAlignment="Left" Height="30" Grid.Row="1" VerticalAlignment="Center" Width="211" IsEnabled="False" SelectionChanged="VideoDeviceChanged" VerticalContentAlignment="Center"/>
         </Grid>
+
+        <StatusBar VerticalAlignment="Bottom" Margin="0,5,0,0">
+            <Label x:Name="publicIPAddress" ToolTip="Public IP Address">Public IP: ?</Label>
+        </StatusBar>
+
     </StackPanel>
 </Window>
