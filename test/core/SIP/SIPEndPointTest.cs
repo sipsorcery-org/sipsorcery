@@ -272,5 +272,24 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.AreEqual(sipEndPoint.Address.AddressFamily, System.Net.Sockets.AddressFamily.InterNetworkV6, "The SIPEndPoint IP address family was incorrectly parsed.");
             Assert.AreEqual(sipEndPoint.Port, 7060, "The SIPEndPoint port was incorrectly parsed.");
         }
+
+        /// <summary>
+        /// Tests that a SIP end point an IPV6 address and a connection id gets parsed correctly.
+        /// </summary>
+        [TestMethod]
+        public void IPv6WithConnectionIDParseTest()
+        {
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipEndPointStr = "udp:[::1];connid=abcd1234";
+            SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
+
+            logger.LogDebug("SIPEndPoint=" + sipEndPoint.ToString() + ".");
+
+            Assert.IsTrue(sipEndPoint.Protocol == SIPProtocolsEnum.udp, "The SIPEndPoint protocol was incorrectly parsed.");
+            Assert.IsTrue(sipEndPoint.Address.ToString() == "::1", "The SIPEndPoint IP address was incorrectly parsed.");
+            Assert.IsTrue(sipEndPoint.Port == 5060, "The SIPEndPoint port was incorrectly parsed.");
+            Assert.IsTrue(sipEndPoint.ConnectionID == "abcd1234", "The SIPEndPoint connection ID was incorrectly parsed.");
+        }
     }
 }

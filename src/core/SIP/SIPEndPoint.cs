@@ -129,7 +129,7 @@ namespace SIPSorcery.SIP
 
         /// <summary>
         /// Parses a SIP end point from either a serialised SIP end point string, format of:
-        /// (udp|tcp|tls|ws|wss):(IPEndpoint)
+        /// (udp|tcp|tls|ws|wss):(IPEndpoint)[;connid=abcd]
         /// or from a string that represents a SIP URI.
         /// </summary>
         /// <param name="sipEndPointStr">The string to parse to extract the SIP end point.</param>
@@ -191,7 +191,12 @@ namespace SIPSorcery.SIP
             if (serialisedSIPEndPoint.Contains(";"))
             {
                 endPointStr = serialisedSIPEndPoint.Slice(':', ';');
-                connectionID = serialisedSIPEndPoint.Substring(serialisedSIPEndPoint.IndexOf(';'));
+                var paramsStr = serialisedSIPEndPoint.Substring(serialisedSIPEndPoint.IndexOf(';') + 1)?.Trim();
+
+                if (paramsStr.Contains(CONNECTIONID_ATTRIBUTE_NAME + "="))
+                {
+                    connectionID = paramsStr.Substring(paramsStr.IndexOf('=') + 1);
+                }
             }
             else
             {

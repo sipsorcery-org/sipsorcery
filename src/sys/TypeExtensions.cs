@@ -78,7 +78,7 @@ namespace SIPSorcery.Sys
             else
             {
                 int startPosn = s.IndexOf(startDelimiter);
-                int endPosn = s.IndexOf(endDelimeter);
+                int endPosn = s.IndexOf(endDelimeter) - 1;
 
                 if(endPosn > startPosn)
                 {
