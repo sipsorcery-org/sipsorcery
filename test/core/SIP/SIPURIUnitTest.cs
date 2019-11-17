@@ -473,7 +473,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.AreEqual(sipURI.Scheme, SIPSchemesEnum.sip, "The SIP URI scheme was not parsed correctly.");
             Assert.AreEqual(sipURI.Host, "[::1]", "The SIP URI host was not parsed correctly.");
-            Assert.AreEqual(sipURI.ToSIPEndPoint(), new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.IPv6Loopback, 5060, null), "The SIP URI end point details were not parsed correctly.");
+            Assert.AreEqual(sipURI.ToSIPEndPoint(), new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.IPv6Loopback, 5060, null, null), "The SIP URI end point details were not parsed correctly.");
 
             logger.LogDebug($"SIP URI {sipURI.ToString()}");
 
@@ -492,7 +492,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.AreEqual(sipURI.Scheme, SIPSchemesEnum.sip, "The SIP URI scheme was not parsed correctly.");
             Assert.AreEqual(sipURI.Host, "[::1]:6060", "The SIP URI host was not parsed correctly.");
-            Assert.AreEqual(sipURI.ToSIPEndPoint(), new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.IPv6Loopback, 6060, null), "The SIP URI end point details were not parsed correctly.");
+            Assert.AreEqual(sipURI.ToSIPEndPoint(), new SIPEndPoint(SIPProtocolsEnum.udp, IPAddress.IPv6Loopback, 6060, null, null), "The SIP URI end point details were not parsed correctly.");
 
             logger.LogDebug($"SIP URI {sipURI.ToString()}");
 

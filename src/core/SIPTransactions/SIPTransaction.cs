@@ -116,7 +116,7 @@ namespace SIPSorcery.SIP
             get { return m_transactionRequest.Header.From.FromUserField; }
         }
         public SIPEndPoint RemoteEndPoint;                  // The remote socket that caused the transaction to be created or the socket a newly created transaction request was sent to.             
-        public SIPEndPoint LocalSIPEndPoint;                // The local SIP endpoint the remote request was received on the if created by this stack the local SIP end point used to send the transaction.
+        public SIPEndPoint LocalSIPEndPoint;                // The local SIP endpoint the remote request was received on or if created by this stack the local SIP end point used to send the transaction.
         public SIPEndPoint OutboundProxy;                   // If not null this value is where ALL transaction requests should be sent to.
         public SIPCDR CDR;
 
@@ -154,7 +154,6 @@ namespace SIPSorcery.SIP
 
         // These are the events that will normally be required by upper level transaction users such as registration or call agents.
         protected event SIPTransactionRequestReceivedDelegate TransactionRequestReceived;
-        //protected event SIPTransactionAuthenticationRequiredDelegate TransactionAuthenticationRequired;
         protected event SIPTransactionResponseReceivedDelegate TransactionInformationResponseReceived;
         protected event SIPTransactionResponseReceivedDelegate TransactionFinalResponseReceived;
         protected event SIPTransactionTimedOutDelegate TransactionTimedOut;
@@ -162,7 +161,6 @@ namespace SIPSorcery.SIP
         // These events are normally only used for housekeeping such as retransmits on ACK's.
         protected event SIPTransactionResponseReceivedDelegate TransactionDuplicateResponse;
         protected event SIPTransactionRequestRetransmitDelegate TransactionRequestRetransmit;
-        //protected event SIPTransactionResponseRetransmitDelegate TransactionResponseRetransmit;
 
         // Events that don't affect the transaction processing, i.e. used for logging/tracing.
         public event SIPTransactionStateChangeDelegate TransactionStateChanged;
@@ -443,7 +441,6 @@ namespace SIPSorcery.SIP
             TransactionTimedOut = null;
             TransactionDuplicateResponse = null;
             TransactionRequestRetransmit = null;
-            //TransactionResponseRetransmit = null;
             TransactionStateChanged = null;
             TransactionTraceMessage = null;
             TransactionRemoved = null;

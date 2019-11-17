@@ -11,6 +11,7 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SIPSorcery.UnitTests;
@@ -86,7 +87,9 @@ CRLF + CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPStreamConnection testConnection = new SIPStreamConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
+            Socket dummySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            dummySocket.Bind(new IPEndPoint(IPAddress.Any, 0));
+            SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; };
 
@@ -134,7 +137,9 @@ CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPStreamConnection testConnection = new SIPStreamConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
+            Socket dummySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            dummySocket.Bind(new IPEndPoint(IPAddress.Any, 0));
+            SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
             testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; };
             Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);

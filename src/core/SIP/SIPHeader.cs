@@ -1329,7 +1329,7 @@ namespace SIPSorcery.SIP
         public List<string> UnknownHeaders = new List<string>();	// Holds any unrecognised headers.
 
         public List<SIPExtensions> RequiredExtensions = new List<SIPExtensions>();
-        public bool HasUnknownRequireExtension = false;
+        public string UnknownRequireExtension = null;
         public List<SIPExtensions> SupportedExtensions = new List<SIPExtensions>();
 
         public SIPHeader()
@@ -1720,7 +1720,7 @@ namespace SIPSorcery.SIP
 
                             if(!String.IsNullOrEmpty(sipHeader.Require))
                             {
-                                sipHeader.RequiredExtensions = SIPExtensionHeaders.ParseSIPExtensions(sipHeader.Require, out sipHeader.HasUnknownRequireExtension);
+                                sipHeader.RequiredExtensions = SIPExtensionHeaders.ParseSIPExtensions(sipHeader.Require, out sipHeader.UnknownRequireExtension);
                             }
                         }
                         #endregion

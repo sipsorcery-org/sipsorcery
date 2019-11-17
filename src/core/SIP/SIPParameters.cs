@@ -4,10 +4,10 @@
 // Description: SIP parameters as used in Contact, To, From and Via SIP headers.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 06 May 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 06 May 2006	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -40,11 +40,6 @@ namespace SIPSorcery.SIP
     /// SIP URI with parameters and headers (paramters always come first):
     /// sip:1234@sip.com;key1=value1;key2=value2?key1=value1&key2=value2
     /// ]]>
-    /// </code>
-    /// 
-    /// <code>
-    /// generic-param  =  token [ EQUAL gen-value ]
-    /// gen-value      =  token / host / quoted-string
     /// </code>
     /// </summary>
     [DataContract]

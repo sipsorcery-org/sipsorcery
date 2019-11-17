@@ -30,7 +30,7 @@ namespace SIPSorcery.Sys.UnitTests
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddress(IPAddress.Parse("192.168.11.48"));
+            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("192.168.11.48"));
             Assert.IsNotNull(localAddress);
 
             Console.WriteLine($"Local address {localAddress}.");
@@ -44,7 +44,7 @@ namespace SIPSorcery.Sys.UnitTests
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddress(IPAddress.Loopback);
+            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Loopback);
             Assert.AreEqual(IPAddress.Loopback, localAddress);
 
             Console.WriteLine($"Local address {localAddress}.");
@@ -58,7 +58,7 @@ namespace SIPSorcery.Sys.UnitTests
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddress(IPAddress.Parse("67.222.131.147"));
+            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("67.222.131.147"));
             Assert.IsNotNull(localAddress);
 
             Console.WriteLine($"Local address {localAddress}.");
@@ -73,7 +73,7 @@ namespace SIPSorcery.Sys.UnitTests
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddress(IPAddress.IPv6Loopback);
+            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.IPv6Loopback);
             Assert.AreEqual(IPAddress.IPv6Loopback, localAddress);
 
             Console.WriteLine($"Local address {localAddress}.");
@@ -88,7 +88,7 @@ namespace SIPSorcery.Sys.UnitTests
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddress(IPAddress.Parse("fe80::54a9:d238:b2ee:abc"));
+            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("fe80::54a9:d238:b2ee:abc"));
 
             Assert.IsNotNull(localAddress);
 
@@ -105,10 +105,41 @@ namespace SIPSorcery.Sys.UnitTests
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddress(IPAddress.Parse("2606:db00:0:62b::2"));
+            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("2606:db00:0:62b::2"));
             Assert.IsNotNull(localAddress);
 
             Console.WriteLine($"Local address {localAddress}.");
+        }
+
+        /// <summary>
+        /// Tests that the list of local IP addresses is returned.
+        /// </summary>
+        [TestMethod]
+        public void GetAllLocalIPAddressesUnitTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var localAddresses = NetServices.GetAllLocalIPAddresses();
+            Assert.IsNotNull(localAddresses);
+
+            foreach (var localAddress in localAddresses)
+            {
+                Console.WriteLine($"Local address {localAddress}.");
+            }
+        }
+
+        /// <summary>
+        /// Tests that the local address for accessing the Internet on this machine can be determined.
+        /// </summary>
+        [TestMethod]
+        public void GetInternetAddressUnitTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var localInternetAddresses = NetServices.GetLocalAddressForInternet();
+            Assert.IsNotNull(localInternetAddresses);
+
+            Console.WriteLine($"Local Internet address {localInternetAddresses}.");
         }
     }
 }

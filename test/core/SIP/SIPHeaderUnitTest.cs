@@ -739,7 +739,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.IsTrue(sipHeader.RequiredExtensions.Contains(SIPExtensions.Prack), "The required header extensions was missing Prack.");
             Assert.IsTrue(sipHeader.SupportedExtensions.Contains(SIPExtensions.Prack), "The supported header extensions was missing Prack.");
-            Assert.IsTrue(sipHeader.HasUnknownRequireExtension, "The had unknown required header extension was not correctly set.");
+            Assert.IsNotNull(sipHeader.UnknownRequireExtension, "The had unknown required header extension was not correctly set.");
 
             Console.WriteLine("---------------------------------------------------");
         }

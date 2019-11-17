@@ -74,6 +74,8 @@ namespace SIPSorcery.SIP
     /// </summary>
     public abstract class SIPChannel : IDisposable
     {
+        protected static int CHANNEL_ID_LENGTH = 3; // Length of the random numeric string to use for channel ID's.
+
         protected ILogger logger = Log.Logger;
 
         [Obsolete("Please use alternative DefaultSIPChannelEndPoint.", true)]
@@ -96,13 +98,19 @@ namespace SIPSorcery.SIP
         /// for a channel to have mutliple addresses is if it's socket address is set to 
         /// IPAddress.Any.
         /// </summary>
-        public List<IPAddress> LocalIPAddresses { get; protected set; }
+        public static List<IPAddress> LocalIPAddresses { get; private set; }
 
         /// <summary>
-        /// In the case where a channel has mutliple IP addresses one will be selected as the 
-        /// default.
+        /// The local IP address this machine uses to communicate with the Internet.
         /// </summary>
-        public IPAddress DefaultIPAddress { get; protected set; }
+        public static IPAddress InternetDefaultAddress { get; private set;}
+
+        /// <summary>
+        /// The IP address the channel is listening on. Can be IPAddress.Any so cannot
+        /// be used directly in SIP Headers, SIP URIs etc. Instead call GetContactURI and
+        /// provdie the desintation address.
+        /// </summary>
+        public IPAddress ListeningIPAddress { get; protected set; }
 
         /// <summary>
         /// The port that this SIP channel is listening on.
@@ -114,9 +122,9 @@ namespace SIPSorcery.SIP
         /// A single SIP channel can potentially be listening on multiple IP addresses if
         /// IPAddress.Any is used. One of the addresses will be chosen as the default.
         /// </summary>
-        public SIPEndPoint DefaultSIPChannelEndPoint 
+        public SIPEndPoint DefaultSIPChannelEndPoint
         {
-            get { return new SIPEndPoint(SIPProtocol, DefaultIPAddress, Port, null); }
+            get { return new SIPEndPoint(SIPProtocol, ListeningIPAddress, Port, ID, null); }
         }
 
         /// <summary>
@@ -134,9 +142,9 @@ namespace SIPSorcery.SIP
         /// </summary>
         public bool IsLoopbackAddress
         {
-            get { return LocalIPAddresses.Count == 1 && IPAddress.IsLoopback(DefaultIPAddress); }
+            get { return LocalIPAddresses.Count == 1 && IPAddress.IsLoopback(ListeningIPAddress); }
         }
-
+           
         /// <summary>
         /// The type of SIP protocol (udp, tcp, tls or web socket) for this channel.
         /// </summary>
@@ -147,7 +155,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public AddressFamily AddressFamily
         {
-            get { return DefaultIPAddress.AddressFamily; }
+            get { return ListeningIPAddress.AddressFamily; }
         }
 
         /// <summary>
@@ -161,6 +169,15 @@ namespace SIPSorcery.SIP
         /// The function delegate that will be called whenever a new SIP message is received on the SIP channel.
         /// </summary>
         public SIPMessageReceivedDelegate SIPMessageReceived;
+
+        static SIPChannel()
+        {
+            LocalIPAddresses = NetServices.GetAllLocalIPAddresses();
+
+            // When using IPAddress.Any a default end point is still needed for placing in SIP headers and payloads.
+            // Using 0.0.0.0 in SIP headers causes issues for some SIP software stacks.
+            InternetDefaultAddress = NetServices.GetLocalAddressForInternet();
+        }
 
         /// <summary>
         /// Send a SIP message, represented as a string, to a remote end point.
@@ -213,11 +230,44 @@ namespace SIPSorcery.SIP
         public abstract bool HasConnection(IPEndPoint remoteEndPoint);
 
         /// <summary>
+        /// Gets the local IP address this SIP channel will use for communicating with the destination
+        /// IP address.
+        /// </summary>
+        /// <param name="dst">The destination IP address.</param>
+        /// <returns>The local IP address this channel selects to use for connecting to the destination.</returns>
+        public IPAddress GetLocalIPAddressForDestination(IPAddress dst)
+        {
+            IPAddress localAddress = ListeningIPAddress;
+
+            if (IPAddress.Any.Equals(ListeningIPAddress) || IPAddress.IPv6Any.Equals(ListeningIPAddress))
+            {
+                // This channel is listening on IPAddress.Any.
+                localAddress = NetServices.GetLocalAddressForRemote(dst);
+            }
+
+            return localAddress;
+        }
+
+        /// <summary>
+        /// Get the local SIPEndPoint this channel will use for communicating with the destination IP address,
+        /// </summary>
+        /// <param name="dst">The destination IP address.</param>
+        /// <returns>The local SIP end points this channel selects to use for connecting to the destination.</returns>
+        public SIPEndPoint GetLocalSIPEndPointForDestination(IPAddress dst)
+        {
+            IPAddress localAddress = GetLocalIPAddressForDestination(dst);
+            return new SIPEndPoint(SIPProtocol, localAddress, Port, ID, null);
+        }
+
+        /// <summary>
         /// The default URI to be used for contacting this SIP channel.
         /// </summary>
-        public SIPURI GetDefaultContactURI(SIPSchemesEnum scheme)
+        /// <param name="scheme">The SIP scheme to use for the Contact URI.</param>
+        /// <param name="dst">The destination address the Contact URI is for. For a SIPChannel using
+        /// IPAddress.Any the desintation needs to be known so it can select the correct local address.</param>
+        public SIPURI GetContactURI(SIPSchemesEnum scheme, IPAddress dst)
         {
-            return new SIPURI(scheme, DefaultSIPChannelEndPoint);
+            return new SIPURI(scheme, GetLocalSIPEndPointForDestination(dst));
         }
 
         /// <summary>

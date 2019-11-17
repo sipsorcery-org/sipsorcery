@@ -5,10 +5,10 @@
 // an INVITE transaction.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //  
 // History:
-// 21 Nov 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 21 Nov 2006	Aaron Clauson	Created, Dublin, Ireland.
 // 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 
@@ -16,8 +16,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
@@ -215,11 +213,6 @@ namespace SIPSorcery.SIP
                         contactUri = new SIPURI(null, m_contactHost + ":" + localSIPEndPoint.Port, null, sipRequest.URI.Scheme);
                     }
                 }
-                //else if (IPAddress.Equals(IPAddress.Any, localSIPEndPoint.Address) || IPAddress.Equals(IPAddress.IPv6Any, localSIPEndPoint.Address))
-                //{
-                //    // No point using a contact address of 0.0.0.0.
-                //    contactUri = new SIPURI(null, Dns.GetHostName() + ":" + localSIPEndPoint.Port, null, sipRequest.URI.Scheme);
-                //}
                 else
                 {
                     contactUri = new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint);

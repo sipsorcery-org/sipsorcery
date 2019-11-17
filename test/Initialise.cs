@@ -14,7 +14,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -22,6 +21,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SIPSorcery.SIP;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.UnitTests
 {
@@ -85,10 +85,10 @@ namespace SIPSorcery.UnitTests
     {
         public MockSIPChannel(IPEndPoint channelEndPoint)
         {
-            LocalIPAddresses = new List<IPAddress>() { channelEndPoint.Address };
-            DefaultIPAddress = channelEndPoint.Address;
+            ListeningIPAddress = channelEndPoint.Address;
             Port = channelEndPoint.Port;
             SIPProtocol = SIPProtocolsEnum.udp;
+            ID = Crypto.GetRandomInt(5).ToString();
         }
 
         public override void Send(IPEndPoint destinationEndPoint, string message)

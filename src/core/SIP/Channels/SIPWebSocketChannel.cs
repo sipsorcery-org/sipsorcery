@@ -29,6 +29,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 
@@ -87,7 +88,7 @@ namespace SIPSorcery.SIP
                 if (e.RawData?.Length > 0)
                 {
                     // TODO: Check what happens if web socket server asked to listen on IPAddress.Any.
-                    Channel.SIPMessageReceived?.Invoke(Channel, Channel.DefaultSIPChannelEndPoint, new SIPEndPoint(_sipProtocol, _remoteEndPoint, this.ID), e.RawData);
+                    Channel.SIPMessageReceived?.Invoke(Channel, Channel.DefaultSIPChannelEndPoint, new SIPEndPoint(_sipProtocol, _remoteEndPoint, Channel.ID, this.ID), e.RawData);
                 }
             }
 
@@ -126,9 +127,14 @@ namespace SIPSorcery.SIP
         /// <param name="endPoint">The IP end point to listen on and send from.</param>
         public SIPWebSocketChannel(IPEndPoint endPoint, X509Certificate2 certificate)
         {
-            LocalIPAddresses = new List<IPAddress>() { endPoint.Address };
+            if (endPoint == null)
+            {
+                throw new ArgumentNullException("endPoint", "The end point must be specified when creating a SIPTCPChannel.");
+            }
+
+            ID = Crypto.GetRandomInt(CHANNEL_ID_LENGTH).ToString();
+            ListeningIPAddress = endPoint.Address;
             Port = endPoint.Port;
-            DefaultIPAddress = endPoint.Address;
             IsReliable = true;
 
             if (certificate == null)
@@ -148,9 +154,10 @@ namespace SIPSorcery.SIP
 
             //m_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
 
-            logger.LogDebug($"SIWebSocketChannel listener created {DefaultSIPChannelEndPoint}.");
+            logger.LogInformation($"SIP WebSocket Channel created for {endPoint}.");
 
-            m_webSocketServer.AddWebSocketService<SIPMessagWebSocketBehavior>("/", (behaviour) => {
+            m_webSocketServer.AddWebSocketService<SIPMessagWebSocketBehavior>("/", (behaviour) =>
+            {
                 behaviour.Channel = this;
                 behaviour.Logger = this.logger;
 
@@ -160,7 +167,7 @@ namespace SIPSorcery.SIP
             m_webSocketServer.Start();
         }
 
-        public SIPWebSocketChannel(IPAddress listenAddress, int listenPort) 
+        public SIPWebSocketChannel(IPAddress listenAddress, int listenPort)
             : this(new IPEndPoint(listenAddress, listenPort), null)
         { }
 
@@ -172,7 +179,7 @@ namespace SIPSorcery.SIP
         /// <param name="certificate">The X509 certificate to supply to connecting clients. Unless
         /// the client has been specifically configured otherwise the it will perform validation on the certificate
         /// which typically involved checking that the hostname of the server matches the certificate's common name.</param>
-        public SIPWebSocketChannel(IPAddress listenAddress, int listenPort, X509Certificate2 certificate) 
+        public SIPWebSocketChannel(IPAddress listenAddress, int listenPort, X509Certificate2 certificate)
             : this(new IPEndPoint(listenAddress, listenPort), certificate)
         { }
 

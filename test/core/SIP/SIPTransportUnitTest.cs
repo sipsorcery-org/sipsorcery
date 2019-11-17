@@ -75,7 +75,7 @@ namespace SIPSorcery.SIP.UnitTests
             var clientChannel = new SIPUDPChannel(IPAddress.Loopback, 6061);
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.DefaultSIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback), testComplete); });
 
             Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
 
@@ -192,8 +192,6 @@ namespace SIPSorcery.SIP.UnitTests
                 Assert.IsTrue(testComplete.Task.Result);
 
                 logger.LogDebug($"Completed for test run {i}.");
-
-                //Task.Delay(3000).Wait();
             }
 
             cancelServer.Cancel();

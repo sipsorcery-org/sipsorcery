@@ -17,8 +17,10 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.NetworkInformation;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 
@@ -33,7 +35,8 @@ namespace SIPSorcery.Sys
         public const int UDP_PORT_END = 65535;
         private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
-        private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 5;               // The maximum number of re-attempts that will be made when trying to bind the RTP port.
+        private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 5;  // The maximum number of re-attempts that will be made when trying to bind the RTP port.
+        private const string INTERNET_IPADDRESS = "1.1.1.1";    // IP address to use when getting default IP address from OS. No connection is established.
 
         private static ILogger logger = Log.Logger;
 
@@ -170,17 +173,50 @@ namespace SIPSorcery.Sys
 
         /// <summary>
         /// This method utilises the OS routing table to determine the local IP address to connection to a destination end point.
-        /// The problem it is attempting to solve is selecting the correct local interface to use when communicating with another device
-        /// on the same private network compared to a device on the Internet.
+        /// It selectes the correct local IP address, on a potentially multi-honed host, to communicate with a destination IP address.
         /// See https://github.com/sipsorcery/sipsorcery/issues/97 for elaboration.
         /// </summary>
         /// <param name="destination">The remote destination to find a local IP address for.</param>
         /// <returns>The local IP address to use to connect to the remote end point.</returns>
-        public static IPAddress GetLocalAddress(IPAddress destination)
+        public static IPAddress GetLocalAddressForRemote(IPAddress destination)
         {
             UdpClient udpClient = new UdpClient(destination.AddressFamily);
             udpClient.Connect(destination, 0);
             return (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+        }
+
+        /// <summary>
+        /// Gets the default local address for this machine for communicating with the Internet.
+        /// </summary>
+        /// <returns>The local address this machine should use for communicating with the Internet.</returns>
+        public static IPAddress GetLocalAddressForInternet()
+        {
+            var internetAddress = IPAddress.Parse(INTERNET_IPADDRESS);
+            return GetLocalAddressForRemote(internetAddress);
+        }
+
+        /// <summary>
+        /// Gets all the IP addresses for all active interfaces on the machine.
+        /// </summary>
+        /// <returns>A list of all local IP addresses.</returns>
+        public static List<IPAddress> GetAllLocalIPAddresses()
+        {
+            List<IPAddress> localAddresses = new List<IPAddress>();
+
+            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (NetworkInterface n in adapters)
+            {
+                if (n.OperationalStatus == OperationalStatus.Up)
+                {
+                    IPInterfaceProperties ipProps = n.GetIPProperties();
+                    foreach (var unicastAddr in ipProps.UnicastAddresses)
+                    {
+                        localAddresses.Add(unicastAddr.Address);
+                    }
+                }
+            }
+
+            return localAddresses;
         }
     }
 }
