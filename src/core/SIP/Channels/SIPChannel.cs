@@ -140,10 +140,10 @@ namespace SIPSorcery.SIP
         /// A single SIP channel can potentially be listening on multiple IP addresses if
         /// IPAddress.Any is used. One of the addresses will be chosen as the default.
         /// </summary>
-        //public SIPEndPoint DefaultSIPChannelEndPoint
-        //{
-        //    get { return new SIPEndPoint(SIPProtocol, ListeningIPAddress, Port, ID, null); }
-        //}
+        public SIPEndPoint DefaultSIPChannelEndPoint
+        {
+            get { return new SIPEndPoint(SIPProtocol, ListeningIPAddress, Port, ID, null); }
+        }
 
         /// <summary>
         /// If the underlying transport channel is reliable, such as TCP, this will be set to true.

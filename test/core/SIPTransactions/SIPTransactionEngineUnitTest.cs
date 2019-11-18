@@ -117,7 +117,7 @@ namespace SIPSorcery.SIP.UnitTests
 
                 SIPURI dummyURI = SIPURI.ParseSIPURI("sip:dummy@" + serverEndPoint);
                 SIPRequest inviteRequest = GetDummyINVITERequest(dummyURI);
-                inviteRequest.LocalSIPEndPoint = clientTransport.GetDefaultTransportContact(SIPProtocolsEnum.udp);
+                inviteRequest.LocalSIPEndPoint = clientEndPoint;
 
                 // Send the invite to the server side.
                 UACInviteTransaction clientTransaction = new UACInviteTransaction(clientTransport, inviteRequest, serverEndPoint, clientEndPoint, null);

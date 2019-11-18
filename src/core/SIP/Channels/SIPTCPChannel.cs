@@ -347,10 +347,10 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dstEndPoint">The remote end point to send to.</param>
         /// <param name="message">The data to send.</param>
-        public override void Send(IPEndPoint destinationEndPoint, string message)
+        public override async void Send(IPEndPoint destinationEndPoint, string message)
         {
             byte[] messageBuffer = Encoding.UTF8.GetBytes(message);
-            Send(destinationEndPoint, messageBuffer, null);
+            await SendAsync(destinationEndPoint, messageBuffer, null);
         }
 
         /// <summary>
@@ -358,14 +358,14 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dstEndPoint">The remote end point to send to.</param>
         /// <param name="buffer">The data to send.</param>
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer)
+        public override async void Send(IPEndPoint dstEndPoint, byte[] buffer)
         {
-            Send(dstEndPoint, buffer, null);
+            await SendAsync(dstEndPoint, buffer, null);
         }
 
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        public override async void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
         {
-            SendAsync(dstEndPoint, buffer, serverCertificateName).Wait();
+            await SendAsync(dstEndPoint, buffer, serverCertificateName);
         }
 
         public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer)
