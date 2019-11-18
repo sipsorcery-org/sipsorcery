@@ -61,7 +61,7 @@ namespace SIPSorcery
             var sipTransport = new SIPTransport();
 
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
-            //sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
+            sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
 
             EnableTraceLogs(sipTransport);
 
@@ -94,10 +94,12 @@ namespace SIPSorcery
                         uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
                         // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-                        NetServices.CreateRtpSocket(localSIPEndPoint.Address, 49000, 49100, false, out rtpSocket, out controlSocket);
+                        NetServices.CreateRtpSocket(IPAddress.Any, 49000, 49100, false, out rtpSocket, out controlSocket);
 
-                        IPEndPoint rtpEndPoint = rtpSocket.LocalEndPoint as IPEndPoint;
+                        // The RTP socket is listening on IPAddress.Any but the IP address placed into the SDP needs to be one the caller can reach.
                         IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+                        IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
+                        IPEndPoint rtpEndPoint = new IPEndPoint(rtpAddress, (rtpSocket.LocalEndPoint as IPEndPoint).Port);
                         var rtpSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 
                         var rtpTask = Task.Run(() => SendRecvRtp(rtpSocket, rtpSession, dstRtpEndPoint, AUDIO_FILE, rtpCts))

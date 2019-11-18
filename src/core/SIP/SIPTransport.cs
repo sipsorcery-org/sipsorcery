@@ -40,7 +40,7 @@ namespace SIPSorcery.SIP
         private const int MAX_INMESSAGE_QUEUECOUNT = 5000;          // The maximum number of messages that can be stored in the incoming message queue.
         private const int MAX_RELIABLETRANSMISSIONS_COUNT = 5000;   // The maximum number of messages that can be maintained for reliable transmissions.
 
-        public const string ALLOWED_SIP_METHODS = "ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, REFER, REGISTER, SUBSCRIBE";
+        public const string ALLOWED_SIP_METHODS = "ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE";
 
         private static readonly int m_t1 = SIPTimings.T1;
         private static readonly int m_t2 = SIPTimings.T2;
@@ -253,107 +253,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-        [Obsolete("", true)]
-        public SIPEndPoint GetDefaultTransportContact(SIPProtocolsEnum protocol)
-        {
-            SIPChannel defaultChannel = GetDefaultChannel(protocol);
-
-            if (defaultChannel != null)
-            {
-                return defaultChannel.DefaultSIPChannelEndPoint;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Attempts to find the a matching SIP channel for the specified protocol. Preference is given to non-loopback
-        /// channels.
-        /// </summary>
-        /// <returns>A SIP channel.</returns>
-        public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
-        {
-            if (m_sipChannels == null || m_sipChannels.Count == 0)
-            {
-                throw new ApplicationException("No SIP channels available.");
-            }
-
-            var matchingChannels = m_sipChannels.Values.Where(x => x.SIPProtocol == protocol);
-
-            if (matchingChannels.Count() == 0)
-            {
-                throw new ApplicationException($"The SIP transport layer does not have any SIP channels available for protocol {protocol}.");
-            }
-            else if (matchingChannels.Count() == 1)
-            {
-                return matchingChannels.First().DefaultSIPChannelEndPoint;
-            }
-            else
-            {
-                // TODO: Add proper weighting algortihm. Ideally want to choose the matching channel 
-                // with the best internet connection.
-                return matchingChannels.OrderBy(x => x.IsLoopbackAddress).First().DefaultSIPChannelEndPoint;
-            }
-        }
-
-        /// <summary>
-        /// Attempts to locate the SIP channel that can communicate with the destination end point.
-        /// </summary>
-        /// <param name="destinationEP">The remote SIP end point to find a SIP channel for.</param>
-        /// <returns>If successful the SIP end point of a SIP channel that can be used to communicate 
-        /// with the destination end point.</returns>
-        public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
-        {
-            if (m_sipChannels == null || m_sipChannels.Count == 0)
-            {
-                return null;
-            }
-            else if (m_sipChannels.Count == 1)
-            {
-                return m_sipChannels.First().Value.DefaultSIPChannelEndPoint;
-            }
-            else if (IPAddress.IsLoopback(destinationEP.Address))
-            {
-                // If destination is a loopback IP address look for a protocol and IP protocol match.
-                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol &&
-                    (x.Value.IsLoopbackAddress
-                        || IPAddress.Equals(IPAddress.Any, x.Value.ListeningIPAddress)
-                        || IPAddress.Equals(IPAddress.IPv6Any, x.Value.ListeningIPAddress)) &&
-                    x.Value.AddressFamily == destinationEP.Address.AddressFamily)
-                    .Select(x => x.Value.DefaultSIPChannelEndPoint).FirstOrDefault();
-            }
-            else if (m_sipChannels.Count(x => x.Value.SIPProtocol == destinationEP.Protocol &&
-                x.Value.AddressFamily == destinationEP.Address.AddressFamily &&
-                !x.Value.IsLoopbackAddress) == 1)
-            {
-                // If there is only one channel matching the required SIP protocol and IP protocol pair return it.
-                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol &&
-                    x.Value.AddressFamily == destinationEP.Address.AddressFamily &&
-                    !x.Value.IsLoopbackAddress).Select(x => x.Value.DefaultSIPChannelEndPoint).Single();
-            }
-            else
-            {
-                // TODO add logic here to use channel ID and also to use OS route table to
-                // select the local IP address required to communicate with the destination.
-
-                //var localAddress = NetServices.GetLocalAddress(destinationEP.Address);
-
-                //foreach (SIPChannel sipChannel in m_sipChannels.Values)
-                //{
-                //    if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
-                //        (localAddress == null || sipChannel.SIPChannelEndPoint.Address.Equals(localAddress)))
-                //    {
-                //        return sipChannel.SIPChannelEndPoint;
-                //    }
-                //}
-
-                // Return the first matching end point for the destination end point's protocol.
-                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol).Select(y => y.Value).FirstOrDefault()?.DefaultSIPChannelEndPoint;
-            }
-        }
-
         /// <summary>
         /// This function performs processing on a request to handle any actions that need to be taken based on the Route header.
         /// </summary>
@@ -383,7 +282,7 @@ namespace SIPSorcery.SIP
                     foreach (SIPChannel sipChannel in m_sipChannels.Values)
                     {
                         // TODO: For IPAddress.Any have to check all available IP addresses not just listening one.
-                        if (sipRequest.URI.CanonicalAddress == 
+                        if (sipRequest.URI.CanonicalAddress ==
                             new SIPURI(sipRequest.URI.Scheme, sipChannel.ListeningIPAddress, sipChannel.Port).CanonicalAddress)
                         {
                             // The request URI was this router's address so it was set by a strict router.
@@ -403,7 +302,7 @@ namespace SIPSorcery.SIP
                         foreach (SIPChannel sipChannel in m_sipChannels.Values)
                         {
                             // TODO: For IPAddress.Any have to check all available IP addresses not just listening one.
-                            if (sipRequest.Header.Routes.TopRoute.URI.CanonicalAddress == 
+                            if (sipRequest.Header.Routes.TopRoute.URI.CanonicalAddress ==
                                 new SIPURI(sipRequest.Header.Routes.TopRoute.URI.Scheme, sipChannel.ListeningIPAddress, sipChannel.Port).CanonicalAddress)
                             {
                                 // Remove the top route as it belongs to this proxy.
@@ -453,20 +352,9 @@ namespace SIPSorcery.SIP
                 // Ignore packet, it's destined for the blackhole.
                 return;
             }
-            else if (m_sipChannels.Count == 0)
-            {
-                throw new ApplicationException("No channels are configured in the SIP transport layer. The data could not be sent.");
-            }
 
-            SIPChannel sendSIPChannel = FindSIPChannel(localSIPEndPoint);
-            if (sendSIPChannel != null)
-            {
-                sendSIPChannel.Send(dstEndPoint.GetIPEndPoint(), buffer, null);
-            }
-            else
-            {
-                logger.LogWarning($"No SIPChannel could be found for {localSIPEndPoint} when attempting a SendRaw to {dstEndPoint}.");
-            }
+            SIPChannel sendSIPChannel = m_sipChannels[localSIPEndPoint.ChannelID];
+            sendSIPChannel.Send(dstEndPoint.GetIPEndPoint(), buffer, null);
         }
 
         /// <summary>
@@ -567,26 +455,8 @@ namespace SIPSorcery.SIP
                 throw new ApplicationException("No channels are configured in the SIP transport layer. No attempt made to send the request.");
             }
 
-            SIPChannel sipChannel = null;
-
-            if (sipRequest.LocalSIPEndPoint != null)
-            {
-                sipChannel = FindSIPChannel(sipRequest.LocalSIPEndPoint);
-                sipChannel = sipChannel ?? GetDefaultChannel(sipRequest.LocalSIPEndPoint);
-            }
-            else
-            {
-                sipChannel = GetDefaultChannel(dstEndPoint);
-            }
-
-            if (sipChannel != null)
-            {
-                return await SendRequestAsync(sipChannel, dstEndPoint, sipRequest);
-            }
-            else
-            {
-                throw new ApplicationException("A default SIP channel could not be found for protocol " + sipRequest.LocalSIPEndPoint.Protocol + " when sending SIP request.");
-            }
+            SIPChannel sipChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
+            return await SendRequestAsync(sipChannel, dstEndPoint, sipRequest);
         }
 
         /// <summary>
@@ -743,7 +613,19 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Attempts an asynchronous send of a SIP response back to the SIP request origin.
+        /// Asynchronously forwards a SIP response. There are two main cases for a SIP response to be forwarded:
+        /// - First case is when we have processed a request and are returning a response. In this case the response
+        ///   should be sent back on exactly the same socket the request came on.
+        /// - Second case is when we are acting as a Proxy and the response is on it's way back from the agent
+        ///   that processed the request. In this case it's highly likely the response needs to be forwarded to
+        ///   a different end point then the one it came from and it's also possible it will need to use a completely
+        ///   different channel to send on compared to the one it arrived on.
+        /// 
+        /// Forwarding logic:
+        /// - If the RemoteEndPoint is set on the response use it as the destination
+        ///   Otherwise determine the destination based on the top Via header.
+        /// - If the LocalEndPoint is set on the reponse use it to determine the channel to send from
+        ///   Otherwise determine the channel to send from based on the destination.
         /// </summary>
         /// <param name="sipResponse">The SIP response to send.</param>
         public async Task<SocketError> SendResponseAsync(SIPResponse sipResponse)
@@ -757,77 +639,64 @@ namespace SIPSorcery.SIP
                 throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
             }
 
-            string connectionID = sipResponse.LocalSIPEndPoint?.ConnectionID ?? sipResponse.RemoteSIPEndPoint?.ConnectionID;
-
-            if (!String.IsNullOrEmpty(connectionID))
+            // First step, resolving the destination end point.
+            var dstEndPoint = sipResponse.RemoteSIPEndPoint;
+            if (dstEndPoint == null)
             {
-                // This reponse needs to be sent on a specific connection.
-                var sipChannel = FindSIPChannelForConnection(connectionID);
-
-                if (sipChannel != null)
+                var result = GetDestinationForResponse(sipResponse);
+                if (result.status == SocketError.Success)
                 {
-                    FireSIPResponseOutTraceEvent(sipChannel.ListeningSIPEndPoint, sipResponse.RemoteSIPEndPoint, sipResponse);
-
-                    sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
-                    return await sipChannel.SendAsync(connectionID, Encoding.UTF8.GetBytes(sipResponse.ToString()));
+                    dstEndPoint = result.dstEndPoint;
                 }
                 else
                 {
-                    logger.LogWarning($"Could not find a SIP channel to send SIP Response for connection ID {connectionID}.");
-                    return SocketError.NotConnected;
+                    // The destination couldn't be resolved, return the error message.
+                    // Note this could be a temporary failure it we're still waiting for a DNS resolution.
+                    return result.status;
                 }
+            }
+
+            if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
+            {
+                // Ignore packet, it's destined for the blackhole.
+                return SocketError.Success;
             }
             else
             {
-                // Need to determine the desintation from the SIP response headers. If possible the SIP response should be sent out from
-                // the same local SIP end point as the SIP request it's for.
-                SIPChannel sipChannel = FindSIPChannel(sipResponse.LocalSIPEndPoint);
-                sipChannel = sipChannel ?? GetDefaultChannel(sipResponse.LocalSIPEndPoint.Protocol);
+                // Once the destination is known determine the local SIP channel to reach it.
+                SIPChannel sendFromChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
 
-                if (sipChannel != null)
+                // Now have a destination and sending channel, go ahead and forward.
+                FireSIPResponseOutTraceEvent(sipResponse.LocalSIPEndPoint ?? sendFromChannel.ListeningSIPEndPoint, dstEndPoint, sipResponse);
+
+                sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
+
+                if (dstEndPoint.ConnectionID != null)
                 {
-                    return await SendResponseAsync(sipChannel, sipResponse);
+                    return await sendFromChannel.SendAsync(dstEndPoint.ConnectionID, Encoding.UTF8.GetBytes(sipResponse.ToString()));
                 }
                 else
                 {
-                    throw new ApplicationException($"Could not find a SIP channel to send SIP Response for transport protcol {sipResponse.LocalSIPEndPoint.Protocol}.");
+                    return await sendFromChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
                 }
             }
         }
 
         /// <summary>
-        /// Attempts to send a SIP response on a specific SIP channel.
+        /// Attempts to resolve the desintation end point for a SIP response from the top SIP Via header. 
+        /// Normally the address in the header will be an IP address but the standard does permit a host which 
+        /// will require a DNS lookup.
         /// </summary>
-        /// <param name="sipChannel">The SIP channel to send the SIP response on.</param>
-        /// <param name="sipResponse">The SIP response to send.</param>
-        private async void SendResponse(SIPChannel sipChannel, SIPResponse sipResponse)
+        /// <param name="sipResponse">The SIP response to forward.</param>
+        /// <returns>A socket error object indicating the result of the resolve attempt and if successful a SIP
+        /// end point to forward the SIP response to.</returns>
+        private (SocketError status, SIPEndPoint dstEndPoint) GetDestinationForResponse(SIPResponse sipResponse)
         {
-            await SendResponseAsync(sipChannel, sipResponse);
-        }
-
-        /// <summary>
-        /// Attempts an asynchronous send of a SIP response on a specific SIP channel. This method attempts to resolve the
-        /// desintation end point from the top SIP Via header. Normally the address in the header will be an IP address but
-        /// the standard does permit a host which will require a DNS resolution.
-        /// </summary>
-        /// <param name="sipChannel">The SIP channel to send the SIP response on.</param>
-        /// <param name="sipResponse">The SIP response to send.</param>
-        private async Task<SocketError> SendResponseAsync(SIPChannel sipChannel, SIPResponse sipResponse)
-        {
-            if (sipResponse == null)
-            {
-                throw new ArgumentNullException("sipResponse", "The SIP response must be set for SendResponseAsync.");
-            }
-            else if (sipChannel == null)
-            {
-                throw new ArgumentNullException("sipChannel", "The SIP channel must be set for SendResponseAsync.");
-            }
-
             SIPViaHeader topViaHeader = sipResponse.Header.Vias.TopViaHeader;
             if (topViaHeader == null)
             {
                 logger.LogWarning($"There was no top Via header on a SIP response from {sipResponse.RemoteSIPEndPoint} in SendResponseAsync, response dropped.");
-                return SocketError.Fault;
+                return (SocketError.Fault, null);
             }
             else
             {
@@ -835,33 +704,19 @@ namespace SIPSorcery.SIP
 
                 if (lookupResult.LookupError != null)
                 {
-                    throw new ApplicationException("Could not resolve destination for response.\n" + sipResponse.ToString());
+                    logger.LogWarning("Could not resolve destination for response.\n" + sipResponse.ToString());
+                    return (SocketError.HostNotFound, null);
                 }
                 else if (lookupResult.Pending)
                 {
-                    // Ignore this response transmission and wait for the transaction retransmit mechanism to try again when DNS will have hopefully resolved the end point.
-                    return SocketError.IOPending;
+                    // Ignore this response transmission and wait for the transaction retransmit mechanism to try again when DNS will have 
+                    // hopefully resolved the end point.
+                    return (SocketError.IOPending, null);
                 }
                 else
                 {
                     SIPEndPoint dstEndPoint = lookupResult.GetSIPEndPoint();
-
-                    if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
-                    {
-                        // Ignore packet, it's destined for the blackhole.
-                        return SocketError.Success;
-                    }
-                    else if (dstEndPoint != null)
-                    {
-                        FireSIPResponseOutTraceEvent(sipChannel.ListeningSIPEndPoint, dstEndPoint, sipResponse);
-
-                        sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
-                        return await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
-                    }
-                    else
-                    {
-                        throw new ApplicationException("SendResponse could not send a response as no end point was resolved.\n" + sipResponse.ToString());
-                    }
+                    return (SocketError.Success, dstEndPoint);
                 }
             }
         }
@@ -1061,7 +916,7 @@ namespace SIPSorcery.SIP
         /// <param name="localEndPoint">The local end point that the SIP channel received the message on.</param>
         /// <param name="remoteEndPoint">The remote end point the message came from.</param>
         /// <param name="buffer">The raw message received.</param>
-        private void SIPMessageReceived(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
+        private async void SIPMessageReceived(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
         {
             string rawSIPMessage = null;
 
@@ -1089,7 +944,7 @@ namespace SIPSorcery.SIP
                             rawSIPMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
                             if (rawSIPMessage.IsNullOrBlank())
                             {
-                                // An emptry transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
+                                // An empty transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
                                 return;
                             }
                             else if (!rawSIPMessage.Contains("SIP"))
@@ -1208,7 +1063,7 @@ namespace SIPSorcery.SIP
                                                 // header was not present in the request and that the MaxForwards check should not be undertaken.
                                                 FireSIPBadRequestInTraceEvent(localEndPoint, remoteEndPoint, $"Zero MaxForwards on {sipRequest.Method} {sipRequest.URI} from {sipRequest.Header.From.FromURI.User} {remoteEndPoint}.", SIPValidationFieldsEnum.Request, sipRequest.ToString());
                                                 SIPResponse tooManyHops = GetResponse(sipRequest, SIPResponseStatusCodesEnum.TooManyHops, null);
-                                                SendResponse(sipChannel, tooManyHops);
+                                                await SendResponseAsync(tooManyHops);
                                                 return;
                                             }
                                             else if (sipRequest.Header.UnknownRequireExtension != null)
@@ -1217,7 +1072,7 @@ namespace SIPSorcery.SIP
                                                 FireSIPBadRequestInTraceEvent(localEndPoint, remoteEndPoint, $"Rejecting request to one or more required exensions not being supported, unsupported extensions: {sipRequest.Header.UnknownRequireExtension}.", SIPValidationFieldsEnum.Request, sipRequest.ToString());
                                                 SIPResponse badRequireResp = GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadExtension, null);
                                                 badRequireResp.Header.Unsupported = sipRequest.Header.UnknownRequireExtension;
-                                                SendResponse(sipChannel, badRequireResp);
+                                                await SendResponseAsync(badRequireResp);
                                                 return;
                                             }
 
@@ -1237,7 +1092,7 @@ namespace SIPSorcery.SIP
                                     {
                                         FireSIPBadRequestInTraceEvent(localEndPoint, remoteEndPoint, sipRequestExcp.Message, sipRequestExcp.SIPErrorField, sipMessage.RawMessage);
                                         SIPResponse errorResponse = GetResponse(localEndPoint, remoteEndPoint, sipRequestExcp.SIPResponseErrorCode, sipRequestExcp.Message);
-                                        SendResponse(sipChannel, errorResponse);
+                                        await SendResponseAsync(errorResponse);
                                     }
 
                                     #endregion
@@ -1258,19 +1113,192 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Attempts to find a connection oriented SIPChannel that matches the specified connection ID.
+        /// Attempts to locate a SIP channel that can be used to communicate with a remote end point
+        /// over a specific SIP protocol.
         /// </summary>
-        /// <param name="connectionID">The connection ID of the SIPChannel to find.</param>
-        /// <returns>A matching SIPChannel if found otherwise null.</returns>
-        public SIPChannel FindSIPChannelForConnection(string connectionID)
+        /// <param name="protocol">The SIP protocol required for the communication.</param>
+        /// <param name="dst">The destination end point.</param>
+        /// <returns>If found a SIP channel or null if not.</returns>
+        public SIPChannel GetSIPChannelForDestination(SIPProtocolsEnum protocol, IPEndPoint dst)
         {
-            if (String.IsNullOrEmpty(connectionID))
+            if (m_sipChannels == null || m_sipChannels.Count == 0)
             {
-                return null;
+                throw new ApplicationException("The transport layer does not have any SIP channels.");
+            }
+            else if (!m_sipChannels.Any(x => x.Value.SIPProtocol == protocol && x.Value.ListeningIPAddress.AddressFamily == dst.Address.AddressFamily))
+            {
+                throw new ApplicationException($"The transport layer does not have any SIP channels matching {protocol} and {dst.AddressFamily}.");
             }
             else
             {
-                return m_sipChannels.Where(x => x.Value.HasConnection(connectionID)).FirstOrDefault().Value;
+                SIPChannel matchingChannel = null;
+
+                // There's at least one channel available. If there's an IPAddress.Any channel choose that first
+                // since it's able to use all the machine's active network interfaces and should be able to reach
+                // any remote end point.
+                IPAddress addrAny = (dst.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
+                matchingChannel = GetExactMatchSIPChannel(protocol, addrAny);
+                if (matchingChannel != null)
+                {
+                    return matchingChannel;
+                }
+
+                // Check for an exact match on the destination address and a SIP channel. Barring duplciate IP addresses and other 
+                // shenanigans this would mean we're on the same machine. Note this will also catch loopback to loopback cases.
+                matchingChannel = GetExactMatchSIPChannel(protocol, dst.Address);
+                if (matchingChannel != null)
+                {
+                    return matchingChannel;
+                }
+
+                // Now we'll rely on the Operating Systems routing table to tell us which local IP address would be the one 
+                // chosen to communicate with the destination. And then look for an exact match on a channel listening address.
+                IPAddress srcAddr = NetServices.GetLocalAddressForRemote(dst.Address);
+                if (srcAddr != null)
+                {
+                    matchingChannel = GetExactMatchSIPChannel(protocol, srcAddr);
+                    if (matchingChannel != null)
+                    {
+                        return matchingChannel;
+                    }
+                }
+
+                // Now we're clutching at straws. Try the IP address the OS routing table tells us is used for accessing the Internet.
+                IPAddress internetSrcAddr = NetServices.GetLocalAddressForInternet();
+                if (internetSrcAddr != null)
+                {
+                    matchingChannel = GetExactMatchSIPChannel(protocol, internetSrcAddr);
+                    if (matchingChannel != null)
+                    {
+                        return matchingChannel;
+                    }
+                }
+
+                // Hard to see how we could get to here. Maybe some weird IPv6 edge case or a network interface has gone down. Just return the first channel.
+                return m_sipChannels.Where(x => x.Value.SIPProtocol == protocol && dst.Address.AddressFamily == x.Value.AddressFamily)
+                    .Select(x => x.Value).First();
+            }
+        }
+
+        /// <summary>
+        /// Helper method for GetSIPChannelForDestination to do the SIP channel match check when it is known 
+        /// exactly which SIP protocol and listening IP address we're after.
+        /// </summary>
+        /// <param name="protocol">The SIP protcol to find a match for.</param>
+        /// <param name="reqdAddress">The listening IP address to find a match for.</param>
+        /// <returns>A SIP channel if a match is found or null if not.</returns>
+        private SIPChannel GetExactMatchSIPChannel(SIPProtocolsEnum protocol, IPAddress reqdAddress)
+        {
+            if (m_sipChannels.Any(x => x.Value.SIPProtocol == protocol && reqdAddress.Equals(x.Value.ListeningIPAddress)))
+            {
+                return m_sipChannels.Where(x =>
+                             x.Value.SIPProtocol == protocol && reqdAddress.Equals(x.Value.ListeningIPAddress))
+                           .Select(x => x.Value)
+                           .First();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
+        public SIPEndPoint GetDefaultTransportContact(SIPProtocolsEnum protocol)
+        {
+            //SIPChannel defaultChannel = GetDefaultChannel(protocol);
+
+            //if (defaultChannel != null)
+            //{
+            //    return defaultChannel.DefaultSIPChannelEndPoint;
+            //}
+            //else
+            //{
+            //    return null;
+            //}
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Attempts to find the a matching SIP channel for the specified protocol. Preference is given to non-loopback
+        /// channels.
+        /// </summary>
+        /// <returns>A SIP channel.</returns>
+        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
+        public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
+        {
+            if (m_sipChannels == null || m_sipChannels.Count == 0)
+            {
+                throw new ApplicationException("No SIP channels available.");
+            }
+
+            var matchingChannels = m_sipChannels.Values.Where(x => x.SIPProtocol == protocol);
+
+            if (matchingChannels.Count() == 0)
+            {
+                throw new ApplicationException($"The SIP transport layer does not have any SIP channels available for protocol {protocol}.");
+            }
+            else if (matchingChannels.Count() == 1)
+            {
+                return matchingChannels.First().DefaultSIPChannelEndPoint;
+            }
+            else
+            {
+                return matchingChannels.OrderBy(x => x.IsLoopbackAddress).First().DefaultSIPChannelEndPoint;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to locate the SIP channel that can communicate with the destination end point.
+        /// </summary>
+        /// <param name="destinationEP">The remote SIP end point to find a SIP channel for.</param>
+        /// <returns>If successful the SIP end point of a SIP channel that can be used to communicate 
+        /// with the destination end point.</returns>
+        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
+        public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
+        {
+            if (m_sipChannels == null || m_sipChannels.Count == 0)
+            {
+                return null;
+            }
+            else if (m_sipChannels.Count == 1)
+            {
+                return m_sipChannels.First().Value.DefaultSIPChannelEndPoint;
+            }
+            else if (IPAddress.IsLoopback(destinationEP.Address))
+            {
+                // If destination is a loopback IP address look for a protocol and IP protocol match.
+                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol &&
+                    (x.Value.IsLoopbackAddress
+                        || IPAddress.Equals(IPAddress.Any, x.Value.ListeningIPAddress)
+                        || IPAddress.Equals(IPAddress.IPv6Any, x.Value.ListeningIPAddress)) &&
+                    x.Value.AddressFamily == destinationEP.Address.AddressFamily)
+                    .Select(x => x.Value.DefaultSIPChannelEndPoint).FirstOrDefault();
+            }
+            else if (m_sipChannels.Count(x => x.Value.SIPProtocol == destinationEP.Protocol &&
+                x.Value.AddressFamily == destinationEP.Address.AddressFamily &&
+                !x.Value.IsLoopbackAddress) == 1)
+            {
+                // If there is only one channel matching the required SIP protocol and IP protocol pair return it.
+                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol &&
+                    x.Value.AddressFamily == destinationEP.Address.AddressFamily &&
+                    !x.Value.IsLoopbackAddress).Select(x => x.Value.DefaultSIPChannelEndPoint).Single();
+            }
+            else
+            {
+                //var localAddress = NetServices.GetLocalAddress(destinationEP.Address);
+
+                //foreach (SIPChannel sipChannel in m_sipChannels.Values)
+                //{
+                //    if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
+                //        (localAddress == null || sipChannel.SIPChannelEndPoint.Address.Equals(localAddress)))
+                //    {
+                //        return sipChannel.SIPChannelEndPoint;
+                //    }
+                //}
+
+                // Return the first matching end point for the destination end point's protocol.
+                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol).Select(y => y.Value).FirstOrDefault()?.DefaultSIPChannelEndPoint;
             }
         }
 
@@ -1279,6 +1307,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="localEndPoint">The local socket endpoint of the SIPChannel to find.</param>
         /// <returns>A matching SIPChannel if found otherwise null.</returns>
+        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
         public SIPChannel FindSIPChannel(SIPEndPoint localSIPEndPoint)
         {
             if (localSIPEndPoint == null)
@@ -1291,7 +1320,7 @@ namespace SIPSorcery.SIP
                 {
                     return m_sipChannels[localSIPEndPoint.ChannelID];
                 }
-                else if(m_sipChannels.Values.Any(x => x.SIPProtocol == localSIPEndPoint.Protocol))
+                else if (m_sipChannels.Values.Any(x => x.SIPProtocol == localSIPEndPoint.Protocol))
                 {
                     // No match on channel ID do fallback is to return the first available channel that matches the desired channel protocol.
                     return m_sipChannels.Values.Where(x => x.SIPProtocol == localSIPEndPoint.Protocol).First();
@@ -1304,49 +1333,10 @@ namespace SIPSorcery.SIP
             }
         }
 
-        /// <summary>
-        /// Returns the first SIPChannel found for the requested protocol.
-        /// </summary>
-        /// <param name="protocol"></param>
-        /// <returns></returns>
-        private SIPChannel GetDefaultChannel(SIPProtocolsEnum protocol)
-        {
-            // Channels that are not on a loopback address take priority.
-            foreach (SIPChannel sipChannel in m_sipChannels.Values)
-            {
-                if (sipChannel.SIPProtocol == protocol && !IPAddress.IsLoopback(sipChannel.ListeningIPAddress))
-                {
-                    return sipChannel;
-                }
-            }
-            foreach (SIPChannel sipChannel in m_sipChannels.Values)
-            {
-                if (sipChannel.SIPProtocol == protocol)
-                {
-                    return sipChannel;
-                }
-            }
-
-            logger.LogWarning("No default SIP channel could be found for " + protocol + ".");
-            return null;
-        }
-
-        private SIPChannel GetDefaultChannel(SIPEndPoint dstEndPoint)
-        {
-            var e = GetDefaultSIPEndPoint(dstEndPoint);
-            var sipChannel = FindSIPChannel(e);
-            if (sipChannel != null)
-            {
-                return sipChannel;
-            }
-
-            logger.LogWarning("No default SIP channel could be found for " + dstEndPoint.ToString() + ".");
-            return null;
-        }
-
-        [Obsolete("The channels list is now indexed by channel ID.", true)]
         public bool IsLocalSIPEndPoint(SIPEndPoint sipEndPoint)
         {
+            // TODO: Key has changed from end point to ID. 
+            // Also need this check to accommodate cases where a channel is listening on IPAddress.Any.
             return m_sipChannels.ContainsKey(sipEndPoint.ToString());
         }
 
@@ -1527,7 +1517,8 @@ namespace SIPSorcery.SIP
             {
                 if (localSIPEndPoint == null)
                 {
-                    localSIPEndPoint = GetDefaultSIPEndPoint(remoteEndPoint != null ? remoteEndPoint.Protocol : SIPProtocolsEnum.udp);
+                    SIPChannel senderChannel = GetSIPChannelForDestination(remoteEndPoint.Protocol, remoteEndPoint.GetIPEndPoint());
+                    localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
                 }
 
                 SIPResponse response = new SIPResponse(responseCode, reasonPhrase, localSIPEndPoint, remoteEndPoint);
@@ -1558,9 +1549,16 @@ namespace SIPSorcery.SIP
 
         public SIPRequest GetRequest(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, SIPEndPoint localSIPEndPoint)
         {
+            return Task.Run(() => GetRequestAsync(method, uri, to, localSIPEndPoint)).Result;
+        }
+
+        public async Task<SIPRequest> GetRequestAsync(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, SIPEndPoint localSIPEndPoint)
+        {
             if (localSIPEndPoint == null)
             {
-                localSIPEndPoint = GetDefaultSIPEndPoint(uri.Protocol);
+                var lookupResult = await SIPDNSManager.ResolveAsync(uri);
+                SIPChannel senderChannel = GetSIPChannelForDestination(uri.Protocol, lookupResult.EndPointResults.First().LookupEndPoint.GetIPEndPoint());
+                localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
             }
 
             SIPRequest request = new SIPRequest(method, uri);
@@ -1597,7 +1595,8 @@ namespace SIPSorcery.SIP
             {
                 if (localSIPEndPoint == null)
                 {
-                    localSIPEndPoint = GetDefaultSIPEndPoint(localSIPEndPoint);
+                    SIPChannel senderChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
+                    localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
                 }
 
                 CheckTransactionEngineExists();
@@ -1618,7 +1617,8 @@ namespace SIPSorcery.SIP
             {
                 if (localSIPEndPoint == null)
                 {
-                    localSIPEndPoint = GetDefaultSIPEndPoint(dstEndPoint != null ? dstEndPoint.Protocol : SIPProtocolsEnum.udp);
+                    SIPChannel senderChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
+                    localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
                 }
 
                 CheckTransactionEngineExists();
@@ -1639,7 +1639,8 @@ namespace SIPSorcery.SIP
             {
                 if (localSIPEndPoint == null)
                 {
-                    localSIPEndPoint = GetDefaultSIPEndPoint(dstEndPoint != null ? dstEndPoint.Protocol : SIPProtocolsEnum.udp);
+                    SIPChannel senderChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
+                    localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
                 }
 
                 CheckTransactionEngineExists();
@@ -1660,7 +1661,8 @@ namespace SIPSorcery.SIP
             {
                 if (localSIPEndPoint == null)
                 {
-                    localSIPEndPoint = GetDefaultSIPEndPoint(dstEndPoint != null ? dstEndPoint.Protocol : SIPProtocolsEnum.udp);
+                    SIPChannel senderChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
+                    localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
                 }
 
                 CheckTransactionEngineExists();
@@ -1670,7 +1672,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception CreateUASTransaction. " + excp);
+                logger.LogError("Exception CreateCancelTransaction. " + excp);
                 throw;
             }
         }

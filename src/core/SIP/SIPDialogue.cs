@@ -318,9 +318,16 @@ namespace SIPSorcery.SIP
                     byeOutboundProxy = outboundProxy;
                 }
 
-                SIPEndPoint localEndPoint = (byeOutboundProxy != null) ?
-                    sipTransport.GetDefaultSIPEndPoint(byeOutboundProxy) :
-                    sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetEndpoint());
+                SIPEndPoint localEndPoint = null;
+                if (byeOutboundProxy != null)
+                {
+                    localEndPoint = sipTransport.GetSIPChannelForDestination(byeOutboundProxy.Protocol, byeOutboundProxy.GetIPEndPoint()).ListeningSIPEndPoint;
+                }
+                else
+                {
+                    var remoteEP = GetRemoteTargetEndpoint();
+                    localEndPoint = sipTransport.GetSIPChannelForDestination(remoteEP.Protocol, remoteEP.GetIPEndPoint()).ListeningSIPEndPoint;
+                }
 
                 SIPRequest byeRequest = GetByeRequest(localEndPoint);
                 SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, byeOutboundProxy);

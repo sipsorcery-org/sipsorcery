@@ -15,6 +15,7 @@
 // ============================================================================
 
 using System;
+using System.Net;
 using System.Threading;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
@@ -72,7 +73,7 @@ namespace SIPSorcery.SIP.App
             int expiry)
         {
             m_sipTransport = sipTransport;
-            m_localEndPoint = sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp);
+            m_localEndPoint = sipTransport.GetSIPChannelForDestination(SIPProtocolsEnum.udp, new System.Net.IPEndPoint(IPAddress.Any, 0)).ListeningSIPEndPoint;
             m_sipAccountAOR = new SIPURI(username, server, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
             m_authUsername = username;
             m_password = password;

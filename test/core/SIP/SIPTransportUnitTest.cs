@@ -77,7 +77,7 @@ namespace SIPSorcery.SIP.UnitTests
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000000) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -364,8 +364,6 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 serverSIPTransport.AddSIPChannel(testServerChannel);
 
-                logger.LogDebug(serverSIPTransport.GetDefaultSIPEndPoint(testServerChannel.SIPProtocol).ToString());
-
                 serverSIPTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
                 {
                     logger.LogDebug($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
@@ -378,7 +376,10 @@ namespace SIPSorcery.SIP.UnitTests
                 };
 
                 cts.Token.WaitHandle.WaitOne();
-                //WaitHandle.WaitAny(new[] { cts.Token.WaitHandle });
+            }
+            catch(Exception excp)
+            {
+                logger.LogError($"Exception RunServer. {excp.Message}");
             }
             finally
             {

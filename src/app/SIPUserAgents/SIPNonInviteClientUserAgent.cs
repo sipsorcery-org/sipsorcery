@@ -16,6 +16,7 @@
 // ============================================================================
 
 using System;
+using System.Net;
 using System.Threading;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
@@ -61,7 +62,8 @@ namespace SIPSorcery.SIP.App
             try
             {
                 SIPRequest req = GetRequest(method);
-                SIPNonInviteTransaction tran = m_sipTransport.CreateNonInviteTransaction(req, null, m_sipTransport.GetDefaultSIPEndPoint(req.URI.Protocol), m_outboundProxy);
+                var localSIPEndPoint = m_sipTransport.GetSIPChannelForDestination(req.URI.Protocol, new System.Net.IPEndPoint(IPAddress.Any, 0)).ListeningSIPEndPoint;
+                SIPNonInviteTransaction tran = m_sipTransport.CreateNonInviteTransaction(req, null, localSIPEndPoint, m_outboundProxy);
                 
                 ManualResetEvent waitForResponse = new ManualResetEvent(false);
                 tran.NonInviteTransactionTimedOut += RequestTimedOut;
@@ -164,7 +166,8 @@ namespace SIPSorcery.SIP.App
                 header.UserAgent = m_userAgent;
                 request.Header = header;
 
-                SIPViaHeader viaHeader = new SIPViaHeader(m_sipTransport.GetDefaultSIPEndPoint(uri.Protocol), CallProperties.CreateBranchId());
+                var localSIPEndPoint = m_sipTransport.GetSIPChannelForDestination(SIPProtocolsEnum.udp, new System.Net.IPEndPoint(IPAddress.Any, 0)).ListeningSIPEndPoint;
+                SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
                 request.Header.Vias.PushViaHeader(viaHeader);
 
                 try

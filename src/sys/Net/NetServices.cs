@@ -180,6 +180,11 @@ namespace SIPSorcery.Sys
         /// <returns>The local IP address to use to connect to the remote end point.</returns>
         public static IPAddress GetLocalAddressForRemote(IPAddress destination)
         {
+            if(destination == null || IPAddress.Any.Equals(destination) || IPAddress.IPv6Any.Equals(destination))
+            {
+                return null;
+            }
+
             UdpClient udpClient = new UdpClient(destination.AddressFamily);
             udpClient.Connect(destination, 0);
             return (udpClient.Client.LocalEndPoint as IPEndPoint).Address;

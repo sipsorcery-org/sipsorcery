@@ -224,11 +224,7 @@ namespace SIPSorcery.SIP.App
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Switching to " + SIPURI.ParseSIPURI(m_sipCallDescriptor.Uri).CanonicalAddress + " via " + m_serverEndPoint + ".", Owner));
 
-                        m_localSIPEndPoint = m_sipTransport.GetDefaultSIPEndPoint(m_serverEndPoint);
-                        if (m_localSIPEndPoint == null)
-                        {
-                            throw new ApplicationException("The call could not locate an appropriate SIP transport channel for protocol " + callURI.Protocol + ".");
-                        }
+                        m_localSIPEndPoint = m_sipTransport.GetSIPChannelForDestination(m_serverEndPoint.Protocol, m_serverEndPoint.GetIPEndPoint()).ListeningSIPEndPoint;
 
                         string content = sipCallDescriptor.Content;
 
@@ -510,9 +506,16 @@ namespace SIPSorcery.SIP.App
 
             try
             {
-                SIPEndPoint localEndPoint = (m_outboundProxy != null) ?
-                                m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy) :
-                                m_sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetEndpoint());
+                SIPEndPoint localEndPoint = null;
+                if(m_outboundProxy != null)
+                {
+                    localEndPoint = m_sipTransport.GetSIPChannelForDestination(m_outboundProxy.Protocol, m_outboundProxy.GetIPEndPoint()).ListeningSIPEndPoint;
+                }
+                else
+                {
+                    var remoteEP = GetRemoteTargetEndpoint();
+                    localEndPoint = m_sipTransport.GetSIPChannelForDestination(remoteEP.Protocol, remoteEP.GetIPEndPoint()).ListeningSIPEndPoint;
+                }
 
                 SIPRequest byeRequest = GetByeRequest(localEndPoint);
                 SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, m_outboundProxy);

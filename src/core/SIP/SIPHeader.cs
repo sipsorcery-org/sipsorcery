@@ -4,10 +4,10 @@
 // Description: SIP Header.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 17 Sep 2005	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 17 Sep 2005	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -24,25 +24,7 @@ using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
-    /// <bnf>
-    /// Via               =  ( "Via" / "v" ) HCOLON via-parm *(COMMA via-parm)
-    /// via-parm          =  sent-protocol LWS sent-by *( SEMI via-params )
-    /// via-params        =  via-ttl / via-maddr / via-received / via-branch / via-extension
-    /// via-ttl           =  "ttl" EQUAL ttl
-    /// via-maddr         =  "maddr" EQUAL host
-    /// via-received      =  "received" EQUAL (IPv4address / IPv6address)
-    /// via-branch        =  "branch" EQUAL token
-    /// via-extension     =  generic-param
-    /// sent-protocol     =  protocol-name SLASH protocol-version SLASH transport
-    /// protocol-name     =  "SIP" / token
-    /// protocol-version  =  token
-    /// transport         =  "UDP" / "TCP" / "TLS" / "SCTP" / other-transport
-    /// sent-by           =  host [ COLON port ]
-    /// ttl               =  1*3DIGIT ; 0 to 255
-    /// generic-param     =  token [ EQUAL gen-value ]
-    /// gen-value         =  token / host / quoted-string
-    /// </bnf>
-    /// <remarks>
+    /// <summary>
     /// The Via header only has parameters, no headers. Parameters of from ...;name=value;name2=value2
     /// Specific parameters: ttl, maddr, received, branch.
     /// 
@@ -57,7 +39,7 @@ namespace SIPSorcery.SIP
     /// Only the top Via header branch is used for transactions though so if the request has made it to this stack
     /// with missing branches then in theory it should be safe to proceed. It will be left up to the SIPTransaction
     /// class to reject any SIP requests that are missing the necessary branch.
-    /// </remarks>
+    /// </summary>
     public class SIPViaHeader
     {
         private static char m_paramDelimChar = ';';

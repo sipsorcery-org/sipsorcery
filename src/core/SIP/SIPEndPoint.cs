@@ -32,8 +32,8 @@ namespace SIPSorcery.SIP
     /// </summary>
     public class SIPEndPoint
     {
-        private const string CHANNELID_ATTRIBUTE_NAME = "chanid";
-        private const string CONNECTIONID_ATTRIBUTE_NAME = "connid";
+        private const string CHANNELID_ATTRIBUTE_NAME = "cid";
+        private const string CONNECTIONID_ATTRIBUTE_NAME = "xid";
 
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;

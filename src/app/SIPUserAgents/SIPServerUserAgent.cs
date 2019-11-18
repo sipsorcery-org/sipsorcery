@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using System.Linq;
@@ -444,7 +445,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="clientHungup">True if the BYE request was received from the client. False if the hangup
         /// needs to originate from this agent.</param>
-        public void Hangup(bool clientHungup)
+        public async void Hangup(bool clientHungup)
         {
             m_isHungup = true;
 
@@ -458,13 +459,39 @@ namespace SIPSorcery.SIP.App
             {
                 try
                 {
-                    SIPEndPoint localEndPoint = m_uasTransaction.LocalSIPEndPoint;
+                    // Cases found where the Contact in the INVITE was to a different protocol than the oringinal request.
+                    var inviteContact = m_uasTransaction.TransactionRequest.Header.Contact.FirstOrDefault();
+                    if (inviteContact == null)
+                    {
+                        logger.LogWarning("The Contact header on the INVITE request was missing, BYE request cannot be generated.");
+                    }
+                    else
+                    {
+                        SIPEndPoint localEndPoint = m_uasTransaction.LocalSIPEndPoint;
+                        if (inviteContact.ContactURI.Protocol != localEndPoint.Protocol)
+                        {
+                            var lookupResult = await SIPDNSManager.ResolveAsync(inviteContact.ContactURI);
+                            if (lookupResult == null || lookupResult.EndPointResults?.Count == 0)
+                            {
+                                throw new ApplicationException("The Contact header URI on the INVITE request could not be resolved, BYE request cannot be generated.");
+                            }
+                            else
+                            {
+                               IPEndPoint contactUriEndPoint = lookupResult.EndPointResults.Select(x => x.LookupEndPoint).First().GetIPEndPoint();
 
-                    SIPRequest byeRequest = GetByeRequest(localEndPoint);
+                                logger.LogDebug($"Contact header URI {inviteContact.ContactURI} resolved to {contactUriEndPoint}.");
 
-                    SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, m_outboundProxy);
-                    byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
-                    byeTransaction.SendReliableRequest();
+                                SIPChannel sendingChannel = m_sipTransport.GetSIPChannelForDestination(inviteContact.ContactURI.Protocol, contactUriEndPoint);
+                                localEndPoint = sendingChannel.GetLocalSIPEndPointForDestination(contactUriEndPoint.Address);
+                            }
+                        }
+
+                        SIPRequest byeRequest = GetByeRequest(localEndPoint);
+
+                        SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, m_outboundProxy);
+                        byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
+                        byeTransaction.SendReliableRequest();
+                    }
                 }
                 catch (Exception excp)
                 {
