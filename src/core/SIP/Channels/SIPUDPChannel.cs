@@ -81,21 +81,6 @@ namespace SIPSorcery.SIP
                     var receiveResult = await m_sipConn.ReceiveAsync();
                     if (receiveResult.Buffer?.Length > 0)
                     {
-                        SIPEndPoint localEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, m_sipConn.Client.LocalEndPoint as IPEndPoint, ID, null);
-
-                        if (IPAddress.Any.Equals(ListeningIPAddress))
-                        {
-                            // There doesn't seem to be a way to get the local address the UDP client used for the receive. The
-                            // workaround is to do a lookup in the OS's routing table and cache the result.
-                            _localAddressForDestination.TryGetValue(receiveResult.RemoteEndPoint.Address, out var localAddress);
-                            if (localAddress == null)
-                            {
-                                localAddress = NetServices.GetLocalAddressForRemote(receiveResult.RemoteEndPoint.Address);
-                                _localAddressForDestination.TryAdd(receiveResult.RemoteEndPoint.Address, localAddress);
-                            }
-                            localEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(localAddress, Port), ID, null);
-                        }
-
                         SIPEndPoint remoteEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, receiveResult.RemoteEndPoint, ID, null);
                         SIPMessageReceived?.Invoke(this, localEndPoint, remoteEndPoint, receiveResult.Buffer);
                     }

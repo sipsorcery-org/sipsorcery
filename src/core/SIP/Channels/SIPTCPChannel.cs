@@ -152,7 +152,7 @@ namespace SIPSorcery.SIP
                 catch (SocketException acceptSockExcp) when (acceptSockExcp.SocketErrorCode == SocketError.Interrupted)
                 {
                     // This is a result of the transport channel being closed and WSACancelBlockingCall being called in WinSock2. Safe to ignore.
-                    logger.LogDebug($"SIPTCPChannel accepts for {DefaultSIPChannelEndPoint} cancelled.");
+                    logger.LogDebug($"SIPTCPChannel accepts for {ListeningIPAddress}:{Port} cancelled.");
                 }
                 catch (Exception acceptExcp)
                 {
@@ -592,7 +592,7 @@ namespace SIPSorcery.SIP
         {
             if (!Closed == true)
             {
-                logger.LogDebug($"Closing SIP TCP Channel {DefaultSIPChannelEndPoint}.");
+                logger.LogDebug($"Closing SIP TCP Channel {ListeningIPAddress}:{Port}.");
 
                 Closed = true;
 
@@ -661,7 +661,7 @@ namespace SIPSorcery.SIP
 
                             if (inactiveConnection != null)
                             {
-                                logger.LogDebug($"Pruning inactive connection on {DefaultSIPChannelEndPoint} to remote end point {inactiveConnection.RemoteEndPoint}.");
+                                logger.LogDebug($"Pruning inactive connection on {ListeningIPAddress}:{Port} to remote end point {inactiveConnection.RemoteEndPoint}.");
                                 inactiveConnection.StreamSocket.Close();
                             }
                             else
@@ -685,7 +685,7 @@ namespace SIPSorcery.SIP
                     checkComplete = false;
                 }
 
-                logger.LogDebug($"SIPChannel socket on {DefaultSIPChannelEndPoint} pruning connections halted.");
+                logger.LogDebug($"SIPChannel socket on {ListeningIPAddress}:{Port} pruning connections halted.");
             }
             catch (Exception excp)
             {

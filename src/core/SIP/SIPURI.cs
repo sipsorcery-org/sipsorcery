@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
@@ -177,6 +178,12 @@ namespace SIPSorcery.SIP
             {
                 Parameters.Set(m_uriParamTransportKey, sipEndPoint.Protocol.ToString());
             }
+        }
+
+        public SIPURI(SIPSchemesEnum scheme, IPAddress address, int port)
+        {
+            Scheme = scheme;
+            Host = $"{address}:{port}";
         }
 
         public static SIPURI ParseSIPURI(string uri)

@@ -174,7 +174,7 @@ namespace SIPSorcery.SIP
 
         public void RemoveSIPChannel(SIPChannel sipChannel)
         {
-            if (m_sipChannels.ContainsKey(sipChannel.DefaultSIPChannelEndPoint.ToString()))
+            if (m_sipChannels.ContainsKey(sipChannel.ID))
             {
                 m_sipChannels.Remove(sipChannel.ID);
                 sipChannel.SIPMessageReceived -= ReceiveMessage;
@@ -246,8 +246,6 @@ namespace SIPSorcery.SIP
                 }
 
                 m_inMessageArrived.Set();
-
-                //logger.LogDebug("SIPTransport Shutdown Complete.");
             }
             catch (Exception excp)
             {
@@ -255,6 +253,7 @@ namespace SIPSorcery.SIP
             }
         }
 
+        [Obsolete("", true)]
         public SIPEndPoint GetDefaultTransportContact(SIPProtocolsEnum protocol)
         {
             SIPChannel defaultChannel = GetDefaultChannel(protocol);
@@ -383,7 +382,9 @@ namespace SIPSorcery.SIP
                 {
                     foreach (SIPChannel sipChannel in m_sipChannels.Values)
                     {
-                        if (sipRequest.URI.CanonicalAddress == new SIPURI(sipRequest.URI.Scheme, sipChannel.DefaultSIPChannelEndPoint).CanonicalAddress)
+                        // TODO: For IPAddress.Any have to check all available IP addresses not just listening one.
+                        if (sipRequest.URI.CanonicalAddress == 
+                            new SIPURI(sipRequest.URI.Scheme, sipChannel.ListeningIPAddress, sipChannel.Port).CanonicalAddress)
                         {
                             // The request URI was this router's address so it was set by a strict router.
                             // Replace the URI with the original SIP URI that is stored at the end of the route header.
@@ -401,8 +402,9 @@ namespace SIPSorcery.SIP
                     {
                         foreach (SIPChannel sipChannel in m_sipChannels.Values)
                         {
+                            // TODO: For IPAddress.Any have to check all available IP addresses not just listening one.
                             if (sipRequest.Header.Routes.TopRoute.URI.CanonicalAddress == 
-                                new SIPURI(sipRequest.Header.Routes.TopRoute.URI.Scheme, sipChannel.DefaultSIPChannelEndPoint).CanonicalAddress)
+                                new SIPURI(sipRequest.Header.Routes.TopRoute.URI.Scheme, sipChannel.ListeningIPAddress, sipChannel.Port).CanonicalAddress)
                             {
                                 // Remove the top route as it belongs to this proxy.
                                 sipRequest.ReceivedRoute = sipRequest.Header.Routes.PopRoute();
@@ -631,6 +633,10 @@ namespace SIPSorcery.SIP
             return sendResult;
         }
 
+        /// <summary>
+        /// Sends a SIP transaction reliably where reliably for UDP means retransmitting the message up to eleven times.
+        /// </summary>
+        /// <param name="sipTransaction">The transaction to send.</param>
         public async void SendSIPReliable(SIPTransaction sipTransaction)
         {
             await SendSIPReliableAsync(sipTransaction);
@@ -760,7 +766,7 @@ namespace SIPSorcery.SIP
 
                 if (sipChannel != null)
                 {
-                    FireSIPResponseOutTraceEvent(sipChannel.DefaultSIPChannelEndPoint, sipResponse.RemoteSIPEndPoint, sipResponse);
+                    FireSIPResponseOutTraceEvent(sipChannel.ListeningSIPEndPoint, sipResponse.RemoteSIPEndPoint, sipResponse);
 
                     sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
                     return await sipChannel.SendAsync(connectionID, Encoding.UTF8.GetBytes(sipResponse.ToString()));
@@ -847,7 +853,7 @@ namespace SIPSorcery.SIP
                     }
                     else if (dstEndPoint != null)
                     {
-                        FireSIPResponseOutTraceEvent(sipChannel.DefaultSIPChannelEndPoint, dstEndPoint, sipResponse);
+                        FireSIPResponseOutTraceEvent(sipChannel.ListeningSIPEndPoint, dstEndPoint, sipResponse);
 
                         sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
                         return await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
@@ -1338,6 +1344,7 @@ namespace SIPSorcery.SIP
             return null;
         }
 
+        [Obsolete("The channels list is now indexed by channel ID.", true)]
         public bool IsLocalSIPEndPoint(SIPEndPoint sipEndPoint)
         {
             return m_sipChannels.ContainsKey(sipEndPoint.ToString());
@@ -1359,24 +1366,13 @@ namespace SIPSorcery.SIP
             }
         }
 
+        /// <summary>
+        /// Gets a list of all SIP end points this SIP transport instance is listening on.
+        /// </summary>
+        /// <returns>A list of SIP end points.</returns>
         public List<SIPEndPoint> GetListeningSIPEndPoints()
         {
-            try
-            {
-                List<SIPEndPoint> endPointsList = new List<SIPEndPoint>();
-
-                foreach (SIPChannel channel in m_sipChannels.Values)
-                {
-                    endPointsList.Add(channel.DefaultSIPChannelEndPoint);
-                }
-
-                return endPointsList;
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception GetListeningSIPEndPoints. " + excp.Message);
-                throw;
-            }
+            return m_sipChannels.Select(x => x.Value.ListeningSIPEndPoint).ToList();
         }
 
         #region Logging.

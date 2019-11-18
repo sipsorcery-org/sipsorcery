@@ -60,7 +60,7 @@ namespace SIPSorcery.SIP
 
             await sslStream.AuthenticateAsServerAsync(m_serverCertificate);
 
-            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {DefaultSIPChannelEndPoint}->{streamConnection.StreamSocket.RemoteEndPoint}.");
+            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {LocalIPAddresses}:{Port}->{streamConnection.StreamSocket.RemoteEndPoint}.");
 
             //// Display the properties and settings for the authenticated stream.
             ////DisplaySecurityLevel(sslStream);
@@ -96,7 +96,7 @@ namespace SIPSorcery.SIP
                 streamConnection.SslStream = sslStream;
                 streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
 
-                logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {DefaultSIPChannelEndPoint}->{streamConnection.StreamSocket.RemoteEndPoint}.");
+                logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {ListeningIPAddress}:{Port}->{streamConnection.StreamSocket.RemoteEndPoint}.");
 
                 sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
 

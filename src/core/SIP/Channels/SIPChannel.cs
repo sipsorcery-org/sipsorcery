@@ -118,14 +118,32 @@ namespace SIPSorcery.SIP
         public int Port { get; protected set; }
 
         /// <summary>
+        /// The IP end point this channel is listening on. Note it can contain
+        /// IPAddress.Any which means it can match multiple IP addresses.
+        /// </summary>
+        public IPEndPoint ListeningEndPoint 
+        {
+            get { return new IPEndPoint(ListeningIPAddress, Port); }
+        }
+
+        /// <summary>
+        /// The SIP end point this channel is listening on. Note it can contain
+        /// IPAddress.Any which means it can match multiple IP addresses.
+        /// </summary>
+        public SIPEndPoint ListeningSIPEndPoint
+        {
+            get { return new SIPEndPoint(SIPProtocol, ListeningIPAddress, Port, ID, null); }
+        }
+
+        /// <summary>
         /// The default local SIP end point that the channel is listening on and sending from.
         /// A single SIP channel can potentially be listening on multiple IP addresses if
         /// IPAddress.Any is used. One of the addresses will be chosen as the default.
         /// </summary>
-        public SIPEndPoint DefaultSIPChannelEndPoint
-        {
-            get { return new SIPEndPoint(SIPProtocol, ListeningIPAddress, Port, ID, null); }
-        }
+        //public SIPEndPoint DefaultSIPChannelEndPoint
+        //{
+        //    get { return new SIPEndPoint(SIPProtocol, ListeningIPAddress, Port, ID, null); }
+        //}
 
         /// <summary>
         /// If the underlying transport channel is reliable, such as TCP, this will be set to true.

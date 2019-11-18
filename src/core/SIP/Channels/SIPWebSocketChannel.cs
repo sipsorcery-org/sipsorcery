@@ -350,7 +350,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                logger.LogDebug($"Closing SIP Web Socket Channel {DefaultSIPChannelEndPoint}.");
+                logger.LogDebug($"Closing SIP Web Socket Channel {ListeningIPAddress}:{Port}.");
 
                 Closed = true;
                 m_webSocketServer.Stop();
