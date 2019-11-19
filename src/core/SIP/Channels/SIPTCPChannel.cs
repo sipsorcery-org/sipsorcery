@@ -1,15 +1,18 @@
 //-----------------------------------------------------------------------------
 // Filename: SIPTCPChannel.cs
 //
-// Description: SIP transport for TCP.
+// Description: SIP transport for TCP. Not this is also the base class for the
+// SIPTLSChannel. For the TLS channel the TCP base class will accept or connect and
+// then switch to the TLS class to upgrade to an SSL stream.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 19 Apr 2008	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 19 Apr 2008	Aaron Clauson	Created, Hobart, Australia.
 // 16 Oct 2019  Aaron Clauson   Added IPv6 support.
 // 24 Oct 2019  Aaron Clauson   Major refactor to avoid TIME_WAIT state on connection close.
+// 19 Nov 2019  Aaron Clauson   Enhanced to deal with listening on IPAddress.Any.
 //
 // Notes:
 // See https://stackoverflow.com/questions/58506815/how-to-apply-linger-option-with-winsock2/58511052#58511052 for
@@ -22,6 +25,17 @@
 // https://tools.ietf.org/html/draft-faber-time-wait-avoidance-00: RFC for mechanism to avoid TIME_WAIT state on busy web servers.
 // http://www.serverframework.com/asynchronousevents/2011/01/time-wait-and-its-design-implications-for-protocols-and-scalable-servers.html:
 // Explanation of TIME_WAIT state purpose.
+//
+// Asynchronous Sockets:
+// The async socket mechanism used in this class is the "new high performance" approach described at
+// https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socketasynceventargs?view=netframework-4.8#remarks
+// While that sounds nice the main motivation for this class was simply to switch to an async method
+// that did not require the BeginReceive & EndReceive callbacks or the "Asychronous Programming Model" (APM)
+// see https://docs.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/. A "Task-based Asynchronous Pattern"
+// would have been preferred but only for consistency with the rest of the code base and .NET libraries.
+// Also note that the SIPUDPChannel is using the APM BeginReceiveMessageFrom/EndReceiveMessageFrom approach. The motivation
+// for that decision is that it's the only one of the UDP socket receives methods that provides access to the received on
+// IP address when listening on IPAddress.Any.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -43,20 +57,36 @@ namespace SIPSorcery.SIP
     public class SIPTCPChannel : SIPChannel
     {
         private const int MAX_TCP_CONNECTIONS = 1000;               // Maximum number of connections for the TCP listener.
-        private const int INITIALPRUNE_CONNECTIONS_DELAY = 60000;   // Wait this long before starting the prune checks, there will be no connections to prune initially and the CPU is needed elsewhere.
         private const int PRUNE_CONNECTIONS_INTERVAL = 60000;        // The period at which to prune the connections.
         private const int PRUNE_NOTRANSMISSION_MINUTES = 70;         // The number of minutes after which if no transmissions are sent or received a connection will be pruned.
 
+        /// <summary>
+        /// This is the main object managed by this class. It is the socket listening for incoming connections.
+        /// </summary>
         protected TcpListener m_tcpServerListener;
-        protected List<string> m_connectingSockets = new List<string>();  // List of sockets that are in the process of being connected to. Need to avoid SIP re-transmits initiating multiple connect attempts.
 
+        /// <summary>
+        /// List of sockets that are in the process of being connected to. 
+        /// Needed to avoid SIP re-transmits initiating multiple connect attempts.
+        /// </summary>
+        protected List<string> m_connectingSockets = new List<string>();
+
+        /// <summary>
+        /// This string is used in debug messages. It makes it possible to differentiate
+        /// whether an instance in acting solely as a TCP channel or as the base class of a TLS channel.
+        /// </summary>
         virtual protected string ProtDescr { get; } = "TCP";
 
-        // Can be set to allow TCP channels hosted in the same process to send to each other. Useful for testing.
-        // By default sends between TCP channels in the same process are disabled to prevent resource exhaustion.
+        /// <summary>
+        /// Can be set to allow TCP channels hosted in the same process to send to each other. Useful for testing.
+        /// By default sends between TCP channels in the same process are disabled to prevent resource exhaustion.
+        /// </summary>
         public bool DisableLocalTCPSocketsCheck;
 
-        private static List<string> m_localTCPSockets = new List<string>(); // Keeps a list of TCP sockets this process is listening on to prevent it establishing TCP connections to itself.
+        /// <summary>
+        /// Keeps a list of TCP sockets this process is listening on to prevent it establishing TCP connections to itself.
+        /// </summary>
+        private static List<string> m_localTCPSockets = new List<string>();
 
         /// <summary>
         /// Maintains a list of all current TCP connections currently connected to/from this channel. This allows the SIP transport
@@ -154,12 +184,12 @@ namespace SIPSorcery.SIP
                 catch (SocketException acceptSockExcp) when (acceptSockExcp.SocketErrorCode == SocketError.Interrupted)
                 {
                     // This is a result of the transport channel being closed and WSACancelBlockingCall being called in WinSock2. Safe to ignore.
-                    logger.LogDebug($"SIPTCPChannel accepts for {ListeningIPAddress}:{Port} cancelled.");
+                    logger.LogDebug($"SIP {ProtDescr} Channel accepts for {ListeningIPAddress}:{Port} cancelled.");
                 }
                 catch (Exception acceptExcp)
                 {
                     // This exception gets thrown if the remote end disconnects during the socket accept.
-                    logger.LogWarning("Exception SIPTCPChannel accepting socket (" + acceptExcp.GetType() + "). " + acceptExcp.Message);
+                    logger.LogWarning($"Exception SIP {ProtDescr} Channel accepting socket (" + acceptExcp.GetType() + "). " + acceptExcp.Message);
                 }
             }
         }
@@ -243,7 +273,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 // There was an error processing the last message received. Remove the disconnected socket.
-                logger.LogError($"Exception processing SIP stream receive on read from {e.RemoteEndPoint} closing connection. {excp.Message}");
+                logger.LogError($"Exception processing SIP {ProtDescr} stream receive on read from {e.RemoteEndPoint} closing connection. {excp.Message}");
                 OnSIPStreamDisconnected(streamConn, SocketError.Fault);
             }
         }
@@ -259,7 +289,7 @@ namespace SIPSorcery.SIP
             if (e.BytesTransferred == 0 || e.SocketError != SocketError.Success)
             {
                 // There was an error processing the last message send. Remove the disconnected socket.
-                logger.LogWarning($"SIPTCPChannel Socket send to {e.RemoteEndPoint} failed with socket error {e.SocketError}, removing connection.");
+                logger.LogWarning($"SIP {ProtDescr} Channel Socket send to {e.RemoteEndPoint} failed with socket error {e.SocketError}, removing connection.");
                 OnSIPStreamDisconnected(streamConn, e.SocketError);
             }
         }
@@ -280,7 +310,7 @@ namespace SIPSorcery.SIP
             }
             IPEndPoint localEndPoint = new IPEndPoint(localAddress, Port);
 
-            logger.LogDebug($"ConnectAsync SIP TCP Channel local end point of {localEndPoint} selected for connection to {dstEndPoint}.");
+            logger.LogDebug($"ConnectAsync SIP {ProtDescr} Channel local end point of {localEndPoint} selected for connection to {dstEndPoint}.");
 
             Socket clientSocket = new Socket(dstEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             clientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -307,11 +337,11 @@ namespace SIPSorcery.SIP
 
             var connectResult = await connectTcs.Task;
 
-            logger.LogDebug($"ConnectAsync SIP TCP Channel connect completed result for {localEndPoint}->{dstEndPoint} {connectResult}.");
+            logger.LogDebug($"ConnectAsync SIP {ProtDescr} Channel connect completed result for {localEndPoint}->{dstEndPoint} {connectResult}.");
 
             if (connectResult != SocketError.Success)
             {
-                logger.LogWarning($"SIP TCP Channel send to {dstEndPoint} failed. Attempt to create a client socket failed.");
+                logger.LogWarning($"SIP {ProtDescr} Channel send to {dstEndPoint} failed. Attempt to create a client socket failed.");
             }
             else
             {
@@ -374,23 +404,7 @@ namespace SIPSorcery.SIP
 
         public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer)
         {
-            if (dstEndPoint == null)
-            {
-                throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in SIPTCPChannel.");
-            }
-            else if (buffer == null || buffer.Length == 0)
-            {
-                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPTCPChannel.");
-            }
-
-            try
-            {
-                return await SendAsync(dstEndPoint, buffer, null);
-            }
-            catch (SocketException sockExcp)
-            {
-                return sockExcp.SocketErrorCode;
-            }
+            return await SendAsync(dstEndPoint, buffer, null);
         }
 
         /// <summary>
@@ -405,14 +419,18 @@ namespace SIPSorcery.SIP
         {
             try
             {
+                if (dstEndPoint == null)
+                {
+                    throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in SIPTCPChannel.");
+                }
                 if (buffer == null || buffer.Length == 0)
                 {
                     throw new ApplicationException("An empty buffer was specified to Send in SIPTCPChannel.");
                 }
                 else if (DisableLocalTCPSocketsCheck == false && m_localTCPSockets.Contains(dstEndPoint.ToString()))
                 {
-                    logger.LogWarning($"SIPTCPChannel blocked Send to {dstEndPoint} as it was identified as a locally hosted TCP socket.\r\n" + Encoding.UTF8.GetString(buffer));
-                    throw new ApplicationException("A Send call was blocked in SIPTCPChannel due to the destination being another local TCP socket.");
+                    logger.LogWarning($"SIP {ProtDescr} Channel blocked Send to {dstEndPoint} as it was identified as a locally hosted {ProtDescr} socket.\r\n" + Encoding.UTF8.GetString(buffer));
+                    throw new ApplicationException($"A Send call was blocked in SIP {ProtDescr} Channel due to the destination being another local TCP socket.");
                 }
                 else
                 {
@@ -509,7 +527,7 @@ namespace SIPSorcery.SIP
             }
             catch (SocketException sockExcp)
             {
-                logger.LogWarning($"SocketException SIPTCPChannel SendOnConnected {dstEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
+                logger.LogWarning($"SocketException SIP {ProtDescr} Channel SendOnConnected {dstEndPoint}. ErrorCode {sockExcp.SocketErrorCode}. {sockExcp}");
                 OnSIPStreamDisconnected(sipStreamConn, sockExcp.SocketErrorCode);
                 throw;
             }
@@ -526,7 +544,7 @@ namespace SIPSorcery.SIP
             {
                 if (connection != null)
                 {
-                    logger.LogWarning($"SIP stream disconnected {SIPProtocol}:{connection.RemoteEndPoint} {socketError}.");
+                    logger.LogWarning($"SIP {ProtDescr} stream disconnected {connection.RemoteEndPoint} {socketError}.");
 
                     if (m_connections.TryRemove(connection.ConnectionID, out _))
                     {
@@ -616,7 +634,7 @@ namespace SIPSorcery.SIP
                 }
                 catch (Exception excp)
                 {
-                    logger.LogWarning($"Exception SIPTCPChannel Close (shutting down listener). {excp.Message}");
+                    logger.LogWarning($"Exception SIP {ProtDescr} Channel Close (shutting down listener). {excp.Message}");
                 }
             }
         }
@@ -635,7 +653,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                await Task.Delay(INITIALPRUNE_CONNECTIONS_DELAY);
+                await Task.Delay(PRUNE_CONNECTIONS_INTERVAL);
 
                 while (!Closed)
                 {
@@ -662,7 +680,7 @@ namespace SIPSorcery.SIP
 
                             if (inactiveConnection != null)
                             {
-                                logger.LogDebug($"Pruning inactive connection on {ListeningIPAddress}:{Port} to remote end point {inactiveConnection.RemoteEndPoint}.");
+                                logger.LogDebug($"Pruning inactive connection on {ProtDescr} {ListeningIPAddress}:{Port} to remote end point {inactiveConnection.RemoteEndPoint}.");
                                 inactiveConnection.StreamSocket.Close();
                             }
                             else
@@ -686,11 +704,11 @@ namespace SIPSorcery.SIP
                     checkComplete = false;
                 }
 
-                logger.LogDebug($"SIPChannel socket on {ListeningIPAddress}:{Port} pruning connections halted.");
+                logger.LogDebug($"SIP {ProtDescr} Channel socket on {ListeningIPAddress}:{Port} pruning connections halted.");
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SIPChannel PruneConnections. " + excp.Message);
+                logger.LogError($"Exception SIP {ProtDescr} Channel PruneConnections. " + excp.Message);
             }
         }
     }

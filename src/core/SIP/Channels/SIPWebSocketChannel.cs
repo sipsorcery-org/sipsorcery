@@ -88,7 +88,7 @@ namespace SIPSorcery.SIP
                 if (e.RawData?.Length > 0)
                 {
                     // TODO: Check what happens if web socket server asked to listen on IPAddress.Any.
-                    Channel.SIPMessageReceived?.Invoke(Channel, Channel.DefaultSIPChannelEndPoint, new SIPEndPoint(_sipProtocol, _remoteEndPoint, Channel.ID, this.ID), e.RawData);
+                    Channel.SIPMessageReceived?.Invoke(Channel, Channel.ListeningSIPEndPoint, new SIPEndPoint(_sipProtocol, _remoteEndPoint, Channel.ID, this.ID), e.RawData);
                 }
             }
 

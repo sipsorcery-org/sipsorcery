@@ -11,6 +11,13 @@
 // 14 Oct 2019  Aaron Clauson   Added IPv6 support.
 // 17 Nov 2019  Aaron Clauson   Added IPAddress.Any support, see https://github.com/sipsorcery/sipsorcery/issues/97.
 //
+// Notes:
+// This class is using the "Asychronous Programming Model" (APM)* BeginReceiveMessageFrom/EndReceiveMessageFrom approach. 
+// The motivation for te decision is that it's the only one of the UDP socket receives methods that provides access to 
+// the received on IP address when listening on IPAddress.Any.
+//
+// * https://docs.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/
+//
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------

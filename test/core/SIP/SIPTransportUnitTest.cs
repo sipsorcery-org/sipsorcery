@@ -46,7 +46,7 @@ namespace SIPSorcery.SIP.UnitTests
             var clientChannel = new SIPUDPChannel(IPAddress.IPv6Loopback, 6061);
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.DefaultSIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback), testComplete); });
 
             Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
 
@@ -106,7 +106,7 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.DefaultSIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel,serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback), testComplete); });
 
             Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
 
@@ -137,7 +137,7 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.DefaultSIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback), testComplete); });
 
             Task.WhenAny(new Task[] { clientTask, Task.Delay(5000) }).Wait();
 
@@ -176,7 +176,7 @@ namespace SIPSorcery.SIP.UnitTests
 
                 var clientChannel = new SIPTCPChannel(IPAddress.Any, 7065);
                 clientChannel.DisableLocalTCPSocketsCheck = true;
-                SIPURI serverUri = new SIPURI(SIPSchemesEnum.sip, serverChannel.DefaultSIPChannelEndPoint);
+                SIPURI serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback);
 
                 logger.LogDebug($"Server URI {serverUri.ToString()}.");
 
@@ -220,7 +220,7 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sips, serverChannel.DefaultSIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sips, IPAddress.IPv6Loopback), testComplete); });
 
             Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
 
@@ -257,7 +257,7 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sips, serverChannel.DefaultSIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sips, IPAddress.Loopback), testComplete); });
 
             Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(5000) }).Wait();
 
@@ -356,7 +356,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// <param name="cts">Cancellation token to tell the server when to shutdown.</param>
         private void RunServer(SIPChannel testServerChannel, CancellationTokenSource cts)
         {
-            logger.LogDebug($"RunServer test channel created on {testServerChannel.DefaultSIPChannelEndPoint}.");
+            logger.LogDebug($"RunServer test channel created on {testServerChannel.ListeningSIPEndPoint}.");
 
             var serverSIPTransport = new SIPTransport();
 
@@ -383,7 +383,7 @@ namespace SIPSorcery.SIP.UnitTests
             }
             finally
             {
-                logger.LogDebug($"Server task for completed for {testServerChannel.DefaultSIPChannelEndPoint}.");
+                logger.LogDebug($"Server task for completed for {testServerChannel.ListeningSIPEndPoint}.");
                 serverSIPTransport.Shutdown();
             }
         }
@@ -396,7 +396,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// <param name="tcs">The task completion source that this method will set if it receives the expected response.</param>
         private async Task RunClient(SIPChannel testClientChannel, SIPURI serverUri, TaskCompletionSource<bool> tcs)
         {
-            logger.LogDebug($"Starting client task for {testClientChannel.DefaultSIPChannelEndPoint}.");
+            logger.LogDebug($"Starting client task for {testClientChannel.ListeningSIPEndPoint}.");
 
             var clientSIPTransport = new SIPTransport();
 
@@ -404,7 +404,7 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 clientSIPTransport.AddSIPChannel(testClientChannel);
 
-                logger.LogDebug($"RunClient test channel created on {testClientChannel.DefaultSIPChannelEndPoint}.");
+                logger.LogDebug($"RunClient test channel created on {testClientChannel.ListeningSIPEndPoint}.");
 
                 clientSIPTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
                 {
@@ -428,7 +428,7 @@ namespace SIPSorcery.SIP.UnitTests
             }
             finally
             {
-                logger.LogDebug($"Client task completed for {testClientChannel.DefaultSIPChannelEndPoint}.");
+                logger.LogDebug($"Client task completed for {testClientChannel.ListeningSIPEndPoint}.");
                 clientSIPTransport.Shutdown();
             }
         }

@@ -1202,137 +1202,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
-        public SIPEndPoint GetDefaultTransportContact(SIPProtocolsEnum protocol)
-        {
-            //SIPChannel defaultChannel = GetDefaultChannel(protocol);
-
-            //if (defaultChannel != null)
-            //{
-            //    return defaultChannel.DefaultSIPChannelEndPoint;
-            //}
-            //else
-            //{
-            //    return null;
-            //}
-
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Attempts to find the a matching SIP channel for the specified protocol. Preference is given to non-loopback
-        /// channels.
-        /// </summary>
-        /// <returns>A SIP channel.</returns>
-        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
-        public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
-        {
-            if (m_sipChannels == null || m_sipChannels.Count == 0)
-            {
-                throw new ApplicationException("No SIP channels available.");
-            }
-
-            var matchingChannels = m_sipChannels.Values.Where(x => x.SIPProtocol == protocol);
-
-            if (matchingChannels.Count() == 0)
-            {
-                throw new ApplicationException($"The SIP transport layer does not have any SIP channels available for protocol {protocol}.");
-            }
-            else if (matchingChannels.Count() == 1)
-            {
-                return matchingChannels.First().DefaultSIPChannelEndPoint;
-            }
-            else
-            {
-                return matchingChannels.OrderBy(x => x.IsLoopbackAddress).First().DefaultSIPChannelEndPoint;
-            }
-        }
-
-        /// <summary>
-        /// Attempts to locate the SIP channel that can communicate with the destination end point.
-        /// </summary>
-        /// <param name="destinationEP">The remote SIP end point to find a SIP channel for.</param>
-        /// <returns>If successful the SIP end point of a SIP channel that can be used to communicate 
-        /// with the destination end point.</returns>
-        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
-        public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
-        {
-            if (m_sipChannels == null || m_sipChannels.Count == 0)
-            {
-                return null;
-            }
-            else if (m_sipChannels.Count == 1)
-            {
-                return m_sipChannels.First().Value.DefaultSIPChannelEndPoint;
-            }
-            else if (IPAddress.IsLoopback(destinationEP.Address))
-            {
-                // If destination is a loopback IP address look for a protocol and IP protocol match.
-                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol &&
-                    (x.Value.IsLoopbackAddress
-                        || IPAddress.Equals(IPAddress.Any, x.Value.ListeningIPAddress)
-                        || IPAddress.Equals(IPAddress.IPv6Any, x.Value.ListeningIPAddress)) &&
-                    x.Value.AddressFamily == destinationEP.Address.AddressFamily)
-                    .Select(x => x.Value.DefaultSIPChannelEndPoint).FirstOrDefault();
-            }
-            else if (m_sipChannels.Count(x => x.Value.SIPProtocol == destinationEP.Protocol &&
-                x.Value.AddressFamily == destinationEP.Address.AddressFamily &&
-                !x.Value.IsLoopbackAddress) == 1)
-            {
-                // If there is only one channel matching the required SIP protocol and IP protocol pair return it.
-                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol &&
-                    x.Value.AddressFamily == destinationEP.Address.AddressFamily &&
-                    !x.Value.IsLoopbackAddress).Select(x => x.Value.DefaultSIPChannelEndPoint).Single();
-            }
-            else
-            {
-                //var localAddress = NetServices.GetLocalAddress(destinationEP.Address);
-
-                //foreach (SIPChannel sipChannel in m_sipChannels.Values)
-                //{
-                //    if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
-                //        (localAddress == null || sipChannel.SIPChannelEndPoint.Address.Equals(localAddress)))
-                //    {
-                //        return sipChannel.SIPChannelEndPoint;
-                //    }
-                //}
-
-                // Return the first matching end point for the destination end point's protocol.
-                return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol).Select(y => y.Value).FirstOrDefault()?.DefaultSIPChannelEndPoint;
-            }
-        }
-
-        /// <summary>
-        /// Attempts to match a SIPChannel that is listening on the specified local end point.
-        /// </summary>
-        /// <param name="localEndPoint">The local socket endpoint of the SIPChannel to find.</param>
-        /// <returns>A matching SIPChannel if found otherwise null.</returns>
-        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
-        public SIPChannel FindSIPChannel(SIPEndPoint localSIPEndPoint)
-        {
-            if (localSIPEndPoint == null)
-            {
-                return null;
-            }
-            else
-            {
-                if (localSIPEndPoint.ChannelID != null && m_sipChannels.ContainsKey(localSIPEndPoint.ChannelID))
-                {
-                    return m_sipChannels[localSIPEndPoint.ChannelID];
-                }
-                else if (m_sipChannels.Values.Any(x => x.SIPProtocol == localSIPEndPoint.Protocol))
-                {
-                    // No match on channel ID do fallback is to return the first available channel that matches the desired channel protocol.
-                    return m_sipChannels.Values.Where(x => x.SIPProtocol == localSIPEndPoint.Protocol).First();
-                }
-                else
-                {
-                    logger.LogWarning($"No SIP channel could be found for local SIP end point {localSIPEndPoint}.");
-                    return null;
-                }
-            }
-        }
-
         public bool IsLocalSIPEndPoint(SIPEndPoint sipEndPoint)
         {
             // TODO: Key has changed from end point to ID. 
@@ -1715,6 +1584,147 @@ namespace SIPSorcery.SIP
             {
                 return GetURIEndPoint(lookupURI, async);
             }
+        }
+
+        #endregion
+
+        #region Obsolete methods.
+
+        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
+        public SIPEndPoint GetDefaultTransportContact(SIPProtocolsEnum protocol)
+        {
+            //SIPChannel defaultChannel = GetDefaultChannel(protocol);
+
+            //if (defaultChannel != null)
+            //{
+            //    return defaultChannel.DefaultSIPChannelEndPoint;
+            //}
+            //else
+            //{
+            //    return null;
+            //}
+
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Attempts to find the a matching SIP channel for the specified protocol. Preference is given to non-loopback
+        /// channels.
+        /// </summary>
+        /// <returns>A SIP channel.</returns>
+        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
+        public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
+        {
+            throw new NotImplementedException();
+
+            //if (m_sipChannels == null || m_sipChannels.Count == 0)
+            //{
+            //    throw new ApplicationException("No SIP channels available.");
+            //}
+
+            //var matchingChannels = m_sipChannels.Values.Where(x => x.SIPProtocol == protocol);
+
+            //if (matchingChannels.Count() == 0)
+            //{
+            //    throw new ApplicationException($"The SIP transport layer does not have any SIP channels available for protocol {protocol}.");
+            //}
+            //else if (matchingChannels.Count() == 1)
+            //{
+            //    return matchingChannels.First().DefaultSIPChannelEndPoint;
+            //}
+            //else
+            //{
+            //    return matchingChannels.OrderBy(x => x.IsLoopbackAddress).First().DefaultSIPChannelEndPoint;
+            //}
+        }
+
+        /// <summary>
+        /// Attempts to locate the SIP channel that can communicate with the destination end point.
+        /// </summary>
+        /// <param name="destinationEP">The remote SIP end point to find a SIP channel for.</param>
+        /// <returns>If successful the SIP end point of a SIP channel that can be used to communicate 
+        /// with the destination end point.</returns>
+        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
+        public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
+        {
+            throw new NotImplementedException();
+
+            //if (m_sipChannels == null || m_sipChannels.Count == 0)
+            //{
+            //    return null;
+            //}
+            //else if (m_sipChannels.Count == 1)
+            //{
+            //    return m_sipChannels.First().Value.DefaultSIPChannelEndPoint;
+            //}
+            //else if (IPAddress.IsLoopback(destinationEP.Address))
+            //{
+            //    // If destination is a loopback IP address look for a protocol and IP protocol match.
+            //    return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol &&
+            //        (x.Value.IsLoopbackAddress
+            //            || IPAddress.Equals(IPAddress.Any, x.Value.ListeningIPAddress)
+            //            || IPAddress.Equals(IPAddress.IPv6Any, x.Value.ListeningIPAddress)) &&
+            //        x.Value.AddressFamily == destinationEP.Address.AddressFamily)
+            //        .Select(x => x.Value.DefaultSIPChannelEndPoint).FirstOrDefault();
+            //}
+            //else if (m_sipChannels.Count(x => x.Value.SIPProtocol == destinationEP.Protocol &&
+            //    x.Value.AddressFamily == destinationEP.Address.AddressFamily &&
+            //    !x.Value.IsLoopbackAddress) == 1)
+            //{
+            //    // If there is only one channel matching the required SIP protocol and IP protocol pair return it.
+            //    return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol &&
+            //        x.Value.AddressFamily == destinationEP.Address.AddressFamily &&
+            //        !x.Value.IsLoopbackAddress).Select(x => x.Value.DefaultSIPChannelEndPoint).Single();
+            //}
+            //else
+            //{
+            //    //var localAddress = NetServices.GetLocalAddress(destinationEP.Address);
+
+            //    //foreach (SIPChannel sipChannel in m_sipChannels.Values)
+            //    //{
+            //    //    if (sipChannel.SIPChannelEndPoint.Protocol == destinationEP.Protocol &&
+            //    //        (localAddress == null || sipChannel.SIPChannelEndPoint.Address.Equals(localAddress)))
+            //    //    {
+            //    //        return sipChannel.SIPChannelEndPoint;
+            //    //    }
+            //    //}
+
+            //    // Return the first matching end point for the destination end point's protocol.
+            //    return m_sipChannels.Where(x => x.Value.SIPProtocol == destinationEP.Protocol).Select(y => y.Value).FirstOrDefault()?.DefaultSIPChannelEndPoint;
+            //}
+        }
+
+        /// <summary>
+        /// Attempts to match a SIPChannel that is listening on the specified local end point.
+        /// </summary>
+        /// <param name="localEndPoint">The local socket endpoint of the SIPChannel to find.</param>
+        /// <returns>A matching SIPChannel if found otherwise null.</returns>
+        [Obsolete("Use GetSIPChannelForDestination and SIPChannel.GetLocalSIPEndPointForDestination.", true)]
+        public SIPChannel FindSIPChannel(SIPEndPoint localSIPEndPoint)
+        {
+            throw new NotImplementedException();
+
+            //if (localSIPEndPoint == null)
+            //{
+            //    return null;
+            //}
+            //else
+            //{
+            //    if (localSIPEndPoint.ChannelID != null && m_sipChannels.ContainsKey(localSIPEndPoint.ChannelID))
+            //    {
+            //        return m_sipChannels[localSIPEndPoint.ChannelID];
+            //    }
+            //    else if (m_sipChannels.Values.Any(x => x.SIPProtocol == localSIPEndPoint.Protocol))
+            //    {
+            //        // No match on channel ID do fallback is to return the first available channel that matches the desired channel protocol.
+            //        return m_sipChannels.Values.Where(x => x.SIPProtocol == localSIPEndPoint.Protocol).First();
+            //    }
+            //    else
+            //    {
+            //        logger.LogWarning($"No SIP channel could be found for local SIP end point {localSIPEndPoint}.");
+            //        return null;
+            //    }
+            //}
         }
 
         #endregion

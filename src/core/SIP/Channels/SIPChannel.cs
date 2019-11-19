@@ -78,15 +78,6 @@ namespace SIPSorcery.SIP
 
         protected ILogger logger = Log.Logger;
 
-        [Obsolete("Please use alternative DefaultSIPChannelEndPoint.", true)]
-        public SIPEndPoint LocalSIPEndPoint;
-
-        [Obsolete("Please use alternative GetDefaultContactURI.", true)]
-        public string SIPChannelContactURI
-        {
-            get { return LocalSIPEndPoint.ToString(); }
-        }
-
         /// <summary>
         /// A unique ID for the channel. Useful for ensuring a transmission can occur
         /// on a specific channel without having to match listening addresses.
@@ -131,16 +122,6 @@ namespace SIPSorcery.SIP
         /// IPAddress.Any which means it can match multiple IP addresses.
         /// </summary>
         public SIPEndPoint ListeningSIPEndPoint
-        {
-            get { return new SIPEndPoint(SIPProtocol, ListeningIPAddress, Port, ID, null); }
-        }
-
-        /// <summary>
-        /// The default local SIP end point that the channel is listening on and sending from.
-        /// A single SIP channel can potentially be listening on multiple IP addresses if
-        /// IPAddress.Any is used. One of the addresses will be chosen as the default.
-        /// </summary>
-        public SIPEndPoint DefaultSIPChannelEndPoint
         {
             get { return new SIPEndPoint(SIPProtocol, ListeningIPAddress, Port, ID, null); }
         }
@@ -298,5 +279,24 @@ namespace SIPSorcery.SIP
         /// Calls close on the SIP channel when the object is disposed.
         /// </summary>
         public abstract void Dispose();
+
+        #region Obsolete methods.
+
+        [Obsolete("Please use alternative GetLocalSIPEndPointForDestination, it takes into account the dst which is important for IPAddress.Any listeners.", true)]
+        public SIPEndPoint LocalSIPEndPoint;
+
+        [Obsolete("Please use alternative GetContactURI, it takes into account the dst which is important for IPAddress.Any listeners.", true)]
+        public string SIPChannelContactURI
+        {
+            get { return LocalSIPEndPoint.ToString(); }
+        }
+
+        [Obsolete("Please use alternative GetLocalSIPEndPointForDestination, it takes into account the dst which is important for IPAddress.Any listeners.", true)]
+        public SIPEndPoint DefaultSIPChannelEndPoint
+        {
+            get { return new SIPEndPoint(SIPProtocol, ListeningIPAddress, Port, ID, null); }
+        }
+
+        #endregion.
     }
 }
