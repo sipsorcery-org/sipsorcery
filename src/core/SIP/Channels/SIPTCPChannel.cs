@@ -50,6 +50,8 @@ namespace SIPSorcery.SIP
         protected TcpListener m_tcpServerListener;
         protected List<string> m_connectingSockets = new List<string>();  // List of sockets that are in the process of being connected to. Need to avoid SIP re-transmits initiating multiple connect attempts.
 
+        virtual protected string ProtDescr { get; } = "TCP";
+
         // Can be set to allow TCP channels hosted in the same process to send to each other. Useful for testing.
         // By default sends between TCP channels in the same process are disabled to prevent resource exhaustion.
         public bool DisableLocalTCPSocketsCheck;
@@ -100,7 +102,7 @@ namespace SIPSorcery.SIP
                 m_tcpServerListener = new TcpListener(listenEndPoint);
                 m_tcpServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 m_tcpServerListener.Server.LingerState = new LingerOption(true, 0);
-                if(listenEndPoint.AddressFamily == AddressFamily.InterNetworkV6) m_tcpServerListener.Server.DualMode = true;
+                if (listenEndPoint.AddressFamily == AddressFamily.InterNetworkV6) m_tcpServerListener.Server.DualMode = true;
                 m_tcpServerListener.Start(MAX_TCP_CONNECTIONS);
 
                 if (listenEndPoint.Port == 0)
@@ -113,7 +115,7 @@ namespace SIPSorcery.SIP
                 Task.Run(AcceptConnections);
                 Task.Run(PruneConnections);
 
-                logger.LogInformation($"SIP TCP Channel created for {listenEndPoint}.");
+                logger.LogInformation($"SIP {ProtDescr} Channel created for {listenEndPoint}.");
             }
             catch (Exception excp)
             {
@@ -125,16 +127,16 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Processes the socket accepts from the channel's socket listener.
         /// </summary>
-        private void AcceptConnections()
+        private async void AcceptConnections()
         {
-            logger.LogDebug($"SIP TCP Channel socket on {m_tcpServerListener.Server.LocalEndPoint} accept connections thread started.");
+            logger.LogDebug($"SIP {ProtDescr} Channel socket on {m_tcpServerListener.Server.LocalEndPoint} accept connections thread started.");
 
             while (!Closed)
             {
                 try
                 {
                     Socket clientSocket = m_tcpServerListener.AcceptSocket();
-                    logger.LogDebug($"SIP TCP Channel connection accepted from {clientSocket.RemoteEndPoint} by {clientSocket.LocalEndPoint}.");
+                    logger.LogDebug($"SIP {ProtDescr} Channel connection accepted from {clientSocket.RemoteEndPoint} by {clientSocket.LocalEndPoint}.");
 
                     if (!Closed)
                     {
@@ -146,7 +148,7 @@ namespace SIPSorcery.SIP
 
                         m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
 
-                        OnAccept(sipStmConn);
+                        await OnAccept(sipStmConn);
                     }
                 }
                 catch (SocketException acceptSockExcp) when (acceptSockExcp.SocketErrorCode == SocketError.Interrupted)
@@ -166,7 +168,7 @@ namespace SIPSorcery.SIP
         /// For TCP channel no special action is required when accepting a new client connection. Can start receiving immeidately.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly accepted client socket.</param>
-        protected virtual void OnAccept(SIPStreamConnection streamConnection)
+        protected virtual Task OnAccept(SIPStreamConnection streamConnection)
         {
             SocketAsyncEventArgs args = streamConnection.RecvSocketArgs;
             args.AcceptSocket = streamConnection.StreamSocket;
@@ -178,6 +180,8 @@ namespace SIPSorcery.SIP
             {
                 ProcessReceive(args);
             }
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -232,7 +236,7 @@ namespace SIPSorcery.SIP
                     OnSIPStreamDisconnected(streamConn, e.SocketError);
                 }
             }
-            catch(SocketException sockExcp)
+            catch (SocketException sockExcp)
             {
                 OnSIPStreamDisconnected(streamConn, sockExcp.SocketErrorCode);
             }
@@ -372,11 +376,11 @@ namespace SIPSorcery.SIP
         {
             if (dstEndPoint == null)
             {
-                throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in SIPUDPChannel.");
+                throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in SIPTCPChannel.");
             }
             else if (buffer == null || buffer.Length == 0)
             {
-                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPUDPChannel.");
+                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPTCPChannel.");
             }
 
             try
@@ -425,7 +429,7 @@ namespace SIPSorcery.SIP
                     }
                 }
             }
-            catch(SocketException sockExcp)
+            catch (SocketException sockExcp)
             {
                 return sockExcp.SocketErrorCode;
             }
@@ -524,28 +528,25 @@ namespace SIPSorcery.SIP
                 {
                     logger.LogWarning($"SIP stream disconnected {SIPProtocol}:{connection.RemoteEndPoint} {socketError}.");
 
-                    lock (m_connections)
+                    if (m_connections.TryRemove(connection.ConnectionID, out _))
                     {
-                        if (m_connections.TryRemove(connection.ConnectionID, out _))
-                        {
-                            var socket = connection.StreamSocket;
+                        var socket = connection.StreamSocket;
 
-                            // Important: Due to the way TCP works the end of the connection that initiates the close
-                            // is meant to go into a TIME_WAIT state. On Windows that results in the same pair of sockets
-                            // being unable to reconnect for 30s. SIP can deal with stray and duplicate messages at the 
-                            // appliction layer so the TIME_WAIT is not that useful. While not useful it is also a major annoyance
-                            // as if a connection is dropped for whatever reason, such as a parser error or inactivity, it will
-                            // prevent the connection being re-established.
-                            //
-                            // For this reason this implementation uses a hard RST close for client initiated socket closes. This
-                            // results in a TCP RST packet instead of the graceful FIN-ACK sequence. Two things are necessary with
-                            // WinSock2 to force the hard RST:
-                            //
-                            // - the Linger option must be set on the raw socket before binding as Linger option {1, 0}.
-                            // - the close method must be called on teh socket without shutting down the stream.
+                        // Important: Due to the way TCP works the end of the connection that initiates the close
+                        // is meant to go into a TIME_WAIT state. On Windows that results in the same pair of sockets
+                        // being unable to reconnect for 30s. SIP can deal with stray and duplicate messages at the 
+                        // appliction layer so the TIME_WAIT is not that useful. While not useful it is also a major annoyance
+                        // as if a connection is dropped for whatever reason, such as a parser error or inactivity, it will
+                        // prevent the connection being re-established.
+                        //
+                        // For this reason this implementation uses a hard RST close for client initiated socket closes. This
+                        // results in a TCP RST packet instead of the graceful FIN-ACK sequence. Two things are necessary with
+                        // WinSock2 to force the hard RST:
+                        //
+                        // - the Linger option must be set on the raw socket before binding as Linger option {1, 0}.
+                        // - the close method must be called on teh socket without shutting down the stream.
 
-                            socket.Close();
-                        }
+                        socket.Close();
                     }
                 }
             }
@@ -592,7 +593,7 @@ namespace SIPSorcery.SIP
         {
             if (!Closed == true)
             {
-                logger.LogDebug($"Closing SIP TCP Channel {ListeningIPAddress}:{Port}.");
+                logger.LogDebug($"Closing SIP {ProtDescr} Channel {ListeningIPAddress}:{Port}.");
 
                 Closed = true;
 

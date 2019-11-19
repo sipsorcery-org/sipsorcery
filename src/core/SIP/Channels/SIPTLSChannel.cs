@@ -4,10 +4,10 @@
 // Description: SIP transport for TLS over TCP.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 13 Mar 2009	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 13 Mar 2009	Aaron Clauson	Created, Hobart, Australia.
 // 16 Oct 2019  Aaron Clauson   Added IPv6 support.
 //
 // License: 
@@ -19,6 +19,7 @@ using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 
@@ -27,6 +28,8 @@ namespace SIPSorcery.SIP
     public class SIPTLSChannel : SIPTCPChannel
     {
         private X509Certificate2 m_serverCertificate;
+
+        override protected string ProtDescr { get; } = "TLS";
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
             : base(endPoint, SIPProtocolsEnum.tls)
@@ -43,6 +46,8 @@ namespace SIPSorcery.SIP
 
             IsSecure = true;
             m_serverCertificate = serverCertificate;
+
+            logger.LogInformation($"SIP TLS Channel ready for {ListeningEndPoint} and certificate {m_serverCertificate.Subject}.");
         }
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPAddress listenAddress, int listenPort) :
@@ -53,14 +58,14 @@ namespace SIPSorcery.SIP
         /// For the TLS channel the SSL stream must be created and any authentication actions undertaken.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly accepted client socket.</param>
-        protected override async void OnAccept(SIPStreamConnection streamConnection)
+        protected override async Task OnAccept(SIPStreamConnection streamConnection)
         {
             NetworkStream networkStream = new NetworkStream(streamConnection.StreamSocket, true);
             SslStream sslStream = new SslStream(networkStream, false);
 
             await sslStream.AuthenticateAsServerAsync(m_serverCertificate);
 
-            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {LocalIPAddresses}:{Port}->{streamConnection.StreamSocket.RemoteEndPoint}.");
+            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {ListeningIPAddress}:{Port}->{streamConnection.StreamSocket.RemoteEndPoint}.");
 
             //// Display the properties and settings for the authenticated stream.
             ////DisplaySecurityLevel(sslStream);
@@ -123,16 +128,17 @@ namespace SIPSorcery.SIP
                 if (bytesRead == 0)
                 {
                     // SSL stream was disconnected by the remote end pont sending a FIN or RST.
-                    logger.LogDebug("TLS socket disconnected by {sipStreamConnection.ConnectionProps.RemoteEndPoint}.");
+                    logger.LogDebug($"TLS socket disconnected by {sipStreamConnection.RemoteEndPoint}.");
                     OnSIPStreamDisconnected(sipStreamConnection, SocketError.ConnectionReset);
                 }
-                sipStreamConnection.ExtractSIPMessages(this, sipStreamConnection.SslStreamBuffer, bytesRead);
-                sipStreamConnection.SslStream.BeginRead(sipStreamConnection.SslStreamBuffer, sipStreamConnection.RecvEndPosn, sipStreamConnection.SslStreamBuffer.Length - sipStreamConnection.RecvEndPosn, new AsyncCallback(OnReadCallback), sipStreamConnection);
-
+                else
+                {
+                    sipStreamConnection.ExtractSIPMessages(this, sipStreamConnection.SslStreamBuffer, bytesRead);
+                    sipStreamConnection.SslStream.BeginRead(sipStreamConnection.SslStreamBuffer, sipStreamConnection.RecvEndPosn, sipStreamConnection.SslStreamBuffer.Length - sipStreamConnection.RecvEndPosn, new AsyncCallback(OnReadCallback), sipStreamConnection);
+                }
             }
             catch (SocketException sockExcp)  // Occurs if the remote end gets disconnected.
             {
-                //logger.LogWarning($"SocketException SIPTLSChannel ReceiveCallback. Error code {sockExcp.SocketErrorCode}. {sockExcp}");
                 OnSIPStreamDisconnected(sipStreamConnection, sockExcp.SocketErrorCode);
             }
             catch (IOException ioExcp)
@@ -143,13 +149,13 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    logger.LogWarning($"IOException SIPTLSChannel ReceiveCallback. {ioExcp.Message}");
+                    logger.LogWarning($"IOException SIPTLSChannel OnReadCallback. {ioExcp.Message}");
                     OnSIPStreamDisconnected(sipStreamConnection, SocketError.Fault);
                 }
             }
             catch (Exception excp)
             {
-                logger.LogWarning($"Exception SIPTLSChannel ReceiveCallback. {excp.Message}");
+                logger.LogWarning($"Exception SIPTLSChannel OnReadCallback. {excp.Message}");
                 OnSIPStreamDisconnected(sipStreamConnection, SocketError.Fault);
             }
         }

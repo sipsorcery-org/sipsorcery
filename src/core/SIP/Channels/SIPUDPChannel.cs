@@ -109,13 +109,14 @@ namespace SIPSorcery.SIP
                 // so that we know to stop sending.
                 logger.LogWarning($"SocketException SIPUDPChannel Receive ({sockExcp.ErrorCode}). {sockExcp.Message}");
             }
+            catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
             catch (Exception excp)
             {
-                logger.LogError($"Exception SIPUDPChannel.EndReceive. {excp.Message}");
+                logger.LogError($"Exception SIPUDPChannel.EndReceiveMessageFrome. {excp.Message}");
             }
             finally
             {
-                if(!Closed)
+                if (!Closed)
                 {
                     Receive();
                 }

@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -36,7 +37,8 @@ namespace SIPSorcery
         private static readonly string AUDIO_FILE = "the_simplicity.ulaw";
         //private static readonly string AUDIO_FILE = "the_simplicity.mp3";
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
-        private static int SIP_LISTEN_PORT = 6060;
+        private static int SIP_LISTEN_PORT = 5060;
+        private static int SIPS_LISTEN_PORT = 5061;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -62,6 +64,7 @@ namespace SIPSorcery
 
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
+            sipTransport.AddSIPChannel(new SIPTLSChannel(new X509Certificate2("localhost.pfx"), new IPEndPoint(listenAddress, SIPS_LISTEN_PORT)));
 
             EnableTraceLogs(sipTransport);
 
