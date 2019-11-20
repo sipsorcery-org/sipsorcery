@@ -200,7 +200,7 @@ namespace SIPSorcery
                 DNSManager.Stop();
 
                 // Give the transport half a second to shutdown (puts the log messages in a better sequence).
-                System.Threading.Thread.Sleep(500);
+                await Task.Delay(500);
 
                 logger.LogInformation($"=> Command completed {((success) ? "successfully" : "with failure")}.");
             }

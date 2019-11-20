@@ -20,6 +20,7 @@ namespace SIPSorcery.Net
 	{
 		PCMU = 0,
         PCMA = 1,
+        G722 = 9,
         Dynamic = 96,
 	}
 
@@ -38,6 +39,8 @@ namespace SIPSorcery.Net
                 case RTPPayloadTypesEnum.PCMU:
                 case RTPPayloadTypesEnum.PCMA:
                     return 8000;
+                case RTPPayloadTypesEnum.G722:
+                    return 16000;
                 default:
                     return 0;
             }

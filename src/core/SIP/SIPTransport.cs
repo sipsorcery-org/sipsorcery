@@ -1418,29 +1418,39 @@ namespace SIPSorcery.SIP
 
         public SIPRequest GetRequest(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, SIPEndPoint localSIPEndPoint)
         {
-            return Task.Run(() => GetRequestAsync(method, uri, to, localSIPEndPoint)).Result;
+            //return Task.Run(() => GetRequestAsync(method, uri, to, localSIPEndPoint)).Result;
+            return GetRequestAsync(method, uri, to, localSIPEndPoint);
         }
 
-        public async Task<SIPRequest> GetRequestAsync(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, SIPEndPoint localSIPEndPoint)
+        public SIPRequest GetRequestAsync(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, SIPEndPoint localSIPEndPoint)
         {
-            if (localSIPEndPoint == null)
+            SIPChannel senderChannel = null;
+
+            //var lookupResult = await SIPDNSManager.ResolveAsync(uri);
+            var lookupResult = SIPDNSManager.ResolveSIPService(uri, false);
+            SIPEndPoint dst = lookupResult.EndPointResults.First().LookupEndPoint;
+
+            if (localSIPEndPoint?.ChannelID != null)
             {
-                var lookupResult = await SIPDNSManager.ResolveAsync(uri);
-                SIPChannel senderChannel = GetSIPChannelForDestination(uri.Protocol, lookupResult.EndPointResults.First().LookupEndPoint.GetIPEndPoint());
+                senderChannel = m_sipChannels[localSIPEndPoint.ChannelID];
+            }
+            else
+            { 
+                senderChannel = GetSIPChannelForDestination(uri.Protocol, dst.GetIPEndPoint());
                 localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
             }
 
             SIPRequest request = new SIPRequest(method, uri);
             request.LocalSIPEndPoint = localSIPEndPoint;
 
-            SIPContactHeader contactHeader = new SIPContactHeader(null, new SIPURI(SIPSchemesEnum.sip, localSIPEndPoint));
+            SIPContactHeader contactHeader = new SIPContactHeader(null, senderChannel.GetContactURI(uri.Scheme, dst.GetIPEndPoint().Address));
             SIPFromHeader fromHeader = new SIPFromHeader(null, contactHeader.ContactURI, CallProperties.CreateNewTag());
             SIPHeader header = new SIPHeader(contactHeader, fromHeader, to, 1, CallProperties.CreateNewCallId());
             request.Header = header;
             header.CSeqMethod = method;
             header.Allow = ALLOWED_SIP_METHODS;
 
-            SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
+            SIPViaHeader viaHeader = new SIPViaHeader(senderChannel.GetLocalSIPEndPointForDestination(dst.GetIPEndPoint().Address).GetIPEndPoint(), CallProperties.CreateBranchId());
             header.Vias.PushViaHeader(viaHeader);
 
             return request;

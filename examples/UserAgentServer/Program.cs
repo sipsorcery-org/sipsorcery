@@ -1,16 +1,30 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example program of how to use the SIPSorcery core library to act as the server for a SIP call.
+// Description: An example program of how to use the SIPSorcery core library to 
+// act as the server for a SIP call.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 09 Oct 2019	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland (www.sipsorcery.com).
+// 09 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// This example can be used with the automated SIP test tool [SIPp] (https://github.com/SIPp/sipp)
+// and its inbuilt User Agent Client scenario.
+// Note: IPp doesn't support IPv6.
+//
+// To isntall on WSL:
+// $ sudo apt install sip-tester
+//
+// Running tests (press the '+' key while test is running to increase the call rate):
+// For UDP testing: sipp -sn uac 127.0.0.1
+// For TCP testing: sipp -sn uac localhost -t t1
 //-----------------------------------------------------------------------------
 
 using System;
@@ -34,8 +48,10 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string AUDIO_FILE = "the_simplicity.ulaw";
+        private static readonly string AUDIO_FILE_PCMU = "the_simplicity.ulaw";
         //private static readonly string AUDIO_FILE = "the_simplicity.mp3";
+        private static readonly string AUDIO_FILE_G722 = "the_simplicity.g722";
+
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
         private static int SIP_LISTEN_PORT = 5060;
         private static int SIPS_LISTEN_PORT = 5061;
@@ -50,21 +66,33 @@ namespace SIPSorcery
             EnableConsoleLogger();
 
             IPAddress listenAddress = IPAddress.Any;
+            IPAddress listenIPv6Address = IPAddress.IPv6Any;
             if (args != null && args.Length > 0)
             {
-                if (!IPAddress.TryParse(args[0], out listenAddress))
+                if (!IPAddress.TryParse(args[0], out var customListenAddress))
                 {
                     Log.LogWarning($"Command line argument could not be parsed as an IP address \"{args[0]}\"");
                     listenAddress = IPAddress.Any;
+                }
+                else
+                {
+                    if (customListenAddress.AddressFamily == AddressFamily.InterNetwork) listenAddress = customListenAddress;
+                    if (customListenAddress.AddressFamily == AddressFamily.InterNetworkV6) listenIPv6Address = customListenAddress;
                 }
             }
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
 
+            // IPv4 channels.
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTLSChannel(new X509Certificate2("localhost.pfx"), new IPEndPoint(listenAddress, SIPS_LISTEN_PORT)));
+
+            // IPv6 channels.
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
+            sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
+            sipTransport.AddSIPChannel(new SIPTLSChannel(new X509Certificate2("localhost.pfx"), new IPEndPoint(listenIPv6Address, SIPS_LISTEN_PORT)));
 
             EnableTraceLogs(sipTransport);
 
@@ -84,31 +112,55 @@ namespace SIPSorcery
                     {
                         SIPSorcery.Sys.Log.Logger.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
 
-                        // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
-                        // means this example can be kept simpler.
-                        if (uas?.IsHungup == false) uas?.Hangup(false);
-                        rtpCts?.Cancel();
+                        // Check there's a codec we support in the INVITE offer.
+                        var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
+                        RTPSession rtpSession = null;
+                        string audioFile = null;
 
-                        UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
-                        uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
-                        rtpCts = new CancellationTokenSource();
+                        if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)RTPPayloadTypesEnum.G722)))
+                        {
+                            rtpSession = new RTPSession((int)RTPPayloadTypesEnum.G722, null, null);
+                            audioFile = AUDIO_FILE_G722;
+                        }
+                        else if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)RTPPayloadTypesEnum.PCMU)))
+                        {
+                            rtpSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+                            audioFile = AUDIO_FILE_PCMU;
+                        }
 
-                        uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
-                        uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
+                        if (rtpSession == null)
+                        {
+                            // Didn't get a match on the codecs we support.
+                            SIPResponse noMatchingCodecResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptableHere, null);
+                            sipTransport.SendResponse(noMatchingCodecResponse);
+                        }
+                        else
+                        {
+                            // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
+                            // means this example can be kept simpler.
+                            if (uas?.IsHungup == false) uas?.Hangup(false);
+                            rtpCts?.Cancel();
 
-                        // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-                        NetServices.CreateRtpSocket(IPAddress.Any, 49000, 49100, false, out rtpSocket, out controlSocket);
+                            UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                            uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
+                            rtpCts = new CancellationTokenSource();
 
-                        // The RTP socket is listening on IPAddress.Any but the IP address placed into the SDP needs to be one the caller can reach.
-                        IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
-                        IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
-                        IPEndPoint rtpEndPoint = new IPEndPoint(rtpAddress, (rtpSocket.LocalEndPoint as IPEndPoint).Port);
-                        var rtpSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+                            uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+                            uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
-                        var rtpTask = Task.Run(() => SendRecvRtp(rtpSocket, rtpSession, dstRtpEndPoint, AUDIO_FILE, rtpCts))
-                            .ContinueWith(_ => { if (uas?.IsHungup == false) uas?.Hangup(false); });
+                            // Initialise an RTP session to receive the RTP packets from the remote SIP server.
+                            NetServices.CreateRtpSocket(IPAddress.Any, 49000, 49100, false, out rtpSocket, out controlSocket);
 
-                        uas.Answer(SDP.SDP_MIME_CONTENTTYPE, GetSDP(rtpEndPoint).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
+                            // The RTP socket is listening on IPAddress.Any but the IP address placed into the SDP needs to be one the caller can reach.
+                            IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+                            IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
+                            IPEndPoint rtpEndPoint = new IPEndPoint(rtpAddress, (rtpSocket.LocalEndPoint as IPEndPoint).Port);
+
+                            var rtpTask = Task.Run(() => SendRecvRtp(rtpSocket, rtpSession, dstRtpEndPoint, audioFile, rtpCts))
+                                .ContinueWith(_ => { if (uas?.IsHungup == false) uas?.Hangup(false); });
+
+                            uas.Answer(SDP.SDP_MIME_CONTENTTYPE, GetSDP(rtpEndPoint).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
+                        }
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)
                     {
@@ -121,12 +173,12 @@ namespace SIPSorcery
                         rtpSocket?.Close();
                         controlSocket?.Close();
                     }
-                    else if (sipRequest.Method == SIPMethodsEnum.REGISTER || sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
+                    else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
                     {
                         SIPResponse notAllowededResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
                         sipTransport.SendResponse(notAllowededResponse);
                     }
-                    else if (sipRequest.Method == SIPMethodsEnum.OPTIONS || sipRequest.Method == SIPMethodsEnum.REGISTER || sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
+                    else if (sipRequest.Method == SIPMethodsEnum.OPTIONS || sipRequest.Method == SIPMethodsEnum.REGISTER)
                     {
                         SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         sipTransport.SendResponse(optionsResponse);
@@ -242,8 +294,11 @@ namespace SIPSorcery
                     }
                 });
 
-                switch (Path.GetExtension(audioFileName).ToLower())
+                string audioFileExt = Path.GetExtension(audioFileName).ToLower();
+
+                switch (audioFileExt)
                 {
+                    case ".g722":
                     case ".ulaw":
                         {
                             uint timestamp = 0;
@@ -327,7 +382,7 @@ namespace SIPSorcery
                         break;
 
                     default:
-                        throw new NotImplementedException("Only ulaw and mp3 files are understood by this example.");
+                        throw new NotImplementedException($"The {audioFileExt} file type is not understood by this example.");
                 }
             }
             catch (OperationCanceledException) { }
@@ -351,7 +406,8 @@ namespace SIPSorcery
             var audioAnnouncement = new SDPMediaAnnouncement()
             {
                 Media = SDPMediaTypesEnum.audio,
-                MediaFormats = new List<SDPMediaFormat>() { new SDPMediaFormat((int)SDPMediaFormatsEnum.PCMU, "PCMU", 8000) }
+                MediaFormats = new List<SDPMediaFormat>() { new SDPMediaFormat((int)SDPMediaFormatsEnum.PCMU, "PCMU", 8000),
+                                                            new SDPMediaFormat((int)SDPMediaFormatsEnum.G722, "G722", 8000) }
             };
             audioAnnouncement.Port = rtpSocket.Port;
             audioAnnouncement.ExtraAttributes.Add("a=sendrecv");
