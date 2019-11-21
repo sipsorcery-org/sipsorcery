@@ -1137,7 +1137,7 @@ namespace SIPSorcery.SIP
                 // since it's able to use all the machine's active network interfaces and should be able to reach
                 // any remote end point.
                 IPAddress addrAny = (dst.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
-                matchingChannel = GetExactMatchSIPChannel(protocol, addrAny);
+                matchingChannel = GetSIPChannel(protocol, addrAny);
                 if (matchingChannel != null)
                 {
                     return matchingChannel;
@@ -1145,7 +1145,7 @@ namespace SIPSorcery.SIP
 
                 // Check for an exact match on the destination address and a SIP channel. Barring duplciate IP addresses and other 
                 // shenanigans this would mean we're on the same machine. Note this will also catch loopback to loopback cases.
-                matchingChannel = GetExactMatchSIPChannel(protocol, dst.Address);
+                matchingChannel = GetSIPChannel(protocol, dst.Address);
                 if (matchingChannel != null)
                 {
                     return matchingChannel;
@@ -1156,7 +1156,7 @@ namespace SIPSorcery.SIP
                 IPAddress srcAddr = NetServices.GetLocalAddressForRemote(dst.Address);
                 if (srcAddr != null)
                 {
-                    matchingChannel = GetExactMatchSIPChannel(protocol, srcAddr);
+                    matchingChannel = GetSIPChannel(protocol, srcAddr);
                     if (matchingChannel != null)
                     {
                         return matchingChannel;
@@ -1167,7 +1167,7 @@ namespace SIPSorcery.SIP
                 IPAddress internetSrcAddr = NetServices.GetLocalAddressForInternet();
                 if (internetSrcAddr != null)
                 {
-                    matchingChannel = GetExactMatchSIPChannel(protocol, internetSrcAddr);
+                    matchingChannel = GetSIPChannel(protocol, internetSrcAddr);
                     if (matchingChannel != null)
                     {
                         return matchingChannel;
@@ -1187,12 +1187,12 @@ namespace SIPSorcery.SIP
         /// <param name="protocol">The SIP protcol to find a match for.</param>
         /// <param name="reqdAddress">The listening IP address to find a match for.</param>
         /// <returns>A SIP channel if a match is found or null if not.</returns>
-        private SIPChannel GetExactMatchSIPChannel(SIPProtocolsEnum protocol, IPAddress reqdAddress)
+        private SIPChannel GetSIPChannel(SIPProtocolsEnum protocol, IPAddress listeningAddress)
         {
-            if (m_sipChannels.Any(x => x.Value.SIPProtocol == protocol && reqdAddress.Equals(x.Value.ListeningIPAddress)))
+            if (m_sipChannels.Any(x => x.Value.SIPProtocol == protocol && listeningAddress.Equals(x.Value.ListeningIPAddress)))
             {
                 return m_sipChannels.Where(x =>
-                             x.Value.SIPProtocol == protocol && reqdAddress.Equals(x.Value.ListeningIPAddress))
+                             x.Value.SIPProtocol == protocol && listeningAddress.Equals(x.Value.ListeningIPAddress))
                            .Select(x => x.Value)
                            .First();
             }

@@ -23,9 +23,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+//using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
 {
+    [Xunit.Trait("Category", "unit")]
+    public class BtcTests
+    {
+        [Xunit.Fact]
+        public void IsAliveTest()
+        {
+            Console.WriteLine("==> XUnit IsAlive Test.");
+            Xunit.Assert.True(true);
+        }
+    }
+
     [TestClass]
     public class SIPTransportUnitTest
     {
@@ -106,7 +118,7 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel,serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback), testComplete); });
 
             Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
 
@@ -312,7 +324,7 @@ namespace SIPSorcery.SIP.UnitTests
                     }
                     tcpClient.GetStream().Close();
                 }
-                catch(Exception excp)
+                catch (Exception excp)
                 {
                     logger.LogError($"Exception on dummy TCP listener task. {excp.Message}");
                     testComplete.SetResult(false);
@@ -325,7 +337,7 @@ namespace SIPSorcery.SIP.UnitTests
                 logger.LogDebug(sipRequest.ToString());
                 Interlocked.Increment(ref recvdReqCount);
 
-                if(recvdReqCount == requestCount)
+                if (recvdReqCount == requestCount)
                 {
                     testComplete.SetResult(true);
                 }
@@ -377,7 +389,7 @@ namespace SIPSorcery.SIP.UnitTests
 
                 cts.Token.WaitHandle.WaitOne();
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogError($"Exception RunServer. {excp.Message}");
             }

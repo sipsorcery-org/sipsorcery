@@ -7,7 +7,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 23 May 2005	Aaron Clauson	Created, Montreux, Switzerland.
+// 23 May 2005	Aaron Clauson	Created, Dublin, Ireland.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
 //
 // License: 
