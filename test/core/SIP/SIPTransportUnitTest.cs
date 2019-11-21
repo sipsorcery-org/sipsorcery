@@ -22,33 +22,36 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-//using Xunit;
+using Serilog;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace SIPSorcery.SIP.UnitTests
 {
-    [Xunit.Trait("Category", "unit")]
-    public class BtcTests
-    {
-        [Xunit.Fact]
-        public void IsAliveTest()
-        {
-            Console.WriteLine("==> XUnit IsAlive Test.");
-            Xunit.Assert.True(true);
-        }
-    }
-
-    [TestClass]
+    [Trait("Category", "Integration")]
     public class SIPTransportUnitTest
     {
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPTransportUnitTest(ITestOutputHelper output)
+        {
+            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
+            var loggerConfig = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                //.WriteTo.TestOutput(output, Serilog.Events.LogEventLevel.Verbose)
+                .WriteTo.Console(Serilog.Events.LogEventLevel.Verbose)
+                .CreateLogger();
+            loggerFactory.AddSerilog(loggerConfig);
+
+            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            logger = SIPSorcery.Sys.Log.Logger;
+        }
 
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate IPv6 sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
-        [TestCategory("IPv6")]
+        [Fact]
+        //[TestCategory("IPv6")]
         public void IPv6LoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -68,7 +71,7 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
 
             cancelServer.Cancel();
         }
@@ -76,10 +79,11 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate IPv4 sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void IPv4LoopbackSendReceiveTest()
         {
+            logger.LogDebug("IPv4LoopbackSendReceiveTest commencing...");
+
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
@@ -97,16 +101,15 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
             cancelServer.Cancel();
         }
 
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate TCP IPv6 sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
-        [TestCategory("IPv6")]
+        [Fact]
+        //[TestCategory("IPv6")]
         public void IPv6TcpLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -128,7 +131,7 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
 
             cancelServer.Cancel();
         }
@@ -136,8 +139,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate IPv4 TCP sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void IPv4TcpLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -159,7 +161,7 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
 
             cancelServer.Cancel();
         }
@@ -172,8 +174,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// This is not a real test because the OS will allow the connection to be re-established if the process ID is the same as the one
         /// that put the socket into the TIME_WAIT state.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void IPv4TcpLoopbackConsecutiveSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -201,7 +202,7 @@ namespace SIPSorcery.SIP.UnitTests
                     testComplete.SetResult(false);
                 }
 
-                Assert.IsTrue(testComplete.Task.Result);
+                Assert.True(testComplete.Task.Result);
 
                 logger.LogDebug($"Completed for test run {i}.");
             }
@@ -212,15 +213,14 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate TLS IPv6 sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
-        [TestCategory("IPv6")]
+        [Fact]
+        //[TestCategory("IPv6")]
         public void IPv6TlsLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-            Assert.IsTrue(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
+            Assert.True(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
             var serverCertificate = new X509Certificate2(@"certs\localhost.pfx", "");
             var verifyCert = serverCertificate.Verify();
@@ -242,7 +242,7 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
 
             cancelServer.Cancel();
         }
@@ -250,14 +250,13 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate IPv4 TLS sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void IPv4TlsLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-            Assert.IsTrue(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
+            Assert.True(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
             var serverCertificate = new X509Certificate2(@"certs\localhost.pfx", "");
             var verifyCert = serverCertificate.Verify();
@@ -279,7 +278,7 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
 
             cancelServer.Cancel();
         }
@@ -287,8 +286,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that SIP messages can be correctly extracted from a TCP stream when arbitrarily fragmented.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void TcpTrickleReceiveTest()
         {
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
@@ -356,9 +354,9 @@ namespace SIPSorcery.SIP.UnitTests
 
             transport.Shutdown();
 
-            Assert.IsTrue(testComplete.Task.IsCompleted);
-            Assert.IsTrue(testComplete.Task.Result);
-            Assert.AreEqual(requestCount, recvdReqCount, $"The count of {recvdReqCount} for the requests received did not match what was expected.");
+            Assert.True(testComplete.Task.IsCompleted);
+            Assert.True(testComplete.Task.Result);
+            Assert.True(requestCount == recvdReqCount, $"The count of {recvdReqCount} for the requests received did not match what was expected.");
         }
 
         /// <summary>

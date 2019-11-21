@@ -11,16 +11,16 @@
 
 using System;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class SIPMessageUnitTest
     {
         private static string CRLF = SIPConstants.CRLF;
 
-        [TestMethod]
+        [Fact]
         public void ParseResponseUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -40,12 +40,12 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
 
-            Assert.IsTrue(sipMessage != null, "The SIP message not parsed correctly.");
+            Assert.True(sipMessage != null, "The SIP message not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseResponseWithBodyUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -82,12 +82,12 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
 
-            Assert.IsTrue(sipMessage != null, "The SIP message not parsed correctly.");
+            Assert.True(sipMessage != null, "The SIP message not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseResponseNoEndDoubleCRLFUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -107,12 +107,12 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
 
-            Assert.IsTrue(sipMessage != null, "The SIP message not parsed correctly.");
+            Assert.True(sipMessage != null, "The SIP message not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseCiscoOptionsResponseUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -144,8 +144,8 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessage);
 
-            Assert.IsTrue(sipMessage != null, "The SIP message not parsed correctly.");
-            Assert.IsTrue(sipResponse.Header.Vias.Length == 2, "The SIP reponse did not end up with the right number of Via headers.");
+            Assert.True(sipMessage != null, "The SIP message not parsed correctly.");
+            Assert.True(sipResponse.Header.Vias.Length == 2, "The SIP reponse did not end up with the right number of Via headers.");
 
             Console.WriteLine("-----------------------------------------");
         }
@@ -153,7 +153,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that the Content-Length is correctly parsed.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ContentLengthParseFromSingleRequestTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -178,13 +178,13 @@ namespace SIPSorcery.SIP.UnitTests
 
             Console.WriteLine("Content-Length " + contentLength + ".");
 
-            Assert.IsTrue(contentLength == 2393, "The content length was parsed incorrectly.");
+            Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
 
         /// <summary>
         /// Tests that the Content-Length is correctly parsed when there is extra spacing in the header.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ContentLengthParseFromSingleRequestExtraSpacingTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -209,13 +209,13 @@ namespace SIPSorcery.SIP.UnitTests
 
             Console.WriteLine("Content-Length " + contentLength + ".");
 
-            Assert.IsTrue(contentLength == 2393, "The content length was parsed incorrectly.");
+            Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
 
         /// <summary>
         /// Tests that the Content-Length is correctly parsed when a compact header form is used.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ContentLengthCompactParseFromSingleRequestTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -240,14 +240,14 @@ namespace SIPSorcery.SIP.UnitTests
 
             Console.WriteLine("Content-Length " + contentLength + ".");
 
-            Assert.IsTrue(contentLength == 2393, "The content length was parsed incorrectly.");
+            Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
 
         /// <summary>
         /// Tests that the Content-Length is correctly parsed when a compact header form is used and there is extra
         /// spacing in the header.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ContentLengthCompactParseFromSingleRequestExtraSpacingTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -270,13 +270,13 @@ namespace SIPSorcery.SIP.UnitTests
 
             int contentLength = SIPMessage.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
-            Assert.IsTrue(contentLength == 2393, "The content length was parsed incorrectly.");
+            Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
 
         /// <summary>
         /// Tests that a SIP request received with no Content-Length header is interpreted as having no body.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseReceiveNoContentLengthHeaderRequestTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -297,13 +297,13 @@ namespace SIPSorcery.SIP.UnitTests
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
             byte[] parsedNotifyBytes = SIPMessage.ParseSIPMessageFromStream(notifyRequestBytes, 0, notifyRequestBytes.Length, out _);
 
-            Assert.IsTrue(notifyRequestBytes.Length == parsedNotifyBytes.Length, "The length of the parsed byte array was incorrect.");
+            Assert.True(notifyRequestBytes.Length == parsedNotifyBytes.Length, "The length of the parsed byte array was incorrect.");
         }
 
         /// <summary>
         /// Tests that a transmission containing a SIP request is correctly extracted.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseReceiveSingleRequestTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -403,13 +403,13 @@ CRLF +
             byte[] notifyRequestBytes = Encoding.ASCII.GetBytes(notifyRequest);
             byte[] parsedNotifyBytes = SIPMessage.ParseSIPMessageFromStream(notifyRequestBytes, 0, notifyRequestBytes.Length, out _);
 
-            Assert.IsTrue(notifyRequestBytes.Length == parsedNotifyBytes.Length, "The length of the parsed byte array was incorrect.");
+            Assert.True(notifyRequestBytes.Length == parsedNotifyBytes.Length, "The length of the parsed byte array was incorrect.");
         }
 
         /// <summary>
         /// Tests parsing a receive with multiple requests and responses.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseMultiRequestAndResponseTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -469,13 +469,13 @@ CRLF +
             byte[] response1Bytes = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, request1Bytes.Length + request2Bytes.Length, testReceiveBytes.Length, out _);
             Console.WriteLine("Response1=" + UTF8Encoding.UTF8.GetString(response1Bytes));
 
-            Assert.IsTrue(request1Bytes.Length + request2Bytes.Length + response1Bytes.Length == testReceiveBytes.Length, "The length of the parsed requests and responses was incorrect.");
+            Assert.True(request1Bytes.Length + request2Bytes.Length + response1Bytes.Length == testReceiveBytes.Length, "The length of the parsed requests and responses was incorrect.");
         }
 
         /// <summary>
         /// Test that parsing a request with a single byte missing from its content is correcty handled.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseRequestOneByteMissingTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -499,13 +499,13 @@ includesdp=tru";
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
             byte[] request1Bytes = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out _);
 
-            Assert.IsNull(request1Bytes, "The parsed bytes should have been empty.");
+            Assert.True(request1Bytes == null, "The parsed bytes should have been empty.");
         }
 
         /// <summary>
         /// Test that parsing a request with a single byte missing from its content is correcty handled.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseRequestOneByteExtraTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -529,7 +529,7 @@ CRLF +
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
             byte[] request1Bytes = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out _);
 
-            Assert.IsTrue(request1Bytes.Length == testReceiveBytes.Length - 1, "The parsed bytes was an incorrect length.");
+            Assert.True(request1Bytes.Length == testReceiveBytes.Length - 1, "The parsed bytes was an incorrect length.");
         }
 
         /// <summary>
@@ -537,7 +537,7 @@ CRLF +
         /// This will occur when using a fixed length buffer to receive data and the position of the received data is less than the length
         /// of the receive array.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseRequestBytesReadShortTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -561,13 +561,13 @@ include                                               ";
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
             byte[] request1Bytes = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length - 100, out _);
 
-            Assert.IsNull(request1Bytes, "A request array should not have been returned.");
+            Assert.True(request1Bytes == null, "A request array should not have been returned.");
         }
 
         /// <summary>
         /// Test that parsing a request works when there are some leading bytes related to a NAT keep alive transmission.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseRequestWithLeadingNATKeepAliveBytesTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -595,14 +595,14 @@ CRLF +
 
             Console.WriteLine(Encoding.UTF8.GetString(request1Bytes));
 
-            Assert.IsNotNull(request1Bytes, "The parsed bytes should have been populated.");
-            Assert.IsTrue(skippedBytes == 4, "The number of skipped bytes was incorrect.");
+            Assert.True(request1Bytes != null, "The parsed bytes should have been populated.");
+            Assert.True(skippedBytes == 4, "The number of skipped bytes was incorrect.");
         }
 
         /// <summary>
         /// Tests that processing a buffer with a SIP message and some preceeding spurious characters skips the correct number of bytes.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void TestProcessRecevieWithBytesToSkipTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -628,8 +628,8 @@ CRLF +
             int bytesSkipped = 0;
             byte[] result = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out bytesSkipped);
 
-            Assert.IsNotNull(result, "The resultant array should not have been null.");
-            Assert.IsTrue(bytesSkipped == 12, "The bytes skipped was incorrect.");
+            Assert.True(result != null, "The resultant array should not have been null.");
+            Assert.True(bytesSkipped == 12, "The bytes skipped was incorrect.");
         }
     }
 }

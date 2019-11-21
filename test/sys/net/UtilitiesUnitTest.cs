@@ -10,14 +10,14 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class UtilitiesUnitTest
     {
-        [TestMethod]
+        [Fact]
         public void ReverseUInt16SampleTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -48,10 +48,10 @@ namespace SIPSorcery.Sys.UnitTests
             Console.WriteLine("Reversed=" + reversed);
             Console.WriteLine("Unreversed=" + unReversed);
 
-            Assert.IsTrue(testNum == unReversed, "Reverse endian operation for uint16 did not work successfully.");
+            Assert.True(testNum == unReversed, "Reverse endian operation for uint16 did not work successfully.");
         }
 
-        [TestMethod]
+        [Fact]
         public void ReverseUInt32SampleTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -82,10 +82,10 @@ namespace SIPSorcery.Sys.UnitTests
             Console.WriteLine("Reversed=" + reversed);
             Console.WriteLine("Unreversed=" + unReversed);
 
-            Assert.IsTrue(testNum == unReversed, "Reverse endian operation for uint32 did not work successfully.");
+            Assert.True(testNum == unReversed, "Reverse endian operation for uint32 did not work successfully.");
         }
 
-        [TestMethod]
+        [Fact]
         public void ReverseUInt64SampleTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -116,7 +116,7 @@ namespace SIPSorcery.Sys.UnitTests
             Console.WriteLine("Reversed=" + reversed);
             Console.WriteLine("Unreversed=" + unReversed);
 
-            Assert.IsTrue(testNum == unReversed, "Reverse endian operation for uint64 did not work successfully.");
+            Assert.True(testNum == unReversed, "Reverse endian operation for uint64 did not work successfully.");
         }
     }
 }

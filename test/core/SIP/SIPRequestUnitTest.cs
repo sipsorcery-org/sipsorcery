@@ -10,19 +10,21 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net;
 using System.Text;
 using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SIPSorcery.Sys;
 using SIPSorcery.UnitTests;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace SIPSorcery.SIP.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class SIPRequestUnitTest
     {
         private static string m_CRLF = SIPConstants.CRLF;
+
+        private readonly ITestOutputHelper output;
 
         private class MockSIPDNSManager
         {
@@ -47,21 +49,9 @@ namespace SIPSorcery.SIP.UnitTests
             }
         }
 
-        public SIPRequestUnitTest()
-        { }
-
-        private TestContext testContextInstance;
-
-        public TestContext TestContext
+        public SIPRequestUnitTest(ITestOutputHelper output)
         {
-            get
-            {
-                return testContextInstance;
-            }
-            set
-            {
-                testContextInstance = value;
-            }
+            this.output = output;
         }
 
         private bool IsLocalSIPSocket(string socket, SIPProtocolsEnum protocol)
@@ -77,15 +67,15 @@ namespace SIPSorcery.SIP.UnitTests
             return false;
         }
 
-        [TestMethod]
+        [Fact]
         public void SampleTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            Assert.IsTrue(true, "True was false.");
+            Assert.True(true, "True was false.");
         }
-
-        [TestMethod]
+        
+        [Fact]
         public void ParseXtenINVITEUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -125,18 +115,17 @@ namespace SIPSorcery.SIP.UnitTests
             }
             Console.WriteLine("Body:\r\n" + inviteReq.Body + ".");
 
-            Assert.IsTrue(inviteReq.Method == SIPMethodsEnum.INVITE, "The SIP request method was not parsed correctly.");
-            Assert.IsTrue(inviteReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
-            Assert.IsTrue(inviteReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
-            Assert.IsTrue(inviteReq.URI.User == "303", "The SIP request URI Name was not parsed correctly.");
-            Assert.IsTrue(inviteReq.URI.Host == "sip.blueface.ie", "The SIP request URI Host was not parsed correctly.");
-            Assert.IsTrue(inviteReq.Body != null && inviteReq.Body.Length == 271, "The SIP content body was not parsed correctly.");
+            Assert.True(inviteReq.Method == SIPMethodsEnum.INVITE, "The SIP request method was not parsed correctly.");
+            Assert.True(inviteReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
+            Assert.True(inviteReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
+            Assert.True(inviteReq.URI.User == "303", "The SIP request URI Name was not parsed correctly.");
+            Assert.True(inviteReq.URI.Host == "sip.blueface.ie", "The SIP request URI Host was not parsed correctly.");
+            Assert.True(inviteReq.Body != null && inviteReq.Body.Length == 271, "The SIP content body was not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(SIPValidationException))]
+        [Fact]
         public void MalformedContactHeaderUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -156,10 +145,10 @@ namespace SIPSorcery.SIP.UnitTests
             "Content-Length: 0" + m_CRLF +
             "Max-Forwards: 70" + m_CRLF + m_CRLF;
 
-            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMsg);
+            Assert.Throws< SIPValidationException>(() => SIPRequest.ParseSIPRequest(sipMsg));
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseAsteriskACKUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -179,16 +168,16 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessage);
 
-            Assert.IsTrue(ackReq.Method == SIPMethodsEnum.ACK, "The SIP request method was not parsed correctly.");
-            Assert.IsTrue(ackReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
-            Assert.IsTrue(ackReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
-            Assert.IsTrue(ackReq.URI.User == "303", "The SIP request URI was not parsed correctly.");
-            Assert.IsTrue(ackReq.URI.Host == "213.168.225.133", "The SIP request URI Host was not parsed correctly.");
+            Assert.True(ackReq.Method == SIPMethodsEnum.ACK, "The SIP request method was not parsed correctly.");
+            Assert.True(ackReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
+            Assert.True(ackReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
+            Assert.True(ackReq.URI.User == "303", "The SIP request URI was not parsed correctly.");
+            Assert.True(ackReq.URI.Host == "213.168.225.133", "The SIP request URI Host was not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseCiscoACKUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -211,16 +200,16 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessage);
 
-            Assert.IsTrue(ackReq.Method == SIPMethodsEnum.ACK, "The SIP request method was not parsed correctly.");
-            Assert.IsTrue(ackReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
-            Assert.IsTrue(ackReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
-            Assert.IsTrue(ackReq.URI.User == "303", "The SIP request URI was not parsed correctly.");
-            Assert.IsTrue(ackReq.URI.Host == "213.168.225.133:5061", "The SIP request URI Host was not parsed correctly.");
+            Assert.True(ackReq.Method == SIPMethodsEnum.ACK, "The SIP request method was not parsed correctly.");
+            Assert.True(ackReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
+            Assert.True(ackReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
+            Assert.True(ackReq.URI.User == "303", "The SIP request URI was not parsed correctly.");
+            Assert.True(ackReq.URI.Host == "213.168.225.133:5061", "The SIP request URI Host was not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseXtenByeUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -241,15 +230,15 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessage);
 
-            Assert.IsTrue(byeReq.Method == SIPMethodsEnum.BYE, "The SIP request method was not parsed correctly.");
-            Assert.IsTrue(byeReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
-            Assert.IsTrue(byeReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
-            Assert.IsTrue(byeReq.URI.User == "303", "The SIP request URI name was not parsed correctly.");
+            Assert.True(byeReq.Method == SIPMethodsEnum.BYE, "The SIP request method was not parsed correctly.");
+            Assert.True(byeReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
+            Assert.True(byeReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
+            Assert.True(byeReq.URI.User == "303", "The SIP request URI name was not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseAsteriskBYEUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -269,16 +258,16 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessage);
 
-            Assert.IsTrue(byeReq.Method == SIPMethodsEnum.BYE, "The SIP request method was not parsed correctly.");
-            Assert.IsTrue(byeReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
-            Assert.IsTrue(byeReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
-            Assert.IsTrue(byeReq.URI.User == "bluesipd", "The SIP request URI Name was not parsed correctly.");
-            Assert.IsTrue(byeReq.URI.Host == "192.168.1.2:5065", "The SIP request URI Host was not parsed correctly.");
+            Assert.True(byeReq.Method == SIPMethodsEnum.BYE, "The SIP request method was not parsed correctly.");
+            Assert.True(byeReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
+            Assert.True(byeReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
+            Assert.True(byeReq.URI.User == "bluesipd", "The SIP request URI Name was not parsed correctly.");
+            Assert.True(byeReq.URI.Host == "192.168.1.2:5065", "The SIP request URI Host was not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void TopRouteUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -299,12 +288,12 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessage);
 
             SIPRoute topRoute = byeReq.Header.Routes.PopRoute();
-            Assert.IsTrue(topRoute.Host == "220.240.255.198:64300", "The top route was not parsed correctly, top route IP address was " + topRoute.Host + ".");
+            Assert.True(topRoute.Host == "220.240.255.198:64300", "The top route was not parsed correctly, top route IP address was " + topRoute.Host + ".");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void SubscribeRequestUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -334,7 +323,7 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void SpaceInNamesRequestUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -363,8 +352,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Error on this request is a non-numeric port on the Via header.
         /// </summary>
-        [TestMethod]
-        [ExpectedException(typeof(SIPValidationException))]
+        [Fact]
         public void DodgyAastraRequestUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -384,12 +372,10 @@ namespace SIPSorcery.SIP.UnitTests
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessage);
-
-            Console.WriteLine("-----------------------------------------");
+            Assert.Throws<SIPValidationException>(() => SIPRequest.ParseSIPRequest(sipMessage));
         }
 
-        [TestMethod]
+        [Fact]
         public void NetgearInviteRequestUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -434,7 +420,7 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void RTCRegisterRequestUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -459,7 +445,7 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void CiscoRegisterRequest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -481,7 +467,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessage);
         }
 
-        [TestMethod]
+        [Fact]
         public void AuthenticatedRegisterRequestUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -507,15 +493,15 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPAuthenticationHeader authHeader = registerReq.Header.AuthenticationHeader;
 
-            Assert.IsTrue(authHeader != null, "The Authorization header was not correctly extracted from the SIP Register Request.");
-            Assert.IsTrue(authHeader.SIPDigest.Nonce == "1694683214", "The Authorization header nonce was not correctly extracted from the SIP Register Request, header nonce = " + authHeader.SIPDigest.Nonce + ".");
-            Assert.IsTrue(authHeader.SIPDigest.Realm == "sip.blueface.ie", "The Authorization header realm was not correctly extracted from the SIP Register Request.");
-            Assert.IsTrue(authHeader.SIPDigest.Username == "aaronxten", "The Authorization username nonce was not correctly extracted from the SIP Register Request, header username = " + authHeader.SIPDigest.Username + ".");
-            Assert.IsTrue(authHeader.SIPDigest.URI == "sip:blueface.ie", "The Authorization header URI was not correctly extracted from the SIP Register Request.");
-            Assert.IsTrue(authHeader.SIPDigest.Response == "85f2089ac958e69ce4d74f5ae72a9a5f", "The Authorization header response was not correctly extracted from the SIP Register Request.");
+            Assert.True(authHeader != null, "The Authorization header was not correctly extracted from the SIP Register Request.");
+            Assert.True(authHeader.SIPDigest.Nonce == "1694683214", "The Authorization header nonce was not correctly extracted from the SIP Register Request, header nonce = " + authHeader.SIPDigest.Nonce + ".");
+            Assert.True(authHeader.SIPDigest.Realm == "sip.blueface.ie", "The Authorization header realm was not correctly extracted from the SIP Register Request.");
+            Assert.True(authHeader.SIPDigest.Username == "aaronxten", "The Authorization username nonce was not correctly extracted from the SIP Register Request, header username = " + authHeader.SIPDigest.Username + ".");
+            Assert.True(authHeader.SIPDigest.URI == "sip:blueface.ie", "The Authorization header URI was not correctly extracted from the SIP Register Request.");
+            Assert.True(authHeader.SIPDigest.Response == "85f2089ac958e69ce4d74f5ae72a9a5f", "The Authorization header response was not correctly extracted from the SIP Register Request.");
         }
 
-        [TestMethod]
+        [Fact]
         public void MicrosoftMessengerRegisterRequestUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -540,7 +526,7 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine(registerReq.ToString());
         }
 
-        [TestMethod]
+        [Fact]
         public void CreateBranchIdUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -568,7 +554,7 @@ namespace SIPSorcery.SIP.UnitTests
             int length = branchId.Length - SIPConstants.SIP_BRANCH_MAGICCOOKIE.Length;
             Console.WriteLine("length=" + length);
 
-            Assert.IsTrue(branchId != null, "The branchid was not created correctly.");
+            Assert.True(branchId != null, "The branchid was not created correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
@@ -600,12 +586,12 @@ namespace SIPSorcery.SIP.UnitTests
                 
             inviteReq.Header.Via.PushViaHeader(requestVia);
 				
-            Assert.IsTrue(inviteReq.IsLoop("192.168.1.2", 5065, branchId), "The SIP request was not correctly detected as a loop.");
+            Assert.True(inviteReq.IsLoop("192.168.1.2", 5065, branchId), "The SIP request was not correctly detected as a loop.");
 
             Console.WriteLine("-----------------------------------------");
         }*/
 
-        [TestMethod]
+        [Fact]
         public void LooseRouteForProxyUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -632,12 +618,12 @@ namespace SIPSorcery.SIP.UnitTests
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
 
-            Assert.IsTrue(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly modified.");
-            Assert.IsTrue(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "The request route information was not correctly preprocessed.");
-            Assert.IsTrue(inviteReq.Header.Routes.Length == 1, "The route set was an incorrect length.");
+            Assert.True(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly modified.");
+            Assert.True(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "The request route information was not correctly preprocessed.");
+            Assert.True(inviteReq.Header.Routes.Length == 1, "The route set was an incorrect length.");
         }
 
-        [TestMethod]
+        [Fact]
         public void LooseRouteForProxyMultipleContactsUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -660,17 +646,17 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
 
             SIPTransport mockSIPTransport = new SIPTransport(MockSIPDNSManager.Resolve, null, false);
-            mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPEndPoint.Parse("82.195.148.216:5061")));
-            mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPEndPoint.Parse("82.195.148.216:5062")));
+            mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5061")));
+            mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5062")));
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
 
-            Assert.IsTrue(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly modified.");
-            Assert.IsTrue(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "The request route information was not correctly preprocessed.");
-            Assert.IsTrue(inviteReq.Header.Routes.Length == 1, "The route set was an incorrect length.");
+            Assert.True(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly modified.");
+            Assert.True(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "The request route information was not correctly preprocessed.");
+            Assert.True(inviteReq.Header.Routes.Length == 1, "The route set was an incorrect length.");
         }
 
-        [TestMethod]
+        [Fact]
         public void LooseRouteNotForProxyUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -697,11 +683,11 @@ namespace SIPSorcery.SIP.UnitTests
        
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
 
-            Assert.IsTrue(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly modified.");
-            Assert.IsTrue(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:82.195.148.216:5062;lr>", "The request route information was not correctly preprocessed.");
+            Assert.True(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly modified.");
+            Assert.True(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:82.195.148.216:5062;lr>", "The request route information was not correctly preprocessed.");
         }
 
-        [TestMethod]
+        [Fact]
         public void StrictRoutePriorToProxyUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -732,12 +718,12 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Next Route=" + inviteReq.Header.Routes.TopRoute.ToString());
             Console.WriteLine("Request URI=" + inviteReq.URI.ToString());
 
-            Assert.IsTrue(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "Top route was not correct.");
-            Assert.IsTrue(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly adjusted.");
-            Assert.IsTrue(inviteReq.Header.Routes.Length == 1, "The route set was not correct.");
+            Assert.True(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "Top route was not correct.");
+            Assert.True(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly adjusted.");
+            Assert.True(inviteReq.Header.Routes.Length == 1, "The route set was not correct.");
         }
 
-        [TestMethod]
+        [Fact]
         public void StrictRouteAfterProxyUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -767,18 +753,17 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Next Route=" + inviteReq.Header.Routes.TopRoute.ToString());
             Console.WriteLine("Request URI=" + inviteReq.URI.ToString());
 
-            Assert.IsTrue(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "Top route was not correctly recognised.");
-            Assert.IsTrue(inviteReq.Header.Routes.BottomRoute.ToString() == "<sip:303@sip.blueface.ie>", "Bottom route was not correctly placed.");
-            Assert.IsTrue(inviteReq.URI.ToString() == "sip:10.10.10.10", "The request URI was not correctly adjusted.");
-            Assert.IsTrue(inviteReq.Header.Routes.Length == 2, "The route set was not correct.");
+            Assert.True(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "Top route was not correctly recognised.");
+            Assert.True(inviteReq.Header.Routes.BottomRoute.ToString() == "<sip:303@sip.blueface.ie>", "Bottom route was not correctly placed.");
+            Assert.True(inviteReq.URI.ToString() == "sip:10.10.10.10", "The request URI was not correctly adjusted.");
+            Assert.True(inviteReq.Header.Routes.Length == 2, "The route set was not correct.");
         }
 
-        [TestMethod]
-        //[Ignore("This SIP stack will not put hostnames into a Route header in order to avoid unnecessary DNS lookups.")]
-        [Ignore]
+        [Fact(Skip = "This SIP stack will not put hostnames into a Route header in order to avoid unnecessary DNS lookups.")]
+        //[Ignore()]
         public void LooseRouteForProxyHostnameUnitTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            output.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -802,13 +787,12 @@ namespace SIPSorcery.SIP.UnitTests
 
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
 
-            Assert.IsTrue(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly modified.");
-            Assert.IsTrue(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "The request route information was not correctly preprocessed.");
-            Assert.IsTrue(inviteReq.Header.Routes.Length == 1, "The route set was an incorrect length.");
+            Assert.True(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly modified.");
+            Assert.True(inviteReq.Header.Routes.TopRoute.ToString() == "<sip:89.100.92.186:45270;lr>", "The request route information was not correctly preprocessed.");
+            Assert.True(inviteReq.Header.Routes.Length == 1, "The route set was an incorrect length.");
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(SIPValidationException))]
+        [Fact]
         public void SpuriousStartCharsInResponseUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -829,12 +813,12 @@ namespace SIPSorcery.SIP.UnitTests
                 "Supported: x-sipura" + m_CRLF + m_CRLF;
 
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessage);
+            Assert.Throws<SIPValidationException>(() => SIPRequest.ParseSIPRequest(sipMessage));
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void RegisterZeroExpiryUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -859,7 +843,7 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void AvayaInviteUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -913,13 +897,13 @@ namespace SIPSorcery.SIP.UnitTests
 
             Console.WriteLine(inviteReq.ToString());
 
-            Assert.IsTrue(inviteReq.URI.ToString() == "sip:8219522@sip.194.213.29.100", "The request URI was not updated to the strict route.");
-            Assert.IsTrue(inviteReq.Header.Routes.TopRoute.URI.ToString() == "sip:194.213.29.100:5060", "The route set was not correctly updated.");
+            Assert.True(inviteReq.URI.ToString() == "sip:8219522@sip.194.213.29.100", "The request URI was not updated to the strict route.");
+            Assert.True(inviteReq.Header.Routes.TopRoute.URI.ToString() == "sip:194.213.29.100:5060", "The route set was not correctly updated.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void LocalphoneInviteUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -959,7 +943,7 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void MultipleRouteHeadersUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -981,26 +965,26 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessage);
 
-            Assert.IsTrue(byeReq.Header.Routes.Length == 7, "The wrong number of Ruute headers were parsed.");
+            Assert.True(byeReq.Header.Routes.Length == 7, "The wrong number of Ruute headers were parsed.");
             SIPRoute nextRoute = byeReq.Header.Routes.PopRoute();
-            Assert.IsTrue(nextRoute.Host == "220.240.255.198:64300", "The first route was incorrect.");
+            Assert.True(nextRoute.Host == "220.240.255.198:64300", "The first route was incorrect.");
             nextRoute = byeReq.Header.Routes.PopRoute();
-            Assert.IsTrue(nextRoute.Host == "192.168.1.2:5065", "The second route was incorrect.");
+            Assert.True(nextRoute.Host == "192.168.1.2:5065", "The second route was incorrect.");
             nextRoute = byeReq.Header.Routes.PopRoute();
-            Assert.IsTrue(nextRoute.Host == "21.10.21.2", "The third route was incorrect.");
+            Assert.True(nextRoute.Host == "21.10.21.2", "The third route was incorrect.");
             nextRoute = byeReq.Header.Routes.PopRoute();
-            Assert.IsTrue(nextRoute.Host == "90.91.82.12", "The fourth route was incorrect.");
+            Assert.True(nextRoute.Host == "90.91.82.12", "The fourth route was incorrect.");
             nextRoute = byeReq.Header.Routes.PopRoute();
-            Assert.IsTrue(nextRoute.Host == "90.91.82.12", "The fifth route was incorrect.");
+            Assert.True(nextRoute.Host == "90.91.82.12", "The fifth route was incorrect.");
             nextRoute = byeReq.Header.Routes.PopRoute();
-            Assert.IsTrue(nextRoute.Host == "2.3.22.2", "The sixth route was incorrect.");
+            Assert.True(nextRoute.Host == "2.3.22.2", "The sixth route was incorrect.");
             nextRoute = byeReq.Header.Routes.PopRoute();
-            Assert.IsTrue(nextRoute.Host == "90.91.82.12", "The seventh route was incorrect.");
+            Assert.True(nextRoute.Host == "90.91.82.12", "The seventh route was incorrect.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void SinologicInvalidInviteUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -1027,7 +1011,7 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine(inviteReq.ToString());
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseACKWithDomainNameInViaTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);

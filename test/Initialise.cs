@@ -19,28 +19,28 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using SIPSorcery.SIP;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.UnitTests
 {
-    [TestClass]
-    public class Initialize
-    {
-        [AssemblyInitialize]
-        public static void AssemblyInitialize(TestContext context)
-        {
-            Console.WriteLine("AssemblyInitialise");
-            SIPSorcery.Sys.Log.Logger = SimpleConsoleLogger.Instance;
-        }
+    //[Trait("Category", "unit")]
+    //public class Initialize
+    //{
+    //    [AssemblyInitialize]
+    //    public static void AssemblyInitialize(TestContext context)
+    //    {
+    //        Console.WriteLine("AssemblyInitialise");
+    //        SIPSorcery.Sys.Log.Logger = SimpleConsoleLogger.Instance;
+    //    }
 
-        [AssemblyCleanup]
-        public static void AssemblyCleanup()
-        {
-            Console.WriteLine("AssemblyCleanup");
-        }
-    }
+    //    [AssemblyCleanup]
+    //    public static void AssemblyCleanup()
+    //    {
+    //        Console.WriteLine("AssemblyCleanup");
+    //    }
+    //}
 
     /// <summary>
     /// Getting the Microsoft console logger to work with the mstest framework was unsuccessful. Using this super

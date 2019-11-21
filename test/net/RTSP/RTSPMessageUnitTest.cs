@@ -15,17 +15,17 @@
 
 using System;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class RTSPMessageUnitTest
     {
         /// <summary>
         /// Tests that an RTSP request with headers and a body is correctly serialised and parsed.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void RTSPRequestWIthStandardHeadersParseTest()
         {
             int cseq = 23;
@@ -44,8 +44,8 @@ c=IN IP4 224.2.0.1/16";
             byte[] buffer = Encoding.UTF8.GetBytes(describeResponse.ToString());
             RTSPMessage rtspMessage = RTSPMessage.ParseRTSPMessage(buffer, null, null);
 
-            Assert.AreEqual(RTSPMessageTypesEnum.Response, rtspMessage.RTSPMessageType);
-            Assert.AreEqual(body, rtspMessage.Body);
+            Assert.Equal(RTSPMessageTypesEnum.Response, rtspMessage.RTSPMessageType);
+            Assert.Equal(body, rtspMessage.Body);
         }
     }
 }

@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
@@ -58,10 +59,10 @@ namespace SIPSorcery.SIP
         public string Host;
 
         [DataMember]
-        public SIPParameters Parameters = new SIPParameters(null, PARAM_TAG_DELIMITER);
+        public SIPParameters Parameters = new SIPParameters();
 
         [DataMember]
-        public SIPParameters Headers = new SIPParameters(null, HEADER_TAG_DELIMITER);
+        public SIPParameters Headers = new SIPParameters();
 
         /// <summary>
         /// The protocol for a SIP URI is dicatated by the scheme of the URI and then by the transport parameter and finally by the 
@@ -192,7 +193,7 @@ namespace SIPSorcery.SIP
             {
                 SIPURI sipURI = new SIPURI();
 
-                if (uri == null || uri.Trim().Length == 0)
+                if (String.IsNullOrEmpty(uri))
                 {
                     throw new SIPValidationException(SIPValidationFieldsEnum.URI, "A SIP URI cannot be parsed from an empty string.");
                 }
@@ -421,11 +422,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public static bool AreEqual(SIPURI uri1, SIPURI uri2)
-        {
-            return uri1 == uri2;
-        }
-
         private void ParseParamsAndHeaders(string paramsAndHeaders)
         {
             if (paramsAndHeaders != null && paramsAndHeaders.Trim().Length > 0)
@@ -444,6 +440,11 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public static bool AreEqual(SIPURI uri1, SIPURI uri2)
+        {
+            return uri1 == uri2;
+        }
+
         public override bool Equals(object obj)
         {
             return AreEqual(this, (SIPURI)obj);
@@ -451,13 +452,11 @@ namespace SIPSorcery.SIP
 
         public static bool operator ==(SIPURI uri1, SIPURI uri2)
         {
-            if ((object)uri1 == null && (object)uri2 == null)
-            //if (uri1 == null && uri2 == null)
+            if (uri1 is null && uri2 is null)
             {
                 return true;
             }
-            else if ((object)uri1 == null || (object)uri2 == null)
-            //if (uri1 == null || uri2 == null)
+            else if (uri1 is null || uri2 is null)
             {
                 return false;
             }
@@ -469,49 +468,13 @@ namespace SIPSorcery.SIP
             {
                 return false;
             }
-            else
+            else if (uri1.Parameters != uri2.Parameters)
             {
-                // Compare parameters.
-                if (uri1.Parameters.Count != uri2.Parameters.Count)
-                {
-                    return false;
-                }
-                else
-                {
-                    string[] uri1Keys = uri1.Parameters.GetKeys();
-
-                    if (uri1Keys != null && uri1Keys.Length > 0)
-                    {
-                        foreach (string key in uri1Keys)
-                        {
-                            if (uri1.Parameters.Get(key) != uri2.Parameters.Get(key))
-                            {
-                                return false;
-                            }
-                        }
-                    }
-                }
-
-                // Compare headers.
-                if (uri1.Headers.Count != uri2.Headers.Count)
-                {
-                    return false;
-                }
-                else
-                {
-                    string[] uri1Keys = uri1.Headers.GetKeys();
-
-                    if (uri1Keys != null && uri1Keys.Length > 0)
-                    {
-                        foreach (string key in uri1Keys)
-                        {
-                            if (uri1.Headers.Get(key) != uri2.Headers.Get(key))
-                            {
-                                return false;
-                            }
-                        }
-                    }
-                }
+                return false;
+            }
+            else if (uri1.Headers != uri2.Headers)
+            {
+                return false;
             }
 
             return true;
@@ -534,12 +497,12 @@ namespace SIPSorcery.SIP
             copy.Host = Host;
             copy.User = User;
 
-            if (Parameters.Count > 0)
+            if (Parameters?.Count > 0)
             {
                 copy.Parameters = Parameters.CopyOf();
             }
 
-            if (Headers.Count > 0)
+            if (Headers?.Count > 0)
             {
                 copy.Headers = Headers.CopyOf();
             }

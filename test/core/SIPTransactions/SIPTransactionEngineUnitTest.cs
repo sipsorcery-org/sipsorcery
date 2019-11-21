@@ -12,12 +12,12 @@
 using System;
 using System.Net;
 using System.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class SIPTransactionEngineUnitTest
     {
         private class MockSIPDNSManager
@@ -32,8 +32,7 @@ namespace SIPSorcery.SIP.UnitTests
         protected static readonly string m_CRLF = SIPConstants.CRLF;
 
 
-        [TestMethod]
-        [ExpectedException(typeof(ApplicationException))]
+        [Fact]
         public void DuplicateTransactionUnitTest()
         {
             SIPTransactionEngine clientEngine = new SIPTransactionEngine();
@@ -44,13 +43,14 @@ namespace SIPSorcery.SIP.UnitTests
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
             UACInviteTransaction clientTransaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, dummySIPEndPoint, null);
             clientEngine.AddTransaction(clientTransaction);
-            clientEngine.AddTransaction(clientTransaction);
+            
+            Assert.Throws<ApplicationException>(() => clientEngine.AddTransaction(clientTransaction));
         }
 
         /// <summary>
         /// Tests that the transaction ID is correctly generated and matched for a request and response pair.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void MatchOnRequestAndResponseTest()
         {
             SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
@@ -82,14 +82,14 @@ namespace SIPSorcery.SIP.UnitTests
                 "Content-Length: 0" + m_CRLF +
                 m_CRLF);
 
-            Assert.IsNotNull(transactionEngine.GetTransaction(sipResponse), "Transaction should have matched, check the hashing mechanism.");
+            Assert.True(transactionEngine.GetTransaction(sipResponse) != null, "Transaction should have matched, check the hashing mechanism.");
         }
 
         /// <summary>
         /// Tests the production and recognition of an ACK request for this transaction engine.
         /// The test uses two different transaction engine instances with one acting as the client and one as the server.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void AckRecognitionUnitTest()
         {
             SIPTransport clientTransport = null;
@@ -127,8 +127,8 @@ namespace SIPSorcery.SIP.UnitTests
 
                 Thread.Sleep(500);
 
-                Assert.IsTrue(clientTransaction.TransactionState == SIPTransactionStatesEnum.Completed, "Client transaction in incorrect state.");
-                Assert.IsTrue(serverTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed, "Server transaction in incorrect state.");
+                Assert.True(clientTransaction.TransactionState == SIPTransactionStatesEnum.Completed, "Client transaction in incorrect state.");
+                Assert.True(serverTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed, "Server transaction in incorrect state.");
             }
             finally
             {
@@ -144,7 +144,7 @@ namespace SIPSorcery.SIP.UnitTests
             }
         }
 
-        [TestMethod]
+        [Fact]
         public void AckRecognitionIIUnitTest()
         {
             SIPTransactionEngine engine = new SIPTransactionEngine();     // Client side of the INVITE.
@@ -185,7 +185,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPTransaction matchingTransaction = engine.GetTransaction(ackRequest);
 
-            Assert.IsTrue(matchingTransaction.TransactionId == serverTransaction.TransactionId, "ACK transaction did not match INVITE transaction.");
+            Assert.True(matchingTransaction.TransactionId == serverTransaction.TransactionId, "ACK transaction did not match INVITE transaction.");
         }
 
         private SIPRequest GetDummyINVITERequest(SIPURI dummyURI)

@@ -10,14 +10,14 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class RTCPPacketUnitTest
     {
-        [TestMethod]
+        [Fact]
         public void GetRTCPPacketTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -34,7 +34,7 @@ namespace SIPSorcery.Net.UnitTests
             }
         }
 
-        [TestMethod]
+        [Fact]
         public void RTCPHeaderRoundTripTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -53,12 +53,12 @@ namespace SIPSorcery.Net.UnitTests
 
             //Console.WriteLine("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
 
-            Assert.IsTrue(src.SenderSyncSource == dst.SenderSyncSource, "SenderSyncSource was mismatched.");
-            Assert.IsTrue(src.NTPTimestamp == dst.NTPTimestamp, "NTPTimestamp was mismatched.");
-            Assert.IsTrue(src.RTPTimestamp == dst.RTPTimestamp, "RTPTimestamp was mismatched.");
-            Assert.IsTrue(src.SenderPacketCount == dst.SenderPacketCount, "SenderPacketCount was mismatched.");
-            Assert.IsTrue(src.SenderOctetCount == dst.SenderOctetCount, "SenderOctetCount was mismatched.");
-            Assert.IsTrue(src.Reports.Length == dst.Reports.Length, "Reports length was mismatched.");
+            Assert.True(src.SenderSyncSource == dst.SenderSyncSource, "SenderSyncSource was mismatched.");
+            Assert.True(src.NTPTimestamp == dst.NTPTimestamp, "NTPTimestamp was mismatched.");
+            Assert.True(src.RTPTimestamp == dst.RTPTimestamp, "RTPTimestamp was mismatched.");
+            Assert.True(src.SenderPacketCount == dst.SenderPacketCount, "SenderPacketCount was mismatched.");
+            Assert.True(src.SenderOctetCount == dst.SenderOctetCount, "SenderOctetCount was mismatched.");
+            Assert.True(src.Reports.Length == dst.Reports.Length, "Reports length was mismatched.");
         }
     }
 }

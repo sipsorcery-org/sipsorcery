@@ -10,14 +10,14 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.SIP.App.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class SIPMonitorEventUnitTest
     {
-        [TestMethod]
+        [Fact]
         public void SerializeMeassageOnlyProxyEventHeadersTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -28,8 +28,8 @@ namespace SIPSorcery.SIP.App.UnitTests
             string serialisedEvent = monitorEvent.ToCSV();
             SIPMonitorEvent desMonitorEvent = SIPMonitorConsoleEvent.ParseClientControlEventCSV(serialisedEvent);
 
-            Assert.AreEqual(monitorEvent.Message, desMonitorEvent.Message, "The event message was not serialised/desrialised correctly.");
-            Assert.AreEqual(monitorEvent.Created.ToString(), desMonitorEvent.Created.ToString(), "The event created was not serialised/desrialised correctly.");
+            Assert.True(monitorEvent.Message ==  desMonitorEvent.Message, "The event message was not serialised/desrialised correctly.");
+            Assert.True(monitorEvent.Created.ToString() == desMonitorEvent.Created.ToString(), "The event created was not serialised/desrialised correctly.");
         }
     }
 }
