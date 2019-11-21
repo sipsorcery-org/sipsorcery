@@ -110,16 +110,14 @@ namespace SIPSorcery
             logger = SIPSorcery.Sys.Log.Logger;
 
             var result = Parser.Default.ParseArguments<Options>(args)
-                .WithParsed<Options>(opts => RunCommand(opts));
-
-            Console.ReadLine();
+                .WithParsed<Options>(opts => RunCommand(opts).Wait());
         }
 
         /// <summary>
         /// Executes the command set by the program's command line arguments.
         /// </summary>
         /// <param name="options">The options that dictate the SIP command to execute.</param>
-        static async void RunCommand(Options options)
+        static async Task RunCommand(Options options)
         {
             try
             {

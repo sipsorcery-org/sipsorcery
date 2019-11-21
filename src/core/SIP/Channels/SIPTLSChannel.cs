@@ -65,7 +65,7 @@ namespace SIPSorcery.SIP
 
             await sslStream.AuthenticateAsServerAsync(m_serverCertificate);
 
-            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {ListeningIPAddress}:{Port}->{streamConnection.StreamSocket.RemoteEndPoint}.");
+            logger.LogDebug($"SIP TLS Channel successfully upgraded accepted client to SSL stream for {ListeningEndPoint}->{streamConnection.StreamSocket.RemoteEndPoint}.");
 
             //// Display the properties and settings for the authenticated stream.
             ////DisplaySecurityLevel(sslStream);
@@ -91,27 +91,19 @@ namespace SIPSorcery.SIP
         /// <param name="serverCertificateName">The expected common name on the SSL certificate supplied by the server.</param>
         protected override async Task OnClientConnect(SIPStreamConnection streamConnection, byte[] buffer, string serverCertificateName)
         {
-            try
-            {
-                NetworkStream networkStream = new NetworkStream(streamConnection.StreamSocket, true);
-                SslStream sslStream = new SslStream(networkStream, false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
-                //DisplayCertificateInformation(sslStream);
+            NetworkStream networkStream = new NetworkStream(streamConnection.StreamSocket, true);
+            SslStream sslStream = new SslStream(networkStream, false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+            //DisplayCertificateInformation(sslStream);
 
-                //await sslStream.AuthenticateAsClientAsync(serverCertificateName);
-                streamConnection.SslStream = sslStream;
-                streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
+            await sslStream.AuthenticateAsClientAsync(serverCertificateName);
+            streamConnection.SslStream = sslStream;
+            streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
 
-                logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {ListeningIPAddress}:{Port}->{streamConnection.StreamSocket.RemoteEndPoint}.");
+            logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {ListeningEndPoint}->{streamConnection.StreamSocket.RemoteEndPoint}.");
 
-                sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
+            sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
 
-                await sslStream.WriteAsync(buffer, 0, buffer.Length);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError($"Exception SIPTLSChannel OnClientConnect. {excp.Message}");
-                throw;
-            }
+            await sslStream.WriteAsync(buffer, 0, buffer.Length);
         }
 
         /// <summary>

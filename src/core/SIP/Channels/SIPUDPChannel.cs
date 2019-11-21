@@ -86,7 +86,7 @@ namespace SIPSorcery.SIP
                 // the BeginReceiveMessageFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
                 // case the sopcket can be considered to be unusable adn there's no point trying another receive.
                 logger.LogError($"Exception Receive. {excp.Message}");
-                logger.LogDebug($"SIPUDPChannel socket on {ListeningIPAddress}:{Port} listening halted.");
+                logger.LogDebug($"SIPUDPChannel socket on {ListeningEndPoint} listening halted.");
                 Closed = true;
             }
         }
@@ -207,7 +207,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                logger.LogDebug($"Closing SIP UDP Channel {ListeningIPAddress}:{Port}.");
+                logger.LogDebug($"Closing SIP UDP Channel {ListeningEndPoint}.");
 
                 Closed = true;
                 m_udpClientWrapper.Close();
