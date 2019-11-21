@@ -302,58 +302,70 @@ namespace SIPSorcery.SIP
         /// <returns>If successful a connected client socket or null if not.</returns>
         public async Task<SocketError> ConnectClientAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
         {
-            // No existing TCP connection to the destination. Attempt a new socket connection.
-            IPAddress localAddress = ListeningIPAddress;
-            if (ListeningIPAddress == IPAddress.Any)
+            try
             {
-                localAddress = NetServices.GetLocalAddressForRemote(dstEndPoint.Address);
+                // No existing TCP connection to the destination. Attempt a new socket connection.
+                IPAddress localAddress = ListeningIPAddress;
+                if (ListeningIPAddress == IPAddress.Any)
+                {
+                    localAddress = NetServices.GetLocalAddressForRemote(dstEndPoint.Address);
+                }
+                IPEndPoint localEndPoint = new IPEndPoint(localAddress, Port);
+
+                logger.LogDebug($"ConnectAsync SIP {ProtDescr} Channel local end point of {localEndPoint} selected for connection to {dstEndPoint}.");
+
+                Socket clientSocket = new Socket(dstEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                clientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                clientSocket.LingerState = new LingerOption(true, 0);
+                clientSocket.Bind(localEndPoint);
+
+                SocketAsyncEventArgs connectArgs = new SocketAsyncEventArgs
+                {
+                    RemoteEndPoint = dstEndPoint
+                };
+
+                // If this is a TCP channel can take a shortcut and set the first send payload on the connect args.
+                if (buffer != null && buffer.Length > 0 && serverCertificateName == null)
+                {
+                    connectArgs.SetBuffer(buffer, 0, buffer.Length);
+                }
+
+                logger.LogDebug($"Attempting TCP connection from {localEndPoint} to {dstEndPoint}.");
+
+                // Attempt to connect.
+                TaskCompletionSource<SocketError> connectTcs = new TaskCompletionSource<SocketError>();
+                connectArgs.Completed += (sender, sockArgs) =>
+                {
+                    if (sockArgs.LastOperation == SocketAsyncOperation.Connect) connectTcs.SetResult(sockArgs.SocketError);
+                };
+                bool willRaiseEvent = clientSocket.ConnectAsync(connectArgs);
+                if (!willRaiseEvent) if (connectArgs.LastOperation == SocketAsyncOperation.Connect) connectTcs.SetResult(connectArgs.SocketError);
+
+                var connectResult = await connectTcs.Task;
+
+                logger.LogDebug($"ConnectAsync SIP {ProtDescr} Channel connect completed result for {localEndPoint}->{dstEndPoint} {connectResult}.");
+
+                if (connectResult != SocketError.Success)
+                {
+                    logger.LogWarning($"SIP {ProtDescr} Channel send to {dstEndPoint} failed. Attempt to create a client socket failed.");
+                }
+                else
+                {
+                    SIPStreamConnection sipStmConn = new SIPStreamConnection(clientSocket, clientSocket.RemoteEndPoint as IPEndPoint, SIPProtocol);
+                    sipStmConn.SIPMessageReceived += SIPTCPMessageReceived;
+
+                    m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
+
+                    await OnClientConnect(sipStmConn, buffer, serverCertificateName);
+                }
+
+                return connectResult;
             }
-            IPEndPoint localEndPoint = new IPEndPoint(localAddress, Port);
-
-            logger.LogDebug($"ConnectAsync SIP {ProtDescr} Channel local end point of {localEndPoint} selected for connection to {dstEndPoint}.");
-
-            Socket clientSocket = new Socket(dstEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            clientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            clientSocket.LingerState = new LingerOption(true, 0);
-            clientSocket.Bind(localEndPoint);
-
-            SocketAsyncEventArgs connectArgs = new SocketAsyncEventArgs
+            catch(Exception excp)
             {
-                AcceptSocket = clientSocket,
-                RemoteEndPoint = dstEndPoint
-            };
-
-            // If this is a TCP channel can take a shortcut and set the first send payload on the connect args.
-            if (buffer != null && buffer.Length > 0 && serverCertificateName == null)
-            {
-                connectArgs.SetBuffer(buffer, 0, buffer.Length);
+                logger.LogError($"Exception ConnectClientAsync. {excp.Message}");
+                throw;
             }
-
-            // Attempt to connect.
-            TaskCompletionSource<SocketError> connectTcs = new TaskCompletionSource<SocketError>();
-            connectArgs.Completed += (sender, sockArgs) => { if (sockArgs.LastOperation == SocketAsyncOperation.Connect) connectTcs.SetResult(sockArgs.SocketError); };
-            bool willRaiseEvent = clientSocket.ConnectAsync(connectArgs);
-            if (!willRaiseEvent) if (connectArgs.LastOperation == SocketAsyncOperation.Connect) connectTcs.SetResult(connectArgs.SocketError);
-
-            var connectResult = await connectTcs.Task;
-
-            logger.LogDebug($"ConnectAsync SIP {ProtDescr} Channel connect completed result for {localEndPoint}->{dstEndPoint} {connectResult}.");
-
-            if (connectResult != SocketError.Success)
-            {
-                logger.LogWarning($"SIP {ProtDescr} Channel send to {dstEndPoint} failed. Attempt to create a client socket failed.");
-            }
-            else
-            {
-                SIPStreamConnection sipStmConn = new SIPStreamConnection(clientSocket, clientSocket.RemoteEndPoint as IPEndPoint, SIPProtocol);
-                sipStmConn.SIPMessageReceived += SIPTCPMessageReceived;
-
-                m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
-
-                OnClientConnect(sipStmConn, buffer, serverCertificateName);
-            }
-
-            return connectResult;
         }
 
         /// <summary>
@@ -362,7 +374,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly connected client socket.</param>
         /// <param name="buffer">Optional parameter that contains the data that still needs to be sent once the connection is established.</param>
-        protected virtual void OnClientConnect(SIPStreamConnection streamConnection, byte[] buffer, string certificateName)
+        protected virtual async Task OnClientConnect(SIPStreamConnection streamConnection, byte[] buffer, string certificateName)
         {
             SocketAsyncEventArgs recvArgs = streamConnection.RecvSocketArgs;
             recvArgs.AcceptSocket = streamConnection.StreamSocket;

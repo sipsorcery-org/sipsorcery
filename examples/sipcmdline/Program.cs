@@ -111,6 +111,8 @@ namespace SIPSorcery
 
             var result = Parser.Default.ParseArguments<Options>(args)
                 .WithParsed<Options>(opts => RunCommand(opts));
+
+            Console.ReadLine();
         }
 
         /// <summary>

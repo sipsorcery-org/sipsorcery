@@ -89,7 +89,7 @@ namespace SIPSorcery.SIP
         /// <param name="streamConnection">The stream connection holding the newly connected client socket.</param>
         /// <param name="buffer">The data to send.</param>
         /// <param name="serverCertificateName">The expected common name on the SSL certificate supplied by the server.</param>
-        protected override async void OnClientConnect(SIPStreamConnection streamConnection, byte[] buffer, string serverCertificateName)
+        protected override async Task OnClientConnect(SIPStreamConnection streamConnection, byte[] buffer, string serverCertificateName)
         {
             try
             {
@@ -97,7 +97,7 @@ namespace SIPSorcery.SIP
                 SslStream sslStream = new SslStream(networkStream, false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
                 //DisplayCertificateInformation(sslStream);
 
-                await sslStream.AuthenticateAsClientAsync(serverCertificateName);
+                //await sslStream.AuthenticateAsClientAsync(serverCertificateName);
                 streamConnection.SslStream = sslStream;
                 streamConnection.SslStreamBuffer = new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize];
 

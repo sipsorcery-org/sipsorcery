@@ -27,6 +27,25 @@
 // For TCP testing: sipp -sn uac localhost -t t1
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// Media files:
+// The "Simplicity" audio used in this example is from an artist called MACROFORM
+// and can be downloaded directly from: https://www.jamendo.com/track/579315/simplicity?language=en
+// The use of the audio is licensed under the Creative Commons 
+// https://creativecommons.org/licenses/by-nd/2.0/
+// The audio is free for personal use but a license may be required for commerical use.
+// If it sounds familair this particular file is also included as part of Asterisk's 
+// (asterisk.org) music on hold.
+//
+// ffmpeg can be used to convert the mp3 file into the required format for placing directly 
+// into the RTP packets. Currently this example supports two audio formats: G711.ULAW (or PCMU)
+// and G722.
+//
+// ffmpeg -i Macroform_-_Simplicity.mp3 -ar 8k -f mulaw Macroform_-_Simplicity.ulaw
+// ffmpeg -i Macroform_-_Simplicity.mp3 -ar 16k -acodec g722 Macroform_-_Simplicity.g722
+//-----------------------------------------------------------------------------
+
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -48,9 +67,9 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string AUDIO_FILE_PCMU = "the_simplicity.ulaw";
-        //private static readonly string AUDIO_FILE = "the_simplicity.mp3";
-        private static readonly string AUDIO_FILE_G722 = "the_simplicity.g722";
+        private static readonly string AUDIO_FILE_PCMU = @"media\Macroform_-_Simplicity.ulaw";
+        //private static readonly string AUDIO_FILE_MP3 = @"media\Macroform_-_Simplicity.mp3";
+        private static readonly string AUDIO_FILE_G722 = @"media\Macroform_-_Simplicity.g722";
 
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
         private static int SIP_LISTEN_PORT = 5060;
