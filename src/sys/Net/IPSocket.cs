@@ -36,39 +36,6 @@ namespace SIPSorcery.Sys
         public const int MaxPort = 0x0000FFFF;
 
         /// <summary>
-        /// Returns an IPv4 end point from a socket address in 10.0.0.1:5060 format.
-        /// </summary>>
-        //      public static IPEndPoint GetIPEndPoint(string IPSocket)
-        //{
-        //	if(IPSocket == null || IPSocket.Trim().Length == 0)
-        //	{
-        //		throw new ApplicationException("IPSocket cannot parse an IPEndPoint from an empty string.");
-        //	}
-
-        //	try
-        //	{
-        //		int colonIndex = IPSocket.IndexOf(":");
-
-        //		if(colonIndex != -1)
-        //		{
-        //			string ipAddress = IPSocket.Substring(0, colonIndex).Trim();
-        //			int port = Convert.ToInt32(IPSocket.Substring(colonIndex+1).Trim());
-        //			IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
-
-        //			return endPoint;
-        //		}
-        //		else
-        //		{
-        //			return new IPEndPoint(IPAddress.Parse(IPSocket.Trim()), 0);
-        //		}
-        //	}
-        //	catch(Exception excp)
-        //	{
-        //		throw new ApplicationException(excp.Message + "(" + IPSocket + ")");
-        //	}
-        //}
-
-        /// <summary>
         /// This code is based on the IPEndPoint.ToString method in the dotnet source code at
         /// https://github.com/dotnet/corefx/blob/master/src/System.Net.Primitives/src/System/Net/IPEndPoint.cs.
         /// If/when that feature makes it into .NET Standard this method can be replaced.

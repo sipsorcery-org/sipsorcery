@@ -539,9 +539,8 @@ namespace SIPSorcery.SIP.App
                     SIPMethodsEnum.REGISTER,
                     registerURI,
                     new SIPToHeader(null, m_sipAccountAOR, null),
-                    localSIPEndPoint);
+                    new SIPFromHeader(null, m_sipAccountAOR, CallProperties.CreateNewTag()));
 
-                registerRequest.Header.From = new SIPFromHeader(null, m_sipAccountAOR, CallProperties.CreateNewTag());
                 registerRequest.Header.Contact[0] = new SIPContactHeader(null, m_contactURI);
                 registerRequest.Header.CSeq = ++m_cseq;
                 registerRequest.Header.CallId = m_callID;

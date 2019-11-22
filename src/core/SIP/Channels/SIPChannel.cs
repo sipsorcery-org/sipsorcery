@@ -4,11 +4,10 @@
 // Description: Generic items for SIP channels.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 19 Apr 2008	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
-//                              (split from original SIPUDPChannel).
+// 19 Apr 2008	Aaron Clauson	Created (split from original SIPUDPChannel), Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -16,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -137,14 +137,6 @@ namespace SIPSorcery.SIP
         public bool IsSecure { get; protected set; } = false;
 
         /// <summary>
-        /// Returns true if the sole IP address the SIP channel is listening on is the IPv4 or IPv6 loopback address.
-        /// </summary>
-        public bool IsLoopbackAddress
-        {
-            get { return LocalIPAddresses.Count == 1 && IPAddress.IsLoopback(ListeningIPAddress); }
-        }
-           
-        /// <summary>
         /// The type of SIP protocol (udp, tcp, tls or web socket) for this channel.
         /// </summary>
         public SIPProtocolsEnum SIPProtocol { get; protected set; }
@@ -176,6 +168,28 @@ namespace SIPSorcery.SIP
             // When using IPAddress.Any a default end point is still needed for placing in SIP headers and payloads.
             // Using 0.0.0.0 in SIP headers causes issues for some SIP software stacks.
             InternetDefaultAddress = NetServices.GetLocalAddressForInternet();
+        }
+
+        /// <summary>
+        /// Checks whether the host string corresponds to a socket address that this SIP channel is listening on.
+        /// </summary>
+        /// <param name="host">The host string to check.</param>
+        /// <returns>True if the host is a socket this channel is listening on. False if not.</returns>
+        internal bool IsChannelSocket(string host) 
+        {
+            if(IPSocket.TryParseIPEndPoint(host, out var ep))
+            {
+                if(ListeningIPAddress != IPAddress.Any)
+                {
+                    return ep.Address.Equals(ListeningIPAddress) && ep.Port == ListeningEndPoint.Port;
+                }
+                else
+                {
+                    return ep.Port == ListeningEndPoint.Port && LocalIPAddresses.Any(x => x.Equals(ep.Address));
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

@@ -76,6 +76,7 @@ namespace SIPSorcery.SIP
 
         public int Retransmits = 0;
         public int AckRetransmits = 0;
+        public int PrackRetransmits = 0;
         public DateTime InitialTransmit = DateTime.MinValue;
         public DateTime LastTransmit = DateTime.MinValue;
         public bool DeliveryPending = true;
@@ -106,6 +107,8 @@ namespace SIPSorcery.SIP
         protected string m_remoteTag;
         protected SIPRequest m_ackRequest;                  // ACK request for INVITE transactions.
         protected SIPEndPoint m_ackRequestIPEndPoint;       // Socket the ACK request was sent to.
+        protected SIPRequest m_prackRequest;                // PRACK request for provisional INVITE transaction responses.
+        protected SIPEndPoint m_prackRequestIPEndPoint;     // Socket the PRACK request was sent to.
 
         public SIPURI TransactionRequestURI
         {
@@ -250,8 +253,7 @@ namespace SIPSorcery.SIP
                 {
                     if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
                     {
-                        // TODO: If this transaction is using reliable provisional responses then resend the PRACK request.
-
+                        ResendPrackRequest();
                     }
                     else
                     {
@@ -368,6 +370,11 @@ namespace SIPSorcery.SIP
                 m_ackRequest = sipRequest;
                 m_ackRequestIPEndPoint = dstEndPoint;
             }
+            else if(sipRequest.Method == SIPMethodsEnum.PRACK)
+            {
+                m_prackRequest = sipRequest;
+                m_prackRequestIPEndPoint = dstEndPoint;
+            }
 
             m_sipTransport.SendRequest(dstEndPoint, sipRequest);
         }
@@ -378,19 +385,7 @@ namespace SIPSorcery.SIP
 
             if (dstEndPoint != null)
             {
-                FireTransactionTraceMessage($"Send Request {LocalSIPEndPoint.ToString()}->{dstEndPoint.ToString()}: {sipRequest.StatusLine}");
-
-                if (sipRequest.Method == SIPMethodsEnum.ACK)
-                {
-                    m_ackRequest = sipRequest;
-                    m_ackRequestIPEndPoint = dstEndPoint;
-                }
-                else
-                {
-                    RemoteEndPoint = dstEndPoint;
-                }
-
-                m_sipTransport.SendRequest(dstEndPoint, sipRequest);
+                SendRequest(dstEndPoint, sipRequest);
             }
             else
             {
@@ -471,7 +466,7 @@ namespace SIPSorcery.SIP
             m_sipTransport.SendResponse(prackResponse);
         }
 
-        public void ResendAckRequest()
+        private void ResendAckRequest()
         {
             if (m_ackRequest != null)
             {
@@ -482,6 +477,20 @@ namespace SIPSorcery.SIP
             else
             {
                 logger.LogWarning("An ACK retransmit was required but there was no stored ACK request to send.");
+            }
+        }
+
+        private void ResendPrackRequest()
+        {
+            if (m_prackRequest != null)
+            {
+                SendRequest(m_prackRequest);
+                PrackRetransmits += 1;
+                LastTransmit = DateTime.Now;
+            }
+            else
+            {
+                logger.LogWarning("A PRACK retransmit was required but there was no stored PRACK request to send.");
             }
         }
 

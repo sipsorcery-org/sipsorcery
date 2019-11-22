@@ -267,9 +267,6 @@ namespace SIPSorcery.SIP
         /// </remarks>
         public void PreProcessRouteInfo(SIPRequest sipRequest)
         {
-            // TODO: The check of route URI's against local end points needs to incorporate SIP channels
-            // that have multiple IP addresses.
-
             // If there are no routes defined then there is nothing to do.
             if (sipRequest.Header.Routes != null && sipRequest.Header.Routes.Length > 0)
             {
@@ -278,9 +275,7 @@ namespace SIPSorcery.SIP
                 {
                     foreach (SIPChannel sipChannel in m_sipChannels.Values)
                     {
-                        // TODO: For IPAddress.Any have to check all available IP addresses not just listening one.
-                        if (sipRequest.URI.CanonicalAddress ==
-                            new SIPURI(sipRequest.URI.Scheme, sipChannel.ListeningIPAddress, sipChannel.Port).CanonicalAddress)
+                        if (sipChannel.IsChannelSocket(sipRequest.URI.Host))
                         {
                             // The request URI was this router's address so it was set by a strict router.
                             // Replace the URI with the original SIP URI that is stored at the end of the route header.
@@ -299,8 +294,7 @@ namespace SIPSorcery.SIP
                         foreach (SIPChannel sipChannel in m_sipChannels.Values)
                         {
                             // TODO: For IPAddress.Any have to check all available IP addresses not just listening one.
-                            if (sipRequest.Header.Routes.TopRoute.URI.CanonicalAddress ==
-                                new SIPURI(sipRequest.Header.Routes.TopRoute.URI.Scheme, sipChannel.ListeningIPAddress, sipChannel.Port).CanonicalAddress)
+                            if (sipChannel.IsChannelSocket(sipRequest.Header.Routes.TopRoute.URI.Host))
                             {
                                 // Remove the top route as it belongs to this proxy.
                                 sipRequest.ReceivedRoute = sipRequest.Header.Routes.PopRoute();
@@ -378,15 +372,13 @@ namespace SIPSorcery.SIP
             }
             else if (m_sipChannels.Count == 0)
             {
-                throw new ApplicationException("No channels are configured in the SIP transport layer. No attempt made to send the request.");
+                throw new ApplicationException("No channels are configured in the SIP transport layer.");
             }
 
             SIPDNSLookupResult dnsResult = GetRequestEndPoint(sipRequest, null, true);
 
             if (dnsResult.LookupError != null)
             {
-                //SIPResponse unresolvableResponse = GetResponse(sipRequest, SIPResponseStatusCodesEnum.AddressIncomplete, "DNS resolution for " + dnsResult.URI.Host + " failed " + dnsResult.LookupError);
-                //SendResponse(unresolvableResponse);
                 return SocketError.HostNotFound;
             }
             else if (dnsResult.Pending)
@@ -453,6 +445,31 @@ namespace SIPSorcery.SIP
             }
 
             SIPChannel sipChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
+            IPEndPoint sendFromEndPoint = sipChannel.GetLocalSIPEndPointForDestination(dstEndPoint.GetIPEndPoint().Address).GetIPEndPoint();
+
+            // Once the channel has been determined check some specific header fields and replace the placeholder end point:
+            /// - Top Via header.
+            /// - From header.
+            /// - Contact header.
+            if(sipRequest.Header.Vias.TopViaHeader.ContactAddress == IPAddress.Any.ToString())
+            {
+                sipRequest.Header.Vias.Via[0].Host = sendFromEndPoint.Address.ToString();
+                sipRequest.Header.Vias.Via[0].Port = sendFromEndPoint.Port;
+            }
+
+            if(sipRequest.Header.From.FromURI.Host.StartsWith(IPAddress.Any.ToString()))
+            {
+                sipRequest.Header.From.FromURI.Host = sendFromEndPoint.ToString();
+            }
+
+            if(sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count == 1)
+            {
+                if(sipRequest.Header.Contact.Single().ContactURI.Host.StartsWith(IPAddress.Any.ToString()))
+                {
+                    sipRequest.Header.Contact.Single().ContactURI.Host = sendFromEndPoint.ToString();
+                }
+            }
+
             return await SendRequestAsync(sipChannel, dstEndPoint, sipRequest);
         }
 
@@ -1410,46 +1427,51 @@ namespace SIPSorcery.SIP
             }
         }
 
+        /// <summary>
+        /// Builds a very basic SIP request. In most cases additional headers will need to be added in order for it to be useful.
+        /// When this method is called the channel used for sending the request has not been decided. The headers below depend on 
+        /// the sending channel. By setting them to "0.0.0.0:0" the send request methods will substitute in the appropriate value
+        /// at send time:
+        /// - Top Via header.
+        /// - From header.
+        /// - Contact header.
+        /// </summary>
+        /// <param name="method">The method for the SIP request.</param>
+        /// <param name="uri">The destination URI for the request.</param>
+        /// <returns>A SIP request object.</returns>
         public SIPRequest GetRequest(SIPMethodsEnum method, SIPURI uri)
         {
-            return GetRequest(method, uri, new SIPToHeader(null, uri, null), null);
+            return GetRequest(
+                method, 
+                uri, 
+                new SIPToHeader(null, uri, null), 
+                new SIPFromHeader(null, new SIPURI(uri.Scheme,IPAddress.Any, 0), CallProperties.CreateNewTag()));
         }
 
-        public SIPRequest GetRequest(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, SIPEndPoint localSIPEndPoint)
+        /// <summary>
+        /// Builds a very basic SIP request. In most cases additional headers will need to be added in order for it to be useful.
+        /// When this method is called the channel used for sending the request has not been decided. The headers below depend on 
+        /// the sending channel. By setting them to "0.0.0.0:0" the send request methods will substitute in the appropriate value
+        /// at send time:
+        /// - Top Via header.
+        /// - From header.
+        /// - Contact header.
+        /// </summary>
+        /// <param name="method">The method for the SIP request.</param>
+        /// <param name="uri">The destination URI for the request.</param>
+        /// <param name="to">The To header for the request.</param>
+        /// <param name="from">The From header for the request.</param>
+        /// <returns>A SIP request object.</returns>
+        public SIPRequest GetRequest(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, SIPFromHeader from)
         {
-            //return Task.Run(() => GetRequestAsync(method, uri, to, localSIPEndPoint)).Result;
-            return GetRequestAsync(method, uri, to, localSIPEndPoint);
-        }
-
-        public SIPRequest GetRequestAsync(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, SIPEndPoint localSIPEndPoint)
-        {
-            SIPChannel senderChannel = null;
-
-            //var lookupResult = await SIPDNSManager.ResolveAsync(uri);
-            var lookupResult = SIPDNSManager.ResolveSIPService(uri, false);
-            SIPEndPoint dst = lookupResult.EndPointResults.First().LookupEndPoint;
-
-            if (localSIPEndPoint?.ChannelID != null)
-            {
-                senderChannel = m_sipChannels[localSIPEndPoint.ChannelID];
-            }
-            else
-            {
-                senderChannel = GetSIPChannelForDestination(uri.Protocol, dst.GetIPEndPoint());
-                localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
-            }
-
             SIPRequest request = new SIPRequest(method, uri);
-            request.LocalSIPEndPoint = localSIPEndPoint;
 
-            SIPContactHeader contactHeader = new SIPContactHeader(null, senderChannel.GetContactURI(uri.Scheme, dst.GetIPEndPoint().Address));
-            SIPFromHeader fromHeader = new SIPFromHeader(null, contactHeader.ContactURI, CallProperties.CreateNewTag());
-            SIPHeader header = new SIPHeader(contactHeader, fromHeader, to, 1, CallProperties.CreateNewCallId());
+            SIPHeader header = new SIPHeader(from, to, 1, CallProperties.CreateNewCallId());
             request.Header = header;
             header.CSeqMethod = method;
             header.Allow = ALLOWED_SIP_METHODS;
 
-            SIPViaHeader viaHeader = new SIPViaHeader(senderChannel.GetLocalSIPEndPointForDestination(dst.GetIPEndPoint().Address).GetIPEndPoint(), CallProperties.CreateBranchId());
+            SIPViaHeader viaHeader = new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), CallProperties.CreateBranchId());
             header.Vias.PushViaHeader(viaHeader);
 
             return request;
