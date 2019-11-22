@@ -12,7 +12,7 @@ build:
   verbosity: quiet
 test:
   categories:
-    except:
+#    except:
 #    - IPv6
 #    - Integration
 on_success:
