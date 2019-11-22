@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Threading.Tasks;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
@@ -133,7 +134,7 @@ namespace SIPSorcery.SIP
         /// The remote socket that caused the transaction to be created or the socket a newly 
         /// created transaction request was sent to. 
         /// </summary>
-        public SIPEndPoint RemoteEndPoint;             
+        public SIPEndPoint RemoteEndPoint;
 
         /// <summary>
         /// The local SIP endpoint the remote request was received on or if created by us 
@@ -362,7 +363,7 @@ namespace SIPSorcery.SIP
 
                 if (PrackSupported == true)
                 {
-                    if(RSeq == 0)
+                    if (RSeq == 0)
                     {
                         RSeq = Crypto.GetRandomInt(1, Int32.MaxValue / 2 - 1);
                     }
@@ -390,7 +391,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
+        protected async Task SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
             FireTransactionTraceMessage($"Send Request {LocalSIPEndPoint}->{dstEndPoint}: {sipRequest.StatusLine}");
 
@@ -399,22 +400,22 @@ namespace SIPSorcery.SIP
                 m_ackRequest = sipRequest;
                 m_ackRequestIPEndPoint = dstEndPoint;
             }
-            else if(sipRequest.Method == SIPMethodsEnum.PRACK)
+            else if (sipRequest.Method == SIPMethodsEnum.PRACK)
             {
                 m_prackRequest = sipRequest;
                 m_prackRequestIPEndPoint = dstEndPoint;
             }
 
-            m_sipTransport.SendRequest(dstEndPoint, sipRequest);
+            await m_sipTransport.SendRequestAsync(dstEndPoint, sipRequest);
         }
 
         public void SendRequest(SIPRequest sipRequest)
         {
-            SIPEndPoint dstEndPoint = m_sipTransport.GetRequestEndPoint(sipRequest, OutboundProxy, true).GetSIPEndPoint();
+            var lookupResult = m_sipTransport.GetRequestEndPoint(sipRequest, OutboundProxy, true);
 
-            if (dstEndPoint != null)
+            if (lookupResult != null && lookupResult.LookupError == null)
             {
-                SendRequest(dstEndPoint, sipRequest);
+                SendRequest(lookupResult.GetSIPEndPoint(), sipRequest).Wait();
             }
             else
             {
@@ -483,7 +484,7 @@ namespace SIPSorcery.SIP
         /// <param name="sipRequest">The PRACK request.</param>
         public void PRACKReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            if(m_transactionState == SIPTransactionStatesEnum.Proceeding && RSeq == sipRequest.Header.RAckRSeq)
+            if (m_transactionState == SIPTransactionStatesEnum.Proceeding && RSeq == sipRequest.Header.RAckRSeq)
             {
                 logger.LogDebug("PRACK request matched the current outstanding provisional response, setting as delivered.");
                 DeliveryPending = false;
@@ -497,29 +498,43 @@ namespace SIPSorcery.SIP
 
         private void ResendAckRequest()
         {
-            if (m_ackRequest != null)
+            try
             {
-                SendRequest(m_ackRequest);
-                AckRetransmits += 1;
-                LastTransmit = DateTime.Now;
+                if (m_ackRequest != null)
+                {
+                    SendRequest(m_ackRequest);
+                    AckRetransmits += 1;
+                    LastTransmit = DateTime.Now;
+                }
+                else
+                {
+                    logger.LogWarning("An ACK retransmit was required but there was no stored ACK request to send.");
+                }
             }
-            else
+            catch (Exception excp)
             {
-                logger.LogWarning("An ACK retransmit was required but there was no stored ACK request to send.");
+                logger.LogError($"Exception ResendAckRequest. {excp.Message}");
             }
         }
 
         private void ResendPrackRequest()
         {
-            if (m_prackRequest != null)
+            try
             {
-                SendRequest(m_prackRequest);
-                PrackRetransmits += 1;
-                LastTransmit = DateTime.Now;
+                if (m_prackRequest != null)
+                {
+                    SendRequest(m_prackRequest);
+                    PrackRetransmits += 1;
+                    LastTransmit = DateTime.Now;
+                }
+                else
+                {
+                    logger.LogWarning("A PRACK retransmit was required but there was no stored PRACK request to send.");
+                }
             }
-            else
+            catch (Exception excp)
             {
-                logger.LogWarning("A PRACK retransmit was required but there was no stored PRACK request to send.");
+                logger.LogError($"Exception ResendPrackRequest. {excp.Message}");
             }
         }
 

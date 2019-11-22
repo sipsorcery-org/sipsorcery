@@ -133,16 +133,19 @@ namespace SIPSorcery
 
                         // Check there's a codec we support in the INVITE offer.
                         var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
+                        IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
                         RTPSession rtpSession = null;
                         string audioFile = null;
 
                         if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)RTPPayloadTypesEnum.G722)))
                         {
+                            Log.LogDebug($"Using G722 RTP media type and audio file {AUDIO_FILE_G722}.");
                             rtpSession = new RTPSession((int)RTPPayloadTypesEnum.G722, null, null);
                             audioFile = AUDIO_FILE_G722;
                         }
                         else if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)RTPPayloadTypesEnum.PCMU)))
                         {
+                            Log.LogDebug($"Using PCMU RTP media type and audio file {AUDIO_FILE_PCMU}.");
                             rtpSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
                             audioFile = AUDIO_FILE_PCMU;
                         }
@@ -168,10 +171,9 @@ namespace SIPSorcery
                             uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
                             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-                            NetServices.CreateRtpSocket(IPAddress.Any, 49000, 49100, false, out rtpSocket, out controlSocket);
+                            NetServices.CreateRtpSocket(dstRtpEndPoint.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 49000, 49100, false, out rtpSocket, out controlSocket);
 
                             // The RTP socket is listening on IPAddress.Any but the IP address placed into the SDP needs to be one the caller can reach.
-                            IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
                             IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
                             IPEndPoint rtpEndPoint = new IPEndPoint(rtpAddress, (rtpSocket.LocalEndPoint as IPEndPoint).Port);
 

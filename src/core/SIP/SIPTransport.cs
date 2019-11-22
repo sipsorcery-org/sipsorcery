@@ -457,7 +457,7 @@ namespace SIPSorcery.SIP
             SIPEndPoint sendFromSIPEndPoint = sipChannel.GetLocalSIPEndPointForDestination(dstEndPoint.GetIPEndPoint().Address);
 
             // Once the channel has been determined check some specific header fields and replace the placeholder end point.
-            AdjustHeadersForEndPoint(sendFromSIPEndPoint.GetIPEndPoint(), ref sipRequest.Header);
+            AdjustHeadersForEndPoint(sendFromSIPEndPoint, ref sipRequest.Header);
 
             return await SendRequestAsync(sipChannel, sendFromSIPEndPoint, dstEndPoint, sipRequest);
         }
@@ -671,7 +671,7 @@ namespace SIPSorcery.SIP
                 SIPEndPoint sendFromSIPEndPoint = sendFromChannel.GetLocalSIPEndPointForDestination(dstEndPoint.GetIPEndPoint().Address);
 
                 // Once the channel has been determined check some specific header fields and replace the placeholder end point.
-                AdjustHeadersForEndPoint(sendFromSIPEndPoint.GetIPEndPoint(), ref sipResponse.Header);
+                AdjustHeadersForEndPoint(sendFromSIPEndPoint, ref sipResponse.Header);
 
                 // Now have a destination and sending channel, go ahead and forward.
                 FireSIPResponseOutTraceEvent(sendFromSIPEndPoint, dstEndPoint, sipResponse);
@@ -697,14 +697,21 @@ namespace SIPSorcery.SIP
         /// <param name="sendFromEndPoint">The IP end point the request or response is being sent from.</param>
         /// <param name="sipHeader">The SIP header object to apply the adjustments to. The header object will be updated
         /// in place with any header adjustments.</param>
-        private void AdjustHeadersForEndPoint(IPEndPoint sendFromEndPoint, ref SIPHeader header)
+        private void AdjustHeadersForEndPoint(SIPEndPoint sendFromSIPEndPoint, ref SIPHeader header)
         {
+            IPEndPoint sendFromEndPoint = sendFromSIPEndPoint.GetIPEndPoint();
+
             // Top Via header.
             if (header.Vias.TopViaHeader.ContactAddress.StartsWith(IPAddress.Any.ToString()) ||
                 header.Vias.TopViaHeader.ContactAddress.StartsWith(IPAddress.IPv6Any.ToString()))
             {
                 header.Vias.Via[0].Host = sendFromEndPoint.Address.ToString();
                 header.Vias.Via[0].Port = sendFromEndPoint.Port;
+            }
+
+            if(header.Vias.TopViaHeader.Transport != sendFromSIPEndPoint.Protocol)
+            {
+                header.Vias.Via[0].Transport = sendFromSIPEndPoint.Protocol;
             }
 
             // From header.
@@ -728,6 +735,11 @@ namespace SIPSorcery.SIP
                     {
                         header.Contact.Single().ContactURI.Host = sendFromEndPoint.ToString();
                     }
+                }
+
+                if (header.Contact.Single().ContactURI.Scheme == SIPSchemesEnum.sip && sendFromSIPEndPoint.Protocol != SIPProtocolsEnum.udp)
+                {
+                    header.Contact.Single().ContactURI.Protocol = sendFromSIPEndPoint.Protocol;
                 }
             }
         }
@@ -1249,22 +1261,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public bool DoesTransactionExist(SIPRequest sipRequest)
-        {
-            if (m_transactionEngine == null)
-            {
-                return false;
-            }
-            else if (m_transactionEngine.GetTransaction(sipRequest) != null)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         /// <summary>
         /// Gets a list of all SIP end points this SIP transport instance is listening on.
         /// </summary>
@@ -1375,6 +1371,22 @@ namespace SIPSorcery.SIP
         #endregion
 
         #region Request, Response and Transaction retrieval and creation methods.
+
+        public bool DoesTransactionExist(SIPRequest sipRequest)
+        {
+            if (m_transactionEngine == null)
+            {
+                return false;
+            }
+            else if (m_transactionEngine.GetTransaction(sipRequest) != null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
         /// <summary>
         /// Helper method to create a SIP response for a SIP request. This method can be thoght of as creating a 

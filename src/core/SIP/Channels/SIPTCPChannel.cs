@@ -137,7 +137,7 @@ namespace SIPSorcery.SIP
 
                 if (listenEndPoint.Port == 0)
                 {
-                    listenEndPoint.Port = (m_tcpServerListener.Server.LocalEndPoint as IPEndPoint).Port;
+                    Port = (m_tcpServerListener.Server.LocalEndPoint as IPEndPoint).Port;
                 }
 
                 m_localTCPSockets.Add(listenEndPoint.ToString());

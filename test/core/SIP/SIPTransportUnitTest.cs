@@ -390,6 +390,18 @@ namespace SIPSorcery.SIP.UnitTests
                     }
                 };
 
+                serverSIPTransport.SIPRequestInTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+                {
+                    logger.LogDebug($"SERVER REQUEST IN {localSIPEndPoint}<-{remoteEndPoint}");
+                    logger.LogDebug(sipRequest.ToString());
+                };
+
+                serverSIPTransport.SIPResponseOutTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
+                {
+                    logger.LogDebug($"SERVER RESPONSE OUT {localSIPEndPoint}->{remoteEndPoint}");
+                    logger.LogDebug(sipResponse.ToString());
+                };
+
                 cts.Token.WaitHandle.WaitOne();
             }
             catch (Exception excp)
@@ -424,8 +436,7 @@ namespace SIPSorcery.SIP.UnitTests
 
                 clientSIPTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
                 {
-                    logger.LogDebug($"Response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
-                    logger.LogDebug(sipResponse.ToString());
+                    logger.LogDebug($"Expected response received {localSIPEndPoint}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
 
                     if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
                     {
@@ -434,13 +445,27 @@ namespace SIPSorcery.SIP.UnitTests
                     }
                 };
 
-                var optionsRequest = clientSIPTransport.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
+                clientSIPTransport.SIPRequestOutTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+                {
+                    logger.LogDebug($"CLIENT REQUEST OUT {localSIPEndPoint}->{remoteEndPoint}");
+                    logger.LogDebug(sipRequest.ToString());
+                };
 
-                logger.LogDebug(optionsRequest.ToString());
+                clientSIPTransport.SIPResponseInTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
+                {
+                    logger.LogDebug($"CLIENT RESPONSE IN {localSIPEndPoint}<-{remoteEndPoint}");
+                    logger.LogDebug(sipResponse.ToString());
+                };
+
+                var optionsRequest = clientSIPTransport.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
 
                 clientSIPTransport.SendRequest(optionsRequest);
 
                 await tcs.Task;
+            }
+            catch (Exception excp)
+            {
+                logger.LogError($"Exception RunClient. {excp.Message}");
             }
             finally
             {

@@ -527,7 +527,6 @@ namespace SIPSorcery.SIP.App
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPClientUserAgent Hangup. " + excp.Message);
-                throw;
             }
         }
 

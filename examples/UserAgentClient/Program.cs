@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -69,16 +70,29 @@ namespace SIPSorcery
 
             Log.LogInformation($"Call destination {callUri}.");
 
+            var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
+            Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
+            var dstAddress = lookupResult.GetSIPEndPoint().Address;
+
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)));
+            var listenAddress = dstAddress.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any;
+            if (callUri.Scheme == SIPSchemesEnum.sip && callUri.Protocol == SIPProtocolsEnum.udp)
+            {
+                sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, 0)));
+            }
+            else if (callUri.Scheme == SIPSchemesEnum.sip && callUri.Protocol == SIPProtocolsEnum.tcp)
+            {
+                sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, 0)));
+            }
+            else if (callUri.Scheme == SIPSchemesEnum.sips || callUri.Protocol == SIPProtocolsEnum.tls)
+            {
+                sipTransport.AddSIPChannel(new SIPTLSChannel(new X509Certificate2("localhost.pfx"), new IPEndPoint(listenAddress, 0)));
+            }
 
             EnableTraceLogs(sipTransport);
 
-            var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
-            Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
-
-            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(lookupResult.GetSIPEndPoint().Address);
+            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(dstAddress);
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
             Socket rtpSocket = null;
@@ -149,7 +163,8 @@ namespace SIPSorcery
                 null,
                 callUri.ToString(),
                 SIPConstants.SIP_DEFAULT_FROMURI,
-                null, null, null, null,
+                callUri.CanonicalAddress,
+                null, null, null,
                 SIPCallDirection.Out,
                 SDP.SDP_MIME_CONTENTTYPE,
                 GetSDP(rtpSocket.LocalEndPoint as IPEndPoint).ToString(),
