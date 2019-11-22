@@ -16,7 +16,7 @@
   </ItemGroup>
   
   <PropertyGroup>
-  <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
+  <TargetFrameworks>netstandard2.0;net452;netcoreapp3.0</TargetFrameworks>
 	<Version>3.6.0.0</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
