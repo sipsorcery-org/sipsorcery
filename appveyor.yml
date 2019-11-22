@@ -8,12 +8,12 @@ before_build:
 - cmd: nuget restore -DisableParallelProcessing src\SIPSorcery.sln
 build:
   project: src\SIPSorcery.sln
-  publish_nuget: true
-  verbosity: normal
+  publish_nuget: false
+  verbosity: quiet
 test:
   categories:
     except:
-     - IPv6
+#    - IPv6
 #    - Integration
 on_success:
   - ps: |
