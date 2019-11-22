@@ -10,8 +10,8 @@ build:
   project: src\SIPSorcery.sln
   publish_nuget: false
   verbosity: quiet
-test:
-  categories:
+#test:
+#  categories:
 #    except:
 #    - IPv6
 #    - Integration
