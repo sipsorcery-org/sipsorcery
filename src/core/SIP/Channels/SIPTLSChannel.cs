@@ -139,6 +139,11 @@ namespace SIPSorcery.SIP
                 {
                     OnSIPStreamDisconnected(sipStreamConnection, (ioExcp.InnerException as SocketException).SocketErrorCode);
                 }
+                else if (ioExcp.InnerException is ObjectDisposedException)
+                {
+                    // This exception is expected when the TLS connection is closed and this method is waiting for a receive.
+                    OnSIPStreamDisconnected(sipStreamConnection,SocketError.Disconnecting);
+                }
                 else
                 {
                     logger.LogWarning($"IOException SIPTLSChannel OnReadCallback. {ioExcp.Message}");

@@ -55,7 +55,7 @@ namespace SIPSorcery.SIP
         private bool m_queueIncoming = true;
 
         private bool m_transportThreadStarted = false;
-        private Queue<IncomingMessage> m_inMessageQueue = new Queue<IncomingMessage>();
+        private ConcurrentQueue<IncomingMessage> m_inMessageQueue = new ConcurrentQueue<IncomingMessage>();
         private ManualResetEvent m_inMessageArrived = new ManualResetEvent(false);
         private bool m_closed = false;
 
@@ -218,10 +218,7 @@ namespace SIPSorcery.SIP
                     }
                     else
                     {
-                        lock (m_inMessageQueue)
-                        {
-                            m_inMessageQueue.Enqueue(incomingMessage);
-                        }
+                        m_inMessageQueue.Enqueue(incomingMessage);
                     }
 
                     m_inMessageArrived.Set();
@@ -240,12 +237,12 @@ namespace SIPSorcery.SIP
             {
                 m_closed = true;
 
+                m_inMessageArrived.Set();
+
                 foreach (SIPChannel channel in m_sipChannels.Values)
                 {
                     channel.Close();
                 }
-
-                m_inMessageArrived.Set();
             }
             catch (Exception excp)
             {
@@ -731,21 +728,18 @@ namespace SIPSorcery.SIP
 
                     while (m_inMessageQueue.Count > 0)
                     {
-                        IncomingMessage incomingMessage = null;
-
-                        lock (m_inMessageQueue)
-                        {
-                            incomingMessage = m_inMessageQueue.Dequeue();
-                        }
-
+                        m_inMessageQueue.TryDequeue(out var incomingMessage);
                         if (incomingMessage != null)
                         {
                             SIPMessageReceived(incomingMessage.LocalSIPChannel, incomingMessage.LocalEndPoint, incomingMessage.RemoteEndPoint, incomingMessage.Buffer);
                         }
                     }
 
-                    m_inMessageArrived.Reset();
-                    m_inMessageArrived.WaitOne(MAX_QUEUEWAIT_PERIOD);
+                    if (!m_closed)
+                    {
+                        m_inMessageArrived.Reset();
+                        m_inMessageArrived.WaitOne(MAX_QUEUEWAIT_PERIOD);
+                    }
                 }
             }
             catch (Exception excp)
@@ -1435,7 +1429,7 @@ namespace SIPSorcery.SIP
                 senderChannel = m_sipChannels[localSIPEndPoint.ChannelID];
             }
             else
-            { 
+            {
                 senderChannel = GetSIPChannelForDestination(uri.Protocol, dst.GetIPEndPoint());
                 localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
             }

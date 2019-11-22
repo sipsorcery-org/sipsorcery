@@ -93,7 +93,7 @@ namespace SIPSorcery.SIP.UnitTests
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -103,6 +103,8 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.True(testComplete.Task.Result);
             cancelServer.Cancel();
+
+            logger.LogDebug("Test complete.");
         }
 
         /// <summary>
@@ -312,7 +314,7 @@ namespace SIPSorcery.SIP.UnitTests
                     {
                         logger.LogDebug($"Sending request {i}.");
 
-                        var req = transport.GetRequest(SIPMethodsEnum.OPTIONS, SIPURI.ParseSIPURIRelaxed($"{i}@sipsorcery.com;transport=tcp"));
+                        var req = transport.GetRequest(SIPMethodsEnum.OPTIONS, tcpChannel.GetContactURI(SIPSchemesEnum.sip, listenEP.Address));
                         byte[] reqBytes = Encoding.UTF8.GetBytes(req.ToString());
 
                         tcpClient.GetStream().Write(reqBytes, 0, reqBytes.Length);
@@ -353,6 +355,9 @@ namespace SIPSorcery.SIP.UnitTests
             //Task.WhenAny(new Task[] { testComplete.Task }).Wait();
 
             transport.Shutdown();
+
+            // Give the SIP transport time to shutdown. Keeps exception messages out of the logs.
+            Task.Delay(1000).Wait();
 
             Assert.True(testComplete.Task.IsCompleted);
             Assert.True(testComplete.Task.Result);
@@ -395,6 +400,7 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 logger.LogDebug($"Server task for completed for {testServerChannel.ListeningSIPEndPoint}.");
                 serverSIPTransport.Shutdown();
+                logger.LogDebug($"Server task SIP transport shutdown.");
             }
         }
 
@@ -440,6 +446,7 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 logger.LogDebug($"Client task completed for {testClientChannel.ListeningSIPEndPoint}.");
                 clientSIPTransport.Shutdown();
+                logger.LogDebug($"Client task SIP transport shutdown.");
             }
         }
     }
