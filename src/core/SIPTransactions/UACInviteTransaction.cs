@@ -8,7 +8,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 //   
 // History:
-// 21 Nov 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com).
+// 21 Nov 2006	Aaron Clauson	Created, Dublin, Ireland.
 // 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 

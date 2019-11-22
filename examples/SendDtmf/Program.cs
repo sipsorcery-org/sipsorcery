@@ -90,7 +90,7 @@ namespace SIPSorcery
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)));
 
             // Un/comment this line to see/hide each SIP message sent and received.
-            //EnableTraceLogs(sipTransport);
+            EnableTraceLogs(sipTransport);
 
             // Note this relies on the callURI host being an IP address. If it's a hostname a DNS lookup is required.
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(callUri.ToSIPEndPoint().Address);

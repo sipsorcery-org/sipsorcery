@@ -445,7 +445,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="clientHungup">True if the BYE request was received from the client. False if the hangup
         /// needs to originate from this agent.</param>
-        public async void Hangup(bool clientHungup)
+        public void Hangup(bool clientHungup)
         {
             m_isHungup = true;
 
@@ -467,28 +467,8 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        SIPEndPoint localEndPoint = m_uasTransaction.LocalSIPEndPoint;
-                        if (inviteContact.ContactURI.Protocol != localEndPoint.Protocol)
-                        {
-                            var lookupResult = await SIPDNSManager.ResolveAsync(inviteContact.ContactURI);
-                            if (lookupResult == null || lookupResult.EndPointResults?.Count == 0)
-                            {
-                                throw new ApplicationException("The Contact header URI on the INVITE request could not be resolved, BYE request cannot be generated.");
-                            }
-                            else
-                            {
-                               IPEndPoint contactUriEndPoint = lookupResult.EndPointResults.Select(x => x.LookupEndPoint).First().GetIPEndPoint();
-
-                                logger.LogDebug($"Contact header URI {inviteContact.ContactURI} resolved to {contactUriEndPoint}.");
-
-                                SIPChannel sendingChannel = m_sipTransport.GetSIPChannelForDestination(inviteContact.ContactURI.Protocol, contactUriEndPoint);
-                                localEndPoint = sendingChannel.GetLocalSIPEndPointForDestination(contactUriEndPoint.Address);
-                            }
-                        }
-
-                        SIPRequest byeRequest = GetByeRequest(localEndPoint);
-
-                        SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, m_outboundProxy);
+                        SIPRequest byeRequest = GetByeRequest();
+                        SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, null, m_outboundProxy);
                         byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
                         byeTransaction.SendReliableRequest();
                     }
@@ -588,7 +568,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private SIPRequest GetByeRequest(SIPEndPoint localSIPEndPoint)
+        private SIPRequest GetByeRequest()
         {
             SIPRequest byeRequest = new SIPRequest(SIPMethodsEnum.BYE, SIPDialogue.RemoteTarget);
             SIPFromHeader byeFromHeader = SIPFromHeader.ParseFromHeader(SIPDialogue.LocalUserField.ToString());
@@ -601,7 +581,7 @@ namespace SIPSorcery.SIP.App
             byeRequest.Header.Routes = SIPDialogue.RouteSet;
             byeRequest.Header.ProxySendFrom = SIPDialogue.ProxySendFrom;
 
-            SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
+            SIPViaHeader viaHeader = new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), CallProperties.CreateBranchId());
             byeRequest.Header.Vias.PushViaHeader(viaHeader);
 
             return byeRequest;

@@ -93,8 +93,17 @@ namespace SIPSorcery.SIP
 
         public SIPTransactionTypesEnum TransactionType = SIPTransactionTypesEnum.NonInvite;
         public DateTime Created = DateTime.Now;
-        public DateTime CompletedAt = DateTime.Now;     // For INVITEs this is the time they recieved the final response and is used to calculate the time they expie as T6 after this.
-        public DateTime TimedOutAt;                     // If the transaction times out this holds the value it timed out at.
+
+        /// <summary>
+        /// For INVITEs this is the time they recieved the final response and is used to calculate the time 
+        /// they expie as T6 after this.
+        /// </summary>
+        public DateTime CompletedAt = DateTime.Now;
+
+        /// <summary>
+        /// If the transaction times out this holds the value it timed out at.
+        /// </summary>
+        public DateTime TimedOutAt;
 
         protected string m_branchId;
         public string BranchId
@@ -118,9 +127,25 @@ namespace SIPSorcery.SIP
         {
             get { return m_transactionRequest.Header.From.FromUserField; }
         }
-        public SIPEndPoint RemoteEndPoint;                  // The remote socket that caused the transaction to be created or the socket a newly created transaction request was sent to.             
-        public SIPEndPoint LocalSIPEndPoint;                // The local SIP endpoint the remote request was received on or if created by this stack the local SIP end point used to send the transaction.
-        public SIPEndPoint OutboundProxy;                   // If not null this value is where ALL transaction requests should be sent to.
+
+
+        /// <summary>
+        /// The remote socket that caused the transaction to be created or the socket a newly 
+        /// created transaction request was sent to. 
+        /// </summary>
+        public SIPEndPoint RemoteEndPoint;             
+
+        /// <summary>
+        /// The local SIP endpoint the remote request was received on or if created by us 
+        /// the local SIP end point used to send the initial transaction request (note will be null
+        /// until the request is sent).
+        /// </summary>
+        public SIPEndPoint LocalSIPEndPoint;
+
+        /// <summary>
+        /// If not null this value is where ALL transaction requests should be sent to.
+        /// </summary>
+        public SIPEndPoint OutboundProxy;
         public SIPCDR CDR;
 
         private SIPTransactionStatesEnum m_transactionState = SIPTransactionStatesEnum.Calling;
@@ -143,7 +168,11 @@ namespace SIPSorcery.SIP
 
         public int RSeq { get; private set; } = 0;
 
-        protected SIPResponse m_transactionFinalResponse;   // This is the final response being sent by a UAS transaction or the one received by a UAC one.
+        protected SIPResponse m_transactionFinalResponse;
+
+        /// <summary>
+        /// This is the final response being sent by a UAS transaction or the one received by a UAC one.
+        /// </summary>
         public SIPResponse TransactionFinalResponse
         {
             get { return m_transactionFinalResponse; }
@@ -198,10 +227,10 @@ namespace SIPSorcery.SIP
                 {
                     throw new ArgumentNullException("A SIPRequest object must be supplied when creating a SIPTransaction.");
                 }
-                else if (localSIPEndPoint == null)
-                {
-                    throw new ArgumentNullException("The local SIP end point must be set when creating a SIPTransaction.");
-                }
+                //else if (localSIPEndPoint == null)
+                //{
+                //    throw new ArgumentNullException("The local SIP end point must be set when creating a SIPTransaction.");
+                //}
                 else if (transactionRequest.Header.Vias.TopViaHeader == null)
                 {
                     throw new ArgumentNullException("The SIP request must have a Via header when creating a SIPTransaction.");
@@ -308,19 +337,19 @@ namespace SIPSorcery.SIP
 
             if (TransactionType == SIPTransactionTypesEnum.InviteServer)
             {
-                FireTransactionTraceMessage($"Send Final Response Reliable {LocalSIPEndPoint.ToString()}->{viaAddress}: {finalResponse.ShortDescription}");
+                FireTransactionTraceMessage($"Send Final Response Reliable {LocalSIPEndPoint}->{viaAddress}: {finalResponse.ShortDescription}");
                 m_sipTransport.SendSIPReliable(this);
             }
             else
             {
-                FireTransactionTraceMessage($"Send Final Response {LocalSIPEndPoint.ToString()}->{viaAddress}: {finalResponse.ShortDescription}");
+                FireTransactionTraceMessage($"Send Final Response {LocalSIPEndPoint}->{viaAddress}: {finalResponse.ShortDescription}");
                 m_sipTransport.SendResponse(finalResponse);
             }
         }
 
         public virtual void SendProvisionalResponse(SIPResponse sipResponse)
         {
-            FireTransactionTraceMessage($"Send Info Response {LocalSIPEndPoint.ToString()}->{this.RemoteEndPoint}: {sipResponse.ShortDescription}");
+            FireTransactionTraceMessage($"Send Info Response {LocalSIPEndPoint}->{this.RemoteEndPoint}: {sipResponse.ShortDescription}");
 
             if (sipResponse.StatusCode == 100)
             {
@@ -363,7 +392,7 @@ namespace SIPSorcery.SIP
 
         public void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
-            FireTransactionTraceMessage($"Send Request {LocalSIPEndPoint.ToString()}->{dstEndPoint}: {sipRequest.StatusLine}");
+            FireTransactionTraceMessage($"Send Request {LocalSIPEndPoint}->{dstEndPoint}: {sipRequest.StatusLine}");
 
             if (sipRequest.Method == SIPMethodsEnum.ACK)
             {
@@ -395,7 +424,7 @@ namespace SIPSorcery.SIP
 
         public void SendReliableRequest()
         {
-            FireTransactionTraceMessage($"Send Request reliable {LocalSIPEndPoint.ToString()}->{RemoteEndPoint}: {TransactionRequest.StatusLine}");
+            FireTransactionTraceMessage($"Send Request reliable {LocalSIPEndPoint}->{RemoteEndPoint}: {TransactionRequest.StatusLine}");
 
             if (TransactionType == SIPTransactionTypesEnum.InivteClient && this.TransactionRequest.Method == SIPMethodsEnum.INVITE)
             {
@@ -514,22 +543,22 @@ namespace SIPSorcery.SIP
             }
 
             //FireTransactionTraceMessage("Send Request retransmit " + Retransmits + " " + LocalSIPEndPoint.ToString() + "->" + this.RemoteEndPoint + m_crLF + this.TransactionRequest.ToString());
-            FireTransactionTraceMessage($"Send Request retransmit {Retransmits} {LocalSIPEndPoint.ToString()}->{this.RemoteEndPoint}: {this.TransactionRequest.StatusLine}");
+            FireTransactionTraceMessage($"Send Request retransmit {Retransmits} {LocalSIPEndPoint}->{this.RemoteEndPoint}: {this.TransactionRequest.StatusLine}");
         }
 
         public void OnRetransmitFinalResponse()
         {
-            FireTransactionTraceMessage($"Send Response retransmit {Retransmits} {LocalSIPEndPoint.ToString()}->{this.RemoteEndPoint}: {this.TransactionFinalResponse.ShortDescription}");
+            FireTransactionTraceMessage($"Send Response retransmit {Retransmits} {LocalSIPEndPoint}->{this.RemoteEndPoint}: {this.TransactionFinalResponse.ShortDescription}");
         }
 
         public void OnRetransmitProvisionalResponse()
         {
-            FireTransactionTraceMessage($"Send Provisional Response retransmit {Retransmits} {LocalSIPEndPoint.ToString()}->{this.RemoteEndPoint}: {this.ReliableProvisionalResponse.ShortDescription}");
+            FireTransactionTraceMessage($"Send Provisional Response retransmit {Retransmits} {LocalSIPEndPoint}->{this.RemoteEndPoint}: {this.ReliableProvisionalResponse.ShortDescription}");
         }
 
         public void OnTimedOutProvisionalResponse()
         {
-            FireTransactionTraceMessage($"Provisional Response delivery timed out {Retransmits} {LocalSIPEndPoint.ToString()}->{this.RemoteEndPoint}: {this.ReliableProvisionalResponse.ShortDescription}");
+            FireTransactionTraceMessage($"Provisional Response delivery timed out {Retransmits} {LocalSIPEndPoint}->{this.RemoteEndPoint}: {this.ReliableProvisionalResponse.ShortDescription}");
         }
 
         public void FireTransactionTimedOut()

@@ -54,8 +54,8 @@ namespace SIPSorcery.SIP
         /// The optional body or payload for the SIP request.
         /// </summary>
         public string Body;
-        
-        
+
+
         public SIPRoute ReceivedRoute;
 
         /// <summary>
@@ -106,17 +106,9 @@ namespace SIPSorcery.SIP
 
         public SIPRequest(SIPMethodsEnum method, string uri)
         {
-            try
-            {
-                Method = method;
-                URI = SIPURI.ParseSIPURI(uri);
-                SIPVersion = m_sipFullVersion;
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPRequest ctor. " + excp.Message);
-                throw;
-            }
+            Method = method;
+            URI = SIPURI.ParseSIPURI(uri);
+            SIPVersion = m_sipFullVersion;
         }
 
         public SIPRequest(SIPMethodsEnum method, SIPURI uri)

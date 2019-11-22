@@ -260,17 +260,28 @@ namespace SIPSorcery
 
             try
             {
-                sipTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
+                sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
                 {
-                    logger.LogDebug($"Response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
-                    logger.LogDebug(sipResponse.ToString());
+                    logger.LogDebug($"Request sent: {localEP}->{remoteEP}");
+                    logger.LogDebug(req.ToString());
+                };
 
-                    tcs.SetResult(true);
+                sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
+                {
+                    logger.LogDebug($"Response received: {localEP}<-{remoteEP}");
+                    logger.LogDebug(resp.ToString());
                 };
 
                 var optionsRequest = sipTransport.GetRequest(SIPMethodsEnum.OPTIONS, dst);
 
-                logger.LogDebug(optionsRequest.ToString());
+                sipTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
+                {
+                    if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.OPTIONS && sipResponse.Header.CallId == optionsRequest.Header.CallId)
+                    {
+                        logger.LogDebug($"Expected response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
+                        tcs.SetResult(true);
+                    }
+                };
 
                 SocketError sendResult = await sipTransport.SendRequestAsync(optionsRequest);
                 if (sendResult != SocketError.Success)

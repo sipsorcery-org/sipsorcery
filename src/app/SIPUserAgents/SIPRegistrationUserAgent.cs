@@ -5,16 +5,17 @@
 // A user agent that can register and maintain a binding with a SIP Registrar.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 03 Mar 2010	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, London, UK (www.sipsorcery.com).
+// 03 Mar 2010	Aaron Clauson	Created, Hobart, Australia.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using SIPSorcery.Sys;
@@ -92,6 +93,9 @@ namespace SIPSorcery.SIP.App
             m_registrarHost = server;
             m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
             m_callID = Guid.NewGuid().ToString();
+
+            // Setting the contact to "0.0.0.0" tells the transport layer to populate it at send time.
+            m_contactURI = new SIPURI(m_sipAccountAOR.Scheme, IPAddress.Any, 0);
 
             Log_External = (ev) => logger.LogDebug(ev?.Message);
         }
@@ -266,21 +270,8 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        if(m_localEndPoint == null)
-                        {
-                            // It was left up to us to find the best SIP channel to send the registration request on.
-                            var sipChannel = m_sipTransport.GetSIPChannelForDestination(SIPProtocolsEnum.udp, registrarSIPEndPoint.GetIPEndPoint());
-                            m_localEndPoint = sipChannel.GetLocalSIPEndPointForDestination(registrarSIPEndPoint.GetIPEndPoint().Address);
-                        }
-
-                        if (m_contactURI == null)
-                        {
-                            // It's been left up to us to generate the default contact URI.
-                            m_contactURI = new SIPURI(SIPSchemesEnum.sip, m_localEndPoint);
-                        }
-
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Initiating registration to " + m_registrarHost + " at " + registrarSIPEndPoint.ToString() + " for " + m_sipAccountAOR.ToString() + ".", m_owner));
-                        SIPRequest regRequest = GetRegistrationRequest(m_localEndPoint);
+                        SIPRequest regRequest = GetRegistrationRequest();
 
                         SIPNonInviteTransaction regTransaction = m_sipTransport.CreateNonInviteTransaction(regRequest, registrarSIPEndPoint, m_localEndPoint, m_outboundProxy);
                         // These handlers need to be on their own threads to take the processing off the SIP transport layer.
@@ -526,7 +517,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private SIPRequest GetRegistrationRequest(SIPEndPoint localSIPEndPoint)
+        private SIPRequest GetRegistrationRequest()
         {
             try
             {
@@ -541,7 +532,7 @@ namespace SIPSorcery.SIP.App
                     new SIPToHeader(null, m_sipAccountAOR, null),
                     new SIPFromHeader(null, m_sipAccountAOR, CallProperties.CreateNewTag()));
 
-                registerRequest.Header.Contact[0] = new SIPContactHeader(null, m_contactURI);
+                registerRequest.Header.Contact = new List<SIPContactHeader> { new SIPContactHeader(null, m_contactURI) };
                 registerRequest.Header.CSeq = ++m_cseq;
                 registerRequest.Header.CallId = m_callID;
                 registerRequest.Header.UserAgent = (!UserAgent.IsNullOrBlank()) ? UserAgent : m_userAgent;

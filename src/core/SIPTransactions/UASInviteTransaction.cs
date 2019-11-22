@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
@@ -26,10 +27,6 @@ namespace SIPSorcery.SIP
     public class UASInviteTransaction : SIPTransaction
     {
         private static string m_sipServerAgent = SIPConstants.SIP_SERVER_STRING;
-
-        // If set this host name (or IP address) that should be used in the Contact header of the Ok response so that ACK
-        // requests can be delivered correctly.
-        private string m_contactHost;
 
         /// <summary>
         /// The local tag is set on the To SIP header and forms part of the information used to identify a SIP dialog.
@@ -46,13 +43,11 @@ namespace SIPSorcery.SIP
             SIPEndPoint dstEndPoint,
             SIPEndPoint localSIPEndPoint,
             SIPEndPoint outboundProxy,
-            string contactHost,
             bool noCDR = false)
             : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.InviteServer;
             m_remoteTag = sipRequest.Header.From.FromTag;
-            m_contactHost = contactHost;
 
             if (sipRequest.Header.To.ToTag == null)
             {
@@ -200,23 +195,8 @@ namespace SIPSorcery.SIP
                 SIPResponse okResponse = new SIPResponse(SIPResponseStatusCodesEnum.Ok, null, sipRequest.LocalSIPEndPoint, sipRequest.RemoteSIPEndPoint);
 
                 SIPHeader requestHeader = sipRequest.Header;
-                SIPURI contactUri = null;
-
-                if (String.IsNullOrEmpty(m_contactHost) == false)
-                {
-                    if (m_contactHost.Contains(":"))
-                    {
-                        contactUri = new SIPURI(null, m_contactHost, null, sipRequest.URI.Scheme);
-                    }
-                    else
-                    {
-                        contactUri = new SIPURI(null, m_contactHost + ":" + localSIPEndPoint.Port, null, sipRequest.URI.Scheme);
-                    }
-                }
-                else
-                {
-                    contactUri = new SIPURI(sipRequest.URI.Scheme, localSIPEndPoint);
-                }
+                // Let the transport layer set the contact at send time.
+                SIPURI contactUri = new SIPURI(sipRequest.URI.Scheme, IPAddress.Any, 0);
 
                 okResponse.Header = new SIPHeader(new SIPContactHeader(null, contactUri), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
 

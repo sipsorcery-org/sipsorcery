@@ -248,7 +248,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dst">The destination IP address.</param>
         /// <returns>The local IP address this channel selects to use for connecting to the destination.</returns>
-        public IPAddress GetLocalIPAddressForDestination(IPAddress dst)
+        private IPAddress GetLocalIPAddressForDestination(IPAddress dst)
         {
             IPAddress localAddress = ListeningIPAddress;
 
@@ -266,14 +266,17 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dst">The destination IP address.</param>
         /// <returns>The local SIP end points this channel selects to use for connecting to the destination.</returns>
-        public SIPEndPoint GetLocalSIPEndPointForDestination(IPAddress dst)
+        internal SIPEndPoint GetLocalSIPEndPointForDestination(IPAddress dst)
         {
             IPAddress localAddress = GetLocalIPAddressForDestination(dst);
             return new SIPEndPoint(SIPProtocol, localAddress, Port, ID, null);
         }
 
         /// <summary>
-        /// The default URI to be used for contacting this SIP channel.
+        /// The contact SIP URI to be used for contacting this SIP channel WHEN sending to the destination IP address.
+        /// The contact URI can change based on the destination. For example if the SIP channel is listening on IPAddress.Any
+        /// a destination address of 127.0.0.1 will result in a contact of sip:127.0.0.1:X. Using the same channel to
+        /// send to a desintation address on the internet will result in a different URI.
         /// </summary>
         /// <param name="scheme">The SIP scheme to use for the Contact URI.</param>
         /// <param name="dst">The destination address the Contact URI is for. For a SIPChannel using

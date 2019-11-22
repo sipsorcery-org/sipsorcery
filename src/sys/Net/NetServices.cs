@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -37,10 +38,20 @@ namespace SIPSorcery.Sys
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
         private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 5;  // The maximum number of re-attempts that will be made when trying to bind the RTP port.
         private const string INTERNET_IPADDRESS = "1.1.1.1";    // IP address to use when getting default IP address from OS. No connection is established.
+        private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;   // The amount of time to leave the result of a local IP address determination in the cache.
 
         private static ILogger logger = Log.Logger;
 
         private static Mutex _allocatePortsMutex = new Mutex();
+
+        /// <summary>
+        /// A lookup collection to cache the local IP address for a destination address. The collection will cache results of
+        /// asking the Operating System which local address to use for a destination address. The cache saves a relatively 
+        /// expensive call to create a socket and ask the OS for a route lookup.
+        /// 
+        /// TODO:  Clear this cache if the state of the local network interfaces change.
+        /// </summary>
+        private static ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>> m_localAddressTable = new ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>>();
 
         public static UdpClient CreateRandomUDPListener(IPAddress localAddress, out IPEndPoint localEndPoint)
         {
@@ -185,9 +196,25 @@ namespace SIPSorcery.Sys
                 return null;
             }
 
-            UdpClient udpClient = new UdpClient(destination.AddressFamily);
-            udpClient.Connect(destination, 0);
-            return (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+            if (m_localAddressTable.TryGetValue(destination, out var cachedAddress))
+            {
+                if(DateTime.Now.Subtract(cachedAddress.Item2).TotalSeconds >= LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS)
+                {
+                    m_localAddressTable.TryRemove(destination, out _);
+                }
+
+                return cachedAddress.Item1;
+            }
+            else
+            {
+                UdpClient udpClient = new UdpClient(destination.AddressFamily);
+                udpClient.Connect(destination, 0);
+                var localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+
+                m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>( localAddress, DateTime.Now ));
+
+                return localAddress;
+            }
         }
 
         /// <summary>

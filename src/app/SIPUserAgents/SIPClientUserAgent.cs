@@ -284,9 +284,7 @@ namespace SIPSorcery.SIP.App
                             }
                         }
 
-                        var dstUri = SIPURI.ParseSIPURI(m_sipCallDescriptor.Uri);
-                        var contactUri = localChannel.GetContactURI(dstUri.Scheme, m_serverEndPoint.GetIPEndPoint().Address);
-                        SIPRequest switchServerInvite = GetInviteRequest(m_sipCallDescriptor, CallProperties.CreateBranchId(), CallProperties.CreateNewCallId(), m_localSIPEndPoint, contactUri, routeSet, content, sipCallDescriptor.ContentType);
+                        SIPRequest switchServerInvite = GetInviteRequest(m_sipCallDescriptor, CallProperties.CreateBranchId(), CallProperties.CreateNewCallId(), routeSet, content, sipCallDescriptor.ContentType);
 
                         // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
                         m_serverTransaction = m_sipTransport.CreateUACTransaction(switchServerInvite, m_serverEndPoint, m_localSIPEndPoint, m_outboundProxy);
@@ -811,16 +809,15 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private SIPRequest GetInviteRequest(SIPCallDescriptor sipCallDescriptor, string branchId, string callId, SIPEndPoint localSIPEndPoint, SIPURI contactUri, SIPRouteSet routeSet, string content, string contentType)
+        private SIPRequest GetInviteRequest(SIPCallDescriptor sipCallDescriptor, string branchId, string callId, SIPRouteSet routeSet, string content, string contentType)
         {
             SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, sipCallDescriptor.Uri);
-            inviteRequest.LocalSIPEndPoint = localSIPEndPoint;
 
             SIPHeader inviteHeader = new SIPHeader(sipCallDescriptor.GetFromHeader(), SIPToHeader.ParseToHeader(sipCallDescriptor.To), 1, callId);
 
             inviteHeader.From.FromTag = CallProperties.CreateNewTag();
 
-            inviteHeader.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, contactUri) };
+            inviteHeader.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, new SIPURI(inviteRequest.URI.Scheme, IPAddress.Any, 0)) };
             inviteHeader.Contact[0].ContactURI.User = sipCallDescriptor.Username;
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
             inviteHeader.UserAgent = m_userAgent;
@@ -834,7 +831,7 @@ namespace SIPSorcery.SIP.App
                 inviteHeader.ProxySendFrom = sipCallDescriptor.ProxySendFrom;
             }
 
-            SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, branchId);
+            SIPViaHeader viaHeader = new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), branchId);
             inviteRequest.Header.Vias.PushViaHeader(viaHeader);
 
             inviteRequest.Body = content;

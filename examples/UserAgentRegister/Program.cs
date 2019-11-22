@@ -36,15 +36,7 @@ namespace SIPSorcery.Register
             Console.WriteLine("SIPSorcery registration user agent example.");
             Console.WriteLine("Press ctrl-c to exit.");
 
-            // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console()
-                .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            AddConsoleLogger();
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
@@ -99,6 +91,21 @@ namespace SIPSorcery.Register
                 sipTransport.Shutdown();
             }
             SIPSorcery.Net.DNSManager.Stop();
+        }
+
+        /// <summary>
+        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        /// </summary>
+        private static void AddConsoleLogger()
+        {
+            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
+            var loggerConfig = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console()
+                .CreateLogger();
+            loggerFactory.AddSerilog(loggerConfig);
+            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
         }
 
         /// <summary>
