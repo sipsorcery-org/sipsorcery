@@ -6,10 +6,10 @@
 // then the example will fallback to on way audio.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson  (aaron@sipsorcery.com)
 // 
 // History:
-// 26 Oct 2019	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland (www.sipsorcery.com).
+// 26 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -34,10 +34,9 @@ namespace SIPSorcery
 {
     class Program
     {
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@sipsorcery.com";  // Talking Clock.
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:echo@sipsorcery.com"; // Echo Test.
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@sipsorcery.com";  // Talking Clock.
+        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:echo@sipsorcery.com"; // Echo Test.
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
-        private static readonly int SIP_REQUEST_TIMEOUT_MILLISECONDS = 5000;                   // Timeout period for SIP requests sent by us.
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -53,15 +52,7 @@ namespace SIPSorcery
             bool isCallHungup = false;
             bool hasCallFailed = false;
 
-            // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console()
-                .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            AddConsoleLogger();
 
             SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
             if (args != null && args.Length > 0)
@@ -80,141 +71,126 @@ namespace SIPSorcery
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            int port = SIPConstants.DEFAULT_SIP_PORT + 1000;
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)));
 
             EnableTraceLogs(sipTransport);
 
             var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
             Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
 
-            // Send an OPTIONS request to determine the local IP address to use for the RTP socket.
-            var optionsTask = SendOptionsTaskAsync(sipTransport, callUri);
-            var result = Task.WhenAny(optionsTask, Task.Delay(SIP_REQUEST_TIMEOUT_MILLISECONDS));
-            result.Wait();
+            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(lookupResult.GetSIPEndPoint().Address);
 
-            if (optionsTask.IsCompletedSuccessfully == false || optionsTask.Result == null)
+            // Initialise an RTP session to receive the RTP packets from the remote SIP server.
+            Socket rtpSocket = null;
+            Socket controlSocket = null;
+            NetServices.CreateRtpSocket(localIPAddress, 48000, 48100, false, out rtpSocket, out controlSocket);
+            var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+            var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+
+            // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
+            var uac = new SIPClientUserAgent(sipTransport);
+
+            uac.CallTrying += (uac, resp) =>
             {
-                Log.LogError($"OPTIONS request to {callUri} failed.");
-            }
-            else
+                Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
+            };
+            uac.CallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
+            uac.CallFailed += (uac, err) =>
             {
-                IPAddress localIPAddress = optionsTask.Result;
-                // Select the IP address to use for RTP based on the destination SIP URI.
-                var endPointForCall = callUri.ToSIPEndPoint() == null ? sipTransport.GetDefaultSIPEndPoint(callUri.Protocol) : sipTransport.GetDefaultSIPEndPoint(callUri.ToSIPEndPoint());
-
-                // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-                Socket rtpSocket = null;
-                Socket controlSocket = null;
-                NetServices.CreateRtpSocket(localIPAddress, 48000, 48100, false, out rtpSocket, out controlSocket);
-                var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
-                var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
-
-                // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
-                var uac = new SIPClientUserAgent(sipTransport);
-
-                uac.CallTrying += (uac, resp) =>
+                Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
+                hasCallFailed = true;
+            };
+            uac.CallAnswered += (uac, resp) =>
+            {
+                if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
-                    Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
-                };
-                uac.CallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
-                uac.CallFailed += (uac, err) =>
-                {
-                    Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
-                    hasCallFailed = true;
-                };
-                uac.CallAnswered += (uac, resp) =>
-                {
-                    if (resp.Status == SIPResponseStatusCodesEnum.Ok)
+                    Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
+
+                    // Only set the remote RTP end point if there hasn't already been a packet received on it.
+                    if (_remoteRtpEndPoint == null)
                     {
-                        Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-
-                        // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                        if (_remoteRtpEndPoint == null)
-                        {
-                            _remoteRtpEndPoint = SDP.GetSDPRTPEndPoint(resp.Body);
-                            Log.LogDebug($"Remote RTP socket {_remoteRtpEndPoint}.");
-                        }
+                        _remoteRtpEndPoint = SDP.GetSDPRTPEndPoint(resp.Body);
+                        Log.LogDebug($"Remote RTP socket {_remoteRtpEndPoint}.");
                     }
-                    else
-                    {
-                        Log.LogWarning($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                    }
-                };
-
-                // The only incoming request that needs to be explicitly handled for this example is if the remote end hangs up the call.
-                sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+                }
+                else
                 {
-                    if (sipRequest.Method == SIPMethodsEnum.BYE)
-                    {
-                        SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
-                        SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        byeTransaction.SendFinalResponse(byeResponse);
+                    Log.LogWarning($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
+                }
+            };
 
-                        if (uac.IsUACAnswered)
-                        {
-                            Log.LogInformation("Call was hungup by remote server.");
-                            isCallHungup = true;
-                            rtpCts.Cancel();
-                        }
-                    }
-                };
-
-                // It's a good idea to start the RTP receiving socket before the call request is sent.
-                // A SIP server will generally start sending RTP as soon as it has processed the incoming call request and
-                // being ready to receive will stop any ICMP error response being generated.
-                Task.Run(() => RecvRtp(rtpSocket, rtpRecvSession, rtpCts));
-                Task.Run(() => SendRtp(rtpSocket, rtpSendSession, rtpCts));
-
-                // Start the thread that places the call.
-                SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
-                    SIPConstants.SIP_DEFAULT_USERNAME,
-                    null,
-                    callUri.ToString(),
-                    SIPConstants.SIP_DEFAULT_FROMURI,
-                    null, null, null, null,
-                    SIPCallDirection.Out,
-                    SDP.SDP_MIME_CONTENTTYPE,
-                    GetSDP(rtpSocket.LocalEndPoint as IPEndPoint).ToString(),
-                    null);
-
-                uac.Call(callDescriptor);
-
-                // Ctrl-c will gracefully exit the call at any point.
-                Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+            // The only incoming request that needs to be explicitly handled for this example is if the remote end hangs up the call.
+            sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+            {
+                if (sipRequest.Method == SIPMethodsEnum.BYE)
                 {
-                    e.Cancel = true;
-                    rtpCts.Cancel();
-                };
+                    SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                    SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    byeTransaction.SendFinalResponse(byeResponse);
 
-                // At this point the call has been initiated and everything will be handled in an event handler or on the RTP
-                // receive task. The code below is to gracefully exit.
-
-                // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
-                rtpCts.Token.WaitHandle.WaitOne();
-
-                Log.LogInformation("Exiting...");
-
-                rtpSocket?.Close();
-                controlSocket?.Close();
-
-                if (!isCallHungup && uac != null)
-                {
                     if (uac.IsUACAnswered)
                     {
-                        Log.LogInformation($"Hanging up call to {uac.CallDescriptor.To}.");
-                        uac.Hangup();
+                        Log.LogInformation("Call was hungup by remote server.");
+                        isCallHungup = true;
+                        rtpCts.Cancel();
                     }
-                    else if (!hasCallFailed)
-                    {
-                        Log.LogInformation($"Cancelling call to {uac.CallDescriptor.To}.");
-                        uac.Cancel();
-                    }
-
-                    // Give the BYE or CANCEL request time to be transmitted.
-                    Log.LogInformation("Waiting 1s for call to clean up...");
-                    Task.Delay(1000).Wait();
                 }
+            };
+
+            // It's a good idea to start the RTP receiving socket before the call request is sent.
+            // A SIP server will generally start sending RTP as soon as it has processed the incoming call request and
+            // being ready to receive will stop any ICMP error response being generated.
+            Task.Run(() => RecvRtp(rtpSocket, rtpRecvSession, rtpCts));
+            Task.Run(() => SendRtp(rtpSocket, rtpSendSession, rtpCts));
+
+            // Start the thread that places the call.
+            SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
+                SIPConstants.SIP_DEFAULT_USERNAME,
+                null,
+                callUri.ToString(),
+                SIPConstants.SIP_DEFAULT_FROMURI,
+                null, null, null, null,
+                SIPCallDirection.Out,
+                SDP.SDP_MIME_CONTENTTYPE,
+                GetSDP(rtpSocket.LocalEndPoint as IPEndPoint).ToString(),
+                null);
+
+            uac.Call(callDescriptor);
+
+            // Ctrl-c will gracefully exit the call at any point.
+            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+            {
+                e.Cancel = true;
+                rtpCts.Cancel();
+            };
+
+            // At this point the call has been initiated and everything will be handled in an event handler or on the RTP
+            // receive task. The code below is to gracefully exit.
+
+            // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
+            rtpCts.Token.WaitHandle.WaitOne();
+
+            Log.LogInformation("Exiting...");
+
+            rtpSocket?.Close();
+            controlSocket?.Close();
+
+            if (!isCallHungup && uac != null)
+            {
+                if (uac.IsUACAnswered)
+                {
+                    Log.LogInformation($"Hanging up call to {uac.CallDescriptor.To}.");
+                    uac.Hangup();
+                }
+                else if (!hasCallFailed)
+                {
+                    Log.LogInformation($"Cancelling call to {uac.CallDescriptor.To}.");
+                    uac.Cancel();
+                }
+
+                // Give the BYE or CANCEL request time to be transmitted.
+                Log.LogInformation("Waiting 1s for call to clean up...");
+                Task.Delay(1000).Wait();
             }
 
             SIPSorcery.Net.DNSManager.Stop();
@@ -224,47 +200,6 @@ namespace SIPSorcery
                 Log.LogInformation("Shutting down SIP transport...");
                 sipTransport.Shutdown();
             }
-        }
-
-        /// <summary>
-        /// An asynchronous task that attempts to send a single OPTIONS request.
-        /// </summary>
-        /// <param name="sipTransport">The transport object to use for the send.</param>
-        /// <param name="dst">The destination end point to send the request to.</param>
-        /// <returns>The received IP address in the response Via header. This indicates the local IP address that was used to
-        /// reach the destination.</returns>
-        private static async Task<IPAddress> SendOptionsTaskAsync(SIPTransport sipTransport, SIPURI dst)
-        {
-            TaskCompletionSource<IPAddress> tcs = new TaskCompletionSource<IPAddress>();
-
-            try
-            {
-                sipTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
-                {
-                    Log.LogDebug($"Response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
-                    //Log.LogDebug(sipResponse.ToString());
-
-                    tcs.SetResult(IPAddress.Parse(sipResponse.Header.Vias.TopViaHeader.ReceivedFromIPAddress));
-                };
-
-                var optionsRequest = sipTransport.GetRequest(SIPMethodsEnum.OPTIONS, dst);
-
-                //Log.LogDebug(optionsRequest.ToString());
-
-                SocketError sendResult = await sipTransport.SendRequestAsync(optionsRequest);
-                if (sendResult != SocketError.Success)
-                {
-                    Log.LogWarning($"Attempt to send request failed with {sendResult}.");
-                    tcs.SetResult(null);
-                }
-            }
-            catch (Exception excp)
-            {
-                Log.LogError($"Exception SendOptionsTask. {excp.Message}");
-                tcs.SetResult(null);
-            }
-
-            return await tcs.Task;
         }
 
         /// <summary>
@@ -330,69 +265,85 @@ namespace SIPSorcery
                     }
                 }
             }
+            catch(SocketException sockExcp)
+            {
+                Log.LogWarning($"RecvRTP socket error {sockExcp.SocketErrorCode}");
+            }
             catch (ObjectDisposedException) { } // This is how .Net deals with an in use socket being closed. Safe to ignore.
             catch (Exception excp)
             {
-                Log.LogError($"Exception processing RTP. {excp}");
+                Log.LogError($"Exception RecvRTP. {excp.Message}");
             }
         }
 
         private static void SendRtp(Socket rtpSocket, RTPSession rtpSendSession, CancellationTokenSource cts)
         {
-            WaveFormat waveFormat = new WaveFormat(8000, 16, 1);   // The format that both the input and output audio streams will use, i.e. PCMU.
-
-            // Set up the input device that will provide audio samples that can be encoded, packaged into RTP and sent to
-            // the remote end of the call.
-            if (WaveInEvent.DeviceCount == 0)
+            try
             {
-                Log.LogWarning("No audio input devices available. No audio will be sent.");
-            }
-            else
-            {
-                DateTime lastSendReportAt = DateTime.Now;
-                uint rtpSendTimestamp = 0;
-                uint packetSentCount = 0;
-                uint bytesSentCount = 0;
+                WaveFormat waveFormat = new WaveFormat(8000, 16, 1);   // The format that both the input and output audio streams will use, i.e. PCMU.
 
-                // Device used to get audio sample from, e.g. microphone.
-                using (WaveInEvent waveInEvent = new WaveInEvent())
+                // Set up the input device that will provide audio samples that can be encoded, packaged into RTP and sent to
+                // the remote end of the call.
+                if (WaveInEvent.DeviceCount == 0)
                 {
-                    waveInEvent.BufferMilliseconds = 20;    // This sets the frequency of the RTP packets.
-                    waveInEvent.NumberOfBuffers = 1;
-                    waveInEvent.DeviceNumber = 0;
-                    waveInEvent.WaveFormat = waveFormat;
-                    waveInEvent.DataAvailable += (object sender, WaveInEventArgs args) =>
+                    Log.LogWarning("No audio input devices available. No audio will be sent.");
+                }
+                else
+                {
+                    DateTime lastSendReportAt = DateTime.Now;
+                    uint rtpSendTimestamp = 0;
+                    uint packetSentCount = 0;
+                    uint bytesSentCount = 0;
+
+                    // Device used to get audio sample from, e.g. microphone.
+                    using (WaveInEvent waveInEvent = new WaveInEvent())
                     {
-                        byte[] sample = new byte[args.Buffer.Length / 2];
-                        int sampleIndex = 0;
-
-                        for (int index = 0; index < args.BytesRecorded; index += 2)
+                        waveInEvent.BufferMilliseconds = 20;    // This sets the frequency of the RTP packets.
+                        waveInEvent.NumberOfBuffers = 1;
+                        waveInEvent.DeviceNumber = 0;
+                        waveInEvent.WaveFormat = waveFormat;
+                        waveInEvent.DataAvailable += (object sender, WaveInEventArgs args) =>
                         {
-                            var ulawByte = NAudio.Codecs.MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(args.Buffer, index));
-                            sample[sampleIndex++] = ulawByte;
-                        }
+                            byte[] sample = new byte[args.Buffer.Length / 2];
+                            int sampleIndex = 0;
 
-                        if (_remoteRtpEndPoint != null)
-                        {
-                            rtpSendSession.SendAudioFrame(rtpSocket, _remoteRtpEndPoint, rtpSendTimestamp, sample);
-                            rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
-                            packetSentCount++;
-                            bytesSentCount += (uint)sample.Length;
-                        }
+                            for (int index = 0; index < args.BytesRecorded; index += 2)
+                            {
+                                var ulawByte = NAudio.Codecs.MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(args.Buffer, index));
+                                sample[sampleIndex++] = ulawByte;
+                            }
 
-                        if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
-                        {
+                            if (_remoteRtpEndPoint != null)
+                            {
+                                rtpSendSession.SendAudioFrame(rtpSocket, _remoteRtpEndPoint, rtpSendTimestamp, sample);
+                                rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
+                                packetSentCount++;
+                                bytesSentCount += (uint)sample.Length;
+                            }
+
+                            if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
+                            {
                             // This is typically where RTCP sender (SR) reports would be sent. Omitted here for brevity.
                             lastSendReportAt = DateTime.Now;
-                            var remoteRtpEndPoint = _remoteRtpEndPoint as IPEndPoint;
-                            Log.LogDebug($"RTP send report {rtpSocket.LocalEndPoint}->{remoteRtpEndPoint} pkts {packetSentCount} bytes {bytesSentCount}");
-                        }
-                    };
+                                var remoteRtpEndPoint = _remoteRtpEndPoint as IPEndPoint;
+                                Log.LogDebug($"RTP send report {rtpSocket.LocalEndPoint}->{remoteRtpEndPoint} pkts {packetSentCount} bytes {bytesSentCount}");
+                            }
+                        };
 
-                    waveInEvent.StartRecording();
+                        waveInEvent.StartRecording();
 
-                    cts.Token.WaitHandle.WaitOne();
+                        cts.Token.WaitHandle.WaitOne();
+                    }
                 }
+            }
+            catch (SocketException sockExcp)
+            {
+                Log.LogWarning($"SendRTP socket error {sockExcp.SocketErrorCode}");
+            }
+            catch (ObjectDisposedException) { } // This is how .Net deals with an in use socket being closed. Safe to ignore.
+            catch (Exception excp)
+            {
+                Log.LogError($"Exception SendRTP. {excp.Message}");
             }
         }
 
@@ -417,6 +368,21 @@ namespace SIPSorcery
             sdp.Media.Add(audioAnnouncement);
 
             return sdp;
+        }
+
+        /// <summary>
+        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        /// </summary>
+        private static void AddConsoleLogger()
+        {
+            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
+            var loggerConfig = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console()
+                .CreateLogger();
+            loggerFactory.AddSerilog(loggerConfig);
+            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
         }
 
         /// <summary>

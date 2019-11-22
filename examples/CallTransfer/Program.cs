@@ -13,6 +13,25 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// Note on call flow and destinations being used in this sample.
+//
+// The steps involved in the call flow are:
+// 1. Attempt a normal call to an external SIP agent (destination set in DEFAULT_DESTINATION_SIP_URI).
+// 2. If the call is answered wait 10 seconds (time set by DELAY_UNTIL_TRANSFER_MILLISECONDS).
+// 3. Send a REFER request that asks the remote SIP agent from step 1 to call a new destination
+//    (set by TRANSFER_DESTINATION_SIP_URI) and if successful use it to replace the current call.
+//
+// The scenario used in development used an Asterisk/FreePBX server on 192.168.11.48.
+// The first destination of sip:100@192.168.11.48 was to a softphone that was registered 
+// with the Asterisk server.
+// The transfer destination of sip:*60@192.168.11.48 was to a talking clock extension on 
+// the same Asterisk server.
+//
+// The outcome of the transfer is that the softphone receives a call, answers it and then after
+// a 10s delay gets the transfer request and starts listening to the talking clock.
+//-----------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,16 +51,15 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:100@192.168.11.48";   // SIP URI to transfer the call to.
-        private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.48";  // Talking Clock English.
-        private static readonly int SIP_REQUEST_TIMEOUT_MILLISECONDS = 5000;                   //  Timeout period for SIP requests sent by us. 
-        private static readonly int DELAY_UNTIL_TRANSFER_MILLISECONDS = 10000;                // Delay after the initial call is answered before initiating the transfer.
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:100@192.168.11.48";   // Desintation for inital call, needs to successfully answer.
+        private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.48";  // The destination to transfer the intial call to.
+        private static readonly int DELAY_UNTIL_TRANSFER_MILLISECONDS = 10000;                 // Delay after the initial call is answered before initiating the transfer.
 
         /// <summary>
         /// PCMU encoding for silence, http://what-when-how.com/voip/g-711-compression-voip/
         /// </summary>
         private static readonly byte PCMU_SILENCE_BYTE_ZERO = 0x7F;
-        private static readonly byte PCMU_SILENCE_BYTE_ONE  = 0xFF;
+        private static readonly byte PCMU_SILENCE_BYTE_ONE = 0xFF;
         private static readonly int SILENCE_SAMPLE_PERIOD = 20; // In milliseconds (PCM is 64kbit/s).
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
@@ -65,29 +83,24 @@ namespace SIPSorcery
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            int port = SIPConstants.DEFAULT_SIP_PORT + 1000;
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, port)));
+            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)));
 
-            // Uncomment this line to see each SIP message sent and received.
-            EnableTraceLogs(sipTransport);
+            // Un/comment this line to see/hide each SIP message sent and received.
+            //EnableTraceLogs(sipTransport);
 
-            // Send an OPTIONS request to determine the local IP address to use for the RTP socket.
-            var optionsTask = SendOptionsTaskAsync(sipTransport, callUri);
-            var result = Task.WhenAny(optionsTask, Task.Delay(SIP_REQUEST_TIMEOUT_MILLISECONDS));
-            result.Wait();
-
-            if (optionsTask.IsCompletedSuccessfully == false || optionsTask.Result == null)
+            // Determine the local IP address to use for our RTP end point based on the address it will be sending to.
+            var lookupResult = sipTransport.GetURIEndPoint(callUri, false);
+            if (lookupResult != null)
             {
-                Log.LogError($"OPTIONS request to {callUri} failed.");
-            }
-            else
-            {
-                IPAddress localIPAddress = optionsTask.Result;
+                var uasSIPEndPoint = lookupResult.GetSIPEndPoint();
+                IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(uasSIPEndPoint.GetIPEndPoint().Address);
+
+                Log.LogInformation($"Call URI {callUri} resolved to {uasSIPEndPoint}.");
 
                 // Initialise an RTP session to receive the RTP packets from the remote SIP server.
                 Socket rtpSocket = null;
                 Socket controlSocket = null;
-                NetServices.CreateRtpSocket(localIPAddress, 49000, 49100, false, out rtpSocket, out controlSocket);
+                NetServices.CreateRtpSocket(rtpAddress, 49000, 49100, false, out rtpSocket, out controlSocket);
                 var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
                 var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 
@@ -104,6 +117,7 @@ namespace SIPSorcery
                 {
                     Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                     hasCallFailed = true;
+                    rtpCts.Cancel();
                 };
                 uac.CallAnswered += (uac, resp) =>
                 {
@@ -118,6 +132,13 @@ namespace SIPSorcery
                     else
                     {
                         Log.LogWarning($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
+
+                        if(resp.StatusCode >= 400)
+                        {
+                            // Call failed.
+                            hasCallFailed = true;
+                            rtpCts.Cancel();
+                        }
                     }
                 };
 
@@ -167,22 +188,27 @@ namespace SIPSorcery
                 };
 
                 // At this point the call is established. We'll wait for a few seconds and then transfer.
-                Task.Delay(DELAY_UNTIL_TRANSFER_MILLISECONDS).Wait();
+                // Note the empty ContinueWith is to catch and ignore the TaskCancelationExeption generated if
+                // rtpCts is set by the call failing.
+                Task.Delay(DELAY_UNTIL_TRANSFER_MILLISECONDS, rtpCts.Token).ContinueWith(tsk => { }).Wait();
 
-                SIPRequest referRequest = GetReferRequest(uac, SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI));
-                SIPNonInviteTransaction referTx = sipTransport.CreateNonInviteTransaction(referRequest, referRequest.RemoteSIPEndPoint, referRequest.LocalSIPEndPoint, null);
-
-                referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =>
+                if (!hasCallFailed)
                 {
-                    if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
-                    {
-                        Log.LogInformation("Call transfer was accepted by remote server.");
-                        isCallHungup = true;
-                        rtpCts.Cancel();
-                    }
-                };
+                    SIPRequest referRequest = GetReferRequest(uac, SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI));
+                    SIPNonInviteTransaction referTx = sipTransport.CreateNonInviteTransaction(referRequest, referRequest.RemoteSIPEndPoint, referRequest.LocalSIPEndPoint, null);
 
-                referTx.SendReliableRequest();
+                    referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =>
+                    {
+                        if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
+                        {
+                            Log.LogInformation("Call transfer was accepted by remote server.");
+                            isCallHungup = true;
+                            rtpCts.Cancel();
+                        }
+                    };
+
+                    referTx.SendReliableRequest();
+                }
 
                 // At this point the call transfer has been initiated and everything will be handled in an event handler or on the RTP
                 // receive task. The code below is to gracefully exit.
@@ -236,47 +262,6 @@ namespace SIPSorcery
                 .CreateLogger();
             loggerFactory.AddSerilog(loggerConfig);
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
-        }
-
-        /// <summary>
-        /// An asynchronous task that attempts to send a single OPTIONS request.
-        /// </summary>
-        /// <param name="sipTransport">The transport object to use for the send.</param>
-        /// <param name="dst">The destination end point to send the request to.</param>
-        /// <returns>The received IP address in the response Via header. This indicates the local IP address that was used to
-        /// reach the destination.</returns>
-        private static async Task<IPAddress> SendOptionsTaskAsync(SIPTransport sipTransport, SIPURI dst)
-        {
-            TaskCompletionSource<IPAddress> tcs = new TaskCompletionSource<IPAddress>();
-
-            try
-            {
-                sipTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
-                {
-                    Log.LogDebug($"Response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
-                    //Log.LogDebug(sipResponse.ToString());
-
-                    tcs.SetResult(IPAddress.Parse(sipResponse.Header.Vias.TopViaHeader.ReceivedFromIPAddress));
-                };
-
-                var optionsRequest = sipTransport.GetRequest(SIPMethodsEnum.OPTIONS, dst);
-
-                //Log.LogDebug(optionsRequest.ToString());
-
-                SocketError sendResult = await sipTransport.SendRequestAsync(optionsRequest);
-                if (sendResult != SocketError.Success)
-                {
-                    Log.LogWarning($"Attempt to send request failed with {sendResult}.");
-                    tcs.SetResult(null);
-                }
-            }
-            catch (Exception excp)
-            {
-                Log.LogError($"Exception SendOptionsTask. {excp.Message}");
-                tcs.SetResult(null);
-            }
-
-            return await tcs.Task;
         }
 
         /// <summary>

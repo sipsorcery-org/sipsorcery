@@ -65,6 +65,19 @@ namespace SIPSorcery.SIP.App
         public event Action<SIPURI> RegistrationSuccessful;
         public event Action<SIPURI> RegistrationRemoved;
 
+        /// <summary>
+        /// Creates a new SIP registation agent that will attempt to register with a SIP Registrar server.
+        /// If the registration fails the agent will retry up to a hard coded maximum number of 3 attempts.
+        /// If successful the agent will periodically refresh the registration based on the Expiry time 
+        /// returned by the server.
+        /// </summary>
+        /// <param name="sipTransport">The SIP transport layer to use to send the register request.</param>
+        /// <param name="username">The username to use if the server requests authorisation.</param>
+        /// <param name="password">The password to use if the server requests authorisation.</param>
+        /// <param name="server">The hostname or socket address for the registrat server. Can be in a format of
+        /// hostname:port or ipaddress:port, e.g. sipsorcery.com or 67.222.131.147:5060.</param>
+        /// <param name="expiry">The expiry value to request for the contact. This value can be rejected or overridden
+        /// by the server.</param>
         public SIPRegistrationUserAgent(
             SIPTransport sipTransport,
             string username,
@@ -73,12 +86,10 @@ namespace SIPSorcery.SIP.App
             int expiry)
         {
             m_sipTransport = sipTransport;
-            m_localEndPoint = sipTransport.GetSIPChannelForDestination(SIPProtocolsEnum.udp, new System.Net.IPEndPoint(IPAddress.Any, 0)).ListeningSIPEndPoint;
             m_sipAccountAOR = new SIPURI(username, server, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
             m_authUsername = username;
             m_password = password;
             m_registrarHost = server;
-            m_contactURI = new SIPURI(SIPSchemesEnum.sip, m_localEndPoint);
             m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
             m_callID = Guid.NewGuid().ToString();
 
@@ -255,6 +266,19 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
+                        if(m_localEndPoint == null)
+                        {
+                            // It was left up to us to find the best SIP channel to send the registration request on.
+                            var sipChannel = m_sipTransport.GetSIPChannelForDestination(SIPProtocolsEnum.udp, registrarSIPEndPoint.GetIPEndPoint());
+                            m_localEndPoint = sipChannel.GetLocalSIPEndPointForDestination(registrarSIPEndPoint.GetIPEndPoint().Address);
+                        }
+
+                        if (m_contactURI == null)
+                        {
+                            // It's been left up to us to generate the default contact URI.
+                            m_contactURI = new SIPURI(SIPSchemesEnum.sip, m_localEndPoint);
+                        }
+
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Initiating registration to " + m_registrarHost + " at " + registrarSIPEndPoint.ToString() + " for " + m_sipAccountAOR.ToString() + ".", m_owner));
                         SIPRequest regRequest = GetRegistrationRequest(m_localEndPoint);
 

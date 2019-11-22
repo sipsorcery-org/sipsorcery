@@ -224,7 +224,8 @@ namespace SIPSorcery.SIP.App
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Switching to " + SIPURI.ParseSIPURI(m_sipCallDescriptor.Uri).CanonicalAddress + " via " + m_serverEndPoint + ".", Owner));
 
-                        m_localSIPEndPoint = m_sipTransport.GetSIPChannelForDestination(m_serverEndPoint.Protocol, m_serverEndPoint.GetIPEndPoint()).ListeningSIPEndPoint;
+                        SIPChannel localChannel = m_sipTransport.GetSIPChannelForDestination(m_serverEndPoint.Protocol, m_serverEndPoint.GetIPEndPoint());
+                        m_localSIPEndPoint = localChannel.ListeningSIPEndPoint;
 
                         string content = sipCallDescriptor.Content;
 
@@ -283,7 +284,9 @@ namespace SIPSorcery.SIP.App
                             }
                         }
 
-                        SIPRequest switchServerInvite = GetInviteRequest(m_sipCallDescriptor, CallProperties.CreateBranchId(), CallProperties.CreateNewCallId(), m_localSIPEndPoint, routeSet, content, sipCallDescriptor.ContentType);
+                        var dstUri = SIPURI.ParseSIPURI(m_sipCallDescriptor.Uri);
+                        var contactUri = localChannel.GetContactURI(dstUri.Scheme, m_serverEndPoint.GetIPEndPoint().Address);
+                        SIPRequest switchServerInvite = GetInviteRequest(m_sipCallDescriptor, CallProperties.CreateBranchId(), CallProperties.CreateNewCallId(), m_localSIPEndPoint, contactUri, routeSet, content, sipCallDescriptor.ContentType);
 
                         // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
                         m_serverTransaction = m_sipTransport.CreateUACTransaction(switchServerInvite, m_serverEndPoint, m_localSIPEndPoint, m_outboundProxy);
@@ -808,7 +811,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private SIPRequest GetInviteRequest(SIPCallDescriptor sipCallDescriptor, string branchId, string callId, SIPEndPoint localSIPEndPoint, SIPRouteSet routeSet, string content, string contentType)
+        private SIPRequest GetInviteRequest(SIPCallDescriptor sipCallDescriptor, string branchId, string callId, SIPEndPoint localSIPEndPoint, SIPURI contactUri, SIPRouteSet routeSet, string content, string contentType)
         {
             SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, sipCallDescriptor.Uri);
             inviteRequest.LocalSIPEndPoint = localSIPEndPoint;
@@ -816,18 +819,6 @@ namespace SIPSorcery.SIP.App
             SIPHeader inviteHeader = new SIPHeader(sipCallDescriptor.GetFromHeader(), SIPToHeader.ParseToHeader(sipCallDescriptor.To), 1, callId);
 
             inviteHeader.From.FromTag = CallProperties.CreateNewTag();
-
-            // For incoming calls forwarded via the dial plan the username needs to go into the Contact header.
-            SIPURI contactUri = null;  
-            if (IPAddress.Equals(IPAddress.Any, localSIPEndPoint.Address) || IPAddress.Equals(IPAddress.IPv6Any, localSIPEndPoint.Address))
-            {
-                // No point using a contact address of 0.0.0.0.
-                contactUri = new SIPURI(null, Dns.GetHostName() + ":" + localSIPEndPoint.Port, null, inviteRequest.URI.Scheme);
-            }
-            else
-            {
-                contactUri = new SIPURI(inviteRequest.URI.Scheme, localSIPEndPoint);
-            }
 
             inviteHeader.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, contactUri) };
             inviteHeader.Contact[0].ContactURI.User = sipCallDescriptor.Username;
