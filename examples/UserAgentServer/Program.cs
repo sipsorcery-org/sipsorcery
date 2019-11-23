@@ -163,7 +163,7 @@ namespace SIPSorcery
                             if (uas?.IsHungup == false) uas?.Hangup(false);
                             rtpCts?.Cancel();
 
-                            UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                            UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, null);
                             uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
                             rtpCts = new CancellationTokenSource();
 
@@ -186,7 +186,7 @@ namespace SIPSorcery
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)
                     {
                         SIPSorcery.Sys.Log.Logger.LogInformation("Call hungup.");
-                        SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                        SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, null);
                         SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         byeTransaction.SendFinalResponse(byeResponse);
                         uas?.Hangup(true);

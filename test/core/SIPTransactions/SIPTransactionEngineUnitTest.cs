@@ -10,10 +10,13 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Threading;
-using Xunit;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace SIPSorcery.SIP.UnitTests
 {
@@ -28,9 +31,14 @@ namespace SIPSorcery.SIP.UnitTests
                 return new SIPDNSLookupResult(sipURI, new SIPEndPoint(IPSocket.ParseSocketString(sipURI.Host)));
             }
         }
-
+        
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
         protected static readonly string m_CRLF = SIPConstants.CRLF;
 
+        public SIPTransactionEngineUnitTest(ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
 
         [Fact]
         public void DuplicateTransactionUnitTest()
@@ -41,7 +49,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRequest inviteRequest = GetDummyINVITERequest(dummyURI);
 
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
-            UACInviteTransaction clientTransaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, null);
+            UACInviteTransaction clientTransaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, null);
             clientEngine.AddTransaction(clientTransaction);
             
             Assert.Throws<ApplicationException>(() => clientEngine.AddTransaction(clientTransaction));
@@ -70,7 +78,7 @@ namespace SIPSorcery.SIP.UnitTests
                 m_CRLF +
                 "dummy");
 
-            SIPTransaction transaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, null);
+            SIPTransaction transaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, null);
             transactionEngine.AddTransaction(transaction);
 
             SIPResponse sipResponse = SIPResponse.ParseSIPResponse("SIP/2.0 603 Nothing listening" + m_CRLF +
@@ -98,31 +106,29 @@ namespace SIPSorcery.SIP.UnitTests
             try
             {
                 SIPTransactionEngine clientEngine = new SIPTransactionEngine();     // Client side of the INVITE.
-                SIPEndPoint clientEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 12013));
-                clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(clientEndPoint.GetIPEndPoint()), false);
+                clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)), false);
                 SetTransportTraceEvents(clientTransport);
 
                 SIPTransactionEngine serverEngine = new SIPTransactionEngine();     // Server side of the INVITE.
                 UASInviteTransaction serverTransaction = null;
-                SIPEndPoint serverEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 12014));
-                serverTransport = new SIPTransport(MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(serverEndPoint.GetIPEndPoint()), false);
+                serverTransport = new SIPTransport(MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)), false);
                 SetTransportTraceEvents(serverTransport);
                 serverTransport.SIPTransportRequestReceived += (localEndPoint, remoteEndPoint, sipRequest) =>
                 {
-                    Console.WriteLine("Server Transport Request In: " + sipRequest.Method + ".");
-                    serverTransaction = serverTransport.CreateUASTransaction(sipRequest, remoteEndPoint, null);
+                    logger.LogDebug("Server Transport Request In: " + sipRequest.Method + ".");
+                    serverTransaction = serverTransport.CreateUASTransaction(sipRequest, null);
                     SetTransactionTraceEvents(serverTransaction);
                     serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
                 };
 
-                SIPURI dummyURI = SIPURI.ParseSIPURI("sip:dummy@" + serverEndPoint);
+                SIPURI dummyURI = SIPURI.ParseSIPURI("sip:dummy@" + serverTransport.GetSIPChannels().First().GetLocalSIPEndPointForDestination(IPAddress.Loopback).GetIPEndPoint());
                 SIPRequest inviteRequest = GetDummyINVITERequest(dummyURI);
 
                 // Send the invite to the server side.
-                UACInviteTransaction clientTransaction = new UACInviteTransaction(clientTransport, inviteRequest, serverEndPoint, null);
+                UACInviteTransaction clientTransaction = new UACInviteTransaction(clientTransport, inviteRequest, null);
                 SetTransactionTraceEvents(clientTransaction);
                 clientEngine.AddTransaction(clientTransaction);
-                clientTransaction.SendInviteRequest(serverEndPoint, inviteRequest);
+                clientTransaction.SendInviteRequest(inviteRequest);
 
                 Thread.Sleep(500);
 
@@ -165,7 +171,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             // Server has received the invite.
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
-            UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, null, true);
+            UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, null, true);
             engine.AddTransaction(serverTransaction);
 
             string ackRequestStr =
@@ -235,52 +241,52 @@ namespace SIPSorcery.SIP.UnitTests
 
         void transaction_TransactionStateChanged(SIPTransaction sipTransaction)
         {
-            Console.WriteLine(sipTransaction.GetType() + " State Change (" + sipTransaction.TransactionId + "): " + sipTransaction.TransactionState);
+            logger.LogDebug(sipTransaction.GetType() + " State Change (" + sipTransaction.TransactionId + "): " + sipTransaction.TransactionState);
         }
 
         void transaction_TransactionRemoved(SIPTransaction sipTransaction)
         {
-            Console.WriteLine(sipTransaction.GetType() + " Removed (" + sipTransaction.TransactionId + ")");
+            logger.LogDebug(sipTransaction.GetType() + " Removed (" + sipTransaction.TransactionId + ")");
         }
 
         void transport_UnrecognisedMessageReceived(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, byte[] buffer)
         {
-            Console.WriteLine("Unrecognised: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + buffer.Length + " bytes.");
+            logger.LogDebug("Unrecognised: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + buffer.Length + " bytes.");
         }
 
         void transport_STUNRequestReceived(IPEndPoint receivedEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength)
         {
-            Console.WriteLine("STUN: " + receivedEndPoint + "<-" + remoteEndPoint.ToString() + " " + buffer.Length + " bufferLength.");
+            logger.LogDebug("STUN: " + receivedEndPoint + "<-" + remoteEndPoint.ToString() + " " + buffer.Length + " bufferLength.");
         }
 
         void transport_SIPResponseOutTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint toEndPoint, SIPResponse sipResponse)
         {
-            Console.WriteLine("Response Out: " + localEndPoint + "->" + toEndPoint.ToString() + "\n" + sipResponse.ToString());
+            logger.LogDebug("Response Out: " + localEndPoint + "->" + toEndPoint.ToString() + "\n" + sipResponse.ToString());
         }
 
         void transport_SIPResponseInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, SIPResponse sipResponse)
         {
-            Console.WriteLine("Response In: " + localEndPoint + "<-" + fromEndPoint.ToString() + "\n" + sipResponse.ToString());
+            logger.LogDebug("Response In: " + localEndPoint + "<-" + fromEndPoint.ToString() + "\n" + sipResponse.ToString());
         }
 
         void transport_SIPRequestOutTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint toEndPoint, SIPRequest sipRequest)
         {
-            Console.WriteLine("Request Out: " + localEndPoint + "->" + toEndPoint.ToString() + "\n" + sipRequest.ToString());
+            logger.LogDebug("Request Out: " + localEndPoint + "->" + toEndPoint.ToString() + "\n" + sipRequest.ToString());
         }
 
         void transport_SIPRequestInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, SIPRequest sipRequest)
         {
-            Console.WriteLine("Request In: " + localEndPoint + "<-" + fromEndPoint.ToString() + "\n" + sipRequest.ToString());
+            logger.LogDebug("Request In: " + localEndPoint + "<-" + fromEndPoint.ToString() + "\n" + sipRequest.ToString());
         }
 
         void transport_SIPBadResponseInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, string message, SIPValidationFieldsEnum errorField, string rawMessage)
         {
-            Console.WriteLine("Bad Response: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + errorField + ". " + message + "\n" + rawMessage);
+            logger.LogDebug("Bad Response: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + errorField + ". " + message + "\n" + rawMessage);
         }
 
         void transport_SIPBadRequestInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, string message, SIPValidationFieldsEnum errorField, string rawMessage)
         {
-            Console.WriteLine("Bad Request: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + errorField + "." + message + "\n" + rawMessage);
+            logger.LogDebug("Bad Request: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + errorField + "." + message + "\n" + rawMessage);
         }
     }
 }

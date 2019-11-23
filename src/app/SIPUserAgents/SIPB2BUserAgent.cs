@@ -143,7 +143,7 @@ namespace SIPSorcery.SIP.App
                 //uacInviteRequest.RemoteSIPEndPoint = m_blackhole;
 
                 // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
-                m_uacTransaction = m_sipTransport.CreateUACTransaction(uacInviteRequest, m_blackhole, null);
+                m_uacTransaction = m_sipTransport.CreateUACTransaction(uacInviteRequest, null);
                 if (m_uacTransaction.CDR != null)
                 {
                     m_uacTransaction.CDR.Owner = m_uacOwner;
@@ -156,13 +156,13 @@ namespace SIPSorcery.SIP.App
                 //uacTransaction.UACInviteTransactionTimedOut += ServerTimedOut;
                 //uacTransaction.TransactionTraceMessage += TransactionTraceMessage;
 
-                m_uacTransaction.SendInviteRequest(m_blackhole, m_uacTransaction.TransactionRequest);
+                m_uacTransaction.SendInviteRequest(m_uacTransaction.TransactionRequest);
 
                 SIPRequest uasInviteRequest = uacInviteRequest.Copy();
                 //uasInviteRequest.LocalSIPEndPoint = m_blackhole;
                 //uasInviteRequest.RemoteSIPEndPoint = m_blackhole;
                 uasInviteRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                m_uasTransaction = m_sipTransport.CreateUASTransaction(uasInviteRequest, m_blackhole, null);
+                m_uasTransaction = m_sipTransport.CreateUASTransaction(uasInviteRequest, null);
 
                 SetOwner(sipCallDescriptor.ToSIPAccount.Owner, sipCallDescriptor.ToSIPAccount.AdminMemberId);
                 //m_uasTransaction.TransactionTraceMessage += TransactionTraceMessage;

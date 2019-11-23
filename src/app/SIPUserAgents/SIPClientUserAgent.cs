@@ -283,7 +283,7 @@ namespace SIPSorcery.SIP.App
                         SIPRequest switchServerInvite = GetInviteRequest(m_sipCallDescriptor, CallProperties.CreateBranchId(), CallProperties.CreateNewCallId(), routeSet, content, sipCallDescriptor.ContentType);
 
                         // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
-                        m_serverTransaction = m_sipTransport.CreateUACTransaction(switchServerInvite, m_serverEndPoint, m_outboundProxy);
+                        m_serverTransaction = m_sipTransport.CreateUACTransaction(switchServerInvite, m_outboundProxy);
                         m_serverTransaction.CDR.DialPlanContextID = m_sipCallDescriptor.DialPlanContextID;
 
                         #region Real-time call control processing.
@@ -379,7 +379,7 @@ namespace SIPSorcery.SIP.App
                             m_serverTransaction.UACInviteTransactionTimedOut += ServerTimedOut;
                             m_serverTransaction.TransactionTraceMessage += TransactionTraceMessage;
 
-                            m_serverTransaction.SendInviteRequest(m_serverEndPoint, m_serverTransaction.TransactionRequest);
+                            m_serverTransaction.SendInviteRequest(m_serverTransaction.TransactionRequest);
                         }
                         else
                         {
@@ -465,7 +465,7 @@ namespace SIPSorcery.SIP.App
                         cancelRequest.Header.AuthenticationHeader.SIPDigest.Response = authDigest.Digest;
                     }
 
-                    m_cancelTransaction = m_sipTransport.CreateNonInviteTransaction(cancelRequest, m_serverEndPoint, m_outboundProxy);
+                    m_cancelTransaction = m_sipTransport.CreateNonInviteTransaction(cancelRequest, m_outboundProxy);
                     m_cancelTransaction.TransactionTraceMessage += TransactionTraceMessage;
                     m_cancelTransaction.SendReliableRequest();
                 }
@@ -489,7 +489,7 @@ namespace SIPSorcery.SIP.App
             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Sending UPDATE to " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
 
             SIPRequest updateRequest = GetUpdateRequest(m_serverTransaction.TransactionRequest, crmHeaders);
-            SIPNonInviteTransaction updateTransaction = m_sipTransport.CreateNonInviteTransaction(updateRequest, m_serverEndPoint, m_outboundProxy);
+            SIPNonInviteTransaction updateTransaction = m_sipTransport.CreateNonInviteTransaction(updateRequest, m_outboundProxy);
             updateTransaction.TransactionTraceMessage += TransactionTraceMessage;
             updateTransaction.SendReliableRequest();
         }
@@ -505,7 +505,7 @@ namespace SIPSorcery.SIP.App
             {
                 SIPRequest byeRequest = GetByeRequest(m_serverTransaction.TransactionFinalResponse, m_sipDialogue.RemoteTarget);
                 byeRequest.SetSendFromHints(m_serverTransaction.TransactionRequest.LocalSIPEndPoint);
-                SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, m_outboundProxy);
+                SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, m_outboundProxy);
                 byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
                 byeTransaction.NonInviteTransactionTimedOut += (tx) => logger.LogDebug($"Bye request for {m_sipCallDescriptor.Uri} timed out.");
                 byeTransaction.SendReliableRequest();
@@ -548,7 +548,7 @@ namespace SIPSorcery.SIP.App
                         {
                             SIPURI byeURI = sipResponse.Header.Contact[0].ContactURI;
                             SIPRequest byeRequest = GetByeRequest(sipResponse, byeURI);
-                            SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, m_outboundProxy);
+                            SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, m_outboundProxy);
                             byeTransaction.SendReliableRequest();
                         }
                         else
@@ -588,7 +588,7 @@ namespace SIPSorcery.SIP.App
 
                             // Create a new UAC transaction to establish the authenticated server call.
                             var originalCallTransaction = m_serverTransaction;
-                            m_serverTransaction = m_sipTransport.CreateUACTransaction(authInviteRequest, m_serverEndPoint, m_outboundProxy);
+                            m_serverTransaction = m_sipTransport.CreateUACTransaction(authInviteRequest, m_outboundProxy);
                             if (m_serverTransaction.CDR != null)
                             {
                                 m_serverTransaction.CDR.Owner = Owner;
@@ -609,7 +609,7 @@ namespace SIPSorcery.SIP.App
                             m_serverTransaction.UACInviteTransactionTimedOut += ServerTimedOut;
                             m_serverTransaction.TransactionTraceMessage += TransactionTraceMessage;
 
-                            m_serverTransaction.SendInviteRequest(m_serverEndPoint, authInviteRequest);
+                            m_serverTransaction.SendInviteRequest(authInviteRequest);
                         }
                         else
                         {
@@ -770,7 +770,7 @@ namespace SIPSorcery.SIP.App
                     authRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                     authRequest.Header.CSeq++;
 
-                    SIPNonInviteTransaction authByeTransaction = m_sipTransport.CreateNonInviteTransaction(authRequest, null, m_outboundProxy);
+                    SIPNonInviteTransaction authByeTransaction = m_sipTransport.CreateNonInviteTransaction(authRequest, m_outboundProxy);
                     authByeTransaction.NonInviteTransactionTimedOut += (tx) => logger.LogDebug($"Authenticated Bye request for {m_sipCallDescriptor.Uri} timed out.");
                     authByeTransaction.SendReliableRequest();
                 }
@@ -790,7 +790,7 @@ namespace SIPSorcery.SIP.App
 
             inviteHeader.From.FromTag = CallProperties.CreateNewTag();
 
-            inviteHeader.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, new SIPURI(inviteRequest.URI.Scheme, IPAddress.Any, 0)) };
+            inviteHeader.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader() };
             inviteHeader.Contact[0].ContactURI.User = sipCallDescriptor.Username;
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
             inviteHeader.UserAgent = m_userAgent;
@@ -803,9 +803,7 @@ namespace SIPSorcery.SIP.App
             {
                 inviteHeader.ProxySendFrom = sipCallDescriptor.ProxySendFrom;
             }
-
-            SIPViaHeader viaHeader = new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), branchId);
-            inviteRequest.Header.Vias.PushViaHeader(viaHeader);
+            inviteRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
             inviteRequest.Body = content;
             inviteRequest.Header.ContentLength = (inviteRequest.Body != null) ? inviteRequest.Body.Length : 0;
@@ -885,11 +883,8 @@ namespace SIPSorcery.SIP.App
             byeHeader.CSeqMethod = SIPMethodsEnum.BYE;
             byeHeader.ProxySendFrom = m_serverTransaction.TransactionRequest.Header.ProxySendFrom;
             byeRequest.Header = byeHeader;
-
             byeRequest.Header.Routes = (inviteResponse.Header.RecordRoutes != null) ? inviteResponse.Header.RecordRoutes.Reversed() : null;
-
-            SIPViaHeader viaHeader = new SIPViaHeader(CallProperties.CreateBranchId());
-            byeRequest.Header.Vias.PushViaHeader(viaHeader);
+            byeRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
             return byeRequest;
         }

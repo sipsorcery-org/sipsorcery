@@ -19,12 +19,32 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Xunit;
+using Serilog;
 using SIPSorcery.SIP;
 using SIPSorcery.Sys;
+using Xunit.Abstractions;
 
 namespace SIPSorcery.UnitTests
 {
+    public class TestLogHelper
+    {
+        //private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public static void InitTestLogger(ITestOutputHelper output)
+        {
+            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
+            var loggerConfig = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .WriteTo.TestOutput(output, Serilog.Events.LogEventLevel.Verbose)
+                .WriteTo.Console(Serilog.Events.LogEventLevel.Verbose)
+                .CreateLogger();
+            loggerFactory.AddSerilog(loggerConfig);
+
+            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            //logger = SIPSorcery.Sys.Log.Logger;
+        }
+    }
+
     //[Trait("Category", "unit")]
     //public class Initialize
     //{
@@ -47,7 +67,7 @@ namespace SIPSorcery.UnitTests
     /// simple console logger proved to be a lot easier. Can be revisited if mstest logging ever goes back to 
     /// just working OOTB.
     /// </summary>
-    internal class SimpleConsoleLogger : ILogger
+    internal class SimpleConsoleLogger : Microsoft.Extensions.Logging.ILogger
     {
         public static SimpleConsoleLogger Instance { get; } = new SimpleConsoleLogger();
 

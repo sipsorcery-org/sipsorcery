@@ -43,15 +43,14 @@ namespace SIPSorcery.SIP
         /// <param name="disablePrackSupport">If set to true then PRACK support will not be set in the initial INVITE reqeust.</param>
         internal UACInviteTransaction(SIPTransport sipTransport, 
             SIPRequest sipRequest, 
-            SIPEndPoint dstEndPoint, 
             SIPEndPoint outboundProxy, 
             bool sendOkAckManually = false,
             bool disablePrackSupport = false)
-            : base(sipTransport, sipRequest, dstEndPoint, outboundProxy)
+            : base(sipTransport, sipRequest, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.InivteClient;
             m_localTag = sipRequest.Header.From.FromTag;
-            CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, sipRequest.LocalSIPEndPoint, dstEndPoint);
+            CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, sipRequest.LocalSIPEndPoint,sipRequest.RemoteSIPEndPoint);
             _sendOkAckManually = sendOkAckManually;
             _disablePrackSupport = disablePrackSupport;
 
@@ -71,9 +70,8 @@ namespace SIPSorcery.SIP
             CDR = null;
         }
 
-        public void SendInviteRequest(SIPEndPoint dstEndPoint, SIPRequest inviteRequest)
+        public void SendInviteRequest(SIPRequest inviteRequest)
         {
-            this.RemoteEndPoint = dstEndPoint;
             base.SendReliableRequest();
         }
 
@@ -137,7 +135,7 @@ namespace SIPSorcery.SIP
                 {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
                     var ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI);
-                    base.SendRequest(RemoteEndPoint, ackRequest).Wait();
+                    base.SendRequest(ackRequest);
                 }
 
                 UACInviteTransactionFinalResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
@@ -186,7 +184,7 @@ namespace SIPSorcery.SIP
                 }
 
                 // ACK for 2xx response needs to be a new transaction and gets routed based on SIP request fields.
-                var ackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.ACK, sipResponse, ackURI, LocalSIPEndPoint);
+                var ackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.ACK, sipResponse, ackURI);
 
                 if (content.NotNullOrBlank())
                 {
@@ -224,10 +222,10 @@ namespace SIPSorcery.SIP
         /// acceptable, the UAC core MUST generate a valid answer in the ACK and
         /// then send a BYE immediately.
         /// </remarks>
-        private SIPRequest GetNewTransactionAcknowledgeRequest(SIPMethodsEnum method, SIPResponse sipResponse, SIPURI ackURI, SIPEndPoint localSIPEndPoint)
+        private SIPRequest GetNewTransactionAcknowledgeRequest(SIPMethodsEnum method, SIPResponse sipResponse, SIPURI ackURI)
         {
             SIPRequest ackRequest = new SIPRequest(method, ackURI.ToString());
-            ackRequest.SetSendFromHints(localSIPEndPoint);
+            ackRequest.SetSendFromHints(sipResponse.LocalSIPEndPoint);
 
             SIPHeader header = new SIPHeader(TransactionRequest.Header.From, sipResponse.Header.To, sipResponse.Header.CSeq, sipResponse.Header.CallId);
             header.CSeqMethod = method;
@@ -245,9 +243,7 @@ namespace SIPSorcery.SIP
             }
 
             ackRequest.Header = header;
-
-            SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
-            ackRequest.Header.Vias.PushViaHeader(viaHeader);
+            ackRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
             return ackRequest;
         }
@@ -291,9 +287,7 @@ namespace SIPSorcery.SIP
             header.ProxySendFrom = base.TransactionRequest.Header.ProxySendFrom;
 
             ackRequest.Header = header;
-
-            SIPViaHeader viaHeader = new SIPViaHeader(sipResponse.Header.Vias.TopViaHeader.Branch);
-            ackRequest.Header.Vias.PushViaHeader(viaHeader);
+            ackRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
             return ackRequest;
         }
@@ -319,7 +313,7 @@ namespace SIPSorcery.SIP
         public void SendPRackRequest(SIPResponse progressResponse)
         {
             // PRACK requests create a new transaction and get routed based on SIP request fields.
-            var prackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.PRACK, progressResponse, m_transactionRequest.URI, LocalSIPEndPoint);
+            var prackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.PRACK, progressResponse, m_transactionRequest.URI);
 
             prackRequest.Header.RAckRSeq = progressResponse.Header.RSeq;
             prackRequest.Header.RAckCSeq = progressResponse.Header.CSeq;

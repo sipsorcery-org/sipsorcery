@@ -261,21 +261,7 @@ namespace SIPSorcery.SIP.App
                         subscribeRequest.Header.ContentType = m_filterTextType;
                     }
 
-                    SIPEndPoint dstEndPoint = m_outboundProxy;
-                    if (dstEndPoint == null)
-                    {
-                        SIPDNSLookupResult lookupResult = m_sipTransport.GetURIEndPoint(m_resourceURI, false);
-                        if (lookupResult.LookupError != null)
-                        {
-                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.NotifierClient, SIPMonitorEventTypesEnum.SubscribeFailed, "Could not resolve " + m_resourceURI.Host + ", " + lookupResult.LookupError, null));
-                        }
-                        else
-                        {
-                            dstEndPoint = lookupResult.GetSIPEndPoint();
-                        }
-                    }
-
-                    SIPNonInviteTransaction subscribeTransaction = m_sipTransport.CreateNonInviteTransaction(subscribeRequest, dstEndPoint, m_outboundProxy);
+                    SIPNonInviteTransaction subscribeTransaction = m_sipTransport.CreateNonInviteTransaction(subscribeRequest, m_outboundProxy);
                     subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
                     subscribeTransaction.NonInviteTransactionTimedOut += SubsribeTransactionTimedOut;
 
@@ -375,7 +361,7 @@ namespace SIPSorcery.SIP.App
                             }
 
                             // Create a new transaction to establish the authenticated server call.
-                            SIPNonInviteTransaction subscribeTransaction = m_sipTransport.CreateNonInviteTransaction(authSubscribeRequest, sipTransaction.RemoteEndPoint, m_outboundProxy);
+                            SIPNonInviteTransaction subscribeTransaction = m_sipTransport.CreateNonInviteTransaction(authSubscribeRequest, m_outboundProxy);
                             subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
                             subscribeTransaction.NonInviteTransactionTimedOut += SubsribeTransactionTimedOut;
 

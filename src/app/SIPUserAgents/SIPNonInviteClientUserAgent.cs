@@ -62,7 +62,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 SIPRequest req = GetRequest(method);
-                SIPNonInviteTransaction tran = m_sipTransport.CreateNonInviteTransaction(req, null, m_outboundProxy);
+                SIPNonInviteTransaction tran = m_sipTransport.CreateNonInviteTransaction(req, m_outboundProxy);
                 
                 ManualResetEvent waitForResponse = new ManualResetEvent(false);
                 tran.NonInviteTransactionTimedOut += RequestTimedOut;
@@ -95,7 +95,7 @@ namespace SIPSorcery.SIP.App
                         if ((m_callDescriptor.Username != null || m_callDescriptor.AuthUsername != null) && m_callDescriptor.Password != null)
                         {
                             SIPRequest authenticatedRequest = GetAuthenticatedRequest(sipTransaction.TransactionRequest, sipResponse);
-                            SIPNonInviteTransaction authTransaction = m_sipTransport.CreateNonInviteTransaction(authenticatedRequest, sipTransaction.RemoteEndPoint, m_outboundProxy);
+                            SIPNonInviteTransaction authTransaction = m_sipTransport.CreateNonInviteTransaction(authenticatedRequest, m_outboundProxy);
                             authTransaction.NonInviteTransactionFinalResponseReceived += AuthResponseReceived;
                             authTransaction.NonInviteTransactionTimedOut += RequestTimedOut;
                             m_sipTransport.SendSIPReliable(authTransaction);
@@ -164,9 +164,7 @@ namespace SIPSorcery.SIP.App
                 header.CSeqMethod = method;
                 header.UserAgent = m_userAgent;
                 request.Header = header;
-
-                SIPViaHeader viaHeader = new SIPViaHeader(CallProperties.CreateBranchId());
-                request.Header.Vias.PushViaHeader(viaHeader);
+                request.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
                 try
                 {

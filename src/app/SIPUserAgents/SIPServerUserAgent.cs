@@ -139,8 +139,8 @@ namespace SIPSorcery.SIP.App
         {
             m_uasTransaction.TransactionTraceMessage += traceDelegate;
 
-            traceDelegate(m_uasTransaction, SIPMonitorEventTypesEnum.SIPTransaction + "=>" + "Request received " + m_uasTransaction.LocalSIPEndPoint +
-                "<-" + m_uasTransaction.RemoteEndPoint + "\r\n" + m_uasTransaction.TransactionRequest.ToString());
+            traceDelegate(m_uasTransaction, SIPMonitorEventTypesEnum.SIPTransaction + "=>" + "Request received " + m_uasTransaction.TransactionRequest.LocalSIPEndPoint +
+                "<-" + m_uasTransaction.TransactionRequest.RemoteSIPEndPoint + "\r\n" + m_uasTransaction.TransactionRequest.ToString());
         }
 
         public bool LoadSIPAccountForIncomingCall()
@@ -468,7 +468,7 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         SIPRequest byeRequest = GetByeRequest();
-                        SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, m_outboundProxy);
+                        SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, m_outboundProxy);
                         byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
                         byeTransaction.SendReliableRequest();
                     }
@@ -504,7 +504,7 @@ namespace SIPSorcery.SIP.App
                     authByeRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                     authByeRequest.Header.CSeq = authByeRequest.Header.CSeq + 1;
 
-                    SIPNonInviteTransaction bTransaction = m_sipTransport.CreateNonInviteTransaction(authByeRequest, null, null);
+                    SIPNonInviteTransaction bTransaction = m_sipTransport.CreateNonInviteTransaction(authByeRequest, null);
                     bTransaction.SendReliableRequest();
                 }
             }
@@ -580,9 +580,7 @@ namespace SIPSorcery.SIP.App
             byeRequest.Header = byeHeader;
             byeRequest.Header.Routes = SIPDialogue.RouteSet;
             byeRequest.Header.ProxySendFrom = SIPDialogue.ProxySendFrom;
-
-            SIPViaHeader viaHeader = new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), CallProperties.CreateBranchId());
-            byeRequest.Header.Vias.PushViaHeader(viaHeader);
+            byeRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
             return byeRequest;
         }

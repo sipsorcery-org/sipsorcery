@@ -37,16 +37,7 @@ namespace SIPSorcery.SIP.UnitTests
 
         public SIPTransportUnitTest(ITestOutputHelper output)
         {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
-                .MinimumLevel.Verbose()
-                //.WriteTo.TestOutput(output, Serilog.Events.LogEventLevel.Verbose)
-                .WriteTo.Console(Serilog.Events.LogEventLevel.Verbose)
-                .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
-            logger = SIPSorcery.Sys.Log.Logger;
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         /// <summary>

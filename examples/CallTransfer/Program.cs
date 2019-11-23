@@ -147,7 +147,7 @@ namespace SIPSorcery
                 {
                     if (sipRequest.Method == SIPMethodsEnum.BYE)
                     {
-                        SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                        SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, null);
                         SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         byeTransaction.SendFinalResponse(byeResponse);
 
@@ -195,7 +195,7 @@ namespace SIPSorcery
                 if (!hasCallFailed)
                 {
                     SIPRequest referRequest = GetReferRequest(uac, SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI));
-                    SIPNonInviteTransaction referTx = sipTransport.CreateNonInviteTransaction(referRequest, referRequest.RemoteSIPEndPoint, referRequest.LocalSIPEndPoint, null);
+                    SIPNonInviteTransaction referTx = sipTransport.CreateNonInviteTransaction(referRequest, referRequest.RemoteSIPEndPoint, null);
 
                     referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =>
                     {
@@ -397,6 +397,8 @@ namespace SIPSorcery
             SIPDialogue sipDialogue = uac.SIPDialogue;
 
             SIPRequest referRequest = new SIPRequest(SIPMethodsEnum.REFER, sipDialogue.RemoteTarget);
+            referRequest.SetSendFromHints(uac.ServerTransaction.TransactionRequest.LocalSIPEndPoint);
+
             SIPFromHeader referFromHeader = SIPFromHeader.ParseFromHeader(sipDialogue.LocalUserField.ToString());
             SIPToHeader referToHeader = SIPToHeader.ParseToHeader(sipDialogue.RemoteUserField.ToString());
             int cseq = sipDialogue.CSeq + 1;
@@ -407,13 +409,9 @@ namespace SIPSorcery
             referRequest.Header = referHeader;
             referRequest.Header.Routes = sipDialogue.RouteSet;
             referRequest.Header.ProxySendFrom = sipDialogue.ProxySendFrom;
-
-            SIPViaHeader viaHeader = new SIPViaHeader(uac.ServerTransaction.LocalSIPEndPoint, CallProperties.CreateBranchId());
-            referRequest.Header.Vias.PushViaHeader(viaHeader);
-
+            referRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
             referRequest.Header.ReferTo = referToUri.ToString();
-            referRequest.Header.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, uac.ServerTransaction.TransactionRequest.Header.Contact.First().ContactURI) };
-            referRequest.RemoteSIPEndPoint = uac.ServerTransaction.RemoteEndPoint;
+            referRequest.Header.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader() };
 
             return referRequest;
         }
