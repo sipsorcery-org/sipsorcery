@@ -11,14 +11,14 @@
 
 using System;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class ByteBufferInfoUnitTest
     {
-        [TestMethod]
+        [Fact]
         public void HasStringUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -27,10 +27,10 @@ namespace SIPSorcery.Sys.UnitTests
 
             bool hasFox = ByteBufferInfo.HasString(sample, 0, Int32.MaxValue, "fox", null);
 
-            Assert.IsTrue(hasFox, "The string was not found in the buffer.");
+            Assert.True(hasFox, "The string was not found in the buffer.");
         }
 
-        [TestMethod]
+        [Fact]
         public void NotBeforeEndUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -39,10 +39,10 @@ namespace SIPSorcery.Sys.UnitTests
 
             bool hasFox = ByteBufferInfo.HasString(sample, 0, Int32.MaxValue, "fox", "brown");
 
-            Assert.IsTrue(!hasFox, "The string was not found in the buffer.");
+            Assert.True(!hasFox, "The string was not found in the buffer.");
         }
 
-        [TestMethod]
+        [Fact]
         public void GetStringIndexUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -64,10 +64,10 @@ namespace SIPSorcery.Sys.UnitTests
 
             int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
 
-            Assert.IsTrue(endOfMsgIndex == sample.Length - 4, "The string position was not correctly found in the buffer.");
+            Assert.True(endOfMsgIndex == sample.Length - 4, "The string position was not correctly found in the buffer.");
         }
 
-        [TestMethod]
+        [Fact]
         public void GetStringIndexSIPInviteUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -108,10 +108,10 @@ namespace SIPSorcery.Sys.UnitTests
 
             int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
 
-            Assert.IsTrue(endOfMsgIndex == sipMsg.IndexOf("\r\n\r\n"), "The string position was not correctly found in the buffer. Index found was " + endOfMsgIndex + ", should have been " + sipMsg.IndexOf("\r\n\r\n") + ".");
+            Assert.True(endOfMsgIndex == sipMsg.IndexOf("\r\n\r\n"), "The string position was not correctly found in the buffer. Index found was " + endOfMsgIndex + ", should have been " + sipMsg.IndexOf("\r\n\r\n") + ".");
         }
 
-        [TestMethod]
+        [Fact]
         public void GetStringIndexNotFoundUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -133,7 +133,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
 
-            Assert.IsTrue(endOfMsgIndex == -1, "The string position was not correctly found in the buffer.");
+            Assert.True(endOfMsgIndex == -1, "The string position was not correctly found in the buffer.");
         }
     }
 }

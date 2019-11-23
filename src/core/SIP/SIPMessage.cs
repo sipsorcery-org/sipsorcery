@@ -21,13 +21,9 @@ using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
-    /// <bnf>
-    /// generic-message  =  start-line
-    ///                     *message-header
-    ///                     CRLF
-    ///                     [ message-body ]
-    /// start-line       =  Request-Line / Status-Line
-    /// </bnf>
+    /// <summary>
+    /// Represents an incoming message before having determined whether it is a request or a response.
+    /// </summary>
     public class SIPMessage
     {
         private const string SIP_RESPONSE_PREFIX = "SIP";
@@ -118,8 +114,8 @@ namespace SIPSorcery.SIP
                 sipMessage.LocalSIPEndPoint = localSIPEndPoint;
                 sipMessage.RemoteSIPEndPoint = remoteSIPEndPoint;
 
-                // For connection oriented transports the same connection should be used for responses and susequent requests.
-                if (!String.IsNullOrEmpty(remoteSIPEndPoint?.ConnectionID))
+                // For connection oriented transports the same connection should be used for responses and subsequent requests.
+                if (sipMessage.LocalSIPEndPoint != null && remoteSIPEndPoint.ConnectionID != null)
                 {
                     sipMessage.LocalSIPEndPoint.ConnectionID = remoteSIPEndPoint.ConnectionID;
                 }

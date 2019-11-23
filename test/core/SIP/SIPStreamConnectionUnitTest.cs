@@ -11,15 +11,17 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
+using SIPSorcery.UnitTests;
 
 namespace SIPSorcery.SIP.UnitTests
 {
     /// <summary>
     /// Unit tests for SIPStreamConnection class.
     /// </summary>
-    [TestClass]
+    [Trait("Category", "unit")]
     public class SIPStreamConnectionUnitTest
     {
         private string CRLF = SIPConstants.CRLF;
@@ -27,7 +29,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that a socket read leaves the buffers and positions in the correct state.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void TestSocketReadSingleMessageTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -55,14 +57,14 @@ CRLF +
 
             testConnection.ExtractSIPMessages(null, testReceiveBytes, testReceiveBytes.Length);
 
-            Assert.IsTrue(testConnection.RecvEndPosn == 0, "The receive buffer end position should have been 0.");
+            Assert.True(testConnection.RecvEndPosn == 0, "The receive buffer end position should have been 0.");
         }
 
         /// <summary>
         /// Tests that a socket read leaves the buffers and positions in the correct state when the SIP message has spurious characters
         /// preceeding the transmission.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void TestSocketReadWithBytesToSkipTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -85,23 +87,25 @@ CRLF + CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPStreamConnection testConnection = new SIPStreamConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
+            Socket dummySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            dummySocket.Bind(new IPEndPoint(IPAddress.Any, 0));
+            SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
-            testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
-            //Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
+            testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; };
 
-            testConnection.ExtractSIPMessages(null, testReceiveBytes, testReceiveBytes.Length);
+            MockSIPChannel mockChannel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
+            testConnection.ExtractSIPMessages(mockChannel, testReceiveBytes, testReceiveBytes.Length);
 
-            Assert.IsTrue(sipMessages == 1, "The number of SIP messages parsed was incorrect, was " + sipMessages + ".");
-            Assert.IsTrue(testConnection.RecvStartPosn == 0, $"The receive buffer start position was incorrect, was {testConnection.RecvStartPosn}.");
-            Assert.IsTrue(testConnection.RecvEndPosn == 0, $"The receive buffer end position was incorrect, was {testConnection.RecvEndPosn}.");
+            Assert.True(sipMessages == 1, "The number of SIP messages parsed was incorrect, was " + sipMessages + ".");
+            Assert.True(testConnection.RecvStartPosn == 0, $"The receive buffer start position was incorrect, was {testConnection.RecvStartPosn}.");
+            Assert.True(testConnection.RecvEndPosn == 0, $"The receive buffer end position was incorrect, was {testConnection.RecvEndPosn}.");
         }
 
         /// <summary>
         /// Tests that a socket read leaves the buffers and positions in the correct state when the receive contains multiple 
         /// SIP message has spurious characters preceeding the transmission.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void TestSocketReadWithTwoMessagesAndBytesToSkipTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -133,27 +137,30 @@ CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            SIPStreamConnection testConnection = new SIPStreamConnection(null, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
+            Socket dummySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            dummySocket.Bind(new IPEndPoint(IPAddress.Any, 0));
+            SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
-            testConnection.SIPMessageReceived += (chan, ep, buffer) => { sipMessages++; };
+            testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; };
             Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
 
-            testConnection.ExtractSIPMessages(null, testConnection.RecvSocketArgs.Buffer, testReceiveBytes.Length);
+            MockSIPChannel mockChannel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
+            testConnection.ExtractSIPMessages(mockChannel, testConnection.RecvSocketArgs.Buffer, testReceiveBytes.Length);
             string remainingBytes = Encoding.UTF8.GetString(testConnection.RecvSocketArgs.Buffer, testConnection.RecvStartPosn, testConnection.RecvEndPosn - testConnection.RecvStartPosn);
 
             Console.WriteLine("SocketBufferEndPosition=" + testConnection.RecvEndPosn + ".");
             Console.WriteLine("SocketBuffer=" + remainingBytes + ".");
 
-            Assert.IsTrue(sipMessages == 2, "The number of SIP messages parsed was incorrect.");
-            Assert.AreEqual(708, testConnection.RecvStartPosn, $"The receive buffer start position was incorrect, was {testConnection.RecvStartPosn}.");
-            Assert.AreEqual(734, testConnection.RecvEndPosn, $"The receive buffer end position was incorrect, was {testConnection.RecvEndPosn}.");
-            Assert.IsTrue(remainingBytes == "SUBSCRIBE sip:aaron@10.1.1", $"The leftover bytes in the socket buffer were incorrect {remainingBytes}.");
+            Assert.True(sipMessages == 2, "The number of SIP messages parsed was incorrect.");
+            Assert.True(708 == testConnection.RecvStartPosn, $"The receive buffer start position was incorrect, was {testConnection.RecvStartPosn}.");
+            Assert.True(734 == testConnection.RecvEndPosn, $"The receive buffer end position was incorrect, was {testConnection.RecvEndPosn}.");
+            Assert.True(remainingBytes == "SUBSCRIBE sip:aaron@10.1.1", $"The leftover bytes in the socket buffer were incorrect {remainingBytes}.");
         }
 
         /// <summary>
         /// Tests that the Content-Length is correctly parsed when a compact header form is used.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ContentLengthParseWhenUpperCaseTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -176,13 +183,13 @@ CRLF +
 
             int contentLength = SIPMessage.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
-            Assert.IsTrue(contentLength == 2393, "The content length was parsed incorrectly.");
+            Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
 
         /// <summary>
         /// Tests that the Content-Length is correctly parsed when the SIP Contact header has mixed case.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ContentLengthParseWhenMixedCaseTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -205,7 +212,7 @@ CRLF +
 
             int contentLength = SIPMessage.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
-            Assert.IsTrue(contentLength == 2393, "The content length was parsed incorrectly.");
+            Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
     }
 }

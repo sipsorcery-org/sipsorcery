@@ -6,6 +6,7 @@
 //
 // Author(s):
 // Alphons van der Heijden
+// Aaron Clauson
 //
 // History:
 // 28 Mar 2008	Aaron Clauson   Added to sipwitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.

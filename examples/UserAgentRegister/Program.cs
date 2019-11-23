@@ -1,13 +1,14 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example program of how to use the SIPSorcery core library to register a SIP account. 
+// Description: An example program of how to use the SIPSorcery core library 
+// to register a SIP account. 
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //  
 // History:
-// 07 Oct 2019	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland (www.sipsorcery.com).
+// 07 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -28,26 +29,21 @@ namespace SIPSorcery.Register
     {
         private const int SUCCESS_REGISTRATION_COUNT = 3;   // Number of successful registrations to attempt before exiting process.
 
-        static void Main(string[] args)
+        private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+
+        static void Main()
         {
             Console.WriteLine("SIPSorcery registration user agent example.");
             Console.WriteLine("Press ctrl-c to exit.");
 
-            // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console()
-                .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            AddConsoleLogger();
 
             // Set up a default SIP transport.
-            var sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
-            int port = FreePort.FindNextAvailableUDPPort(SIPConstants.DEFAULT_SIP_PORT);
-            var sipChannel = new SIPUDPChannel(new IPEndPoint(LocalIPConfig.GetDefaultIPv4Address(), port));
+            var sipTransport = new SIPTransport();
+            var sipChannel = new SIPUDPChannel(IPAddress.Any, 0);
             sipTransport.AddSIPChannel(sipChannel);
+
+            //EnableTraceLogs(sipTransport);
 
             // Create a client user agent to maintain a periodic registration with a SIP server.
             var regUserAgent = new SIPRegistrationUserAgent(
@@ -95,6 +91,61 @@ namespace SIPSorcery.Register
                 sipTransport.Shutdown();
             }
             SIPSorcery.Net.DNSManager.Stop();
+        }
+
+        /// <summary>
+        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        /// </summary>
+        private static void AddConsoleLogger()
+        {
+            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
+            var loggerConfig = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console()
+                .CreateLogger();
+            loggerFactory.AddSerilog(loggerConfig);
+            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+        }
+
+        /// <summary>
+        /// Enable detailed SIP log messages.
+        /// </summary>
+        private static void EnableTraceLogs(SIPTransport sipTransport)
+        {
+            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
+            {
+                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
+                Log.LogDebug(req.ToString());
+            };
+
+            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
+            {
+                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
+                Log.LogDebug(req.ToString());
+            };
+
+            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
+                Log.LogDebug(resp.ToString());
+            };
+
+            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
+                Log.LogDebug(resp.ToString());
+            };
+
+            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
+            {
+                Log.LogDebug($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+            };
+
+            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
+            {
+                Log.LogDebug($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+            };
         }
     }
 }

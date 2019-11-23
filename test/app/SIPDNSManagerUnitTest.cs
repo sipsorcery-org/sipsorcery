@@ -14,11 +14,11 @@
 //-----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.SIP.App.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "integration")]
     public class SIPDNSManagerUnitTest
     {
         private static ILogger logger = SIPSorcery.Sys.Log.Logger;
@@ -26,8 +26,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         /// <summary>
         /// Tests that an IP address can be reoslved when the resolution can only be done via a SRV record.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void ResolveHostFromServiceTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -36,7 +35,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             SIPEndPoint resultEP = result.GetSIPEndPoint();
 
-            Assert.IsNotNull(resultEP);
+            Assert.NotNull(resultEP);
 
             logger.LogDebug($"resolved to SIP end point {resultEP}");
         }
@@ -44,8 +43,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         /// <summary>
         /// Tests that an attempt to lookup the a hostname that's not fully qualified works correctly.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void LookupLocalHostnameTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -56,7 +54,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             SIPEndPoint resultEP = result.GetSIPEndPoint();
 
-            Assert.IsNotNull(resultEP);
+            Assert.NotNull(resultEP);
 
             logger.LogDebug($"resolved to SIP end point {resultEP}");
         }

@@ -11,24 +11,24 @@
 
 using System;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class TypeExtensionsUnitTest
     {
-        [TestMethod]
+        [Fact]
         public void TrimTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             String myString = null;
 
-            Assert.IsTrue(myString.IsNullOrBlank(), "String was not correctly detected as blank.");
+            Assert.True(myString.IsNullOrBlank(), "String was not correctly detected as blank.");
         }
 
-        [TestMethod]
+        [Fact]
         public void ZeroBytesTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -37,7 +37,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             Console.WriteLine("Trimmed length=" + myString.Trim().Length + ".");
 
-            Assert.IsTrue(myString.IsNullOrBlank(), "String was not correctly detected as blank.");
+            Assert.True(myString.IsNullOrBlank(), "String was not correctly detected as blank.");
         }
     }
 }

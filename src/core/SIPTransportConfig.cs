@@ -97,9 +97,8 @@ namespace SIPSorcery.SIP
                                     var certificate = LoadCertificate(certificateType, certificatePath, certificateKeyPassword);
                                     if (certificate != null)
                                     {
-                                        // TODO fix TLSChannel and uncomment 2 lines.
-                                        //var tlsChannel = new SIPTLSChannel(certificate, sipEndPoint.GetIPEndPoint());
-                                        //sipChannels.Add(tlsChannel);
+                                        var tlsChannel = new SIPTLSChannel(certificate, sipEndPoint.GetIPEndPoint());
+                                        sipChannels.Add(tlsChannel);
                                     }
                                     else
                                     {

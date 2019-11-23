@@ -529,11 +529,12 @@ namespace SIPSorcery.SIP
         /// understands.
         /// </summary>
         /// <param name="extensionList">The string containing the list of extensions to parse.</param>
+        /// <param name="unknownExtensions">A comma separated list of the unsupported extensions.</param>
         /// <returns>A list of extensions that were understood and a boolean indicating whether any unknown extensions were present.</returns>
-        public static List<SIPExtensions> ParseSIPExtensions(string extensionList, out bool hadUnknownExtension)
+        public static List<SIPExtensions> ParseSIPExtensions(string extensionList, out string unknownExtensions)
         {
             List<SIPExtensions> knownExtensions = new List<SIPExtensions>();
-            hadUnknownExtension = false;
+            unknownExtensions = null;
 
             if(String.IsNullOrEmpty(extensionList) == false)
             {
@@ -549,7 +550,7 @@ namespace SIPSorcery.SIP
                         }
                         else
                         {
-                            hadUnknownExtension = true;
+                            unknownExtensions += (unknownExtensions != null) ? $",{extension.Trim()}" : extension.Trim();
                         }
                     }
                 }

@@ -1,13 +1,16 @@
 //-----------------------------------------------------------------------------
 // Filename: IPSocket.cs
 //
-// Description: Converts special charatcers in XML to their safe equivalent.
+// Description: Helper functions for socket strings and IP end points.
+// Note that as of 16 Nov 2019 a number of equivalent functions are now
+// contained in the System.Net.IPEndPoint v4 class BUT are missing from
+// the Net Standard version.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 22 jun 2005	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 22 jun 2005	Aaron Clauson   Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -31,39 +34,6 @@ namespace SIPSorcery.Sys
         /// Specifies the maximum acceptable value for the <see cref='System.Net.IPEndPoint.Port'/> property.
         /// </summary>
         public const int MaxPort = 0x0000FFFF;
-
-        /// <summary>
-        /// Returns an IPv4 end point from a socket address in 10.0.0.1:5060 format.
-        /// </summary>>
-        //      public static IPEndPoint GetIPEndPoint(string IPSocket)
-        //{
-        //	if(IPSocket == null || IPSocket.Trim().Length == 0)
-        //	{
-        //		throw new ApplicationException("IPSocket cannot parse an IPEndPoint from an empty string.");
-        //	}
-
-        //	try
-        //	{
-        //		int colonIndex = IPSocket.IndexOf(":");
-
-        //		if(colonIndex != -1)
-        //		{
-        //			string ipAddress = IPSocket.Substring(0, colonIndex).Trim();
-        //			int port = Convert.ToInt32(IPSocket.Substring(colonIndex+1).Trim());
-        //			IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
-
-        //			return endPoint;
-        //		}
-        //		else
-        //		{
-        //			return new IPEndPoint(IPAddress.Parse(IPSocket.Trim()), 0);
-        //		}
-        //	}
-        //	catch(Exception excp)
-        //	{
-        //		throw new ApplicationException(excp.Message + "(" + IPSocket + ")");
-        //	}
-        //}
 
         /// <summary>
         /// This code is based on the IPEndPoint.ToString method in the dotnet source code at

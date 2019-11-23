@@ -4,10 +4,10 @@
 // Description: 
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// ??	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// ??	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -23,6 +23,7 @@ namespace SIPSorcery.Net
         PCMU = 0,   // Audio.
         GSM = 3,    // Audio.
         G723 = 4,   // Audio.
+        G722 = 9,   // Audio
         PCMA = 8,   // Audio.
         G729 = 18,  // Audio.
         JPEG = 26,  // Video

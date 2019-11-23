@@ -10,14 +10,14 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class CryptoUnitTest
     {
-        [TestMethod]
+        [Fact]
         public void SampleTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -26,7 +26,7 @@ namespace SIPSorcery.Sys.UnitTests
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void CallRandomNumberWebServiceUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -36,7 +36,7 @@ namespace SIPSorcery.Sys.UnitTests
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void GetRandomNumberTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -46,7 +46,7 @@ namespace SIPSorcery.Sys.UnitTests
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void GetOneHundredRandomNumbersTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);

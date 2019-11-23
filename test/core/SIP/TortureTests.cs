@@ -12,7 +12,7 @@
 using System.IO;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
 {
@@ -25,7 +25,7 @@ namespace SIPSorcery.SIP.UnitTests
     /// Cutting and pasting is no good as things like white space getting interpreted as end of line screws up
     /// intent of the tests.
     /// </summary>
-    [TestClass]
+    [Trait("Category", "unit")]
     public class SIPTortureTests
     {
         private static ILogger logger = SIPSorcery.Sys.Log.Logger;
@@ -33,13 +33,12 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Torture test 3.1.1.1. with file wsinv.dat.
         /// </summary>
-        [TestMethod]
-        [Ignore] // Bit trickier to pass than anticipated.
+        [Fact(Skip = "Bit trickier to pass than anticipated.")]
         public void ShortTorturousInvite()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            Assert.IsTrue(File.Exists("wsinv.dat"), "The wsinv.dat torture test input file was missing.");
+            Assert.True(File.Exists("wsinv.dat"), "The wsinv.dat torture test input file was missing.");
 
             string raw = File.ReadAllText("wsinv.dat");
 
@@ -48,8 +47,8 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(raw), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(raw);
 
-            Assert.IsNotNull(sipMessage, "The SIP message could not be parsed.");
-            Assert.IsNotNull(inviteReq, "The SIP request could not be parsed.");
+            Assert.NotNull(sipMessage);
+            Assert.NotNull(inviteReq);
 
             logger.LogDebug("-----------------------------------------");
         }

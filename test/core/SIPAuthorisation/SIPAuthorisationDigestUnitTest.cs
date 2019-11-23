@@ -10,14 +10,14 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class SIPAuthorisationDigestUnitTest
     {
-        [TestMethod]
+        [Fact]
         public void KnownDigestTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -29,12 +29,12 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Digest = " + digest + ".");
             Console.WriteLine(authRequest.ToString());
 
-            Assert.IsTrue(true, "True was false.");
+            Assert.True(true, "True was false.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void KnownDigestTestObscureChars()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -46,12 +46,12 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Digest = " + digest + ".");
             Console.WriteLine(authRequest.ToString());
 
-            Assert.IsTrue(digest == "500fd998b609a0f24b45edfe190f2a17", "The digest was incorrect.");
+            Assert.True(digest == "500fd998b609a0f24b45edfe190f2a17", "The digest was incorrect.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void KnownDigestTestObscureChars2()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -63,12 +63,12 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Digest = " + digest + ".");
             Console.WriteLine(authRequest.ToString());
 
-            Assert.IsTrue(digest == "54b08b70ed1976068b9e18d38ea59849", "The digest was incorrect.");
+            Assert.True(digest == "54b08b70ed1976068b9e18d38ea59849", "The digest was incorrect.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void KnownDigestTest2()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -80,12 +80,12 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Digest = " + digest + ".");
             Console.WriteLine(authRequest.ToString());
 
-            Assert.IsTrue(true, "True was false.");
+            Assert.True(true, "True was false.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void KnownRegisterDigestTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -97,12 +97,12 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Digest = " + digest + ".");
             Console.WriteLine(authRequest.ToString());
 
-            Assert.IsTrue("08881d1d56c0b21f11d19f4067da7045" == digest, "Digest was incorrect.");
+            Assert.True("08881d1d56c0b21f11d19f4067da7045" == digest, "Digest was incorrect.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void KnownRegisterDigestTest2()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -114,27 +114,27 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Digest = " + digest + ".");
             Console.WriteLine(authRequest.ToString());
 
-            Assert.IsTrue("1ef20beed71043225873e4f6712e4922" == digest, "Digest was incorrect.");
+            Assert.True("1ef20beed71043225873e4f6712e4922" == digest, "Digest was incorrect.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseWWWAuthenticateDigestTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPAuthorisationDigest authRequest = SIPAuthorisationDigest.ParseAuthorisationDigest(SIPAuthorisationHeadersEnum.WWWAuthenticate, @"Digest realm=""aol.com"",nonce=""48e7541d4339e27ee7b520a4bf8a8e3c4fffcb90"",qop=""auth"",opaque=""004533235332435434ffac663e"",algorithm=MD5");
 
-            Assert.IsTrue(authRequest.Realm == "aol.com", "The authorisation realm was not parsed correctly.");
-            Assert.IsTrue(authRequest.Nonce == "48e7541d4339e27ee7b520a4bf8a8e3c4fffcb90", "The authorisation nonce was not parsed correctly.");
-            Assert.IsTrue(authRequest.Qop == "auth", "The authorisation qop was not parsed correctly.");
-            Assert.IsTrue(authRequest.Opaque == "004533235332435434ffac663e", "The authorisation opaque was not parsed correctly.");
+            Assert.True(authRequest.Realm == "aol.com", "The authorisation realm was not parsed correctly.");
+            Assert.True(authRequest.Nonce == "48e7541d4339e27ee7b520a4bf8a8e3c4fffcb90", "The authorisation nonce was not parsed correctly.");
+            Assert.True(authRequest.Qop == "auth", "The authorisation qop was not parsed correctly.");
+            Assert.True(authRequest.Opaque == "004533235332435434ffac663e", "The authorisation opaque was not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void KnownWWWAuthenticateDigestTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -149,12 +149,12 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Digest = " + digest + ".");
             Console.WriteLine(authRequest.ToString());
 
-            Assert.IsTrue("6221ea0348e2d5229dd1f3825d633295" == digest, "Digest was incorrect.");
+            Assert.True("6221ea0348e2d5229dd1f3825d633295" == digest, "Digest was incorrect.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void AuthenticateHeaderToStringTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -169,12 +169,12 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Digest = " + digest + ".");
             Console.WriteLine(authRequest.ToString());
 
-            Assert.IsTrue(authRequest.ToString() == @"Digest username=""user@aim.com"",realm=""aol.com"",nonce=""48e7541d4339e27ee7b520a4bf8a8e3c4fffcb90"",uri=""sip:01135312222222@sip.aol.com;transport=udp"",response=""18ad0e62fcc9d7f141a72078c4a0784f"",cnonce=""cf2e005f1801550717cc8c59193aa9f4"",nc=00000001,qop=auth,opaque=""004533235332435434ffac663e"",algorithm=MD5", "The authorisation header was not put to a string correctly.");
+            Assert.True(authRequest.ToString() == @"Digest username=""user@aim.com"",realm=""aol.com"",nonce=""48e7541d4339e27ee7b520a4bf8a8e3c4fffcb90"",uri=""sip:01135312222222@sip.aol.com;transport=udp"",response=""18ad0e62fcc9d7f141a72078c4a0784f"",cnonce=""cf2e005f1801550717cc8c59193aa9f4"",nc=00000001,qop=auth,opaque=""004533235332435434ffac663e"",algorithm=MD5", "The authorisation header was not put to a string correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void KnownQOPUnitTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -189,12 +189,12 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Digest = " + digest + ".");
             Console.WriteLine(authRequest.ToString());
 
-            Assert.IsTrue(authRequest.Response == "7709215c1d58c1912dc59d1e8b5b6248", "The authentication response digest was not generated properly.");
+            Assert.True(authRequest.Response == "7709215c1d58c1912dc59d1e8b5b6248", "The authentication response digest was not generated properly.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void KnownOpaqueTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -207,12 +207,12 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Digest = " + digest + ".");
             Console.WriteLine(authRequest.ToString());
 
-            Assert.IsTrue(true, "True was false.");
+            Assert.True(true, "True was false.");
 
             Console.WriteLine("-----------------------------------------");
         }
 
-        [TestMethod]
+        [Fact]
         public void GenreateDigestTest()
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -225,7 +225,7 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Digest = " + digest + ".");
             Console.WriteLine(authRequest.ToString());
 
-            Assert.IsTrue(true, "True was false.");
+            Assert.True(true, "True was false.");
 
             Console.WriteLine("-----------------------------------------");
         }

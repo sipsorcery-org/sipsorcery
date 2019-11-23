@@ -12,14 +12,14 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class RawSocketUnitTest
     {
-        [TestMethod]
+        [Fact]
         public void IPHeaderConstructionUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -40,11 +40,10 @@ namespace SIPSorcery.Sys.UnitTests
 
             Console.WriteLine();
 
-            Assert.IsTrue(true, "True was false.");
+            Assert.True(true, "True was false.");
         }
 
-        [TestMethod]
-        [Ignore("Will only work on WinXP or where raw socket privileges have been explicitly granted.")]
+        [Fact(Skip = "Will only work on Win10 or where raw socket privileges have been explicitly granted.")]
         public void PreconstructedIPPacketSendUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -76,11 +75,10 @@ namespace SIPSorcery.Sys.UnitTests
             rawSocket.Shutdown(SocketShutdown.Both);
             rawSocket.Close();
 
-            Assert.IsTrue(true, "True was false.");
+            Assert.True(true, "True was false.");
         }
 
-        [TestMethod]
-        [Ignore("Will only work on WinXP or where raw socket privileges have been explicitly granted.")]
+        [Fact(Skip="Will only work on Win10 or where raw socket privileges have been explicitly granted.")]
         public void IPEmptyPacketSendUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -103,7 +101,7 @@ namespace SIPSorcery.Sys.UnitTests
             rawSocket.Shutdown(SocketShutdown.Both);
             rawSocket.Close();
 
-            Assert.IsTrue(true, "True was false.");
+            Assert.True(true, "True was false.");
         }
     }
 }

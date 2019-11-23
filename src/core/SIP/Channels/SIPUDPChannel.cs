@@ -4,11 +4,19 @@
 // Description: SIP transport for UDP.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 17 Oct 2005	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 17 Oct 2005	Aaron Clauson	Created, Dublin, Ireland.
 // 14 Oct 2019  Aaron Clauson   Added IPv6 support.
+// 17 Nov 2019  Aaron Clauson   Added IPAddress.Any support, see https://github.com/sipsorcery/sipsorcery/issues/97.
+//
+// Notes:
+// This class is using the "Asychronous Programming Model" (APM)* BeginReceiveMessageFrom/EndReceiveMessageFrom approach. 
+// The motivation for te decision is that it's the only one of the UDP socket receives methods that provides access to 
+// the received on IP address when listening on IPAddress.Any.
+//
+// * https://docs.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -26,10 +34,9 @@ namespace SIPSorcery.SIP
 {
     public class SIPUDPChannel : SIPChannel
     {
-        private readonly Task m_mainLoop;
-
-        // Channel sockets.
-        private readonly UdpClient m_sipConn = null;
+        private readonly Socket m_udpSocket;
+        private readonly UdpClient m_udpClientWrapper;  // Wrapper around the socket. Allows access to SendAsync methods.
+        private byte[] m_recvBuffer;
 
         /// <summary>
         /// Creates a SIP channel to listen for and send SIP messages over UDP.
@@ -37,103 +44,114 @@ namespace SIPSorcery.SIP
         /// <param name="endPoint">The IP end point to listen on and send from.</param>
         public SIPUDPChannel(IPEndPoint endPoint)
         {
-            m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, endPoint);
-
-            m_sipConn = new UdpClient(m_localSIPEndPoint.GetIPEndPoint());
-            if (m_localSIPEndPoint.Port == 0)
+            if (endPoint == null)
             {
-                m_localSIPEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, (IPEndPoint)m_sipConn.Client.LocalEndPoint);
+                throw new ArgumentNullException("endPoint", "The end point must be specified when creating a SIPUDPChannel.");
             }
-            logger.LogDebug("SIPUDPChannel listener created " + m_localSIPEndPoint.GetIPEndPoint() + ".");
 
-            m_mainLoop = Task.Run(Listen);
+            ID = Crypto.GetRandomInt(CHANNEL_ID_LENGTH).ToString();
+            ListeningIPAddress = endPoint.Address;
+            Port = endPoint.Port;
+            SIPProtocol = SIPProtocolsEnum.udp;
+            IsReliable = true;
+
+            m_udpSocket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+            m_udpSocket.Bind(endPoint);
+            if (endPoint.Port == 0)
+            {
+                Port = (m_udpSocket.LocalEndPoint as IPEndPoint).Port;
+            }
+            m_udpClientWrapper = new UdpClient();
+            m_udpClientWrapper.Client = m_udpSocket;
+            m_recvBuffer = new byte[SIPConstants.SIP_MAXIMUM_UDP_SEND_LENGTH * 2];
+
+            logger.LogInformation($"SIP UDP Channel created for {ListeningEndPoint}.");
+
+            Receive();
         }
 
         public SIPUDPChannel(IPAddress listenAddress, int listenPort) : this(new IPEndPoint(listenAddress, listenPort))
         { }
 
-        private async Task Listen()
-        {
-            logger.LogDebug("SIPUDPChannel socket on " + m_localSIPEndPoint.ToString() + " listening started.");
-
-            while (!Closed)
-            {
-                try
-                {
-                    var receiveResult = await m_sipConn.ReceiveAsync();
-                    if (receiveResult.Buffer?.Length > 0)
-                    {
-                        SIPMessageReceived?.Invoke(this, new SIPEndPoint(SIPProtocolsEnum.udp, receiveResult.RemoteEndPoint), receiveResult.Buffer);
-                    }
-                }
-                catch (ObjectDisposedException)
-                {
-                    // it's ok to be here after invoking Close()
-                    break;
-                }
-                catch (SocketException)
-                {
-                    // ToDo. Pretty sure these exceptions get thrown when an ICMP message comes back indicating there is no listening
-                    // socket on the other end. It would be nice to be able to relate that back to the socket that the data was sent to
-                    // so that we know to stop sending.
-                    //logger.LogWarning("SocketException SIPUDPChannel Receive (" + sockExcp.ErrorCode + "). " + sockExcp.Message);
-
-                    //inEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
-                    continue;
-                }
-                catch (Exception listenExcp)
-                {
-                    logger.LogError("Exception listening on SIPUDPChannel. " + listenExcp.Message);
-                    continue;
-                }
-            }
-
-            logger.LogDebug("SIPUDPChannel socket on " + m_localSIPEndPoint + " listening halted.");
-        }
-
-        public override void Send(IPEndPoint destinationEndPoint, string message)
-        {
-            byte[] messageBuffer = Encoding.UTF8.GetBytes(message);
-            Send(destinationEndPoint, messageBuffer);
-        }
-
-        public override void Send(IPEndPoint destinationEndPoint, byte[] buffer)
+        private void Receive()
         {
             try
             {
-                if (destinationEndPoint == null)
-                {
-                    throw new ApplicationException("An empty destination was specified to Send in SIPUDPChannel.");
-                }
-                else
-                {
-                    m_sipConn.Send(buffer, buffer.Length, destinationEndPoint);
-                }
+                EndPoint recvEndPoint = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+                m_udpSocket.BeginReceiveMessageFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveMessageFrom, null);
             }
-            catch (Exception excp)
+            catch(Exception excp)
             {
-                logger.LogError("Exception (" + excp.GetType().ToString() + ") SIPUDPChannel Send (sendto=>" + IPSocket.GetSocketString(destinationEndPoint) + "). " + excp.Message);
-                throw excp;
+                // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
+                // the BeginReceiveMessageFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
+                // case the sopcket can be considered to be unusable adn there's no point trying another receive.
+                logger.LogError($"Exception Receive. {excp.Message}");
+                logger.LogDebug($"SIPUDPChannel socket on {ListeningEndPoint} listening halted.");
+                Closed = true;
             }
         }
 
-        public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer)
+        private void EndReceiveMessageFrom(IAsyncResult ar)
+        {
+            try
+            {
+                SocketFlags flags = SocketFlags.None;
+                EndPoint remoteEP = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+
+                int bytesRead = m_udpSocket.EndReceiveMessageFrom(ar, ref flags, ref remoteEP, out var packetInfo);
+
+                if (bytesRead > 0)
+                {
+                    SIPEndPoint remoteEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, remoteEP as IPEndPoint, ID, null);
+                    SIPEndPoint localEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(packetInfo.Address, Port), ID, null);
+                    byte[] sipMsgBuffer = new byte[bytesRead];
+                    Buffer.BlockCopy(m_recvBuffer, 0, sipMsgBuffer, 0, bytesRead);
+                    SIPMessageReceived?.Invoke(this, localEndPoint, remoteEndPoint, sipMsgBuffer);
+                }
+            }
+            catch (SocketException sockExcp)
+            {
+                // ToDo. Pretty sure these exceptions get thrown when an ICMP message comes back indicating there is no listening
+                // socket on the other end. It would be nice to be able to relate that back to the socket that the data was sent to
+                // so that we know to stop sending.
+                logger.LogWarning($"SocketException SIPUDPChannel Receive ({sockExcp.ErrorCode}). {sockExcp.Message}");
+            }
+            catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
+            catch (Exception excp)
+            {
+                logger.LogError($"Exception SIPUDPChannel.EndReceiveMessageFrome. {excp.Message}");
+            }
+            finally
+            {
+                if (!Closed)
+                {
+                    Receive();
+                }
+            }
+        }
+
+        public override async void Send(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
+        {
+            await SendAsync(dstEndPoint, buffer, connectionIDHint);
+        }
+
+        public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
             if (dstEndPoint == null)
             {
                 throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in SIPUDPChannel.");
             }
-            else if(buffer == null || buffer.Length == 0)
+            else if (buffer == null || buffer.Length == 0)
             {
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPUDPChannel.");
             }
 
             try
             {
-                int bytesSent = await m_sipConn.SendAsync(buffer, buffer.Length, dstEndPoint);
+                int bytesSent = await m_udpClientWrapper.SendAsync(buffer, buffer.Length, dstEndPoint);
                 return (bytesSent > 0) ? SocketError.Success : SocketError.ConnectionReset;
             }
-            catch(SocketException sockExcp)
+            catch (SocketException sockExcp)
             {
                 return sockExcp.SocketErrorCode;
             }
@@ -142,7 +160,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// This method is not implemented for the SIP UDP channel.
         /// </summary>
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        public override void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }
@@ -150,15 +168,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// This method is not implemented for the SIP UDP channel.
         /// </summary>
-        public override Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
-        {
-            throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
-        }
-
-        /// <summary>
-        /// This method is not implemented for the SIP UDP channel.
-        /// </summary>
-        public override Task<SocketError> SendAsync(string connectionID, byte[] buffer)
+        public override Task<SocketError> SendSecureAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }
@@ -183,11 +193,10 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                logger.LogDebug("Closing SIP UDP Channel " + SIPChannelEndPoint + ".");
+                logger.LogDebug($"Closing SIP UDP Channel {ListeningEndPoint}.");
 
                 Closed = true;
-                m_sipConn.Close();
-                m_mainLoop.GetAwaiter().GetResult();
+                m_udpClientWrapper.Close();
             }
             catch (Exception excp)
             {

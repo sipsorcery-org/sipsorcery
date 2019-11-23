@@ -20,7 +20,7 @@ namespace SIPSorcery.SIP
 {
     // SIP Channel delegates.
     public delegate void SIPMessageSentDelegate(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer);
-    public delegate void SIPMessageReceivedDelegate(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer);
+    public delegate void SIPMessageReceivedDelegate(SIPChannel sipChannel, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer);
 
     // SIP Transport delegates.
     public delegate void SIPTransportRequestDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest);

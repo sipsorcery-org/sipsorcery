@@ -11,13 +11,13 @@
 
 using System;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 namespace SIPSorcery.Net.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class STUNUnitTest
     {
-        [TestMethod]
+        [Fact]
         public void ParseAsteriskSTUNRequestTestMethod()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -36,7 +36,7 @@ namespace SIPSorcery.Net.UnitTests
             Console.WriteLine("Transaction ID = " + BitConverter.ToString(stunHeader.TransactionId) + ".");
         }
 
-        [TestMethod]
+        [Fact]
         public void STUNWithUsernameToBytesUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -48,7 +48,7 @@ namespace SIPSorcery.Net.UnitTests
             Console.WriteLine(BitConverter.ToString(stunMessageBytes));
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseSTUNResponseTestMethod()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);

@@ -10,17 +10,17 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class RTPVP8HeaderUnitTest
     {
         /// <summary>
         /// Tests getting the VP8 header for an intermediate (non-key) frame.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void GeIntermediateFrameHeaderTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -39,7 +39,7 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// Tests that a known VP8 header is correctly parsed.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseKnownVP8HeaderTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -49,11 +49,11 @@ namespace SIPSorcery.Net.UnitTests
             var knownHeader = RTPVP8Header.GetVP8Header(rawHeader);
             var outputBytes = knownHeader.GetBytes();
 
-            Assert.AreEqual(knownHeader.FirstPartitionSize, 1697);
+            Assert.Equal(1697, knownHeader.FirstPartitionSize);
 
             for(int index=0; index<rawHeader.Length; index++)
             {
-                Assert.AreEqual(rawHeader[index], outputBytes[index]);
+                Assert.Equal(rawHeader[index], outputBytes[index]);
             }
         }
 
@@ -61,7 +61,7 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// Tests that the first partition size is parsed and then returned correctly.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ReversePartitionSizeTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -76,13 +76,13 @@ namespace SIPSorcery.Net.UnitTests
 
             var mirroredHeader = RTPVP8Header.GetVP8Header(rtpVP8Header.GetBytes());
 
-            Assert.AreEqual(rtpVP8Header.FirstPartitionSize, mirroredHeader.FirstPartitionSize);
+            Assert.Equal(rtpVP8Header.FirstPartitionSize, mirroredHeader.FirstPartitionSize);
         }
 
         /// <summary>
         /// Tests that the VP8 header is correctly parsed when a two byte picure ID is used.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void CheckLengthForTwoBytePicutreIDTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -91,13 +91,13 @@ namespace SIPSorcery.Net.UnitTests
 
             var vp8Header = RTPVP8Header.GetVP8Header(rawHeader);
 
-            Assert.AreEqual(4, vp8Header.PayloadDescriptorLength);
+            Assert.Equal(4, vp8Header.PayloadDescriptorLength);
         }
 
         /// <summary>
         /// Tests that the VP8 header is correctly parsed when a single byte picure ID is used.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void CheckLengthForSingleBytePicutreIDTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -106,7 +106,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var vp8Header = RTPVP8Header.GetVP8Header(rawHeader);
 
-            Assert.AreEqual(3, vp8Header.PayloadDescriptorLength);
+            Assert.Equal(3, vp8Header.PayloadDescriptorLength);
         }
     }
 }
