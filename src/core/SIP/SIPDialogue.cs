@@ -231,7 +231,14 @@ namespace SIPSorcery.SIP
             Direction = SIPCallDirection.Out;
 
             // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
-            RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, uacInviteTransaction.TransactionRequest.RemoteSIPEndPoint.CopyOf());
+            if (uacInviteTransaction.TransactionFinalResponse != null)
+            {
+                RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, uacInviteTransaction.TransactionFinalResponse.RemoteSIPEndPoint.CopyOf());
+            }
+            else
+            {
+                RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, uacInviteTransaction.TransactionRequest.RemoteSIPEndPoint.CopyOf());
+            }
             ProxySendFrom = uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedOn;
             if (uacInviteTransaction.TransactionFinalResponse.Header.Contact != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact.Count > 0)
             {
