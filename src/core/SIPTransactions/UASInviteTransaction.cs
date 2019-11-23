@@ -41,10 +41,9 @@ namespace SIPSorcery.SIP
             SIPTransport sipTransport,
             SIPRequest sipRequest,
             SIPEndPoint dstEndPoint,
-            SIPEndPoint localSIPEndPoint,
             SIPEndPoint outboundProxy,
             bool noCDR = false)
-            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy)
+            : base(sipTransport, sipRequest, dstEndPoint, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.InviteServer;
             m_remoteTag = sipRequest.Header.From.FromTag;
@@ -61,7 +60,7 @@ namespace SIPSorcery.SIP
             }
 
             //logger.LogDebug("New UASTransaction (" + TransactionId + ") for " + TransactionRequest.URI.ToString() + " to " + RemoteEndPoint + ".");
-            SIPEndPoint localEP = SIPEndPoint.TryParse(sipRequest.Header.ProxyReceivedOn) ?? localSIPEndPoint;
+            SIPEndPoint localEP = SIPEndPoint.TryParse(sipRequest.Header.ProxyReceivedOn) ?? sipRequest.LocalSIPEndPoint;
             SIPEndPoint remoteEP = SIPEndPoint.TryParse(sipRequest.Header.ProxyReceivedFrom) ?? dstEndPoint;
 
             if (!noCDR)
@@ -188,11 +187,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public SIPResponse GetOkResponse(SIPRequest sipRequest, SIPEndPoint localSIPEndPoint, string contentType, string messageBody)
+        public SIPResponse GetOkResponse(SIPRequest sipRequest, string contentType, string messageBody)
         {
             try
             {
-                SIPResponse okResponse = new SIPResponse(SIPResponseStatusCodesEnum.Ok, null, sipRequest.LocalSIPEndPoint, sipRequest.RemoteSIPEndPoint);
+                SIPResponse okResponse = new SIPResponse(SIPResponseStatusCodesEnum.Ok, null);
+                okResponse.SetSendFromHints(sipRequest.LocalSIPEndPoint);
 
                 SIPHeader requestHeader = sipRequest.Header;
                 // Let the transport layer set the contact at send time.

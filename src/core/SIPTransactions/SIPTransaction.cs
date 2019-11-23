@@ -209,13 +209,10 @@ namespace SIPSorcery.SIP
         /// <param name="sipTransport">The SIP Transport layer that is to be used with the transaction.</param>
         /// <param name="transactionRequest">The SIP Request on which the transaction is based.</param>
         /// <param name="dstEndPoint">The socket the at the remote end of the transaction and which transaction messages will be sent to.</param>
-        /// <param name="localSIPEndPoint">The socket that should be used as the send from socket for communications on this transaction. Typically this will
-        /// be the socket the initial request was received on.</param>
         protected SIPTransaction(
             SIPTransport sipTransport,
             SIPRequest transactionRequest,
             SIPEndPoint dstEndPoint,
-            SIPEndPoint localSIPEndPoint,
             SIPEndPoint outboundProxy)
         {
             try
@@ -228,10 +225,6 @@ namespace SIPSorcery.SIP
                 {
                     throw new ArgumentNullException("A SIPRequest object must be supplied when creating a SIPTransaction.");
                 }
-                //else if (localSIPEndPoint == null)
-                //{
-                //    throw new ArgumentNullException("The local SIP end point must be set when creating a SIPTransaction.");
-                //}
                 else if (transactionRequest.Header.Vias.TopViaHeader == null)
                 {
                     throw new ArgumentNullException("The SIP request must have a Via header when creating a SIPTransaction.");
@@ -246,7 +239,6 @@ namespace SIPSorcery.SIP
                 m_callId = transactionRequest.Header.CallId;
                 m_sentBy = transactionRequest.Header.Vias.TopViaHeader.ContactAddress;
                 RemoteEndPoint = dstEndPoint;
-                LocalSIPEndPoint = localSIPEndPoint;
                 OutboundProxy = outboundProxy;
 
                 if (transactionRequest.Header.RequiredExtensions.Contains(SIPExtensions.Prack) ||
@@ -439,7 +431,8 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                SIPResponse informationalResponse = new SIPResponse(sipResponseCode, null, sipRequest.LocalSIPEndPoint, sipRequest.RemoteSIPEndPoint);
+                SIPResponse informationalResponse = new SIPResponse(sipResponseCode, null);
+                informationalResponse.SetSendFromHints(sipRequest.LocalSIPEndPoint);
 
                 SIPHeader requestHeader = sipRequest.Header;
                 informationalResponse.Header = new SIPHeader(requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);

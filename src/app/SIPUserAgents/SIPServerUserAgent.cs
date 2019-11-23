@@ -348,7 +348,7 @@ namespace SIPSorcery.SIP.App
                         m_uasTransaction.LocalTag = toTag;
                     }
 
-                    SIPResponse okResponse = m_uasTransaction.GetOkResponse(m_uasTransaction.TransactionRequest, m_uasTransaction.TransactionRequest.LocalSIPEndPoint, contentType, body);
+                    SIPResponse okResponse = m_uasTransaction.GetOkResponse(m_uasTransaction.TransactionRequest, contentType, body);
 
                     if (body != null)
                     {
@@ -468,7 +468,7 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         SIPRequest byeRequest = GetByeRequest();
-                        SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, null, m_outboundProxy);
+                        SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, m_outboundProxy);
                         byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
                         byeTransaction.SendReliableRequest();
                     }
@@ -504,7 +504,7 @@ namespace SIPSorcery.SIP.App
                     authByeRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                     authByeRequest.Header.CSeq = authByeRequest.Header.CSeq + 1;
 
-                    SIPNonInviteTransaction bTransaction = m_sipTransport.CreateNonInviteTransaction(authByeRequest, null, localSIPEndPoint, null);
+                    SIPNonInviteTransaction bTransaction = m_sipTransport.CreateNonInviteTransaction(authByeRequest, null, null);
                     bTransaction.SendReliableRequest();
                 }
             }

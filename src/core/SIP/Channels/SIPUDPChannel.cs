@@ -130,18 +130,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override void Send(IPEndPoint destinationEndPoint, string message)
+        public override async void Send(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
-            byte[] messageBuffer = Encoding.UTF8.GetBytes(message);
-            Send(destinationEndPoint, messageBuffer);
+            await SendAsync(dstEndPoint, buffer, connectionIDHint);
         }
 
-        public override async void Send(IPEndPoint dstEndPoint, byte[] buffer)
-        {
-            await SendAsync(dstEndPoint, buffer);
-        }
-
-        public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer)
+        public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
             if (dstEndPoint == null)
             {
@@ -166,7 +160,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// This method is not implemented for the SIP UDP channel.
         /// </summary>
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        public override void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }
@@ -174,15 +168,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// This method is not implemented for the SIP UDP channel.
         /// </summary>
-        public override Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
-        {
-            throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
-        }
-
-        /// <summary>
-        /// This method is not implemented for the SIP UDP channel.
-        /// </summary>
-        public override Task<SocketError> SendAsync(string connectionID, byte[] buffer)
+        public override Task<SocketError> SendSecureAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }

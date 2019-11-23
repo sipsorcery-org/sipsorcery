@@ -395,31 +395,20 @@ namespace SIPSorcery.SIP
         /// Attempts to send data to the remote end point over a reliable TCP connection.
         /// </summary>
         /// <param name="dstEndPoint">The remote end point to send to.</param>
-        /// <param name="message">The data to send.</param>
-        public override async void Send(IPEndPoint destinationEndPoint, string message)
-        {
-            byte[] messageBuffer = Encoding.UTF8.GetBytes(message);
-            await SendAsync(destinationEndPoint, messageBuffer, null);
-        }
-
-        /// <summary>
-        /// Attempts to send data to the remote end point over a reliable TCP connection.
-        /// </summary>
-        /// <param name="dstEndPoint">The remote end point to send to.</param>
         /// <param name="buffer">The data to send.</param>
-        public override async void Send(IPEndPoint dstEndPoint, byte[] buffer)
+        public override async void Send(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
-            await SendAsync(dstEndPoint, buffer, null);
+            await SendAsync(dstEndPoint, buffer, connectionIDHint);
         }
 
-        public override async void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        public override async void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
-            await SendAsync(dstEndPoint, buffer, serverCertificateName);
+            await SendSecureAsync(dstEndPoint, buffer, serverCertificateName, connectionIDHint);
         }
 
-        public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer)
+        public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
-            return await SendAsync(dstEndPoint, buffer, null);
+            return await SendSecureAsync(dstEndPoint, buffer, null, connectionIDHint);
         }
 
         /// <summary>
@@ -430,7 +419,9 @@ namespace SIPSorcery.SIP
         /// <param name="buffer">The data to send.</param>
         /// <param name="serverCertificateName">Optional. Only relevant for SSL streams. The common name
         /// that is expected for the remote SSL server.</param>
-        public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        /// <param name="connectionIDHint">Optional. The ID of the specific TCP connection to try and the send the message on.</param>
+        /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
+        public override async Task<SocketError> SendSecureAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             try
             {
@@ -450,9 +441,20 @@ namespace SIPSorcery.SIP
                 else
                 {
                     // Lookup a client socket that is connected to the destination. If it does not exist attempt to connect a new one.
-                    if (HasConnection(dstEndPoint))
+                    SIPStreamConnection sipStreamConn = null;
+
+                    if (connectionIDHint != null)
                     {
-                        var sipStreamConn = m_connections.Where(x => x.Value.RemoteEndPoint.Equals(dstEndPoint)).First().Value;
+                        m_connections.TryGetValue(connectionIDHint, out sipStreamConn);
+                    }
+
+                    if (sipStreamConn == null && HasConnection(dstEndPoint))
+                    {
+                       sipStreamConn = m_connections.Where(x => x.Value.RemoteEndPoint.Equals(dstEndPoint)).First().Value;
+                    }
+
+                    if (sipStreamConn != null)
+                    {
                         SendOnConnected(sipStreamConn, buffer);
                         return SocketError.Success;
                     }
@@ -474,44 +476,6 @@ namespace SIPSorcery.SIP
             {
                 logger.LogError("Exception (" + excp.GetType().ToString() + ") SIPTCPChannel Send (sendto=>" + dstEndPoint + "). " + excp.Message);
                 throw;
-            }
-        }
-
-        /// <summary>
-        /// Sends a SIP message asynchronously on a specific stream connection.
-        /// </summary>
-        /// <param name="connectionID">The ID of the specific TCP connection that the message must be sent on.</param>
-        /// <param name="buffer">The data to send.</param>
-        /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override Task<SocketError> SendAsync(string connectionID, byte[] buffer)
-        {
-            if (String.IsNullOrEmpty(connectionID))
-            {
-                throw new ArgumentException("connectionID", "An empty connection ID was specified for a Send in SIPTCPChannel.");
-            }
-            else if (buffer == null || buffer.Length == 0)
-            {
-                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPTCPChannel.");
-            }
-
-            try
-            {
-                SIPStreamConnection sipStreamConn = null;
-                m_connections.TryGetValue(connectionID, out sipStreamConn);
-
-                if (sipStreamConn != null)
-                {
-                    SendOnConnected(sipStreamConn, buffer);
-                    return Task.FromResult(SocketError.Success);
-                }
-                else
-                {
-                    return Task.FromResult(SocketError.ConnectionReset);
-                }
-            }
-            catch (SocketException sockExcp)
-            {
-                return Task.FromResult(sockExcp.SocketErrorCode);
             }
         }
 

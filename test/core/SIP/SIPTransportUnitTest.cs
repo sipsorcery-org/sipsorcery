@@ -31,6 +31,8 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "Integration")]
     public class SIPTransportUnitTest
     {
+        private const int TRANSPORT_TEST_TIMEOUT = 5000;
+
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         public SIPTransportUnitTest(ITestOutputHelper output)
@@ -63,7 +65,7 @@ namespace SIPSorcery.SIP.UnitTests
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -93,7 +95,7 @@ namespace SIPSorcery.SIP.UnitTests
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -125,7 +127,7 @@ namespace SIPSorcery.SIP.UnitTests
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -155,7 +157,7 @@ namespace SIPSorcery.SIP.UnitTests
             Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { clientTask, Task.Delay(5000) }).Wait();
+            Task.WhenAny(new Task[] { clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -196,7 +198,7 @@ namespace SIPSorcery.SIP.UnitTests
                 logger.LogDebug($"Server URI {serverUri.ToString()}.");
 
                 var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverUri, testComplete); });
-                Task.WhenAny(new Task[] { clientTask, Task.Delay(5000) }).Wait();
+                Task.WhenAny(new Task[] { clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
                 if (testComplete.Task.IsCompleted == false)
                 {
@@ -236,7 +238,7 @@ namespace SIPSorcery.SIP.UnitTests
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sips, IPAddress.IPv6Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -272,7 +274,7 @@ namespace SIPSorcery.SIP.UnitTests
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
             var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sips, IPAddress.Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(5000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -351,13 +353,12 @@ namespace SIPSorcery.SIP.UnitTests
 
             tcpChannel.ConnectClientAsync(listenEP, null, null).Wait();
 
-            Task.WhenAny(new Task[] { testComplete.Task, Task.Delay(5000) }).Wait();
-            //Task.WhenAny(new Task[] { testComplete.Task }).Wait();
+            Task.WhenAny(new Task[] { testComplete.Task, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             transport.Shutdown();
 
             // Give the SIP transport time to shutdown. Keeps exception messages out of the logs.
-            Task.Delay(1000).Wait();
+            Task.Delay(500).Wait();
 
             Assert.True(testComplete.Task.IsCompleted);
             Assert.True(testComplete.Task.Result);
@@ -386,6 +387,7 @@ namespace SIPSorcery.SIP.UnitTests
                     if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                     {
                         SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        logger.LogDebug(optionsResponse.ToString());
                         serverSIPTransport.SendResponse(optionsResponse);
                     }
                 };

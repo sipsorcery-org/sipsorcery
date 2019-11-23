@@ -193,38 +193,33 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Send a SIP message, represented as a string, to a remote end point.
+        /// Synchronous wrapper for <see cref="SendAsync"/>
         /// </summary>
-        /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
-        /// <param name="message">The message to send.</param>
-        public abstract void Send(IPEndPoint destinationEndPoint, string message);
-        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer);
-        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName);
+        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint = null);
+
+        /// <summary>
+        /// Synchronous wrapper for <see cref="SendSecureAsync"/>
+        /// </summary>
+        public abstract void SendSecure(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint = null);
 
         /// <summary>
         /// Asynchronous SIP message send to a remote end point.
         /// </summary>
         /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
         /// <param name="buffer">The data to send.</param>
+        /// <param name="connectionID">Optional ID of the specific client connection that the message should be sent on. It's only
+        /// a hint so if the connection has been closed a new one will be attempted.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public abstract Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer);
+        public abstract Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint = null);
 
         /// <summary>
-        /// Asynchronous SIP message send to a remote end point.
+        /// Asynchronous SIP message send over a secure TLS connetion to a remote end point.
         /// </summary>
         /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
         /// <param name="buffer">The data to send.</param>
         /// <param name="serverCertificateName">If the send is over SSL the required common name of the server's X509 certificate.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public abstract Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName);
-
-        /// <summary>
-        /// Sends a SIP message asynchronously on a specific stream connection.
-        /// </summary>
-        /// <param name="connectionID">The ID of the specific client connection that the messgae must be sent on.</param>
-        /// <param name="buffer">The data to send.</param>
-        /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public abstract Task<SocketError> SendAsync(string connectionID, byte[] buffer);
+        public abstract Task<SocketError> SendSecureAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint = null);
 
         /// <summary>
         /// Checks whether the SIP channel has a connection matching a unique connection ID.

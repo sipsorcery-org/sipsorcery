@@ -41,7 +41,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRequest inviteRequest = GetDummyINVITERequest(dummyURI);
 
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
-            UACInviteTransaction clientTransaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, dummySIPEndPoint, null);
+            UACInviteTransaction clientTransaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, null);
             clientEngine.AddTransaction(clientTransaction);
             
             Assert.Throws<ApplicationException>(() => clientEngine.AddTransaction(clientTransaction));
@@ -70,7 +70,7 @@ namespace SIPSorcery.SIP.UnitTests
                 m_CRLF +
                 "dummy");
 
-            SIPTransaction transaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, dummySIPEndPoint, null);
+            SIPTransaction transaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, null);
             transactionEngine.AddTransaction(transaction);
 
             SIPResponse sipResponse = SIPResponse.ParseSIPResponse("SIP/2.0 603 Nothing listening" + m_CRLF +
@@ -110,17 +110,16 @@ namespace SIPSorcery.SIP.UnitTests
                 serverTransport.SIPTransportRequestReceived += (localEndPoint, remoteEndPoint, sipRequest) =>
                 {
                     Console.WriteLine("Server Transport Request In: " + sipRequest.Method + ".");
-                    serverTransaction = serverTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localEndPoint, null);
+                    serverTransaction = serverTransport.CreateUASTransaction(sipRequest, remoteEndPoint, null);
                     SetTransactionTraceEvents(serverTransaction);
                     serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
                 };
 
                 SIPURI dummyURI = SIPURI.ParseSIPURI("sip:dummy@" + serverEndPoint);
                 SIPRequest inviteRequest = GetDummyINVITERequest(dummyURI);
-                inviteRequest.LocalSIPEndPoint = clientEndPoint;
 
                 // Send the invite to the server side.
-                UACInviteTransaction clientTransaction = new UACInviteTransaction(clientTransport, inviteRequest, serverEndPoint, clientEndPoint, null);
+                UACInviteTransaction clientTransaction = new UACInviteTransaction(clientTransport, inviteRequest, serverEndPoint, null);
                 SetTransactionTraceEvents(clientTransaction);
                 clientEngine.AddTransaction(clientTransaction);
                 clientTransaction.SendInviteRequest(serverEndPoint, inviteRequest);
@@ -166,7 +165,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             // Server has received the invite.
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
-            UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, dummySIPEndPoint, null, true);
+            UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, dummySIPEndPoint, null, true);
             engine.AddTransaction(serverTransaction);
 
             string ackRequestStr =

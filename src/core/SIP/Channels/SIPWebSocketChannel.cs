@@ -202,21 +202,7 @@ namespace SIPSorcery.SIP
         /// <param name="destinationEndPoint">The remote destiation end point to send the data to.</param>
         /// <param name="buffer">The data to send.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override async void Send(IPEndPoint destinationEndPoint, string message)
-        {
-            byte[] buffer = Encoding.UTF8.GetBytes(message);
-            await SendAsync(destinationEndPoint, buffer);
-        }
-
-        /// <summary>
-        /// Ideally sends on the web socket channel should specify the connection ID. But if there's
-        /// a good reason not to we can check if there is an existing client connection with the
-        /// requested remote end point and use it.
-        /// </summary>
-        /// <param name="destinationEndPoint">The remote destiation end point to send the data to.</param>
-        /// <param name="buffer">The data to send.</param>
-        /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override async void Send(IPEndPoint destinationEndPoint, byte[] buffer)
+        public override async void Send(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
         {
             if (destinationEndPoint == null)
             {
@@ -227,7 +213,7 @@ namespace SIPSorcery.SIP
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPWebSocketChannel.");
             }
 
-            await SendAsync(destinationEndPoint, buffer);
+            await SendAsync(destinationEndPoint, buffer, connectionIDHint);
         }
 
         /// <summary>
@@ -237,49 +223,13 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="destinationEndPoint">The remote destiation end point to send the data to.</param>
         /// <param name="buffer">The data to send.</param>
+        /// <param name="connectionIDHint">The ID of the specific web socket connection to try and send the message on.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override async Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer)
+        public override async Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
         {
             if (destinationEndPoint == null)
             {
                 throw new ApplicationException("An empty destination was specified to Send in SIPWebSocketChannel.");
-            }
-            else if (buffer == null || buffer.Length == 0)
-            {
-                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPWebSocketChannel.");
-            }
-
-            try
-            {
-                var client = m_clientConnections.Where(x => x.Value.Context.UserEndPoint.Equals(destinationEndPoint)).Select(x => x.Value).FirstOrDefault();
-
-                if (client != null)
-                {
-                    await Task.Run(() => client.Send(buffer, 0, buffer.Length));
-                    return SocketError.Success;
-                }
-                else
-                {
-                    return SocketError.ConnectionReset;
-                }
-            }
-            catch (SocketException sockExcp)
-            {
-                return sockExcp.SocketErrorCode;
-            }
-        }
-
-        /// <summary>
-        /// Sends a SIP message asynchronously on a specific stream connection.
-        /// </summary>
-        /// <param name="connectionID">The ID of the specific web socket connection that the message must be sent on.</param>
-        /// <param name="buffer">The data to send.</param>
-        /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override async Task<SocketError> SendAsync(string connectionID, byte[] buffer)
-        {
-            if (String.IsNullOrEmpty(connectionID))
-            {
-                throw new ArgumentException("connectionID", "An empty connection ID was specified for a Send in SIPWebSocketChannel.");
             }
             else if (buffer == null || buffer.Length == 0)
             {
@@ -289,7 +239,16 @@ namespace SIPSorcery.SIP
             try
             {
                 SIPMessagWebSocketBehavior client = null;
-                m_clientConnections.TryGetValue(connectionID, out client);
+
+                if (connectionIDHint != null)
+                {
+                    m_clientConnections.TryGetValue(connectionIDHint, out client);
+                }
+
+                if (client == null)
+                {
+                    client = m_clientConnections.Where(x => x.Value.Context.UserEndPoint.Equals(destinationEndPoint)).Select(x => x.Value).FirstOrDefault();
+                }
 
                 if (client != null)
                 {
@@ -310,7 +269,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Not implemented for the WebSocket channel.
         /// </summary>
-        public override void Send(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        public override void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             throw new NotImplementedException("This Send method is not available in the SIP Web Socket channel, please use an alternative overload.");
         }
@@ -318,7 +277,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Not implemented for the WebSocket channel.
         /// </summary>
-        public override Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        public override Task<SocketError> SendSecureAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             throw new NotImplementedException("This Send method is not available in the SIP Web Socket channel, please use an alternative overload.");
         }

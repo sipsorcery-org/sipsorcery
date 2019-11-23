@@ -273,7 +273,7 @@ namespace SIPSorcery.SIP.App
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Initiating registration to " + m_registrarHost + " at " + registrarSIPEndPoint.ToString() + " for " + m_sipAccountAOR.ToString() + ".", m_owner));
                         SIPRequest regRequest = GetRegistrationRequest();
 
-                        SIPNonInviteTransaction regTransaction = m_sipTransport.CreateNonInviteTransaction(regRequest, registrarSIPEndPoint, m_localEndPoint, m_outboundProxy);
+                        SIPNonInviteTransaction regTransaction = m_sipTransport.CreateNonInviteTransaction(regRequest, registrarSIPEndPoint, m_outboundProxy);
                         // These handlers need to be on their own threads to take the processing off the SIP transport layer.
                         regTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { ThreadPool.QueueUserWorkItem(delegate { ServerResponseReceived(lep, rep, tn, rsp); }); };
                         regTransaction.NonInviteTransactionTimedOut += (tn) => { ThreadPool.QueueUserWorkItem(delegate { RegistrationTimedOut(tn); }); };
@@ -320,7 +320,7 @@ namespace SIPSorcery.SIP.App
                         {
                             m_attempts++;
                             SIPRequest authenticatedRequest = GetAuthenticatedRegistrationRequest(sipTransaction.TransactionRequest, sipResponse);
-                            SIPNonInviteTransaction regAuthTransaction = m_sipTransport.CreateNonInviteTransaction(authenticatedRequest, sipTransaction.RemoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            SIPNonInviteTransaction regAuthTransaction = m_sipTransport.CreateNonInviteTransaction(authenticatedRequest, sipTransaction.RemoteEndPoint, m_outboundProxy);
                             regAuthTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { ThreadPool.QueueUserWorkItem(delegate { AuthResponseReceived(lep, rep, tn, rsp); }); };
                             regAuthTransaction.NonInviteTransactionTimedOut += (tn) => { ThreadPool.QueueUserWorkItem(delegate { RegistrationTimedOut(tn); }); };
                             m_sipTransport.SendSIPReliable(regAuthTransaction);
@@ -556,7 +556,8 @@ namespace SIPSorcery.SIP.App
                 authRequest.SetCredentials(username, m_password, registerRequest.URI.ToString(), SIPMethodsEnum.REGISTER.ToString());
 
                 SIPRequest regRequest = registerRequest.Copy();
-                regRequest.LocalSIPEndPoint = registerRequest.LocalSIPEndPoint;
+                regRequest.SetSendFromHints(registerRequest.LocalSIPEndPoint);
+
                 regRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                 regRequest.Header.From.FromTag = CallProperties.CreateNewTag();
                 regRequest.Header.To.ToTag = null;

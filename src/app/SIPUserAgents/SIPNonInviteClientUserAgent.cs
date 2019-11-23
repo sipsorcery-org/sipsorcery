@@ -62,8 +62,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 SIPRequest req = GetRequest(method);
-                var localSIPEndPoint = m_sipTransport.GetSIPChannelForDestination(req.URI.Protocol, new System.Net.IPEndPoint(IPAddress.Any, 0)).ListeningSIPEndPoint;
-                SIPNonInviteTransaction tran = m_sipTransport.CreateNonInviteTransaction(req, null, localSIPEndPoint, m_outboundProxy);
+                SIPNonInviteTransaction tran = m_sipTransport.CreateNonInviteTransaction(req, null, m_outboundProxy);
                 
                 ManualResetEvent waitForResponse = new ManualResetEvent(false);
                 tran.NonInviteTransactionTimedOut += RequestTimedOut;
@@ -96,7 +95,7 @@ namespace SIPSorcery.SIP.App
                         if ((m_callDescriptor.Username != null || m_callDescriptor.AuthUsername != null) && m_callDescriptor.Password != null)
                         {
                             SIPRequest authenticatedRequest = GetAuthenticatedRequest(sipTransaction.TransactionRequest, sipResponse);
-                            SIPNonInviteTransaction authTransaction = m_sipTransport.CreateNonInviteTransaction(authenticatedRequest, sipTransaction.RemoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            SIPNonInviteTransaction authTransaction = m_sipTransport.CreateNonInviteTransaction(authenticatedRequest, sipTransaction.RemoteEndPoint, m_outboundProxy);
                             authTransaction.NonInviteTransactionFinalResponseReceived += AuthResponseReceived;
                             authTransaction.NonInviteTransactionTimedOut += RequestTimedOut;
                             m_sipTransport.SendSIPReliable(authTransaction);
@@ -166,8 +165,7 @@ namespace SIPSorcery.SIP.App
                 header.UserAgent = m_userAgent;
                 request.Header = header;
 
-                var localSIPEndPoint = m_sipTransport.GetSIPChannelForDestination(SIPProtocolsEnum.udp, new System.Net.IPEndPoint(IPAddress.Any, 0)).ListeningSIPEndPoint;
-                SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
+                SIPViaHeader viaHeader = new SIPViaHeader(CallProperties.CreateBranchId());
                 request.Header.Vias.PushViaHeader(viaHeader);
 
                 try
@@ -222,7 +220,7 @@ namespace SIPSorcery.SIP.App
                 digest.SetCredentials(username, m_callDescriptor.Password, originalRequest.URI.ToString(), originalRequest.Method.ToString());
 
                 SIPRequest authRequest = originalRequest.Copy();
-                authRequest.LocalSIPEndPoint = originalRequest.LocalSIPEndPoint;
+                authRequest.SetSendFromHints(originalRequest.LocalSIPEndPoint);
                 authRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                 authRequest.Header.From.FromTag = CallProperties.CreateNewTag();
                 authRequest.Header.To.ToTag = null;

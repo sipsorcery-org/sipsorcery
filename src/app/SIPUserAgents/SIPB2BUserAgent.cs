@@ -139,11 +139,11 @@ namespace SIPSorcery.SIP.App
                 }
                 uacInviteRequest.Body = sipCallDescriptor.Content;
                 uacInviteRequest.Header.ContentType = sipCallDescriptor.ContentType;
-                uacInviteRequest.LocalSIPEndPoint = m_blackhole;
-                uacInviteRequest.RemoteSIPEndPoint = m_blackhole;
+                //uacInviteRequest.LocalSIPEndPoint = m_blackhole;
+                //uacInviteRequest.RemoteSIPEndPoint = m_blackhole;
 
                 // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
-                m_uacTransaction = m_sipTransport.CreateUACTransaction(uacInviteRequest, m_blackhole, m_blackhole, null);
+                m_uacTransaction = m_sipTransport.CreateUACTransaction(uacInviteRequest, m_blackhole, null);
                 if (m_uacTransaction.CDR != null)
                 {
                     m_uacTransaction.CDR.Owner = m_uacOwner;
@@ -159,10 +159,10 @@ namespace SIPSorcery.SIP.App
                 m_uacTransaction.SendInviteRequest(m_blackhole, m_uacTransaction.TransactionRequest);
 
                 SIPRequest uasInviteRequest = uacInviteRequest.Copy();
-                uasInviteRequest.LocalSIPEndPoint = m_blackhole;
-                uasInviteRequest.RemoteSIPEndPoint = m_blackhole;
+                //uasInviteRequest.LocalSIPEndPoint = m_blackhole;
+                //uasInviteRequest.RemoteSIPEndPoint = m_blackhole;
                 uasInviteRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                m_uasTransaction = m_sipTransport.CreateUASTransaction(uasInviteRequest, m_blackhole, m_blackhole, null);
+                m_uasTransaction = m_sipTransport.CreateUASTransaction(uasInviteRequest, m_blackhole, null);
 
                 SetOwner(sipCallDescriptor.ToSIPAccount.Owner, sipCallDescriptor.ToSIPAccount.AdminMemberId);
                 //m_uasTransaction.TransactionTraceMessage += TransactionTraceMessage;
@@ -386,7 +386,7 @@ namespace SIPSorcery.SIP.App
             SIPFromHeader fromHeader = sipCallDescriptor.GetFromHeader();
 
             SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, SIPURI.ParseSIPURI(callURI));
-            inviteRequest.LocalSIPEndPoint = m_blackhole;
+            //inviteRequest.LocalSIPEndPoint = m_blackhole;
 
             SIPHeader inviteHeader = new SIPHeader(fromHeader, new SIPToHeader(null, inviteRequest.URI, null), 1, CallProperties.CreateNewCallId());
 

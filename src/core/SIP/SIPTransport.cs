@@ -453,7 +453,7 @@ namespace SIPSorcery.SIP
                 throw new ApplicationException("No channels are configured in the SIP transport layer. No attempt made to send the request.");
             }
 
-            SIPChannel sipChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
+            SIPChannel sipChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint(), sipRequest.SendFromHintChannelID);
             SIPEndPoint sendFromSIPEndPoint = sipChannel.GetLocalSIPEndPointForDestination(dstEndPoint.GetIPEndPoint().Address);
 
             // Once the channel has been determined check some specific header fields and replace the placeholder end point.
@@ -496,11 +496,11 @@ namespace SIPSorcery.SIP
 
             if (sipChannel.IsSecure)
             {
-                sendResult = await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host);
+                sendResult = await sipChannel.SendSecureAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host, sipRequest.SendFromHintConnectionID);
             }
             else
             {
-                sendResult = await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()));
+                sendResult = await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.SendFromHintConnectionID);
             }
 
             return sendResult;
@@ -548,11 +548,7 @@ namespace SIPSorcery.SIP
             if (sipTransaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
             {
                 // This is a user agent server INVITE transaction that wants to send a reliable provisional or final response.
-                if (sipTransaction.LocalSIPEndPoint == null)
-                {
-                    throw new ApplicationException("The SIPTransport layer cannot send a reliable SIP response because the send from socket has not been set for the transaction.");
-                }
-                else if (sipTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
+                if (sipTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
                 {
                     sendResult = await SendResponseAsync(sipTransaction.ReliableProvisionalResponse);
                 }
@@ -643,20 +639,17 @@ namespace SIPSorcery.SIP
             }
 
             // First step, resolving the destination end point.
-            var dstEndPoint = sipResponse.RemoteSIPEndPoint;
-            if (dstEndPoint == null)
+            SIPEndPoint dstEndPoint = null;
+            var result = GetDestinationForResponse(sipResponse);
+            if (result.status == SocketError.Success)
             {
-                var result = GetDestinationForResponse(sipResponse);
-                if (result.status == SocketError.Success)
-                {
-                    dstEndPoint = result.dstEndPoint;
-                }
-                else
-                {
-                    // The destination couldn't be resolved, return the error message.
-                    // Note this could be a temporary failure it we're still waiting for a DNS resolution.
-                    return result.status;
-                }
+                dstEndPoint = result.dstEndPoint;
+            }
+            else
+            {
+                // The destination couldn't be resolved, return the error message.
+                // Note this could be a temporary failure it we're still waiting for a DNS resolution.
+                return result.status;
             }
 
             if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
@@ -667,7 +660,7 @@ namespace SIPSorcery.SIP
             else
             {
                 // Once the destination is known determine the local SIP channel to reach it.
-                SIPChannel sendFromChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
+                SIPChannel sendFromChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint(), sipResponse.SendFromHintChannelID);
                 SIPEndPoint sendFromSIPEndPoint = sendFromChannel.GetLocalSIPEndPointForDestination(dstEndPoint.GetIPEndPoint().Address);
 
                 // Once the channel has been determined check some specific header fields and replace the placeholder end point.
@@ -678,14 +671,7 @@ namespace SIPSorcery.SIP
 
                 sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
 
-                if (dstEndPoint.ConnectionID != null)
-                {
-                    return await sendFromChannel.SendAsync(dstEndPoint.ConnectionID, Encoding.UTF8.GetBytes(sipResponse.ToString()));
-                }
-                else
-                {
-                    return await sendFromChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()));
-                }
+                return await sendFromChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()), sipResponse.SendFromHintConnectionID);
             }
         }
 
@@ -709,7 +695,7 @@ namespace SIPSorcery.SIP
                 header.Vias.Via[0].Port = sendFromEndPoint.Port;
             }
 
-            if(header.Vias.TopViaHeader.Transport != sendFromSIPEndPoint.Protocol)
+            if (header.Vias.TopViaHeader.Transport != sendFromSIPEndPoint.Protocol)
             {
                 header.Vias.Via[0].Transport = sendFromSIPEndPoint.Protocol;
             }
@@ -762,7 +748,9 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                SIPDNSLookupResult lookupResult = GetHostEndPoint(topViaHeader.ReceivedFromAddress, false);
+                SIPURI lookupURI = new SIPURI(null, topViaHeader.ReceivedFromAddress, null, SIPSchemesEnum.sip, topViaHeader.Transport);
+                //SIPDNSLookupResult lookupResult = GetHostEndPoint(topViaHeader.ReceivedFromAddress, false);
+                SIPDNSLookupResult lookupResult = GetURIEndPoint(lookupURI, false);
 
                 if (lookupResult.LookupError != null)
                 {
@@ -777,8 +765,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    SIPEndPoint dstEndPoint = lookupResult.GetSIPEndPoint();
-                    return (SocketError.Success, dstEndPoint);
+                    return (SocketError.Success, lookupResult.GetSIPEndPoint());
                 }
             }
         }
@@ -1177,8 +1164,10 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="protocol">The SIP protocol required for the communication.</param>
         /// <param name="dst">The destination end point.</param>
+        /// <param name="channelIDHint">An optional channel ID that gives a hint as to the preferred 
+        /// channel to select.</param>
         /// <returns>If found a SIP channel or null if not.</returns>
-        public SIPChannel GetSIPChannelForDestination(SIPProtocolsEnum protocol, IPEndPoint dst)
+        private SIPChannel GetSIPChannelForDestination(SIPProtocolsEnum protocol, IPEndPoint dst, string channelIDHint)
         {
             if (m_sipChannels == null || m_sipChannels.Count == 0)
             {
@@ -1187,6 +1176,10 @@ namespace SIPSorcery.SIP
             else if (!m_sipChannels.Any(x => x.Value.SIPProtocol == protocol && x.Value.ListeningIPAddress.AddressFamily == dst.Address.AddressFamily))
             {
                 throw new ApplicationException($"The transport layer does not have any SIP channels matching {protocol} and {dst.AddressFamily}.");
+            }
+            else if (!String.IsNullOrEmpty(channelIDHint) && m_sipChannels.Any(x => x.Value.SIPProtocol == protocol && x.Key == channelIDHint))
+            {
+                return m_sipChannels[channelIDHint];
             }
             else
             {
@@ -1402,7 +1395,8 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                SIPResponse response = new SIPResponse(responseCode, reasonPhrase, sipRequest.LocalSIPEndPoint, sipRequest.RemoteSIPEndPoint);
+                SIPResponse response = new SIPResponse(responseCode, reasonPhrase);
+                response.SetSendFromHints(sipRequest.LocalSIPEndPoint);
 
                 if (reasonPhrase != null)
                 {
@@ -1454,7 +1448,8 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                SIPResponse response = new SIPResponse(responseCode, reasonPhrase, localSIPEndPoint, remoteSIPEndPoint);
+                SIPResponse response = new SIPResponse(responseCode, reasonPhrase);
+                response.SetSendFromHints(localSIPEndPoint);
                 SIPSchemesEnum sipScheme = (localSIPEndPoint.Protocol == SIPProtocolsEnum.tls) ? SIPSchemesEnum.sips : SIPSchemesEnum.sip;
                 SIPFromHeader from = new SIPFromHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
                 SIPToHeader to = new SIPToHeader(null, new SIPURI(sipScheme, localSIPEndPoint), null);
@@ -1492,7 +1487,7 @@ namespace SIPSorcery.SIP
             return GetRequest(
                 method,
                 uri,
-                new SIPToHeader(null, uri, null),
+                new SIPToHeader(null, new SIPURI(uri.User, uri.Host, null, uri.Scheme, SIPProtocolsEnum.udp), null),
                 new SIPFromHeader(null, new SIPURI(uri.Scheme, IPAddress.Any, 0), CallProperties.CreateNewTag()));
         }
 
@@ -1519,7 +1514,7 @@ namespace SIPSorcery.SIP
             header.CSeqMethod = method;
             header.Allow = ALLOWED_SIP_METHODS;
 
-            SIPViaHeader viaHeader = new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), CallProperties.CreateBranchId());
+            SIPViaHeader viaHeader = new SIPViaHeader(CallProperties.CreateBranchId());
             header.Vias.PushViaHeader(viaHeader);
 
             return request;
@@ -1537,12 +1532,12 @@ namespace SIPSorcery.SIP
             return m_transactionEngine.GetTransaction(sipRequest);
         }
 
-        public SIPNonInviteTransaction CreateNonInviteTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy)
+        public SIPNonInviteTransaction CreateNonInviteTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint outboundProxy)
         {
             try
             {
                 CheckTransactionEngineExists();
-                SIPNonInviteTransaction nonInviteTransaction = new SIPNonInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy);
+                SIPNonInviteTransaction nonInviteTransaction = new SIPNonInviteTransaction(this, sipRequest, dstEndPoint, outboundProxy);
                 m_transactionEngine.AddTransaction(nonInviteTransaction);
                 return nonInviteTransaction;
             }
@@ -1553,18 +1548,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public UACInviteTransaction CreateUACTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy, bool sendOkAckManually = false, bool disablePrackSupport = false)
+        public UACInviteTransaction CreateUACTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint outboundProxy, bool sendOkAckManually = false, bool disablePrackSupport = false)
         {
             try
             {
-                if (localSIPEndPoint == null)
-                {
-                    SIPChannel senderChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
-                    localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
-                }
-
                 CheckTransactionEngineExists();
-                UACInviteTransaction uacInviteTransaction = new UACInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy, sendOkAckManually);
+                UACInviteTransaction uacInviteTransaction = new UACInviteTransaction(this, sipRequest, dstEndPoint, outboundProxy, sendOkAckManually);
                 m_transactionEngine.AddTransaction(uacInviteTransaction);
                 return uacInviteTransaction;
             }
@@ -1575,18 +1564,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public UASInviteTransaction CreateUASTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, SIPEndPoint outboundProxy, bool noCDR = false)
+        public UASInviteTransaction CreateUASTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint outboundProxy, bool noCDR = false)
         {
             try
             {
-                if (localSIPEndPoint == null)
-                {
-                    SIPChannel senderChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
-                    localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
-                }
-
                 CheckTransactionEngineExists();
-                UASInviteTransaction uasInviteTransaction = new UASInviteTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, outboundProxy, noCDR);
+                UASInviteTransaction uasInviteTransaction = new UASInviteTransaction(this, sipRequest, dstEndPoint, outboundProxy, noCDR);
                 m_transactionEngine.AddTransaction(uasInviteTransaction);
                 return uasInviteTransaction;
             }
@@ -1597,18 +1580,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public SIPCancelTransaction CreateCancelTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, UASInviteTransaction inviteTransaction)
+        public SIPCancelTransaction CreateCancelTransaction(SIPRequest sipRequest, SIPEndPoint dstEndPoint, UASInviteTransaction inviteTransaction)
         {
             try
             {
-                if (localSIPEndPoint == null)
-                {
-                    SIPChannel senderChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint());
-                    localSIPEndPoint = senderChannel.ListeningSIPEndPoint;
-                }
-
                 CheckTransactionEngineExists();
-                SIPCancelTransaction cancelTransaction = new SIPCancelTransaction(this, sipRequest, dstEndPoint, localSIPEndPoint, inviteTransaction);
+                SIPCancelTransaction cancelTransaction = new SIPCancelTransaction(this, sipRequest, dstEndPoint, inviteTransaction);
                 m_transactionEngine.AddTransaction(cancelTransaction);
                 return cancelTransaction;
             }

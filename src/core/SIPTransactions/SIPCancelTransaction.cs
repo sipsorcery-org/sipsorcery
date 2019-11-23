@@ -4,10 +4,10 @@
 // Description: SIP Transaction created in response to a CANCEL request.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 14 Feb 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, Hobart, Australia (www.sipsorcery.com)
+// 14 Feb 2006	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -24,8 +24,8 @@ namespace SIPSorcery.SIP
 
         private UASInviteTransaction m_originalTransaction;
 
-        internal SIPCancelTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, SIPEndPoint localSIPEndPoint, UASInviteTransaction originalTransaction)
-            : base(sipTransport, sipRequest, dstEndPoint, localSIPEndPoint, originalTransaction.OutboundProxy)
+        internal SIPCancelTransaction(SIPTransport sipTransport, SIPRequest sipRequest, SIPEndPoint dstEndPoint, UASInviteTransaction originalTransaction)
+            : base(sipTransport, sipRequest, dstEndPoint, originalTransaction.OutboundProxy)
         {
             m_originalTransaction = originalTransaction;
             TransactionType = SIPTransactionTypesEnum.NonInvite;
@@ -89,7 +89,8 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                SIPResponse cancelResponse = new SIPResponse(sipResponseCode, null, sipRequest.LocalSIPEndPoint, null);
+                SIPResponse cancelResponse = new SIPResponse(sipResponseCode, null);
+                cancelResponse.SetSendFromHints(sipRequest.LocalSIPEndPoint);
 
                 SIPHeader requestHeader = sipRequest.Header;
                 cancelResponse.Header = new SIPHeader(requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);

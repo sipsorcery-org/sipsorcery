@@ -275,7 +275,7 @@ namespace SIPSorcery.SIP.App
                         }
                     }
 
-                    SIPNonInviteTransaction subscribeTransaction = m_sipTransport.CreateNonInviteTransaction(subscribeRequest, dstEndPoint, null, m_outboundProxy);
+                    SIPNonInviteTransaction subscribeTransaction = m_sipTransport.CreateNonInviteTransaction(subscribeRequest, dstEndPoint, m_outboundProxy);
                     subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
                     subscribeTransaction.NonInviteTransactionTimedOut += SubsribeTransactionTimedOut;
 
@@ -375,7 +375,7 @@ namespace SIPSorcery.SIP.App
                             }
 
                             // Create a new transaction to establish the authenticated server call.
-                            SIPNonInviteTransaction subscribeTransaction = m_sipTransport.CreateNonInviteTransaction(authSubscribeRequest, sipTransaction.RemoteEndPoint, sipTransaction.LocalSIPEndPoint, m_outboundProxy);
+                            SIPNonInviteTransaction subscribeTransaction = m_sipTransport.CreateNonInviteTransaction(authSubscribeRequest, sipTransaction.RemoteEndPoint, m_outboundProxy);
                             subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
                             subscribeTransaction.NonInviteTransactionTimedOut += SubsribeTransactionTimedOut;
 

@@ -201,6 +201,10 @@ namespace SIPSorcery.SIP
             this(contactEndPoint.Address.ToString(), contactEndPoint.Port, branch, protocol)
         { }
 
+        public SIPViaHeader(string branch) :
+            this(new IPEndPoint(IPAddress.Any, 0), branch, SIPProtocolsEnum.udp)
+        { }
+
         public static SIPViaHeader[] ParseSIPViaHeader(string viaHeaderStr)
         {
             List<SIPViaHeader> viaHeadersList = new List<SIPViaHeader>();

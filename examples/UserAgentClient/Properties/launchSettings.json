@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "UserAgentClient": {
+      "commandName": "Project",
+      "commandLineArgs": "sips:[::1]"
+    }
+  }
+}
