@@ -147,7 +147,7 @@ namespace SIPSorcery
                 {
                     if (sipRequest.Method == SIPMethodsEnum.BYE)
                     {
-                        SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, null);
+                        SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, null);
                         SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         byeTransaction.SendFinalResponse(byeResponse);
 
@@ -195,7 +195,7 @@ namespace SIPSorcery
                 if (!hasCallFailed)
                 {
                     SIPRequest referRequest = GetReferRequest(uac, SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI));
-                    SIPNonInviteTransaction referTx = sipTransport.CreateNonInviteTransaction(referRequest, referRequest.RemoteSIPEndPoint, null);
+                    SIPNonInviteTransaction referTx = sipTransport.CreateNonInviteTransaction(referRequest, null);
 
                     referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =>
                     {
