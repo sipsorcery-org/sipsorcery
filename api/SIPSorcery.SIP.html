@@ -84,10 +84,6 @@
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.HTTPDigest.html">HTTPDigest</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.SIP.IncomingMessage.html">IncomingMessage</a></h4>
-      <section><p>Represents a message received on a SIP channel prior to any attempt to identify
-whether it represents a SIP request, response or something else.</p>
-</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPAuthenticationHeader.html">SIPAuthenticationHeader</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPAuthorisationDigest.html">SIPAuthorisationDigest</a></h4>
@@ -164,7 +160,8 @@ a particular SIP extension.</p>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPHeaders.html">SIPHeaders</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPMessage.html">SIPMessage</a></h4>
-      <section></section>
+      <section><p>Represents an incoming message before having determined whether it is a request or a response.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPMethods.html">SIPMethods</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPMIMETypes.html">SIPMIMETypes</a></h4>
@@ -184,10 +181,8 @@ sip:1234@sip.com;key1=value1;key2=value2
 SIP URI with headers:
 sip:1234@sip.com?key1=value1&amp;key2=value2
 
-SIP URI with parameters and headers (paramters always come first):
+SIP URI with parameters and headers (parameters always come first):
 sip:1234@sip.com;key1=value1;key2=value2?key1=value1&amp;key2=value2</code></pre>
-<pre><code>generic-param  =  token [ EQUAL gen-value ]
-gen-value      =  token / host / quoted-string</code></pre>
 </section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPProtocolsType.html">SIPProtocolsType</a></h4>
       <section></section>
@@ -201,11 +196,6 @@ gen-value      =  token / host / quoted-string</code></pre>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a></h4>
       <section><p>Represents a SIP Response.</p>
-<pre><code>Backus-Naur Form:
-SIP-Version SP Status-Code SP Reason-Phrase CRLF
-*message-header
-CRLF
-[ message-body ]</code></pre>
 </section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPResponseStatusCodes.html">SIPResponseStatusCodes</a></h4>
       <section></section>
@@ -219,7 +209,7 @@ CRLF
       <h4><a class="xref" href="SIPSorcery.SIP.SIPServices.html">SIPServices</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPStreamConnection.html">SIPStreamConnection</a></h4>
-      <section><p>Represents a reliable stream connection (e.g. TCP or TLS) between two end points. Stream connections have a lot more
+      <section><p>Represents a reliable stream connection (e.g. TCP or TLS) between two end points. Stream connections have a more
 overhead than UDP. The state of the connection has to be monitored and messages on the stream can be spread across
 multiple packets.</p>
 </section>
@@ -233,8 +223,6 @@ multiple packets.</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPTransaction.html">SIPTransaction</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.SIP.SIPTransactionEngine.html">SIPTransactionEngine</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPTransport.html">SIPTransport</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPTransportConfig.html">SIPTransportConfig</a></h4>
@@ -242,70 +230,7 @@ multiple packets.</p>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPUDPChannel.html">SIPUDPChannel</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a></h4>
-      <section><p>Implements the the absoluteURI structure from the SIP RFC (incomplete as at 17 nov 2006, AC).</p>
-<pre><code>absoluteURI    =  scheme &quot;:&quot; ( hier-part / opaque-part )
-hier-part      =  ( net-path / abs-path ) [ &quot;?&quot; query ]
-net-path       =  &quot;//&quot; authority [ abs-path ]
-abs-path       =  &quot;/&quot; path-segments
-
-opaque-part    =  uric-no-slash *uric
-uric           =  reserved / unreserved / escaped
-uric-no-slash  =  unreserved / escaped / &quot;;&quot; / &quot;?&quot; / &quot;:&quot; / &quot;@&quot; / &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot; / &quot;$&quot; / &quot;,&quot;
-path-segments  =  segment *( &quot;/&quot; segment )
-segment        =  *pchar *( &quot;;&quot; param )
-param          =  *pchar
-pchar          =  unreserved / escaped / &quot;:&quot; / &quot;@&quot; / &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot; / &quot;$&quot; / &quot;,&quot;
-scheme         =  ALPHA *( ALPHA / DIGIT / &quot;+&quot; / &quot;-&quot; / &quot;.&quot; )
-authority      =  srvr / reg-name
-srvr           =  [ [ userinfo &quot;@&quot; ] hostport ]
-reg-name       =  1*( unreserved / escaped / &quot;$&quot; / &quot;,&quot; / &quot;;&quot; / &quot;:&quot; / &quot;@&quot; / &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot; )
-query          =  *uric
-
-SIP-URI          =  &quot;sip:&quot; [ userinfo ] hostport uri-parameters [ headers ]
-SIPS-URI         =  &quot;sips:&quot; [ userinfo ] hostport uri-parameters [ headers ]
-userinfo         =  ( user / telephone-subscriber ) [ &quot;:&quot; password ] &quot;@&quot;
-user             =  1*( unreserved / escaped / user-unreserved )
-user-unreserved  =  &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot; / &quot;$&quot; / &quot;,&quot; / &quot;;&quot; / &quot;?&quot; / &quot;/&quot;
-password         =  *( unreserved / escaped / &quot;&amp;&quot; / &quot;=&quot; / &quot;+&quot; / &quot;$&quot; / &quot;,&quot; )
-hostport         =  host [ &quot;:&quot; port ]
-host             =  hostname / IPv4address / IPv6reference
-hostname         =  *( domainlabel &quot;.&quot; ) toplabel [ &quot;.&quot; ]
-domainlabel      =  alphanum / alphanum *( alphanum / &quot;-&quot; ) alphanum
-toplabel         =  ALPHA / ALPHA *( alphanum / &quot;-&quot; ) alphanum
-IPv4address    =  1*3DIGIT &quot;.&quot; 1*3DIGIT &quot;.&quot; 1*3DIGIT &quot;.&quot; 1*3DIGIT
-IPv6reference  =  &quot;[&quot; IPv6address &quot;]&quot;
-IPv6address    =  hexpart [ &quot;:&quot; IPv4address ]
-hexpart        =  hexseq / hexseq &quot;::&quot; [ hexseq ] / &quot;::&quot; [ hexseq ]
-hexseq         =  hex4 *( &quot;:&quot; hex4)
-hex4           =  1*4HEXDIG
-port           =  1*DIGIT
-
-The BNF for telephone-subscriber can be found in RFC 2806 [9].  Note,
-however, that any characters allowed there that are not allowed in
-the user part of the SIP URI MUST be escaped.
-
-uri-parameters    =  *( &quot;;&quot; uri-parameter)
-uri-parameter     =  transport-param / user-param / method-param / ttl-param / maddr-param / lr-param / other-param
-transport-param   =  &quot;transport=&quot; ( &quot;udp&quot; / &quot;tcp&quot; / &quot;sctp&quot; / &quot;tls&quot; / other-transport)
-other-transport   =  token
-user-param        =  &quot;user=&quot; ( &quot;phone&quot; / &quot;ip&quot; / other-user)
-other-user        =  token
-method-param      =  &quot;method=&quot; Method
-ttl-param         =  &quot;ttl=&quot; ttl
-maddr-param       =  &quot;maddr=&quot; host
-lr-param          =  &quot;lr&quot;
-other-param       =  pname [ &quot;=&quot; pvalue ]
-pname             =  1*paramchar
-pvalue            =  1*paramchar
-paramchar         =  param-unreserved / unreserved / escaped
-param-unreserved  =  &quot;[&quot; / &quot;]&quot; / &quot;/&quot; / &quot;:&quot; / &quot;&amp;&quot; / &quot;+&quot; / &quot;$&quot;
-
-headers         =  &quot;?&quot; header *( &quot;&amp;&quot; header )
-header          =  hname &quot;=&quot; hvalue
-hname           =  1*( hnv-unreserved / unreserved / escaped )
-hvalue          =  *( hnv-unreserved / unreserved / escaped )
-hnv-unreserved  =  &quot;[&quot; / &quot;]&quot; / &quot;/&quot; / &quot;?&quot; / &quot;:&quot; / &quot;+&quot; / &quot;$&quot;</code></pre>
-</section>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPUserAgentRolesTypes.html">SIPUserAgentRolesTypes</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPUserField.html">SIPUserField</a></h4>
@@ -322,7 +247,18 @@ parameters, not URI parameters.</p>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPValidationException.html">SIPValidationException</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPViaHeader.html">SIPViaHeader</a></h4>
-      <section></section>
+      <section><p>The Via header only has parameters, no headers. Parameters of from ...;name=value;name2=value2
+Specific parameters: ttl, maddr, received, branch.</p>
+<p>From page 179 of RFC3261:
+&quot;Even though this specification mandates that the branch parameter be
+present in all requests, the BNF for the header field indicates that
+it is optional.&quot;</p>
+<p>The branch parameter on a Via therefore appears to be optionally mandatory?!</p>
+<p>Any SIP application element that uses transactions depends on the branch parameter for transaction matching.
+Only the top Via header branch is used for transactions though so if the request has made it to this stack
+with missing branches then in theory it should be safe to proceed. It will be left up to the SIPTransaction
+class to reject any SIP requests that are missing the necessary branch.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPViaSet.html">SIPViaSet</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.SIPWebSocketChannel.html">SIPWebSocketChannel</a></h4>

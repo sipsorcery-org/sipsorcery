@@ -112,19 +112,19 @@ wherever a modification is required.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPAddress_System_Int32_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.%23ctor(SIPSorcery.SIP.SIPProtocolsEnum%2CSystem.Net.IPAddress%2CSystem.Int32%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPAddress_System_Int32_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.%23ctor(SIPSorcery.SIP.SIPProtocolsEnum%2CSystem.Net.IPAddress%2CSystem.Int32%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L89">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L96">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint__ctor_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPAddress_System_Int32_System_String_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPAddress,System.Int32,System.String)">SIPEndPoint(SIPProtocolsEnum, IPAddress, Int32, String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPAddress_System_Int32_System_String_System_String_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPAddress,System.Int32,System.String,System.String)">SIPEndPoint(SIPProtocolsEnum, IPAddress, Int32, String, String)</h4>
   <div class="markdown level1 summary"><p>Instantiates a new SIP end point.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port, string connectionID)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port, string channelID, string connectionID)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -156,8 +156,14 @@ wherever a modification is required.</p>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">channelID</span></td>
+        <td><p>Optional. The unique ID of the channel that created the end point.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
         <td><span class="parametername">connectionID</span></td>
-        <td><p>For connection oriented protocols the unique ID of the connection.
+        <td><p>Optional. For connection oriented protocols the unique ID of the connection.
 For connectionless protocols should be set to null.</p>
 </td>
       </tr>
@@ -168,7 +174,7 @@ For connectionless protocols should be set to null.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.%23ctor(SIPSorcery.SIP.SIPProtocolsEnum%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L110">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L118">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint__ctor_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPEndPoint_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPEndPoint)">SIPEndPoint(SIPProtocolsEnum, IPEndPoint)</h4>
@@ -202,18 +208,18 @@ For connectionless protocols should be set to null.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPEndPoint_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.%23ctor(SIPSorcery.SIP.SIPProtocolsEnum%2CSystem.Net.IPEndPoint%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPEndPoint_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.%23ctor(SIPSorcery.SIP.SIPProtocolsEnum%2CSystem.Net.IPEndPoint%2CSystem.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L117">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L125">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint__ctor_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPEndPoint_System_String_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPEndPoint,System.String)">SIPEndPoint(SIPProtocolsEnum, IPEndPoint, String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPProtocolsEnum_System_Net_IPEndPoint_System_String_System_String_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPProtocolsEnum,System.Net.IPEndPoint,System.String,System.String)">SIPEndPoint(SIPProtocolsEnum, IPEndPoint, String, String)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint, string connectionID)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint, string channelID, string connectionID)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -237,6 +243,11 @@ For connectionless protocols should be set to null.</p>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">channelID</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
         <td><span class="parametername">connectionID</span></td>
         <td></td>
       </tr>
@@ -247,7 +258,7 @@ For connectionless protocols should be set to null.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPURI_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.%23ctor(SIPSorcery.SIP.SIPURI)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L97">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L105">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint__ctor_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint__ctor_SIPSorcery_SIP_SIPURI_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor(SIPSorcery.SIP.SIPURI)">SIPEndPoint(SIPURI)</h4>
@@ -279,7 +290,7 @@ For connectionless protocols should be set to null.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint__ctor_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.%23ctor(System.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L74">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L80">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint__ctor_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint__ctor_System_Net_IPEndPoint_" data-uid="SIPSorcery.SIP.SIPEndPoint.#ctor(System.Net.IPEndPoint)">SIPEndPoint(IPEndPoint)</h4>
@@ -315,7 +326,7 @@ will be set to their defaults.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_Address.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.Address%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L54">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L55">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_Address_" data-uid="SIPSorcery.SIP.SIPEndPoint.Address*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_Address" data-uid="SIPSorcery.SIP.SIPEndPoint.Address">Address</h4>
@@ -343,10 +354,41 @@ will be set to their defaults.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_ChannelID.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.ChannelID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L72">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPEndPoint_ChannelID_" data-uid="SIPSorcery.SIP.SIPEndPoint.ChannelID*"></a>
+  <h4 id="SIPSorcery_SIP_SIPEndPoint_ChannelID" data-uid="SIPSorcery.SIP.SIPEndPoint.ChannelID">ChannelID</h4>
+  <div class="markdown level1 summary"><p>If set represents the SIP channel ID that this SIP end point was created from.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string ChannelID { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_ConnectionID.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.ConnectionID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L66">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L67">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_ConnectionID_" data-uid="SIPSorcery.SIP.SIPEndPoint.ConnectionID*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_ConnectionID" data-uid="SIPSorcery.SIP.SIPEndPoint.ConnectionID">ConnectionID</h4>
@@ -379,7 +421,7 @@ possible to ensure responses or subsequent request can re-use the same connectio
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_Port.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.Port%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L59">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L60">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_Port_" data-uid="SIPSorcery.SIP.SIPEndPoint.Port*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_Port" data-uid="SIPSorcery.SIP.SIPEndPoint.Port">Port</h4>
@@ -410,7 +452,7 @@ possible to ensure responses or subsequent request can re-use the same connectio
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_Protocol.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.Protocol%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L49">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L50">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_Protocol_" data-uid="SIPSorcery.SIP.SIPEndPoint.Protocol*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_Protocol" data-uid="SIPSorcery.SIP.SIPEndPoint.Protocol">Protocol</h4>
@@ -441,7 +483,7 @@ possible to ensure responses or subsequent request can re-use the same connectio
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_Scheme.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.Scheme%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L44">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L45">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_Scheme_" data-uid="SIPSorcery.SIP.SIPEndPoint.Scheme*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_Scheme" data-uid="SIPSorcery.SIP.SIPEndPoint.Scheme">Scheme</h4>
@@ -475,7 +517,7 @@ For example sips cannot be sent over UDP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_AreEqual_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.AreEqual(SIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L210">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L235">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_AreEqual_" data-uid="SIPSorcery.SIP.SIPEndPoint.AreEqual*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_AreEqual_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.SIPEndPoint.AreEqual(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)">AreEqual(SIPEndPoint, SIPEndPoint)</h4>
@@ -527,7 +569,7 @@ For example sips cannot be sent over UDP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_CopyOf.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.CopyOf%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L248">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L283">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_CopyOf_" data-uid="SIPSorcery.SIP.SIPEndPoint.CopyOf*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_CopyOf" data-uid="SIPSorcery.SIP.SIPEndPoint.CopyOf">CopyOf()</h4>
@@ -557,7 +599,7 @@ For example sips cannot be sent over UDP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_Equals_System_Object_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.Equals(System.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L215">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L240">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_Equals_" data-uid="SIPSorcery.SIP.SIPEndPoint.Equals*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_Equals_System_Object_" data-uid="SIPSorcery.SIP.SIPEndPoint.Equals(System.Object)">Equals(Object)</h4>
@@ -606,7 +648,7 @@ For example sips cannot be sent over UDP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_GetHashCode.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.GetHashCode%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L243">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L276">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_GetHashCode_" data-uid="SIPSorcery.SIP.SIPEndPoint.GetHashCode*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_GetHashCode" data-uid="SIPSorcery.SIP.SIPEndPoint.GetHashCode">GetHashCode()</h4>
@@ -638,7 +680,7 @@ For example sips cannot be sent over UDP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_GetIPEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.GetIPEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L254">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L289">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_GetIPEndPoint_" data-uid="SIPSorcery.SIP.SIPEndPoint.GetIPEndPoint*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_GetIPEndPoint" data-uid="SIPSorcery.SIP.SIPEndPoint.GetIPEndPoint">GetIPEndPoint()</h4>
@@ -668,12 +710,12 @@ For example sips cannot be sent over UDP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_ParseSIPEndPoint_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.ParseSIPEndPoint(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L132">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L141">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_ParseSIPEndPoint_" data-uid="SIPSorcery.SIP.SIPEndPoint.ParseSIPEndPoint*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_ParseSIPEndPoint_System_String_" data-uid="SIPSorcery.SIP.SIPEndPoint.ParseSIPEndPoint(System.String)">ParseSIPEndPoint(String)</h4>
   <div class="markdown level1 summary"><p>Parses a SIP end point from either a serialised SIP end point string, format of:
-(udp|tcp|tls|ws|wss):(IPEndpoint)
+(udp|tcp|tls|ws|wss):(IPEndpoint)[;connid=abcd]
 or from a string that represents a SIP URI.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -720,7 +762,7 @@ or from a string that represents a SIP URI.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_ToString.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.ToString%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L204">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L226">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_ToString_" data-uid="SIPSorcery.SIP.SIPEndPoint.ToString*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_ToString" data-uid="SIPSorcery.SIP.SIPEndPoint.ToString">ToString()</h4>
@@ -752,7 +794,7 @@ or from a string that represents a SIP URI.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_TryParse_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.TryParse(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L163">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L172">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_TryParse_" data-uid="SIPSorcery.SIP.SIPEndPoint.TryParse*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_TryParse_System_String_" data-uid="SIPSorcery.SIP.SIPEndPoint.TryParse(System.String)">TryParse(String)</h4>
@@ -801,7 +843,7 @@ or from a string that represents a SIP URI.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_op_Equality_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.op_Equality(SIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L220">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L245">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_op_Equality_" data-uid="SIPSorcery.SIP.SIPEndPoint.op_Equality*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_op_Equality_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.SIPEndPoint.op_Equality(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)">Equality(SIPEndPoint, SIPEndPoint)</h4>
@@ -853,7 +895,7 @@ or from a string that represents a SIP URI.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPEndPoint_op_Inequality_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPEndPoint.op_Inequality(SIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L238">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPEndPoint.cs/#L271">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPEndPoint_op_Inequality_" data-uid="SIPSorcery.SIP.SIPEndPoint.op_Inequality*"></a>
   <h4 id="SIPSorcery_SIP_SIPEndPoint_op_Inequality_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.SIPEndPoint.op_Inequality(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)">Inequality(SIPEndPoint, SIPEndPoint)</h4>

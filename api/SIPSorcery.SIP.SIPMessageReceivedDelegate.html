@@ -79,7 +79,7 @@
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_SIPMessageReceivedDelegate_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public delegate void SIPMessageReceivedDelegate(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer);</code></pre>
+    <pre><code class="lang-csharp hljs">public delegate void SIPMessageReceivedDelegate(SIPChannel sipChannel, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer);</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -94,6 +94,11 @@
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPChannel.html">SIPChannel</a></td>
         <td><span class="parametername">sipChannel</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
+        <td><span class="parametername">localSIPEndPoint</span></td>
         <td></td>
       </tr>
       <tr>
