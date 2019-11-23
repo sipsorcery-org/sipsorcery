@@ -33,6 +33,9 @@
     <None Update="media\Macroform_-_Simplicity.ulaw">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="media\the_simplicity.ulaw">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="the_simplicity.g722">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

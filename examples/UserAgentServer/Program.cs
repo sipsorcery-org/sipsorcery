@@ -41,7 +41,7 @@
 // into the RTP packets. Currently this example supports two audio formats: G711.ULAW (or PCMU)
 // and G722.
 //
-// ffmpeg -i Macroform_-_Simplicity.mp3 -ar 8k -f mulaw Macroform_-_Simplicity.ulaw
+// ffmpeg -i Macroform_-_Simplicity.mp3 -ac 1 -ar 8k -ab 64k -f mulaw Macroform_-_Simplicity.ulaw
 // ffmpeg -i Macroform_-_Simplicity.mp3 -ar 16k -acodec g722 Macroform_-_Simplicity.g722
 //-----------------------------------------------------------------------------
 
@@ -68,12 +68,15 @@ namespace SIPSorcery
     class Program
     {
         private static readonly string AUDIO_FILE_PCMU = @"media\Macroform_-_Simplicity.ulaw";
+        //private static readonly string AUDIO_FILE_PCMU = @"media\the_simplicity.ulaw";
         //private static readonly string AUDIO_FILE_MP3 = @"media\Macroform_-_Simplicity.mp3";
         private static readonly string AUDIO_FILE_G722 = @"media\Macroform_-_Simplicity.g722";
 
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
         private static int SIP_LISTEN_PORT = 5060;
         private static int SIPS_LISTEN_PORT = 5061;
+        private static int RTP_PORT_START = 49000;
+        private static int RTP_PORT_END = 49100;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -171,7 +174,7 @@ namespace SIPSorcery
                             uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
                             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-                            NetServices.CreateRtpSocket(dstRtpEndPoint.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, 49000, 49100, false, out rtpSocket, out controlSocket);
+                            NetServices.CreateRtpSocket(dstRtpEndPoint.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, RTP_PORT_START, RTP_PORT_END, false, out rtpSocket, out controlSocket);
 
                             // The RTP socket is listening on IPAddress.Any but the IP address placed into the SDP needs to be one the caller can reach.
                             IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
@@ -438,7 +441,7 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        /// Hangs up teh current call.
+        /// Hangs up the current call.
         /// </summary>
         /// <param name="uas">The user agent server to hangup the call on.</param>
         private static async Task Hangup(SIPServerUserAgent uas)
