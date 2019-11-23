@@ -22,21 +22,29 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Serilog;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace SIPSorcery.SIP.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "Integration")]
     public class SIPTransportUnitTest
     {
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private const int TRANSPORT_TEST_TIMEOUT = 5000;
+
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPTransportUnitTest(ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
 
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate IPv6 sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
-        [TestCategory("IPv6")]
+        [Fact]
+        //[TestCategory("IPv6")]
         public void IPv6LoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -46,9 +54,9 @@ namespace SIPSorcery.SIP.UnitTests
             var clientChannel = new SIPUDPChannel(IPAddress.IPv6Loopback, 6061);
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -56,7 +64,7 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
 
             cancelServer.Cancel();
         }
@@ -64,10 +72,11 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate IPv4 sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void IPv4LoopbackSendReceiveTest()
         {
+            logger.LogDebug("IPv4LoopbackSendReceiveTest commencing...");
+
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
@@ -75,9 +84,9 @@ namespace SIPSorcery.SIP.UnitTests
             var clientChannel = new SIPUDPChannel(IPAddress.Loopback, 6061);
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -85,16 +94,17 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
             cancelServer.Cancel();
+
+            logger.LogDebug("Test complete.");
         }
 
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate TCP IPv6 sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
-        [TestCategory("IPv6")]
+        [Fact]
+        //[TestCategory("IPv6")]
         public void IPv6TcpLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -106,9 +116,9 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(2000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -116,7 +126,7 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
 
             cancelServer.Cancel();
         }
@@ -124,8 +134,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate IPv4 TCP sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void IPv4TcpLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -137,9 +146,9 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { clientTask, Task.Delay(5000) }).Wait();
+            Task.WhenAny(new Task[] { clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -147,7 +156,7 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
 
             cancelServer.Cancel();
         }
@@ -160,8 +169,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// This is not a real test because the OS will allow the connection to be re-established if the process ID is the same as the one
         /// that put the socket into the TIME_WAIT state.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void IPv4TcpLoopbackConsecutiveSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -176,12 +184,12 @@ namespace SIPSorcery.SIP.UnitTests
 
                 var clientChannel = new SIPTCPChannel(IPAddress.Any, 7065);
                 clientChannel.DisableLocalTCPSocketsCheck = true;
-                SIPURI serverUri = new SIPURI(SIPSchemesEnum.sip, serverChannel.SIPChannelEndPoint);
+                SIPURI serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback);
 
                 logger.LogDebug($"Server URI {serverUri.ToString()}.");
 
                 var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverUri, testComplete); });
-                Task.WhenAny(new Task[] { clientTask, Task.Delay(5000) }).Wait();
+                Task.WhenAny(new Task[] { clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
                 if (testComplete.Task.IsCompleted == false)
                 {
@@ -189,11 +197,9 @@ namespace SIPSorcery.SIP.UnitTests
                     testComplete.SetResult(false);
                 }
 
-                Assert.IsTrue(testComplete.Task.Result);
+                Assert.True(testComplete.Task.Result);
 
                 logger.LogDebug($"Completed for test run {i}.");
-
-                //Task.Delay(3000).Wait();
             }
 
             cancelServer.Cancel();
@@ -202,15 +208,14 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate TLS IPv6 sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
-        [TestCategory("IPv6")]
+        [Fact]
+        //[TestCategory("IPv6")]
         public void IPv6TlsLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-            Assert.IsTrue(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
+            Assert.True(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
             var serverCertificate = new X509Certificate2(@"certs\localhost.pfx", "");
             var verifyCert = serverCertificate.Verify();
@@ -222,9 +227,9 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sips, serverChannel.SIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sips, IPAddress.IPv6Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(3000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -232,7 +237,7 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
 
             cancelServer.Cancel();
         }
@@ -240,14 +245,13 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate IPv4 TLS sockets using the loopback address.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void IPv4TlsLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-            Assert.IsTrue(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
+            Assert.True(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
             var serverCertificate = new X509Certificate2(@"certs\localhost.pfx", "");
             var verifyCert = serverCertificate.Verify();
@@ -259,9 +263,9 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, new SIPURI(SIPSchemesEnum.sips, serverChannel.SIPChannelEndPoint), testComplete); });
+            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sips, IPAddress.Loopback), testComplete); });
 
-            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(5000) }).Wait();
+            Task.WhenAny(new Task[] { serverTask, clientTask, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             if (testComplete.Task.IsCompleted == false)
             {
@@ -269,7 +273,7 @@ namespace SIPSorcery.SIP.UnitTests
                 testComplete.SetResult(false);
             }
 
-            Assert.IsTrue(testComplete.Task.Result);
+            Assert.True(testComplete.Task.Result);
 
             cancelServer.Cancel();
         }
@@ -277,8 +281,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// <summary>
         /// Tests that SIP messages can be correctly extracted from a TCP stream when arbitrarily fragmented.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void TcpTrickleReceiveTest()
         {
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
@@ -304,7 +307,7 @@ namespace SIPSorcery.SIP.UnitTests
                     {
                         logger.LogDebug($"Sending request {i}.");
 
-                        var req = transport.GetRequest(SIPMethodsEnum.OPTIONS, SIPURI.ParseSIPURIRelaxed($"{i}@sipsorcery.com;transport=tcp"));
+                        var req = transport.GetRequest(SIPMethodsEnum.OPTIONS, tcpChannel.GetContactURI(SIPSchemesEnum.sip, listenEP.Address));
                         byte[] reqBytes = Encoding.UTF8.GetBytes(req.ToString());
 
                         tcpClient.GetStream().Write(reqBytes, 0, reqBytes.Length);
@@ -314,7 +317,7 @@ namespace SIPSorcery.SIP.UnitTests
                     }
                     tcpClient.GetStream().Close();
                 }
-                catch(Exception excp)
+                catch (Exception excp)
                 {
                     logger.LogError($"Exception on dummy TCP listener task. {excp.Message}");
                     testComplete.SetResult(false);
@@ -327,7 +330,7 @@ namespace SIPSorcery.SIP.UnitTests
                 logger.LogDebug(sipRequest.ToString());
                 Interlocked.Increment(ref recvdReqCount);
 
-                if(recvdReqCount == requestCount)
+                if (recvdReqCount == requestCount)
                 {
                     testComplete.SetResult(true);
                 }
@@ -341,14 +344,16 @@ namespace SIPSorcery.SIP.UnitTests
 
             tcpChannel.ConnectClientAsync(listenEP, null, null).Wait();
 
-            Task.WhenAny(new Task[] { testComplete.Task, Task.Delay(5000) }).Wait();
-            //Task.WhenAny(new Task[] { testComplete.Task }).Wait();
+            Task.WhenAny(new Task[] { testComplete.Task, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
             transport.Shutdown();
 
-            Assert.IsTrue(testComplete.Task.IsCompleted);
-            Assert.IsTrue(testComplete.Task.Result);
-            Assert.AreEqual(requestCount, recvdReqCount, $"The count of {recvdReqCount} for the requests received did not match what was expected.");
+            // Give the SIP transport time to shutdown. Keeps exception messages out of the logs.
+            Task.Delay(500).Wait();
+
+            Assert.True(testComplete.Task.IsCompleted);
+            Assert.True(testComplete.Task.Result);
+            Assert.True(requestCount == recvdReqCount, $"The count of {recvdReqCount} for the requests received did not match what was expected.");
         }
 
         /// <summary>
@@ -358,15 +363,13 @@ namespace SIPSorcery.SIP.UnitTests
         /// <param name="cts">Cancellation token to tell the server when to shutdown.</param>
         private void RunServer(SIPChannel testServerChannel, CancellationTokenSource cts)
         {
-            logger.LogDebug($"RunServer test channel created on {testServerChannel.SIPChannelEndPoint}.");
+            logger.LogDebug($"RunServer test channel created on {testServerChannel.ListeningSIPEndPoint}.");
 
             var serverSIPTransport = new SIPTransport();
 
             try
             {
                 serverSIPTransport.AddSIPChannel(testServerChannel);
-
-                logger.LogDebug(serverSIPTransport.GetDefaultSIPEndPoint(testServerChannel.SIPChannelEndPoint.Protocol).ToString());
 
                 serverSIPTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
                 {
@@ -375,17 +378,34 @@ namespace SIPSorcery.SIP.UnitTests
                     if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                     {
                         SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        logger.LogDebug(optionsResponse.ToString());
                         serverSIPTransport.SendResponse(optionsResponse);
                     }
                 };
 
+                serverSIPTransport.SIPRequestInTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+                {
+                    logger.LogDebug($"SERVER REQUEST IN {localSIPEndPoint}<-{remoteEndPoint}");
+                    logger.LogDebug(sipRequest.ToString());
+                };
+
+                serverSIPTransport.SIPResponseOutTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
+                {
+                    logger.LogDebug($"SERVER RESPONSE OUT {localSIPEndPoint}->{remoteEndPoint}");
+                    logger.LogDebug(sipResponse.ToString());
+                };
+
                 cts.Token.WaitHandle.WaitOne();
-                //WaitHandle.WaitAny(new[] { cts.Token.WaitHandle });
+            }
+            catch (Exception excp)
+            {
+                logger.LogError($"Exception RunServer. {excp.Message}");
             }
             finally
             {
-                logger.LogDebug($"Server task for completed for {testServerChannel.SIPChannelEndPoint.ToString()}.");
+                logger.LogDebug($"Server task for completed for {testServerChannel.ListeningSIPEndPoint}.");
                 serverSIPTransport.Shutdown();
+                logger.LogDebug($"Server task SIP transport shutdown.");
             }
         }
 
@@ -397,7 +417,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// <param name="tcs">The task completion source that this method will set if it receives the expected response.</param>
         private async Task RunClient(SIPChannel testClientChannel, SIPURI serverUri, TaskCompletionSource<bool> tcs)
         {
-            logger.LogDebug($"Starting client task for {testClientChannel.SIPChannelEndPoint.ToString()}.");
+            logger.LogDebug($"Starting client task for {testClientChannel.ListeningSIPEndPoint}.");
 
             var clientSIPTransport = new SIPTransport();
 
@@ -405,12 +425,11 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 clientSIPTransport.AddSIPChannel(testClientChannel);
 
-                logger.LogDebug($"RunClient test channel created on {testClientChannel.SIPChannelEndPoint}.");
+                logger.LogDebug($"RunClient test channel created on {testClientChannel.ListeningSIPEndPoint}.");
 
                 clientSIPTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
                 {
-                    logger.LogDebug($"Response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
-                    logger.LogDebug(sipResponse.ToString());
+                    logger.LogDebug($"Expected response received {localSIPEndPoint}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
 
                     if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
                     {
@@ -419,18 +438,33 @@ namespace SIPSorcery.SIP.UnitTests
                     }
                 };
 
-                var optionsRequest = clientSIPTransport.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
+                clientSIPTransport.SIPRequestOutTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+                {
+                    logger.LogDebug($"CLIENT REQUEST OUT {localSIPEndPoint}->{remoteEndPoint}");
+                    logger.LogDebug(sipRequest.ToString());
+                };
 
-                logger.LogDebug(optionsRequest.ToString());
+                clientSIPTransport.SIPResponseInTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
+                {
+                    logger.LogDebug($"CLIENT RESPONSE IN {localSIPEndPoint}<-{remoteEndPoint}");
+                    logger.LogDebug(sipResponse.ToString());
+                };
+
+                var optionsRequest = clientSIPTransport.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
 
                 clientSIPTransport.SendRequest(optionsRequest);
 
                 await tcs.Task;
             }
+            catch (Exception excp)
+            {
+                logger.LogError($"Exception RunClient. {excp.Message}");
+            }
             finally
             {
-                logger.LogDebug($"Client task completed for {testClientChannel.SIPChannelEndPoint.ToString()}.");
+                logger.LogDebug($"Client task completed for {testClientChannel.ListeningSIPEndPoint}.");
                 clientSIPTransport.Shutdown();
+                logger.LogDebug($"Client task SIP transport shutdown.");
             }
         }
     }

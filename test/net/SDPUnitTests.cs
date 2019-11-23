@@ -14,20 +14,20 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {
     /// <summary>
     /// Unit tests for Session Description Protocol (SDP) class.
     /// </summary>
-    [TestClass]
+    [Trait("Category", "unit")]
     public class SDPUnitTests
     {
         private static string m_CRLF = SDP.CRLF;
         private static ILogger Logger = SIPSorcery.Sys.Log.Logger;
 
-        [TestMethod]
+        [Fact]
         public void ParseSDPUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -50,16 +50,16 @@ namespace SIPSorcery.Net.UnitTests
 
             Debug.WriteLine(sdp.ToString());
 
-            Assert.IsTrue(sdp.Connection.ConnectionAddress == "10.0.0.4", "The connection address was not parsed  correctly.");
-            Assert.IsTrue(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
-            Assert.IsTrue(sdp.Media[0].Port == 12228, "The connection port was not parsed correctly.");
-            Assert.IsTrue(sdp.Media[0].GetFormatListToString() == "0 101", "The media format list was incorrect.");
-            Assert.IsTrue(sdp.Media[0].MediaFormats[0].FormatID == 0, "The highest priority media format ID was incorrect.");
-            Assert.IsTrue(sdp.Media[0].MediaFormats[0].Name == "PCMU", "The highest priority media format name was incorrect.");
-            Assert.IsTrue(sdp.Media[0].MediaFormats[0].ClockRate == 8000, "The highest priority media format clockrate was incorrect.");
+            Assert.True(sdp.Connection.ConnectionAddress == "10.0.0.4", "The connection address was not parsed  correctly.");
+            Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
+            Assert.True(sdp.Media[0].Port == 12228, "The connection port was not parsed correctly.");
+            Assert.True(sdp.Media[0].GetFormatListToString() == "0 101", "The media format list was incorrect.");
+            Assert.True(sdp.Media[0].MediaFormats[0].FormatID == 0, "The highest priority media format ID was incorrect.");
+            Assert.True(sdp.Media[0].MediaFormats[0].Name == "PCMU", "The highest priority media format name was incorrect.");
+            Assert.True(sdp.Media[0].MediaFormats[0].ClockRate == 8000, "The highest priority media format clockrate was incorrect.");
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseBriaSDPUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -69,12 +69,12 @@ namespace SIPSorcery.Net.UnitTests
 
             Debug.WriteLine(sdp.ToString());
 
-            Assert.IsTrue(sdp.Connection.ConnectionAddress == "144.137.16.240", "The connection address was not parsed correctly.");
-            Assert.IsTrue(sdp.Media[0].Port == 34640, "The connection port was not parsed correctly.");
-            Assert.IsTrue(sdp.Media[0].MediaFormats[0].Name == "PCMU", "The highest priority media format name was incorrect.");
+            Assert.True(sdp.Connection.ConnectionAddress == "144.137.16.240", "The connection address was not parsed correctly.");
+            Assert.True(sdp.Media[0].Port == 34640, "The connection port was not parsed correctly.");
+            Assert.True(sdp.Media[0].MediaFormats[0].Name == "PCMU", "The highest priority media format name was incorrect.");
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseICESessionAttributesUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -98,15 +98,15 @@ namespace SIPSorcery.Net.UnitTests
 
             Debug.WriteLine(sdp.ToString());
 
-            Assert.IsTrue(sdp.IceUfrag == "8hhY", "The ICE username was not parsed correctly.");
-            Assert.IsTrue(sdp.IcePwd == "asd88fgpdd777uzjYhagZg", "The ICE password was not parsed correctly.");
+            Assert.True(sdp.IceUfrag == "8hhY", "The ICE username was not parsed correctly.");
+            Assert.True(sdp.IcePwd == "asd88fgpdd777uzjYhagZg", "The ICE password was not parsed correctly.");
         }
 
         /// <summary>
         /// Test that an SDP payload with multiple media announcements (in this test audio and video) are correctly
         /// parsed.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseMultipleMediaAnnouncementsUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -129,15 +129,15 @@ namespace SIPSorcery.Net.UnitTests
 
             Debug.WriteLine(sdp.ToString());
 
-            Assert.AreEqual(2, sdp.Media.Count);
-            Assert.AreEqual(49290, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault().Port);
-            Assert.AreEqual(56674, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault().Port);
+            Assert.Equal(2, sdp.Media.Count);
+            Assert.Equal(49290, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault().Port);
+            Assert.Equal(56674, sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault().Port);
         }
 
         /// <summary>
         /// Test that an SDP payload with multiple connection options is correctly parsed.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseAudioAndVideoConnectionsUnitTest()
         {
             Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -157,13 +157,13 @@ namespace SIPSorcery.Net.UnitTests
 
             Logger.LogDebug(sdp.ToString());
 
-            Assert.IsTrue(sdp.Connection.ConnectionAddress == "101.180.234.134", "The connection address was not parsed correctly.");
+            Assert.True(sdp.Connection.ConnectionAddress == "101.180.234.134", "The connection address was not parsed correctly.");
         }
 
         /// <summary>
         /// Test that an SDP payload from Mircosoft's Edge browser for a WebRTC session gets parsed correctly..
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseEdgeBrowserSdpUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -199,17 +199,17 @@ namespace SIPSorcery.Net.UnitTests
 
             Debug.WriteLine(sdp.ToString());
 
-            Assert.AreEqual(2, sdp.Media.Count);
-            Assert.IsTrue(sdp.Media.First().Media == SDPMediaTypesEnum.audio);
-            Assert.IsTrue(sdp.Media.First().Transport == "UDP/TLS/RTP/SAVPF");
-            Assert.IsTrue(sdp.Media.Last().Media == SDPMediaTypesEnum.video);
-            Assert.IsTrue(sdp.Media.Last().Transport == "UDP/TLS/RTP/SAVPF");
+            Assert.Equal(2, sdp.Media.Count);
+            Assert.True(sdp.Media.First().Media == SDPMediaTypesEnum.audio);
+            Assert.True(sdp.Media.First().Transport == "UDP/TLS/RTP/SAVPF");
+            Assert.True(sdp.Media.Last().Media == SDPMediaTypesEnum.video);
+            Assert.True(sdp.Media.Last().Transport == "UDP/TLS/RTP/SAVPF");
         }
 
         /// <summary>
         /// Test that an SDP packet with IPv6 addresses can be correctly parsed.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseIPv6SDPUnitTest()
         {
             Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -229,14 +229,14 @@ namespace SIPSorcery.Net.UnitTests
 
             Logger.LogDebug(sdp.ToString());
 
-            Assert.IsTrue(sdp.Connection.ConnectionAddressType == "IP6", "The connection address type not parsed correctly.");
-            Assert.IsTrue(sdp.Connection.ConnectionAddress == "FF1E:03AD::7F2E:172A:1E24", "The connection address was not parsed correctly.");
+            Assert.True(sdp.Connection.ConnectionAddressType == "IP6", "The connection address type not parsed correctly.");
+            Assert.True(sdp.Connection.ConnectionAddress == "FF1E:03AD::7F2E:172A:1E24", "The connection address was not parsed correctly.");
         }
 
         /// <summary>
         /// Tests that the first RTP end point corresponding to a media offer can be extracted.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void GetFirstMedaiOfferRTPSocketUnitTest()
         {
             Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -257,14 +257,14 @@ namespace SIPSorcery.Net.UnitTests
 
             IPEndPoint audioRtpEndPoint = SDP.GetSDPRTPEndPoint(sdpStr);
 
-            Assert.IsTrue(audioRtpEndPoint.Address.Equals(IPAddress.Parse("10.0.0.4")), "The media RTP address was not correct.");
-            Assert.AreEqual(audioRtpEndPoint.Port, 12228, "The media RTP port was not correct.");
+            Assert.True(audioRtpEndPoint.Address.Equals(IPAddress.Parse("10.0.0.4")), "The media RTP address was not correct.");
+            Assert.True(audioRtpEndPoint.Port == 12228, "The media RTP port was not correct.");
         }
 
         /// <summary>
         /// Tests that the first IPv6 RTP end point corresponding to a media offer can be extracted.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void GetFirstMedaiOfferIPv6RTPSocketUnitTest()
         {
             Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -282,8 +282,8 @@ namespace SIPSorcery.Net.UnitTests
 
             IPEndPoint audioRtpEndPoint = SDP.GetSDPRTPEndPoint(sdpStr);
 
-            Assert.IsTrue(audioRtpEndPoint.Address.Equals(IPAddress.Parse("FF1E:03AD::7F2E:172A:1E24")), "The media RTP address was not correct.");
-            Assert.AreEqual(audioRtpEndPoint.Port, 6000, "The media RTP port was not correct.");
+            Assert.True(audioRtpEndPoint.Address.Equals(IPAddress.Parse("FF1E:03AD::7F2E:172A:1E24")), "The media RTP address was not correct.");
+            Assert.True(audioRtpEndPoint.Port == 6000, "The media RTP port was not correct.");
         }
     }
 }

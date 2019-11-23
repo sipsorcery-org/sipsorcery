@@ -14,15 +14,16 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 
 namespace SIPSorcery.SIP.App
 {
-    /// <remarks>
-    /// A To tag MUST be set on all non 100 Trying responses, see RFC 3261 "8.2.6.2 Headers and Tags".
-    /// </remarks>
+    /// <summary>
+    /// Implementation of a SIP Server User Agent that can be used to receive SIP calls.
+    /// </summary>
     public class SIPServerUserAgent : ISIPServerUserAgent
     {
         private static ILogger logger = Log.Logger;
@@ -34,7 +35,6 @@ namespace SIPSorcery.SIP.App
         private SIPTransport m_sipTransport;
         private UASInviteTransaction m_uasTransaction;
         private SIPEndPoint m_outboundProxy;                   // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
-        private SIPDialogue m_sipDialogue;
         private bool m_isAuthenticated;
         private bool m_isCancelled;
         private bool m_isHungup;
@@ -42,7 +42,7 @@ namespace SIPSorcery.SIP.App
         private string m_adminMemberId;
         private string m_sipUsername;
         private string m_sipDomain;
-        private SIPCallDirection m_sipCallDirection;
+
         public bool IsB2B { get { return false; } }
         public bool IsInvite
         {
@@ -50,15 +50,15 @@ namespace SIPSorcery.SIP.App
         }
         public string Owner { get { return m_owner; } }
 
-        public SIPCallDirection CallDirection
-        {
-            get { return m_sipCallDirection; }
-        }
+        /// <summary>
+        /// Call direction for this user agent.
+        /// </summary>
+        public SIPCallDirection CallDirection { get; private set; } = SIPCallDirection.In;
 
-        public SIPDialogue SIPDialogue
-        {
-            get { return m_sipDialogue; }
-        }
+        /// <summary>
+        /// The SIP dialog that's created if we're able to successfully answer the call request.
+        /// </summary>
+        public SIPDialogue SIPDialogue { get; private set; }
 
         private SIPAccount m_sipAccount;
         public SIPAccount SIPAccount
@@ -118,7 +118,7 @@ namespace SIPSorcery.SIP.App
             m_outboundProxy = outboundProxy;
             m_sipUsername = sipUsername;
             m_sipDomain = sipDomain;
-            m_sipCallDirection = callDirection;
+            CallDirection = callDirection;
             GetSIPAccount_External = getSIPAccount;
             SIPAuthenticateRequest_External = sipAuthenticateRequest;
             Log_External = logDelegate ?? Log_External;
@@ -139,8 +139,8 @@ namespace SIPSorcery.SIP.App
         {
             m_uasTransaction.TransactionTraceMessage += traceDelegate;
 
-            traceDelegate(m_uasTransaction, SIPMonitorEventTypesEnum.SIPTransaction + "=>" + "Request received " + m_uasTransaction.LocalSIPEndPoint +
-                "<-" + m_uasTransaction.RemoteEndPoint + "\r\n" + m_uasTransaction.TransactionRequest.ToString());
+            traceDelegate(m_uasTransaction, SIPMonitorEventTypesEnum.SIPTransaction + "=>" + "Request received " + m_uasTransaction.TransactionRequest.LocalSIPEndPoint +
+                "<-" + m_uasTransaction.TransactionRequest.RemoteSIPEndPoint + "\r\n" + m_uasTransaction.TransactionRequest.ToString());
         }
 
         public bool LoadSIPAccountForIncomingCall()
@@ -348,7 +348,7 @@ namespace SIPSorcery.SIP.App
                         m_uasTransaction.LocalTag = toTag;
                     }
 
-                    SIPResponse okResponse = m_uasTransaction.GetOkResponse(m_uasTransaction.TransactionRequest, m_uasTransaction.TransactionRequest.LocalSIPEndPoint, contentType, body);
+                    SIPResponse okResponse = m_uasTransaction.GetOkResponse(m_uasTransaction.TransactionRequest, contentType, body);
 
                     if (body != null)
                     {
@@ -359,10 +359,10 @@ namespace SIPSorcery.SIP.App
 
                     m_uasTransaction.SendFinalResponse(okResponse);
 
-                    m_sipDialogue = new SIPDialogue(m_uasTransaction, m_owner, m_adminMemberId);
-                    m_sipDialogue.TransferMode = transferMode;
+                    SIPDialogue = new SIPDialogue(m_uasTransaction, m_owner, m_adminMemberId);
+                    SIPDialogue.TransferMode = transferMode;
 
-                    return m_sipDialogue;
+                    return SIPDialogue;
                 }
             }
             catch (Exception excp)
@@ -449,7 +449,7 @@ namespace SIPSorcery.SIP.App
         {
             m_isHungup = true;
 
-            if (m_sipDialogue == null)
+            if (SIPDialogue == null)
             {
                 return;
             }
@@ -459,15 +459,19 @@ namespace SIPSorcery.SIP.App
             {
                 try
                 {
-                    SIPEndPoint localEndPoint = (m_outboundProxy != null) ?
-                                    m_sipTransport.GetDefaultSIPEndPoint(m_outboundProxy) :
-                                    m_sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetEndpoint());
-
-                    SIPRequest byeRequest = GetByeRequest(localEndPoint);
-
-                    SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, m_outboundProxy);
-                    byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
-                    byeTransaction.SendReliableRequest();
+                    // Cases found where the Contact in the INVITE was to a different protocol than the oringinal request.
+                    var inviteContact = m_uasTransaction.TransactionRequest.Header.Contact.FirstOrDefault();
+                    if (inviteContact == null)
+                    {
+                        logger.LogWarning("The Contact header on the INVITE request was missing, BYE request cannot be generated.");
+                    }
+                    else
+                    {
+                        SIPRequest byeRequest = GetByeRequest();
+                        SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, m_outboundProxy);
+                        byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
+                        byeTransaction.SendReliableRequest();
+                    }
                 }
                 catch (Exception excp)
                 {
@@ -500,7 +504,7 @@ namespace SIPSorcery.SIP.App
                     authByeRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                     authByeRequest.Header.CSeq = authByeRequest.Header.CSeq + 1;
 
-                    SIPNonInviteTransaction bTransaction = m_sipTransport.CreateNonInviteTransaction(authByeRequest, null, localSIPEndPoint, null);
+                    SIPNonInviteTransaction bTransaction = m_sipTransport.CreateNonInviteTransaction(authByeRequest, null);
                     bTransaction.SendReliableRequest();
                 }
             }
@@ -560,32 +564,23 @@ namespace SIPSorcery.SIP.App
             if (m_uasTransaction.CDR != null)
             {
                 m_uasTransaction.CDR.DialPlanContextID = dialPlanContextID;
-
                 m_uasTransaction.CDR.Updated();
             }
         }
 
-        private SIPEndPoint GetRemoteTargetEndpoint()
+        private SIPRequest GetByeRequest()
         {
-            SIPURI dstURI = (m_sipDialogue.RouteSet == null) ? m_sipDialogue.RemoteTarget : m_sipDialogue.RouteSet.TopRoute.URI;
-            return dstURI.ToSIPEndPoint();
-        }
+            SIPRequest byeRequest = new SIPRequest(SIPMethodsEnum.BYE, SIPDialogue.RemoteTarget);
+            SIPFromHeader byeFromHeader = SIPFromHeader.ParseFromHeader(SIPDialogue.LocalUserField.ToString());
+            SIPToHeader byeToHeader = SIPToHeader.ParseToHeader(SIPDialogue.RemoteUserField.ToString());
+            int cseq = SIPDialogue.CSeq + 1;
 
-        private SIPRequest GetByeRequest(SIPEndPoint localSIPEndPoint)
-        {
-            SIPRequest byeRequest = new SIPRequest(SIPMethodsEnum.BYE, m_sipDialogue.RemoteTarget);
-            SIPFromHeader byeFromHeader = SIPFromHeader.ParseFromHeader(m_sipDialogue.LocalUserField.ToString());
-            SIPToHeader byeToHeader = SIPToHeader.ParseToHeader(m_sipDialogue.RemoteUserField.ToString());
-            int cseq = m_sipDialogue.CSeq + 1;
-
-            SIPHeader byeHeader = new SIPHeader(byeFromHeader, byeToHeader, cseq, m_sipDialogue.CallId);
+            SIPHeader byeHeader = new SIPHeader(byeFromHeader, byeToHeader, cseq, SIPDialogue.CallId);
             byeHeader.CSeqMethod = SIPMethodsEnum.BYE;
             byeRequest.Header = byeHeader;
-            byeRequest.Header.Routes = m_sipDialogue.RouteSet;
-            byeRequest.Header.ProxySendFrom = m_sipDialogue.ProxySendFrom;
-
-            SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
-            byeRequest.Header.Vias.PushViaHeader(viaHeader);
+            byeRequest.Header.Routes = SIPDialogue.RouteSet;
+            byeRequest.Header.ProxySendFrom = SIPDialogue.ProxySendFrom;
+            byeRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
             return byeRequest;
         }

@@ -14,18 +14,18 @@
 //-----------------------------------------------------------------------------
 
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class RTSPConnectionUnitTest
     {
         /// <summary>
         /// Tests that a receive buffer is correctly identified as containing a complete RTSP message when there is no Content-Length
         /// header.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void RTSPMessageWithNoContentLengthHeaderAvailable()
         {
             RTSPRequest setupRequest = new RTSPRequest(RTSPMethodsEnum.SETUP, RTSPURL.ParseRTSPURL("rtsp://localhost/sample"));
@@ -39,11 +39,11 @@ namespace SIPSorcery.Net.UnitTests
 
             rtspConnection.SocketReadCompleted(rtspRequestBuffer.Length);
 
-            Assert.IsNotNull(rtspMessageBuffer);
+            Assert.NotNull(rtspMessageBuffer);
 
             RTSPRequest req = RTSPRequest.ParseRTSPRequest(RTSPMessage.ParseRTSPMessage(rtspMessageBuffer, null, null));
 
-            Assert.AreEqual(RTSPMethodsEnum.SETUP, req.Method);
+            Assert.Equal(RTSPMethodsEnum.SETUP, req.Method);
         }
     }
 }

@@ -312,8 +312,8 @@ namespace SIPSorcery.SIP.App
 
         public void SetTraceDelegate(SIPTransactionTraceMessageDelegate traceDelegate)
         {
-            traceDelegate(m_transaction, SIPMonitorEventTypesEnum.SIPTransaction + "=>" + m_transaction.TransactionRequest.Method + " request received " + m_transaction.LocalSIPEndPoint +
-                "<-" + m_transaction.RemoteEndPoint + "\r\n" + m_transaction.TransactionRequest.ToString());
+            traceDelegate(m_transaction, SIPMonitorEventTypesEnum.SIPTransaction + "=>" + m_transaction.TransactionRequest.Method + " request received " + m_transaction.TransactionRequest.LocalSIPEndPoint +
+                "<-" + m_transaction.TransactionRequest.RemoteSIPEndPoint + "\r\n" + m_transaction.TransactionRequest.ToString());
         }
 
         public void SetOwner(string owner, string adminMemberId)

@@ -7,7 +7,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 23 May 2005	Aaron Clauson	Created, Montreux, Switzerland.
+// 23 May 2005	Aaron Clauson	Created, Dublin, Ireland.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
 //
 // License: 
@@ -20,6 +20,7 @@ namespace SIPSorcery.Net
 	{
 		PCMU = 0,
         PCMA = 1,
+        G722 = 9,
         Dynamic = 96,
 	}
 
@@ -38,6 +39,8 @@ namespace SIPSorcery.Net
                 case RTPPayloadTypesEnum.PCMU:
                 case RTPPayloadTypesEnum.PCMA:
                     return 8000;
+                case RTPPayloadTypesEnum.G722:
+                    return 16000;
                 default:
                     return 0;
             }

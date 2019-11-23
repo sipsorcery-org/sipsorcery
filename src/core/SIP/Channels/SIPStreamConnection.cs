@@ -5,12 +5,13 @@
 // TCP or TLS.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 31 Mar 2009	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 31 Mar 2009	Aaron Clauson	Created, Hobart, Australia.
 // 25 Oct 2019  Aaron Clauson   Renamed from SIPConnection to SIPStreamConnection as part of major TCP and TLS
 //                              channel refactor. Moved message parsing logic to SIPMessage class.
+// 17 Nov 2019  Aaron Clauson   Added IPAddress.Any support.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -20,17 +21,19 @@ using System;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
     /// <summary>
-    /// Represents a reliable stream connection (e.g. TCP or TLS) between two end points. Stream connections have a lot more
+    /// Represents a reliable stream connection (e.g. TCP or TLS) between two end points. Stream connections have a more
     /// overhead than UDP. The state of the connection has to be monitored and messages on the stream can be spread across
     /// multiple packets.
     /// </summary>
     public class SIPStreamConnection
     {
         public static int MaxSIPTCPMessageSize = SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH;
+        public static int CONNECTION_ID_LENGTH = 7; // Length of the random numeric string to use for connection ID's.
 
         /// <summary>
         /// The underlying TCP socket for the stream connection. To take adavantage of newer async TCP IO operations the
@@ -98,7 +101,7 @@ namespace SIPSorcery.SIP
             LastTransmission = DateTime.Now;
             RemoteEndPoint = remoteEndPoint;
             ConnectionProtocol = connectionProtocol;
-            ConnectionID = Guid.NewGuid().ToString();
+            ConnectionID = Crypto.GetRandomInt(CONNECTION_ID_LENGTH).ToString();
 
             if (ConnectionProtocol == SIPProtocolsEnum.tcp)
             {
@@ -127,7 +130,9 @@ namespace SIPSorcery.SIP
                 if (SIPMessageReceived != null)
                 {
                     LastTransmission = DateTime.Now;
-                    SIPMessageReceived(recvChannel, new SIPEndPoint(ConnectionProtocol, RemoteEndPoint, ConnectionID), sipMsgBuffer);
+                    SIPEndPoint localEndPoint = new SIPEndPoint(ConnectionProtocol, StreamSocket.LocalEndPoint as IPEndPoint, recvChannel.ID, ConnectionID);
+                    SIPEndPoint remoteEndPoint = new SIPEndPoint(ConnectionProtocol, RemoteEndPoint, recvChannel.ID, ConnectionID);
+                    SIPMessageReceived(recvChannel, localEndPoint, remoteEndPoint, sipMsgBuffer);
                 }
 
                 RecvStartPosn += (sipMsgBuffer.Length + bytesSkipped);

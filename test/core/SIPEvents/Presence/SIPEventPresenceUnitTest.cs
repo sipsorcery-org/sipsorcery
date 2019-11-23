@@ -9,17 +9,17 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class SIPEventPresenceUnitTest
     {
         /// <summary>
         /// Used to check the conformance of blocks of XML text to the schema in RFC3863.
         ///// </summary>
-        //[TestMethod]
+        //[Fact]
         ////[Ignore("Use this method to validate dialog XML packages against the RFC schema. It takes a little bit of time to load the schema.")]
         //[ExpectedException(typeof(XmlSchemaValidationException))]
         //public void InvalidXMLUnitTest()
@@ -58,7 +58,7 @@ namespace SIPSorcery.SIP.UnitTests
         ///// <summary>
         ///// Used to check the conformance of blocks of XML text to the schema in RFC 4235.
         ///// </summary>
-        //[TestMethod]
+        //[Fact]
         ////[Ignore("Use this method to validate dialog XML packages against the RFC schema. It takes a little bit of time to load the schema.")]
         //public void ValidXMLUnitTest()
         //{
@@ -101,7 +101,7 @@ namespace SIPSorcery.SIP.UnitTests
         ///// <summary>
         ///// Tests that a SIPEventPresence object will generate an XML text representation of itself without throwing any exceptions.
         ///// </summary>
-        //[TestMethod]
+        //[Fact]
         //public void GetAsXMLStringUnitTest()
         //{
         //    Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -117,7 +117,7 @@ namespace SIPSorcery.SIP.UnitTests
         ///// <summary>
         ///// Tests that a single tuple block of XML text is correctly parsed and the value of each individual item is correctly extracted.
         ///// </summary>
-        //[TestMethod]
+        //[Fact]
         //public void ParseFromXMLStringUnitTest()
         //{
         //    Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -134,12 +134,12 @@ namespace SIPSorcery.SIP.UnitTests
 
         //    SIPEventPresence presence = SIPEventPresence.Parse(presenceXMLStr);
 
-        //    Assert.IsTrue(presence.Entity.ToString() == "sip:test@test.com", "The parsed presence event entity was incorrect.");
-        //    Assert.IsTrue(presence.Tuples.Count == 1, "The parsed presence event tuple number was incorrect.");
-        //    Assert.IsTrue(presence.Tuples[0].ID == "as7d900as8", "The parsed presence event first tuple ID was incorrect.");
-        //    Assert.IsTrue(presence.Tuples[0].Status == SIPEventPresenceStateEnum.open, "The parsed presence event first tuple status was incorrect.");
-        //    Assert.IsTrue(presence.Tuples[0].ContactURI.ToString() == "sip:test123@test.com", "The parsed presence event first tuple Contact URI was incorrect.");
-        //    Assert.IsTrue(presence.Tuples[0].ContactPriority == 1.2M, "The parsed presence event first tuple Contact priority was incorrect.");
+        //    Assert.True(presence.Entity.ToString() == "sip:test@test.com", "The parsed presence event entity was incorrect.");
+        //    Assert.True(presence.Tuples.Count == 1, "The parsed presence event tuple number was incorrect.");
+        //    Assert.True(presence.Tuples[0].ID == "as7d900as8", "The parsed presence event first tuple ID was incorrect.");
+        //    Assert.True(presence.Tuples[0].Status == SIPEventPresenceStateEnum.open, "The parsed presence event first tuple status was incorrect.");
+        //    Assert.True(presence.Tuples[0].ContactURI.ToString() == "sip:test123@test.com", "The parsed presence event first tuple Contact URI was incorrect.");
+        //    Assert.True(presence.Tuples[0].ContactPriority == 1.2M, "The parsed presence event first tuple Contact priority was incorrect.");
 
         //    Console.WriteLine("-----------------------------------------");
         //}

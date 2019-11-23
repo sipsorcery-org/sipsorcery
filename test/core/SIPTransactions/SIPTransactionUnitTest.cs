@@ -11,12 +11,12 @@
 
 using System;
 using System.Net;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class SIPTransactionUnitTest
     {
         private class MockSIPDNSManager
@@ -31,7 +31,7 @@ namespace SIPSorcery.SIP.UnitTests
 
         protected static readonly string m_CRLF = SIPConstants.CRLF;
 
-        [TestMethod]
+        [Fact]
         public void CreateTransactionUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -79,9 +79,9 @@ namespace SIPSorcery.SIP.UnitTests
             SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
             SIPTransport sipTransport = new SIPTransport(MockSIPDNSManager.Resolve, transactionEngine);
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
-            SIPTransaction transaction = sipTransport.CreateUACTransaction(request, dummySIPEndPoint, dummySIPEndPoint, null);
+            SIPTransaction transaction = sipTransport.CreateUACTransaction(request, null);
 
-            Assert.IsTrue(transaction.TransactionRequest.URI.ToString() == "sip:023434211@213.200.94.182;switchtag=902888", "Transaction request URI was incorrect.");
+            Assert.True(transaction.TransactionRequest.URI.ToString() == "sip:023434211@213.200.94.182;switchtag=902888", "Transaction request URI was incorrect.");
         }
     }
 }

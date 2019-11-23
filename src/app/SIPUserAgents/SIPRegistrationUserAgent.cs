@@ -5,16 +5,18 @@
 // A user agent that can register and maintain a binding with a SIP Registrar.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 03 Mar 2010	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, London, UK (www.sipsorcery.com).
+// 03 Mar 2010	Aaron Clauson	Created, Hobart, Australia.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
 using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
@@ -64,6 +66,19 @@ namespace SIPSorcery.SIP.App
         public event Action<SIPURI> RegistrationSuccessful;
         public event Action<SIPURI> RegistrationRemoved;
 
+        /// <summary>
+        /// Creates a new SIP registation agent that will attempt to register with a SIP Registrar server.
+        /// If the registration fails the agent will retry up to a hard coded maximum number of 3 attempts.
+        /// If successful the agent will periodically refresh the registration based on the Expiry time 
+        /// returned by the server.
+        /// </summary>
+        /// <param name="sipTransport">The SIP transport layer to use to send the register request.</param>
+        /// <param name="username">The username to use if the server requests authorisation.</param>
+        /// <param name="password">The password to use if the server requests authorisation.</param>
+        /// <param name="server">The hostname or socket address for the registrat server. Can be in a format of
+        /// hostname:port or ipaddress:port, e.g. sipsorcery.com or 67.222.131.147:5060.</param>
+        /// <param name="expiry">The expiry value to request for the contact. This value can be rejected or overridden
+        /// by the server.</param>
         public SIPRegistrationUserAgent(
             SIPTransport sipTransport,
             string username,
@@ -72,14 +87,15 @@ namespace SIPSorcery.SIP.App
             int expiry)
         {
             m_sipTransport = sipTransport;
-            m_localEndPoint = sipTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum.udp);
             m_sipAccountAOR = new SIPURI(username, server, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
             m_authUsername = username;
             m_password = password;
             m_registrarHost = server;
-            m_contactURI = new SIPURI(SIPSchemesEnum.sip, m_localEndPoint);
             m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
             m_callID = Guid.NewGuid().ToString();
+
+            // Setting the contact to "0.0.0.0" tells the transport layer to populate it at send time.
+            m_contactURI = new SIPURI(m_sipAccountAOR.Scheme, IPAddress.Any, 0);
 
             Log_External = (ev) => logger.LogDebug(ev?.Message);
         }
@@ -255,9 +271,9 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Initiating registration to " + m_registrarHost + " at " + registrarSIPEndPoint.ToString() + " for " + m_sipAccountAOR.ToString() + ".", m_owner));
-                        SIPRequest regRequest = GetRegistrationRequest(m_localEndPoint);
+                        SIPRequest regRequest = GetRegistrationRequest();
 
-                        SIPNonInviteTransaction regTransaction = m_sipTransport.CreateNonInviteTransaction(regRequest, registrarSIPEndPoint, m_localEndPoint, m_outboundProxy);
+                        SIPNonInviteTransaction regTransaction = m_sipTransport.CreateNonInviteTransaction(regRequest, m_outboundProxy);
                         // These handlers need to be on their own threads to take the processing off the SIP transport layer.
                         regTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { ThreadPool.QueueUserWorkItem(delegate { ServerResponseReceived(lep, rep, tn, rsp); }); };
                         regTransaction.NonInviteTransactionTimedOut += (tn) => { ThreadPool.QueueUserWorkItem(delegate { RegistrationTimedOut(tn); }); };
@@ -304,7 +320,7 @@ namespace SIPSorcery.SIP.App
                         {
                             m_attempts++;
                             SIPRequest authenticatedRequest = GetAuthenticatedRegistrationRequest(sipTransaction.TransactionRequest, sipResponse);
-                            SIPNonInviteTransaction regAuthTransaction = m_sipTransport.CreateNonInviteTransaction(authenticatedRequest, sipTransaction.RemoteEndPoint, localSIPEndPoint, m_outboundProxy);
+                            SIPNonInviteTransaction regAuthTransaction = m_sipTransport.CreateNonInviteTransaction(authenticatedRequest, m_outboundProxy);
                             regAuthTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { ThreadPool.QueueUserWorkItem(delegate { AuthResponseReceived(lep, rep, tn, rsp); }); };
                             regAuthTransaction.NonInviteTransactionTimedOut += (tn) => { ThreadPool.QueueUserWorkItem(delegate { RegistrationTimedOut(tn); }); };
                             m_sipTransport.SendSIPReliable(regAuthTransaction);
@@ -501,7 +517,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private SIPRequest GetRegistrationRequest(SIPEndPoint localSIPEndPoint)
+        private SIPRequest GetRegistrationRequest()
         {
             try
             {
@@ -514,10 +530,9 @@ namespace SIPSorcery.SIP.App
                     SIPMethodsEnum.REGISTER,
                     registerURI,
                     new SIPToHeader(null, m_sipAccountAOR, null),
-                    localSIPEndPoint);
+                    new SIPFromHeader(null, m_sipAccountAOR, CallProperties.CreateNewTag()));
 
-                registerRequest.Header.From = new SIPFromHeader(null, m_sipAccountAOR, CallProperties.CreateNewTag());
-                registerRequest.Header.Contact[0] = new SIPContactHeader(null, m_contactURI);
+                registerRequest.Header.Contact = new List<SIPContactHeader> { new SIPContactHeader(null, m_contactURI) };
                 registerRequest.Header.CSeq = ++m_cseq;
                 registerRequest.Header.CallId = m_callID;
                 registerRequest.Header.UserAgent = (!UserAgent.IsNullOrBlank()) ? UserAgent : m_userAgent;
@@ -541,7 +556,8 @@ namespace SIPSorcery.SIP.App
                 authRequest.SetCredentials(username, m_password, registerRequest.URI.ToString(), SIPMethodsEnum.REGISTER.ToString());
 
                 SIPRequest regRequest = registerRequest.Copy();
-                regRequest.LocalSIPEndPoint = registerRequest.LocalSIPEndPoint;
+                regRequest.SetSendFromHints(registerRequest.LocalSIPEndPoint);
+
                 regRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                 regRequest.Header.From.FromTag = CallProperties.CreateNewTag();
                 regRequest.Header.To.ToTag = null;

@@ -14,11 +14,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class RTCPReportUnitTest
     {
         /*			
@@ -37,7 +37,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Console.WriteLine("Sample count = " + report.m_samples.Count + ".");
 
-            Assert.IsTrue(report.TotalPackets == 1, "Incorrect number of packets in report.");
+            Assert.True(report.TotalPackets == 1, "Incorrect number of packets in report.");
         }
 
 
@@ -67,7 +67,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Console.WriteLine("Sample count = " + report.m_samples.Count + ".");
 
-            Assert.IsTrue(report.m_samples.Count == 2, "Incorrect number of reports in the queue.");
+            Assert.True(report.m_samples.Count == 2, "Incorrect number of reports in the queue.");
 
             RTCPReport sample1 = report.GetNextSample();
             RTCPReport sample2 = report.GetNextSample();
@@ -75,8 +75,8 @@ namespace SIPSorcery.Net.UnitTests
             Console.WriteLine("Sample1: " + sample1.SampleStartTime.ToString("mm:ss:fff") + " to " + sample1.SampleEndTime.ToString("mm:ss:fff"));
             Console.WriteLine("Sample2: " + sample2.SampleStartTime.ToString("mm:ss:fff") + " to " + sample2.SampleEndTime.ToString("mm:ss:fff"));
 
-            Assert.IsTrue(sample1.TotalPackets == 2, "Incorrect number of packets in sample1.");
-            Assert.IsTrue(report.m_previousSample == null, "Previous sample should have been null after an empty sample.");
+            Assert.True(sample1.TotalPackets == 2, "Incorrect number of packets in sample1.");
+            Assert.True(report.m_previousSample == null, "Previous sample should have been null after an empty sample.");
 
             //Console.WriteLine("Sample count = " + report.m_samples.Count + ".");
 
@@ -126,8 +126,8 @@ namespace SIPSorcery.Net.UnitTests
 
             Console.WriteLine("total packets = " + report.TotalPackets + ", outoforder = " + report.OutOfOrderPackets + ", drop " + report.PacketsLost + "."); 
 
-            Assert.IsTrue(report.TotalPackets == 2, "Incorrect packet count in sample.");
-            Assert.IsTrue(report.PacketsLost == 1, "Incorrect dropped packet count.");	
+            Assert.True(report.TotalPackets == 2, "Incorrect packet count in sample.");
+            Assert.True(report.PacketsLost == 1, "Incorrect dropped packet count.");	
 
             Thread.Sleep(120);
 
@@ -137,12 +137,12 @@ namespace SIPSorcery.Net.UnitTests
 
             report.AddSample(seqNum++, DateTime.Now, 100);
 
-            Assert.IsTrue(report.m_samples.Count == 1, "Queue size was incorrect.");
+            Assert.True(report.m_samples.Count == 1, "Queue size was incorrect.");
 
             RTCPReport sample1 = report.GetNextSample();
             Console.WriteLine("Packets lost = " + sample1.PacketsLost);
 
-            Assert.IsTrue(sample1.PacketsLost == 1, "Packets lost count was incorrect.");
+            Assert.True(sample1.PacketsLost == 1, "Packets lost count was incorrect.");
         }
 
         [Test]
@@ -166,12 +166,12 @@ namespace SIPSorcery.Net.UnitTests
 
             Console.WriteLine("total packets = " + report.TotalPackets + ", outoforder = " + report.OutOfOrderPackets + "."); 
 
-            Assert.IsTrue(report.TotalPackets == 3, "Incorrect packet count in sample.");
-            Assert.IsTrue(report.OutOfOrderPackets == 2, "Incorrect outoforder packet count.");	
+            Assert.True(report.TotalPackets == 3, "Incorrect packet count in sample.");
+            Assert.True(report.OutOfOrderPackets == 2, "Incorrect outoforder packet count.");	
         }
         */
 
-        [TestMethod]
+        [Fact]
         public void GetRTCPHeaderTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -187,7 +187,7 @@ namespace SIPSorcery.Net.UnitTests
             }
         }
 
-        [TestMethod]
+        [Fact]
         public void RTCPHeaderRoundTripTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -204,15 +204,15 @@ namespace SIPSorcery.Net.UnitTests
 
             //Console.WriteLine("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
 
-            Assert.IsTrue(src.Version == dst.Version, "Version was mismatched.");
-            Assert.IsTrue(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
-            Assert.IsTrue(src.ReceptionReportCount == dst.ReceptionReportCount, "ReceptionReportCount was mismatched.");
-            Assert.IsTrue(src.PacketType == dst.PacketType, "PacketType was mismatched.");
-            Assert.IsTrue(src.Length == dst.Length, "Length was mismatched.");
+            Assert.True(src.Version == dst.Version, "Version was mismatched.");
+            Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
+            Assert.True(src.ReceptionReportCount == dst.ReceptionReportCount, "ReceptionReportCount was mismatched.");
+            Assert.True(src.PacketType == dst.PacketType, "PacketType was mismatched.");
+            Assert.True(src.Length == dst.Length, "Length was mismatched.");
         }
 
 
-        [TestMethod]
+        [Fact]
         public void GetHeaderTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -228,7 +228,7 @@ namespace SIPSorcery.Net.UnitTests
             }
         }
 
-        [TestMethod]
+        [Fact]
         public void HeaderRoundTripTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -249,18 +249,18 @@ namespace SIPSorcery.Net.UnitTests
 
             Console.WriteLine("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
 
-            Assert.IsTrue(src.Version == dst.Version, "Version was mismatched.");
-            Assert.IsTrue(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
-            Assert.IsTrue(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
-            Assert.IsTrue(src.CSRCCount == dst.CSRCCount, "CSRCCount was mismatched.");
-            Assert.IsTrue(src.MarkerBit == dst.MarkerBit, "MarkerBit was mismatched.");
-            Assert.IsTrue(src.SequenceNumber == dst.SequenceNumber, "PayloadType was mismatched.");
-            Assert.IsTrue(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "SequenceNumber was mismatched.");
-            Assert.IsTrue(src.Timestamp == dst.Timestamp, "Timestamp was mismatched.");
-            Assert.IsTrue(src.SyncSource == dst.SyncSource, "SyncSource was mismatched.");
+            Assert.True(src.Version == dst.Version, "Version was mismatched.");
+            Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
+            Assert.True(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
+            Assert.True(src.CSRCCount == dst.CSRCCount, "CSRCCount was mismatched.");
+            Assert.True(src.MarkerBit == dst.MarkerBit, "MarkerBit was mismatched.");
+            Assert.True(src.SequenceNumber == dst.SequenceNumber, "PayloadType was mismatched.");
+            Assert.True(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "SequenceNumber was mismatched.");
+            Assert.True(src.Timestamp == dst.Timestamp, "Timestamp was mismatched.");
+            Assert.True(src.SyncSource == dst.SyncSource, "SyncSource was mismatched.");
         }
 
-        [TestMethod]
+        [Fact]
         public void CustomisedHeaderRoundTripTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -295,18 +295,18 @@ namespace SIPSorcery.Net.UnitTests
 
             Console.WriteLine("Raw Header: " + rawHeader);
 
-            Assert.IsTrue(src.Version == dst.Version, "Version was mismatched.");
-            Assert.IsTrue(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
-            Assert.IsTrue(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
-            Assert.IsTrue(src.CSRCCount == dst.CSRCCount, "CSRCCount was mismatched.");
-            Assert.IsTrue(src.MarkerBit == dst.MarkerBit, "MarkerBit was mismatched.");
-            Assert.IsTrue(src.SequenceNumber == dst.SequenceNumber, "PayloadType was mismatched.");
-            Assert.IsTrue(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "SequenceNumber was mismatched.");
-            Assert.IsTrue(src.Timestamp == dst.Timestamp, "Timestamp was mismatched.");
-            Assert.IsTrue(src.SyncSource == dst.SyncSource, "SyncSource was mismatched.");
+            Assert.True(src.Version == dst.Version, "Version was mismatched.");
+            Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
+            Assert.True(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
+            Assert.True(src.CSRCCount == dst.CSRCCount, "CSRCCount was mismatched.");
+            Assert.True(src.MarkerBit == dst.MarkerBit, "MarkerBit was mismatched.");
+            Assert.True(src.SequenceNumber == dst.SequenceNumber, "PayloadType was mismatched.");
+            Assert.True(src.HeaderExtensionFlag == dst.HeaderExtensionFlag, "SequenceNumber was mismatched.");
+            Assert.True(src.Timestamp == dst.Timestamp, "Timestamp was mismatched.");
+            Assert.True(src.SyncSource == dst.SyncSource, "SyncSource was mismatched.");
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseRawRtpTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -318,17 +318,17 @@ namespace SIPSorcery.Net.UnitTests
 
             RTPPacket rtpPacket = new RTPPacket(rtpBytes);
 
-            Assert.AreEqual(2, rtpPacket.Header.Version, "Version was mismatched.");
-            Assert.AreEqual(0, rtpPacket.Header.PaddingFlag, "PaddingFlag was mismatched.");
-            Assert.AreEqual(0, rtpPacket.Header.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
-            Assert.AreEqual(0, rtpPacket.Header.CSRCCount, "CSRCCount was mismatched.");
-            Assert.AreEqual(1, rtpPacket.Header.MarkerBit, "MarkerBit was mismatched.");
-            Assert.AreEqual(59133, rtpPacket.Header.SequenceNumber, "SequenceNumber was mismatched..");
-            Assert.AreEqual(240U, rtpPacket.Header.Timestamp, "Timestamp was mismatched.");
-            Assert.AreEqual(3739283087, rtpPacket.Header.SyncSource, "SyncSource was mismatched.");
+            Assert.True(2 == rtpPacket.Header.Version, "Version was mismatched.");
+            Assert.True(0 == rtpPacket.Header.PaddingFlag, "PaddingFlag was mismatched.");
+            Assert.True(0 == rtpPacket.Header.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
+            Assert.True(0 == rtpPacket.Header.CSRCCount, "CSRCCount was mismatched.");
+            Assert.True(1 == rtpPacket.Header.MarkerBit, "MarkerBit was mismatched.");
+            Assert.True(59133 == rtpPacket.Header.SequenceNumber, "SequenceNumber was mismatched..");
+            Assert.True(240U == rtpPacket.Header.Timestamp, "Timestamp was mismatched.");
+            Assert.True(3739283087 == rtpPacket.Header.SyncSource, "SyncSource was mismatched.");
         }
 
-        [TestMethod]
+        [Fact]
         public void ParseRawRtpWithExtensionTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -345,16 +345,16 @@ namespace SIPSorcery.Net.UnitTests
 
             RTPPacket rtpPacket = new RTPPacket(rtpBytes);
 
-            Assert.AreEqual(2, rtpPacket.Header.Version, "Version was mismatched.");
-            Assert.AreEqual(0, rtpPacket.Header.PaddingFlag, "PaddingFlag was mismatched.");
-            Assert.AreEqual(1, rtpPacket.Header.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
-            Assert.AreEqual(0, rtpPacket.Header.CSRCCount, "CSRCCount was mismatched.");
-            Assert.AreEqual(1, rtpPacket.Header.MarkerBit, "MarkerBit was mismatched.");
-            Assert.AreEqual(59133, rtpPacket.Header.SequenceNumber, "SequenceNumber was mismatched..");
-            Assert.AreEqual(240U, rtpPacket.Header.Timestamp, "Timestamp was mismatched.");
-            Assert.AreEqual(3739283087, rtpPacket.Header.SyncSource, "SyncSource was mismatched.");
-            Assert.AreEqual(1U, rtpPacket.Header.ExtensionLength, "Extension Length was mismatched.");
-            Assert.AreEqual(rtpPacket.Header.ExtensionPayload.Length, rtpPacket.Header.ExtensionLength * 4, "Extension length and payload were mismatched.");
+            Assert.True(2 == rtpPacket.Header.Version, "Version was mismatched.");
+            Assert.True(0 == rtpPacket.Header.PaddingFlag, "PaddingFlag was mismatched.");
+            Assert.True(1 == rtpPacket.Header.HeaderExtensionFlag, "HeaderExtensionFlag was mismatched.");
+            Assert.True(0 == rtpPacket.Header.CSRCCount, "CSRCCount was mismatched.");
+            Assert.True(1 == rtpPacket.Header.MarkerBit, "MarkerBit was mismatched.");
+            Assert.True(59133 == rtpPacket.Header.SequenceNumber, "SequenceNumber was mismatched..");
+            Assert.True(240U == rtpPacket.Header.Timestamp, "Timestamp was mismatched.");
+            Assert.True(3739283087 == rtpPacket.Header.SyncSource, "SyncSource was mismatched.");
+            Assert.True(1U == rtpPacket.Header.ExtensionLength, "Extension Length was mismatched.");
+            Assert.True(rtpPacket.Header.ExtensionPayload.Length == rtpPacket.Header.ExtensionLength * 4, "Extension length and payload were mismatched.");
         }
     }
 }

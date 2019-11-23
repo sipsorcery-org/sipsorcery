@@ -36,7 +36,10 @@ namespace SIPSorcery.Net
 
         private static ILogger logger = Log.Logger;
 
-        public RTPPayloadTypesEnum PayloadType { get; private set; }
+        /// <summary>
+        /// The payload type for the RTP packet header.
+        /// </summary>
+        public int PayloadType { get; private set; }
         public uint Ssrc { get; private set; }
         public ushort SeqNum { get; private set; }
 
@@ -60,7 +63,7 @@ namespace SIPSorcery.Net
         /// <param name="payloadType">The payload type for the media attached to the sync source.</param>
         /// <param name="srtpProtect">Optional secure DTLS context for encrypting RTP packets.</param>
         /// <param name="srtcpProtect">Optional secure DTLS context for encrypting RTCP packets.</param>
-        public RTPSession(RTPPayloadTypesEnum payloadType, ProtectRtpPacket srtpProtect, ProtectRtpPacket srtcpProtect)
+        public RTPSession(int payloadType, ProtectRtpPacket srtpProtect, ProtectRtpPacket srtcpProtect)
         {
             PayloadType = payloadType;
             SrtpProtect = srtpProtect;

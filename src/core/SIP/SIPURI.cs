@@ -4,16 +4,18 @@
 // Description: SIP URI.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 09 Apr 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 09 Apr 2006	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
+using System.Net;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using SIPSorcery.Sys;
@@ -22,77 +24,7 @@ using Microsoft.Extensions.Logging;
 namespace SIPSorcery.SIP
 {
     /// <summary>
-    /// Implements the the absoluteURI structure from the SIP RFC (incomplete as at 17 nov 2006, AC).
-    ///
-    /// <code>
-    /// <![CDATA[
-    /// absoluteURI    =  scheme ":" ( hier-part / opaque-part )
-    /// hier-part      =  ( net-path / abs-path ) [ "?" query ]
-    /// net-path       =  "//" authority [ abs-path ]
-    /// abs-path       =  "/" path-segments
-    ///
-    /// opaque-part    =  uric-no-slash *uric
-    /// uric           =  reserved / unreserved / escaped
-    /// uric-no-slash  =  unreserved / escaped / ";" / "?" / ":" / "@" / "&" / "=" / "+" / "$" / ","
-    /// path-segments  =  segment *( "/" segment )
-    /// segment        =  *pchar *( ";" param )
-    /// param          =  *pchar
-    /// pchar          =  unreserved / escaped / ":" / "@" / "&" / "=" / "+" / "$" / ","
-    /// scheme         =  ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
-    /// authority      =  srvr / reg-name
-    /// srvr           =  [ [ userinfo "@" ] hostport ]
-    /// reg-name       =  1*( unreserved / escaped / "$" / "," / ";" / ":" / "@" / "&" / "=" / "+" )
-    /// query          =  *uric
-    ///
-    /// SIP-URI          =  "sip:" [ userinfo ] hostport uri-parameters [ headers ]
-    /// SIPS-URI         =  "sips:" [ userinfo ] hostport uri-parameters [ headers ]
-    /// userinfo         =  ( user / telephone-subscriber ) [ ":" password ] "@"
-    /// user             =  1*( unreserved / escaped / user-unreserved )
-    /// user-unreserved  =  "&" / "=" / "+" / "$" / "," / ";" / "?" / "/"
-    /// password         =  *( unreserved / escaped / "&" / "=" / "+" / "$" / "," )
-    /// hostport         =  host [ ":" port ]
-    /// host             =  hostname / IPv4address / IPv6reference
-    /// hostname         =  *( domainlabel "." ) toplabel [ "." ]
-    /// domainlabel      =  alphanum / alphanum *( alphanum / "-" ) alphanum
-    /// toplabel         =  ALPHA / ALPHA *( alphanum / "-" ) alphanum
-    /// IPv4address    =  1*3DIGIT "." 1*3DIGIT "." 1*3DIGIT "." 1*3DIGIT
-    /// IPv6reference  =  "[" IPv6address "]"
-    /// IPv6address    =  hexpart [ ":" IPv4address ]
-    /// hexpart        =  hexseq / hexseq "::" [ hexseq ] / "::" [ hexseq ]
-    /// hexseq         =  hex4 *( ":" hex4)
-    /// hex4           =  1*4HEXDIG
-    /// port           =  1*DIGIT
-    ///
-    /// The BNF for telephone-subscriber can be found in RFC 2806 [9].  Note,
-    /// however, that any characters allowed there that are not allowed in
-    /// the user part of the SIP URI MUST be escaped.
-    /// 
-    /// uri-parameters    =  *( ";" uri-parameter)
-    /// uri-parameter     =  transport-param / user-param / method-param / ttl-param / maddr-param / lr-param / other-param
-    /// transport-param   =  "transport=" ( "udp" / "tcp" / "sctp" / "tls" / other-transport)
-    /// other-transport   =  token
-    /// user-param        =  "user=" ( "phone" / "ip" / other-user)
-    /// other-user        =  token
-    /// method-param      =  "method=" Method
-    /// ttl-param         =  "ttl=" ttl
-    /// maddr-param       =  "maddr=" host
-    /// lr-param          =  "lr"
-    /// other-param       =  pname [ "=" pvalue ]
-    /// pname             =  1*paramchar
-    /// pvalue            =  1*paramchar
-    /// paramchar         =  param-unreserved / unreserved / escaped
-    /// param-unreserved  =  "[" / "]" / "/" / ":" / "&" / "+" / "$"
-    ///
-    /// headers         =  "?" header *( "&" header )
-    /// header          =  hname "=" hvalue
-    /// hname           =  1*( hnv-unreserved / unreserved / escaped )
-    /// hvalue          =  *( hnv-unreserved / unreserved / escaped )
-    /// hnv-unreserved  =  "[" / "]" / "/" / "?" / ":" / "+" / "$"
-    /// ]]>
-    /// </code>
-    /// </summary>
-    /// <remarks>
-    /// Specific parameters for URIs: transport, maddr, ttl, user, method, lr.
+    /// Implements the the SIP URI concept from the SIP RFC3261.
     /// </remarks>
     [DataContract]
     public class SIPURI
@@ -127,10 +59,10 @@ namespace SIPSorcery.SIP
         public string Host;
 
         [DataMember]
-        public SIPParameters Parameters = new SIPParameters(null, PARAM_TAG_DELIMITER);
+        public SIPParameters Parameters = new SIPParameters();
 
         [DataMember]
-        public SIPParameters Headers = new SIPParameters(null, HEADER_TAG_DELIMITER);
+        public SIPParameters Headers = new SIPParameters();
 
         /// <summary>
         /// The protocol for a SIP URI is dicatated by the scheme of the URI and then by the transport parameter and finally by the 
@@ -249,13 +181,19 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public SIPURI(SIPSchemesEnum scheme, IPAddress address, int port)
+        {
+            Scheme = scheme;
+            Host = $"{address}:{port}";
+        }
+
         public static SIPURI ParseSIPURI(string uri)
         {
             try
             {
                 SIPURI sipURI = new SIPURI();
 
-                if (uri == null || uri.Trim().Length == 0)
+                if (String.IsNullOrEmpty(uri))
                 {
                     throw new SIPValidationException(SIPValidationFieldsEnum.URI, "A SIP URI cannot be parsed from an empty string.");
                 }
@@ -484,11 +422,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public static bool AreEqual(SIPURI uri1, SIPURI uri2)
-        {
-            return uri1 == uri2;
-        }
-
         private void ParseParamsAndHeaders(string paramsAndHeaders)
         {
             if (paramsAndHeaders != null && paramsAndHeaders.Trim().Length > 0)
@@ -507,6 +440,11 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public static bool AreEqual(SIPURI uri1, SIPURI uri2)
+        {
+            return uri1 == uri2;
+        }
+
         public override bool Equals(object obj)
         {
             return AreEqual(this, (SIPURI)obj);
@@ -514,13 +452,11 @@ namespace SIPSorcery.SIP
 
         public static bool operator ==(SIPURI uri1, SIPURI uri2)
         {
-            if ((object)uri1 == null && (object)uri2 == null)
-            //if (uri1 == null && uri2 == null)
+            if (uri1 is null && uri2 is null)
             {
                 return true;
             }
-            else if ((object)uri1 == null || (object)uri2 == null)
-            //if (uri1 == null || uri2 == null)
+            else if (uri1 is null || uri2 is null)
             {
                 return false;
             }
@@ -532,49 +468,13 @@ namespace SIPSorcery.SIP
             {
                 return false;
             }
-            else
+            else if (uri1.Parameters != uri2.Parameters)
             {
-                // Compare parameters.
-                if (uri1.Parameters.Count != uri2.Parameters.Count)
-                {
-                    return false;
-                }
-                else
-                {
-                    string[] uri1Keys = uri1.Parameters.GetKeys();
-
-                    if (uri1Keys != null && uri1Keys.Length > 0)
-                    {
-                        foreach (string key in uri1Keys)
-                        {
-                            if (uri1.Parameters.Get(key) != uri2.Parameters.Get(key))
-                            {
-                                return false;
-                            }
-                        }
-                    }
-                }
-
-                // Compare headers.
-                if (uri1.Headers.Count != uri2.Headers.Count)
-                {
-                    return false;
-                }
-                else
-                {
-                    string[] uri1Keys = uri1.Headers.GetKeys();
-
-                    if (uri1Keys != null && uri1Keys.Length > 0)
-                    {
-                        foreach (string key in uri1Keys)
-                        {
-                            if (uri1.Headers.Get(key) != uri2.Headers.Get(key))
-                            {
-                                return false;
-                            }
-                        }
-                    }
-                }
+                return false;
+            }
+            else if (uri1.Headers != uri2.Headers)
+            {
+                return false;
             }
 
             return true;
@@ -597,12 +497,12 @@ namespace SIPSorcery.SIP
             copy.Host = Host;
             copy.User = User;
 
-            if (Parameters.Count > 0)
+            if (Parameters?.Count > 0)
             {
                 copy.Parameters = Parameters.CopyOf();
             }
 
-            if (Headers.Count > 0)
+            if (Headers?.Count > 0)
             {
                 copy.Headers = Headers.CopyOf();
             }

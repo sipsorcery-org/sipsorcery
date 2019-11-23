@@ -15,13 +15,13 @@
 
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using Heijden.DNS;
 using SIPSorcery.SIP;
 
 namespace SIPSorcery.Net.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "integration")]
     public class DNSUnitTest
     {
         private static ILogger logger = SIPSorcery.Sys.Log.Logger;
@@ -29,8 +29,7 @@ namespace SIPSorcery.Net.UnitTests
         /// <summary>
         /// Test that a known A record is resolved.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void LookupARecordMethod()
         {
             logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -39,14 +38,13 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug($"Lookup result {result.RecordsA[0].Address}.");
 
-            Assert.AreEqual(result.RecordsA[0].Address.ToString(), "67.222.131.148");
+            Assert.Equal("67.222.131.148", result.RecordsA[0].Address.ToString());
         }
 
         /// <summary>
         /// Test that a known AAAA record is resolved.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void LookupAAAARecordMethod()
         {
             logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -58,11 +56,10 @@ namespace SIPSorcery.Net.UnitTests
                 logger.LogDebug($"AAAA Lookup result {aaaaResult.ToString()}.");
             }
 
-            Assert.IsTrue(result.RecordsAAAA.Length > 0);
+            Assert.True(result.RecordsAAAA.Length > 0);
         }
 
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void LookupSrvRecordMethod()
         {
             logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -74,15 +71,14 @@ namespace SIPSorcery.Net.UnitTests
                 logger.LogDebug($"SRV Lookup result {srvResult.ToString()}.");
             }
 
-            Assert.AreEqual(result.RecordSRV.Length, 1);
-            Assert.AreEqual(result.RecordSRV.First().TARGET, "sip.sipsorcery.com.");
+            Assert.Single(result.RecordSRV);
+            Assert.Equal("sip.sipsorcery.com.", result.RecordSRV.First().TARGET);
         }
 
         /// <summary>
         /// Test that a non qualified hostname can be looked up.
         /// </summary>
-        [TestMethod]
-        [TestCategory("Integration")]
+        [Fact]
         public void LookupCurrentHostNameMethod()
         {
             logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -93,7 +89,7 @@ namespace SIPSorcery.Net.UnitTests
 
             addressList.ToList().ForEach(x => logger.LogDebug(x.ToString()));
 
-            Assert.IsTrue(addressList.Count() > 0, "No address results were returned for a local hostname lookup.");
+            Assert.True(addressList.Count() > 0, "No address results were returned for a local hostname lookup.");
         }
     }
 }

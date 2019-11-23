@@ -32,7 +32,8 @@ namespace SIPSorcery.SIP
     /// </summary>
     public class SIPEndPoint
     {
-        private const string CONNECTIONID_ATTRIBUTE_NAME = "connid";
+        private const string CHANNELID_ATTRIBUTE_NAME = "cid";
+        private const string CONNECTIONID_ATTRIBUTE_NAME = "xid";
 
         private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private static int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
@@ -65,6 +66,11 @@ namespace SIPSorcery.SIP
         /// </summary>
         public string ConnectionID { get; set; }
 
+        /// <summary>
+        /// If set represents the SIP channel ID that this SIP end point was created from.
+        /// </summary>
+        public string ChannelID { get; set; }
+
         private SIPEndPoint() { }
 
         /// <summary>
@@ -84,13 +90,15 @@ namespace SIPSorcery.SIP
         /// <param name="protocol">The SIP transport/application protocol used for the transmission.</param>
         /// <param name="address">The network address.</param>
         /// <param name="port">The network port.</param>
-        /// <param name="connectionID">For connection oriented protocols the unique ID of the connection.
+        /// <param name="channelID">Optional. The unique ID of the channel that created the end point.</param>
+        /// <param name="connectionID">Optional. For connection oriented protocols the unique ID of the connection.
         /// For connectionless protocols should be set to null.</param>
-        public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port, string connectionID)
+        public SIPEndPoint(SIPProtocolsEnum protocol, IPAddress address, int port, string channelID, string connectionID)
         {
             Protocol = protocol;
             Address = address;
             Port = (port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : port;
+            ChannelID = channelID;
             ConnectionID = connectionID;
         }
 
@@ -114,17 +122,18 @@ namespace SIPSorcery.SIP
             Port = (endPoint.Port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : endPoint.Port;
         }
 
-        public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint, string connectionID)
+        public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint, string channelID, string connectionID)
         {
             Protocol = protocol;
             Address = endPoint.Address;
             Port = (endPoint.Port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : endPoint.Port;
+            ChannelID = channelID;
             ConnectionID = connectionID;
         }
 
         /// <summary>
         /// Parses a SIP end point from either a serialised SIP end point string, format of:
-        /// (udp|tcp|tls|ws|wss):(IPEndpoint)
+        /// (udp|tcp|tls|ws|wss):(IPEndpoint)[;connid=abcd]
         /// or from a string that represents a SIP URI.
         /// </summary>
         /// <param name="sipEndPointStr">The string to parse to extract the SIP end point.</param>
@@ -179,6 +188,7 @@ namespace SIPSorcery.SIP
         /// Valid examples are udp:10.0.0.1:5060 and ws:10.0.0.1:5060;connid=abcd. An invalid example is 10.0.0.1:5060.</param>
         private static SIPEndPoint ParseSerialisedSIPEndPoint(string serialisedSIPEndPoint)
         {
+            string channelID = null;
             string connectionID = null;
             string endPointStr = null;
             string protcolStr = serialisedSIPEndPoint.Substring(0, serialisedSIPEndPoint.IndexOf(':'));
@@ -186,7 +196,19 @@ namespace SIPSorcery.SIP
             if (serialisedSIPEndPoint.Contains(";"))
             {
                 endPointStr = serialisedSIPEndPoint.Slice(':', ';');
-                connectionID = serialisedSIPEndPoint.Substring(serialisedSIPEndPoint.IndexOf(';'));
+                var paramsStr = serialisedSIPEndPoint.Substring(serialisedSIPEndPoint.IndexOf(';') + 1)?.Trim();
+
+                var endPointParams = new SIPParameters(paramsStr, ';');
+
+                if (endPointParams.Has(CHANNELID_ATTRIBUTE_NAME))
+                {
+                    channelID = endPointParams.Get(CHANNELID_ATTRIBUTE_NAME);
+                }
+
+                if (endPointParams.Has(CONNECTIONID_ATTRIBUTE_NAME))
+                {
+                    connectionID = endPointParams.Get(CONNECTIONID_ATTRIBUTE_NAME);
+                }
             }
             else
             {
@@ -198,13 +220,16 @@ namespace SIPSorcery.SIP
                 throw new ApplicationException($"Could not parse SIPEndPoint host {endPointStr} as an IP end point.");
             }
 
-            return new SIPEndPoint(SIPProtocolsType.GetProtocolType(protcolStr), endPoint, connectionID);
+            return new SIPEndPoint(SIPProtocolsType.GetProtocolType(protcolStr), endPoint, channelID, connectionID);
         }
 
         public override string ToString()
         {
             IPEndPoint ep = new IPEndPoint(Address, Port);
-            return Protocol + ":" + ep.ToString() + (!String.IsNullOrEmpty(ConnectionID) ? ";" + CONNECTIONID_ATTRIBUTE_NAME + "=" + ConnectionID : null);
+            string result = Protocol + ":" + ep.ToString();
+            result += (!String.IsNullOrEmpty(ChannelID) ? ";" + CHANNELID_ATTRIBUTE_NAME + "=" + ChannelID : null);
+            result += (!String.IsNullOrEmpty(ConnectionID) ? ";" + CONNECTIONID_ATTRIBUTE_NAME + "=" + ConnectionID : null);
+            return result;
         }
 
         public static bool AreEqual(SIPEndPoint endPoint1, SIPEndPoint endPoint2)
@@ -231,6 +256,14 @@ namespace SIPSorcery.SIP
             {
                 return false;
             }
+            else if(endPoint1.ChannelID != null && endPoint1.ChannelID != endPoint2.ChannelID)
+            {
+                return false;
+            }
+            else if (endPoint1.ConnectionID != null && endPoint1.ConnectionID != endPoint2.ConnectionID)
+            {
+                return false;
+            }
 
             return true;
         }
@@ -242,12 +275,14 @@ namespace SIPSorcery.SIP
 
         public override int GetHashCode()
         {
-            return Protocol.GetHashCode() + Address.GetHashCode() + Port.GetHashCode() + (ConnectionID != null ? ConnectionID.GetHashCode() : 0);
+            return Protocol.GetHashCode() + Address.GetHashCode() + Port.GetHashCode() 
+                + (ChannelID != null ? ChannelID.GetHashCode() : 0)
+                + (ConnectionID != null ? ConnectionID.GetHashCode() : 0);
         }
 
         public SIPEndPoint CopyOf()
         {
-            SIPEndPoint copy = new SIPEndPoint(Protocol, new IPAddress(Address.GetAddressBytes()), Port, ConnectionID);
+            SIPEndPoint copy = new SIPEndPoint(Protocol, new IPAddress(Address.GetAddressBytes()), Port, ChannelID, ConnectionID);
             return copy;
         }
 

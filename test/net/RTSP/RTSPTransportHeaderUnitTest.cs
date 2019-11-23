@@ -12,47 +12,47 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class RTSPTransportHeaderUnitTest
     {
         /// <summary>
         /// Tests that a typical RTSP transport header can be correctly parsed.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void RTSPTransportHeaderParseTest()
         {
             string header = "RTP/AVP;unicast;destination=192.168.33.170;source=192.168.33.103;client_port=61132-61133;server_port=6970-6971";
 
             var transportHeader = RTSPTransportHeader.Parse(header);
 
-            Assert.AreEqual("RTP/AVP", transportHeader.TransportSpecifier);
-            Assert.AreEqual("unicast", transportHeader.BroadcastType);
-            Assert.AreEqual("192.168.33.170", transportHeader.Destination);
-            Assert.AreEqual("192.168.33.103", transportHeader.Source);
-            Assert.AreEqual("61132-61133", transportHeader.ClientRTPPortRange);
-            Assert.AreEqual("6970-6971", transportHeader.ServerRTPPortRange);
+            Assert.Equal("RTP/AVP", transportHeader.TransportSpecifier);
+            Assert.Equal("unicast", transportHeader.BroadcastType);
+            Assert.Equal("192.168.33.170", transportHeader.Destination);
+            Assert.Equal("192.168.33.103", transportHeader.Source);
+            Assert.Equal("61132-61133", transportHeader.ClientRTPPortRange);
+            Assert.Equal("6970-6971", transportHeader.ServerRTPPortRange);
         }
 
         /// <summary>
         /// Tests that a typical RTSP transport header can be formatted to a header string..
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void RTSPTransportHeaderToStringTest()
         {
             var transportHeader = new RTSPTransportHeader() { Destination = "192.168.33.170", Source = "192.168.33.103", ClientRTPPortRange = "61132-61133", ServerRTPPortRange = "6970-6971" };
 
-            Assert.AreEqual("RTP/AVP/UDP", transportHeader.TransportSpecifier);
-            Assert.AreEqual("unicast", transportHeader.BroadcastType);
-            Assert.AreEqual("192.168.33.170", transportHeader.Destination);
-            Assert.AreEqual("192.168.33.103", transportHeader.Source);
-            Assert.AreEqual("61132-61133", transportHeader.ClientRTPPortRange);
-            Assert.AreEqual("6970-6971", transportHeader.ServerRTPPortRange);
+            Assert.Equal("RTP/AVP/UDP", transportHeader.TransportSpecifier);
+            Assert.Equal("unicast", transportHeader.BroadcastType);
+            Assert.Equal("192.168.33.170", transportHeader.Destination);
+            Assert.Equal("192.168.33.103", transportHeader.Source);
+            Assert.Equal("61132-61133", transportHeader.ClientRTPPortRange);
+            Assert.Equal("6970-6971", transportHeader.ServerRTPPortRange);
 
-            Assert.AreEqual("RTP/AVP/UDP;unicast;destination=192.168.33.170;source=192.168.33.103;client_port=61132-61133;server_port=6970-6971", transportHeader.ToString());
+            Assert.Equal("RTP/AVP/UDP;unicast;destination=192.168.33.170;source=192.168.33.103;client_port=61132-61133;server_port=6970-6971", transportHeader.ToString());
         }
     }
 }

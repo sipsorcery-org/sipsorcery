@@ -21,7 +21,7 @@ using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
-    public class SIPTransactionEngine
+    internal class SIPTransactionEngine
     {
         protected static ILogger logger = Log.Logger;
 

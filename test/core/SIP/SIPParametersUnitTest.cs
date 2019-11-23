@@ -11,14 +11,14 @@
 
 using System;
 using System.Text.RegularExpressions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class SIPParametersUnitTest
     {
-        [TestMethod]
+        [Fact]
         public void RouteParamExtractTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -30,10 +30,10 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Parameter string=" + serverParam.ToString() + ".");
             Console.WriteLine("The server parameter is=" + serverParamValue + ".");
 
-            Assert.IsTrue(serverParamValue == "hippo", "The server parameter was not correctly extracted.");
+            Assert.True(serverParamValue == "hippo", "The server parameter was not correctly extracted.");
         }
 
-        [TestMethod]
+        [Fact]
         public void QuotedStringParamExtractTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -45,10 +45,10 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Parameter string=" + serverParam.ToString() + ".");
             Console.WriteLine("The methods parameter is=" + methodsParamValue + ".");
 
-            Assert.IsTrue(methodsParamValue == "\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER\"", "The method parameter was not correctly extracted.");
+            Assert.True(methodsParamValue == "\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER\"", "The method parameter was not correctly extracted.");
         }
 
-        [TestMethod]
+        [Fact]
         public void UserFieldWithNamesExtractTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -59,10 +59,10 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("KeyValuePair count=" + keyValuePairs.Length + ".");
             Console.WriteLine("First KetValuePair=" + keyValuePairs[0] + ".");
 
-            Assert.IsTrue(keyValuePairs.Length == 1, "An incorrect number of key value pairs was extracted");
+            Assert.True(keyValuePairs.Length == 1, "An incorrect number of key value pairs was extracted");
         }
 
-        [TestMethod]
+        [Fact]
         public void MultipleUserFieldWithNamesExtractTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -74,10 +74,10 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("First KetValuePair=" + keyValuePairs[0] + ".");
             Console.WriteLine("Second KetValuePair=" + keyValuePairs[1] + ".");
 
-            Assert.IsTrue(keyValuePairs.Length == 2, "An incorrect number of key value pairs was extracted");
+            Assert.True(keyValuePairs.Length == 2, "An incorrect number of key value pairs was extracted");
         }
 
-        [TestMethod]
+        [Fact]
         public void MultipleUserFieldWithNamesExtraWhitespaceExtractTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -89,11 +89,11 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("First KetValuePair=" + keyValuePairs[0] + ".");
             Console.WriteLine("Second KetValuePair=" + keyValuePairs[1] + ".");
 
-            Assert.IsTrue(keyValuePairs.Length == 2, "An incorrect number of key value pairs was extracted");
+            Assert.True(keyValuePairs.Length == 2, "An incorrect number of key value pairs was extracted");
         }
 
-        [TestMethod]
-        public void GetHashCodeEqualityUnittest()
+        [Fact]
+        public void GetHashCodeDiffOrderEqualityUnittest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
@@ -103,11 +103,11 @@ namespace SIPSorcery.SIP.UnitTests
             string testParamStr2 = ";lr;server=hippo;ftag=12345";
             SIPParameters testParam2 = new SIPParameters(testParamStr2, ';');
 
-            Assert.IsTrue(testParam1.GetHashCode() == testParam2.GetHashCode(), "The parameters had different hashcode values.");
+            Assert.Equal(testParam1, testParam2);
         }
 
-        [TestMethod]
-        public void GetHashCodeDiffOrderEqualityUnittest()
+        [Fact]
+        public void GetHashCodeDiffOrderEqualityReorderedUnittest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
@@ -117,11 +117,11 @@ namespace SIPSorcery.SIP.UnitTests
             string testParamStr2 = "ftag=12345;lr;server=hippo;";
             SIPParameters testParam2 = new SIPParameters(testParamStr2, ';');
 
-            Assert.IsTrue(testParam1.GetHashCode() == testParam2.GetHashCode(), "The parameters had different hashcode values.");
+            Assert.Equal(testParam1, testParam2);
         }
 
-        [TestMethod]
-        public void GetHashCodeDiffCaseEqualityUnittest()
+        [Fact]
+        public void CheckEqualWithDiffCaseEqualityUnittest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
@@ -133,10 +133,10 @@ namespace SIPSorcery.SIP.UnitTests
             SIPParameters testParam2 = new SIPParameters(testParamStr2, ';');
             Console.WriteLine("Parameter 2:" + testParam2.ToString());
 
-            Assert.IsTrue(testParam1.GetHashCode() == testParam2.GetHashCode(), "The parameters had different hashcode values.");
+            Assert.Equal(testParam1, testParam2);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetHashCodeDiffValueCaseEqualityUnittest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -149,10 +149,10 @@ namespace SIPSorcery.SIP.UnitTests
             SIPParameters testParam2 = new SIPParameters(testParamStr2, ';');
             Console.WriteLine("Parameter 2:" + testParam2.ToString());
 
-            Assert.IsTrue(testParam1.GetHashCode() != testParam2.GetHashCode(), "The parameters had different hashcode values.");
+            Assert.True(testParam1.GetHashCode() != testParam2.GetHashCode(), "The parameters had different hashcode values.");
         }
 
-        [TestMethod]
+        [Fact]
         public void EmptyValueParametersUnittest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -161,8 +161,8 @@ namespace SIPSorcery.SIP.UnitTests
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
             Console.WriteLine("Parameter 1:" + testParam1.ToString());
 
-            Assert.IsTrue(testParam1.Has("emptykey"), "The empty parameter \"emptykey\" was not correctly extracted from the paramter string.");
-            Assert.IsTrue(Regex.Match(testParam1.ToString(), "emptykey").Success, "The emptykey name was not in the output parameter string.");
+            Assert.True(testParam1.Has("emptykey"), "The empty parameter \"emptykey\" was not correctly extracted from the paramter string.");
+            Assert.True(Regex.Match(testParam1.ToString(), "emptykey").Success, "The emptykey name was not in the output parameter string.");
         }
     }
 }

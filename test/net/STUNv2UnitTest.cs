@@ -13,17 +13,17 @@ using System;
 using System.Net;
 using System.Text;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {
-    [TestClass]
+    [Trait("Category", "unit")]
     public class STUNv2UnitTest
     {
         /// <summary>
         /// Parse a STUN request received from the Chrome browser's WebRTC stack.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseWebRTCSTUNRequestTestMethod()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -47,15 +47,15 @@ namespace SIPSorcery.Net.UnitTests
             Console.WriteLine("Length = " + stunHeader.MessageLength + ".");
             Console.WriteLine("Transaction ID = " + BitConverter.ToString(stunHeader.TransactionId) + ".");
 
-            Assert.AreEqual(STUNv2MessageTypesEnum.BindingRequest, stunHeader.MessageType);
-            Assert.AreEqual(96, stunHeader.MessageLength);
-            Assert.AreEqual(6, stunMessage.Attributes.Count);
+            Assert.Equal(STUNv2MessageTypesEnum.BindingRequest, stunHeader.MessageType);
+            Assert.Equal(96, stunHeader.MessageLength);
+            Assert.Equal(6, stunMessage.Attributes.Count);
         }
 
         /// <summary>
         /// Tests that a binding request with a username attribute is correctly output to a byte array.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void BindingRequestWithUsernameToBytesUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -66,13 +66,13 @@ namespace SIPSorcery.Net.UnitTests
 
             Console.WriteLine(BitConverter.ToString(stunMessageBytes));
 
-            Assert.IsTrue(stunMessageBytes.Length % 4 == 0);
+            Assert.True(stunMessageBytes.Length % 4 == 0);
         }
 
         /// <summary>
         /// Parse a STUN response received from the Chrome browser's WebRTC stack.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseWebRTCSTUNResponseTestMethod()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -102,15 +102,15 @@ namespace SIPSorcery.Net.UnitTests
                 }
             }
 
-            Assert.AreEqual(STUNv2MessageTypesEnum.BindingSuccessResponse, stunHeader.MessageType);
-            Assert.AreEqual(44, stunHeader.MessageLength);
-            Assert.AreEqual(3, stunMessage.Attributes.Count);
+            Assert.Equal(STUNv2MessageTypesEnum.BindingSuccessResponse, stunHeader.MessageType);
+            Assert.Equal(44, stunHeader.MessageLength);
+            Assert.Equal(3, stunMessage.Attributes.Count);
         }
 
         /// <summary>
         /// Tests that parsing an XOR-MAPPED-ADDRESS attribute correctly extracts the IP Address and Port.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseXORMappedAddressAttributeTestMethod()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -119,14 +119,14 @@ namespace SIPSorcery.Net.UnitTests
 
             STUNv2XORAddressAttribute xorAddressAttribute = new STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum.XORMappedAddress, stunAttribute);
 
-            Assert.AreEqual(49608, xorAddressAttribute.Port);
-            Assert.AreEqual("192.168.33.125", xorAddressAttribute.Address.ToString());
+            Assert.Equal(49608, xorAddressAttribute.Port);
+            Assert.Equal("192.168.33.125", xorAddressAttribute.Address.ToString());
         }
 
         /// <summary>
         /// Tests that putting an XOR-MAPPED-ADDRESS attribute to a byte buffer works correctly.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void PutXORMappedAddressAttributeToBufferTestMethod()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -136,24 +136,24 @@ namespace SIPSorcery.Net.UnitTests
             byte[] buffer = new byte[12];
             xorAddressAttribute.ToByteBuffer(buffer, 0);
 
-            Assert.AreEqual(0x00, buffer[0]);
-            Assert.AreEqual(0x20, buffer[1]);
-            Assert.AreEqual(0x00, buffer[2]);
-            Assert.AreEqual(0x08, buffer[3]);
-            Assert.AreEqual(0x00, buffer[4]);
-            Assert.AreEqual(0x01, buffer[5]);
-            Assert.AreEqual(0xe0, buffer[6]);
-            Assert.AreEqual(0xda, buffer[7]);
-            Assert.AreEqual(0xe1, buffer[8]);
-            Assert.AreEqual(0xba, buffer[9]);
-            Assert.AreEqual(0x85, buffer[10]);
-            Assert.AreEqual(0x3f, buffer[11]);
+            Assert.Equal(0x00, buffer[0]);
+            Assert.Equal(0x20, buffer[1]);
+            Assert.Equal(0x00, buffer[2]);
+            Assert.Equal(0x08, buffer[3]);
+            Assert.Equal(0x00, buffer[4]);
+            Assert.Equal(0x01, buffer[5]);
+            Assert.Equal(0xe0, buffer[6]);
+            Assert.Equal(0xda, buffer[7]);
+            Assert.Equal(0xe1, buffer[8]);
+            Assert.Equal(0xba, buffer[9]);
+            Assert.Equal(0x85, buffer[10]);
+            Assert.Equal(0x3f, buffer[11]);
         }
 
         /// <summary>
         /// Tests that putting a STUN response to a byte buffer works correctly.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void PutResponseToBufferTestMethod()
         {
             STUNv2Message stunResponse = new STUNv2Message(STUNv2MessageTypesEnum.BindingSuccessResponse);
@@ -168,7 +168,7 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that the message integrity attribute is being correctly generated. The original STUN request packet
         /// was capture on the wire from the Google Chrom WebRTC stack.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void TestMessageIntegrityAttributeForBindingRequest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -190,23 +190,23 @@ namespace SIPSorcery.Net.UnitTests
             Console.WriteLine("Length = " + stunHeader.MessageLength + ".");
             Console.WriteLine("Transaction ID = " + BitConverter.ToString(stunHeader.TransactionId) + ".");
 
-            Assert.AreEqual(STUNv2MessageTypesEnum.BindingRequest, stunHeader.MessageType);
-            Assert.AreEqual(96, stunHeader.MessageLength);
-            Assert.AreEqual(6, stunMessage.Attributes.Count);
-            Assert.AreEqual("69-64-38-2B-4C-45-44-57-4D-31-64-30", BitConverter.ToString(stunMessage.Header.TransactionId));
+            Assert.Equal(STUNv2MessageTypesEnum.BindingRequest, stunHeader.MessageType);
+            Assert.Equal(96, stunHeader.MessageLength);
+            Assert.Equal(6, stunMessage.Attributes.Count);
+            Assert.Equal("69-64-38-2B-4C-45-44-57-4D-31-64-30", BitConverter.ToString(stunMessage.Header.TransactionId));
 
             stunMessage.Attributes.Remove(stunMessage.Attributes.Where(x => x.AttributeType == STUNv2AttributeTypesEnum.MessageIntegrity).Single());
             stunMessage.Attributes.Remove(stunMessage.Attributes.Where(x => x.AttributeType == STUNv2AttributeTypesEnum.FingerPrint).Single());
 
             byte[] buffer = stunMessage.ToByteBufferStringKey("r89XhWC9k2kW4Pns75vmwHIa", true);
 
-            Assert.AreEqual(BitConverter.ToString(stunReq), BitConverter.ToString(buffer));
+            Assert.Equal(BitConverter.ToString(stunReq), BitConverter.ToString(buffer));
         }
 
         /// <summary>
         /// Parse a STUN response received from the Coturn TURN server.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void ParseCoturnSTUNResponseTestMethod()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -233,16 +233,16 @@ namespace SIPSorcery.Net.UnitTests
                     STUNv2AddressAttribute addressAttribute = new STUNv2AddressAttribute(attribute.Value);
                     Console.WriteLine(" " + attribute.AttributeType + " " + addressAttribute.Address + ":" + addressAttribute.Port + ".");
 
-                    Assert.AreEqual("59.167.172.177", addressAttribute.Address.ToString());
-                    Assert.AreEqual(49026, addressAttribute.Port);
+                    Assert.Equal("59.167.172.177", addressAttribute.Address.ToString());
+                    Assert.Equal(49026, addressAttribute.Port);
                 }
                 else if (attribute.AttributeType == STUNv2AttributeTypesEnum.XORMappedAddress)
                 {
                     STUNv2XORAddressAttribute xorAddressAttribute = new STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum.XORMappedAddress, attribute.Value);
                     Console.WriteLine(" " + attribute.AttributeType + " " + xorAddressAttribute.Address + ":" + xorAddressAttribute.Port + ".");
 
-                    Assert.AreEqual("59.167.172.177", xorAddressAttribute.Address.ToString());
-                    Assert.AreEqual(49026, xorAddressAttribute.Port);
+                    Assert.Equal("59.167.172.177", xorAddressAttribute.Address.ToString());
+                    Assert.Equal(49026, xorAddressAttribute.Port);
                 }
 
                 else
@@ -251,7 +251,7 @@ namespace SIPSorcery.Net.UnitTests
                 }
             }
 
-            Assert.AreEqual(STUNv2MessageTypesEnum.BindingSuccessResponse, stunHeader.MessageType);
+            Assert.Equal(STUNv2MessageTypesEnum.BindingSuccessResponse, stunHeader.MessageType);
         }
     }
 }

@@ -184,7 +184,7 @@ namespace SIPSorcery.SIP
 
             //DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
 
-            RemoteTarget = new SIPURI(uasInviteTransaction.TransactionRequest.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(uasInviteTransaction.RemoteEndPoint.ToString()));
+            RemoteTarget = new SIPURI(uasInviteTransaction.TransactionRequest.URI.Scheme, uasInviteTransaction.TransactionRequest.RemoteSIPEndPoint.CopyOf());
             ProxySendFrom = uasInviteTransaction.TransactionRequest.Header.ProxyReceivedOn;
             if (uasInviteTransaction.TransactionRequest.Header.Contact != null && uasInviteTransaction.TransactionRequest.Header.Contact.Count > 0)
             {
@@ -231,7 +231,14 @@ namespace SIPSorcery.SIP
             Direction = SIPCallDirection.Out;
 
             // Set the dialogue remote target and take care of mangling if an upstream proxy has indicated it's required.
-            RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, SIPEndPoint.ParseSIPEndPoint(uacInviteTransaction.RemoteEndPoint.ToString()));
+            if (uacInviteTransaction.TransactionFinalResponse != null)
+            {
+                RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, uacInviteTransaction.TransactionFinalResponse.RemoteSIPEndPoint.CopyOf());
+            }
+            else
+            {
+                RemoteTarget = new SIPURI(uacInviteTransaction.TransactionRequest.URI.Scheme, uacInviteTransaction.TransactionRequest.RemoteSIPEndPoint.CopyOf());
+            }
             ProxySendFrom = uacInviteTransaction.TransactionFinalResponse.Header.ProxyReceivedOn;
             if (uacInviteTransaction.TransactionFinalResponse.Header.Contact != null && uacInviteTransaction.TransactionFinalResponse.Header.Contact.Count > 0)
             {
@@ -318,12 +325,8 @@ namespace SIPSorcery.SIP
                     byeOutboundProxy = outboundProxy;
                 }
 
-                SIPEndPoint localEndPoint = (byeOutboundProxy != null) ?
-                    sipTransport.GetDefaultSIPEndPoint(byeOutboundProxy) :
-                    sipTransport.GetDefaultSIPEndPoint(GetRemoteTargetEndpoint());
-
-                SIPRequest byeRequest = GetByeRequest(localEndPoint);
-                SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, null, localEndPoint, byeOutboundProxy);
+                SIPRequest byeRequest = GetByeRequest();
+                SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, byeOutboundProxy);
 
                 byeTransaction.SendReliableRequest();
             }
@@ -346,7 +349,7 @@ namespace SIPSorcery.SIP
             return dstURI.ToSIPEndPoint();
         }
 
-        private SIPRequest GetByeRequest(SIPEndPoint localSIPEndPoint)
+        private SIPRequest GetByeRequest()
         {
             SIPRequest byeRequest = new SIPRequest(SIPMethodsEnum.BYE, RemoteTarget);
             SIPFromHeader byeFromHeader = SIPFromHeader.ParseFromHeader(LocalUserField.ToString());
@@ -358,9 +361,7 @@ namespace SIPSorcery.SIP
             byeRequest.Header = byeHeader;
             byeRequest.Header.Routes = RouteSet;
             byeRequest.Header.ProxySendFrom = ProxySendFrom;
-
-            SIPViaHeader viaHeader = new SIPViaHeader(localSIPEndPoint, CallProperties.CreateBranchId());
-            byeRequest.Header.Vias.PushViaHeader(viaHeader);
+            byeRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
             return byeRequest;
         }

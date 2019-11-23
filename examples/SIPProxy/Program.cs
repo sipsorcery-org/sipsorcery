@@ -4,10 +4,10 @@
 // Description: An example of a simple SIP Proxy Server. 
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History: 
-// 15 Nov 2016	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 15 Nov 2016	Aaron Clauson	Created, Hobart, Australia.
 // 13 Oct 2019  Aaron Clauson   Updated to use the SIPSorcery nuget package.
 //
 // License: 
