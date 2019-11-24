@@ -1,0 +1,179 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Transport Layer </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Transport Layer ">
+    <meta name="generator" content="docfx 2.47.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h2 id="transport-layer">Transport Layer</h2>
+
+<p>The <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class is the most important class in the SIPSorcery library.</p>
+<h3 id="sip-channels">SIP Channels</h3>
+<p>This transport layer is responsible for managing the <a class="xref" href="../api/SIPSorcery.SIP.SIPChannel.html">SIPChannels</a> that handle the sending and receiving of all SIP requests and responses. The types of SIP channels supported are:</p>
+<ul>
+<li><a class="xref" href="../api/SIPSorcery.SIP.SIPUDPChannel.html">SIPUDPChannel</a> the default channel for transmitting and receiving SIP messages over UDP.</li>
+<li><a class="xref" href="../api/SIPSorcery.SIP.SIPTCPChannel.html">SIPTCPChannel</a> transmits and receives SIP messages over TCP.</li>
+<li><a class="xref" href="../api/SIPSorcery.SIP.SIPTCPChannel.html">SIPTLSChannel</a> based on the TCP channel but in this case upgraded to support a secure TLS connection.</li>
+<li><a class="xref" href="../api/SIPSorcery.SIP.SIPWebSocketChannel.html">SIPWebSocketChannel</a> accepts client web socket connections for SIP communications. Supports secure (wss) connections. This channel is accept only, it cannot be used to establish outgoing connections.</li>
+</ul>
+<p>To use the SIPSorcery library the first step is always to create an instance of the <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class  and add one or more SIP channels to it.</p>
+<p>The example below shows how to initialise a new <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class and add IPv4 and IPv6 channels for UDP, TCP and TLS. It's not necessary to always add all channels. In a lot of cases a single IPv4 UDP channel will be sufficient.</p>
+<pre><code class="lang-csharp">int SIP_LISTEN_PORT = 5060;
+int SIPS_LISTEN_PORT = 5061;
+
+// Set up a default SIP transport.
+var sipTransport = new SIPTransport();
+
+// IPv4 channels.
+sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
+sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
+sipTransport.AddSIPChannel(new SIPTLSChannel(new X509Certificate2(&quot;localhost.pfx&quot;), new IPEndPoint(IPAddress.Any, SIPS_LISTEN_PORT)));
+
+// IPv6 channels.
+sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Any, SIP_LISTEN_PORT)));
+sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(IPAddress.IPv6Any, SIP_LISTEN_PORT)));
+sipTransport.AddSIPChannel(new SIPTLSChannel(new X509Certificate2(&quot;localhost.pfx&quot;), new IPEndPoint(IPAddress.IPv6Any, SIPS_LISTEN_PORT)));
+</code></pre>
+<h3 id="receiving">Receiving</h3>
+<p>Once the <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class has been initialised it will automatically start receiving. For an application to get access to received messages it needs to add an event handlers for the <code>SIPTransportRequestReceived</code> and <code>SIPTransportResponseReceived</code> events.</p>
+<pre><code class="lang-csharp">sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =&gt;
+{
+    Console.WriteLine($&quot;Request received {localSIPEndPoint.ToString()}&lt;-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}&quot;);
+}
+
+sipTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =&gt;
+{
+    Console.WriteLine($&quot;Response received {localSIPEndPoint.ToString()}&lt;-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}&quot;);
+};
+</code></pre>
+<h3 id="sending">Sending</h3>
+<p>To send SIP requests and responses there are a number of synchronous and asynchronous <code>Send</code> methods. A challenge when sending SIP requests and responses is the inclusion of IP address information in the headers. It can be the case that the SIP channel a request or response needs to be sent on won't be known until the respective <code>Send</code> method is called. The SIPSorcery library provides a convenient way to deal with this situation. By setting the headers with an address of <code>IPAddress.Any</code> (or <code>0.0.0.0</code>) or <code>IPAddress.IPv6Any</code> (or <code>[::0]</code>) the transport layer will recognise and replace them with the socket that was selected to send the message.</p>
+<p>The specific SIP headers that the transport layer checks are:</p>
+<ul>
+<li><code>Via</code> header (only the top one).</li>
+<li><code>Contact</code> header.</li>
+<li><code>From</code> header.</li>
+</ul>
+<p>The example below shows how to set the headers on a request so that the transport layer will automatically take care of seting the correct socket addresses.</p>
+<pre><code class="lang-csharp">var sipRequest = sipTransport.GetRequest(
+   method,
+   uri,
+   new SIPToHeader(
+     null, 
+     new SIPURI(uri.User, uri.Host, null, uri.Scheme, SIPProtocolsEnum.udp), 
+     null),
+SIPFromHeader.GetDefaultSIPFromHeader(uri.Scheme));
+   
+// Set the Contact header to a default value that lets the transport layer know to update it
+// when the sending socket is selected.
+sipRequest.Header.Contact = new List&lt;SIPContactHeader&gt;() { SIPContactHeader.GetDefaultSIPContactHeader() };
+</code></pre>
+<h3 id="hints-for-sending-channel">Hints for Sending Channel</h3>
+<p>While the transport layer can generally take care of selecting the best channel to send a request or response there are times where it's desireable to provide a suggestion on which specific channel to use. For example if a request is received on a TCP or TLS channel it's generally desireable to send the response back on the same channel. The tranpsort layer has mechanisms to do this but if it needs to be overriden there are two poperties on a request and response that can be used to give the transport layer guidance.</p>
+<ul>
+<li><a class="xref" href="../api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_SendFromHintChannelID">SIPRequest.SendFromHintChannelID</a> and <a class="xref" href="../api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_SendFromHintChannelID">SIPResponse.SendFromHintChannelID</a>: when the SIP transport layer has mutliple channels  this can be used as a mechanism to request that a specific channel be used to send on.</li>
+<li><a class="xref" href="../api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_SendFromHintConnectionID">SIPRequest.SendFromHintConnectionID</a> and <a class="xref" href="../api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_SendFromHintConnectionID">SIPResponse.SendFromHintConnectionID</a>: for connection oriented channels, such as TCP and TLS, it's normally crucial that a message is sent back on the same socket connection that the original request was received on. This property can inform the sending channel which connection is desired.</li>
+</ul>
+<p>The reason these poperties are called hints is that the transport layer may have to overrule them. For example if a hinted channel is UDP but the SIP request being sent is a TCP end point then the hint will have to be ignored. Likewise if a connection hint is for a socket connection that has been closed then the sending channel will ignore it and attempt to establish a new connection. The hints will always be given priority and only if there is a protocol mismatch, closed connection etc. will they be overruled.</p>
+<p>The ID's to use for the channel ID and connection ID come from the <a class="xref" href="../api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_ChannelID">LocalSIPEndPoint.ChannelID</a> and <a class="xref" href="../api/SIPSorcery.SIP.SIPEndPoint.html#SIPSorcery_SIP_SIPEndPoint_ConnectionID">LocalSIPEndPoint.ConnectionID</a> properties on a received SIP request or response.</p>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/docfx/articles/transport.md/#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
