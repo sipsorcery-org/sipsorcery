@@ -1,6 +1,9 @@
-name: .NET Core
+name: dotnet-core22-build 
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build:
@@ -14,4 +17,4 @@ jobs:
       with:
         dotnet-version: 2.2.108
     - name: Build with dotnet
-      run: dotnet build src/SIPSorcery.csproj --framework netcoreapp3.0 --configuration Release
+      run: dotnet build src/SIPSorcery.csproj --framework netcoreapp2.2 --configuration Release

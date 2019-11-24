@@ -7,8 +7,8 @@
   "maxParallelThreads": 8,
   "methodDisplay": "classAndMethod",
   "methodDisplayOptions": "none",
-  "parallelizeAssembly": true,
-  "parallelizeTestCollections": true,
+  "parallelizeAssembly": false,
+  "parallelizeTestCollections": false,
   "preEnumerateTheories": true,
   "shadowCopy": true
 }
