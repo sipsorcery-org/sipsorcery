@@ -214,7 +214,7 @@ namespace SIPSorcery.SIP
             {
                 if (!m_queueIncoming)
                 {
-                    SIPMessageReceived(sipChannel, localEndPoint, remoteEndPoint, buffer);
+                    SIPMessageReceived(sipChannel, localEndPoint, remoteEndPoint, buffer).Wait();
                 }
                 else
                 {
@@ -363,9 +363,9 @@ namespace SIPSorcery.SIP
         /// - find the most appropriate local SIP channel in this SIP transport to send the request on.
         /// </summary>
         /// <param name="sipRequest">The SIP request to send.</param>
-        public async void SendRequest(SIPRequest sipRequest)
+        public void SendRequest(SIPRequest sipRequest)
         {
-            await SendRequestAsync(sipRequest);
+            SendRequestAsync(sipRequest).Wait();
         }
 
         /// <summary>
@@ -422,9 +422,9 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dstEndPoint">The destination end point to send the request to.</param>
         /// <param name="sipRequest">The SIP request to send.</param>
-        public async void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
+        public void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
-            await SendRequestAsync(dstEndPoint, sipRequest);
+            SendRequestAsync(dstEndPoint, sipRequest).Wait();
         }
 
         /// <summary>
@@ -510,9 +510,9 @@ namespace SIPSorcery.SIP
         /// Sends a SIP transaction reliably where reliably for UDP means retransmitting the message up to eleven times.
         /// </summary>
         /// <param name="sipTransaction">The transaction to send.</param>
-        public async void SendSIPReliable(SIPTransaction sipTransaction)
+        public void SendSIPReliable(SIPTransaction sipTransaction)
         {
-            await SendSIPReliableAsync(sipTransaction);
+            SendSIPReliableAsync(sipTransaction).Wait();
         }
 
         /// <summary>
@@ -594,9 +594,9 @@ namespace SIPSorcery.SIP
         /// Attempts to send a SIP response back to the SIP request origin.
         /// </summary>
         /// <param name="sipResponse">The SIP response to send.</param>
-        public async void SendResponse(SIPResponse sipResponse)
+        public void SendResponse(SIPResponse sipResponse)
         {
-            await SendResponseAsync(sipResponse);
+            SendResponseAsync(sipResponse).Wait();
         }
 
         /// <summary>
@@ -771,7 +771,7 @@ namespace SIPSorcery.SIP
                         m_inMessageQueue.TryDequeue(out var incomingMessage);
                         if (incomingMessage != null)
                         {
-                            SIPMessageReceived(incomingMessage.LocalSIPChannel, incomingMessage.LocalEndPoint, incomingMessage.RemoteEndPoint, incomingMessage.Buffer);
+                            SIPMessageReceived(incomingMessage.LocalSIPChannel, incomingMessage.LocalEndPoint, incomingMessage.RemoteEndPoint, incomingMessage.Buffer).Wait();
                         }
                     }
 
@@ -946,7 +946,7 @@ namespace SIPSorcery.SIP
         /// <param name="localEndPoint">The local end point that the SIP channel received the message on.</param>
         /// <param name="remoteEndPoint">The remote end point the message came from.</param>
         /// <param name="buffer">The raw message received.</param>
-        private async void SIPMessageReceived(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
+        private async Task SIPMessageReceived(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
         {
             string rawSIPMessage = null;
 
