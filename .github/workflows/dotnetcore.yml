@@ -1,6 +1,9 @@
 name: SIPSorcery .NET Core 2.2 Build 
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build:
