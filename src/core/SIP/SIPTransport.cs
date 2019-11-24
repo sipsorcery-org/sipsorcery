@@ -195,7 +195,7 @@ namespace SIPSorcery.SIP
             if (!m_transportThreadStarted)
             {
                 m_transportThreadStarted = true;
-                Task.Run(ProcessInMessage);
+                Task.Run((Action)ProcessInMessage);
             }
         }
 
@@ -204,7 +204,7 @@ namespace SIPSorcery.SIP
             if (!m_reliablesThreadRunning)
             {
                 m_reliablesThreadRunning = true;
-                Task.Run(ProcessTransactions);
+                Task.Run((Action)ProcessTransactions);
             }
         }
 
