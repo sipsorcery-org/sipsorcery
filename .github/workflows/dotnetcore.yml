@@ -1,6 +1,9 @@
-name: .NET Core
+name: dotnet-core22-build 
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   build:
