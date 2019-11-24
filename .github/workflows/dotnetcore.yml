@@ -1,4 +1,4 @@
-name: SIPSorcery .NET Core 2.2 Build 
+name: dotnet-core22-build 
 
 on:
   push:
