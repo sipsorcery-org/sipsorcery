@@ -88,6 +88,20 @@ namespace SIPSorcery.SIP
         /// If set this host name (or IP address) will be set whenever the transport layer is asked to
         /// do a substitution on the Contact URI. The substitution is requested by a request or response
         /// setting the Contact URI host to IPAddress.Any ("0.0.0.0") or IPAddress.IPV6.Any ("::0").
+        /// <code>
+        /// var sipRequest = GetRequest(
+        ///   method,
+        ///   uri,
+        ///   new SIPToHeader(
+        ///     null, 
+        ///     new SIPURI(uri.User, uri.Host, null, uri.Scheme, SIPProtocolsEnum.udp), 
+        ///     null),
+        ///   SIPFromHeader.GetDefaultSIPFromHeader(uri.Scheme));
+        ///   
+        /// // Set the Contact header to a default value that lets the transport layer know to update it
+        /// // when the sending socket is selected.
+        /// sipRequest.Header.Contact = new List&lt;SIPContactHeader&gt;() { SIPContactHeader.GetDefaultSIPContactHeader() };
+        /// </code>
         /// </summary>
         public string ContactHost;
 
@@ -609,10 +623,10 @@ namespace SIPSorcery.SIP
         ///   different channel to send on compared to the one it arrived on.
         /// 
         /// Forwarding logic:
-        /// - If the RemoteEndPoint is set on the response use it as the destination
-        ///   Otherwise determine the destination based on the top Via header.
-        /// - If the LocalEndPoint is set on the reponse use it to determine the channel to send from
-        ///   Otherwise determine the channel to send from based on the destination.
+        /// - If the channel hints are set then an attempt will be made to use them to find an approriate channel to
+        ///   send the response on. If the hinted channel can't be found or it is found but is the wrong protocol then
+        ///   move onto the next step,
+        /// - The information in the Top Via header will be used to find the best channel to forward the response on.
         /// </summary>
         /// <param name="sipResponse">The SIP response to send.</param>
         public async Task<SocketError> SendResponseAsync(SIPResponse sipResponse)
@@ -1622,7 +1636,7 @@ namespace SIPSorcery.SIP
 
         #region Obsolete methods.
 
-        [Obsolete("Set the Contact URI host to IPAddress.Any and the Send methods will set to the local address used.", true)]
+        [Obsolete("Set the Contact header using SIPContactHeader.GetDefaultSIPContactHeader and the Send methods will adjust based on the socket that gets used to send.", true)]
         public SIPEndPoint GetDefaultTransportContact(SIPProtocolsEnum protocol)
         {
             //SIPChannel defaultChannel = GetDefaultChannel(protocol);
@@ -1644,7 +1658,7 @@ namespace SIPSorcery.SIP
         /// channels.
         /// </summary>
         /// <returns>A SIP channel.</returns>
-        [Obsolete("Set the Contact URI host to IPAddress.Any and the Send methods will set to the local address used.", true)]
+        [Obsolete("Set the Contact header using SIPContactHeader.GetDefaultSIPContactHeader and the Send methods will adjust based on the socket that gets used to send.", true)]
         public SIPEndPoint GetDefaultSIPEndPoint(SIPProtocolsEnum protocol)
         {
             throw new NotImplementedException();
@@ -1676,7 +1690,7 @@ namespace SIPSorcery.SIP
         /// <param name="destinationEP">The remote SIP end point to find a SIP channel for.</param>
         /// <returns>If successful the SIP end point of a SIP channel that can be used to communicate 
         /// with the destination end point.</returns>
-        [Obsolete("Set the Contact URI host to IPAddress.Any and the Send methods will set to the local address used.", true)]
+        [Obsolete("Set the Contact header using SIPContactHeader.GetDefaultSIPContactHeader and the Send methods will adjust based on the socket that gets used to send.", true)]
         public SIPEndPoint GetDefaultSIPEndPoint(SIPEndPoint destinationEP)
         {
             throw new NotImplementedException();
@@ -1731,7 +1745,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="localEndPoint">The local socket endpoint of the SIPChannel to find.</param>
         /// <returns>A matching SIPChannel if found otherwise null.</returns>
-        [Obsolete("Set the Contact URI host to IPAddress.Any and the Send methods will set to the local address used.", true)]
+        [Obsolete("Set the Contact header using SIPContactHeader.GetDefaultSIPContactHeader and the Send methods will adjust based on the socket that gets used to send.", true)]
         public SIPChannel FindSIPChannel(SIPEndPoint localSIPEndPoint)
         {
             throw new NotImplementedException();
