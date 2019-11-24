@@ -10,8 +10,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using Xunit;
 using Microsoft.Extensions.Logging;
+using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
 {

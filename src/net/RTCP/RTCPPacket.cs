@@ -52,31 +52,31 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-	public class RTCPPacket
-	{
+    public class RTCPPacket
+    {
         public const int SENDERINFO_BYTES_LENGTH = 24;
-        
+
         public RTCPHeader Header;                               // 32 bits.
-        public uint SenderSyncSource;							// 32 bits.
+        public uint SenderSyncSource;                           // 32 bits.
         public UInt64 NTPTimestamp;                              // 64 bits.
         public uint RTPTimestamp;                                // 32 bits.
         public uint SenderPacketCount;                           // 32 bits.
         public uint SenderOctetCount;                            // 32 bits.
         public byte[] Reports;
 
-		public RTCPPacket(uint senderSyncSource, ulong ntpTimestamp, uint rtpTimestamp, uint senderPacketCount, uint senderOctetCount)
-		{
-			Header = new RTCPHeader();
+        public RTCPPacket(uint senderSyncSource, ulong ntpTimestamp, uint rtpTimestamp, uint senderPacketCount, uint senderOctetCount)
+        {
+            Header = new RTCPHeader();
             SenderSyncSource = senderSyncSource;
             NTPTimestamp = ntpTimestamp;
             RTPTimestamp = rtpTimestamp;
             SenderPacketCount = senderPacketCount;
             SenderOctetCount = senderOctetCount;
-		}
-		
-		public RTCPPacket(byte[] packet)
-		{
-			Header = new RTCPHeader(packet);
+        }
+
+        public RTCPPacket(byte[] packet)
+        {
+            Header = new RTCPHeader(packet);
 
             if (BitConverter.IsLittleEndian)
             {
@@ -97,7 +97,7 @@ namespace SIPSorcery.Net
 
             Reports = new byte[packet.Length - RTCPHeader.HEADER_BYTES_LENGTH - SENDERINFO_BYTES_LENGTH];
             Buffer.BlockCopy(packet, RTCPHeader.HEADER_BYTES_LENGTH + SENDERINFO_BYTES_LENGTH, Reports, 0, Reports.Length);
-		}
+        }
 
         public byte[] GetBytes()
         {
@@ -129,8 +129,8 @@ namespace SIPSorcery.Net
             return packet;
         }
 
-		public byte[] GetBytes(byte[] reports)
-		{
+        public byte[] GetBytes(byte[] reports)
+        {
             Reports = reports;
             byte[] payload = new byte[SENDERINFO_BYTES_LENGTH + reports.Length];
 
@@ -159,7 +159,7 @@ namespace SIPSorcery.Net
             Array.Copy(header, packet, header.Length);
             Array.Copy(payload, 0, packet, header.Length, payload.Length);
 
-			return packet;
-		}
-	}
+            return packet;
+        }
+    }
 }

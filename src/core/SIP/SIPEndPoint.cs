@@ -214,7 +214,7 @@ namespace SIPSorcery.SIP
             {
                 endPointStr = serialisedSIPEndPoint.Substring(serialisedSIPEndPoint.IndexOf(':') + 1);
             }
-            
+
             if (!IPSocket.TryParseIPEndPoint(endPointStr, out var endPoint))
             {
                 throw new ApplicationException($"Could not parse SIPEndPoint host {endPointStr} as an IP end point.");
@@ -256,7 +256,7 @@ namespace SIPSorcery.SIP
             {
                 return false;
             }
-            else if(endPoint1.ChannelID != null && endPoint1.ChannelID != endPoint2.ChannelID)
+            else if (endPoint1.ChannelID != null && endPoint1.ChannelID != endPoint2.ChannelID)
             {
                 return false;
             }
@@ -275,7 +275,7 @@ namespace SIPSorcery.SIP
 
         public override int GetHashCode()
         {
-            return Protocol.GetHashCode() + Address.GetHashCode() + Port.GetHashCode() 
+            return Protocol.GetHashCode() + Address.GetHashCode() + Port.GetHashCode()
                 + (ChannelID != null ? ChannelID.GetHashCode() : 0)
                 + (ConnectionID != null ? ConnectionID.GetHashCode() : 0);
         }

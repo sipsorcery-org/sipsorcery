@@ -31,7 +31,7 @@ namespace SIPSorcery.SIP.UnitTests
                 return new SIPDNSLookupResult(sipURI, new SIPEndPoint(IPSocket.ParseSocketString(sipURI.Host)));
             }
         }
-        
+
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
         protected static readonly string m_CRLF = SIPConstants.CRLF;
 
@@ -51,7 +51,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
             UACInviteTransaction clientTransaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, null);
             clientEngine.AddTransaction(clientTransaction);
-            
+
             Assert.Throws<ApplicationException>(() => clientEngine.AddTransaction(clientTransaction));
         }
 

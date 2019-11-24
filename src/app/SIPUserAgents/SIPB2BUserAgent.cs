@@ -64,7 +64,7 @@ namespace SIPSorcery.SIP.App
         public bool IsInvite
         {
             get { return true; }
-        } 
+        }
 
         public SIPCallDirection CallDirection { get { return SIPCallDirection.In; } }
         public UASInviteTransaction SIPTransaction

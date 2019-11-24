@@ -30,7 +30,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             int cseq = 23;
             string session = Guid.NewGuid().ToString();
-            string body =  @"v=0
+            string body = @"v=0
 o=- 2890844526 2890842807 IN IP4 192.16.24.202
 s=RTSP Session
 m=audio 3456 RTP/AVP 0

@@ -19,9 +19,9 @@
 using System;
 using System.Net;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
-using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {

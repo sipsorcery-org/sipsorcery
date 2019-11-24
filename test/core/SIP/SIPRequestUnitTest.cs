@@ -10,8 +10,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Text;
 using System.Collections.Generic;
+using System.Text;
 using SIPSorcery.Sys;
 using SIPSorcery.UnitTests;
 using Xunit;
@@ -74,7 +74,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.True(true, "True was false.");
         }
-        
+
         [Fact]
         public void ParseXtenINVITEUnitTest()
         {
@@ -145,7 +145,7 @@ namespace SIPSorcery.SIP.UnitTests
             "Content-Length: 0" + m_CRLF +
             "Max-Forwards: 70" + m_CRLF + m_CRLF;
 
-            Assert.Throws< SIPValidationException>(() => SIPRequest.ParseSIPRequest(sipMsg));
+            Assert.Throws<SIPValidationException>(() => SIPRequest.ParseSIPRequest(sipMsg));
         }
 
         [Fact]
@@ -680,7 +680,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPTransport mockSIPTransport = new SIPTransport(MockSIPDNSManager.Resolve, null, false);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("10.10.10.10:5060")));
-       
+
             mockSIPTransport.PreProcessRouteInfo(inviteReq);
 
             Assert.True(inviteReq.URI.ToString() == "sip:303@sip.blueface.ie", "The request URI was incorrectly modified.");
@@ -989,7 +989,7 @@ namespace SIPSorcery.SIP.UnitTests
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            string sipMsg = 
+            string sipMsg =
                 "INVITE sip:0447507533@69.59.142.213 SIP/2.0" + m_CRLF +
                 "Via: SIP/2.0/UDP checksecuritytester.sinologic.net:5060;branch=z9hG4bK34323636;rport" + m_CRLF +
                 "From: \"0447507533\" <sip:0447507533@checksecuritytester.sinologic.net>;tag=as55c3de87" + m_CRLF +

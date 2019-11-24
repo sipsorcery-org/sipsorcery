@@ -102,8 +102,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -121,26 +121,26 @@ namespace SIPSorcery.Net
         public decimal Version = SDP_PROTOCOL_VERSION;
 
         // Owner fields.
-        public string Username = "-";		// Username of the session originator.
-        public string SessionId = "-";		// Unique Id for the session.
-        public int AnnouncementVersion = 0;	// Version number for each announcement, number must be increased for each subsequent SDP modification.
-        public string NetworkType = "IN";	// Type of network, IN = Internet.
-        public string AddressType = "IP4";	// Address type, typically IP4 or IP6.
-        public string Address;				// IP Address of the machine that created the session, either FQDN or dotted quad or textual for IPv6.
+        public string Username = "-";       // Username of the session originator.
+        public string SessionId = "-";      // Unique Id for the session.
+        public int AnnouncementVersion = 0; // Version number for each announcement, number must be increased for each subsequent SDP modification.
+        public string NetworkType = "IN";   // Type of network, IN = Internet.
+        public string AddressType = "IP4";  // Address type, typically IP4 or IP6.
+        public string Address;              // IP Address of the machine that created the session, either FQDN or dotted quad or textual for IPv6.
         public string Owner
         {
             get { return Username + " " + SessionId + " " + AnnouncementVersion + " " + NetworkType + " " + AddressType + " " + Address; }
         }
 
-        public string SessionName = "-";			// Common name of the session.
+        public string SessionName = "-";            // Common name of the session.
         public string Timing;
-		public List<string> BandwidthAttributes = new List<string>();
+        public List<string> BandwidthAttributes = new List<string>();
 
         // Optional fields.
         public string SessionDescription;
-        public string URI;							// URI for additional information about the session.
-        public string[] OriginatorEmailAddresses;	// Email addresses for the person responsible for the session.
-        public string[] OriginatorPhoneNumbers;		// Phone numbers for the person responsible for the session.
+        public string URI;                          // URI for additional information about the session.
+        public string[] OriginatorEmailAddresses;   // Email addresses for the person responsible for the session.
+        public string[] OriginatorPhoneNumbers;     // Phone numbers for the person responsible for the session.
         public string IceUfrag;                     // If ICE is being used the username for the STUN requests.
         public string IcePwd;                       // If ICE is being used the password for the STUN requests.
         public List<IceCandidate> IceCandidates;
@@ -196,7 +196,7 @@ namespace SIPSorcery.Net
                         }
                         else if (sdpLine.Trim().StartsWith("c="))
                         {
-                            if(sdp.Connection == null)
+                            if (sdp.Connection == null)
                             {
                                 sdp.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLine);
                             }
@@ -206,8 +206,8 @@ namespace SIPSorcery.Net
                                 activeAnnouncement.Connection = SDPConnectionInformation.ParseConnectionInformation(sdpLine);
                             }
                         }
-						else if(sdpLine.Trim().StartsWith("b="))
-						{
+                        else if (sdpLine.Trim().StartsWith("b="))
+                        {
                             if (activeAnnouncement != null)
                             {
                                 activeAnnouncement.BandwidthAttributes.Add(sdpLine.Substring(2));
@@ -216,8 +216,8 @@ namespace SIPSorcery.Net
                             {
                                 sdp.BandwidthAttributes.Add(sdpLine.Substring(2));
                             }
-						}
-						else if (sdpLine.Trim().StartsWith("t="))
+                        }
+                        else if (sdpLine.Trim().StartsWith("t="))
                         {
                             sdp.Timing = sdpLine.Substring(2);
                         }
@@ -267,7 +267,7 @@ namespace SIPSorcery.Net
                                 }
                                 else
                                 {
-									activeAnnouncement.AddExtra(sdpLine);
+                                    activeAnnouncement.AddExtra(sdpLine);
                                 }
                             }
                             else
@@ -275,36 +275,36 @@ namespace SIPSorcery.Net
                                 logger.LogWarning("There was no active media announcement for a media format attribute, ignoring.");
                             }
                         }
-						else if(sdpLine.Trim().StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX))
-						{
-							if(activeAnnouncement != null)
-							{
-								Match formatAttributeMatch = Regex.Match(sdpLine.Trim(), SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
-								if(formatAttributeMatch.Success)
-								{
-									int formatID;
-									if(Int32.TryParse(formatAttributeMatch.Result("${id}"), out formatID))
-									{
-										activeAnnouncement.AddFormatParameterAttribute(formatID, formatAttributeMatch.Result("${attribute}"));
-									}
-									else
-									{
-										logger.LogWarning("Invalid media format parameter attribute in SDP: " + sdpLine);
-									}
-								}
-								else
-								{
-									activeAnnouncement.AddExtra(sdpLine);
-								}
-							}
-							else
-							{
-								logger.LogWarning("There was no active media announcement for a media format parameter attribute, ignoring.");
-							}
-						}
-						else if (sdpLine.Trim().StartsWith("a=" + ICE_CANDIDATE_ATTRIBUTE_PREFIX))
+                        else if (sdpLine.Trim().StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX))
                         {
-                            if(sdp.IceCandidates == null)
+                            if (activeAnnouncement != null)
+                            {
+                                Match formatAttributeMatch = Regex.Match(sdpLine.Trim(), SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
+                                if (formatAttributeMatch.Success)
+                                {
+                                    int formatID;
+                                    if (Int32.TryParse(formatAttributeMatch.Result("${id}"), out formatID))
+                                    {
+                                        activeAnnouncement.AddFormatParameterAttribute(formatID, formatAttributeMatch.Result("${attribute}"));
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning("Invalid media format parameter attribute in SDP: " + sdpLine);
+                                    }
+                                }
+                                else
+                                {
+                                    activeAnnouncement.AddExtra(sdpLine);
+                                }
+                            }
+                            else
+                            {
+                                logger.LogWarning("There was no active media announcement for a media format parameter attribute, ignoring.");
+                            }
+                        }
+                        else if (sdpLine.Trim().StartsWith("a=" + ICE_CANDIDATE_ATTRIBUTE_PREFIX))
+                        {
+                            if (sdp.IceCandidates == null)
                             {
                                 sdp.IceCandidates = new List<IceCandidate>();
                             }
@@ -340,8 +340,8 @@ namespace SIPSorcery.Net
 
         public void AddExtra(string attribute)
         {
-			if(!string.IsNullOrWhiteSpace(attribute))
-				ExtraAttributes.Add(attribute);
+            if (!string.IsNullOrWhiteSpace(attribute))
+                ExtraAttributes.Add(attribute);
         }
 
         public override string ToString()
@@ -350,15 +350,15 @@ namespace SIPSorcery.Net
                 "v=" + SDP_PROTOCOL_VERSION + CRLF +
                 "o=" + Owner + CRLF +
                 "s=" + SessionName + CRLF +
-                ((Connection != null) ? Connection.ToString() : null) ;
-			foreach(string bandwidth in BandwidthAttributes)
-			{
-				sdp += "b=" + bandwidth + CRLF;
-			}
+                ((Connection != null) ? Connection.ToString() : null);
+            foreach (string bandwidth in BandwidthAttributes)
+            {
+                sdp += "b=" + bandwidth + CRLF;
+            }
 
-			sdp += "t=" + Timing + CRLF;
+            sdp += "t=" + Timing + CRLF;
 
-			sdp += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + CRLF : null;
+            sdp += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + CRLF : null;
             sdp += !string.IsNullOrWhiteSpace(IcePwd) ? "a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + CRLF : null;
             sdp += string.IsNullOrWhiteSpace(SessionDescription) ? null : "i=" + SessionDescription + CRLF;
             sdp += string.IsNullOrWhiteSpace(URI) ? null : "u=" + URI + CRLF;
@@ -367,7 +367,7 @@ namespace SIPSorcery.Net
             {
                 foreach (string originatorAddress in OriginatorEmailAddresses)
                 {
-                    sdp += string.IsNullOrWhiteSpace(originatorAddress ) ? null : "e=" + originatorAddress + CRLF;
+                    sdp += string.IsNullOrWhiteSpace(originatorAddress) ? null : "e=" + originatorAddress + CRLF;
                 }
             }
 
@@ -375,16 +375,16 @@ namespace SIPSorcery.Net
             {
                 foreach (string originatorNumber in OriginatorPhoneNumbers)
                 {
-                    sdp += string.IsNullOrWhiteSpace( originatorNumber ) ? null : "p=" + originatorNumber + CRLF;
+                    sdp += string.IsNullOrWhiteSpace(originatorNumber) ? null : "p=" + originatorNumber + CRLF;
                 }
             }
 
-			foreach(string extra in ExtraAttributes)
-			{
-				sdp += string.IsNullOrWhiteSpace(extra) ? null : extra + CRLF;
-			}
+            foreach (string extra in ExtraAttributes)
+            {
+                sdp += string.IsNullOrWhiteSpace(extra) ? null : extra + CRLF;
+            }
 
-			foreach(SDPMediaAnnouncement media in Media)
+            foreach (SDPMediaAnnouncement media in Media)
             {
                 sdp += (media == null) ? null : media.ToString();
             }

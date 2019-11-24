@@ -14,10 +14,10 @@
 //-----------------------------------------------------------------------------
 
 using System.Linq;
-using Microsoft.Extensions.Logging;
-using Xunit;
 using Heijden.DNS;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
+using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {

@@ -23,8 +23,8 @@ using System.Net.Sockets;
 
 namespace SIPSorcery.Sys
 {
-	public class IPSocket
-	{
+    public class IPSocket
+    {
         /// <summary>
         /// Specifies the minimum acceptable value for the <see cref='System.Net.IPEndPoint.Port'/> property.
         /// </summary>
@@ -41,7 +41,7 @@ namespace SIPSorcery.Sys
         /// If/when that feature makes it into .NET Standard this method can be replaced.
         /// </summary>
         public static string GetSocketString(IPEndPoint endPoint)
-		{
+        {
             string format = (endPoint.Address.AddressFamily == AddressFamily.InterNetworkV6) ? "[{0}]:{1}" : "{0}:{1}";
             return string.Format(format, endPoint.Address.ToString(), endPoint.Port.ToString(NumberFormatInfo.InvariantInfo));
         }
@@ -90,7 +90,7 @@ namespace SIPSorcery.Sys
 
         public static IPEndPoint ParseSocketString(string s)
         {
-            if(TryParseIPEndPoint(s, out var ipEndPoint))
+            if (TryParseIPEndPoint(s, out var ipEndPoint))
             {
                 return ipEndPoint;
             }
@@ -131,7 +131,7 @@ namespace SIPSorcery.Sys
             {
                 if (socket[lastColonPos - 1] == ']')
                 {
-                   // This is an IPv6 address WITH a port.
+                    // This is an IPv6 address WITH a port.
                 }
                 // Look to see if this is IPv4 with a port (IPv6 will have another colon)
                 // If it's a host name there will also not be another ':'.
@@ -184,23 +184,23 @@ namespace SIPSorcery.Sys
             //    return false;
             //}
 
-            if(IPAddress.TryParse(host, out var ipAddress))
+            if (IPAddress.TryParse(host, out var ipAddress))
             {
-                if(IPAddress.IsLoopback(ipAddress) || ipAddress.IsIPv6LinkLocal || ipAddress.IsIPv6SiteLocal)
+                if (IPAddress.IsLoopback(ipAddress) || ipAddress.IsIPv6LinkLocal || ipAddress.IsIPv6SiteLocal)
                 {
                     return true;
                 }
-                else if(ipAddress.AddressFamily == AddressFamily.InterNetwork)
+                else if (ipAddress.AddressFamily == AddressFamily.InterNetwork)
                 {
                     byte[] addrBytes = ipAddress.GetAddressBytes();
                     if ((addrBytes[0] == 10) ||
-                        (addrBytes[0] == 172 && (addrBytes[1] >= 16 && addrBytes[1] <=31)) ||
+                        (addrBytes[0] == 172 && (addrBytes[1] >= 16 && addrBytes[1] <= 31)) ||
                         (addrBytes[0] == 192 && addrBytes[1] == 168))
                     {
                         return true;
                     }
                 }
-             }
+            }
 
             return false;
         }

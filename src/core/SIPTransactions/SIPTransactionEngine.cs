@@ -16,8 +16,8 @@
 
 using System;
 using System.Collections.Generic;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -320,14 +320,14 @@ namespace SIPSorcery.SIP
         }
 
         public void PrintPendingTransactions()
-         {
-             logger.LogDebug("=== Pending Transactions ===");
+        {
+            logger.LogDebug("=== Pending Transactions ===");
 
-             foreach (SIPTransaction transaction in m_transactions.Values)
-             {
-                 logger.LogDebug(" Pending tansaction " + transaction.TransactionRequest.Method + " " + transaction.TransactionState + " " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0.##") + "s " + transaction.TransactionRequestURI.ToString() + " (" + transaction.TransactionId + ").");
-             }
-         }
+            foreach (SIPTransaction transaction in m_transactions.Values)
+            {
+                logger.LogDebug(" Pending tansaction " + transaction.TransactionRequest.Method + " " + transaction.TransactionState + " " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0.##") + "s " + transaction.TransactionRequestURI.ToString() + " (" + transaction.TransactionId + ").");
+            }
+        }
 
         /// <summary>
         /// Should not normally be used as transactions will time out after the retransmit window has expired. This method is 
@@ -370,13 +370,13 @@ namespace SIPSorcery.SIP
         private bool IsCallIdUniqueForPending(string callId)
         {
             bool match = false;
-            
+
             lock (m_transactions)
             {
                 foreach (SIPTransaction transaction in m_transactions.Values)
                 {
-                    if ((transaction.TransactionType == SIPTransactionTypesEnum.InivteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer) && 
-                        transaction.TransactionFinalResponse != null && 
+                    if ((transaction.TransactionType == SIPTransactionTypesEnum.InivteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer) &&
+                        transaction.TransactionFinalResponse != null &&
                         transaction.TransactionState == SIPTransactionStatesEnum.Completed &&
                         transaction.TransactionRequest.Header.CallId == callId)
                     {

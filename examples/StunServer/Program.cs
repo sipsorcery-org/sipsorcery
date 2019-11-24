@@ -46,7 +46,7 @@ namespace StunServerExample
             EnableVerboseLogs(stunServer);
 
             Console.WriteLine("STUN server successfully initialised.");
-                       
+
             Console.Write("press any key to exit...");
             Console.Read();
 

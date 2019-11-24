@@ -256,7 +256,7 @@ namespace SIPSorcery
                             controlSocket?.Close();
                         }
 
-                        if(keyProps.KeyChar == 'q')
+                        if (keyProps.KeyChar == 'q')
                         {
                             SIPSorcery.Sys.Log.Logger.LogInformation("Quitting...");
 
@@ -270,7 +270,7 @@ namespace SIPSorcery
                         }
                     }
                 }
-                catch(Exception excp)
+                catch (Exception excp)
                 {
                     SIPSorcery.Sys.Log.Logger.LogError($"Exception Key Press listener. {excp.Message}.");
                 }
@@ -457,7 +457,7 @@ namespace SIPSorcery
                     await Task.Delay(1000);
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 SIPSorcery.Sys.Log.Logger.LogError($"Exception Hangup. {excp.Message}");
             }

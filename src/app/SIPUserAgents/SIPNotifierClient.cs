@@ -18,8 +18,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {
@@ -32,7 +32,7 @@ namespace SIPSorcery.SIP.App
     public class SIPNotifierClient<T> where T : SIPEvent, new()
     {
         private const int DEFAULT_SUBSCRIBE_EXPIRY = 300;       // The default value to request on subscription requests.
-        //private const int RETRY_POST_FAILURE_INTERVAL = 300;    // The interval to retry the subscription after a failure response or timeout.
+                                                                //private const int RETRY_POST_FAILURE_INTERVAL = 300;    // The interval to retry the subscription after a failure response or timeout.
         private const int RESCHEDULE_SUBSCRIBE_MARGIN = 10;     // Reschedule subsequent subscriptions with a small amrgin to try and ensure there is no gap.
         private const int MAX_SUBSCRIBE_ATTEMPTS = 4;           // The maximum number of subscribe attempts that will be made without a failure condition before incurring a temporary failure.
 
@@ -235,10 +235,10 @@ namespace SIPSorcery.SIP.App
                 {
                     m_attempts++;
                     m_localCSeq++;
-                    
+
                     SIPRequest subscribeRequest = m_sipTransport.GetRequest(
                         SIPMethodsEnum.SUBSCRIBE,
-                        m_resourceURI, 
+                        m_resourceURI,
                         new SIPToHeader(null, subscribeURI, m_subscriptionToTag),
                         null);
 

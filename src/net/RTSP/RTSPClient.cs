@@ -21,8 +21,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -453,8 +453,8 @@ namespace SIPSorcery.Net
                                             //}
                                             //else
                                             //{
-                                                //System.Diagnostics.Debug.WriteLine("RTP frame ready for timestamp " + frame.Timestamp + ".");
-                                                OnFrameReady(this, frame);
+                                            //System.Diagnostics.Debug.WriteLine("RTP frame ready for timestamp " + frame.Timestamp + ".");
+                                            OnFrameReady(this, frame);
                                             //}
                                         }
                                         catch (Exception frameReadyExcp)

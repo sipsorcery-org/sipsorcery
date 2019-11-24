@@ -1,0 +1,17 @@
+root = true
+
+# All files
+[*]
+indent_style = space
+end_of_line = crlf
+
+# Code files
+[*.{cs}]
+indent_size = 4
+insert_final_newline = true
+charset = utf-8-bom
+trim_trailing_whitespace = true
+
+# Organize usings
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false

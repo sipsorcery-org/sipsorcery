@@ -19,8 +19,8 @@ using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
-using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
@@ -142,7 +142,7 @@ namespace SIPSorcery.SIP
                 else if (ioExcp.InnerException is ObjectDisposedException)
                 {
                     // This exception is expected when the TLS connection is closed and this method is waiting for a receive.
-                    OnSIPStreamDisconnected(sipStreamConnection,SocketError.Disconnecting);
+                    OnSIPStreamDisconnected(sipStreamConnection, SocketError.Disconnecting);
                 }
                 else
                 {

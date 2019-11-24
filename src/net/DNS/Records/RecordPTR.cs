@@ -14,7 +14,6 @@
 // http://www.opensource.org/licenses/gpl-license.php
 // ===========================================================================
 
-using System;
 /*
  3.3.12. PTR RDATA format
 
@@ -36,19 +35,19 @@ description of the IN-ADDR.ARPA domain for an example.
 
 namespace Heijden.DNS
 {
-	public class RecordPTR : Record
-	{
-		public string PTRDNAME;
+    public class RecordPTR : Record
+    {
+        public string PTRDNAME;
 
-		public RecordPTR(RecordReader rr)
-		{
-			PTRDNAME = rr.ReadDomainName();
-		}
+        public RecordPTR(RecordReader rr)
+        {
+            PTRDNAME = rr.ReadDomainName();
+        }
 
-		public override string ToString()
-		{
-			return PTRDNAME;
-		}
+        public override string ToString()
+        {
+            return PTRDNAME;
+        }
 
-	}
+    }
 }

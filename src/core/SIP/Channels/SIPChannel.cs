@@ -19,8 +19,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -28,12 +28,12 @@ namespace SIPSorcery.SIP
     /// Represents a message received on a SIP channel prior to any attempt to identify
     /// whether it represents a SIP request, response or something else.
     /// </summary>
-	internal class IncomingMessage
-	{
+    internal class IncomingMessage
+    {
         /// <summary>
         /// The SIP channel we received the message on.
         /// </summary>
-    	public SIPChannel LocalSIPChannel;
+        public SIPChannel LocalSIPChannel;
 
         /// <summary>
         /// The local end point that the message was received on. If a SIP channel
@@ -50,7 +50,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// The message data.
         /// </summary>
-		public byte[] Buffer;
+        public byte[] Buffer;
 
         /// <summary>
         /// The time at which the message was received.
@@ -58,15 +58,15 @@ namespace SIPSorcery.SIP
         public DateTime ReceivedAt;
 
         public IncomingMessage(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
-		{
+        {
             LocalSIPChannel = sipChannel;
             LocalEndPoint = localEndPoint;
             RemoteEndPoint = remoteEndPoint;
-			Buffer = buffer;
+            Buffer = buffer;
             ReceivedAt = DateTime.Now;
 
         }
-	}
+    }
 
     /// <summary>
     /// The SIPChannel abstract class encapsulates the common properties and methods required of a SIP channel.
@@ -94,7 +94,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// The local IP address this machine uses to communicate with the Internet.
         /// </summary>
-        public static IPAddress InternetDefaultAddress { get; private set;}
+        public static IPAddress InternetDefaultAddress { get; private set; }
 
         /// <summary>
         /// The IP address the channel is listening on. Can be IPAddress.Any so cannot
@@ -112,7 +112,7 @@ namespace SIPSorcery.SIP
         /// The IP end point this channel is listening on. Note it can contain
         /// IPAddress.Any which means it can match multiple IP addresses.
         /// </summary>
-        public IPEndPoint ListeningEndPoint 
+        public IPEndPoint ListeningEndPoint
         {
             get { return new IPEndPoint(ListeningIPAddress, Port); }
         }
@@ -175,11 +175,11 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="host">The host string to check.</param>
         /// <returns>True if the host is a socket this channel is listening on. False if not.</returns>
-        internal bool IsChannelSocket(string host) 
+        internal bool IsChannelSocket(string host)
         {
-            if(IPSocket.TryParseIPEndPoint(host, out var ep))
+            if (IPSocket.TryParseIPEndPoint(host, out var ep))
             {
-                if(ListeningIPAddress != IPAddress.Any)
+                if (ListeningIPAddress != IPAddress.Any)
                 {
                     return ep.Address.Equals(ListeningIPAddress) && ep.Port == ListeningEndPoint.Port;
                 }

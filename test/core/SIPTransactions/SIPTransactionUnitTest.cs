@@ -11,8 +11,8 @@
 
 using System;
 using System.Net;
-using Xunit;
 using SIPSorcery.Sys;
+using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
 {

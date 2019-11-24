@@ -12,19 +12,22 @@
 
 namespace SIPSorcery.SIP
 {
-    public class SIPRequestAuthenticationResult {
+    public class SIPRequestAuthenticationResult
+    {
 
         public bool Authenticated;
         public bool WasAuthenticatedByIP;
         public SIPResponseStatusCodesEnum ErrorResponse;
         public SIPAuthenticationHeader AuthenticationRequiredHeader;
 
-        public SIPRequestAuthenticationResult(bool isAuthenticated, bool wasAuthenticatedByIP) {
+        public SIPRequestAuthenticationResult(bool isAuthenticated, bool wasAuthenticatedByIP)
+        {
             Authenticated = isAuthenticated;
             WasAuthenticatedByIP = wasAuthenticatedByIP;
         }
 
-        public SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum errorResponse, SIPAuthenticationHeader authenticationRequiredHeader) {
+        public SIPRequestAuthenticationResult(SIPResponseStatusCodesEnum errorResponse, SIPAuthenticationHeader authenticationRequiredHeader)
+        {
             Authenticated = false;
             ErrorResponse = errorResponse;
             AuthenticationRequiredHeader = authenticationRequiredHeader;

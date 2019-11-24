@@ -25,16 +25,16 @@ namespace SIPSorcery.Net
 
         public const int RTP_VERSION = 2;
 
-        public int Version = RTP_VERSION;						// 2 bits.
-        public int PaddingFlag = 0;								// 1 bit.
-        public int HeaderExtensionFlag = 0;						// 1 bit.
-        public int CSRCCount = 0;								// 4 bits
-        public int MarkerBit = 0;								// 1 bit.
-        public int PayloadType = (int)RTPPayloadTypesEnum.PCMU;	// 7 bits.
-        public UInt16 SequenceNumber;							// 16 bits.
-        public uint Timestamp;									// 32 bits.
-        public uint SyncSource;									// 32 bits.
-        public int[] CSRCList;									// 32 bits.
+        public int Version = RTP_VERSION;                       // 2 bits.
+        public int PaddingFlag = 0;                             // 1 bit.
+        public int HeaderExtensionFlag = 0;                     // 1 bit.
+        public int CSRCCount = 0;                               // 4 bits
+        public int MarkerBit = 0;                               // 1 bit.
+        public int PayloadType = (int)RTPPayloadTypesEnum.PCMU; // 7 bits.
+        public UInt16 SequenceNumber;                           // 16 bits.
+        public uint Timestamp;                                  // 32 bits.
+        public uint SyncSource;                                 // 32 bits.
+        public int[] CSRCList;                                  // 32 bits.
         public UInt16 ExtensionProfile;                         // 16 bits.
         public UInt16 ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
         public byte[] ExtensionPayload;
@@ -100,7 +100,7 @@ namespace SIPSorcery.Net
                     ExtensionLength = BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount);
                 }
 
-                if(ExtensionLength > 0 && packet.Length >= (headerAndCSRCLength + 4 + ExtensionLength * 4))
+                if (ExtensionLength > 0 && packet.Length >= (headerAndCSRCLength + 4 + ExtensionLength * 4))
                 {
                     ExtensionPayload = new byte[ExtensionLength * 4];
                     Buffer.BlockCopy(packet, headerAndCSRCLength + 4, ExtensionPayload, 0, ExtensionLength * 4);

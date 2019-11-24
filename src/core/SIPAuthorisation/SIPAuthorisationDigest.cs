@@ -30,8 +30,8 @@ namespace SIPSorcery.SIP
         WWWAuthenticate = 4,
     }
 
-	public class SIPAuthorisationDigest
-	{
+    public class SIPAuthorisationDigest
+    {
         public const string AUTH_ALGORITHM = "MD5";
         public const string QOP_AUTHENTICATION_VALUE = "auth";
         private const int NONCE_DEFAULT_COUNT = 1;
@@ -41,14 +41,14 @@ namespace SIPSorcery.SIP
         public SIPAuthorisationHeadersEnum AuthorisationType { get; private set; }              // This is the type of authorisation request received.
         public SIPAuthorisationHeadersEnum AuthorisationResponseType { get; private set; }      // If this is set it's the type of authorisation response to use otherwise use the same as the request (God knows why you need a different response header?!?)
 
-		public string Realm;
-		public string Username;
-		public string Password;
-		public string DestinationURL;
-		public string URI;
-		public string Nonce;
-		public string RequestType;
-		public string Response;
+        public string Realm;
+        public string Username;
+        public string Password;
+        public string DestinationURL;
+        public string URI;
+        public string Nonce;
+        public string RequestType;
+        public string Response;
         public string Algorithhm;
 
         public string Cnonce;        // Client nonce (used with WWW-Authenticate and qop=auth).
@@ -56,10 +56,10 @@ namespace SIPSorcery.SIP
         private int NonceCount = 0;  // Client nonce count.
         public string Opaque;
 
-		public string Digest
-		{
-			get
-			{
+        public string Digest
+        {
+            get
+            {
                 Algorithhm = AUTH_ALGORITHM;
 
                 // Just to make things difficult For some authorisation requests the header changes when the authenticated response is generated.
@@ -90,21 +90,21 @@ namespace SIPSorcery.SIP
                     Nonce = Crypto.GetRandomString(12);
                 }
 
-				return HTTPDigest.DigestCalcResponse(
-					AUTH_ALGORITHM,
-					Username,
-					Realm,
-					Password,
-					URI,
-					Nonce,
-					nonceCountStr,
-					Cnonce,
-					Qop,
-					RequestType,
-					null,
-					null);
-			}
-		}
+                return HTTPDigest.DigestCalcResponse(
+                    AUTH_ALGORITHM,
+                    Username,
+                    Realm,
+                    Password,
+                    URI,
+                    Nonce,
+                    nonceCountStr,
+                    Cnonce,
+                    Qop,
+                    RequestType,
+                    null,
+                    null);
+            }
+        }
 
         public SIPAuthorisationDigest()
         {
@@ -112,12 +112,12 @@ namespace SIPSorcery.SIP
         }
 
         public SIPAuthorisationDigest(SIPAuthorisationHeadersEnum authorisationType)
-		{
+        {
             AuthorisationType = authorisationType;
         }
 
         public static SIPAuthorisationDigest ParseAuthorisationDigest(SIPAuthorisationHeadersEnum authorisationType, string authorisationRequest)
-		{
+        {
             SIPAuthorisationDigest authRequest = new SIPAuthorisationDigest(authorisationType);
 
             string noDigestHeader = Regex.Replace(authorisationRequest, @"^\s*Digest\s*", "", RegexOptions.IgnoreCase);
@@ -179,18 +179,18 @@ namespace SIPSorcery.SIP
             }
 
             return authRequest;
-		}
+        }
 
         public SIPAuthorisationDigest(SIPAuthorisationHeadersEnum authorisationType, string realm, string username, string password, string uri, string nonce, string request)
-		{
+        {
             AuthorisationType = authorisationType;
-			Realm = realm;
-			Username = username;
-			Password = password;
-			URI = uri;
-			Nonce = nonce;
-			RequestType = request;
-		}
+            Realm = realm;
+            Username = username;
+            Password = password;
+            URI = uri;
+            Nonce = nonce;
+            RequestType = request;
+        }
 
         public void SetCredentials(string username, string password, string uri, string method)
         {
@@ -200,8 +200,8 @@ namespace SIPSorcery.SIP
             RequestType = method;
         }
 
-		public override string ToString()
-		{
+        public override string ToString()
+        {
             string authHeader = AuthHeaders.AUTH_DIGEST_KEY + " ";
 
             authHeader += (Username != null && Username.Trim().Length != 0) ? AuthHeaders.AUTH_USERNAME_KEY + "=\"" + Username + "\"" : null;
@@ -212,11 +212,11 @@ namespace SIPSorcery.SIP
             authHeader += (Cnonce != null) ? "," + AuthHeaders.AUTH_CNONCE_KEY + "=\"" + Cnonce + "\"" : null;
             authHeader += (NonceCount != 0) ? "," + AuthHeaders.AUTH_NONCECOUNT_KEY + "=" + GetPaddedNonceCount(NonceCount) : null;
             authHeader += (Qop != null) ? "," + AuthHeaders.AUTH_QOP_KEY + "=" + Qop : null;
-            authHeader += (Opaque != null) ? "," + AuthHeaders.AUTH_OPAQUE_KEY + "=\"" + Opaque + "\"": null;
+            authHeader += (Opaque != null) ? "," + AuthHeaders.AUTH_OPAQUE_KEY + "=\"" + Opaque + "\"" : null;
             authHeader += (Algorithhm != null) ? "," + AuthHeaders.AUTH_ALGORITHM_KEY + "=" + Algorithhm : null;
 
             return authHeader;
-		}
+        }
 
         public void IncrementNonceCount()
         {
@@ -227,53 +227,53 @@ namespace SIPSorcery.SIP
         {
             return "00000000".Substring(0, 8 - NonceCount.ToString().Length) + count;
         }
-	}
+    }
 
-	public class HTTPDigest
-	{
-		/// <summary>
-		/// Calculate H(A1) as per HTTP Digest specification.
-		/// </summary>
-		public static string DigestCalcHA1(
-			string username,
-			string realm,
-			string password)
-		{
-			string a1 = String.Format("{0}:{1}:{2}", username, realm, password);
-			return GetMD5HashBinHex(a1);
-		}
+    public class HTTPDigest
+    {
+        /// <summary>
+        /// Calculate H(A1) as per HTTP Digest specification.
+        /// </summary>
+        public static string DigestCalcHA1(
+            string username,
+            string realm,
+            string password)
+        {
+            string a1 = String.Format("{0}:{1}:{2}", username, realm, password);
+            return GetMD5HashBinHex(a1);
+        }
 
-		/// <summary>
-		/// Calculate H(A2) as per HTTP Digest specification.
-		/// </summary>
-		public static string DigestCalcHA2(
-			string method,
-			string uri)
-		{
-			string A2 = String.Format("{0}:{1}", method, uri);
-			
-			return GetMD5HashBinHex(A2);
-		}
+        /// <summary>
+        /// Calculate H(A2) as per HTTP Digest specification.
+        /// </summary>
+        public static string DigestCalcHA2(
+            string method,
+            string uri)
+        {
+            string A2 = String.Format("{0}:{1}", method, uri);
 
-		public static string DigestCalcResponse(
-			string algorithm,
-			string username,
-			string realm,
-			string password,
-			string uri,		
-			string nonce,
-			string nonceCount,
-			string cnonce,
-			string qop,			// qop-value: "", "auth", "auth-int".
-			string method,
-			string digestURL,
-			string hEntity
-			)
-		{
-			string HA1 = DigestCalcHA1(username, realm, password);
-			string HA2 = DigestCalcHA2(method, uri);
-			
-            string unhashedDigest= null;
+            return GetMD5HashBinHex(A2);
+        }
+
+        public static string DigestCalcResponse(
+            string algorithm,
+            string username,
+            string realm,
+            string password,
+            string uri,
+            string nonce,
+            string nonceCount,
+            string cnonce,
+            string qop,         // qop-value: "", "auth", "auth-int".
+            string method,
+            string digestURL,
+            string hEntity
+            )
+        {
+            string HA1 = DigestCalcHA1(username, realm, password);
+            string HA2 = DigestCalcHA2(method, uri);
+
+            string unhashedDigest = null;
             if (nonceCount != null && cnonce != null && qop != null)
             {
                 unhashedDigest = String.Format("{0}:{1}:{2}:{3}:{4}:{5}",
@@ -292,17 +292,17 @@ namespace SIPSorcery.SIP
                 HA2);
             }
 
-			return GetMD5HashBinHex(unhashedDigest);
-		}
+            return GetMD5HashBinHex(unhashedDigest);
+        }
 
-		public static string GetMD5HashBinHex(string val)
-		{
-			MD5 md5 = new MD5CryptoServiceProvider();
-			byte[] bHA1 = md5.ComputeHash(Encoding.UTF8.GetBytes(val));
-			string HA1 = null;
-			for (int i = 0 ; i < 16 ; i++)
-				HA1 += String.Format("{0:x02}",bHA1[i]);
-			return HA1;
-		}
-	}
+        public static string GetMD5HashBinHex(string val)
+        {
+            MD5 md5 = new MD5CryptoServiceProvider();
+            byte[] bHA1 = md5.ComputeHash(Encoding.UTF8.GetBytes(val));
+            string HA1 = null;
+            for (int i = 0; i < 16; i++)
+                HA1 += String.Format("{0:x02}", bHA1[i]);
+            return HA1;
+        }
+    }
 }

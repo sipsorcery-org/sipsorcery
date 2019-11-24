@@ -14,7 +14,6 @@
 // http://www.opensource.org/licenses/gpl-license.php
 // ===========================================================================
 
-using System;
 /*
  3.3.11. NS RDATA format
 
@@ -41,19 +40,19 @@ class information are normally queried using IN class protocols.
  */
 namespace Heijden.DNS
 {
-	public class RecordNS : Record
-	{
-		public string NSDNAME;
+    public class RecordNS : Record
+    {
+        public string NSDNAME;
 
-		public RecordNS(RecordReader rr)
-		{
-			NSDNAME = rr.ReadDomainName();
-		}
+        public RecordNS(RecordReader rr)
+        {
+            NSDNAME = rr.ReadDomainName();
+        }
 
-		public override string ToString()
-		{
-			return NSDNAME;
-		}
+        public override string ToString()
+        {
+            return NSDNAME;
+        }
 
-	}
+    }
 }

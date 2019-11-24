@@ -14,10 +14,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net;
-using SIPSorcery.Sys;
-using Microsoft.Extensions.Logging;
 using System.Linq;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {

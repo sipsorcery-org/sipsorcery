@@ -308,7 +308,7 @@ namespace SIPSorcery.SIP.UnitTests
         {
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            Assert.Throws< SIPValidationException>(() => SIPURI.ParseSIPURI("tel:1234565"));
+            Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("tel:1234565"));
 
             Console.WriteLine("-----------------------------------------");
         }
@@ -449,7 +449,7 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURIRelaxed("sip:twolmsted@24.183.120.253, sip:5060"));
-            
+
             Console.WriteLine("-----------------------------------------");
         }
 

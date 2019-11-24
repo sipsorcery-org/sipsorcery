@@ -32,7 +32,7 @@ namespace SIPSorcery.Net.UnitTests
             };
 
             byte[] headerBuffer = rtpVP8Header.GetBytes();
-            
+
             Console.WriteLine(BitConverter.ToString(headerBuffer, 0));
         }
 
@@ -51,7 +51,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(1697, knownHeader.FirstPartitionSize);
 
-            for(int index=0; index<rawHeader.Length; index++)
+            for (int index = 0; index < rawHeader.Length; index++)
             {
                 Assert.Equal(rawHeader[index], outputBytes[index]);
             }
@@ -87,7 +87,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            byte[] rawHeader = new byte[] { 0x80, 0x80, 0x80, 0x01};
+            byte[] rawHeader = new byte[] { 0x80, 0x80, 0x80, 0x01 };
 
             var vp8Header = RTPVP8Header.GetVP8Header(rawHeader);
 

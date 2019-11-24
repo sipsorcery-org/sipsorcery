@@ -13,14 +13,14 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Linq;
-using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -64,19 +64,19 @@ namespace SIPSorcery.SIP
                         switch (protocol)
                         {
                             case SIPProtocolsEnum.udp:
-                            {
-                                logger.LogDebug(" attempting to create SIP UDP channel for " + sipEndPoint.GetIPEndPoint() + ".");
-                                var udpChannel = new SIPUDPChannel(sipEndPoint.GetIPEndPoint());
-                                sipChannels.Add(udpChannel);
-                            }
+                                {
+                                    logger.LogDebug(" attempting to create SIP UDP channel for " + sipEndPoint.GetIPEndPoint() + ".");
+                                    var udpChannel = new SIPUDPChannel(sipEndPoint.GetIPEndPoint());
+                                    sipChannels.Add(udpChannel);
+                                }
                                 break;
                             case SIPProtocolsEnum.tcp:
-                            {
-                                logger.LogDebug(" attempting to create SIP TCP channel for " + sipEndPoint.GetIPEndPoint() + ".");
+                                {
+                                    logger.LogDebug(" attempting to create SIP TCP channel for " + sipEndPoint.GetIPEndPoint() + ".");
 
-                                var tcpChannel = new SIPTCPChannel(sipEndPoint.GetIPEndPoint());
-                                sipChannels.Add(tcpChannel);
-                            }
+                                    var tcpChannel = new SIPTCPChannel(sipEndPoint.GetIPEndPoint());
+                                    sipChannels.Add(tcpChannel);
+                                }
                                 break;
                             case SIPProtocolsEnum.tls:
                                 if (sipSocketNode.Attributes.GetNamedItem(CERTIFICATE_PATH_PARAMETER) == null)
@@ -134,7 +134,7 @@ namespace SIPSorcery.SIP
                     logger.LogDebug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
                     return serverCertificate;
                 }
-                
+
                 var store = (certificateType == "machinestore") ? StoreLocation.LocalMachine : StoreLocation.CurrentUser;
                 return Crypto.LoadCertificate(store, certifcateLocation, true);
             }
@@ -151,7 +151,7 @@ namespace SIPSorcery.SIP
             {
                 return null;
             }
-            
+
             int port;
             if (overridePort > 0)
             {
@@ -170,7 +170,7 @@ namespace SIPSorcery.SIP
             {
                 return m_localIPAddresses.Select(x => new SIPEndPoint(sipProtocol, new IPEndPoint(x, port)));
             }
-            
+
             var ipAddress = IPAddress.Parse(IPSocket.ParseHostFromSocket(sipSocketString));
             return new List<SIPEndPoint> { new SIPEndPoint(sipProtocol, new IPEndPoint(ipAddress, port)) };
         }

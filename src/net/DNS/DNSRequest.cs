@@ -20,37 +20,37 @@ using System.Collections.Generic;
 
 namespace Heijden.DNS
 {
-	public class DNSRequest
-	{
-		public Header header;
+    public class DNSRequest
+    {
+        public Header header;
 
-		public List<Question> Questions;
+        public List<Question> Questions;
 
-		public DNSRequest()
-		{
-			header = new Header();
-			header.OPCODE = OPCode.Query;
-			header.QDCOUNT = 0;
+        public DNSRequest()
+        {
+            header = new Header();
+            header.OPCODE = OPCode.Query;
+            header.QDCOUNT = 0;
 
-			Questions = new List<Question>();
-		}
+            Questions = new List<Question>();
+        }
 
-		public void AddQuestion(Question question)
-		{
-			Questions.Add(question);
-		}
+        public void AddQuestion(Question question)
+        {
+            Questions.Add(question);
+        }
 
-		public byte[] Data
-		{
-			get
-			{
-				List<byte> data = new List<byte>();
-				header.QDCOUNT = (ushort)Questions.Count;
-				data.AddRange(header.Data);
-				foreach (Question q in Questions)
-					data.AddRange(q.Data);
-				return data.ToArray();
-			}
-		}
-	}
+        public byte[] Data
+        {
+            get
+            {
+                List<byte> data = new List<byte>();
+                header.QDCOUNT = (ushort)Questions.Count;
+                data.AddRange(header.Data);
+                foreach (Question q in Questions)
+                    data.AddRange(q.Data);
+                return data.ToArray();
+            }
+        }
+    }
 }

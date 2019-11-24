@@ -19,8 +19,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -672,7 +672,7 @@ namespace SIPSorcery.Net
                     args.SetBuffer(rtpBytes, 0, rtpBytes.Length);
                     _rtpSocket.SendToAsync(args);
                     //_rtpSocket.SendTo(rtpBytes, rtpBytes.Length, SocketFlags.None, RemoteEndPoint);
-                    
+
                     //sw.Stop();
 
                     //if (sw.ElapsedMilliseconds > 15)

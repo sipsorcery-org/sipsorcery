@@ -14,7 +14,6 @@
 // The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ============================================================================
 
-using System;
 /*
  * 
 3.3.1. CNAME RDATA format
@@ -37,19 +36,19 @@ the description of name server logic in [RFC-1034] for details.
  */
 namespace Heijden.DNS
 {
-	public class RecordCNAME : Record
-	{
-		public string CNAME;
+    public class RecordCNAME : Record
+    {
+        public string CNAME;
 
-		public RecordCNAME(RecordReader rr)
-		{
-			CNAME = rr.ReadDomainName();
-		}
+        public RecordCNAME(RecordReader rr)
+        {
+            CNAME = rr.ReadDomainName();
+        }
 
-		public override string ToString()
-		{
-			return CNAME;
-		}
+        public override string ToString()
+        {
+            return CNAME;
+        }
 
-	}
+    }
 }

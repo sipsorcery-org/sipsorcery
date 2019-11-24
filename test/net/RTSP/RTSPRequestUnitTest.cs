@@ -33,7 +33,7 @@ namespace SIPSorcery.Net.UnitTests
 
             RTSPRequest setupRequest = new RTSPRequest(RTSPMethodsEnum.SETUP, RTSPURL.ParseRTSPURL("rtsp://localhost/sample"));
             setupRequest.Header = new RTSPHeader(cseq, session);
-            
+
             byte[] rtspRequestBuffer = Encoding.UTF8.GetBytes(setupRequest.ToString());
             RTSPRequest req = RTSPRequest.ParseRTSPRequest(RTSPMessage.ParseRTSPMessage(rtspRequestBuffer, null, null));
 

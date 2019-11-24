@@ -16,27 +16,27 @@
 using System;
 using System.Net;
 using System.Text;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
     public class RTSPMessage
     {
         private const string RTSP_RESPONSE_PREFIX = "RTSP";
-        private const string RTSP_MESSAGE_IDENTIFIER = "RTSP";	// String that must be in a message buffer to be recognised as an RTSP message and processed.
+        private const string RTSP_MESSAGE_IDENTIFIER = "RTSP";  // String that must be in a message buffer to be recognised as an RTSP message and processed.
 
         private static ILogger logger = Log.Logger;
 
         private static string m_CRLF = RTSPConstants.CRLF;
         private static int m_minFirstLineLength = 7;
-        
+
         public string RawMessage;
-		public RTSPMessageTypesEnum RTSPMessageType = RTSPMessageTypesEnum.Unknown;
-		public string FirstLine;
-		public string[] RTSPHeaders;
-		public string Body;
-		public byte[] RawBuffer;
+        public RTSPMessageTypesEnum RTSPMessageType = RTSPMessageTypesEnum.Unknown;
+        public string FirstLine;
+        public string[] RTSPHeaders;
+        public string Body;
+        public byte[] RawBuffer;
 
         public DateTime ReceivedAt = DateTime.MinValue;
         public IPEndPoint ReceivedFrom;
@@ -111,12 +111,12 @@ namespace SIPSorcery.Net
                     {
                         // Assume flakey implementation if message does not contain the required CRLFCRLF sequence and treat the message as having no body.
                         string headerString = message.Substring(endFistLinePosn + 2, message.Length - endFistLinePosn - 2);
-                        rtspMessage.RTSPHeaders = RTSPHeader.SplitHeaders(headerString); 
+                        rtspMessage.RTSPHeaders = RTSPHeader.SplitHeaders(headerString);
                     }
                     else if (endHeaderPosn > endFistLinePosn + 2)
                     {
                         string headerString = message.Substring(endFistLinePosn + 2, endHeaderPosn - endFistLinePosn - 2);
-                        rtspMessage.RTSPHeaders = RTSPHeader.SplitHeaders(headerString); 
+                        rtspMessage.RTSPHeaders = RTSPHeader.SplitHeaders(headerString);
 
                         if (message.Length > endHeaderPosn + 4)
                         {

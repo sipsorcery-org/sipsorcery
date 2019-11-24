@@ -20,8 +20,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {
@@ -74,7 +74,7 @@ namespace SIPSorcery.SIP.App
 
         // Switchboard dial string options.
         public const string SWITCHBOARD_LINE_NAME_KEY = "swln";             // Dial string option to set the Switchboard-LineName header on the call leg.
-        //public const string SWITCHBOARD_DIALOGUE_DESCRIPTION_KEY = "swdd";// Dial string option to set a value for the switchboard description field on the answered dialogue. It does not set a header.
+                                                                            //public const string SWITCHBOARD_DIALOGUE_DESCRIPTION_KEY = "swdd";// Dial string option to set a value for the switchboard description field on the answered dialogue. It does not set a header.
         public const string SWITCHBOARD_CALLID_KEY = "swcid";               // Dial string option to set the Switchboard-CallID header on the call leg.
         public const string SWITCHBOARD_OWNER_KEY = "swo";                  // Dial string option to set the Switchboard-Owner header on the call leg.
 
@@ -204,7 +204,7 @@ namespace SIPSorcery.SIP.App
             //}
             //else
             //{
-                fromHeader = SIPFromHeader.ParseFromHeader(From);
+            fromHeader = SIPFromHeader.ParseFromHeader(From);
             //}
 
             if (!FromDisplayName.IsNullOrBlank())
@@ -350,7 +350,7 @@ namespace SIPSorcery.SIP.App
                 }
 
                 // Parse the request caller details option.
-                Match callerDetailsMatch = Regex.Match(options,REQUEST_CALLER_DETAILS + @"=(?<callerdetails>\w+)");
+                Match callerDetailsMatch = Regex.Match(options, REQUEST_CALLER_DETAILS + @"=(?<callerdetails>\w+)");
                 if (callerDetailsMatch.Success)
                 {
                     Boolean.TryParse(callerDetailsMatch.Result("${callerdetails}"), out RequestCallerDetails);
@@ -376,7 +376,7 @@ namespace SIPSorcery.SIP.App
                 {
                     Int32.TryParse(delayedReinviteMatch.Result("${delayedReinvite}"), out ReinviteDelay);
 
-                    if(ReinviteDelay > MAX_REINVITE_DELAY)
+                    if (ReinviteDelay > MAX_REINVITE_DELAY)
                     {
                         ReinviteDelay = DEFAULT_REINVITE_DELAY;
                     }

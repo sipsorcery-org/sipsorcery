@@ -48,7 +48,7 @@ namespace SIPSorcery.SIP
             {
                 return false;
             }
-            else if (value.ToLower() == "dialog" || value.ToLower() == "message-summary" || 
+            else if (value.ToLower() == "dialog" || value.ToLower() == "message-summary" ||
                 value.ToLower() == "presence" || value.ToLower() == "refer")
             {
                 return true;
@@ -129,7 +129,7 @@ namespace SIPSorcery.SIP
         public const string SIP_DIALOG_INCLUDE_SDP = "includesdp=true";
     }
 
-    public struct SIPEventDialogStateEvent 
+    public struct SIPEventDialogStateEvent
     {
         public static SIPEventDialogStateEvent None = new SIPEventDialogStateEvent(null);
         public static SIPEventDialogStateEvent Cancelled = new SIPEventDialogStateEvent("cancelled");

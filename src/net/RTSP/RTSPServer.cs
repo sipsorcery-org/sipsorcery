@@ -22,8 +22,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -355,8 +355,8 @@ namespace SIPSorcery.Net
                         lock (m_connectedSockets)
                         {
                             var inactiveConnectionQuery = from connection in m_connectedSockets
-                                                         where connection.Value.LastTransmission < DateTime.Now.AddMinutes(PRUNE_NOTRANSMISSION_MINUTES * -1)
-                                                         select connection.Key;
+                                                          where connection.Value.LastTransmission < DateTime.Now.AddMinutes(PRUNE_NOTRANSMISSION_MINUTES * -1)
+                                                          select connection.Key;
 
                             var inactiveConnectionKey = inactiveConnectionQuery.FirstOrDefault();
 
@@ -392,13 +392,13 @@ namespace SIPSorcery.Net
                         lock (m_rtspSessions)
                         {
                             var inactiveSessionQuery = from session in m_rtspSessions
-                                                      where (session.Value.DontTimeout == false 
-                                                              && session.Value.RTPLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
-                                                               && session.Value.ControlLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
-                                                               && session.Value.StartedAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
-                                                               && session.Value.CreatedAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1))
-                                                               || session.Value.IsClosed
-                                                      select session.Key;
+                                                       where (session.Value.DontTimeout == false
+                                                               && session.Value.RTPLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
+                                                                && session.Value.ControlLastActivityAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
+                                                                && session.Value.StartedAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1)
+                                                                && session.Value.CreatedAt < DateTime.Now.AddSeconds(CLOSE_RTSP_SESSION_NO_DATA_SECONDS * -1))
+                                                                || session.Value.IsClosed
+                                                       select session.Key;
 
                             var inactiveSessionKey = inactiveSessionQuery.FirstOrDefault();
 

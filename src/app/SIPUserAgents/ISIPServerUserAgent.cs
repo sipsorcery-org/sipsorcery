@@ -12,11 +12,11 @@
 
 using System;
 
-namespace SIPSorcery.SIP.App 
+namespace SIPSorcery.SIP.App
 {
     public delegate void SIPUASDelegate(ISIPServerUserAgent uas);
 
-    public interface ISIPServerUserAgent 
+    public interface ISIPServerUserAgent
     {
         SIPCallDirection CallDirection { get; }
         SIPDialogue SIPDialogue { get; }

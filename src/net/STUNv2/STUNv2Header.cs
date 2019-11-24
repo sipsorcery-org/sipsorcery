@@ -72,8 +72,8 @@
 
 using System;
 using System.Text;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -123,7 +123,7 @@ namespace SIPSorcery.Net
     }
 
     public class STUNv2Header
-	{
+    {
         public const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
         public const int STUN_HEADER_LENGTH = 20;
         public const UInt32 MAGIC_COOKIE = 0x2112A442;
@@ -143,7 +143,7 @@ namespace SIPSorcery.Net
         {
             MessageType = messageType;
             //ClassType = classType;
-            TransactionId = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString().Substring(0,TRANSACTION_ID_LENGTH));
+            TransactionId = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString().Substring(0, TRANSACTION_ID_LENGTH));
         }
 
         public static STUNv2Header ParseSTUNHeader(byte[] buffer)
@@ -180,5 +180,5 @@ namespace SIPSorcery.Net
         {
             return BitConverter.ToString(TransactionId);
         }
-	}
+    }
 }

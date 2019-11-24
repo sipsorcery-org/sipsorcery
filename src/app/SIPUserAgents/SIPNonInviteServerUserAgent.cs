@@ -16,8 +16,8 @@
 // ============================================================================
 
 using System;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {
@@ -32,7 +32,7 @@ namespace SIPSorcery.SIP.App
         private SIPTransport m_sipTransport;
         private SIPNonInviteTransaction m_transaction;
         private SIPEndPoint m_outboundProxy;                   // If the system needs to use an outbound proxy for every request this will be set and overrides any user supplied values.
-        //private SIPDialogue m_sipDialogue;
+                                                               //private SIPDialogue m_sipDialogue;
         private bool m_isAuthenticated;
 
         private string m_owner;
@@ -40,7 +40,7 @@ namespace SIPSorcery.SIP.App
         private string m_sipUsername;
         private string m_sipDomain;
         private SIPCallDirection m_sipCallDirection;
-       
+
         public SIPCallDirection CallDirection
         {
             get { return m_sipCallDirection; }
@@ -82,7 +82,7 @@ namespace SIPSorcery.SIP.App
         public bool IsInvite
         {
             get { return false; }
-        } 
+        }
         public SIPRequest CallRequest
         {
             get { return m_transaction.TransactionRequest; }
@@ -161,7 +161,7 @@ namespace SIPSorcery.SIP.App
 
                         if (m_sipAccount == null)
                         {
-                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Rejecting public " + m_transaction.TransactionRequest.Method +" request for " + m_sipUsername + "@" + m_sipDomain + ", SIP account not found.", null));
+                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Rejecting public " + m_transaction.TransactionRequest.Method + " request for " + m_sipUsername + "@" + m_sipDomain + ", SIP account not found.", null));
                             Reject(SIPResponseStatusCodesEnum.NotFound, null, null);
                         }
                         else
@@ -189,7 +189,7 @@ namespace SIPSorcery.SIP.App
                 return false;
             }
         }
-        
+
         public bool AuthenticateCall()
         {
             m_isAuthenticated = false;
@@ -329,7 +329,7 @@ namespace SIPSorcery.SIP.App
 
         public void SetDialPlanContextID(Guid dialPlanContextID)
         {
-           
+
         }
     }
 }

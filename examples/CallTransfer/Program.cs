@@ -133,7 +133,7 @@ namespace SIPSorcery
                     {
                         Log.LogWarning($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                        if(resp.StatusCode >= 400)
+                        if (resp.StatusCode >= 400)
                         {
                             // Call failed.
                             hasCallFailed = true;

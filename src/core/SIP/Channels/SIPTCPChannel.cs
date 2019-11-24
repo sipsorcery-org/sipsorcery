@@ -361,7 +361,7 @@ namespace SIPSorcery.SIP
 
                 return connectResult;
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogError($"Exception ConnectClientAsync. {excp.Message}");
                 return SocketError.Fault;
@@ -450,7 +450,7 @@ namespace SIPSorcery.SIP
 
                     if (sipStreamConn == null && HasConnection(dstEndPoint))
                     {
-                       sipStreamConn = m_connections.Where(x => x.Value.RemoteEndPoint.Equals(dstEndPoint)).First().Value;
+                        sipStreamConn = m_connections.Where(x => x.Value.RemoteEndPoint.Equals(dstEndPoint)).First().Value;
                     }
 
                     if (sipStreamConn != null)

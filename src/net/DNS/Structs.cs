@@ -17,16 +17,16 @@
 
 namespace Heijden.DNS
 {
-	/*
-	 * 3.2.2. TYPE values
-	 *
-	 * TYPE fields are used in resource records.
-	 * Note that these types are a subset of QTYPEs.
-	 *
-	 *		TYPE		value			meaning
-	 */
-	public enum DnsType : ushort
-	{
+    /*
+     * 3.2.2. TYPE values
+     *
+     * TYPE fields are used in resource records.
+     * Note that these types are a subset of QTYPEs.
+     *
+     *		TYPE		value			meaning
+     */
+    public enum DnsType : ushort
+    {
         A = 1,              // a IPV4 host address
         NS = 2,             // an authoritative name server
         MD = 3,             // a mail destination (Obsolete - use MX)
@@ -115,17 +115,17 @@ namespace Heijden.DNS
         DLV = 32769         // DNSSEC Lookaside Validation       [RFC4431]
     }
 
-	/*
-	 * 3.2.3. QTYPE values
-	 *
-	 * QTYPE fields appear in the question part of a query.  QTYPES are a
-	 * superset of TYPEs, hence all TYPEs are valid QTYPEs.  In addition, the
-	 * following QTYPEs are defined:
-	 *
-	 *		QTYPE		value			meaning
-	 */
+    /*
+     * 3.2.3. QTYPE values
+     *
+     * QTYPE fields appear in the question part of a query.  QTYPES are a
+     * superset of TYPEs, hence all TYPEs are valid QTYPEs.  In addition, the
+     * following QTYPEs are defined:
+     *
+     *		QTYPE		value			meaning
+     */
     public enum QType : ushort
-	{
+    {
         A = DnsType.A,         // a IPV4 host address
         NS = DnsType.NS,       // an authoritative name server
         MD = DnsType.MD,       // a mail destination (Obsolete - use MX)
@@ -218,42 +218,42 @@ namespace Heijden.DNS
         TA = DnsType.TA,       // DNSSEC Trust Authorities    [Weiler]  13 December 2005
         DLV = DnsType.DLV      // DNSSEC Lookaside Validation [RFC4431]
     }
-	/*
-	 * 3.2.4. CLASS values
-	 *
-	 * CLASS fields appear in resource records.  The following CLASS mnemonics
-	 *and values are defined:
-	 *
-	 *		CLASS		value			meaning
-	 */
-	public enum Class : ushort
-	{
-		IN = 1,				// the Internet
-		CS = 2,				// the CSNET class (Obsolete - used only for examples in some obsolete RFCs)
-		CH = 3,				// the CHAOS class
-		HS = 4				// Hesiod [Dyer 87]
-	}
-	/*
-	 * 3.2.5. QCLASS values
-	 *
-	 * QCLASS fields appear in the question section of a query.  QCLASS values
-	 * are a superset of CLASS values; every CLASS is a valid QCLASS.  In
-	 * addition to CLASS values, the following QCLASSes are defined:
-	 *
-	 *		QCLASS		value			meaning
-	 */
-	public enum QClass : ushort
-	{
-		IN = Class.IN,		// the Internet
-		CS = Class.CS,		// the CSNET class (Obsolete - used only for examples in some obsolete RFCs)
-		CH = Class.CH,		// the CHAOS class
-		HS = Class.HS,		// Hesiod [Dyer 87]
+    /*
+     * 3.2.4. CLASS values
+     *
+     * CLASS fields appear in resource records.  The following CLASS mnemonics
+     *and values are defined:
+     *
+     *		CLASS		value			meaning
+     */
+    public enum Class : ushort
+    {
+        IN = 1,             // the Internet
+        CS = 2,             // the CSNET class (Obsolete - used only for examples in some obsolete RFCs)
+        CH = 3,             // the CHAOS class
+        HS = 4              // Hesiod [Dyer 87]
+    }
+    /*
+     * 3.2.5. QCLASS values
+     *
+     * QCLASS fields appear in the question section of a query.  QCLASS values
+     * are a superset of CLASS values; every CLASS is a valid QCLASS.  In
+     * addition to CLASS values, the following QCLASSes are defined:
+     *
+     *		QCLASS		value			meaning
+     */
+    public enum QClass : ushort
+    {
+        IN = Class.IN,      // the Internet
+        CS = Class.CS,      // the CSNET class (Obsolete - used only for examples in some obsolete RFCs)
+        CH = Class.CH,      // the CHAOS class
+        HS = Class.HS,      // Hesiod [Dyer 87]
 
-		ANY = 255			// any class
-	}
+        ANY = 255           // any class
+    }
 
-	/*
-RCODE           Response code - this 4 bit field is set as part of
+    /*
+  RCODE           Response code - this 4 bit field is set as part of
                 responses.  The values have the following
                 interpretation:
 
@@ -285,26 +285,26 @@ RCODE           Response code - this 4 bit field is set as part of
                                 transfer) for particular data.
 
                 6-15            Reserved for future use.
-	 */
-	public enum RCode
-	{
-		NOERROR = 0,			// No error condition
-		FORMATERROR = 1,		// Format error
-		SERVERFAILURE = 2,		// Server failure
-		NAMERROR = 3,			// Name Error
-		NOTIMPLEMENTED = 4,		// Not Implemented
-		REFUSED = 5,			// Refused
+     */
+    public enum RCode
+    {
+        NOERROR = 0,            // No error condition
+        FORMATERROR = 1,        // Format error
+        SERVERFAILURE = 2,      // Server failure
+        NAMERROR = 3,           // Name Error
+        NOTIMPLEMENTED = 4,     // Not Implemented
+        REFUSED = 5,            // Refused
 
-		RESERVED6 = 6,			// Reserved
-		RESERVED7 = 7,			// Reserved
-		RESERVED8 = 8,			// Reserved
-		RESERVED9 = 9,			// Reserved
-		RESERVED10 = 10,		// Reserved
-		RESERVED11 = 11,		// Reserved
-		RESERVED12 = 12,		// Reserved
-		RESERVED13 = 13,		// Reserved
-		RESERVED14 = 14,		// Reserved
-		RESERVED15 = 15,        // Reserved
+        RESERVED6 = 6,          // Reserved
+        RESERVED7 = 7,          // Reserved
+        RESERVED8 = 8,          // Reserved
+        RESERVED9 = 9,          // Reserved
+        RESERVED10 = 10,        // Reserved
+        RESERVED11 = 11,        // Reserved
+        RESERVED12 = 12,        // Reserved
+        RESERVED13 = 13,        // Reserved
+        RESERVED14 = 14,        // Reserved
+        RESERVED15 = 15,        // Reserved
 
         BADVERSSIG = 16,    // Bad OPT Version                    [RFC2671]
                             // TSIG Signature Failure             [RFC2845]
@@ -325,7 +325,7 @@ RCODE           Response code - this 4 bit field is set as part of
     }
 
     /*
-OPCODE          A four bit field that specifies kind of query in this
+  OPCODE          A four bit field that specifies kind of query in this
                 message.  This value is set by the originator of a query
                 and copied into the response.  The values are:
 
@@ -336,9 +336,9 @@ OPCODE          A four bit field that specifies kind of query in this
                 2               a server status request (STATUS)
 
                 3-15            reserved for future use
-	 */
+     */
     public enum OPCode
-	{
+    {
         Query = 0,              // a standard query (QUERY)
         IQUERY = 1,             // OpCode Retired (previously IQUERY - No further [RFC3425]
                                 // assignment of this code available)
@@ -360,9 +360,9 @@ OPCODE          A four bit field that specifies kind of query in this
         RESERVED15 = 15,
     }
 
-	public enum TransportType
-	{
-		Udp,
-		Tcp
-	}
+    public enum TransportType
+    {
+        Udp,
+        Tcp
+    }
 }

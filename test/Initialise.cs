@@ -95,10 +95,10 @@ namespace SIPSorcery.UnitTests
         public static SimpleConsoleLoggerScope Instance { get; } = new SimpleConsoleLoggerScope();
 
         private SimpleConsoleLoggerScope()
-        {}
+        { }
 
         public void Dispose()
-        {}
+        { }
     }
 
     internal class MockSIPChannel : SIPChannel

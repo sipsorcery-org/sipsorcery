@@ -30,30 +30,31 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using System;
 using System.Configuration;
 using System.Net;
 using System.Xml;
-using SIPSorcery.Sys;
-using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIPProxy
-{ 
+{
     public class ProxyState : IConfigurationSectionHandler
     {
         private const string SIPPROXY_CONFIGNODE_NAME = "proxy";
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
-  
+
         private static readonly XmlNode m_proxyConfigNode;
         public static readonly XmlNode SIPSocketsNode;
-        
+
         public static IPAddress DefaultLocalAddress;
 
         static ProxyState()
         {
             try
             {
-                var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => {
+                var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+                {
                     builder
                     .AddFilter("*", LogLevel.Debug)
                     .AddConsole();

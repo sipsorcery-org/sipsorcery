@@ -36,8 +36,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -277,7 +277,7 @@ namespace SIPSorcery.Net
 
                             break;
                         }
-                        catch(System.Net.Sockets.SocketException sockExcp)
+                        catch (System.Net.Sockets.SocketException sockExcp)
                         {
                             logger.LogWarning("RTSP session " + _sessionID + " failed to bind to RTP port " + _rtpPort + " and/or control port of " + _controlPort + ", attempt " + bindAttempts + ". " + sockExcp);
 
@@ -287,7 +287,7 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    if(!bindSuccess)
+                    if (!bindSuccess)
                     {
                         throw new ApplicationException("An RTSP session could not bind to the RTP and/or control ports within the range of " + MEDIA_PORT_START + " to " + MEDIA_PORT_END + ".");
                     }
@@ -407,13 +407,13 @@ namespace SIPSorcery.Net
                                 if ((buffer[0] >= 20) && (buffer[0] <= 64))
                                 {
                                     // DTLS.
-                                    if(OnDtlsReceive != null)
+                                    if (OnDtlsReceive != null)
                                     {
                                         try
                                         {
                                             OnDtlsReceive(buffer, bytesRead, SendRTPRaw);
                                         }
-                                        catch(Exception dtlsExcp)
+                                        catch (Exception dtlsExcp)
                                         {
                                             logger.LogError("Exception RTSPSession.RTPReceive DTLS. " + dtlsExcp);
                                         }
@@ -758,7 +758,7 @@ namespace SIPSorcery.Net
                     _senderPacketCount++;
                     _senderOctetCount += (uint)frame.Length;
 
-                    if(_rtcpRemoteEndPoint != null && DateTime.Now.Subtract(_senderLastSentAt).TotalSeconds > RTCP_SENDER_REPORT_INTERVAL_SECONDS)
+                    if (_rtcpRemoteEndPoint != null && DateTime.Now.Subtract(_senderLastSentAt).TotalSeconds > RTCP_SENDER_REPORT_INTERVAL_SECONDS)
                     {
                         Console.WriteLine(packetTimestamp.ToUniversalTime().ToString("hh:mm:ss:fff"));
                         SendRtcpSenderReport(DateTimeToNptTimestamp(packetTimestamp), _timestamp);
@@ -861,7 +861,7 @@ namespace SIPSorcery.Net
                 }
                 else if (_remoteEndPoint == null)
                 {
-                   // logger.LogWarning("SendVP8Frame frame not sent as remote end point is not yet set.");
+                    // logger.LogWarning("SendVP8Frame frame not sent as remote end point is not yet set.");
                 }
                 else
                 {
@@ -980,7 +980,7 @@ namespace SIPSorcery.Net
 
                 _senderLastSentAt = DateTime.Now;
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogError("Exception SendRtcpSenderReport. " + excp);
             }

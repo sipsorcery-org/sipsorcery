@@ -15,8 +15,8 @@
 
 using System;
 using System.Net;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -24,7 +24,7 @@ namespace SIPSorcery.Net
     {
         None = 0,
     }
-    
+
     /// <summary>
     /// RFC2326 6.1:
     /// Request-Line = Method SP Request-URI SP RTSP-Version CRLF
@@ -32,59 +32,59 @@ namespace SIPSorcery.Net
     public class RTSPRequest
     {
         private static ILogger logger = Log.Logger;
-		
-		private static string m_CRLF = RTSPConstants.CRLF;
-		private static string m_rtspFullVersion = RTSPConstants.RTSP_FULLVERSION_STRING;
-		private static string m_rtspVersion = RTSPConstants.RTSP_VERSION_STRING;
-		private static int m_rtspMajorVersion = RTSPConstants.RTSP_MAJOR_VERSION;
-		private static int m_rtspMinorVersion = RTSPConstants.RTSP_MINOR_VERSION;
 
-		public bool Valid = true;
-		public RTSPHeaderError ValidationError = RTSPHeaderError.None;
+        private static string m_CRLF = RTSPConstants.CRLF;
+        private static string m_rtspFullVersion = RTSPConstants.RTSP_FULLVERSION_STRING;
+        private static string m_rtspVersion = RTSPConstants.RTSP_VERSION_STRING;
+        private static int m_rtspMajorVersion = RTSPConstants.RTSP_MAJOR_VERSION;
+        private static int m_rtspMinorVersion = RTSPConstants.RTSP_MINOR_VERSION;
 
-		public string RTSPVersion = m_rtspVersion;
-		public int RTSPMajorVersion = m_rtspMajorVersion;
-		public int RTSPMinorVersion = m_rtspMinorVersion;
-		public RTSPMethodsEnum Method;
-		public string UnknownMethod = null;
+        public bool Valid = true;
+        public RTSPHeaderError ValidationError = RTSPHeaderError.None;
 
-		public RTSPURL URL;
-		public RTSPHeader Header;
-		public string Body;
+        public string RTSPVersion = m_rtspVersion;
+        public int RTSPMajorVersion = m_rtspMajorVersion;
+        public int RTSPMinorVersion = m_rtspMinorVersion;
+        public RTSPMethodsEnum Method;
+        public string UnknownMethod = null;
 
-		public DateTime ReceivedAt = DateTime.MinValue;
-		public IPEndPoint ReceivedFrom;
+        public RTSPURL URL;
+        public RTSPHeader Header;
+        public string Body;
 
-		private RTSPRequest()
-		{}
-			
-		public RTSPRequest(RTSPMethodsEnum method, string url)
-		{
-			RTSPHeaderParserError urlParserError = RTSPHeaderParserError.None;
-			
-			try
-			{
-				Method = method;
-				
-				URL = RTSPURL.ParseRTSPURL(url, out urlParserError);
+        public DateTime ReceivedAt = DateTime.MinValue;
+        public IPEndPoint ReceivedFrom;
+
+        private RTSPRequest()
+        { }
+
+        public RTSPRequest(RTSPMethodsEnum method, string url)
+        {
+            RTSPHeaderParserError urlParserError = RTSPHeaderParserError.None;
+
+            try
+            {
+                Method = method;
+
+                URL = RTSPURL.ParseRTSPURL(url, out urlParserError);
                 if (urlParserError != RTSPHeaderParserError.None)
                 {
                     throw new ApplicationException("Error parsing RTSP URL, " + urlParserError.ToString() + ".");
                 }
 
-				RTSPVersion = m_rtspFullVersion;
-			}
-			catch(Exception excp)
-			{
-				logger.LogError("Exception RTSPRequest Ctor. " + excp.Message + ".");
-			}
-		}
+                RTSPVersion = m_rtspFullVersion;
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception RTSPRequest Ctor. " + excp.Message + ".");
+            }
+        }
 
         public RTSPRequest(RTSPMethodsEnum method, RTSPURL url)
         {
-             Method = method;
-             URL = url;
-             RTSPVersion = m_rtspFullVersion;
+            Method = method;
+            URL = url;
+            RTSPVersion = m_rtspFullVersion;
         }
 
         public static RTSPRequest ParseRTSPRequest(RTSPMessage rtspMessage)
@@ -93,14 +93,14 @@ namespace SIPSorcery.Net
             return ParseRTSPRequest(rtspMessage, out dontCare);
         }
 
-		public static RTSPRequest ParseRTSPRequest(RTSPMessage rtspMessage, out RTSPRequestParserError requestParserError)
-		{
+        public static RTSPRequest ParseRTSPRequest(RTSPMessage rtspMessage, out RTSPRequestParserError requestParserError)
+        {
             requestParserError = RTSPRequestParserError.None;
             string urlStr = null;
-			
-			try
-			{
-				RTSPRequest rtspRequest = new RTSPRequest();
+
+            try
+            {
+                RTSPRequest rtspRequest = new RTSPRequest();
 
                 string statusLine = rtspMessage.FirstLine;
 
@@ -132,39 +132,39 @@ namespace SIPSorcery.Net
                 {
                     throw new ApplicationException("URI was missing on RTSP request.");
                 }
-    		}
-			catch(Exception excp)
-			{
-				logger.LogError("Exception parsing RTSP request. URI, " + urlStr + ".");
-				throw new ApplicationException("There was an exception parsing an RTSP request. " + excp.Message);
-			}
-		}
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception parsing RTSP request. URI, " + urlStr + ".");
+                throw new ApplicationException("There was an exception parsing an RTSP request. " + excp.Message);
+            }
+        }
 
-		public new string ToString()
-		{
-			try
-			{
-				string methodStr = (Method != RTSPMethodsEnum.UNKNOWN) ? Method.ToString() : UnknownMethod;
+        public new string ToString()
+        {
+            try
+            {
+                string methodStr = (Method != RTSPMethodsEnum.UNKNOWN) ? Method.ToString() : UnknownMethod;
 
                 string message = methodStr + " " + URL.ToString() + " " + RTSPVersion + m_CRLF;
                 message += (Header != null) ? Header.ToString() : null;
 
-				if(Body != null)
-				{
-					message += m_CRLF + Body;
-				}
-				else
-				{
-					message += m_CRLF;
-				}
-			
-				return message;
-			}
-			catch(Exception excp)
-			{
-				logger.LogError("Exception RTSPRequest ToString. " + excp.Message);
-				throw excp;
-			}
-		}
+                if (Body != null)
+                {
+                    message += m_CRLF + Body;
+                }
+                else
+                {
+                    message += m_CRLF;
+                }
+
+                return message;
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception RTSPRequest ToString. " + excp.Message);
+                throw excp;
+            }
+        }
     }
 }

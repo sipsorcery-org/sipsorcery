@@ -28,7 +28,7 @@ namespace SIPSorcery.Sys
         private static ILoggerFactory _loggerFactory;
         public static ILoggerFactory LoggerFactory
         {
-            set 
+            set
             {
                 _loggerFactory = value;
                 _logger = null;

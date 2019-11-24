@@ -16,15 +16,15 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
     public class STUNMessage
-	{
+    {
         private static ILogger logger = Log.Logger;
-        
+
         public STUNHeader Header = new STUNHeader();
         public List<STUNAttribute> Attributes = new List<STUNAttribute>();
 
@@ -68,7 +68,7 @@ namespace SIPSorcery.Net
             if (BitConverter.IsLittleEndian)
             {
                 Buffer.BlockCopy(BitConverter.GetBytes(Utility.ReverseEndian((UInt16)Header.MessageType)), 0, buffer, 0, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(Utility.ReverseEndian(attributesLength)), 0, buffer, 2, 2); 
+                Buffer.BlockCopy(BitConverter.GetBytes(Utility.ReverseEndian(attributesLength)), 0, buffer, 2, 2);
             }
             else
             {
@@ -103,6 +103,6 @@ namespace SIPSorcery.Net
         {
             byte[] usernameBytes = Encoding.UTF8.GetBytes(username);
             Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Username, usernameBytes));
-        }        
-	}
+        }
+    }
 }
