@@ -24,7 +24,7 @@ namespace SIPSorcery.SIP
 {
     /// <summary>
     /// Implements the the SIP URI concept from the SIP RFC3261.
-    /// </remarks>
+    /// </summary>
     [DataContract]
     public class SIPURI
     {
