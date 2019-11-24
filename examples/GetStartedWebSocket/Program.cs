@@ -16,9 +16,9 @@
 
 using System;
 using System.Net;
-using SIPSorcery.SIP;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using SIPSorcery.SIP;
 
 namespace demo
 {
@@ -50,7 +50,7 @@ namespace demo
                     SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     sipTransport.SendResponse(okResponse);
                 }
-                else if(sipRequest.Method == SIPMethodsEnum.REGISTER)
+                else if (sipRequest.Method == SIPMethodsEnum.REGISTER)
                 {
                     SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     okResponse.Header.Contact = sipRequest.Header.Contact;

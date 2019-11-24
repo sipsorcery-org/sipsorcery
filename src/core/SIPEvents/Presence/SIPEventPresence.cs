@@ -20,8 +20,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -66,15 +66,15 @@ namespace SIPSorcery.SIP
 
         public static SIPEventPresence Parse(string presenceXMLStr)
         {
-           SIPEventPresence presenceEvent = new SIPEventPresence();
-           presenceEvent.Load(presenceXMLStr);
-           return presenceEvent;
+            SIPEventPresence presenceEvent = new SIPEventPresence();
+            presenceEvent.Load(presenceXMLStr);
+            return presenceEvent;
         }
 
         public override string ToXMLText()
         {
             XNamespace ns = m_pidfXMLNS;
-            
+
             XDocument presenceDoc = new XDocument(new XElement(ns + "presence",
                 new XAttribute("entity", Entity.ToString())));
 

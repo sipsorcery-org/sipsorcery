@@ -18,7 +18,7 @@ using System.Net;
 using System.Net.Sockets;
 
 namespace SIPSorcery.Sys
-{   
+{
     /// <summary>
     ///     0                   1                   2                   3   
     /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
@@ -51,7 +51,7 @@ namespace SIPSorcery.Sys
         public ProtocolType Protocol;                  // 1 = ICMP, 6 = TCP, 17 = UDP.
         public IPAddress SourceAddress;
         public IPAddress DestinationAddress;
-        
+
         // Fragmentation flags. Bit 0=0, Bit 1=DF, Bit 2=MF
         public int DF = 1;              // 0 = May fragment, 1 = Don't fragment.
         public int MF = 0;              // 0 = Last fragment, 1 = More fragments.
@@ -64,7 +64,7 @@ namespace SIPSorcery.Sys
             SourceAddress = sourceAddress;
             DestinationAddress = dstAddress;
         }
-        
+
         public byte[] GetBytes()
         {
             byte[] header = new byte[HeaderLength * 4];
@@ -75,11 +75,11 @@ namespace SIPSorcery.Sys
             header[3] = (byte)Length;
             header[4] = (byte)(Id >> 8);
             header[5] = (byte)Id;
-            header[6] = (byte)(DF * 64 + MF * 32  + (FragmentOffset >> 8));
+            header[6] = (byte)(DF * 64 + MF * 32 + (FragmentOffset >> 8));
             header[7] = (byte)FragmentOffset;
             header[8] = (byte)TTL;
             header[9] = (byte)Protocol;
-            
+
             Buffer.BlockCopy(SourceAddress.GetAddressBytes(), 0, header, 12, 4);
             Buffer.BlockCopy(DestinationAddress.GetAddressBytes(), 0, header, 16, 4);
 
@@ -93,14 +93,14 @@ namespace SIPSorcery.Sys
         public UInt16 GetChecksum(byte[] buffer)
         {
             int checksum = 0;
-            for(int index=0; index<buffer.Length-2; index=index+2)
+            for (int index = 0; index < buffer.Length - 2; index = index + 2)
             {
                 checksum += (buffer[index] << 4) + buffer[index + 1];
             }
 
             //checksum = (checksum >> 16) + (checksum & 0xffff);
             //cksum += (checksum >> 16);
-            return (UInt16) ~checksum;
+            return (UInt16)~checksum;
         }
     }
 
@@ -171,8 +171,8 @@ namespace SIPSorcery.Sys
         }
     }
 
-	public class RawSocket
-	{
+    public class RawSocket
+    {
         /// <summary>
         /// The goal of this method was to send a dummy packet through a NAT gateway in an attempt to create a rule for 
         /// incoming packets. There are better ways to do this now, UPNP etc.

@@ -47,10 +47,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -91,7 +89,7 @@ namespace SIPSorcery.Net
 
         static byte[] lum_ac_codelens = { 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d };
 
-        static byte[] lum_ac_symbols = 
+        static byte[] lum_ac_symbols =
         {
             0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,
             0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
@@ -167,7 +165,7 @@ namespace SIPSorcery.Net
            99, 99, 99, 99, 99, 99, 99, 99,
            99, 99, 99, 99, 99, 99, 99, 99,
            99, 99, 99, 99, 99, 99, 99, 99
-        }; 
+        };
 
         static byte[] CreateJFIFHeader(uint type, uint width, uint height, ArraySegment<byte> tables, byte precision, ushort dri)
         {
@@ -360,7 +358,7 @@ namespace SIPSorcery.Net
         static byte[] CreateDataRestartIntervalMarker(ushort dri)
         {
             return new byte[] { Tags.Prefix, Tags.DataRestartInterval, 0x00, 0x04, (byte)(dri >> 8), (byte)(dri) };
-        }        
+        }
 
         /// <summary>
         /// Writes the packets to a memory stream and creates the default header and quantization tables if necessary.
@@ -403,64 +401,64 @@ namespace SIPSorcery.Net
                     /*
                      4.1.  The Type Field
 
-   The Type field defines the abbreviated table-specification and
-   additional JFIF-style parameters not defined by JPEG, since they are
-   not present in the body of the transmitted JPEG data.
+          The Type field defines the abbreviated table-specification and
+          additional JFIF-style parameters not defined by JPEG, since they are
+          not present in the body of the transmitted JPEG data.
 
-   Three ranges of the type field are currently defined. Types 0-63 are
-   reserved as fixed, well-known mappings to be defined by this document
-   and future revisions of this document. Types 64-127 are the same as
-   types 0-63, except that restart markers are present in the JPEG data
-   and a Restart Marker header appears immediately following the main
-   JPEG header. Types 128-255 are free to be dynamically defined by a
-   session setup protocol (which is beyond the scope of this document).
+          Three ranges of the type field are currently defined. Types 0-63 are
+          reserved as fixed, well-known mappings to be defined by this document
+          and future revisions of this document. Types 64-127 are the same as
+          types 0-63, except that restart markers are present in the JPEG data
+          and a Restart Marker header appears immediately following the main
+          JPEG header. Types 128-255 are free to be dynamically defined by a
+          session setup protocol (which is beyond the scope of this document).
 
-   Of the first group of fixed mappings, types 0 and 1 are currently
-   defined, along with the corresponding types 64 and 65 that indicate
-   the presence of restart markers.  They correspond to an abbreviated
-   table-specification indicating the "Baseline DCT sequential" mode,
-   8-bit samples, square pixels, three components in the YUV color
-   space, standard Huffman tables as defined in [1, Annex K.3], and a
-   single interleaved scan with a scan component selector indicating
-   components 1, 2, and 3 in that order.  The Y, U, and V color planes
-   correspond to component numbers 1, 2, and 3, respectively.  Component
-   1 (i.e., the luminance plane) uses Huffman table number 0 and
-   quantization table number 0 (defined below) and components 2 and 3
-   (i.e., the chrominance planes) use Huffman table number 1 and
-   quantization table number 1 (defined below).
+          Of the first group of fixed mappings, types 0 and 1 are currently
+          defined, along with the corresponding types 64 and 65 that indicate
+          the presence of restart markers.  They correspond to an abbreviated
+          table-specification indicating the "Baseline DCT sequential" mode,
+          8-bit samples, square pixels, three components in the YUV color
+          space, standard Huffman tables as defined in [1, Annex K.3], and a
+          single interleaved scan with a scan component selector indicating
+          components 1, 2, and 3 in that order.  The Y, U, and V color planes
+          correspond to component numbers 1, 2, and 3, respectively.  Component
+          1 (i.e., the luminance plane) uses Huffman table number 0 and
+          quantization table number 0 (defined below) and components 2 and 3
+          (i.e., the chrominance planes) use Huffman table number 1 and
+          quantization table number 1 (defined below).
 
-   Type numbers 2-5 are reserved and SHOULD NOT be used.  Applications
-   based on previous versions of this document (RFC 2035) should be
-   updated to indicate the presence of restart markers with type 64 or
-   65 and the Restart Marker header.
+          Type numbers 2-5 are reserved and SHOULD NOT be used.  Applications
+          based on previous versions of this document (RFC 2035) should be
+          updated to indicate the presence of restart markers with type 64 or
+          65 and the Restart Marker header.
 
-   The two RTP/JPEG types currently defined are described below:
+          The two RTP/JPEG types currently defined are described below:
 
                             horizontal   vertical   Quantization
            types  component samp. fact. samp. fact. table number
-         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-         |       |  1 (Y)  |     2     |     1     |     0     |
-         | 0, 64 |  2 (U)  |     1     |     1     |     1     |
-         |       |  3 (V)  |     1     |     1     |     1     |
-         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-         |       |  1 (Y)  |     2     |     2     |     0     |
-         | 1, 65 |  2 (U)  |     1     |     1     |     1     |
-         |       |  3 (V)  |     1     |     1     |     1     |
-         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          |       |  1 (Y)  |     2     |     1     |     0     |
+          | 0, 64 |  2 (U)  |     1     |     1     |     1     |
+          |       |  3 (V)  |     1     |     1     |     1     |
+          +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          |       |  1 (Y)  |     2     |     2     |     0     |
+          | 1, 65 |  2 (U)  |     1     |     1     |     1     |
+          |       |  3 (V)  |     1     |     1     |     1     |
+          +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-   These sampling factors indicate that the chrominance components of
-   type 0 video is downsampled horizontally by 2 (often called 4:2:2)
-   while the chrominance components of type 1 video are downsampled both
-   horizontally and vertically by 2 (often called 4:2:0).
+          These sampling factors indicate that the chrominance components of
+          type 0 video is downsampled horizontally by 2 (often called 4:2:2)
+          while the chrominance components of type 1 video are downsampled both
+          horizontally and vertically by 2 (often called 4:2:0).
 
-   Types 0 and 1 can be used to carry both progressively scanned and
-   interlaced image data.  This is encoded using the Type-specific field
-   in the main JPEG header.  The following values are defined:
+          Types 0 and 1 can be used to carry both progressively scanned and
+          interlaced image data.  This is encoded using the Type-specific field
+          in the main JPEG header.  The following values are defined:
 
-      0 : Image is progressively scanned.  On a computer monitor, it can
+          0 : Image is progressively scanned.  On a computer monitor, it can
           be displayed as-is at the specified width and height.
 
-      1 : Image is an odd field of an interlaced video signal.  The
+          1 : Image is an odd field of an interlaced video signal.  The
           height specified in the main JPEG header is half of the height
           of the entire displayed image.  This field should be de-
           interlaced with the even field following it such that lines
@@ -468,9 +466,9 @@ namespace SIPSorcery.Net
           the even field should appear just above those same lines from
           the odd field.
 
-      2 : Image is an even field of an interlaced video signal.
+          2 : Image is an even field of an interlaced video signal.
 
-      3 : Image is a single field from an interlaced video signal, but
+          3 : Image is a single field from an interlaced video signal, but
           it should be displayed full frame as if it were received as
           both the odd & even fields of the frame.  On a computer
           monitor, each line in the image should be displayed twice,
@@ -484,11 +482,11 @@ namespace SIPSorcery.Net
                     if (type > 3 || type > 6) throw new ArgumentException("Type numbers 2-5 are reserved and SHOULD NOT be used.  Applications on RFC 2035 should be updated to indicate the presence of restart markers with type 64 or 65 and the Restart Marker header.");
 
                     Quality = (uint)packet.Payload[offset++];
-                    Width =  (uint)(packet.Payload[offset++] * 8); // This should have been 128 or > and the standard would have worked for all resolutions
+                    Width = (uint)(packet.Payload[offset++] * 8); // This should have been 128 or > and the standard would have worked for all resolutions
                     Height = (uint)(packet.Payload[offset++] * 8);// Now in certain highres profiles you will need an OnVif extension before the RtpJpeg Header
-                    //It is worth noting Rtp does not care what you send and more tags such as comments and or higher resolution pictures may be sent and these values will simply be ignored.
+                                                                  //It is worth noting Rtp does not care what you send and more tags such as comments and or higher resolution pictures may be sent and these values will simply be ignored.
 
-                    if(Width == 0 || Height == 0)
+                    if (Width == 0 || Height == 0)
                     {
                         logger.LogWarning("ProcessMjpegFrame could not determine either the width or height of the jpeg frame (width={0}, height={1}).", Width, Height);
                     }
@@ -532,31 +530,31 @@ namespace SIPSorcery.Net
                             #region RFC2435 Length Field
 
                             /*
-                                 
-   The Length field is set to the length in bytes of the quantization
-   table data to follow.  The Length field MAY be set to zero to
-   indicate that no quantization table data is included in this frame.
-   See section 4.2 for more information.  If the Length field in a
-   received packet is larger than the remaining number of bytes, the
-   packet MUST be discarded.
 
-   When table data is included, the number of tables present depends on
-   the JPEG type field.  For example, type 0 uses two tables (one for
-   the luminance component and one shared by the chrominance
-   components).  Each table is an array of 64 values given in zig-zag
-   order, identical to the format used in a JFIF DQT marker segment.
+              The Length field is set to the length in bytes of the quantization
+              table data to follow.  The Length field MAY be set to zero to
+              indicate that no quantization table data is included in this frame.
+              See section 4.2 for more information.  If the Length field in a
+              received packet is larger than the remaining number of bytes, the
+              packet MUST be discarded.
 
-   For each quantization table present, a bit in the Precision field
-   specifies the size of the coefficients in that table.  If the bit is
-   zero, the coefficients are 8 bits yielding a table length of 64
-   bytes.  If the bit is one, the coefficients are 16 bits for a table
-   length of 128 bytes.  For 16 bit tables, the coefficients are
-   presented in network byte order.  The rightmost bit in the Precision
-   field (bit 15 in the diagram above) corresponds to the first table
-   and each additional table uses the next bit to the left.  Bits beyond
-   those corresponding to the tables needed by the type in use MUST be
-   ignored.
-                                 
+              When table data is included, the number of tables present depends on
+              the JPEG type field.  For example, type 0 uses two tables (one for
+              the luminance component and one shared by the chrominance
+              components).  Each table is an array of 64 values given in zig-zag
+              order, identical to the format used in a JFIF DQT marker segment.
+
+              For each quantization table present, a bit in the Precision field
+              specifies the size of the coefficients in that table.  If the bit is
+              zero, the coefficients are 8 bits yielding a table length of 64
+              bytes.  If the bit is one, the coefficients are 16 bits for a table
+              length of 128 bytes.  For 16 bit tables, the coefficients are
+              presented in network byte order.  The rightmost bit in the Precision
+              field (bit 15 in the diagram above) corresponds to the first table
+              and each additional table uses the next bit to the left.  Bits beyond
+              those corresponding to the tables needed by the type in use MUST be
+              ignored.
+
                                  */
 
                             #endregion
@@ -608,10 +606,10 @@ namespace SIPSorcery.Net
                 //In short, for a lifetime of an Image constructed from a stream, the stream must not be destroyed.
                 //Image = new System.Drawing.Bitmap(System.Drawing.Image.FromStream(Buffer, true, true));
                 //DO NOT USE THE EMBEDDED COLOR MANGEMENT
-               // Image = System.Drawing.Image.FromStream(Buffer, false, true);
+                // Image = System.Drawing.Image.FromStream(Buffer, false, true);
 
                 return Buffer.GetBuffer();
             }
         }
-     }
+    }
 }

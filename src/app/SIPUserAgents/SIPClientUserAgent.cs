@@ -14,9 +14,9 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
-using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP.App
 {

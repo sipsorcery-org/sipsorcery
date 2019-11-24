@@ -13,8 +13,8 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Xunit;
 using SIPSorcery.UnitTests;
+using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
 {
@@ -132,7 +132,7 @@ CRLF +
 "From: <sip:switchboard@10.1.1.5>;tag=1902440575" + CRLF +
 "Call-ID: 1b569032-d1e4-4869-be9f-67d4ba8a4e3a" + CRLF +
 "CSeq: 3 SUBSCRIBE" + CRLF
-+ CRLF + 
++ CRLF +
 "SUBSCRIBE sip:aaron@10.1.1";
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);

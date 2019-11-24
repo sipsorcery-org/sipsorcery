@@ -35,7 +35,7 @@ namespace SIPSorcery.Net.UnitTests
             string sdpStr =
                 "v=0" + m_CRLF +
                 "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
-                "s=session" +  m_CRLF +
+                "s=session" + m_CRLF +
                 "c=IN IP4 10.0.0.4" + m_CRLF +
                 "t=0 0" + m_CRLF +
                 "m=audio 12228 RTP/AVP 0 101" + m_CRLF +

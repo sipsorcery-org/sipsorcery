@@ -20,7 +20,7 @@ namespace SIPSorcery.Net
     public class STUNv2ChangeRequestAttribute : STUNv2Attribute
     {
         public const UInt16 CHANGEREQUEST_ATTRIBUTE_LENGTH = 4;
-        
+
         public bool ChangeAddress = false;
         public bool ChangePort = false;
 

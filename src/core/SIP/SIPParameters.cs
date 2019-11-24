@@ -17,9 +17,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -43,8 +42,8 @@ namespace SIPSorcery.SIP
     /// </code>
     /// </summary>
     [DataContract]
-	public class SIPParameters
-	{
+    public class SIPParameters
+    {
         private const char TAG_NAME_VALUE_SEPERATOR = '=';
         private const char QUOTE = '"';
         private const char BACK_SLASH = '\\';
@@ -61,14 +60,14 @@ namespace SIPSorcery.SIP
         [IgnoreDataMember]
         public int Count
         {
-            get { return (m_dictionary != null) ? m_dictionary.Count : 0;  }
+            get { return (m_dictionary != null) ? m_dictionary.Count : 0; }
         }
 
         internal SIPParameters()
         {
             m_dictionary = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         }
-        
+
         /// <summary>
         /// Parses the name value pairs from a SIP parameter or header string.
         /// </summary>
@@ -93,7 +92,7 @@ namespace SIPSorcery.SIP
                 {
                     AddKeyValuePair(keyValuePair, m_dictionary);
                 }
-            }   
+            }
         }
 
         public static string[] GetKeyValuePairsFromQuoted(string quotedString, char delimiter)
@@ -106,9 +105,9 @@ namespace SIPSorcery.SIP
                 {
                     return null;
                 }
-                else if(quotedString.IndexOf(delimiter) == -1)
+                else if (quotedString.IndexOf(delimiter) == -1)
                 {
-                    return new string[] {quotedString};
+                    return new string[] { quotedString };
                 }
                 else
                 {
@@ -288,15 +287,20 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override string ToString() {
+        public override string ToString()
+        {
             string paramStr = null;
 
-            if (m_dictionary != null) {
-                foreach (KeyValuePair<string, string> param in m_dictionary) {
-                    if (param.Value != null && param.Value.Trim().Length > 0) {
+            if (m_dictionary != null)
+            {
+                foreach (KeyValuePair<string, string> param in m_dictionary)
+                {
+                    if (param.Value != null && param.Value.Trim().Length > 0)
+                    {
                         paramStr += TagDelimiter + param.Key + TAG_NAME_VALUE_SEPERATOR + SIPEscape.SIPURIParameterEscape(param.Value);
                     }
-                    else {
+                    else
+                    {
                         paramStr += TagDelimiter + param.Key;
                     }
                 }
@@ -352,7 +356,7 @@ namespace SIPSorcery.SIP
             }
 
             return x.m_dictionary.Count == y.m_dictionary.Count &&
-               x.m_dictionary.Keys.All(k => y.m_dictionary.ContainsKey(k) 
+               x.m_dictionary.Keys.All(k => y.m_dictionary.ContainsKey(k)
                && String.Equals(x.m_dictionary[k], y.m_dictionary[k], StringComparison.InvariantCultureIgnoreCase));
 
             //return x.m_dictionary.Count == y.m_dictionary.Count && !x.m_dictionary.Except(y.m_dictionary).Any();

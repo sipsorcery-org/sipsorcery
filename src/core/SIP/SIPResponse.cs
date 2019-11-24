@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: SIPResponse.cs
 //
 // Description: SIP Response.
@@ -14,8 +14,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -29,36 +29,36 @@ namespace SIPSorcery.SIP
     /// Represents a SIP Response.
     /// </summary>
     public class SIPResponse
-	{
+    {
         private static ILogger logger = Log.Logger;
-		
-		private static string m_CRLF = SIPConstants.CRLF;
-		private static string m_sipVersion = SIPConstants.SIP_FULLVERSION_STRING;
-	
+
+        private static string m_CRLF = SIPConstants.CRLF;
+        private static string m_sipVersion = SIPConstants.SIP_FULLVERSION_STRING;
+
         /// <summary>
         /// The version string for the SIP response.
         /// </summary>
-		public string SIPVersion;
+        public string SIPVersion;
 
         /// <summary>
         /// The status of the SIP response, e.g OK or NotAuthorized.
         /// </summary>
-		public SIPResponseStatusCodesEnum Status;
+        public SIPResponseStatusCodesEnum Status;
 
         /// <summary>
         /// The status code of the SIP response, e.g. 200 for an OK response.
         /// </summary>
-		public int StatusCode;
+        public int StatusCode;
 
         /// <summary>
         /// The optional reason phrase for the SIP response.
         /// </summary>
-		public string ReasonPhrase;
+        public string ReasonPhrase;
 
         /// <summary>
         /// The optional body or payload for the SIP response.
         /// </summary>
-		public string Body;
+        public string Body;
 
         /// <summary>
         /// The SIP response's headers collection.
@@ -98,8 +98,8 @@ namespace SIPSorcery.SIP
             get { return Header?.CSeqMethod + " " + StatusCode + " " + ReasonPhrase; }
         }
 
-		private SIPResponse()
-		{}
+        private SIPResponse()
+        { }
 
         /// <summary>
         /// SIPResponse Constructor.
@@ -127,27 +127,27 @@ namespace SIPSorcery.SIP
         /// If set as null the SIP transport layer will attempt to resolve the remote end point using the response's headers.</param>
         [Obsolete("The local and remote SIP end points are now only for recording receiving sockets. Use the new send from hint proprties.", true)]
         public SIPResponse(
-            SIPResponseStatusCodesEnum responseStatus, 
-            string reasonPhrase, 
-            SIPEndPoint localSIPEndPoint, 
+            SIPResponseStatusCodesEnum responseStatus,
+            string reasonPhrase,
+            SIPEndPoint localSIPEndPoint,
             SIPEndPoint remoteSIPEndPoint)
-		{
-			SIPVersion = m_sipVersion;
-			StatusCode = (int)responseStatus;
+        {
+            SIPVersion = m_sipVersion;
+            StatusCode = (int)responseStatus;
             Status = responseStatus;
             ReasonPhrase = reasonPhrase;
-			ReasonPhrase = responseStatus.ToString();
+            ReasonPhrase = responseStatus.ToString();
             LocalSIPEndPoint = localSIPEndPoint;
             RemoteSIPEndPoint = remoteSIPEndPoint;
-		}
+        }
 
         /// <summary>
         /// Parses a SIP response from a SIP message object.
         /// </summary>
         /// <param name="sipMessage">The SIP message to parse a response from.</param>
         /// <returns>A new SIP response object.</returns>
-		public static SIPResponse ParseSIPResponse(SIPMessage sipMessage)
-		{
+        public static SIPResponse ParseSIPResponse(SIPMessage sipMessage)
+        {
             try
             {
                 SIPResponse sipResponse = new SIPResponse();
@@ -178,7 +178,7 @@ namespace SIPSorcery.SIP
                 logger.LogError(sipMessage.RawMessage);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Response, "Error parsing SIP Response");
             }
-		}
+        }
 
         /// <summary>
         /// Parses a SIP response from a string.
@@ -208,25 +208,25 @@ namespace SIPSorcery.SIP
         /// Returns a string representing the full SIP response.
         /// </summary>
         /// <returns>A string representation of the SIP response.</returns>
-		public override string ToString()
-		{
-			string reasonPhrase = (!ReasonPhrase.IsNullOrBlank()) ? " " + ReasonPhrase : null;
+        public override string ToString()
+        {
+            string reasonPhrase = (!ReasonPhrase.IsNullOrBlank()) ? " " + ReasonPhrase : null;
 
-			string message = 
-				SIPVersion + " " + StatusCode + reasonPhrase + m_CRLF +
-				this.Header.ToString();
+            string message =
+                SIPVersion + " " + StatusCode + reasonPhrase + m_CRLF +
+                this.Header.ToString();
 
-			if(Body != null)
-			{
-				message += m_CRLF + Body;
-			}
-			else
-			{
-				message += m_CRLF;
-			}
-			
-			return message;
-		}
+            if (Body != null)
+            {
+                message += m_CRLF + Body;
+            }
+            else
+            {
+                message += m_CRLF;
+            }
+
+            return message;
+        }
 
         /// <summary>
         /// Creates an identical copy of the SIP Response for the caller.

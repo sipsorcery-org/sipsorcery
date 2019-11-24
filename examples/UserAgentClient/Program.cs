@@ -280,7 +280,7 @@ namespace SIPSorcery
                     }
                 }
             }
-            catch(SocketException sockExcp)
+            catch (SocketException sockExcp)
             {
                 Log.LogWarning($"RecvRTP socket error {sockExcp.SocketErrorCode}");
             }
@@ -338,8 +338,8 @@ namespace SIPSorcery
 
                             if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
                             {
-                            // This is typically where RTCP sender (SR) reports would be sent. Omitted here for brevity.
-                            lastSendReportAt = DateTime.Now;
+                                // This is typically where RTCP sender (SR) reports would be sent. Omitted here for brevity.
+                                lastSendReportAt = DateTime.Now;
                                 var remoteRtpEndPoint = _remoteRtpEndPoint as IPEndPoint;
                                 Log.LogDebug($"RTP send report {rtpSocket.LocalEndPoint}->{remoteRtpEndPoint} pkts {packetSentCount} bytes {bytesSentCount}");
                             }

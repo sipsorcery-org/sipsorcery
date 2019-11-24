@@ -18,8 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {
@@ -140,7 +140,7 @@ namespace SIPSorcery.SIP.App
 
             int callbackPeriod = (m_expiry - REGISTRATION_HEAD_TIME) * 1000;
             logger.LogDebug($"Starting SIPRegistrationUserAgent for {m_sipAccountAOR.ToString()}, callback period {callbackPeriod}ms.");
-            
+
             m_registrationTimer = new Timer(DoRegistration, null, 0, callbackPeriod);
         }
 
@@ -197,7 +197,7 @@ namespace SIPSorcery.SIP.App
         {
             int newExpiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
 
-            if(newExpiry != m_expiry)
+            if (newExpiry != m_expiry)
             {
                 logger.LogInformation($"Expiry for registration agent for {m_sipAccountAOR.ToString()} updated from {m_expiry} to {newExpiry}.");
 

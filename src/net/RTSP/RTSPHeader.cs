@@ -18,8 +18,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -84,12 +84,12 @@ namespace SIPSorcery.Net
                 transportHeader.TransportSpecifier = fields[0];
                 transportHeader.BroadcastType = fields[1];
 
-                foreach(string field in fields.Where(x => x.Contains('=')))
+                foreach (string field in fields.Where(x => x.Contains('=')))
                 {
                     string fieldName = field.Split('=')[0];
                     string fieldValue = field.Split('=')[1];
 
-                    switch(fieldName.ToLower())
+                    switch (fieldName.ToLower())
                     {
                         case CLIENT_RTP_PORT_FIELD_NAME:
                             transportHeader.ClientRTPPortRange = fieldValue.Trim();
@@ -122,13 +122,13 @@ namespace SIPSorcery.Net
         /// <returns>The client port that RTP packets should be sent to. If the port cannot be determined then 0.</returns>
         public int GetClientRTPPort()
         {
-            if(ClientRTPPortRange.NotNullOrBlank())
+            if (ClientRTPPortRange.NotNullOrBlank())
             {
                 int clientRTPPort = 0;
 
                 var fields = ClientRTPPortRange.Split('-');
 
-                if(Int32.TryParse(fields[0], out clientRTPPort))
+                if (Int32.TryParse(fields[0], out clientRTPPort))
                 {
                     return clientRTPPort;
                 }
@@ -205,7 +205,7 @@ namespace SIPSorcery.Net
         {
             string transportHeader = TransportSpecifier + ";" + BroadcastType;
 
-            if(Destination.NotNullOrBlank())
+            if (Destination.NotNullOrBlank())
             {
                 transportHeader += String.Format(";{0}={1}", DESTINATION_FIELD_NAME, Destination);
             }
@@ -225,7 +225,7 @@ namespace SIPSorcery.Net
                 transportHeader += String.Format(";{0}={1}", SERVER_RTP_PORT_FIELD_NAME, ServerRTPPortRange);
             }
 
-            if(Mode.NotNullOrBlank())
+            if (Mode.NotNullOrBlank())
             {
                 transportHeader += String.Format(";{0}={1}", MODE_FIELD_NAME, Mode);
             }

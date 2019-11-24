@@ -33,8 +33,8 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-	public class RTCPSenderReport
-	{
+    public class RTCPSenderReport
+    {
         public const int PAYLOAD_SIZE = 24;
 
         public uint SSRC;
@@ -42,15 +42,15 @@ namespace SIPSorcery.Net
         public uint RtpTimestamp;
         public uint PacketCount;
         public uint OctetCount;
-        
+
         public RTCPSenderReport(uint ssrc, ulong ntpTimestamp, uint rtpTimestamp, uint packetCount, uint octetCount)
-		{
+        {
             SSRC = ssrc;
             NtpTimestamp = ntpTimestamp;
             RtpTimestamp = rtpTimestamp;
             PacketCount = packetCount;
             OctetCount = octetCount;
-		}
+        }
 
         public byte[] GetBytes()
         {

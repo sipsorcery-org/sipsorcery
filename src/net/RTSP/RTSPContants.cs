@@ -158,5 +158,5 @@ namespace SIPSorcery.Net
             return (RTSPResponseStatusCodesEnum)Enum.Parse(typeof(RTSPResponseStatusCodesEnum), statusCode.ToString(), true);
         }
     }
-	
+
 }

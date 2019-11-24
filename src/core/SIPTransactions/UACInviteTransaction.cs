@@ -17,8 +17,8 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 [assembly: InternalsVisibleToAttribute("SIPSorcery.UnitTests")]
 
@@ -41,16 +41,16 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="sendOkAckManually">If set an ACK request for the 2xx response will NOT be sent and it will be up to the application to explicitly call the SendACK request.</param>
         /// <param name="disablePrackSupport">If set to true then PRACK support will not be set in the initial INVITE reqeust.</param>
-        internal UACInviteTransaction(SIPTransport sipTransport, 
-            SIPRequest sipRequest, 
-            SIPEndPoint outboundProxy, 
+        internal UACInviteTransaction(SIPTransport sipTransport,
+            SIPRequest sipRequest,
+            SIPEndPoint outboundProxy,
             bool sendOkAckManually = false,
             bool disablePrackSupport = false)
             : base(sipTransport, sipRequest, outboundProxy)
         {
             TransactionType = SIPTransactionTypesEnum.InivteClient;
             m_localTag = sipRequest.Header.From.FromTag;
-            CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, sipRequest.LocalSIPEndPoint,sipRequest.RemoteSIPEndPoint);
+            CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, sipRequest.LocalSIPEndPoint, sipRequest.RemoteSIPEndPoint);
             _sendOkAckManually = sendOkAckManually;
             _disablePrackSupport = disablePrackSupport;
 
@@ -195,7 +195,7 @@ namespace SIPSorcery.SIP
 
                 base.SendRequest(ackRequest);
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogError($"Exception Send2xxAckRequest. {excp.Message}");
             }

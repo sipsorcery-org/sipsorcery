@@ -23,20 +23,20 @@ namespace SIPSorcery.Net
     public class SDPMediaAnnouncement
     {
         public const string MEDIA_FORMAT_ATTRIBUE_PREFIX = "a=rtpmap:";
-		public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX = "a=fmtp:";
+        public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX = "a=fmtp:";
 
         public const string m_CRLF = "\r\n";
 
         public SDPConnectionInformation Connection;
 
         // Media Announcement fields.
-        public SDPMediaTypesEnum Media = SDPMediaTypesEnum.audio;	// Media type for the stream.
-        public int Port;						// For UDP transports should be in the range 1024 to 65535 and for RTP compliance should be even (only even ports used for data).
-        public string Transport = "RTP/AVP";	// Defined types RTP/AVP (RTP Audio Visual Profile) and udp.
+        public SDPMediaTypesEnum Media = SDPMediaTypesEnum.audio;   // Media type for the stream.
+        public int Port;                        // For UDP transports should be in the range 1024 to 65535 and for RTP compliance should be even (only even ports used for data).
+        public string Transport = "RTP/AVP";    // Defined types RTP/AVP (RTP Audio Visual Profile) and udp.
 
         public List<string> BandwidthAttributes = new List<string>();
         public List<SDPMediaFormat> MediaFormats = new List<SDPMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
-		public List<string> ExtraAttributes = new List<string>();  // Attributes that were not recognised.
+        public List<string> ExtraAttributes = new List<string>();  // Attributes that were not recognised.
 
         public SDPMediaAnnouncement()
         { }
@@ -92,7 +92,7 @@ namespace SIPSorcery.Net
 
         public void AddFormatAttribute(int formatID, string formatAttribute)
         {
-            for(int index=0; index < MediaFormats.Count; index++)
+            for (int index = 0; index < MediaFormats.Count; index++)
             {
                 if (MediaFormats[index].FormatID == formatID)
                 {
@@ -101,18 +101,18 @@ namespace SIPSorcery.Net
             }
         }
 
-		public void AddFormatParameterAttribute(int formatID, string formatAttribute)
-		{
-			for(int index = 0; index < MediaFormats.Count; index++)
-			{
-				if(MediaFormats[index].FormatID == formatID)
-				{
-					MediaFormats[index].SetFormatParameterAttribute(formatAttribute);
-				}
-			}
-		}
+        public void AddFormatParameterAttribute(int formatID, string formatAttribute)
+        {
+            for (int index = 0; index < MediaFormats.Count; index++)
+            {
+                if (MediaFormats[index].FormatID == formatID)
+                {
+                    MediaFormats[index].SetFormatParameterAttribute(formatAttribute);
+                }
+            }
+        }
 
-		public override string ToString()
+        public override string ToString()
         {
             string announcement = "m=" + Media + " " + Port + " " + Transport + " " + GetFormatListToString() + m_CRLF;
             announcement += (Connection == null) ? null : Connection.ToString();
@@ -124,12 +124,12 @@ namespace SIPSorcery.Net
 
             announcement += GetFormatListAttributesToString();
 
-			foreach(string extra in ExtraAttributes)
-			{
-				announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
-			}
-			
-			return announcement;
+            foreach (string extra in ExtraAttributes)
+            {
+                announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
+            }
+
+            return announcement;
         }
 
         public string GetFormatListToString()
@@ -159,24 +159,24 @@ namespace SIPSorcery.Net
                     {
                         formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.Name + "/" + mediaFormat.ClockRate + m_CRLF;
                     }
-					if(mediaFormat.FormatParameterAttribute != null)
-					{
-						formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatParameterAttribute + m_CRLF;
-					}
-					//else if(SDPMediaFormat.GetDefaultFormatAttribute(mediaFormat.FormatID) != null)
-					//{
-					//    formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + SDPMediaFormat.GetDefaultFormatAttribute(mediaFormat.FormatID) + m_CRLF;
-					//}
-				}
-			}
+                    if (mediaFormat.FormatParameterAttribute != null)
+                    {
+                        formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatParameterAttribute + m_CRLF;
+                    }
+                    //else if(SDPMediaFormat.GetDefaultFormatAttribute(mediaFormat.FormatID) != null)
+                    //{
+                    //    formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + SDPMediaFormat.GetDefaultFormatAttribute(mediaFormat.FormatID) + m_CRLF;
+                    //}
+                }
+            }
 
             return formatAttributes;
         }
-		public void AddExtra(string attribute)
-		{
-			if(!string.IsNullOrWhiteSpace(attribute))
-				ExtraAttributes.Add(attribute);
-		}
+        public void AddExtra(string attribute)
+        {
+            if (!string.IsNullOrWhiteSpace(attribute))
+                ExtraAttributes.Add(attribute);
+        }
 
-	}
+    }
 }

@@ -53,11 +53,11 @@ namespace SIPSorcery.Net
             return (STUNAttributeTypesEnum)Enum.Parse(typeof(STUNAttributeTypesEnum), stunAttributeTypeId.ToString(), true);
         }
     }
-    
+
     public class STUNAttribute
-	{
+    {
         public const short STUNATTRIBUTE_HEADER_LENGTH = 4;
-        
+
         public STUNAttributeTypesEnum AttributeType = STUNAttributeTypesEnum.Unknown;
         public UInt16 Length;
         public byte[] Value;
@@ -80,7 +80,7 @@ namespace SIPSorcery.Net
         {
             if (buffer != null && buffer.Length > startIndex && buffer.Length >= endIndex)
             {
-                List<STUNAttribute> attributes = new List<STUNAttribute>();   
+                List<STUNAttribute> attributes = new List<STUNAttribute>();
                 int startAttIndex = startIndex;
 
                 while (startAttIndex < endIndex)
@@ -126,7 +126,7 @@ namespace SIPSorcery.Net
                     {
                         attribute = new STUNAttribute(attributeType, stunAttributeLength, stunAttributeValue);
                     }
-                            
+
                     attributes.Add(attribute);
 
                     startAttIndex = startAttIndex + 4 + stunAttributeLength;
@@ -171,7 +171,7 @@ namespace SIPSorcery.Net
 
             return attrDescrString;
         }
-	}
+    }
 
     /// <summary>
     /// MAPPED-ADDRESS, RESPONSE-ADDRESS, CHANGED-ADDRESS, SOURCE-ADDRESS attributes use this format.
@@ -202,7 +202,7 @@ namespace SIPSorcery.Net
             Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
         }
 
-        public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address) 
+        public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address)
             : base(attributeType, ADDRESS_ATTRIBUTE_LENGTH, null)
         {
             Port = port;
@@ -269,7 +269,7 @@ namespace SIPSorcery.Net
     public class STUNChangeRequestAttribute : STUNAttribute
     {
         public const UInt16 CHANGEREQUEST_ATTRIBUTE_LENGTH = 4;
-        
+
         public bool ChangeAddress = false;
         public bool ChangePort = false;
 

@@ -49,28 +49,28 @@ namespace SIPSorcery.Net
     }
 
     public class RTCPReportHeader
-	{
-		public const int HEADER_BYTES_LENGTH = 4;
+    {
+        public const int HEADER_BYTES_LENGTH = 4;
 
         public RTCPReportTypesEnum ReportType;      // 16 bits.
         public UInt16 Length;                       // 16 bits.
 
         public RTCPReportHeader(RTCPReportTypesEnum reportType, ushort payloadLength)
-		{
+        {
             ReportType = reportType;
             Length = payloadLength;
         }
 
-		/// <summary>
-		/// Extract and load the RTCPReportHeader from packet.
-		/// </summary>
-		/// <param name="packet"></param>
-		public RTCPReportHeader(byte[] packet)
-		{
+        /// <summary>
+        /// Extract and load the RTCPReportHeader from packet.
+        /// </summary>
+        /// <param name="packet"></param>
+        public RTCPReportHeader(byte[] packet)
+        {
             if (packet.Length < HEADER_BYTES_LENGTH)
-			{
-				throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP Report Header packet.");
-			}
+            {
+                throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP Report Header packet.");
+            }
 
             if (BitConverter.IsLittleEndian)
             {
@@ -82,10 +82,10 @@ namespace SIPSorcery.Net
                 ReportType = RTCPReportTypes.GetRTCPReportTypeForId(BitConverter.ToUInt16(packet, 0));
                 Length = BitConverter.ToUInt16(packet, 2);
             }
-		}
+        }
 
-		public byte[] GetBytes()
-		{
+        public byte[] GetBytes()
+        {
             byte[] rtcpReportHeader = new byte[HEADER_BYTES_LENGTH];
 
             if (BitConverter.IsLittleEndian)
@@ -100,6 +100,6 @@ namespace SIPSorcery.Net
             }
 
             return rtcpReportHeader;
-		}
-	}
+        }
+    }
 }

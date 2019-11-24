@@ -10,9 +10,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-namespace SIPSorcery.SIP.App {
+namespace SIPSorcery.SIP.App
+{
 
-    public interface ISIPClientUserAgent {
+    public interface ISIPClientUserAgent
+    {
 
         string Owner { get; }
         string AdminMemberId { get; }

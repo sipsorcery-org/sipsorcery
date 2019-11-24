@@ -16,10 +16,9 @@
 // ============================================================================
 
 using System;
-using System.Net;
 using System.Threading;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {
@@ -39,7 +38,7 @@ namespace SIPSorcery.SIP.App
         private string m_lastServerNonce;
 
         public event Action<SIPResponse> ResponseReceived;
-        
+
         public SIPNonInviteClientUserAgent(
             SIPTransport sipTransport,
             SIPEndPoint outboundProxy,
@@ -63,7 +62,7 @@ namespace SIPSorcery.SIP.App
             {
                 SIPRequest req = GetRequest(method);
                 SIPNonInviteTransaction tran = m_sipTransport.CreateNonInviteTransaction(req, m_outboundProxy);
-                
+
                 ManualResetEvent waitForResponse = new ManualResetEvent(false);
                 tran.NonInviteTransactionTimedOut += RequestTimedOut;
                 tran.NonInviteTransactionFinalResponseReceived += ServerResponseReceived;
@@ -78,7 +77,7 @@ namespace SIPSorcery.SIP.App
 
         private void RequestTimedOut(SIPTransaction sipTransaction)
         {
-            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Attempt to send " + sipTransaction.TransactionRequest.Method +" to " + m_callDescriptor.Uri + " timed out.", m_owner));
+            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Attempt to send " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + " timed out.", m_owner));
         }
 
         private void ServerResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
@@ -86,7 +85,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
-                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Server response " + sipResponse.StatusCode + " " + reasonPhrase + " received for " + sipTransaction.TransactionRequest.Method +" to "  + m_callDescriptor.Uri + ".", m_owner));
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Server response " + sipResponse.StatusCode + " " + reasonPhrase + " received for " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".", m_owner));
 
                 if (sipResponse.Status == SIPResponseStatusCodesEnum.ProxyAuthenticationRequired || sipResponse.Status == SIPResponseStatusCodesEnum.Unauthorised)
                 {
@@ -113,7 +112,7 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Send request failed with " + sipResponse.StatusCode + " but no authentication header was supplied for " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".", m_owner));
-                        
+
                         if (ResponseReceived != null)
                         {
                             ResponseReceived(sipResponse);
@@ -141,7 +140,7 @@ namespace SIPSorcery.SIP.App
         {
             string reasonPhrase = (sipResponse.ReasonPhrase.IsNullOrBlank()) ? sipResponse.Status.ToString() : sipResponse.ReasonPhrase;
             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Server response " + sipResponse.Status + " " + reasonPhrase + " received for authenticated " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".", m_owner));
-            
+
             if (ResponseReceived != null)
             {
                 ResponseReceived(sipResponse);

@@ -19,8 +19,8 @@ using System.Net;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -77,7 +77,7 @@ namespace SIPSorcery.SIP
             }
             set { ViaParameters.Set(m_branchKey, value); }
         }
-        public string ReceivedFromIPAddress		// IP Address contained in the recevied parameter.
+        public string ReceivedFromIPAddress     // IP Address contained in the recevied parameter.
         {
             get
             {
@@ -92,7 +92,7 @@ namespace SIPSorcery.SIP
             }
             set { ViaParameters.Set(m_receivedKey, value); }
         }
-        public int ReceivedFromPort		        // Port contained in the rport parameter.
+        public int ReceivedFromPort             // Port contained in the rport parameter.
         {
             get
             {
@@ -209,7 +209,7 @@ namespace SIPSorcery.SIP
         public SIPViaHeader(IPEndPoint contactEndPoint, string branch, SIPProtocolsEnum protocol) :
             this(contactEndPoint.Address.ToString(), contactEndPoint.Port, branch, protocol)
         { }
-        
+
         public static SIPViaHeader[] ParseSIPViaHeader(string viaHeaderStr)
         {
             List<SIPViaHeader> viaHeadersList = new List<SIPViaHeader>();
@@ -1335,7 +1335,7 @@ namespace SIPSorcery.SIP
         public string CRMCompanyName;               // The matching company name from the CRM system for the caller.
         public string CRMPictureURL;                 // If available a URL for a picture for the person or company from the CRM system for the caller.
 
-        public List<string> UnknownHeaders = new List<string>();	// Holds any unrecognised headers.
+        public List<string> UnknownHeaders = new List<string>();    // Holds any unrecognised headers.
 
         public List<SIPExtensions> RequiredExtensions = new List<SIPExtensions>();
         public string UnknownRequireExtension = null;
@@ -1428,7 +1428,7 @@ namespace SIPSorcery.SIP
             try
             {
                 SIPHeader sipHeader = new SIPHeader();
-                sipHeader.MaxForwards = -1;		// This allows detection of whether this header is present or not.
+                sipHeader.MaxForwards = -1;     // This allows detection of whether this header is present or not.
                 string lastHeader = null;
 
                 for (int lineIndex = 0; lineIndex < headersCollection.Length; lineIndex++)

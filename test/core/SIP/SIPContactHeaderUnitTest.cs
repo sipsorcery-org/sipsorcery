@@ -82,7 +82,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             Console.WriteLine("Contact Header = " + testContactHeader + ".");
 
-            Assert.Throws< SIPValidationException>(() => SIPContactHeader.ParseContactHeader(testContactHeader));
+            Assert.Throws<SIPValidationException>(() => SIPContactHeader.ParseContactHeader(testContactHeader));
         }
 
         [Fact]

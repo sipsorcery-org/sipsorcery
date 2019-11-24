@@ -14,12 +14,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
 using System.Net;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -404,7 +403,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    if(Protocol == SIPProtocolsEnum.tls)
+                    if (Protocol == SIPProtocolsEnum.tls)
                     {
                         ipEndPoint.Port = m_defaultSIPTLSPort;
                         return new SIPEndPoint(Protocol, ipEndPoint);

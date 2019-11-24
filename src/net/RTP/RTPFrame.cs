@@ -97,7 +97,7 @@ namespace SIPSorcery.Net
 
         public bool IsComplete()
         {
-            if(!HasMarker)
+            if (!HasMarker)
             {
                 return false;
             }

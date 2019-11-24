@@ -77,7 +77,7 @@ namespace SIPSorcery.SIP
         /// The current end position of unprocessed data in the recceive buffer.
         /// </summary>
         public int RecvEndPosn { get; private set; }
-        
+
         /// <summary>
         /// A unique ID for this connection. It will be recorded on any received messages to allow responses to quickly
         /// identify the same connection.

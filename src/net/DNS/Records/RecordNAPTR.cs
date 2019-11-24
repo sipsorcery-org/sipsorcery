@@ -15,8 +15,6 @@
 // The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ===========================================================================
 
-using System;
-using System.Collections.Generic;
 
 #region RFC Specifications
 /*
@@ -99,8 +97,8 @@ RFC1035 [1].
 namespace Heijden.DNS
 {
     public class RecordNAPTR : Record
-	{		
-		public const string SIP_SERVICE_KEY = "E2U+SIP";
+    {
+        public const string SIP_SERVICE_KEY = "E2U+SIP";
         public const string EMAIL_SERVICE_KEY = "E2U+EMAIL";
         public const string WEB_SERVICE_KEY = "E2U+WEB";
 

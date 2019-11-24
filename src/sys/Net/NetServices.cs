@@ -20,8 +20,8 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 
@@ -191,14 +191,14 @@ namespace SIPSorcery.Sys
         /// <returns>The local IP address to use to connect to the remote end point.</returns>
         public static IPAddress GetLocalAddressForRemote(IPAddress destination)
         {
-            if(destination == null || IPAddress.Any.Equals(destination) || IPAddress.IPv6Any.Equals(destination))
+            if (destination == null || IPAddress.Any.Equals(destination) || IPAddress.IPv6Any.Equals(destination))
             {
                 return null;
             }
 
             if (m_localAddressTable.TryGetValue(destination, out var cachedAddress))
             {
-                if(DateTime.Now.Subtract(cachedAddress.Item2).TotalSeconds >= LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS)
+                if (DateTime.Now.Subtract(cachedAddress.Item2).TotalSeconds >= LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS)
                 {
                     m_localAddressTable.TryRemove(destination, out _);
                 }
@@ -211,7 +211,7 @@ namespace SIPSorcery.Sys
                 udpClient.Connect(destination, 0);
                 var localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
 
-                m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>( localAddress, DateTime.Now ));
+                m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
 
                 return localAddress;
             }

@@ -16,25 +16,25 @@
 
 namespace SIPSorcery.Net
 {
-	public enum RTPPayloadTypesEnum
-	{
-		PCMU = 0,
+    public enum RTPPayloadTypesEnum
+    {
+        PCMU = 0,
         PCMA = 1,
         G722 = 9,
         Dynamic = 96,
-	}
+    }
 
-	public class RTPPayloadTypes
-	{
+    public class RTPPayloadTypes
+    {
         /// <summary>
         /// Attempts to get the sampling frequency of a payload type.
         /// </summary>
         /// <param name="payloadType">The payload type to get the frequency for.</param>
         /// <returns>An integer representing the payload type's sampling frequency or 0 if it's
         /// dynamic or can't be determined.</returns>
-		public static int GetSamplingFrequency(RTPPayloadTypesEnum payloadType)
-		{
-            switch(payloadType)
+        public static int GetSamplingFrequency(RTPPayloadTypesEnum payloadType)
+        {
+            switch (payloadType)
             {
                 case RTPPayloadTypesEnum.PCMU:
                 case RTPPayloadTypesEnum.PCMA:
@@ -44,6 +44,6 @@ namespace SIPSorcery.Net
                 default:
                     return 0;
             }
-		}
-	}
+        }
+    }
 }

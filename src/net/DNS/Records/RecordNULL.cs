@@ -15,7 +15,6 @@
 // The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx
 // ===========================================================================
 
-using System;
 /*
 3.3.10. NULL RDATA format (EXPERIMENTAL)
 

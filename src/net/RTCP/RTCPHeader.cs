@@ -37,33 +37,33 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-	public class RTCPHeader
-	{
-		public const int HEADER_BYTES_LENGTH = 4;
+    public class RTCPHeader
+    {
+        public const int HEADER_BYTES_LENGTH = 4;
         public const int MAX_RECEPTIONREPORT_COUNT = 32;
 
-		public const int RTCP_VERSION = 2;
+        public const int RTCP_VERSION = 2;
         public const UInt16 RTCP_PACKET_TYPE = 200;             // 200 for Sender Report.
 
-		public int Version = RTCP_VERSION;						// 2 bits.
-		public int PaddingFlag = 0;								// 1 bit.
+        public int Version = RTCP_VERSION;                      // 2 bits.
+        public int PaddingFlag = 0;                             // 1 bit.
         public int ReceptionReportCount = 0;                    // 5 bits.
         public UInt16 PacketType = RTCP_PACKET_TYPE;            // 8 bits.
         public UInt16 Length;                                   // 16 bits.
 
-		public RTCPHeader()
-		{}
+        public RTCPHeader()
+        { }
 
-		/// <summary>
-		/// Extract and load the RTP header from an RTP packet.
-		/// </summary>
-		/// <param name="packet"></param>
-		public RTCPHeader(byte[] packet)
-		{
+        /// <summary>
+        /// Extract and load the RTP header from an RTP packet.
+        /// </summary>
+        /// <param name="packet"></param>
+        public RTCPHeader(byte[] packet)
+        {
             if (packet.Length < HEADER_BYTES_LENGTH)
-			{
-				throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
-			}
+            {
+                throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
+            }
 
             UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
 
@@ -77,14 +77,14 @@ namespace SIPSorcery.Net
                 Length = BitConverter.ToUInt16(packet, 2);
             }
 
-			Version = Convert.ToInt32(firstWord >> 14);
-			PaddingFlag = Convert.ToInt32((firstWord >> 13) & 0x1);
-			ReceptionReportCount = Convert.ToInt32((firstWord >> 8) & 0x1f);
+            Version = Convert.ToInt32(firstWord >> 14);
+            PaddingFlag = Convert.ToInt32((firstWord >> 13) & 0x1);
+            ReceptionReportCount = Convert.ToInt32((firstWord >> 8) & 0x1f);
             PacketType = Convert.ToUInt16(firstWord & 0x00ff);
-		}
+        }
 
-		public byte[] GetHeader(int receptionReportCount, UInt16 length)
-		{
+        public byte[] GetHeader(int receptionReportCount, UInt16 length)
+        {
             if (receptionReportCount > MAX_RECEPTIONREPORT_COUNT)
             {
                 throw new ApplicationException("The Reception Report Count value cannot be larger than " + MAX_RECEPTIONREPORT_COUNT + ".");
@@ -93,25 +93,25 @@ namespace SIPSorcery.Net
             ReceptionReportCount = receptionReportCount;
             Length = length;
 
-			return GetBytes();
-		}
+            return GetBytes();
+        }
 
-		public byte[] GetBytes()
-		{
-			byte[] header = new byte[4];
+        public byte[] GetBytes()
+        {
+            byte[] header = new byte[4];
 
             UInt32 firstWord = Convert.ToUInt32(Version * Math.Pow(2, 30) + PaddingFlag * Math.Pow(2, 29) + ReceptionReportCount * Math.Pow(2, 24) + PacketType * Math.Pow(2, 16) + Length);
 
-			if(BitConverter.IsLittleEndian)
-			{
-				Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 4);
-			}
-			else
-			{
-				Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 4);
-			}
+            if (BitConverter.IsLittleEndian)
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 4);
+            }
+            else
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 4);
+            }
 
-			return header;
-		}
-	}
+            return header;
+        }
+    }
 }

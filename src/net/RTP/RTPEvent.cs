@@ -69,7 +69,7 @@ namespace SIPSorcery.Net
             TotalDuration = totalDduration;
             PayloadTypeID = payloadTypeID;
         }
-        
+
         /// <summary>
         /// Gets the raw buffer for the event.
         /// </summary>

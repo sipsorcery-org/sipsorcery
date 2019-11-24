@@ -17,11 +17,10 @@
 using System;
 using System.Net;
 using System.Threading;
+using Microsoft.Extensions.Logging;
+using Serilog;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
-using Serilog;
-using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Register
 {

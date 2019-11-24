@@ -50,16 +50,16 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text.RegularExpressions;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CommandLine;
 using CommandLine.Text;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using SIPSorcery.SIP.App;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
 
 namespace SIPSorcery
 {

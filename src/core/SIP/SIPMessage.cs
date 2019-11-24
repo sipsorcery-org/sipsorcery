@@ -16,8 +16,8 @@
 
 using System;
 using System.Text;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -141,7 +141,7 @@ namespace SIPSorcery.SIP
                     {
                         // Assume flakey implementation if message does not contain the required CRLFCRLF sequence and treat the message as having no body.
                         string headerString = message.Substring(endFistLinePosn + 2, message.Length - endFistLinePosn - 2);
-                        sipMessage.SIPHeaders = SIPHeader.SplitHeaders(headerString); 
+                        sipMessage.SIPHeaders = SIPHeader.SplitHeaders(headerString);
                     }
                     else
                     {

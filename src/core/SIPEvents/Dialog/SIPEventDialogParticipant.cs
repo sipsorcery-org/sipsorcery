@@ -94,23 +94,23 @@ namespace SIPSorcery.SIP
             XNamespace ss = m_sipsorceryXMLNS;
             XElement participantElement = new XElement(ns + nodeName);
 
-            if(URI != null)
+            if (URI != null)
             {
                 XElement identityElement = new XElement(ns + "identity", URI.ToString());
-                if(!DisplayName.IsNullOrBlank())
+                if (!DisplayName.IsNullOrBlank())
                 {
                     identityElement.Add(new XAttribute("display-name", DisplayName));
                 }
                 participantElement.Add(identityElement);
             }
 
-            if(TargetURI != null)
+            if (TargetURI != null)
             {
                 XElement targetElement = new XElement(ns + "target", new XAttribute("uri", TargetURI.ToString()));
                 participantElement.Add(targetElement);
             }
 
-            if(CSeq > 0)
+            if (CSeq > 0)
             {
                 XElement cseqElement = new XElement(ns + "cseq", CSeq);
                 participantElement.Add(cseqElement);

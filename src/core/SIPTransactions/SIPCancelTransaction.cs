@@ -18,8 +18,8 @@ using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
 {
-	public class SIPCancelTransaction : SIPTransaction
-	{
+    public class SIPCancelTransaction : SIPTransaction
+    {
         public event SIPTransactionResponseReceivedDelegate CancelTransactionFinalResponseReceived;
 
         private UASInviteTransaction m_originalTransaction;

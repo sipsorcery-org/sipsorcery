@@ -36,8 +36,8 @@ namespace SIPSorcery.Net
 
         public int FormatID;
         public string FormatAttribute { get; private set; }
-		public string FormatParameterAttribute {get; private set;}
-		public string Name { get; private set; }
+        public string FormatParameterAttribute { get; private set; }
+        public string Name { get; private set; }
         public int ClockRate { get; private set; }
         public bool IsStandardAttribute { get; set; }           // If true this is a standard media format and the attribute line is not required.
 
@@ -88,9 +88,9 @@ namespace SIPSorcery.Net
                 }
             }
         }
-		public void SetFormatParameterAttribute(string attribute)
-		{
-			FormatParameterAttribute = attribute;
-		}
+        public void SetFormatParameterAttribute(string attribute)
+        {
+            FormatParameterAttribute = attribute;
+        }
     }
 }

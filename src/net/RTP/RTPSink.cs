@@ -20,8 +20,8 @@ using System.Collections;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -76,13 +76,13 @@ namespace SIPSorcery.Net
                     m_rtpPacketSendSize = value;
 
                     /*if(value < DATAGRAM_MAX_SIZE)
-					{
-						m_rtpPacketSendSize = value;
-					}
-					else
-					{
-						m_rtpPacketSendSize = DATAGRAM_MAX_SIZE;
-					}*/
+                    {
+                        m_rtpPacketSendSize = value;
+                    }
+                    else
+                    {
+                        m_rtpPacketSendSize = DATAGRAM_MAX_SIZE;
+                    }*/
                 }
             }
         }
@@ -126,7 +126,7 @@ namespace SIPSorcery.Net
         public bool StopListening = false;
         public bool ShuttingDown = false;
         public bool Sending = false;
-        public bool LogArrivals = false;		// Whether to log packet arrival events.
+        public bool LogArrivals = false;        // Whether to log packet arrival events.
         public bool StopIfNoData = true;
 
         public event RTPSinkClosed ListenerClosed;

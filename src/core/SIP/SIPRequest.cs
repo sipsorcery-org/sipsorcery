@@ -14,8 +14,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -54,7 +54,7 @@ namespace SIPSorcery.SIP
         /// The optional body or payload for the SIP request.
         /// </summary>
         public string Body;
-        
+
         public SIPRoute ReceivedRoute;
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// The remote SIP end point the request was received from.
         /// </summary>
-		public SIPEndPoint RemoteSIPEndPoint { get; private set; }
+        public SIPEndPoint RemoteSIPEndPoint { get; private set; }
 
         /// <summary>
         /// The local SIP end point the request was received on.

@@ -16,8 +16,8 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -27,7 +27,7 @@ namespace SIPSorcery.Net
     public delegate void STUNServerResponseOutTraceDelegate(IPEndPoint localEndPoint, IPEndPoint toEndPoint, STUNMessage stunMessage);
 
     public class STUNServer
-	{
+    {
         private static ILogger logger = Log.Logger;
 
         private IPEndPoint m_primaryEndPoint;
@@ -314,5 +314,5 @@ namespace SIPSorcery.Net
                 logger.LogError("Exception FireSTUNSecondaryResponseOutTraceEvent. " + excp.Message);
             }
         }
-	}
+    }
 }

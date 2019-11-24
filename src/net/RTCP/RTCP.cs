@@ -19,19 +19,19 @@ using System.Collections.Generic;
 using System.Data;
 using System.Net;
 using System.Threading;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
-{	   
+{
     public class RTPReceiveRecord
-	{
-		//public DateTime SendTime;                 // The send time of the RTP packet adjusted to be local time using a rolling average tranist time to calculate.
-		public DateTime ReceiveTime;                // Local time the RTP packet was received.
+    {
+        //public DateTime SendTime;                 // The send time of the RTP packet adjusted to be local time using a rolling average tranist time to calculate.
+        public DateTime ReceiveTime;                // Local time the RTP packet was received.
         private UInt16 sequenceNumber;
-        public long RTPBytes;			            // Includes RTP Header and payload.
+        public long RTPBytes;                       // Includes RTP Header and payload.
         public uint Jitter;
-		public int Duplicates;
+        public int Duplicates;
         public bool InSequence = false;             // Whether the packet is the next expected one in the sequence. Only in sequnce packets are used for sampling jitter.
         public bool JitterBufferDiscard = false;    // Whether a packet would have been discarded from the jitter buffer.
 
@@ -40,17 +40,17 @@ namespace SIPSorcery.Net
         //public int AverageTransit;                  // The average tranist time in milliseconds at the time the packet was received.
 
         public RTPReceiveRecord(DateTime receiveTime, UInt16 sequenceNumber, long rtpBytes, uint jitter, bool inSequence, bool jitterDiscard)
-		{
-			//SendTime = sendTime.ToUniversalTime();
-			ReceiveTime = receiveTime;
-			SequenceNumber = sequenceNumber;
-			RTPBytes = rtpBytes;
+        {
+            //SendTime = sendTime.ToUniversalTime();
+            ReceiveTime = receiveTime;
+            SequenceNumber = sequenceNumber;
+            RTPBytes = rtpBytes;
             Jitter = jitter;
             InSequence = inSequence;
             JitterBufferDiscard = jitterDiscard;
             //AverageTransit = averageTransit;
-		}
-	}
+        }
+    }
 
     public class RTCPReport
     {
@@ -62,25 +62,25 @@ namespace SIPSorcery.Net
         public uint ReportNumber;
         public uint LastReceivedReportNumber;       // The report number of teh last RTCP report that was received from the remote agent.
         private IPEndPoint m_remoteEndPoint;
-		public string RemoteEndPoint
-		{
-			get{ return IPSocket.GetSocketString(m_remoteEndPoint);}
-		}
-		public uint SyncSource;
-		public DateTime SampleStartTime;
-		public DateTime SampleEndTime;
+        public string RemoteEndPoint
+        {
+            get { return IPSocket.GetSocketString(m_remoteEndPoint); }
+        }
+        public uint SyncSource;
+        public DateTime SampleStartTime;
+        public DateTime SampleEndTime;
         public UInt16 StartSequenceNumber;
         public UInt16 EndSequenceNumber;
-		public uint TotalPackets;
-		public uint OutOfOrder;
-		public uint JitterAverage;
-		public uint JitterMaximum;
-		public uint JitterDiscards;
-		public uint PacketsLost;
-		public uint Duplicates;
-		//public int OutsideWindow;					// Packet received that is from a sample more than 4 x N (N = sample size) ago, it will already have been classed as dropped.
-		public ulong BytesReceived;
-		public uint TransmissionRate;
+        public uint TotalPackets;
+        public uint OutOfOrder;
+        public uint JitterAverage;
+        public uint JitterMaximum;
+        public uint JitterDiscards;
+        public uint PacketsLost;
+        public uint Duplicates;
+        //public int OutsideWindow;					// Packet received that is from a sample more than 4 x N (N = sample size) ago, it will already have been classed as dropped.
+        public ulong BytesReceived;
+        public uint TransmissionRate;
         public ulong Duration;
         public uint AverageTransitTime;
 
@@ -145,24 +145,24 @@ namespace SIPSorcery.Net
         }
 
         public RTCPReport(DataRow row)
-		{
-			TotalPackets = Convert.ToUInt32(row["packets"]);
-			PacketsLost = Convert.ToUInt32(row["packetslost"]);
-			JitterDiscards = Convert.ToUInt32(row["jitterdiscards"]);
-			JitterAverage = Convert.ToUInt32(row["jitteraverage"]);
-			JitterMaximum = Convert.ToUInt32(row["jittermaximum"]);
-			OutOfOrder = Convert.ToUInt32(row["outoforder"]);
-			Duplicates = Convert.ToUInt32(row["duplicates"]);
-			SampleStartTime = Convert.ToDateTime(row["starttimestamp"]);
+        {
+            TotalPackets = Convert.ToUInt32(row["packets"]);
+            PacketsLost = Convert.ToUInt32(row["packetslost"]);
+            JitterDiscards = Convert.ToUInt32(row["jitterdiscards"]);
+            JitterAverage = Convert.ToUInt32(row["jitteraverage"]);
+            JitterMaximum = Convert.ToUInt32(row["jittermaximum"]);
+            OutOfOrder = Convert.ToUInt32(row["outoforder"]);
+            Duplicates = Convert.ToUInt32(row["duplicates"]);
+            SampleStartTime = Convert.ToDateTime(row["starttimestamp"]);
             SampleEndTime = Convert.ToDateTime(row["endtimestamp"]);
-			BytesReceived = Convert.ToUInt32(row["bytesreceived"]);
+            BytesReceived = Convert.ToUInt32(row["bytesreceived"]);
             TransmissionRate = Convert.ToUInt32(row["transmissionrate"]);
             Duration = Convert.ToUInt64(row["duration"]);
             AverageTransitTime = Convert.ToUInt32(row["transittime"]);
-		}
+        }
 
         public string ToResultsString()
-		{
+        {
             if (IPSocket.TryParseIPEndPoint(RemoteEndPoint, out var remoteEndPoint))
             {
                 string results =
@@ -185,7 +185,7 @@ namespace SIPSorcery.Net
                 Logger.LogWarning($"Could not parse {RemoteEndPoint} as IPEndPoint in RTCPReport.ToResultsString.");
                 return null;
             }
-		}
+        }
 
         public byte[] GetBytes()
         {
@@ -237,19 +237,19 @@ namespace SIPSorcery.Net
             return payload;
         }
     }
-	
-	public class RTCPReportSampler
-	{
-		private const int TRANSITTIMES_QUEUE_LENGTH = 5000;
+
+    public class RTCPReportSampler
+    {
+        private const int TRANSITTIMES_QUEUE_LENGTH = 5000;
         private const int CHECK_FORSAMPLE_PERIOD = 3000;
-        private const string RTCP_FORMAT_STRING = "syncsrc={0}, ts={1} ,te={2} , dur={3} ,seqs={4,-5:S} ,seqe={5,-5:S} ,pkttot={6,-3:S} ,jitmax={7,-3:S}, jitavg={8,-4:S} " + 
+        private const string RTCP_FORMAT_STRING = "syncsrc={0}, ts={1} ,te={2} , dur={3} ,seqs={4,-5:S} ,seqe={5,-5:S} ,pkttot={6,-3:S} ,jitmax={7,-3:S}, jitavg={8,-4:S} " +
                                     ",transit={9,-5:S} ,pktrate={10,-5:S} ,bytestot={11,-5:S} ,bw={12,-9:S} ,drops={13} ,jitdrops={14} ,duplicates={15} ,outoforder={16}";
 
-		private static ILogger logger = Log.Logger;
+        private static ILogger logger = Log.Logger;
 
-        public int JitterBufferMilliseconds = 150;	// The size of a the theoretical jitter buffer.
-		public int ReportSampleDuration = 1500;		// Sample time in milliseconds after which a new sample is generated.
-		//public int ReportQueueSize = 100;			// The number of samples that will be stored in the queue before they will be dropped on a FIFO basis.
+        public int JitterBufferMilliseconds = 150;  // The size of a the theoretical jitter buffer.
+        public int ReportSampleDuration = 1500;     // Sample time in milliseconds after which a new sample is generated.
+                                                    //public int ReportQueueSize = 100;			// The number of samples that will be stored in the queue before they will be dropped on a FIFO basis.
 
         //private Queue<RTCPReport> m_samples = new Queue<RTCPReport>();	                                        // Reports.
         private Dictionary<UInt16, RTPReceiveRecord> m_rcvdSeqNums = new Dictionary<UInt16, RTPReceiveRecord>();   // [<sequence number>, <RTCPMeasurement>] used to record received sequence numbers to detect duplicates.
@@ -269,14 +269,14 @@ namespace SIPSorcery.Net
         private bool m_checkForSamples = true;
         private ManualResetEvent m_checkForSampleEvent = new ManualResetEvent(false);
 
-		public RTCPReportSampler()
-		{}
+        public RTCPReportSampler()
+        { }
 
         public RTCPReportSampler(Guid rtpStreamId, uint syncSource, IPEndPoint remoteEndPoint, UInt16 startSequenceNumber, DateTime startTime, long bytesReceived)
-		{
+        {
             m_rtpStreamId = rtpStreamId;
             m_syncSource = syncSource;
-			m_remoteEndPoint = remoteEndPoint;
+            m_remoteEndPoint = remoteEndPoint;
 
             m_windowStartSeqNum = startSequenceNumber;
             m_windowLastSeqNum = startSequenceNumber;
@@ -285,11 +285,11 @@ namespace SIPSorcery.Net
             m_lastSampleTime = DateTime.Now;
 
             logger.LogDebug("New RTCP report created for " + syncSource + " for stream from " + IPSocket.GetSocketString(remoteEndPoint) + ", start seq num=" + startSequenceNumber + ".");
-			//resultslogger.LogInformation("StartTime,StartTimestamp,EndTime,EndTimestamp,Duration(ms),StartSeqNum,EndSeqNum,TotalPackets,TotalBytes,TransmissionRate(bps),Drops,Duplicates");
+            //resultslogger.LogInformation("StartTime,StartTimestamp,EndTime,EndTimestamp,Duration(ms),StartSeqNum,EndSeqNum,TotalPackets,TotalBytes,TransmissionRate(bps),Drops,Duplicates");
 
             RTPReceiveRecord measurement = new RTPReceiveRecord(startTime, startSequenceNumber, bytesReceived, 0, true, false);
             m_rcvdSeqNums.Add(startSequenceNumber, measurement);
-		}
+        }
 
         public void StartSampling()
         {
@@ -304,23 +304,23 @@ namespace SIPSorcery.Net
         /// <param name="sendTime">The remote time at which the RTP packet was sent.</param>
         /// <param name="receiveTime">The local time at which the RTP listener received the packet.</param>
         /// <param name="bytesReceived">Number of bytes received.</param>
-		public void RecordRTPReceive(DateTime receiveTime, UInt16 sequenceNumber, long bytesReceived, uint jitter)
-		{
-			try
-			{
+        public void RecordRTPReceive(DateTime receiveTime, UInt16 sequenceNumber, long bytesReceived, uint jitter)
+        {
+            try
+            {
                 //logger.LogDebug("RecordRTPReceive " + sequenceNumber + ".");
-                
-                if(m_rcvdSeqNums.ContainsKey(sequenceNumber))
-				{
+
+                if (m_rcvdSeqNums.ContainsKey(sequenceNumber))
+                {
                     logger.LogDebug("duplicate " + sequenceNumber + ".");
                     m_rcvdSeqNums[sequenceNumber].Duplicates = m_rcvdSeqNums[sequenceNumber].Duplicates + 1;
-				}
-				//else if(sequenceNumber < m_windowStartSeqNum)
-				//{
+                }
+                //else if(sequenceNumber < m_windowStartSeqNum)
+                //{
                 //    OutsideWindow++;
-				//}
-				else
-				{
+                //}
+                else
+                {
                     bool inSequence = (m_windowLastSeqNum != UInt16.MaxValue) ? sequenceNumber == m_windowLastSeqNum + 1 : sequenceNumber == 0;
                     //bool inSequence = (Math.Abs(sequenceNumber - m_windowLastSeqNum) > (UInt16.MaxValue / 2)) ? sequenceNumber == m_windowLastSeqNum + 1 : sequenceNumber == 0;
 
@@ -329,7 +329,7 @@ namespace SIPSorcery.Net
                     /*int startJitterBufferSeq = (m_windowLastSeqNum - JitterBufferSamples >= 0) ? m_windowLastSeqNum - JitterBufferSamples : m_windowLastSeqNum  + 65535 - JitterBufferSamples;
                     int endJitterBufferSeq = (m_windowLastSeqNum + JitterBufferSamples <= 65535) ? m_windowLastSeqNum + JitterBufferSamples : m_windowLastSeqNum + JitterBufferSamples - 65535;
                     bool jitterDiscard = false;
-                    
+
                     if(endJitterBufferSeq > startJitterBufferSeq)
                     {
                         jitterDiscard = !(sequenceNumber >= startJitterBufferSeq && sequenceNumber <= endJitterBufferSeq);
@@ -390,15 +390,15 @@ namespace SIPSorcery.Net
 
                         m_rcvdSeqNums.Add(sequenceNumber, measurement);
                     }
-				}
+                }
 
                 //return CheckForAvailableSample(sequenceNumber);
-			}
-			catch(Exception excp)
-			{
+            }
+            catch (Exception excp)
+            {
                 logger.LogError("Exception RecordRTPReceive for " + sequenceNumber + ". " + excp.Message);
-			}
-		}
+            }
+        }
 
         /// <summary>
         /// A sample is taken if the last RTP measurement recorded is 4x the sample time since the last last smaple was taken.
@@ -416,14 +416,14 @@ namespace SIPSorcery.Net
 
                 //logger.LogDebug("window start seq num=" + m_windowStartSeqNum);
                 RTPReceiveRecord startSampleMeasuerment = m_rcvdSeqNums[m_windowStartSeqNum];
-                
+
                 UInt16 endSampleSeqNum = 0;
                 UInt16 endSampleSeqNumMinusOne = 0;
                 int samplesAvailable = 0;
                 DateTime sampleCutOffTime;
 
                 bool sampleAvailable = false;
-                
+
                 // Determine whether a sample of the RTP stream measurements should be taken.
                 if (DateTime.Now.Subtract(m_lastSampleTime).TotalMilliseconds > (4 * ReportSampleDuration))
                 {
@@ -435,18 +435,18 @@ namespace SIPSorcery.Net
                     //logger.LogDebug("Sample duration=" + sampleDuration + "ms, cut off time=" + sampleCutOffTime.ToString("HH:mm:ss:fff") + ".");
 
                     // Get the list of RTP measurements from last time a sample was taken up to the last receive within the window.
-                    int endSeqNum = (sequenceNumber < m_windowStartSeqNum) ? sequenceNumber + UInt16.MaxValue + 1: sequenceNumber;
+                    int endSeqNum = (sequenceNumber < m_windowStartSeqNum) ? sequenceNumber + UInt16.MaxValue + 1 : sequenceNumber;
                     //logger.LogDebug("Checking for sample from " + m_windowStartSeqNum + " to " + endSeqNum + ".");
                     for (int seqNum = m_windowStartSeqNum; seqNum <= endSeqNum; seqNum++)
-					{
+                    {
                         UInt16 testSeqNum = (seqNum > UInt16.MaxValue) ? Convert.ToUInt16((seqNum % UInt16.MaxValue) - 1) : Convert.ToUInt16(seqNum);
 
                         if (m_rcvdSeqNums.ContainsKey(testSeqNum))
-						{
+                        {
                             //logger.LogDebug(testSeqNum + " " + m_rcvdSeqNums[testSeqNum].ReceiveTime.ToString("ss:fff") + "<" + sampleCutOffTime.ToString("ss:fff") + ".");
-                            
+
                             if (m_rcvdSeqNums[testSeqNum].ReceiveTime < sampleCutOffTime)
-							{
+                            {
                                 samplesAvailable++;
                                 endSampleSeqNum = testSeqNum;
                             }
@@ -460,7 +460,7 @@ namespace SIPSorcery.Net
                         }
                     }
                 }
-                
+
                 /*if (m_rcvdSeqNums.Count > 200)
                 {
                     endSampleSeqNum = m_windowSecondLastSeqNum;
@@ -489,11 +489,11 @@ namespace SIPSorcery.Net
             }
         }
 
-		/// <summary>
-		/// All times passed into this method should already be UTC.
-		/// </summary>
+        /// <summary>
+        /// All times passed into this method should already be UTC.
+        /// </summary>
         private RTCPReport Sample(UInt16 sampleStartSequenceNumber, UInt16 sampleEndSequenceNumber, TimeSpan sampleDuration)
-		{
+        {
             try
             {
                 RTCPReport sample = new RTCPReport(m_rtpStreamId, m_syncSource, m_remoteEndPoint);
@@ -601,8 +601,8 @@ namespace SIPSorcery.Net
 
                 string rtcpReport = String.Format(RTCP_FORMAT_STRING, new object[]{
                     sample.SyncSource,
-                    sample.SampleStartTime.ToString("HH:mm:ss:fff"), 
-                    sample.SampleEndTime.ToString("HH:mm:ss:fff"), 
+                    sample.SampleStartTime.ToString("HH:mm:ss:fff"),
+                    sample.SampleEndTime.ToString("HH:mm:ss:fff"),
                     sampleDuration.TotalMilliseconds.ToString("0"),
                     sample.StartSequenceNumber.ToString(),
                     sample.EndSequenceNumber.ToString(),
@@ -611,8 +611,8 @@ namespace SIPSorcery.Net
                     sample.JitterAverage.ToString("0.##"),
                     sample.AverageTransitTime.ToString("0.##"),
                     packetRate.ToString("0.##"),
-                    sample.BytesReceived.ToString(),  
-                    sample.TransmissionRate.ToString("0.##"),  
+                    sample.BytesReceived.ToString(),
+                    sample.TransmissionRate.ToString("0.##"),
                     sample.PacketsLost.ToString(),
                     sample.JitterDiscards.ToString(),
                     sample.Duplicates.ToString(),
@@ -642,7 +642,7 @@ namespace SIPSorcery.Net
             try
             {
                 Thread.Sleep(CHECK_FORSAMPLE_PERIOD);   // Wait until the first sample is likely to be ready.
-                
+
                 while (m_checkForSamples)
                 {
                     RTCPReport report = CheckForAvailableSample(m_windowLastSeqNum);
@@ -670,15 +670,15 @@ namespace SIPSorcery.Net
         {
             try
             {
-                logger.LogDebug("Shutting down RTCPReportSampler for syncsource= " + m_syncSource + " on stream from " + m_remoteEndPoint.ToString () + ".");
+                logger.LogDebug("Shutting down RTCPReportSampler for syncsource= " + m_syncSource + " on stream from " + m_remoteEndPoint.ToString() + ".");
 
                 m_checkForSamples = false;
                 m_checkForSampleEvent.Set();
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogError("Exception RTCPReportSampler Shutdown. " + excp.Message);
             }
         }
-	}	
+    }
 }

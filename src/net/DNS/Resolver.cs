@@ -20,14 +20,14 @@
 // ============================================================================
 
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
-using System.Text;
-using System.Net.Sockets;
 using System.Net.NetworkInformation;
-using SIPSorcery.Sys;
+using System.Net.Sockets;
+using System.Text;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 /*
  * Network Working Group                                     P. Mockapetris
@@ -394,7 +394,7 @@ namespace Heijden.DNS
                     m_lookupFailures.Add(questionKey, response);
                 }
             }
-            else if(!response.Timedout && response.Answers.Count > 0)
+            else if (!response.Timedout && response.Answers.Count > 0)
             {
                 // Cache non-error responses.
                 logger.LogDebug("Caching DNS lookup success for " + questionKey + ".");

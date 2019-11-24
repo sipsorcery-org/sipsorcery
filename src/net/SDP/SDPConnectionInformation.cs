@@ -19,9 +19,9 @@ namespace SIPSorcery.Net
     {
         public const string m_CRLF = "\r\n";
 
-        public string ConnectionNetworkType = "IN";		// Type of network, IN = Internet.
-        public string ConnectionAddressType = "IP4";	// Address type, typically IP4 or IP6.
-        public string ConnectionAddress;				// IP or mulitcast address for the media connection.
+        public string ConnectionNetworkType = "IN";     // Type of network, IN = Internet.
+        public string ConnectionAddressType = "IP4";    // Address type, typically IP4 or IP6.
+        public string ConnectionAddress;                // IP or mulitcast address for the media connection.
 
         private SDPConnectionInformation()
         { }

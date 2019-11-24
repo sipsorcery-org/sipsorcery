@@ -28,7 +28,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             string serialisedEvent = monitorEvent.ToCSV();
             SIPMonitorEvent desMonitorEvent = SIPMonitorConsoleEvent.ParseClientControlEventCSV(serialisedEvent);
 
-            Assert.True(monitorEvent.Message ==  desMonitorEvent.Message, "The event message was not serialised/desrialised correctly.");
+            Assert.True(monitorEvent.Message == desMonitorEvent.Message, "The event message was not serialised/desrialised correctly.");
             Assert.True(monitorEvent.Created.ToString() == desMonitorEvent.Created.ToString(), "The event created was not serialised/desrialised correctly.");
         }
     }

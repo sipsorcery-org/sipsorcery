@@ -18,8 +18,8 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {
@@ -175,7 +175,7 @@ namespace SIPSorcery.SIP.App
                 string csvEvent =
                     SERIALISATION_PREFIX + "|" +
                     SessionID + "|" +
-                    MonitorServerID + "|" + 
+                    MonitorServerID + "|" +
                     ServerType + "|" +
                     EventType + "|" +
                     Created.ToString(SERIALISATION_DATETIME_FORMAT) + "|" +

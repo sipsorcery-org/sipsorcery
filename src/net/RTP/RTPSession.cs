@@ -20,8 +20,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -223,13 +223,13 @@ namespace SIPSorcery.Net
             CancellationTokenSource cts)
         {
             try
-            {               
+            {
                 // If only the minimum number of packets are being sent then they are both the start and end of the event.
                 rtpEvent.EndOfEvent = (rtpEvent.TotalDuration <= timestampStep);
                 rtpEvent.Duration = timestampStep;
 
                 // Send the start of event packets.
-                for (int i=0; i< RTPEvent.DUPLICATE_COUNT && !cts.IsCancellationRequested; i++)
+                for (int i = 0; i < RTPEvent.DUPLICATE_COUNT && !cts.IsCancellationRequested; i++)
                 {
                     byte[] buffer = rtpEvent.GetEventPayload();
 
@@ -260,7 +260,7 @@ namespace SIPSorcery.Net
 
                     // Send the end of event packets.
                     for (int j = 0; j < RTPEvent.DUPLICATE_COUNT && !cts.IsCancellationRequested; j++)
-                    {                       
+                    {
                         rtpEvent.EndOfEvent = true;
                         rtpEvent.Duration = rtpEvent.TotalDuration;
                         byte[] buffer = rtpEvent.GetEventPayload();
@@ -276,7 +276,7 @@ namespace SIPSorcery.Net
             {
                 logger.LogError("SocketException SendDtmfEvent. " + sockExcp.Message);
             }
-            catch(System.Threading.Tasks.TaskCanceledException)
+            catch (System.Threading.Tasks.TaskCanceledException)
             {
                 logger.LogWarning("SendDtmfEvent was cancelled by caller.");
             }

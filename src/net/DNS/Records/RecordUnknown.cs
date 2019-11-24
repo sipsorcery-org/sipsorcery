@@ -16,15 +16,15 @@
 
 namespace Heijden.DNS
 {
-	public class RecordUnknown : Record
-	{
-		public RecordUnknown(RecordReader rr)
-		{
-			rr.Position -=2;
-			// re-read length
-			ushort RDLENGTH = rr.ReadUInt16();
-			// skip bytes
-			rr.ReadBytes(RDLENGTH);
-		}
-	}
+    public class RecordUnknown : Record
+    {
+        public RecordUnknown(RecordReader rr)
+        {
+            rr.Position -= 2;
+            // re-read length
+            ushort RDLENGTH = rr.ReadUInt16();
+            // skip bytes
+            rr.ReadBytes(RDLENGTH);
+        }
+    }
 }

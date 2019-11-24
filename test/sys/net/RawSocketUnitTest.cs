@@ -78,7 +78,7 @@ namespace SIPSorcery.Sys.UnitTests
             Assert.True(true, "True was false.");
         }
 
-        [Fact(Skip="Will only work on Win10 or where raw socket privileges have been explicitly granted.")]
+        [Fact(Skip = "Will only work on Win10 or where raw socket privileges have been explicitly granted.")]
         public void IPEmptyPacketSendUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);

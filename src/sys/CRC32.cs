@@ -103,11 +103,11 @@ namespace SIPSorcery.Sys
         private byte[] UInt32ToBigEndianBytes(UInt32 x)
         {
             return new byte[] {
-			(byte)((x >> 24) & 0xff),
-			(byte)((x >> 16) & 0xff),
-			(byte)((x >> 8) & 0xff),
-			(byte)(x & 0xff)
-		};
+            (byte)((x >> 24) & 0xff),
+            (byte)((x >> 16) & 0xff),
+            (byte)((x >> 8) & 0xff),
+            (byte)(x & 0xff)
+        };
         }
     }
 }

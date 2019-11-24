@@ -29,7 +29,7 @@ namespace SIPSorcery.Net
 
         public override UInt16 PaddedLength
         {
-            get { return ADDRESS_ATTRIBUTE_LENGTH;  }
+            get { return ADDRESS_ATTRIBUTE_LENGTH; }
         }
 
         public STUNv2AddressAttribute(byte[] attributeValue)
@@ -47,7 +47,7 @@ namespace SIPSorcery.Net
             Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
         }
 
-        public STUNv2AddressAttribute(STUNv2AttributeTypesEnum attributeType, int port, IPAddress address) 
+        public STUNv2AddressAttribute(STUNv2AttributeTypesEnum attributeType, int port, IPAddress address)
             : base(attributeType, null)
         {
             Port = port;

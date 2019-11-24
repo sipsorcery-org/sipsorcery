@@ -48,7 +48,7 @@ namespace SIPSorcery.Net.WebRtc
         private const int CLOSE_SOCKETS_TIMEOUT_WAIT_MILLISECONDS = 3000;
         private const string RTP_MEDIA_SECURE_DESCRIPTOR = "RTP/SAVPF";
         private const string RTP_MEDIA_UNSECURE_DESCRIPTOR = "RTP/AVP";
-        
+
         private static string _sdpOfferTemplate = @"v=0
 o=- {0} 2 IN IP4 127.0.0.1
 s=-
@@ -56,7 +56,7 @@ t=0 0
 a=group:BUNDLE audio video
 ";
         private static string _sdpAudioPcmOfferTemplate =
-@"m=audio {0} {1} 0
+    @"m=audio {0} {1} 0
 c=IN IP4 {2}
 {3}
 a=end-of-candidates 
@@ -71,7 +71,7 @@ a=rtpmap:0 PCMU/8000
 ";
 
         private static string _sdpVideoOfferTemplate =
-"m=video 0 {0} " + PAYLOAD_TYPE_ID + @"
+    "m=video 0 {0} " + PAYLOAD_TYPE_ID + @"
 c=IN IP4 {1}
 a=ice-ufrag:{2}
 a=ice-pwd:{3}{4}
@@ -494,7 +494,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                                     // ToDo: Include srflx and relay addresses.
 
                                     // Only supporting UDP candidates at this stage.
-                                    foreach (var remoteIceCandidate in RemoteIceCandidates.Where(x => x.Transport.ToLower() == "udp" && x.NetworkAddress.NotNullOrBlank() && x.HasConnectionError == false))   
+                                    foreach (var remoteIceCandidate in RemoteIceCandidates.Where(x => x.Transport.ToLower() == "udp" && x.NetworkAddress.NotNullOrBlank() && x.HasConnectionError == false))
                                     {
                                         try
                                         {
@@ -515,7 +515,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                                             localIceCandidate.LastSTUNSendAt = DateTime.Now;
                                         }
-                                        catch(System.Net.Sockets.SocketException sockExcp)
+                                        catch (System.Net.Sockets.SocketException sockExcp)
                                         {
                                             logger.LogWarning($"SocketException sending STUN request to {remoteIceCandidate.NetworkAddress}:{remoteIceCandidate.Port}, removing candidate. {sockExcp.Message}");
                                             remoteIceCandidate.HasConnectionError = true;

@@ -23,8 +23,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -113,9 +113,9 @@ namespace SIPSorcery.SIP
 
         public static SIPEventDialogInfo Parse(string dialogInfoXMLStr)
         {
-           SIPEventDialogInfo eventDialogInfo = new SIPEventDialogInfo();
-           eventDialogInfo.Load(dialogInfoXMLStr);
-           return eventDialogInfo;
+            SIPEventDialogInfo eventDialogInfo = new SIPEventDialogInfo();
+            eventDialogInfo.Load(dialogInfoXMLStr);
+            return eventDialogInfo;
         }
 
         public override string ToXMLText()

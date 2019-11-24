@@ -58,8 +58,8 @@
 
 using System;
 using System.Text;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -84,7 +84,7 @@ namespace SIPSorcery.Net
     }
 
     public class STUNHeader
-	{
+    {
         public const int STUN_HEADER_LENGTH = 20;
         public const int TRANSACTION_ID_LENGTH = 16;
 
@@ -151,5 +151,5 @@ namespace SIPSorcery.Net
 
             return transId;
         }
-	}
+    }
 }

@@ -29,7 +29,7 @@ namespace SIPSorcery.SIP
         public string AvatarURL;
 
         private SIPEventPresenceTuple()
-        {}
+        { }
 
         public SIPEventPresenceTuple(string id, SIPEventPresenceStateEnum status)
         {
@@ -72,7 +72,7 @@ namespace SIPSorcery.SIP
 
             XElement tupleElement = new XElement(ns + "tuple",
                 new XAttribute("id", ID),
-                new XElement(ns + "status", 
+                new XElement(ns + "status",
                     new XElement(ns + "basic", Status.ToString()))
                 );
 

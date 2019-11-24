@@ -18,19 +18,19 @@ using System.Collections.Generic;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
     public class STUNv2Message
-	{
+    {
         private const int FINGERPRINT_XOR = 0x5354554e;
         private const int MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH = 20;
         private const int FINGERPRINT_ATTRIBUTE_CRC32_LENGTH = 4;
 
         private static ILogger logger = Log.Logger;
-        
+
         public STUNv2Header Header = new STUNv2Header();
         public List<STUNv2Attribute> Attributes = new List<STUNv2Attribute>();
 
@@ -106,7 +106,7 @@ namespace SIPSorcery.Net
                 attributesLength += Convert.ToUInt16(STUNv2Attribute.STUNATTRIBUTE_HEADER_LENGTH + attribute.PaddedLength);
             }
 
-            if(messageIntegrityKey != null)
+            if (messageIntegrityKey != null)
             {
                 attributesLength += STUNv2Attribute.STUNATTRIBUTE_HEADER_LENGTH + MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH;
             }
@@ -142,7 +142,7 @@ namespace SIPSorcery.Net
 
                 HMACSHA1 hmacSHA = new HMACSHA1(messageIntegrityKey, true);
                 byte[] hmac = hmacSHA.ComputeHash(buffer, 0, attributeIndex);
-               
+
                 integrityAttibtue.Value = hmac;
                 attributeIndex += integrityAttibtue.ToByteBuffer(buffer, attributeIndex);
             }
@@ -185,5 +185,5 @@ namespace SIPSorcery.Net
 
             return messageDescr;
         }
-	}
+    }
 }

@@ -32,15 +32,15 @@
 // $ sipp 127.0.0.1 -sf REGISTER_client.xml -inf REGISTER_client.csv -m 1 -trace_msg -trace_err 
 //-----------------------------------------------------------------------------
 
+using Microsoft.Extensions.Logging;
+using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
+using SIPSorcery.Sys;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Xml;
-using Microsoft.Extensions.Logging;
-using SIPSorcery.SIP;
-using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIPProxy
 {

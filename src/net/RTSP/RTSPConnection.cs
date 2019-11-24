@@ -17,8 +17,8 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
