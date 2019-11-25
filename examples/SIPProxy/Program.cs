@@ -82,7 +82,7 @@ namespace SIPSorcery.SIPProxy
                 logger = SIPSorcery.Sys.Log.Logger;
 
                 // Configure the SIP transport layer.
-                _sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
+                _sipTransport = new SIPTransport();
 
                 if (_sipSocketsNode != null)
                 {
@@ -93,8 +93,7 @@ namespace SIPSorcery.SIPProxy
                 else
                 {
                     // Use default options to set up a SIP channel.
-                    int port = FreePort.FindNextAvailableUDPPort(_defaultSIPUdpPort);
-                    var sipChannel = new SIPUDPChannel(new IPEndPoint(_defaultLocalAddress, port));
+                    var sipChannel = new SIPUDPChannel(new IPEndPoint(_defaultLocalAddress, _defaultSIPUdpPort));
                     _sipTransport.AddSIPChannel(sipChannel);
                 }
 
@@ -143,7 +142,7 @@ namespace SIPSorcery.SIPProxy
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                 {
-                    SIPNonInviteTransaction optionsTransaction = _sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                    SIPNonInviteTransaction optionsTransaction = _sipTransport.CreateNonInviteTransaction(sipRequest, null);
                     SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     optionsTransaction.SendFinalResponse(optionsResponse);
                 }
@@ -174,7 +173,7 @@ namespace SIPSorcery.SIPProxy
                         registerResponse = SIPResponseStatusCodesEnum.BadRequest;
                     }
 
-                    SIPNonInviteTransaction registerTransaction = _sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                    SIPNonInviteTransaction registerTransaction = _sipTransport.CreateNonInviteTransaction(sipRequest, null);
                     SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, registerResponse, null);
                     registerTransaction.SendFinalResponse(okResponse);
                 }
@@ -187,7 +186,7 @@ namespace SIPSorcery.SIPProxy
             {
                 logger.LogDebug(sipRequest.Method + " request processing not implemented for " + sipRequest.URI.ToParameterlessString() + " from " + remoteEndPoint + ".");
 
-                SIPNonInviteTransaction notImplTransaction = _sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                SIPNonInviteTransaction notImplTransaction = _sipTransport.CreateNonInviteTransaction(sipRequest, null);
                 SIPResponse notImplResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotImplemented, null);
                 notImplTransaction.SendFinalResponse(notImplResponse);
             }
