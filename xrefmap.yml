@@ -21716,6 +21716,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.SendResponse
   nameWithType: SIPTransport.SendResponse
+- uid: SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPResponse)
+  name: SendResponseAsync(SIPEndPoint, SIPResponse)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPResponse_
+  commentId: M:SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPResponse)
+  fullName: SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPResponse)
+  nameWithType: SIPTransport.SendResponseAsync(SIPEndPoint, SIPResponse)
 - uid: SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPResponse)
   name: SendResponseAsync(SIPResponse)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPResponse_
