@@ -41,14 +41,13 @@ namespace SIPSorcery.SIP
         /// Creates a SIP channel to listen for and send SIP messages over UDP.
         /// </summary>
         /// <param name="endPoint">The IP end point to listen on and send from.</param>
-        public SIPUDPChannel(IPEndPoint endPoint)
+        public SIPUDPChannel(IPEndPoint endPoint) : base()
         {
             if (endPoint == null)
             {
                 throw new ArgumentNullException("endPoint", "The end point must be specified when creating a SIPUDPChannel.");
             }
 
-            ID = Crypto.GetRandomInt(CHANNEL_ID_LENGTH).ToString();
             ListeningIPAddress = endPoint.Address;
             Port = endPoint.Port;
             SIPProtocol = SIPProtocolsEnum.udp;

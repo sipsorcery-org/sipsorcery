@@ -99,14 +99,13 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="endPoint">The IP end point to listen on and send from.</param>
         /// <param name="protocol">Whether the channel is being used with TCP or TLS (TLS channels get upgraded once connected).</param>
-        public SIPTCPChannel(IPEndPoint endPoint, SIPProtocolsEnum protocol)
+        public SIPTCPChannel(IPEndPoint endPoint, SIPProtocolsEnum protocol) : base()
         {
             if (endPoint == null)
             {
                 throw new ArgumentNullException("endPoint", "The end point must be specified when creating a SIPTCPChannel.");
             }
 
-            ID = Crypto.GetRandomInt(CHANNEL_ID_LENGTH).ToString();
             ListeningIPAddress = endPoint.Address;
             Port = endPoint.Port;
             SIPProtocol = protocol;

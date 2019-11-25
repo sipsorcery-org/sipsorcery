@@ -173,7 +173,6 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Adds an additional SIP Channel to the transport layer.
         /// </summary>
-        /// <param name="localEndPoint"></param>
         public void AddSIPChannel(SIPChannel sipChannel)
         {
             try
