@@ -18,6 +18,8 @@ The example below shows how to initialise a new [SIPTransport](xref:SIPSorcery.S
 ````csharp
 int SIP_LISTEN_PORT = 5060;
 int SIPS_LISTEN_PORT = 5061;
+int SIP_WEBSOCKET_LISTEN_PORT = 80;
+int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
 
 // Set up a default SIP transport.
 var sipTransport = new SIPTransport();
@@ -26,32 +28,58 @@ var sipTransport = new SIPTransport();
 sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
 sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
 sipTransport.AddSIPChannel(new SIPTLSChannel(new X509Certificate2("localhost.pfx"), new IPEndPoint(IPAddress.Any, SIPS_LISTEN_PORT)));
+sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_WEBSOCKET_LISTEN_PORT));
+sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
 
 // IPv6 channels.
 sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Any, SIP_LISTEN_PORT)));
 sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(IPAddress.IPv6Any, SIP_LISTEN_PORT)));
 sipTransport.AddSIPChannel(new SIPTLSChannel(new X509Certificate2("localhost.pfx"), new IPEndPoint(IPAddress.IPv6Any, SIPS_LISTEN_PORT)));
+sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_WEBSOCKET_LISTEN_PORT));
+sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
 ````
 
 ### Receiving
 
-Once the [SIPTransport](xref:SIPSorcery.SIP.SIPTransport) class has been initialised it will automatically start receiving. For an application to get access to received messages it needs to add an event handlers for the `SIPTransportRequestReceived` and `SIPTransportResponseReceived` events.
+Once the [SIPTransport](xref:SIPSorcery.SIP.SIPTransport) class has been initialised it will automatically start receiving. For an application to get access to received messages it needs to add an event handler for the `SIPTransportRequestReceived` and `SIPTransportResponseReceived` events.
 
 ````csharp
 sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
 {
-    Console.WriteLine($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
+    Console.WriteLine($"Request received {localSIPEndPoint}<-{remoteEndPoint}: {sipRequest.StatusLine}");
 }
 
 sipTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
 {
-    Console.WriteLine($"Response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
+    Console.WriteLine($"Response received {localSIPEndPoint}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
 };
 ````
 
 ### Sending
 
-To send SIP requests and responses there are a number of synchronous and asynchronous `Send` methods. A challenge when sending SIP requests and responses is the inclusion of IP address information in the headers. It can be the case that the SIP channel a request or response needs to be sent on won't be known until the respective `Send` method is called. The SIPSorcery library provides a convenient way to deal with this situation. By setting the headers with an address of `IPAddress.Any` (or `0.0.0.0`) or `IPAddress.IPv6Any` (or `[::0]`) the transport layer will recognise and replace them with the socket that was selected to send the message.
+To send SIP requests and responses there are a number of synchronous and asynchronous `Send` methods. Note the synchronous `Send` methods are wrappers around the async versions with a `Wait` call attached.
+
+For SIP requests the send methods are shown below:
+
+````charp
+public async Task<SocketError> SendRequestAsync(SIPRequest sipRequest)
+
+public async Task<SocketError> SendRequestAsync(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
+````
+
+For SIP requests the send methods are shown below:
+
+````csharp
+public async Task<SocketError> SendResponseAsync(SIPResponse sipResponse)
+
+public async Task<SocketError> SendResponseAsync(SIPEndPoint dstEndPoint, SIPResponse sipResponse)
+````
+
+
+
+### Setting Send From Address in Headers
+
+A challenge when sending SIP requests and responses is the inclusion of IP address information in the headers. It can be the case that the SIP channel a request or response needs to be sent on won't be known until the respective `Send` method is called. The SIPSorcery library provides a convenient way to deal with this situation. By setting the headers with an address of `IPAddress.Any` (or `0.0.0.0`) or `IPAddress.IPv6Any` (or `[::0]`) the transport layer will recognise and replace them with the socket that was selected to send the message.
 
 The specific SIP headers that the transport layer checks are:
 
