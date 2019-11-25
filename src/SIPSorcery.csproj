@@ -17,7 +17,7 @@
   
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net452;netcoreapp2.2</TargetFrameworks>
-	<Version>3.6.0.0</Version>
+	<Version>4.0.0.0-rc</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -37,21 +37,10 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP RTP RTCP STUN WebRTC SDP SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version &gt; 3.0.0 replaces the previous multi assembly package that only targeted the .NET Framework with a single assembly that targets .NET Standard. The release is mainly about rearranging classes and assemblies to support .Net Standard. There have been some functionality changes.
-- Version 3.0.2:  Added net452 target. Replaced log4net dependency with extensible Microsoft logging extension.
-- Version 3.0.3: Added additional method overloads to improve usability. Minor improvements. No breaking changes.
-- Version 3.0.4: Added additional method overloads to improve usability. Minor improvements. No breaking changes.
-- Version 3.1.0: IPv6 support.
-- Version 3.2.0: Added method to change registation agent expiry while registrations are in progress. Major refactor of TCP/TLS channel. Added async methods for send request and response.
-
-- Version 3.3.0: Support for RFC3262 "Reliability of Provisional Responses".
-- Version 3.4.0: Added web socket SIP channel.
-
-- Version 3.5.0: Added ability to send RTP DTMF events as per RFC2833.
-- Version 3.6.0: Added conditional around Windows specific network calls. Added SIPEndPoint to SIPResponse ctor.</PackageReleaseNotes>
+	<PackageReleaseNotes>- Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.</PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
-	<AssemblyVersion>3.6.0.0</AssemblyVersion>
-	<FileVersion>3.6.0.0</FileVersion>
+	<AssemblyVersion>4.0.0.1</AssemblyVersion>
+	<FileVersion>4.0.0.1</FileVersion>
   </PropertyGroup>    
 
 </Project>
