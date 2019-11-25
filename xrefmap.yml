@@ -13772,6 +13772,19 @@ references:
   commentId: T:SIPSorcery.SIP.SIPChannel
   fullName: SIPSorcery.SIP.SIPChannel
   nameWithType: SIPChannel
+- uid: SIPSorcery.SIP.SIPChannel.#ctor
+  name: SIPChannel()
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel__ctor
+  commentId: M:SIPSorcery.SIP.SIPChannel.#ctor
+  fullName: SIPSorcery.SIP.SIPChannel.SIPChannel()
+  nameWithType: SIPChannel.SIPChannel()
+- uid: SIPSorcery.SIP.SIPChannel.#ctor*
+  name: SIPChannel
+  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel__ctor_
+  commentId: Overload:SIPSorcery.SIP.SIPChannel.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPChannel.SIPChannel
+  nameWithType: SIPChannel.SIPChannel
 - uid: SIPSorcery.SIP.SIPChannel.AddressFamily
   name: AddressFamily
   href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_AddressFamily
