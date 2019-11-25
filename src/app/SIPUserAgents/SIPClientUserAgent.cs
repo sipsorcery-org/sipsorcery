@@ -109,7 +109,7 @@ namespace SIPSorcery.SIP.App
             SIPMonitorLogDelegate logDelegate)
         {
             m_sipTransport = sipTransport;
-            m_outboundProxy = (outboundProxy != null) ? SIPEndPoint.ParseSIPEndPoint(outboundProxy.ToString()) : null;
+            m_outboundProxy = outboundProxy?.CopyOf();
             Owner = owner;
             AdminMemberId = adminMemberId;
             Log_External = logDelegate;

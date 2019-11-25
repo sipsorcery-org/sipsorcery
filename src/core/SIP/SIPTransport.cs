@@ -654,6 +654,29 @@ namespace SIPSorcery.SIP
                 return result.status;
             }
 
+            return await SendResponseAsync(dstEndPoint, sipResponse);
+        }
+
+        /// <summary>
+        /// Asynchronously forwards a SIP response to the specified destination.
+        /// </summary>
+        /// <param name="dstEndPoint">The destination end point to send the response to.</param>
+        /// <param name="sipResponse">The SIP response to send.</param>
+        public async Task<SocketError> SendResponseAsync(SIPEndPoint dstEndPoint, SIPResponse sipResponse)
+        {
+            if(dstEndPoint == null)
+            {
+                throw new ArgumentNullException("dstEndPoint", "The destination end point must be set for SendResponseAsync.");
+            }
+            else if (sipResponse == null)
+            {
+                throw new ArgumentNullException("sipResponse", "The SIP response must be set for SendResponseAsync.");
+            }
+            else if (m_sipChannels.Count == 0)
+            {
+                throw new ApplicationException("No channels are configured in the SIP transport layer. The response could not be sent.");
+            }
+
             if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
             {
                 // Ignore packet, it's destined for the blackhole.
