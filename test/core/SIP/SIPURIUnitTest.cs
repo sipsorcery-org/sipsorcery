@@ -505,5 +505,69 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("-----------------------------------------");
         }
+
+        /// <summary>
+        /// Tests that SIP URIs with an IPv6 address with default ports generate the same canonical addresses.
+        /// </summary>
+        [Fact]
+        public void IPv6UriPortToNoPortCanonicalAddressUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI sipURINoPort = SIPURI.ParseSIPURI("sip:[::1]");
+            SIPURI sipURIWIthPort = SIPURI.ParseSIPURI("sip:[::1]:5060");
+
+            Assert.Equal(sipURINoPort.CanonicalAddress, sipURIWIthPort.CanonicalAddress);
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that the SIP URI constructor that takes an IP address works correctly for IPv6.
+        /// </summary>
+        [Fact]
+        public void UriConstructorWithIPv6AddressUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
+
+            Assert.Equal("sip:[::1]:6060", ipv6Uri.ToString());
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that the invalid SIP URIs with IPv6 addresses missing enclosing '[' and ']' throw an exception.
+        /// </summary>
+        [Fact]
+        public void InvalidIPv6UriThrowUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
+
+            Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("sip:user1@2a00:1450:4005:800::2004"));
+            Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("sip:user1@:::ffff:127.0.0.1"));
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with an IPv4 address mapped to an IPv6 address is parsed correctly.
+        /// </summary>
+        [Fact]
+        public void ParseIPv4MappedAddressUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
+
+            var uri = SIPURI.ParseSIPURI("sip:[::ffff:127.0.0.1]");
+
+            Assert.Equal("[::ffff:127.0.0.1]", uri.Host);
+
+            logger.LogDebug("-----------------------------------------");
+        }
     }
 }

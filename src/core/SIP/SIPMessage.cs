@@ -169,6 +169,41 @@ namespace SIPSorcery.SIP
             }
         }
 
+        //rj2: check if message could be "well"known Ping message
+        public static bool IsPing(byte[] buffer)
+        {
+            if (buffer != null)
+            {
+                int bufLen = buffer.Length;
+                if (bufLen == 2 && buffer[0] == '\r' && buffer[1] == '\n')
+                {
+                    //only cr/lf for ping, return NULL and no error msg
+                    return true;
+                }
+                if (bufLen == 4 && buffer[0] == '\r' && buffer[1] == '\n' && buffer[2] == '\r' && buffer[3] == '\n')
+                {
+                    //only cr/lf for ping, return NULL and no error msg
+                    return true;
+                }
+                if (bufLen == 4 && buffer[0] == 'j' && buffer[1] == 'a' && buffer[2] == 'K' && buffer[3] == '\0')
+                {
+                    // linphones keep alive message sucks, ping w/o error msg 
+                    return true;
+                }
+                if (bufLen == 3 && buffer[0] == 'p' && buffer[1] == 'n' && buffer[2] == 'g')
+                {
+                    //only cr/lf for ping, return NULL and no error msg
+                    return true;
+                }
+                if (bufLen == 4 && buffer[0] == '\0' && buffer[1] == '\0' && buffer[2] == '\0' && buffer[3] == '\0')
+                {
+                    //4x byte 0 used as ping
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>
         /// Processes a buffer from a TCP read operation to extract the first full SIP message. If no full SIP 
         /// messages are available it returns null which indicates the next read should be appended to the current

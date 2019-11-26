@@ -4,10 +4,10 @@
 // Description: Base class for SIP dialogues. 
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 20 Oct 2005	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 20 Oct 2005	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -40,7 +40,7 @@ namespace SIPSorcery.SIP
     /// </summary>
     /// <remarks>
     /// The standard states that there are two independent CSeq's for a dialogue: one for requests from the UAC and for requests
-    /// from the UAS. In practice it's been noted that is a UAS (initial UAS) sends an in-dialogue request with a CSeq less than the
+    /// from the UAS. In practice it's been noted that if a UAS (initial UAS) sends an in-dialogue request with a CSeq less than the
     /// UAC's CSeq it can cause problems. To avoid this issue when generating requests the remote CSeq is always used.
     /// </remarks>
     public class SIPDialogue
@@ -71,18 +71,23 @@ namespace SIPSorcery.SIP
         public int CallDurationLimit { get; set; }                  // If non-zero indicates the dialogue established should only be permitted to stay up for this many seconds.
         public string ProxySendFrom { get; set; }                   // If set this is the socket the upstream proxy received the call on.
         public SIPDialogueTransferModesEnum TransferMode { get; set; }  // Specifies how the dialogue will handle REFER requests (transfers).
-        public SIPCallDirection Direction { get; set; }              // Indicates whether the dialogue was created by a ingress or egress call.
 
-        // User informational fields. They don't affect the operation of the dialogue but allow the user to optionally attach descriptive fields to it.
-        //public string SwitchboardCallerDescription { get; set; }
-        //public string SwitchboardDescription { get; set; }
+        /// <summary>
+        /// Indicates whether the dialogue was created by a ingress or egress call.
+        /// </summary>
+        public SIPCallDirection Direction { get; set; }
+
         public string SwitchboardOwner { get; set; }
         public string SwitchboardLineName { get; set; }
         public string CRMPersonName { get; set; }
         public string CRMCompanyName { get; set; }
         public string CRMPictureURL { get; set; }
 
-        public int ReinviteDelay = 0;      // Used as a mechanism to send an immeidate or slightly delayed re-INVITE request when a call is answered as an attempt to help solve audio issues.
+        /// <summary>
+        /// Used as a flag to indicate whether to send an immeidate or slightly delayed re-INVITE request 
+        /// when a call is answered as an attempt to help solve audio issues.
+        /// </summary>
+        public int ReinviteDelay = 0;
 
         public string DialogueName
         {
@@ -296,16 +301,6 @@ namespace SIPSorcery.SIP
                 }
             }
         }
-
-        /*public static string GetDialogueId(string callId, string localTag, string remoteTag)
-        {
-            return Crypto.GetSHAHashAsString(callId + localTag + remoteTag);
-        }
-
-        public static string GetDialogueId(SIPHeader sipHeader)
-        {
-            return Crypto.GetSHAHashAsString(sipHeader.CallId + sipHeader.To.ToTag + sipHeader.From.FromTag);
-        }*/
 
         public void Hangup(SIPTransport sipTransport, SIPEndPoint outboundProxy)
         {
