@@ -28,7 +28,7 @@ namespace SIPSorcery.SIP
     /// <summary>
     /// Represents a SIP Response.
     /// </summary>
-    public class SIPResponse
+    public class SIPResponse : ISIPRequestResponse
     {
         private static ILogger logger = Log.Logger;
 
