@@ -30,6 +30,7 @@ namespace SIPSorcery.SIP
         public int Port;                                    // The SRV record port.
         public DateTime? ResolvedAt;                        // Time this record was created.
         public DateTime? EndPointsResolvedAt;               // The time an attempt was made to resolve the A records for the SRV.
+        public readonly DateTime ValidUntil;                // rj2: Time when DNS-Result becomes invalid, ResolveTime + TimeToLive-Seconds, Member for easy comparison
 
         public SIPDNSServiceResult(SIPServicesEnum sipService, int priority, int weight, uint ttl, string data, int port, DateTime resolvedAt)
         {
@@ -40,6 +41,10 @@ namespace SIPSorcery.SIP
             Data = data;
             Port = port;
             ResolvedAt = resolvedAt;
+            if (ttl != 0)
+                ValidUntil = resolvedAt.AddSeconds(ttl);
+            else
+                ValidUntil = DateTime.MaxValue;
         }
     }
 
@@ -50,12 +55,17 @@ namespace SIPSorcery.SIP
         public DateTime ResolvedAt;
         public DateTime FailedAt;
         public string FailureReason;
+        public readonly DateTime ValidUntil;                // rj2: Time when DNS-Result becomes invalid, ResolveTime + TimeToLive-Seconds, Member for easy comparison
 
         public SIPDNSLookupEndPoint(SIPEndPoint sipEndPoint, uint ttl)
         {
             LookupEndPoint = sipEndPoint;
             TTL = ttl;
             ResolvedAt = DateTime.Now;
+            if (ttl != 0)
+                ValidUntil = ResolvedAt.AddSeconds(ttl);
+            else
+                ValidUntil = DateTime.MaxValue;
         }
     }
 
