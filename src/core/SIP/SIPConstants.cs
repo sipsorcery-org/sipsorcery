@@ -240,7 +240,6 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADERANC_BRANCH = "branch";
         public const string SIP_HEADERANC_RECEIVED = "received";
         public const string SIP_HEADERANC_TRANSPORT = "transport";
-        public const string SIP_HEADERANC_MADDR = "maddr";
 
         // Via header parameter, documented in RFC 3581 "An Extension to the Session Initiation Protocol (SIP) 
         // for Symmetric Response Routing".
