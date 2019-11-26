@@ -193,7 +193,10 @@ namespace SIPSorcery.SIP
         public SIPURI(SIPSchemesEnum scheme, IPAddress address, int port)
         {
             Scheme = scheme;
-            Host = $"{address}:{port}";
+            if (address != null)
+            {
+                Host = address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? $"[{address}]:{port}" : $"{address}:{port}";
+            }
         }
 
         public static SIPURI ParseSIPURI(string uri)
