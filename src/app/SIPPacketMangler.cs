@@ -77,7 +77,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Mangles private IP addresses in a SIP request replacing them with the IP address the packet was received on. 
         /// </summary>
-        /// <param name="sipResponse">The unmangled SIP request.</param>
+        /// <param name="sipRequest">The unmangled SIP request.</param>
         /// <returns>The mangled SIP request</returns>
         public static void MangleSIPRequest(SIPMonitorServerTypesEnum server, SIPRequest sipRequest, string username, SIPMonitorLogDelegate logDelegate)
         {
@@ -113,7 +113,7 @@ namespace SIPSorcery.SIP.App
 
                         if (logDelegate != null)
                         {
-                            logDelegate(new SIPMonitorConsoleEvent(server, SIPMonitorEventTypesEnum.DialPlan, "SDP mangled for INVITE request from " + sipRequest.RemoteSIPEndPoint.ToString() + ", adjusted address " + bottomViaIPAddress + ".", username));
+                            logDelegate(new SIPMonitorConsoleEvent(server, SIPMonitorEventTypesEnum.DialPlan, "SDP mangled for " + sipRequest.Method.ToString() + " request from " + sipRequest.RemoteSIPEndPoint.ToString() + ", adjusted address " + bottomViaIPAddress + ".", username));
                         }
                     }
                 }
@@ -161,7 +161,7 @@ namespace SIPSorcery.SIP.App
 
                         if (logDelegate != null)
                         {
-                            logDelegate(new SIPMonitorConsoleEvent(server, SIPMonitorEventTypesEnum.DialPlan, "SDP mangled for INVITE response from " + sipResponse.RemoteSIPEndPoint.ToString() + ", adjusted address " + remoteEndPoint.Address.ToString() + ".", username));
+                            logDelegate(new SIPMonitorConsoleEvent(server, SIPMonitorEventTypesEnum.DialPlan, "SDP mangled for " + sipResponse.Status.ToString() + " response from " + sipResponse.RemoteSIPEndPoint.ToString() + ", adjusted address " + remoteEndPoint.Address.ToString() + ".", username));
                         }
                     }
                 }
