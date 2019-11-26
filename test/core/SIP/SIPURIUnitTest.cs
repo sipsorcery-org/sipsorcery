@@ -505,5 +505,21 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("-----------------------------------------");
         }
+
+        /// <summary>
+        /// Tests that SIP URIs with an IPv6 address with default ports generate the same canonical addresses.
+        /// </summary>
+        [Fact]
+        public void IPv6UriPortToNoPortCanonicalAddressUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI sipURINoPort = SIPURI.ParseSIPURI("sip:[::1]");
+            SIPURI sipURIWIthPort = SIPURI.ParseSIPURI("sip:[::1]:5060");
+
+            Assert.Equal(sipURINoPort.CanonicalAddress, sipURIWIthPort.CanonicalAddress);
+
+            logger.LogDebug("-----------------------------------------");
+        }
     }
 }

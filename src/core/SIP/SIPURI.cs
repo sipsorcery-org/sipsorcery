@@ -115,9 +115,12 @@ namespace SIPSorcery.SIP
             get
             {
                 string canonicalAddress = Scheme + ":";
-                canonicalAddress += (User != null && User.Trim().Length > 0) ? User + "@" : null;
+                canonicalAddress += !String.IsNullOrEmpty(User) ? User + "@" : null;
 
-                if (Host.IndexOf(':') != -1)
+                // First expression is for IPv6 addresses with a port.
+                // Second expression is for IPv4 addresses and hostnames with a port.
+                if (Host.Contains("]:") ||
+                    (Host.IndexOf(':') != -1 && Host.IndexOf(':') == Host.LastIndexOf(':')))
                 {
                     canonicalAddress += Host;
                 }

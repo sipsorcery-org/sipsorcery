@@ -2,9 +2,12 @@
 // Filename: SIPClientUserAgent.cs
 //
 // Description: Implementation of a SIP Client User Agent that can be used to initiate SIP calls.
-// 
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
 // History:
-// 22 Feb 2008	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 22 Feb 2008	Aaron Clauson   Created, Hobart, Australia.
 // 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 

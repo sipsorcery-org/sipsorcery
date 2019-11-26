@@ -33,8 +33,9 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:aaronbria@sipsorcery.com";
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:echo@sipsorcery.com"; // Echo Test.
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7003@192.168.11.48";
+        private static readonly string SIP_USERNAME = "7001";
+        private static readonly string SIP_PASSWORD = "password";
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
@@ -133,10 +134,10 @@ namespace SIPSorcery
 
             // Start the thread that places the call.
             SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
-                SIPConstants.SIP_DEFAULT_USERNAME,
-                null,
+                SIP_USERNAME,
+                SIP_PASSWORD,
                 callUri.ToString(),
-                SIPConstants.SIP_DEFAULT_FROMURI,
+                $"sip:{SIP_USERNAME}@localhost",
                 callUri.CanonicalAddress,
                 null, null, null,
                 SIPCallDirection.Out,
@@ -162,7 +163,11 @@ namespace SIPSorcery
                     while (!exitCts.Token.WaitHandle.WaitOne(0))
                     {
                         var keyProps = Console.ReadKey();
-                        if (keyProps.KeyChar == 'q')
+                        if (keyProps.KeyChar == 'h')
+                        {
+
+                        }
+                        else if (keyProps.KeyChar == 'q')
                         {
                             Console.WriteLine();
                             Console.WriteLine("Hangup requested by user...");
