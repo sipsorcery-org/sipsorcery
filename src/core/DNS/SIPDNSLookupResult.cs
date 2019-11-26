@@ -42,9 +42,13 @@ namespace SIPSorcery.SIP
             Port = port;
             ResolvedAt = resolvedAt;
             if (ttl != 0)
+            {
                 ValidUntil = resolvedAt.AddSeconds(ttl);
+            }
             else
+            {
                 ValidUntil = DateTime.MaxValue;
+            }
         }
     }
 
@@ -63,9 +67,13 @@ namespace SIPSorcery.SIP
             TTL = ttl;
             ResolvedAt = DateTime.Now;
             if (ttl != 0)
+            {
                 ValidUntil = ResolvedAt.AddSeconds(ttl);
+            }
             else
+            {
                 ValidUntil = DateTime.MaxValue;
+            }
         }
     }
 
