@@ -9,6 +9,7 @@
 //
 // History:
 // 03 Mar 2010	Aaron Clauson	Created, Hobart, Australia.
+// rj2: some PBX/Trunks need UserDisplayName in SIP-REGISTER
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -61,6 +62,7 @@ namespace SIPSorcery.SIP.App
         private Timer m_registrationTimer;
 
         public string UserAgent;                // If not null this value will replace the default user agent value in the REGISTER request.
+        public string UserDisplayName;			//rj2: if not null, used in fromheader and contactheader
 
         public event Action<SIPURI, string> RegistrationFailed;
         public event Action<SIPURI, string> RegistrationTemporaryFailure;
@@ -530,10 +532,10 @@ namespace SIPSorcery.SIP.App
                 SIPRequest registerRequest = m_sipTransport.GetRequest(
                     SIPMethodsEnum.REGISTER,
                     registerURI,
-                    new SIPToHeader(null, m_sipAccountAOR, null),
-                    new SIPFromHeader(null, m_sipAccountAOR, CallProperties.CreateNewTag()));
+                    new SIPToHeader(this.UserDisplayName, m_sipAccountAOR, null),
+                    new SIPFromHeader(this.UserDisplayName, m_sipAccountAOR, CallProperties.CreateNewTag()));
 
-                registerRequest.Header.Contact = new List<SIPContactHeader> { new SIPContactHeader(null, m_contactURI) };
+                registerRequest.Header.Contact = new List<SIPContactHeader> { new SIPContactHeader(this.UserDisplayName, m_contactURI) };
                 registerRequest.Header.CSeq = ++m_cseq;
                 registerRequest.Header.CallId = m_callID;
                 registerRequest.Header.UserAgent = (!UserAgent.IsNullOrBlank()) ? UserAgent : m_userAgent;
