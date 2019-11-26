@@ -17785,136 +17785,216 @@ references:
   commentId: F:SIPSorcery.SIP.SIPHeaders.SIP_HEADER_WWWAUTHENTICATE
   fullName: SIPSorcery.SIP.SIPHeaders.SIP_HEADER_WWWAUTHENTICATE
   nameWithType: SIPHeaders.SIP_HEADER_WWWAUTHENTICATE
-- uid: SIPSorcery.SIP.SIPMessage
-  name: SIPMessage
-  href: api/SIPSorcery.SIP.SIPMessage.html
-  commentId: T:SIPSorcery.SIP.SIPMessage
-  fullName: SIPSorcery.SIP.SIPMessage
-  nameWithType: SIPMessage
-- uid: SIPSorcery.SIP.SIPMessage.Body
+- uid: SIPSorcery.SIP.SIPMessageBase
+  name: SIPMessageBase
+  href: api/SIPSorcery.SIP.SIPMessageBase.html
+  commentId: T:SIPSorcery.SIP.SIPMessageBase
+  fullName: SIPSorcery.SIP.SIPMessageBase
+  nameWithType: SIPMessageBase
+- uid: SIPSorcery.SIP.SIPMessageBase.Body
   name: Body
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_Body
-  commentId: F:SIPSorcery.SIP.SIPMessage.Body
-  fullName: SIPSorcery.SIP.SIPMessage.Body
-  nameWithType: SIPMessage.Body
-- uid: SIPSorcery.SIP.SIPMessage.Created
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Body
+  commentId: F:SIPSorcery.SIP.SIPMessageBase.Body
+  fullName: SIPSorcery.SIP.SIPMessageBase.Body
+  nameWithType: SIPMessageBase.Body
+- uid: SIPSorcery.SIP.SIPMessageBase.Created
   name: Created
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_Created
-  commentId: F:SIPSorcery.SIP.SIPMessage.Created
-  fullName: SIPSorcery.SIP.SIPMessage.Created
-  nameWithType: SIPMessage.Created
-- uid: SIPSorcery.SIP.SIPMessage.FirstLine
-  name: FirstLine
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_FirstLine
-  commentId: F:SIPSorcery.SIP.SIPMessage.FirstLine
-  fullName: SIPSorcery.SIP.SIPMessage.FirstLine
-  nameWithType: SIPMessage.FirstLine
-- uid: SIPSorcery.SIP.SIPMessage.GetContentLength(System.Byte[],System.Int32,System.Int32)
-  name: GetContentLength(Byte[], Int32, Int32)
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_GetContentLength_System_Byte___System_Int32_System_Int32_
-  commentId: M:SIPSorcery.SIP.SIPMessage.GetContentLength(System.Byte[],System.Int32,System.Int32)
-  name.vb: GetContentLength(Byte(), Int32, Int32)
-  fullName: SIPSorcery.SIP.SIPMessage.GetContentLength(System.Byte[], System.Int32, System.Int32)
-  fullName.vb: SIPSorcery.SIP.SIPMessage.GetContentLength(System.Byte(), System.Int32, System.Int32)
-  nameWithType: SIPMessage.GetContentLength(Byte[], Int32, Int32)
-  nameWithType.vb: SIPMessage.GetContentLength(Byte(), Int32, Int32)
-- uid: SIPSorcery.SIP.SIPMessage.GetContentLength*
-  name: GetContentLength
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_GetContentLength_
-  commentId: Overload:SIPSorcery.SIP.SIPMessage.GetContentLength
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPMessage.GetContentLength
-  nameWithType: SIPMessage.GetContentLength
-- uid: SIPSorcery.SIP.SIPMessage.IsPing(System.Byte[])
-  name: IsPing(Byte[])
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_IsPing_System_Byte___
-  commentId: M:SIPSorcery.SIP.SIPMessage.IsPing(System.Byte[])
-  name.vb: IsPing(Byte())
-  fullName: SIPSorcery.SIP.SIPMessage.IsPing(System.Byte[])
-  fullName.vb: SIPSorcery.SIP.SIPMessage.IsPing(System.Byte())
-  nameWithType: SIPMessage.IsPing(Byte[])
-  nameWithType.vb: SIPMessage.IsPing(Byte())
-- uid: SIPSorcery.SIP.SIPMessage.IsPing*
-  name: IsPing
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_IsPing_
-  commentId: Overload:SIPSorcery.SIP.SIPMessage.IsPing
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPMessage.IsPing
-  nameWithType: SIPMessage.IsPing
-- uid: SIPSorcery.SIP.SIPMessage.LocalSIPEndPoint
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Created
+  commentId: F:SIPSorcery.SIP.SIPMessageBase.Created
+  fullName: SIPSorcery.SIP.SIPMessageBase.Created
+  nameWithType: SIPMessageBase.Created
+- uid: SIPSorcery.SIP.SIPMessageBase.Header
+  name: Header
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Header
+  commentId: F:SIPSorcery.SIP.SIPMessageBase.Header
+  fullName: SIPSorcery.SIP.SIPMessageBase.Header
+  nameWithType: SIPMessageBase.Header
+- uid: SIPSorcery.SIP.SIPMessageBase.LocalSIPEndPoint
   name: LocalSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_LocalSIPEndPoint
-  commentId: F:SIPSorcery.SIP.SIPMessage.LocalSIPEndPoint
-  fullName: SIPSorcery.SIP.SIPMessage.LocalSIPEndPoint
-  nameWithType: SIPMessage.LocalSIPEndPoint
-- uid: SIPSorcery.SIP.SIPMessage.ParseSIPMessage(System.Byte[],SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
-  name: ParseSIPMessage(Byte[], SIPEndPoint, SIPEndPoint)
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_ParseSIPMessage_System_Byte___SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPMessage.ParseSIPMessage(System.Byte[],SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
-  name.vb: ParseSIPMessage(Byte(), SIPEndPoint, SIPEndPoint)
-  fullName: SIPSorcery.SIP.SIPMessage.ParseSIPMessage(System.Byte[], SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
-  fullName.vb: SIPSorcery.SIP.SIPMessage.ParseSIPMessage(System.Byte(), SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPMessage.ParseSIPMessage(Byte[], SIPEndPoint, SIPEndPoint)
-  nameWithType.vb: SIPMessage.ParseSIPMessage(Byte(), SIPEndPoint, SIPEndPoint)
-- uid: SIPSorcery.SIP.SIPMessage.ParseSIPMessage(System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
-  name: ParseSIPMessage(String, SIPEndPoint, SIPEndPoint)
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_ParseSIPMessage_System_String_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPMessage.ParseSIPMessage(System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
-  fullName: SIPSorcery.SIP.SIPMessage.ParseSIPMessage(System.String, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPMessage.ParseSIPMessage(String, SIPEndPoint, SIPEndPoint)
-- uid: SIPSorcery.SIP.SIPMessage.ParseSIPMessage*
-  name: ParseSIPMessage
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_ParseSIPMessage_
-  commentId: Overload:SIPSorcery.SIP.SIPMessage.ParseSIPMessage
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_LocalSIPEndPoint
+  commentId: P:SIPSorcery.SIP.SIPMessageBase.LocalSIPEndPoint
+  fullName: SIPSorcery.SIP.SIPMessageBase.LocalSIPEndPoint
+  nameWithType: SIPMessageBase.LocalSIPEndPoint
+- uid: SIPSorcery.SIP.SIPMessageBase.LocalSIPEndPoint*
+  name: LocalSIPEndPoint
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_LocalSIPEndPoint_
+  commentId: Overload:SIPSorcery.SIP.SIPMessageBase.LocalSIPEndPoint
   isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPMessage.ParseSIPMessage
-  nameWithType: SIPMessage.ParseSIPMessage
-- uid: SIPSorcery.SIP.SIPMessage.ParseSIPMessageFromStream(System.Byte[],System.Int32,System.Int32,System.Int32@)
-  name: ParseSIPMessageFromStream(Byte[], Int32, Int32, out Int32)
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_ParseSIPMessageFromStream_System_Byte___System_Int32_System_Int32_System_Int32__
-  commentId: M:SIPSorcery.SIP.SIPMessage.ParseSIPMessageFromStream(System.Byte[],System.Int32,System.Int32,System.Int32@)
-  name.vb: ParseSIPMessageFromStream(Byte(), Int32, Int32, ByRef Int32)
-  fullName: SIPSorcery.SIP.SIPMessage.ParseSIPMessageFromStream(System.Byte[], System.Int32, System.Int32, out System.Int32)
-  fullName.vb: SIPSorcery.SIP.SIPMessage.ParseSIPMessageFromStream(System.Byte(), System.Int32, System.Int32, ByRef System.Int32)
-  nameWithType: SIPMessage.ParseSIPMessageFromStream(Byte[], Int32, Int32, out Int32)
-  nameWithType.vb: SIPMessage.ParseSIPMessageFromStream(Byte(), Int32, Int32, ByRef Int32)
-- uid: SIPSorcery.SIP.SIPMessage.ParseSIPMessageFromStream*
-  name: ParseSIPMessageFromStream
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_ParseSIPMessageFromStream_
-  commentId: Overload:SIPSorcery.SIP.SIPMessage.ParseSIPMessageFromStream
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPMessage.ParseSIPMessageFromStream
-  nameWithType: SIPMessage.ParseSIPMessageFromStream
-- uid: SIPSorcery.SIP.SIPMessage.RawBuffer
-  name: RawBuffer
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_RawBuffer
-  commentId: F:SIPSorcery.SIP.SIPMessage.RawBuffer
-  fullName: SIPSorcery.SIP.SIPMessage.RawBuffer
-  nameWithType: SIPMessage.RawBuffer
-- uid: SIPSorcery.SIP.SIPMessage.RawMessage
-  name: RawMessage
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_RawMessage
-  commentId: F:SIPSorcery.SIP.SIPMessage.RawMessage
-  fullName: SIPSorcery.SIP.SIPMessage.RawMessage
-  nameWithType: SIPMessage.RawMessage
-- uid: SIPSorcery.SIP.SIPMessage.RemoteSIPEndPoint
+  fullName: SIPSorcery.SIP.SIPMessageBase.LocalSIPEndPoint
+  nameWithType: SIPMessageBase.LocalSIPEndPoint
+- uid: SIPSorcery.SIP.SIPMessageBase.logger
+  name: logger
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_logger
+  commentId: F:SIPSorcery.SIP.SIPMessageBase.logger
+  fullName: SIPSorcery.SIP.SIPMessageBase.logger
+  nameWithType: SIPMessageBase.logger
+- uid: SIPSorcery.SIP.SIPMessageBase.m_CRLF
+  name: m_CRLF
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_m_CRLF
+  commentId: F:SIPSorcery.SIP.SIPMessageBase.m_CRLF
+  fullName: SIPSorcery.SIP.SIPMessageBase.m_CRLF
+  nameWithType: SIPMessageBase.m_CRLF
+- uid: SIPSorcery.SIP.SIPMessageBase.m_sipFullVersion
+  name: m_sipFullVersion
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_m_sipFullVersion
+  commentId: F:SIPSorcery.SIP.SIPMessageBase.m_sipFullVersion
+  fullName: SIPSorcery.SIP.SIPMessageBase.m_sipFullVersion
+  nameWithType: SIPMessageBase.m_sipFullVersion
+- uid: SIPSorcery.SIP.SIPMessageBase.RemoteSIPEndPoint
   name: RemoteSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_RemoteSIPEndPoint
-  commentId: F:SIPSorcery.SIP.SIPMessage.RemoteSIPEndPoint
-  fullName: SIPSorcery.SIP.SIPMessage.RemoteSIPEndPoint
-  nameWithType: SIPMessage.RemoteSIPEndPoint
-- uid: SIPSorcery.SIP.SIPMessage.SIPHeaders
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_RemoteSIPEndPoint
+  commentId: P:SIPSorcery.SIP.SIPMessageBase.RemoteSIPEndPoint
+  fullName: SIPSorcery.SIP.SIPMessageBase.RemoteSIPEndPoint
+  nameWithType: SIPMessageBase.RemoteSIPEndPoint
+- uid: SIPSorcery.SIP.SIPMessageBase.RemoteSIPEndPoint*
+  name: RemoteSIPEndPoint
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_RemoteSIPEndPoint_
+  commentId: Overload:SIPSorcery.SIP.SIPMessageBase.RemoteSIPEndPoint
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPMessageBase.RemoteSIPEndPoint
+  nameWithType: SIPMessageBase.RemoteSIPEndPoint
+- uid: SIPSorcery.SIP.SIPMessageBase.SendFromHintChannelID
+  name: SendFromHintChannelID
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SendFromHintChannelID
+  commentId: F:SIPSorcery.SIP.SIPMessageBase.SendFromHintChannelID
+  fullName: SIPSorcery.SIP.SIPMessageBase.SendFromHintChannelID
+  nameWithType: SIPMessageBase.SendFromHintChannelID
+- uid: SIPSorcery.SIP.SIPMessageBase.SendFromHintConnectionID
+  name: SendFromHintConnectionID
+  href: api/SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SendFromHintConnectionID
+  commentId: F:SIPSorcery.SIP.SIPMessageBase.SendFromHintConnectionID
+  fullName: SIPSorcery.SIP.SIPMessageBase.SendFromHintConnectionID
+  nameWithType: SIPMessageBase.SendFromHintConnectionID
+- uid: SIPSorcery.SIP.SIPMessageBuffer
+  name: SIPMessageBuffer
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html
+  commentId: T:SIPSorcery.SIP.SIPMessageBuffer
+  fullName: SIPSorcery.SIP.SIPMessageBuffer
+  nameWithType: SIPMessageBuffer
+- uid: SIPSorcery.SIP.SIPMessageBuffer.Body
+  name: Body
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_Body
+  commentId: F:SIPSorcery.SIP.SIPMessageBuffer.Body
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.Body
+  nameWithType: SIPMessageBuffer.Body
+- uid: SIPSorcery.SIP.SIPMessageBuffer.Created
+  name: Created
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_Created
+  commentId: F:SIPSorcery.SIP.SIPMessageBuffer.Created
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.Created
+  nameWithType: SIPMessageBuffer.Created
+- uid: SIPSorcery.SIP.SIPMessageBuffer.FirstLine
+  name: FirstLine
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_FirstLine
+  commentId: F:SIPSorcery.SIP.SIPMessageBuffer.FirstLine
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.FirstLine
+  nameWithType: SIPMessageBuffer.FirstLine
+- uid: SIPSorcery.SIP.SIPMessageBuffer.GetContentLength(System.Byte[],System.Int32,System.Int32)
+  name: GetContentLength(Byte[], Int32, Int32)
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_GetContentLength_System_Byte___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.SIP.SIPMessageBuffer.GetContentLength(System.Byte[],System.Int32,System.Int32)
+  name.vb: GetContentLength(Byte(), Int32, Int32)
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.GetContentLength(System.Byte[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.SIP.SIPMessageBuffer.GetContentLength(System.Byte(), System.Int32, System.Int32)
+  nameWithType: SIPMessageBuffer.GetContentLength(Byte[], Int32, Int32)
+  nameWithType.vb: SIPMessageBuffer.GetContentLength(Byte(), Int32, Int32)
+- uid: SIPSorcery.SIP.SIPMessageBuffer.GetContentLength*
+  name: GetContentLength
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_GetContentLength_
+  commentId: Overload:SIPSorcery.SIP.SIPMessageBuffer.GetContentLength
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.GetContentLength
+  nameWithType: SIPMessageBuffer.GetContentLength
+- uid: SIPSorcery.SIP.SIPMessageBuffer.IsPing(System.Byte[])
+  name: IsPing(Byte[])
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_IsPing_System_Byte___
+  commentId: M:SIPSorcery.SIP.SIPMessageBuffer.IsPing(System.Byte[])
+  name.vb: IsPing(Byte())
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.IsPing(System.Byte[])
+  fullName.vb: SIPSorcery.SIP.SIPMessageBuffer.IsPing(System.Byte())
+  nameWithType: SIPMessageBuffer.IsPing(Byte[])
+  nameWithType.vb: SIPMessageBuffer.IsPing(Byte())
+- uid: SIPSorcery.SIP.SIPMessageBuffer.IsPing*
+  name: IsPing
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_IsPing_
+  commentId: Overload:SIPSorcery.SIP.SIPMessageBuffer.IsPing
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.IsPing
+  nameWithType: SIPMessageBuffer.IsPing
+- uid: SIPSorcery.SIP.SIPMessageBuffer.LocalSIPEndPoint
+  name: LocalSIPEndPoint
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_LocalSIPEndPoint
+  commentId: F:SIPSorcery.SIP.SIPMessageBuffer.LocalSIPEndPoint
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.LocalSIPEndPoint
+  nameWithType: SIPMessageBuffer.LocalSIPEndPoint
+- uid: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.Byte[],SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  name: ParseSIPMessage(Byte[], SIPEndPoint, SIPEndPoint)
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_ParseSIPMessage_System_Byte___SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.Byte[],SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  name.vb: ParseSIPMessage(Byte(), SIPEndPoint, SIPEndPoint)
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.Byte[], SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
+  fullName.vb: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.Byte(), SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: SIPMessageBuffer.ParseSIPMessage(Byte[], SIPEndPoint, SIPEndPoint)
+  nameWithType.vb: SIPMessageBuffer.ParseSIPMessage(Byte(), SIPEndPoint, SIPEndPoint)
+- uid: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  name: ParseSIPMessage(String, SIPEndPoint, SIPEndPoint)
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_ParseSIPMessage_System_String_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage(System.String, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint)
+  nameWithType: SIPMessageBuffer.ParseSIPMessage(String, SIPEndPoint, SIPEndPoint)
+- uid: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage*
+  name: ParseSIPMessage
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_ParseSIPMessage_
+  commentId: Overload:SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessage
+  nameWithType: SIPMessageBuffer.ParseSIPMessage
+- uid: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream(System.Byte[],System.Int32,System.Int32,System.Int32@)
+  name: ParseSIPMessageFromStream(Byte[], Int32, Int32, out Int32)
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_ParseSIPMessageFromStream_System_Byte___System_Int32_System_Int32_System_Int32__
+  commentId: M:SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream(System.Byte[],System.Int32,System.Int32,System.Int32@)
+  name.vb: ParseSIPMessageFromStream(Byte(), Int32, Int32, ByRef Int32)
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream(System.Byte[], System.Int32, System.Int32, out System.Int32)
+  fullName.vb: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream(System.Byte(), System.Int32, System.Int32, ByRef System.Int32)
+  nameWithType: SIPMessageBuffer.ParseSIPMessageFromStream(Byte[], Int32, Int32, out Int32)
+  nameWithType.vb: SIPMessageBuffer.ParseSIPMessageFromStream(Byte(), Int32, Int32, ByRef Int32)
+- uid: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream*
+  name: ParseSIPMessageFromStream
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_ParseSIPMessageFromStream_
+  commentId: Overload:SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.ParseSIPMessageFromStream
+  nameWithType: SIPMessageBuffer.ParseSIPMessageFromStream
+- uid: SIPSorcery.SIP.SIPMessageBuffer.RawBuffer
+  name: RawBuffer
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_RawBuffer
+  commentId: F:SIPSorcery.SIP.SIPMessageBuffer.RawBuffer
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.RawBuffer
+  nameWithType: SIPMessageBuffer.RawBuffer
+- uid: SIPSorcery.SIP.SIPMessageBuffer.RawMessage
+  name: RawMessage
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_RawMessage
+  commentId: F:SIPSorcery.SIP.SIPMessageBuffer.RawMessage
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.RawMessage
+  nameWithType: SIPMessageBuffer.RawMessage
+- uid: SIPSorcery.SIP.SIPMessageBuffer.RemoteSIPEndPoint
+  name: RemoteSIPEndPoint
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_RemoteSIPEndPoint
+  commentId: F:SIPSorcery.SIP.SIPMessageBuffer.RemoteSIPEndPoint
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.RemoteSIPEndPoint
+  nameWithType: SIPMessageBuffer.RemoteSIPEndPoint
+- uid: SIPSorcery.SIP.SIPMessageBuffer.SIPHeaders
   name: SIPHeaders
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_SIPHeaders
-  commentId: F:SIPSorcery.SIP.SIPMessage.SIPHeaders
-  fullName: SIPSorcery.SIP.SIPMessage.SIPHeaders
-  nameWithType: SIPMessage.SIPHeaders
-- uid: SIPSorcery.SIP.SIPMessage.SIPMessageType
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_SIPHeaders
+  commentId: F:SIPSorcery.SIP.SIPMessageBuffer.SIPHeaders
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.SIPHeaders
+  nameWithType: SIPMessageBuffer.SIPHeaders
+- uid: SIPSorcery.SIP.SIPMessageBuffer.SIPMessageType
   name: SIPMessageType
-  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_SIPMessageType
-  commentId: F:SIPSorcery.SIP.SIPMessage.SIPMessageType
-  fullName: SIPSorcery.SIP.SIPMessage.SIPMessageType
-  nameWithType: SIPMessage.SIPMessageType
+  href: api/SIPSorcery.SIP.SIPMessageBuffer.html#SIPSorcery_SIP_SIPMessageBuffer_SIPMessageType
+  commentId: F:SIPSorcery.SIP.SIPMessageBuffer.SIPMessageType
+  fullName: SIPSorcery.SIP.SIPMessageBuffer.SIPMessageType
+  nameWithType: SIPMessageBuffer.SIPMessageType
 - uid: SIPSorcery.SIP.SIPMessageReceivedDelegate
   name: SIPMessageReceivedDelegate
   href: api/SIPSorcery.SIP.SIPMessageReceivedDelegate.html
@@ -18635,12 +18715,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPRequest.SIPRequest
   nameWithType: SIPRequest.SIPRequest
-- uid: SIPSorcery.SIP.SIPRequest.Body
-  name: Body
-  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_Body
-  commentId: F:SIPSorcery.SIP.SIPRequest.Body
-  fullName: SIPSorcery.SIP.SIPRequest.Body
-  nameWithType: SIPRequest.Body
 - uid: SIPSorcery.SIP.SIPRequest.Copy
   name: Copy()
   href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_Copy
@@ -18667,18 +18741,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPRequest.CreateBranchId
   nameWithType: SIPRequest.CreateBranchId
-- uid: SIPSorcery.SIP.SIPRequest.Created
-  name: Created
-  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_Created
-  commentId: F:SIPSorcery.SIP.SIPRequest.Created
-  fullName: SIPSorcery.SIP.SIPRequest.Created
-  nameWithType: SIPRequest.Created
-- uid: SIPSorcery.SIP.SIPRequest.Header
-  name: Header
-  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_Header
-  commentId: F:SIPSorcery.SIP.SIPRequest.Header
-  fullName: SIPSorcery.SIP.SIPRequest.Header
-  nameWithType: SIPRequest.Header
 - uid: SIPSorcery.SIP.SIPRequest.IsLoop(System.String,System.Int32,System.String)
   name: IsLoop(String, Int32, String)
   href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_IsLoop_System_String_System_Int32_System_String_
@@ -18708,31 +18770,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPRequest.IsValid
   nameWithType: SIPRequest.IsValid
-- uid: SIPSorcery.SIP.SIPRequest.LocalSIPEndPoint
-  name: LocalSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_LocalSIPEndPoint
-  commentId: P:SIPSorcery.SIP.SIPRequest.LocalSIPEndPoint
-  fullName: SIPSorcery.SIP.SIPRequest.LocalSIPEndPoint
-  nameWithType: SIPRequest.LocalSIPEndPoint
-- uid: SIPSorcery.SIP.SIPRequest.LocalSIPEndPoint*
-  name: LocalSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_LocalSIPEndPoint_
-  commentId: Overload:SIPSorcery.SIP.SIPRequest.LocalSIPEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPRequest.LocalSIPEndPoint
-  nameWithType: SIPRequest.LocalSIPEndPoint
 - uid: SIPSorcery.SIP.SIPRequest.Method
   name: Method
   href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_Method
   commentId: F:SIPSorcery.SIP.SIPRequest.Method
   fullName: SIPSorcery.SIP.SIPRequest.Method
   nameWithType: SIPRequest.Method
-- uid: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessage)
-  name: ParseSIPRequest(SIPMessage)
-  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_ParseSIPRequest_SIPSorcery_SIP_SIPMessage_
-  commentId: M:SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessage)
-  fullName: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessage)
-  nameWithType: SIPRequest.ParseSIPRequest(SIPMessage)
+- uid: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessageBuffer)
+  name: ParseSIPRequest(SIPMessageBuffer)
+  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_ParseSIPRequest_SIPSorcery_SIP_SIPMessageBuffer_
+  commentId: M:SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessageBuffer)
+  fullName: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(SIPSorcery.SIP.SIPMessageBuffer)
+  nameWithType: SIPRequest.ParseSIPRequest(SIPMessageBuffer)
 - uid: SIPSorcery.SIP.SIPRequest.ParseSIPRequest(System.String)
   name: ParseSIPRequest(String)
   href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_ParseSIPRequest_System_String_
@@ -18752,31 +18801,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPRequest.ReceivedRoute
   fullName: SIPSorcery.SIP.SIPRequest.ReceivedRoute
   nameWithType: SIPRequest.ReceivedRoute
-- uid: SIPSorcery.SIP.SIPRequest.RemoteSIPEndPoint
-  name: RemoteSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_RemoteSIPEndPoint
-  commentId: P:SIPSorcery.SIP.SIPRequest.RemoteSIPEndPoint
-  fullName: SIPSorcery.SIP.SIPRequest.RemoteSIPEndPoint
-  nameWithType: SIPRequest.RemoteSIPEndPoint
-- uid: SIPSorcery.SIP.SIPRequest.RemoteSIPEndPoint*
-  name: RemoteSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_RemoteSIPEndPoint_
-  commentId: Overload:SIPSorcery.SIP.SIPRequest.RemoteSIPEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPRequest.RemoteSIPEndPoint
-  nameWithType: SIPRequest.RemoteSIPEndPoint
-- uid: SIPSorcery.SIP.SIPRequest.SendFromHintChannelID
-  name: SendFromHintChannelID
-  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_SendFromHintChannelID
-  commentId: F:SIPSorcery.SIP.SIPRequest.SendFromHintChannelID
-  fullName: SIPSorcery.SIP.SIPRequest.SendFromHintChannelID
-  nameWithType: SIPRequest.SendFromHintChannelID
-- uid: SIPSorcery.SIP.SIPRequest.SendFromHintConnectionID
-  name: SendFromHintConnectionID
-  href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_SendFromHintConnectionID
-  commentId: F:SIPSorcery.SIP.SIPRequest.SendFromHintConnectionID
-  fullName: SIPSorcery.SIP.SIPRequest.SendFromHintConnectionID
-  nameWithType: SIPRequest.SendFromHintConnectionID
 - uid: SIPSorcery.SIP.SIPRequest.SetSendFromHints(SIPSorcery.SIP.SIPEndPoint)
   name: SetSendFromHints(SIPEndPoint)
   href: api/SIPSorcery.SIP.SIPRequest.html#SIPSorcery_SIP_SIPRequest_SetSendFromHints_SIPSorcery_SIP_SIPEndPoint_
@@ -18975,12 +18999,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPResponse.SIPResponse
   nameWithType: SIPResponse.SIPResponse
-- uid: SIPSorcery.SIP.SIPResponse.Body
-  name: Body
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_Body
-  commentId: F:SIPSorcery.SIP.SIPResponse.Body
-  fullName: SIPSorcery.SIP.SIPResponse.Body
-  nameWithType: SIPResponse.Body
 - uid: SIPSorcery.SIP.SIPResponse.Copy
   name: Copy()
   href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_Copy
@@ -18994,37 +19012,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPResponse.Copy
   nameWithType: SIPResponse.Copy
-- uid: SIPSorcery.SIP.SIPResponse.Created
-  name: Created
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_Created
-  commentId: F:SIPSorcery.SIP.SIPResponse.Created
-  fullName: SIPSorcery.SIP.SIPResponse.Created
-  nameWithType: SIPResponse.Created
-- uid: SIPSorcery.SIP.SIPResponse.Header
-  name: Header
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_Header
-  commentId: F:SIPSorcery.SIP.SIPResponse.Header
-  fullName: SIPSorcery.SIP.SIPResponse.Header
-  nameWithType: SIPResponse.Header
-- uid: SIPSorcery.SIP.SIPResponse.LocalSIPEndPoint
-  name: LocalSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_LocalSIPEndPoint
-  commentId: P:SIPSorcery.SIP.SIPResponse.LocalSIPEndPoint
-  fullName: SIPSorcery.SIP.SIPResponse.LocalSIPEndPoint
-  nameWithType: SIPResponse.LocalSIPEndPoint
-- uid: SIPSorcery.SIP.SIPResponse.LocalSIPEndPoint*
-  name: LocalSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_LocalSIPEndPoint_
-  commentId: Overload:SIPSorcery.SIP.SIPResponse.LocalSIPEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPResponse.LocalSIPEndPoint
-  nameWithType: SIPResponse.LocalSIPEndPoint
-- uid: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessage)
-  name: ParseSIPResponse(SIPMessage)
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_ParseSIPResponse_SIPSorcery_SIP_SIPMessage_
-  commentId: M:SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessage)
-  fullName: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessage)
-  nameWithType: SIPResponse.ParseSIPResponse(SIPMessage)
+- uid: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessageBuffer)
+  name: ParseSIPResponse(SIPMessageBuffer)
+  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_ParseSIPResponse_SIPSorcery_SIP_SIPMessageBuffer_
+  commentId: M:SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessageBuffer)
+  fullName: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessageBuffer)
+  nameWithType: SIPResponse.ParseSIPResponse(SIPMessageBuffer)
 - uid: SIPSorcery.SIP.SIPResponse.ParseSIPResponse(System.String)
   name: ParseSIPResponse(String)
   href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_ParseSIPResponse_System_String_
@@ -19044,31 +19037,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPResponse.ReasonPhrase
   fullName: SIPSorcery.SIP.SIPResponse.ReasonPhrase
   nameWithType: SIPResponse.ReasonPhrase
-- uid: SIPSorcery.SIP.SIPResponse.RemoteSIPEndPoint
-  name: RemoteSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_RemoteSIPEndPoint
-  commentId: P:SIPSorcery.SIP.SIPResponse.RemoteSIPEndPoint
-  fullName: SIPSorcery.SIP.SIPResponse.RemoteSIPEndPoint
-  nameWithType: SIPResponse.RemoteSIPEndPoint
-- uid: SIPSorcery.SIP.SIPResponse.RemoteSIPEndPoint*
-  name: RemoteSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_RemoteSIPEndPoint_
-  commentId: Overload:SIPSorcery.SIP.SIPResponse.RemoteSIPEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPResponse.RemoteSIPEndPoint
-  nameWithType: SIPResponse.RemoteSIPEndPoint
-- uid: SIPSorcery.SIP.SIPResponse.SendFromHintChannelID
-  name: SendFromHintChannelID
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_SendFromHintChannelID
-  commentId: F:SIPSorcery.SIP.SIPResponse.SendFromHintChannelID
-  fullName: SIPSorcery.SIP.SIPResponse.SendFromHintChannelID
-  nameWithType: SIPResponse.SendFromHintChannelID
-- uid: SIPSorcery.SIP.SIPResponse.SendFromHintConnectionID
-  name: SendFromHintConnectionID
-  href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_SendFromHintConnectionID
-  commentId: F:SIPSorcery.SIP.SIPResponse.SendFromHintConnectionID
-  fullName: SIPSorcery.SIP.SIPResponse.SendFromHintConnectionID
-  nameWithType: SIPResponse.SendFromHintConnectionID
 - uid: SIPSorcery.SIP.SIPResponse.SetSendFromHints(SIPSorcery.SIP.SIPEndPoint)
   name: SetSendFromHints(SIPEndPoint)
   href: api/SIPSorcery.SIP.SIPResponse.html#SIPSorcery_SIP_SIPResponse_SetSendFromHints_SIPSorcery_SIP_SIPEndPoint_
