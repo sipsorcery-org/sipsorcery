@@ -12009,6 +12009,12 @@ references:
   commentId: F:SIPSorcery.SIP.App.SIPRegistrationUserAgent.UserAgent
   fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.UserAgent
   nameWithType: SIPRegistrationUserAgent.UserAgent
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.UserDisplayName
+  name: UserDisplayName
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_UserDisplayName
+  commentId: F:SIPSorcery.SIP.App.SIPRegistrationUserAgent.UserDisplayName
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.UserDisplayName
+  nameWithType: SIPRegistrationUserAgent.UserDisplayName
 - uid: SIPSorcery.SIP.App.SIPRequestAuthenticator
   name: SIPRequestAuthenticator
   href: api/SIPSorcery.SIP.App.SIPRequestAuthenticator.html
