@@ -1008,7 +1008,7 @@ namespace SIPSorcery.SIP
                         else
                         {
                             rawSIPMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-                            if (rawSIPMessage.IsNullOrBlank() || SIPMessage.IsPing(buffer))
+                            if (rawSIPMessage.IsNullOrBlank() || SIPMessageBuffer.IsPing(buffer))
                             {
                                 // An empty transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
                                 return;
@@ -1019,17 +1019,17 @@ namespace SIPSorcery.SIP
                                 return;
                             }
 
-                            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(rawSIPMessage, localEndPoint, remoteEndPoint);
+                            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(rawSIPMessage, localEndPoint, remoteEndPoint);
 
-                            if (sipMessage != null)
+                            if (sipMessageBuffer != null)
                             {
-                                if (sipMessage.SIPMessageType == SIPMessageTypesEnum.Response)
+                                if (sipMessageBuffer.SIPMessageType == SIPMessageTypesEnum.Response)
                                 {
                                     #region SIP Response.
 
                                     try
                                     {
-                                        SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessage);
+                                        SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
                                         if (SIPResponseInTraceEvent != null)
                                         {
@@ -1058,7 +1058,7 @@ namespace SIPSorcery.SIP
                                     }
                                     catch (SIPValidationException sipValidationException)
                                     {
-                                        FireSIPBadResponseInTraceEvent(localEndPoint, remoteEndPoint, sipMessage.RawMessage, sipValidationException.SIPErrorField, sipMessage.RawMessage);
+                                        FireSIPBadResponseInTraceEvent(localEndPoint, remoteEndPoint, sipMessageBuffer.RawMessage, sipValidationException.SIPErrorField, sipMessageBuffer.RawMessage);
                                     }
 
                                     #endregion
@@ -1069,7 +1069,7 @@ namespace SIPSorcery.SIP
 
                                     try
                                     {
-                                        SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessage);
+                                        SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
                                         SIPValidationFieldsEnum sipRequestErrorField = SIPValidationFieldsEnum.Unknown;
                                         string sipRequestValidationError = null;
@@ -1156,7 +1156,7 @@ namespace SIPSorcery.SIP
                                     }
                                     catch (SIPValidationException sipRequestExcp)
                                     {
-                                        FireSIPBadRequestInTraceEvent(localEndPoint, remoteEndPoint, sipRequestExcp.Message, sipRequestExcp.SIPErrorField, sipMessage.RawMessage);
+                                        FireSIPBadRequestInTraceEvent(localEndPoint, remoteEndPoint, sipRequestExcp.Message, sipRequestExcp.SIPErrorField, sipMessageBuffer.RawMessage);
                                         SIPResponse errorResponse = GetResponse(localEndPoint, remoteEndPoint, sipRequestExcp.SIPResponseErrorCode, sipRequestExcp.Message);
                                         await SendResponseAsync(errorResponse);
                                     }

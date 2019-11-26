@@ -8,6 +8,7 @@
 // 
 // History:
 // 17 Sep 2005	Aaron Clauson	Created, Dublin, Ireland.
+// 26 Nov 2019  Aaron Clauson   Added SIPMessageBase inheritance.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -28,13 +29,8 @@ namespace SIPSorcery.SIP
     /// <summary>
     /// Represents a SIP Response.
     /// </summary>
-    public class SIPResponse : ISIPMessager
+    public class SIPResponse : SIPMessageBase
     {
-        private static ILogger logger = Log.Logger;
-
-        private static string m_CRLF = SIPConstants.CRLF;
-        private static string m_sipVersion = SIPConstants.SIP_FULLVERSION_STRING;
-
         /// <summary>
         /// The version string for the SIP response.
         /// </summary>
@@ -56,41 +52,6 @@ namespace SIPSorcery.SIP
         public string ReasonPhrase;
 
         /// <summary>
-        /// The optional body or payload for the SIP response.
-        /// </summary>
-        public string Body;
-
-        /// <summary>
-        /// The SIP response's headers collection.
-        /// </summary>
-        public SIPHeader Header = new SIPHeader();
-
-        /// <summary>
-        /// Timestamp for the SIP response's creation.
-        /// </summary>
-        public DateTime Created = DateTime.Now;
-
-        /// <summary>
-        /// The remote SIP socket the response was received from.
-        /// </summary>
-        public SIPEndPoint RemoteSIPEndPoint { get; private set; }
-
-        /// <summary>
-        /// The local SIP socket the response was received on.
-        /// </summary>
-        public SIPEndPoint LocalSIPEndPoint { get; private set; }
-
-        /// <summary>
-        /// When the SIP transport layer has mutliple channels it will use this ID hint to choose amongst them.
-        /// </summary>
-        public string SendFromHintChannelID;
-
-        /// <summary>
-        /// For connection oriented SIP transport channels this ID provides a hint about the specific connection to use.
-        /// </summary>
-        public string SendFromHintConnectionID;
-
-        /// <summary>
         /// A short one line summary of the SIP response. Useful for logging or diagnostics.
         /// </summary>
         public string ShortDescription
@@ -110,7 +71,7 @@ namespace SIPSorcery.SIP
             SIPResponseStatusCodesEnum responseStatus,
             string reasonPhrase)
         {
-            SIPVersion = m_sipVersion;
+            SIPVersion = m_sipFullVersion;
             StatusCode = (int)responseStatus;
             Status = responseStatus;
             ReasonPhrase = reasonPhrase;
@@ -132,7 +93,7 @@ namespace SIPSorcery.SIP
             SIPEndPoint localSIPEndPoint,
             SIPEndPoint remoteSIPEndPoint)
         {
-            SIPVersion = m_sipVersion;
+            SIPVersion = m_sipFullVersion;
             StatusCode = (int)responseStatus;
             Status = responseStatus;
             ReasonPhrase = reasonPhrase;
@@ -144,16 +105,16 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Parses a SIP response from a SIP message object.
         /// </summary>
-        /// <param name="sipMessage">The SIP message to parse a response from.</param>
+        /// <param name="sipMessageBuffer">The SIP message to parse a response from.</param>
         /// <returns>A new SIP response object.</returns>
-        public static SIPResponse ParseSIPResponse(SIPMessage sipMessage)
+        public static SIPResponse ParseSIPResponse(SIPMessageBuffer sipMessageBuffer)
         {
             try
             {
                 SIPResponse sipResponse = new SIPResponse();
-                sipResponse.LocalSIPEndPoint = sipMessage.LocalSIPEndPoint;
-                sipResponse.RemoteSIPEndPoint = sipMessage.RemoteSIPEndPoint;
-                string statusLine = sipMessage.FirstLine;
+                sipResponse.LocalSIPEndPoint = sipMessageBuffer.LocalSIPEndPoint;
+                sipResponse.RemoteSIPEndPoint = sipMessageBuffer.RemoteSIPEndPoint;
+                string statusLine = sipMessageBuffer.FirstLine;
 
                 int firstSpacePosn = statusLine.IndexOf(" ");
 
@@ -163,8 +124,8 @@ namespace SIPSorcery.SIP
                 sipResponse.Status = SIPResponseStatusCodes.GetStatusTypeForCode(sipResponse.StatusCode);
                 sipResponse.ReasonPhrase = statusLine.Substring(3).Trim();
 
-                sipResponse.Header = SIPHeader.ParseSIPHeaders(sipMessage.SIPHeaders);
-                sipResponse.Body = sipMessage.Body;
+                sipResponse.Header = SIPHeader.ParseSIPHeaders(sipMessageBuffer.SIPHeaders);
+                sipResponse.Body = sipMessageBuffer.Body;
 
                 return sipResponse;
             }
@@ -175,7 +136,7 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception ParseSIPResponse. " + excp.Message);
-                logger.LogError(sipMessage.RawMessage);
+                logger.LogError(sipMessageBuffer.RawMessage);
                 throw new SIPValidationException(SIPValidationFieldsEnum.Response, "Error parsing SIP Response");
             }
         }
@@ -189,7 +150,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                SIPMessage sipMessage = SIPMessage.ParseSIPMessage(sipMessageStr, null, null);
+                SIPMessageBuffer sipMessage = SIPMessageBuffer.ParseSIPMessage(sipMessageStr, null, null);
                 return SIPResponse.ParseSIPResponse(sipMessage);
             }
             catch (SIPValidationException)

@@ -6,10 +6,10 @@
 // for such requests is so they can be passed to a dial plan for processing.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 24 Apr 2011	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, London, UK (www.sipsorcery.com).
+// 24 Apr 2011	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

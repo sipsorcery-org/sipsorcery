@@ -38,8 +38,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Contact: <sip:303@213.168.225.133>" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPResponse tryingResp = SIPResponse.ParseSIPResponse(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPResponse tryingResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
             Assert.True(tryingResp.Status == SIPResponseStatusCodesEnum.Trying, "The SIP response status was not parsed correctly.");
 
@@ -81,8 +81,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=fmtp:101 0-16" + m_CRLF +
                 "a=silenceSupp:off - - - -" + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
             Assert.True(okResp.Status == SIPResponseStatusCodesEnum.Ok, "The SIP response status was not parsed correctly.");
             Assert.True(okResp.Body.Length == 352, "The SIP response body length was not correct.");
@@ -117,8 +117,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=rtpmap:4 g723/8000" + m_CRLF +
                 "a=rtpmap:2 g726/8000" + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
             Assert.True(okResp.Status == SIPResponseStatusCodesEnum.Ok, "The SIP response status was not parsed correctly.");
             Assert.True(okResp.Body.Length == 217, "The SIP response body length was not correct.");
@@ -142,8 +142,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Contact: <sip:sip.blueface.ie@213.168.225.133>" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPResponse forbiddenResp = SIPResponse.ParseSIPResponse(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPResponse forbiddenResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
             Assert.True(forbiddenResp.Status == SIPResponseStatusCodesEnum.Forbidden, "The SIP response status was not parsed correctly.");
 
@@ -180,8 +180,8 @@ namespace SIPSorcery.SIP.UnitTests
             "a=rtpmap:101 telephone-event/8000" + m_CRLF +
             "a=fmtp:101 0-15" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPResponse optionsResp = SIPResponse.ParseSIPResponse(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPResponse optionsResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
             Assert.True(optionsResp.Status == SIPResponseStatusCodesEnum.Ok, "The SIP response status was not parsed correctly.");
 
@@ -204,8 +204,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, REFER" + m_CRLF +
                 "Supported: x-sipura" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPResponse optionsResp = SIPResponse.ParseSIPResponse(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPResponse optionsResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
             Console.WriteLine("CSeq=" + optionsResp.Header.CSeq + ".");
             Console.WriteLine("CSeq Method=" + optionsResp.Header.CSeqMethod + ".");
@@ -247,8 +247,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=rtpmap:101 telephone-event/8000" + m_CRLF +
                 "a=ptime:20";
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
             Console.WriteLine("To: " + okResp.Header.To.ToString());
 
@@ -274,8 +274,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Contact: <sip:303@sip.blueface.ie>;q=0.1;expires=3298, \"Joe Bloggs\"<sip:253989@89.100.104.191:64226;rinstance=5720c5fed8cbcd34>;q=0.1;expires=3600" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
             Console.WriteLine("To: " + okResp.Header.To.ToString());
 
@@ -326,8 +326,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=sendrecv" + m_CRLF +
                 "a=ptime:20" + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
             Assert.True(okResp.Header.RecordRoutes.Length == 2, "The wrong number of Record-Route headers were present in the parsed response.");
             Assert.True(okResp.Header.RecordRoutes.PopRoute().ToString() == "<sip:77.75.25.44:5060;lr=on>", "The top Record-Route header was incorrect.");
@@ -371,8 +371,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=sendrecv" + m_CRLF +
                 "m=video 0 RTP/AVP 31 34 103 99";
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
             Assert.True(okResp.Header.Vias.Length == 2, "The wrong number of Record-Route headers were present in the parsed response.");
             Assert.True(okResp.Header.Vias.TopViaHeader.ContactAddress == "194.213.29.100:5060", "The top via contact address was not ocrrectly parsed.");
