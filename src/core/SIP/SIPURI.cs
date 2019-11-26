@@ -133,6 +133,82 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public string HostAddress
+        {
+            get
+            {
+                //rj2: colon might be IPv6 delimeter, not port delimeter, check first against IPv6 with Port notation, and then the occurance of multiple colon
+                if (Host.IndexOf("]:") > 0)
+                {
+                    return Host.Substring(0, Host.IndexOf("]:") + 1);
+                }
+                //if there are multiple colon, it's IPv6 without port, else IPv4 with port
+                else if (Host.IndexOf(':') > 0 && Host.IndexOf(':') != Host.LastIndexOf(':'))
+                {
+                    return Host;
+                }
+                else if (Host.IndexOf(':') > 0)
+                {
+                    return Host.Substring(0, Host.IndexOf(":"));
+                }
+                return Host;
+            }
+        }
+
+        public string MAddrOrHostAddress
+        {
+            get
+            {
+                return this.MAddr ?? this.HostAddress;
+            }
+        }
+
+        public string MAddrOrHost
+        {
+            get
+            {
+                if (this.HostPort.IsNullOrBlank())
+                {
+                    return MAddrOrHostAddress;
+                }
+                return MAddrOrHostAddress + ":" + this.HostPort;
+            }
+        }
+
+        public string MAddr
+        {
+            get
+            {
+                if (this.Parameters.Has(SIPHeaderAncillary.SIP_HEADERANC_MADDR))
+                {
+                    return this.Parameters.Get(SIPHeaderAncillary.SIP_HEADERANC_MADDR);
+                }
+                return null;
+            }
+        }
+
+        public string HostPort
+        {
+            get
+            {
+                //rj2: colon might be IPv6 delimeter, not port delimeter, check first against IPv6 with Port notation, and then the occurance of multiple colon
+                if (Host.IndexOf("]:") > 0)
+                {
+                    return Host.Substring(Host.IndexOf("]:") + 2);
+                }
+                //if there are multiple colon, it's IPv6 without port, else IPv4 with port
+                else if (Host.IndexOf(':') > 0 && Host.IndexOf(':') != Host.LastIndexOf(':'))
+                {
+                    return null;
+                }
+                else if (Host.IndexOf(':') > 0)
+                {
+                    return Host.Substring(Host.IndexOf(":") + 1);
+                }
+                return null;
+            }
+        }
+
         public string UnescapedUser
         {
             get
@@ -186,7 +262,10 @@ namespace SIPSorcery.SIP
         public SIPURI(SIPSchemesEnum scheme, IPAddress address, int port)
         {
             Scheme = scheme;
-            Host = $"{address}:{port}";
+            if (address != null)
+            {
+                Host = address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? $"[{address}]:{port}" : $"{address}:{port}";
+            }
         }
 
         public static SIPURI ParseSIPURI(string uri)
