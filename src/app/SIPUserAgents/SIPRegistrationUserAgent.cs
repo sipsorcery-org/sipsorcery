@@ -29,7 +29,8 @@ namespace SIPSorcery.SIP.App
         private const int MAX_REGISTRATION_ATTEMPT_TIMEOUT = 60;
         private const int REGISTRATION_HEAD_TIME = 5;                // Time in seconds to go to next registration to initate.
         private const int REGISTER_FAILURERETRY_INTERVAL = 300;      // Number of seconds between consecutive register requests in the event of failures or timeouts.
-        private const int REGISTER_MINIMUM_EXPIRY = 60;              // The minimum interval a registration will be accepted for. Anything less than this interval will use this minimum value.
+        //rj2: there are PBX which send new Expires header in SIP OK with value lesser than 60 -> set hardcoded minimum to 10, so registration on PBX does not timeout
+        private const int REGISTER_MINIMUM_EXPIRY = 10;              // The minimum interval a registration will be accepted for. Anything less than this interval will use this minimum value.
         private const int DEFAULT_REGISTER_EXPIRY = 600;
         private const int MAX_REGISTER_ATTEMPTS = 3;                 // The maximum number of registration attempts that will be made without a failure condition before incurring a temporary failure.
 
