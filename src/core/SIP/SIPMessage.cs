@@ -169,7 +169,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-
         //rj2: check if message could be "well"known Ping message
         public static bool IsPing(byte[] buffer)
         {

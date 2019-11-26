@@ -115,19 +115,12 @@ namespace SIPSorcery.SIP
             get
             {
                 string canonicalAddress = Scheme + ":";
-                canonicalAddress += (User != null && User.Trim().Length > 0) ? User + "@" : null;
+                canonicalAddress += !String.IsNullOrEmpty(User) ? User + "@" : null;
 
-                //rj2: colon might be IPv6 delimeter, not port delimeter, check first against IPv6 with Port notation, and then the occurance of multiple colon
-                if (Host.IndexOf("]:") > 0)
-                {
-                    canonicalAddress += Host;
-                }
-                //if there are multiple colon, it's IPv6 without port, else IPv4 with port
-                else if (Host.IndexOf(':') > 0 && Host.IndexOf(':') != Host.LastIndexOf(':'))
-                {
-                    canonicalAddress += "[" + Host + "]:" + m_defaultSIPPort;
-                }
-                else if (Host.IndexOf(':') > 0)
+                // First expression is for IPv6 addresses with a port.
+                // Second expression is for IPv4 addresses and hostnames with a port.
+                if (Host.Contains("]:") ||
+                    (Host.IndexOf(':') != -1 && Host.IndexOf(':') == Host.LastIndexOf(':')))
                 {
                     canonicalAddress += Host;
                 }
