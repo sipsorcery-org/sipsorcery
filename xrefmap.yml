@@ -15091,6 +15091,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPDNSLookupEndPoint.TTL
   fullName: SIPSorcery.SIP.SIPDNSLookupEndPoint.TTL
   nameWithType: SIPDNSLookupEndPoint.TTL
+- uid: SIPSorcery.SIP.SIPDNSLookupEndPoint.ValidUntil
+  name: ValidUntil
+  href: api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html#SIPSorcery_SIP_SIPDNSLookupEndPoint_ValidUntil
+  commentId: F:SIPSorcery.SIP.SIPDNSLookupEndPoint.ValidUntil
+  fullName: SIPSorcery.SIP.SIPDNSLookupEndPoint.ValidUntil
+  nameWithType: SIPDNSLookupEndPoint.ValidUntil
 - uid: SIPSorcery.SIP.SIPDNSLookupResult
   name: SIPDNSLookupResult
   href: api/SIPSorcery.SIP.SIPDNSLookupResult.html
@@ -15308,6 +15314,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPDNSServiceResult.TTL
   fullName: SIPSorcery.SIP.SIPDNSServiceResult.TTL
   nameWithType: SIPDNSServiceResult.TTL
+- uid: SIPSorcery.SIP.SIPDNSServiceResult.ValidUntil
+  name: ValidUntil
+  href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult_ValidUntil
+  commentId: F:SIPSorcery.SIP.SIPDNSServiceResult.ValidUntil
+  fullName: SIPSorcery.SIP.SIPDNSServiceResult.ValidUntil
+  nameWithType: SIPDNSServiceResult.ValidUntil
 - uid: SIPSorcery.SIP.SIPDNSServiceResult.Weight
   name: Weight
   href: api/SIPSorcery.SIP.SIPDNSServiceResult.html#SIPSorcery_SIP_SIPDNSServiceResult_Weight
