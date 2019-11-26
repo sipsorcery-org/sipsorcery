@@ -1008,7 +1008,7 @@ namespace SIPSorcery.SIP
                         else
                         {
                             rawSIPMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-                            if (rawSIPMessage.IsNullOrBlank())
+                            if (rawSIPMessage.IsNullOrBlank() || SIPMessage.IsPing(buffer))
                             {
                                 // An empty transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
                                 return;
