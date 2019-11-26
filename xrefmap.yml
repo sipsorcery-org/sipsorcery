@@ -17825,6 +17825,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPMessage.GetContentLength
   nameWithType: SIPMessage.GetContentLength
+- uid: SIPSorcery.SIP.SIPMessage.IsPing(System.Byte[])
+  name: IsPing(Byte[])
+  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_IsPing_System_Byte___
+  commentId: M:SIPSorcery.SIP.SIPMessage.IsPing(System.Byte[])
+  name.vb: IsPing(Byte())
+  fullName: SIPSorcery.SIP.SIPMessage.IsPing(System.Byte[])
+  fullName.vb: SIPSorcery.SIP.SIPMessage.IsPing(System.Byte())
+  nameWithType: SIPMessage.IsPing(Byte[])
+  nameWithType.vb: SIPMessage.IsPing(Byte())
+- uid: SIPSorcery.SIP.SIPMessage.IsPing*
+  name: IsPing
+  href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_IsPing_
+  commentId: Overload:SIPSorcery.SIP.SIPMessage.IsPing
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPMessage.IsPing
+  nameWithType: SIPMessage.IsPing
 - uid: SIPSorcery.SIP.SIPMessage.LocalSIPEndPoint
   name: LocalSIPEndPoint
   href: api/SIPSorcery.SIP.SIPMessage.html#SIPSorcery_SIP_SIPMessage_LocalSIPEndPoint
