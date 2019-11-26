@@ -484,6 +484,13 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug($"SIP URI {sipURI.ToString()}");
 
+            //rj2: should throw exception
+            Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("sip:user1@2a00:1450:4005:800::2004"));//ipv6 host without mandatory brackets
+            Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("sip:user1@:::ffff:127.0.0.1"));//ipv6 with mapped ipv4 localhost
+            //rj2: should/does not throw exception
+            sipURI = SIPURI.ParseSIPURI("sip:[::ffff:127.0.0.1]");
+            Assert.True(sipURI.Host == "[::ffff:127.0.0.1]", "The SIP URI host was not parsed correctly.");
+
             logger.LogDebug("-----------------------------------------");
         }
 
@@ -516,8 +523,35 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPURI sipURINoPort = SIPURI.ParseSIPURI("sip:[::1]");
             SIPURI sipURIWIthPort = SIPURI.ParseSIPURI("sip:[::1]:5060");
+            logger.LogDebug($"SIP URI {sipURINoPort.ToString()}");
+            logger.LogDebug($"Canonical address {sipURIWIthPort.CanonicalAddress}");
 
             Assert.Equal(sipURINoPort.CanonicalAddress, sipURIWIthPort.CanonicalAddress);
+
+            Assert.True(sipURINoPort.ToString() == "sip:[::1]", "The SIP URI was not ToString'ed correctly.");
+            Assert.True(sipURIWIthPort.CanonicalAddress == "sip:[::1]:5060", "The SIP URI canonical address was not correct.");
+
+            //rj2: more test cases
+            sipURINoPort = SIPURI.ParseSIPURI("sip:[2a00:1450:4005:800::2004]");
+            sipURIWIthPort = SIPURI.ParseSIPURI("sip:[2a00:1450:4005:800::2004]:5060");
+            logger.LogDebug($"SIP URI {sipURINoPort.ToString()}");
+            logger.LogDebug($"Canonical address {sipURIWIthPort.CanonicalAddress}");
+
+            Assert.Equal(sipURINoPort.CanonicalAddress, sipURIWIthPort.CanonicalAddress);
+
+            Assert.True(sipURINoPort.ToString() == "sip:[2a00:1450:4005:800::2004]", "The SIP URI was not ToString'ed correctly.");
+            Assert.True(sipURIWIthPort.CanonicalAddress == "sip:[2a00:1450:4005:800::2004]:5060", "The SIP URI canonical address was not correct.");
+
+
+            sipURINoPort = SIPURI.ParseSIPURI("sip:user1@[2a00:1450:4005:800::2004]");
+            sipURIWIthPort = SIPURI.ParseSIPURI("sip:user1@[2a00:1450:4005:800::2004]:5060");
+            logger.LogDebug($"SIP URI {sipURINoPort.ToString()}");
+            logger.LogDebug($"Canonical address {sipURIWIthPort.CanonicalAddress}");
+
+            Assert.Equal(sipURINoPort.CanonicalAddress, sipURIWIthPort.CanonicalAddress);
+
+            Assert.True(sipURINoPort.ToString() == "sip:user1@[2a00:1450:4005:800::2004]", "The SIP URI was not ToString'ed correctly.");
+            Assert.True(sipURIWIthPort.CanonicalAddress == "sip:user1@[2a00:1450:4005:800::2004]:5060", "The SIP URI canonical address was not correct.");
 
             logger.LogDebug("-----------------------------------------");
         }
