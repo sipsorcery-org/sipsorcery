@@ -521,5 +521,20 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("-----------------------------------------");
         }
+
+        /// <summary>
+        /// Tests that the SIP URI constructor that takes an IP address works correctly for IPv6.
+        /// </summary>
+        [Fact]
+        public void UriConstructorWithIPv6AddressUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
+
+            Assert.Equal("sip:[::1]:6060", ipv6Uri.ToString());
+
+            logger.LogDebug("-----------------------------------------");
+        }
     }
 }
