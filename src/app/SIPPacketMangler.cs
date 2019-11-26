@@ -37,13 +37,24 @@ namespace SIPSorcery.SIP.App
             {
                 if (sdpBody != null && publicIPAddress != null)
                 {
-                    string sdpAddress = SDP.GetSDPRTPEndPoint(sdpBody).Address.ToString();
+                    IPAddress addr = SDP.GetSDPRTPEndPoint(sdpBody).Address;
+                    //rj2: need to consider publicAddress and IPv6 for mangling
+                    IPAddress pubaddr = IPAddress.Parse(publicIPAddress);
+                    string sdpAddress = addr.ToString();
 
+                    if (IPSocket.IsPrivateAddress(sdpAddress) && publicIPAddress != sdpAddress && addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                    {
+                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP6 (?<ipaddress>([:a-fA-F0-9]+))", "c=IN " + (pubaddr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? "IP6 " : "IP4 ") + publicIPAddress, RegexOptions.Singleline | RegexOptions.ExplicitCapture);
+                        wasMangled = true;
+
+                        return mangledSDP;
+                    }
+                    else
                     // Only mangle if there is something to change. For example the server could be on the same private subnet in which case it can't help.
                     if (IPSocket.IsPrivateAddress(sdpAddress) && publicIPAddress != sdpAddress)
                     {
                         //logger.LogDebug("MangleSDP replacing private " + sdpAddress + " with " + publicIPAddress + ".");
-                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", "c=IN IP4 " + publicIPAddress, RegexOptions.Singleline);
+                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", "c=IN " + (pubaddr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? "IP6 " : "IP4 ") + publicIPAddress, RegexOptions.Singleline);
                         wasMangled = true;
 
                         return mangledSDP;
