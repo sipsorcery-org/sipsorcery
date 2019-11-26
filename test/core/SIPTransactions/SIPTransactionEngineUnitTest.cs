@@ -64,9 +64,9 @@ namespace SIPSorcery.SIP.UnitTests
             SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
 
-            SIPRequest inviteRequest = SIPRequest.ParseSIPRequest("INVITE sip:dummy@udp:127.0.0.1:12014 SIP/2.0" + m_CRLF +
+            SIPRequest inviteRequest = SIPRequest.ParseSIPRequest("INVITE sip:dummy@127.0.0.1:12014 SIP/2.0" + m_CRLF +
                 "Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27" + m_CRLF +
-                "To: <sip:dummy@udp:127.0.0.1:12014>" + m_CRLF +
+                "To: <sip:dummy@127.0.0.1:12014>" + m_CRLF +
                 "From: <sip:unittest@mysipswitch.com>;tag=2062917371" + m_CRLF +
                 "Call-ID: 8ae45c15425040179a4285d774ccbaf6" + m_CRLF +
                 "CSeq: 1 INVITE" + m_CRLF +
@@ -83,7 +83,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPResponse sipResponse = SIPResponse.ParseSIPResponse("SIP/2.0 603 Nothing listening" + m_CRLF +
                 "Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013" + m_CRLF +
-                "To: <sip:dummy@udp:127.0.0.1:12014>" + m_CRLF +
+                "To: <sip:dummy@127.0.0.1:12014>" + m_CRLF +
                 "From: <sip:unittest@mysipswitch.com>;tag=2062917371" + m_CRLF +
                 "Call-ID: 8ae45c15425040179a4285d774ccbaf6" + m_CRLF +
                 "CSeq: 1 INVITE" + m_CRLF +
