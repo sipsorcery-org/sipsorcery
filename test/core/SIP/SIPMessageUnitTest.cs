@@ -631,5 +631,45 @@ CRLF +
             Assert.True(result != null, "The resultant array should not have been null.");
             Assert.True(bytesSkipped == 12, "The bytes skipped was incorrect.");
         }
+
+        //rj2
+        [Fact]
+        public void IsPingUnitTest()
+        {
+            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            byte[] buffer = new byte[] { 0x0d, 0x0a };//"\r\n"
+            Assert.True(SIPMessage.IsPing(buffer), "Buffer \\r\\n is not a Ping message.");
+
+            buffer = new byte[] { 0x0d, 0x0a, 0x0d, 0x0a };//"\r\n\r\n"
+            Assert.True(SIPMessage.IsPing(buffer), "Buffer \\r\\n\\r\\n is not a Ping message.");
+
+            buffer = new byte[] { 0x6a, 0x61, 0x4b, 0x00 };//"jaK\0"
+            Assert.True(SIPMessage.IsPing(buffer), "Buffer jaK\\0 is not a Ping message.");
+
+            buffer = new byte[] { 0x70, 0x6e, 0x67 };//"png"
+            Assert.True(SIPMessage.IsPing(buffer), "Buffer png is not a Ping message.");
+
+            buffer = new byte[] { 0x00, 0x00, 0x00, 0x00 };//"\0\0\0\0"
+            Assert.True(SIPMessage.IsPing(buffer), "Buffer \\0\\0\\0\\0 is not a Ping message.");
+
+            string sipMsg =
+                "SIP/2.0 100 Trying" + CRLF +
+                "Via: SIP/2.0/UDP 213.168.225.135:5060;branch=z9hG4bKD+ta2mJ+C+VV/L50aPO1lFJnrag=" + CRLF +
+                "Via: SIP/2.0/UDP 192.168.1.2:5065;received=220.240.255.198:64193;branch=z9hG4bKB86FC8D2431F49E9862D1EE439C78AD8" + CRLF +
+                "From: bluesipd <sip:bluesipd@bluesipd:5065>;tag=3272744142" + CRLF +
+                "To: <sip:303@bluesipd>" + CRLF +
+                "Call-ID: FE63F90D-4339-4AD0-9D44-59F44A1935E7@192.168.1.2" + CRLF +
+                "CSeq: 45560 INVITE" + CRLF +
+                "User-Agent: asterisk" + CRLF +
+                "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY" + CRLF +
+                "Contact: <sip:303@213.168.225.133>" + CRLF +
+                "Content-Length: 0" + CRLF + CRLF;
+
+            Assert.False(SIPMessage.IsPing(Encoding.UTF8.GetBytes(sipMsg)), "The SIP message is a Ping.");
+
+            Console.WriteLine("-----------------------------------------");
+        }
+
     }
 }
