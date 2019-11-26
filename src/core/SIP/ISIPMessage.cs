@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SIPSorcery.SIP
 {
-    public interface ISIPRequestResponse
+    public interface ISIPMessage
     {
 
     }
