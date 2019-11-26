@@ -536,5 +536,38 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("-----------------------------------------");
         }
+
+        /// <summary>
+        /// Tests that the invalid SIP URIs with IPv6 addresses missing enclosing '[' and ']' throw an exception.
+        /// </summary>
+        [Fact]
+        public void InvalidIPv6UriThrowUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
+
+            Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("sip:user1@2a00:1450:4005:800::2004"));
+            Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("sip:user1@:::ffff:127.0.0.1"));
+
+            logger.LogDebug("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP URI with an IPv4 address mapped to an IPv6 address is parsed correctly.
+        /// </summary>
+        [Fact]
+        public void ParseIPv4MappedAddressUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
+
+            var uri = SIPURI.ParseSIPURI("sip:[::ffff:127.0.0.1]");
+
+            Assert.Equal("[::ffff:127.0.0.1]", uri.Host);
+
+            logger.LogDebug("-----------------------------------------");
+        }
     }
 }
