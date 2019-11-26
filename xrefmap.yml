@@ -17311,6 +17311,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPHeaderAncillary.SIP_HEADERANC_BRANCH
   fullName: SIPSorcery.SIP.SIPHeaderAncillary.SIP_HEADERANC_BRANCH
   nameWithType: SIPHeaderAncillary.SIP_HEADERANC_BRANCH
+- uid: SIPSorcery.SIP.SIPHeaderAncillary.SIP_HEADERANC_MADDR
+  name: SIP_HEADERANC_MADDR
+  href: api/SIPSorcery.SIP.SIPHeaderAncillary.html#SIPSorcery_SIP_SIPHeaderAncillary_SIP_HEADERANC_MADDR
+  commentId: F:SIPSorcery.SIP.SIPHeaderAncillary.SIP_HEADERANC_MADDR
+  fullName: SIPSorcery.SIP.SIPHeaderAncillary.SIP_HEADERANC_MADDR
+  nameWithType: SIPHeaderAncillary.SIP_HEADERANC_MADDR
 - uid: SIPSorcery.SIP.SIPHeaderAncillary.SIP_HEADERANC_RECEIVED
   name: SIP_HEADERANC_RECEIVED
   href: api/SIPSorcery.SIP.SIPHeaderAncillary.html#SIPSorcery_SIP_SIPHeaderAncillary_SIP_HEADERANC_RECEIVED
@@ -22174,6 +22180,71 @@ references:
   commentId: F:SIPSorcery.SIP.SIPURI.Host
   fullName: SIPSorcery.SIP.SIPURI.Host
   nameWithType: SIPURI.Host
+- uid: SIPSorcery.SIP.SIPURI.HostAddress
+  name: HostAddress
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_HostAddress
+  commentId: P:SIPSorcery.SIP.SIPURI.HostAddress
+  fullName: SIPSorcery.SIP.SIPURI.HostAddress
+  nameWithType: SIPURI.HostAddress
+- uid: SIPSorcery.SIP.SIPURI.HostAddress*
+  name: HostAddress
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_HostAddress_
+  commentId: Overload:SIPSorcery.SIP.SIPURI.HostAddress
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPURI.HostAddress
+  nameWithType: SIPURI.HostAddress
+- uid: SIPSorcery.SIP.SIPURI.HostPort
+  name: HostPort
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_HostPort
+  commentId: P:SIPSorcery.SIP.SIPURI.HostPort
+  fullName: SIPSorcery.SIP.SIPURI.HostPort
+  nameWithType: SIPURI.HostPort
+- uid: SIPSorcery.SIP.SIPURI.HostPort*
+  name: HostPort
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_HostPort_
+  commentId: Overload:SIPSorcery.SIP.SIPURI.HostPort
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPURI.HostPort
+  nameWithType: SIPURI.HostPort
+- uid: SIPSorcery.SIP.SIPURI.MAddr
+  name: MAddr
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_MAddr
+  commentId: P:SIPSorcery.SIP.SIPURI.MAddr
+  fullName: SIPSorcery.SIP.SIPURI.MAddr
+  nameWithType: SIPURI.MAddr
+- uid: SIPSorcery.SIP.SIPURI.MAddr*
+  name: MAddr
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_MAddr_
+  commentId: Overload:SIPSorcery.SIP.SIPURI.MAddr
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPURI.MAddr
+  nameWithType: SIPURI.MAddr
+- uid: SIPSorcery.SIP.SIPURI.MAddrOrHost
+  name: MAddrOrHost
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_MAddrOrHost
+  commentId: P:SIPSorcery.SIP.SIPURI.MAddrOrHost
+  fullName: SIPSorcery.SIP.SIPURI.MAddrOrHost
+  nameWithType: SIPURI.MAddrOrHost
+- uid: SIPSorcery.SIP.SIPURI.MAddrOrHost*
+  name: MAddrOrHost
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_MAddrOrHost_
+  commentId: Overload:SIPSorcery.SIP.SIPURI.MAddrOrHost
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPURI.MAddrOrHost
+  nameWithType: SIPURI.MAddrOrHost
+- uid: SIPSorcery.SIP.SIPURI.MAddrOrHostAddress
+  name: MAddrOrHostAddress
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_MAddrOrHostAddress
+  commentId: P:SIPSorcery.SIP.SIPURI.MAddrOrHostAddress
+  fullName: SIPSorcery.SIP.SIPURI.MAddrOrHostAddress
+  nameWithType: SIPURI.MAddrOrHostAddress
+- uid: SIPSorcery.SIP.SIPURI.MAddrOrHostAddress*
+  name: MAddrOrHostAddress
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_MAddrOrHostAddress_
+  commentId: Overload:SIPSorcery.SIP.SIPURI.MAddrOrHostAddress
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPURI.MAddrOrHostAddress
+  nameWithType: SIPURI.MAddrOrHostAddress
 - uid: SIPSorcery.SIP.SIPURI.op_Equality(SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPURI)
   name: Equality(SIPURI, SIPURI)
   href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_op_Equality_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPURI_
