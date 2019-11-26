@@ -106,8 +106,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=rtpmap:101 telephone-event/8000" + m_CRLF +
                 "a=fmtp:101 0-15" + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             if (inviteReq.Body != null)
             {
@@ -165,8 +165,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Max-Forwards: 70" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Assert.True(ackReq.Method == SIPMethodsEnum.ACK, "The SIP request method was not parsed correctly.");
             Assert.True(ackReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
@@ -197,8 +197,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Remote-Party-ID: \"dev\" <sip:aaron@89.100.92.186>;party=calling;id-type=subscriber;privacy=off;screen=yes" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Assert.True(ackReq.Method == SIPMethodsEnum.ACK, "The SIP request method was not parsed correctly.");
             Assert.True(ackReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
@@ -227,8 +227,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: X-PRO release 1103v" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Assert.True(byeReq.Method == SIPMethodsEnum.BYE, "The SIP request method was not parsed correctly.");
             Assert.True(byeReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
@@ -255,8 +255,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: asterisk" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Assert.True(byeReq.Method == SIPMethodsEnum.BYE, "The SIP request method was not parsed correctly.");
             Assert.True(byeReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
@@ -284,8 +284,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: asterisk" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             SIPRoute topRoute = byeReq.Header.Routes.PopRoute();
             Assert.True(topRoute.Host == "220.240.255.198:64300", "The top route was not parsed correctly, top route IP address was " + topRoute.Host + ".");
@@ -315,8 +315,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Proxy-Require: ms-benotify" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest subscribeReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest subscribeReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Console.WriteLine(subscribeReq.ToString());
 
@@ -341,8 +341,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Expires: 30" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Console.WriteLine(registerReq.ToString());
 
@@ -371,8 +371,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: Aastra Intelligate" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            Assert.Throws<SIPValidationException>(() => SIPRequest.ParseSIPRequest(sipMessage));
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            Assert.Throws<SIPValidationException>(() => SIPRequest.ParseSIPRequest(sipMessageBuffer));
         }
 
         [Fact]
@@ -412,8 +412,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=rtpmap:103 G726-40/8000" + m_CRLF +
                 "a=rtpmap:8 PCMA/8000";
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Console.WriteLine(inviteReq.ToString());
 
@@ -439,8 +439,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Allow-Events: presence" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Console.WriteLine("-----------------------------------------");
         }
@@ -463,8 +463,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Content-Length: 0" + m_CRLF +
                 "Expires: 3600" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
         }
 
         [Fact]
@@ -486,8 +486,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Authorization: Digest realm=\"sip.blueface.ie\",nonce=\"1694683214\",username=\"aaronxten\",response=\"85f2089ac958e69ce4d74f5ae72a9a5f\",uri=\"sip:blueface.ie\"" + m_CRLF +
                 m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Console.WriteLine(registerReq.ToString());
 
@@ -520,8 +520,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Allow-Events: presence" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Console.WriteLine(registerReq.ToString());
         }
@@ -544,8 +544,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: X-PRO release 1103v" + m_CRLF +
                 m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             string branchId = CallProperties.CreateBranchId();
 
@@ -577,8 +577,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: X-PRO release 1103v" + m_CRLF +
                 m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             string branchId = inviteReq.CreateBranchId();
 				
@@ -610,8 +610,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: X-PRO release 1103v" + m_CRLF +
                 m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             MockSIPChannel mockSIPChannel = new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5062"));
             SIPTransport mockSIPTransport = new SIPTransport(MockSIPDNSManager.Resolve, null, mockSIPChannel, false);
@@ -642,8 +642,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: X-PRO release 1103v" + m_CRLF +
                 m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             SIPTransport mockSIPTransport = new SIPTransport(MockSIPDNSManager.Resolve, null, false);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5061")));
@@ -675,8 +675,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: X-PRO release 1103v" + m_CRLF +
                 m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             SIPTransport mockSIPTransport = new SIPTransport(MockSIPDNSManager.Resolve, null, false);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("10.10.10.10:5060")));
@@ -706,8 +706,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: X-PRO release 1103v" + m_CRLF +
                 m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             SIPTransport mockSIPTransport = new SIPTransport(MockSIPDNSManager.Resolve, null, false);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5062")));
@@ -742,8 +742,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: X-PRO release 1103v" + m_CRLF +
                 m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             SIPTransport mockSIPTransport = new SIPTransport(MockSIPDNSManager.Resolve, null, false);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("82.195.148.216:5062")));
@@ -779,8 +779,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: X-PRO release 1103v" + m_CRLF +
                 m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             SIPTransport mockSIPTransport = new SIPTransport(MockSIPDNSManager.Resolve, null, false);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("194.213.29.100:5060")));
@@ -812,8 +812,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, REFER" + m_CRLF +
                 "Supported: x-sipura" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            Assert.Throws<SIPValidationException>(() => SIPRequest.ParseSIPRequest(sipMessage));
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            Assert.Throws<SIPValidationException>(() => SIPRequest.ParseSIPRequest(sipMessageBuffer));
 
             Console.WriteLine("-----------------------------------------");
         }
@@ -835,8 +835,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: X-Lite release 1006e stamp 34025" + m_CRLF +
                 "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY, MESSAGE, SUBSCRIBE, INFO" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest registerReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Console.WriteLine(registerReq.ToString());
 
@@ -887,8 +887,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=ptime:20" + m_CRLF +
                 "a=rtcp:20027 IN IP4 10.1.1.241";
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             SIPTransport mockSIPTransport = new SIPTransport(MockSIPDNSManager.Resolve, null, false);
             mockSIPTransport.AddSIPChannel(new MockSIPChannel(IPSocket.ParseSocketString("194.213.29.100:5060")));
@@ -935,8 +935,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=rtpmap:18 G729/8000" + m_CRLF +
                 "a=fmtp:18 annexb=yes";
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Console.WriteLine(inviteReq.ToString());
 
@@ -962,8 +962,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "User-Agent: asterisk" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Assert.True(byeReq.Header.Routes.Length == 7, "The wrong number of Ruute headers were parsed.");
             SIPRoute nextRoute = byeReq.Header.Routes.PopRoute();
@@ -1005,8 +1005,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Content-Type: application/sdp" + m_CRLF +
                 "Content-Length: 232" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Console.WriteLine(inviteReq.ToString());
         }
@@ -1028,8 +1028,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "Proxy-Authorization: Digest username=\"user\",realm=\"sipsorcery.com\",nonce=\"13046264131868153844\",uri=\"sip:300@sipsorcery.com\",response=\"7b3b69c82a8ca80e5d6c58d4be652a79\",opaque=\"\",algorithm=MD5" + m_CRLF +
                 "Content-Length: 0" + m_CRLF + m_CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Console.WriteLine(ackReq.ToString());
 
