@@ -22,7 +22,7 @@ namespace SIPSorcery.SIP
     /// <summary>
     /// Represents a SIP Request.
     /// </summary>
-    public class SIPRequest
+    public class SIPRequest : ISIPMessage
     {
         private static ILogger logger = Log.Logger;
 
