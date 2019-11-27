@@ -1360,14 +1360,68 @@ when a call is answered as an attempt to help solve audio issues.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_GetInDialogRequest_SIPSorcery_SIP_SIPMethodsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.GetInDialogRequest(SIPSorcery.SIP.SIPMethodsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L347">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPDialogue_GetInDialogRequest_" data-uid="SIPSorcery.SIP.SIPDialogue.GetInDialogRequest*"></a>
+  <h4 id="SIPSorcery_SIP_SIPDialogue_GetInDialogRequest_SIPSorcery_SIP_SIPMethodsEnum_" data-uid="SIPSorcery.SIP.SIPDialogue.GetInDialogRequest(SIPSorcery.SIP.SIPMethodsEnum)">GetInDialogRequest(SIPMethodsEnum)</h4>
+  <div class="markdown level1 summary"><p>Builds a basic SIP request with the header fields set to correctly identify it as an
+in dialog request. Calling this method also increments the dialog's local CSeq counter.
+This is safe to do even if the request does not end up being sent.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPRequest GetInDialogRequest(SIPMethodsEnum method)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPMethodsEnum.html">SIPMethodsEnum</a></td>
+        <td><span class="parametername">method</span></td>
+        <td><p>The method of the SIP request to create.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPRequest.html">SIPRequest</a></td>
+        <td><p>An in dailog SIP request.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPDialogue_Hangup_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPDialogue.Hangup(SIPSorcery.SIP.SIPTransport%2CSIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L305">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPDialogue.cs/#L311">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPDialogue_Hangup_" data-uid="SIPSorcery.SIP.SIPDialogue.Hangup*"></a>
   <h4 id="SIPSorcery_SIP_SIPDialogue_Hangup_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.SIPDialogue.Hangup(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint)">Hangup(SIPTransport, SIPEndPoint)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>Generates a BYE request for this dialog and forwards it to the remote cal party.
+This has the effect of hanging up the call.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -1386,12 +1440,14 @@ when a call is answered as an attempt to help solve audio issues.</p>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPTransport.html">SIPTransport</a></td>
         <td><span class="parametername">sipTransport</span></td>
-        <td></td>
+        <td><p>The transport layer to use for sending the request.</p>
+</td>
       </tr>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
         <td><span class="parametername">outboundProxy</span></td>
-        <td></td>
+        <td><p>Optional. If set an end point that the BYE request will be directly forwarded to.</p>
+</td>
       </tr>
     </tbody>
   </table>
