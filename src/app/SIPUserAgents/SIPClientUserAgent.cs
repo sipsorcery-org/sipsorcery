@@ -489,12 +489,19 @@ namespace SIPSorcery.SIP.App
 
         public void Update(CRMHeaders crmHeaders)
         {
-            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Sending UPDATE to " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
+            try
+            {
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Sending UPDATE to " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
 
-            SIPRequest updateRequest = GetUpdateRequest(m_serverTransaction.TransactionRequest, crmHeaders);
-            SIPNonInviteTransaction updateTransaction = m_sipTransport.CreateNonInviteTransaction(updateRequest, m_outboundProxy);
-            updateTransaction.TransactionTraceMessage += TransactionTraceMessage;
-            updateTransaction.SendReliableRequest();
+                SIPRequest updateRequest = GetUpdateRequest(m_serverTransaction.TransactionRequest, crmHeaders);
+                SIPNonInviteTransaction updateTransaction = m_sipTransport.CreateNonInviteTransaction(updateRequest, m_outboundProxy);
+                updateTransaction.TransactionTraceMessage += TransactionTraceMessage;
+                updateTransaction.SendReliableRequest();
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception SIPClientUserAgent Update. " + excp.Message);
+            }
         }
 
         public void Hangup()

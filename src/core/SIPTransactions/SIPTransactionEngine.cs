@@ -128,7 +128,7 @@ namespace SIPSorcery.SIP
                             // of collisions seemingly very slim. As a safeguard if there happen to be two transactions with the same Call-ID in the list the match will not be made.
                             // One case where the Call-Id match breaks down is for in-Dialogue requests in that case there will be multiple transactions with the same Call-ID and tags.
                             //if (transaction.TransactionType == SIPTransactionTypesEnum.Invite && transaction.TransactionFinalResponse != null && transaction.TransactionState == SIPTransactionStatesEnum.Completed)
-                            if ((transaction.TransactionType == SIPTransactionTypesEnum.InivteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
+                            if ((transaction.TransactionType == SIPTransactionTypesEnum.InviteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
                                 && transaction.TransactionFinalResponse != null)
                             {
                                 if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId &&
@@ -226,7 +226,7 @@ namespace SIPSorcery.SIP
 
                     foreach (SIPTransaction transaction in m_transactions.Values)
                     {
-                        if (transaction.TransactionType == SIPTransactionTypesEnum.InivteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
+                        if (transaction.TransactionType == SIPTransactionTypesEnum.InviteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
                         {
                             if (transaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
                             {
@@ -375,7 +375,7 @@ namespace SIPSorcery.SIP
             {
                 foreach (SIPTransaction transaction in m_transactions.Values)
                 {
-                    if ((transaction.TransactionType == SIPTransactionTypesEnum.InivteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer) &&
+                    if ((transaction.TransactionType == SIPTransactionTypesEnum.InviteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer) &&
                         transaction.TransactionFinalResponse != null &&
                         transaction.TransactionState == SIPTransactionStatesEnum.Completed &&
                         transaction.TransactionRequest.Header.CallId == callId)

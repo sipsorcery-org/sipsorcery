@@ -1,13 +1,13 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: ISIPServerUserAgent.cs
 //
-// Description: The interface definition for SIP Server User Agents (UAC).
+// Description: The interface definition for SIP Server User Agents (UAS).
 
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 30 Aug 2009	Aaron Clauson   Created, Hobart, Asutralia.
+// 30 Aug 2009	Aaron Clauson   Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

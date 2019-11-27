@@ -25,6 +25,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserAgentServer", "UserAgen
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallHold", "CallHold\CallHold.csproj", "{DDE7D3EF-E005-4D8E-A7EB-F1CB446B680B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\src\SIPSorcery.csproj", "{622F0E4E-9527-442E-9A0D-0B5728DA5F57}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,6 +123,14 @@ Global
 		{DDE7D3EF-E005-4D8E-A7EB-F1CB446B680B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DDE7D3EF-E005-4D8E-A7EB-F1CB446B680B}.Release|x64.ActiveCfg = Release|Any CPU
 		{DDE7D3EF-E005-4D8E-A7EB-F1CB446B680B}.Release|x64.Build.0 = Release|Any CPU
+		{622F0E4E-9527-442E-9A0D-0B5728DA5F57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{622F0E4E-9527-442E-9A0D-0B5728DA5F57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{622F0E4E-9527-442E-9A0D-0B5728DA5F57}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{622F0E4E-9527-442E-9A0D-0B5728DA5F57}.Debug|x64.Build.0 = Debug|Any CPU
+		{622F0E4E-9527-442E-9A0D-0B5728DA5F57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{622F0E4E-9527-442E-9A0D-0B5728DA5F57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{622F0E4E-9527-442E-9A0D-0B5728DA5F57}.Release|x64.ActiveCfg = Release|Any CPU
+		{622F0E4E-9527-442E-9A0D-0B5728DA5F57}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
