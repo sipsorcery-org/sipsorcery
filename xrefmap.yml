@@ -9991,12 +9991,6 @@ references:
   commentId: T:SIPSorcery.SIP.App.SIPCallResponseDelegate
   fullName: SIPSorcery.SIP.App.SIPCallResponseDelegate
   nameWithType: SIPCallResponseDelegate
-- uid: SIPSorcery.SIP.App.SIPCallSDPChangedDelegate
-  name: SIPCallSDPChangedDelegate
-  href: api/SIPSorcery.SIP.App.SIPCallSDPChangedDelegate.html
-  commentId: T:SIPSorcery.SIP.App.SIPCallSDPChangedDelegate
-  fullName: SIPSorcery.SIP.App.SIPCallSDPChangedDelegate
-  nameWithType: SIPCallSDPChangedDelegate
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent
   name: SIPClientUserAgent
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html
@@ -12843,12 +12837,6 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.CallHungup
   fullName: SIPSorcery.SIP.App.SIPUserAgent.CallHungup
   nameWithType: SIPUserAgent.CallHungup
-- uid: SIPSorcery.SIP.App.SIPUserAgent.CallRemoteSDPChanged
-  name: CallRemoteSDPChanged
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_CallRemoteSDPChanged
-  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.CallRemoteSDPChanged
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.CallRemoteSDPChanged
-  nameWithType: SIPUserAgent.CallRemoteSDPChanged
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Cancel
   name: Cancel()
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Cancel
@@ -12912,19 +12900,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.Hangup
   nameWithType: SIPUserAgent.Hangup
-- uid: SIPSorcery.SIP.App.SIPUserAgent.InCallRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
-  name: InCallRequestReceivedAsync(SIPRequest)
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_InCallRequestReceivedAsync_SIPSorcery_SIP_SIPRequest_
-  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.InCallRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.InCallRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
-  nameWithType: SIPUserAgent.InCallRequestReceivedAsync(SIPRequest)
-- uid: SIPSorcery.SIP.App.SIPUserAgent.InCallRequestReceivedAsync*
-  name: InCallRequestReceivedAsync
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_InCallRequestReceivedAsync_
-  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.InCallRequestReceivedAsync
+- uid: SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
+  name: InDialogRequestReceivedAsync(SIPRequest)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_InDialogRequestReceivedAsync_SIPSorcery_SIP_SIPRequest_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
+  nameWithType: SIPUserAgent.InDialogRequestReceivedAsync(SIPRequest)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync*
+  name: InDialogRequestReceivedAsync
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_InDialogRequestReceivedAsync_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync
   isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.InCallRequestReceivedAsync
-  nameWithType: SIPUserAgent.InCallRequestReceivedAsync
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync
+  nameWithType: SIPUserAgent.InDialogRequestReceivedAsync
 - uid: SIPSorcery.SIP.App.SIPUserAgent.IsAnswered
   name: IsAnswered
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_IsAnswered
@@ -12938,6 +12926,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.IsAnswered
   nameWithType: SIPUserAgent.IsAnswered
+- uid: SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
+  name: OnReinviteRequest
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnReinviteRequest
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
+  nameWithType: SIPUserAgent.OnReinviteRequest
 - uid: SIPSorcery.SIP.App.SIPUserAgent.SendReInviteRequest(SIPSorcery.Net.SDP)
   name: SendReInviteRequest(SDP)
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_SendReInviteRequest_SIPSorcery_Net_SDP_
