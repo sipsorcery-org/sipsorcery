@@ -32,7 +32,6 @@ namespace SIPSorcery.SIP.App
     public delegate void SIPCallResponseDelegate(ISIPClientUserAgent uac, SIPResponse sipResponse);
     public delegate void SIPCallFailedDelegate(ISIPClientUserAgent uac, string errorMessage);
     public delegate void SIPUASStateChangedDelegate(ISIPServerUserAgent uas, SIPResponseStatusCodesEnum statusCode, string reasonPhrase);
-    public delegate void SIPCallSDPChangedDelegate(SIPRequest sipRequest, SDP originalSDP, SDP newSDP);
 
     // Get SIP account(s) from external sources delegate.
     public delegate SIPAccount GetSIPAccountDelegate(string username, string domain);

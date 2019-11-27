@@ -127,15 +127,11 @@ namespace SIPSorcery.SIP.App
         public event SIPCallFailedDelegate ClientCallFailed;
 
         /// <summary>
-        /// The remote call party has sent us a new SDP. Re-INVITE requests are
-        /// used to change the SDP and it can indicate a range of conditions such as:
-        /// - Changing the RTP end point, e.g. a B2B server wants to reinvite iteslf out of the media path,
-        /// - Call is being aplced on or off hold,
-        /// - Codecs changed in response to bandwidth conditions,
-        /// - And more.
-        /// Applies to calls initiated by us and calls recevied by us.
+        /// The remote call party has sent us a new re-INVITE request. Common
+        /// reasons are for placing a call on and off hold, changing RTP end points, 
+        /// changing codecs etc.
         /// </summary>
-        public event SIPCallSDPChangedDelegate CallRemoteSDPChanged;
+        public event Action<UASInviteTransaction> OnReinviteRequest;
 
         /// <summary>
         /// Call was hungup by the remote party. Applies to calls initiated by us and calls recevied
@@ -201,10 +197,12 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Handler for when an in dialog request is received on an established call.
         /// Typical types of request will be re-INVITES for things like putting a call on or
-        /// off hold and REFER requests for transfers.
+        /// off hold and REFER requests for transfers. Some in dialog request types, such 
+        /// as re-INVITES have specific events so they can be bubbled up to the 
+        /// application to deal with.
         /// </summary>
         /// <param name="request">The in dialog request received.</param>
-        public async Task InCallRequestReceivedAsync(SIPRequest sipRequest)
+        public async Task InDialogRequestReceivedAsync(SIPRequest sipRequest)
         {
             // Make sure the request matches our dialog and is not a stray.
             // A dialog request should match on to tag, from tag and call ID. We'll be more 
@@ -215,7 +213,7 @@ namespace SIPSorcery.SIP.App
                 var sendResult = await SendResponse(noCallLegResponse);
                 if (sendResult != SocketError.Success)
                 {
-                    logger.LogWarning($"DualUserAgent send response failed in InCallRequestReceivedAsync with {sendResult}.");
+                    logger.LogWarning($"SIPUserAgent send response failed in InCallRequestReceivedAsync with {sendResult}.");
                 }
             }
             else
@@ -239,7 +237,7 @@ namespace SIPSorcery.SIP.App
 
                     UASInviteTransaction reInviteTransaction = m_transport.CreateUASTransaction(sipRequest, m_outboundProxy);
 
-                    if (CallRemoteSDPChanged == null)
+                    if (OnReinviteRequest == null)
                     {
                         // The application isn't prepared to accept re-INVITE requests. We'll reject as gently as we can to try and not lose the call.
                         SIPResponse notAcceptableResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, null);
@@ -249,18 +247,7 @@ namespace SIPSorcery.SIP.App
                     {
                         SIPResponse tryingResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
                         reInviteTransaction.SendProvisionalResponse(tryingResponse);
-
-                        SDP originalSDP = null;
-                        if (m_uac != null)
-                        {
-                            originalSDP = SDP.ParseSDPDescription(m_uac.ServerTransaction.TransactionFinalResponse.Body);
-                        }
-                        else if (m_uas != null)
-                        {
-                            originalSDP = SDP.ParseSDPDescription(m_uas.CallRequest.Body);
-                        }
-
-                        CallRemoteSDPChanged(sipRequest, originalSDP, SDP.ParseSDPDescription(sipRequest.Body));
+                        OnReinviteRequest(reInviteTransaction);
                     }
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
@@ -295,7 +282,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-
+                        //TODO: Add handling logic for indialog REFER requests.
                     }
                 }
             }
