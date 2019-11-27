@@ -23790,6 +23790,19 @@ references:
   commentId: T:SIPSorcery.Sys.IPSocket
   fullName: SIPSorcery.Sys.IPSocket
   nameWithType: IPSocket
+- uid: SIPSorcery.Sys.IPSocket.GetIPEndPoint(System.String)
+  name: GetIPEndPoint(String)
+  href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_GetIPEndPoint_System_String_
+  commentId: M:SIPSorcery.Sys.IPSocket.GetIPEndPoint(System.String)
+  fullName: SIPSorcery.Sys.IPSocket.GetIPEndPoint(System.String)
+  nameWithType: IPSocket.GetIPEndPoint(String)
+- uid: SIPSorcery.Sys.IPSocket.GetIPEndPoint*
+  name: GetIPEndPoint
+  href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_GetIPEndPoint_
+  commentId: Overload:SIPSorcery.Sys.IPSocket.GetIPEndPoint
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.IPSocket.GetIPEndPoint
+  nameWithType: IPSocket.GetIPEndPoint
 - uid: SIPSorcery.Sys.IPSocket.GetSocketString(System.Net.IPEndPoint)
   name: GetSocketString(IPEndPoint)
   href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_GetSocketString_System_Net_IPEndPoint_
@@ -23803,6 +23816,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.IPSocket.GetSocketString
   nameWithType: IPSocket.GetSocketString
+- uid: SIPSorcery.Sys.IPSocket.IsIPAddress(System.String)
+  name: IsIPAddress(String)
+  href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_IsIPAddress_System_String_
+  commentId: M:SIPSorcery.Sys.IPSocket.IsIPAddress(System.String)
+  fullName: SIPSorcery.Sys.IPSocket.IsIPAddress(System.String)
+  nameWithType: IPSocket.IsIPAddress(String)
+- uid: SIPSorcery.Sys.IPSocket.IsIPAddress*
+  name: IsIPAddress
+  href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_IsIPAddress_
+  commentId: Overload:SIPSorcery.Sys.IPSocket.IsIPAddress
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.IPSocket.IsIPAddress
+  nameWithType: IPSocket.IsIPAddress
 - uid: SIPSorcery.Sys.IPSocket.IsPrivateAddress(System.String)
   name: IsPrivateAddress(String)
   href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_IsPrivateAddress_System_String_
@@ -23828,6 +23854,28 @@ references:
   commentId: F:SIPSorcery.Sys.IPSocket.MinPort
   fullName: SIPSorcery.Sys.IPSocket.MinPort
   nameWithType: IPSocket.MinPort
+- uid: SIPSorcery.Sys.IPSocket.Parse(System.String,System.Int32)
+  name: Parse(String, Int32)
+  href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_Parse_System_String_System_Int32_
+  commentId: M:SIPSorcery.Sys.IPSocket.Parse(System.String,System.Int32)
+  fullName: SIPSorcery.Sys.IPSocket.Parse(System.String, System.Int32)
+  nameWithType: IPSocket.Parse(String, Int32)
+- uid: SIPSorcery.Sys.IPSocket.Parse(System.String,System.String@,System.Int32@)
+  name: Parse(String, out String, out Int32)
+  href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_Parse_System_String_System_String__System_Int32__
+  commentId: M:SIPSorcery.Sys.IPSocket.Parse(System.String,System.String@,System.Int32@)
+  name.vb: Parse(String, ByRef String, ByRef Int32)
+  fullName: SIPSorcery.Sys.IPSocket.Parse(System.String, out System.String, out System.Int32)
+  fullName.vb: SIPSorcery.Sys.IPSocket.Parse(System.String, ByRef System.String, ByRef System.Int32)
+  nameWithType: IPSocket.Parse(String, out String, out Int32)
+  nameWithType.vb: IPSocket.Parse(String, ByRef String, ByRef Int32)
+- uid: SIPSorcery.Sys.IPSocket.Parse*
+  name: Parse
+  href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_Parse_
+  commentId: Overload:SIPSorcery.Sys.IPSocket.Parse
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.IPSocket.Parse
+  nameWithType: IPSocket.Parse
 - uid: SIPSorcery.Sys.IPSocket.ParseHostFromSocket(System.String)
   name: ParseHostFromSocket(String)
   href: api/SIPSorcery.Sys.IPSocket.html#SIPSorcery_Sys_IPSocket_ParseHostFromSocket_System_String_
