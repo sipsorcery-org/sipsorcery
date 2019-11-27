@@ -181,7 +181,7 @@ CRLF +
 
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
-            int contentLength = SIPMessage.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+            int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
             Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
@@ -210,7 +210,7 @@ CRLF +
 
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
-            int contentLength = SIPMessage.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+            int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
             Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }

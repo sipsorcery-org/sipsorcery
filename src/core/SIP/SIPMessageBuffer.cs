@@ -1,14 +1,14 @@
 //-----------------------------------------------------------------------------
-// Filename: SIPMessage.cs
+// Filename: SIPMessageBuffer.cs
 //
 // Desciption: Functionality to determine whether a SIP message is a request or
 // a response and break a message up into its constituent parts.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 04 May 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 04 May 2006	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -24,7 +24,7 @@ namespace SIPSorcery.SIP
     /// <summary>
     /// Represents an incoming message before having determined whether it is a request or a response.
     /// </summary>
-    public class SIPMessage
+    public class SIPMessageBuffer
     {
         private const string SIP_RESPONSE_PREFIX = "SIP";
         private const string SIP_MESSAGE_IDENTIFIER = "SIP";    // String that must be in a message buffer to be recognised as a SIP message and processed.
@@ -54,7 +54,7 @@ namespace SIPSorcery.SIP
         /// <param name="localSIPEndPoint">The end point the message was received on.</param>
         /// <param name="remoteSIPEndPoint">The end point the message was received from.</param>
         /// <returns>If successfull a SIP message or null if not.</returns>
-        public static SIPMessage ParseSIPMessage(byte[] buffer, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)
+        public static SIPMessageBuffer ParseSIPMessage(byte[] buffer, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)
         {
             string message = null;
 
@@ -77,12 +77,12 @@ namespace SIPSorcery.SIP
                 else
                 {
                     message = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-                    SIPMessage sipMessage = ParseSIPMessage(message, localSIPEndPoint, remoteSIPEndPoint);
+                    SIPMessageBuffer sipMessageBuffer = ParseSIPMessage(message, localSIPEndPoint, remoteSIPEndPoint);
 
-                    if (sipMessage != null)
+                    if (sipMessageBuffer != null)
                     {
-                        sipMessage.RawBuffer = buffer;
-                        return sipMessage;
+                        sipMessageBuffer.RawBuffer = buffer;
+                        return sipMessageBuffer;
                     }
                     else
                     {
@@ -106,11 +106,11 @@ namespace SIPSorcery.SIP
         /// <param name="localSIPEndPoint">The end point the message was received on.</param>
         /// <param name="remoteSIPEndPoint">The end point the message was received from.</param>
         /// <returns>If successfull a SIP message or null if not.</returns>
-        public static SIPMessage ParseSIPMessage(string message, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)
+        public static SIPMessageBuffer ParseSIPMessage(string message, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)
         {
             try
             {
-                SIPMessage sipMessage = new SIPMessage();
+                SIPMessageBuffer sipMessage = new SIPMessageBuffer();
                 sipMessage.LocalSIPEndPoint = localSIPEndPoint;
                 sipMessage.RemoteSIPEndPoint = remoteSIPEndPoint;
 

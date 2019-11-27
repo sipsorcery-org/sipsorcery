@@ -2,9 +2,12 @@
 // Filename: SIPB2BUserAgent.cs
 //
 // Description: Implementation of a SIP Back-to-back User Agent.
-// 
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
 // History:
-// 21 Jul 2009	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
+// 21 Jul 2009	Aaron Clauson   Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

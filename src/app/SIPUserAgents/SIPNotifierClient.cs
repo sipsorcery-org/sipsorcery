@@ -6,10 +6,10 @@
 // the notifier server as per RFC3265.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 23 Feb 2010  Aaron Clauson   Created (aaron@sipsorcery.com), SIPSorcery Ltd, London, UK (www.sipsorcery.com).
+// 23 Feb 2010  Aaron Clauson   Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

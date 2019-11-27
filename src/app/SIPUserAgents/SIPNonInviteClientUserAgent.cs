@@ -6,10 +6,10 @@
 // sending non-INVITE requests that require authentication.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 26 Apr 2011	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, London, UK (www.sipsorcery.com).
+// 26 Apr 2011	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -103,28 +103,19 @@ namespace SIPSorcery.SIP.App
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Send request received an authentication required response but no credentials were available.", m_owner));
 
-                            if (ResponseReceived != null)
-                            {
-                                ResponseReceived(sipResponse);
-                            }
+                            ResponseReceived?.Invoke(sipResponse);
                         }
                     }
                     else
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Send request failed with " + sipResponse.StatusCode + " but no authentication header was supplied for " + sipTransaction.TransactionRequest.Method + " to " + m_callDescriptor.Uri + ".", m_owner));
 
-                        if (ResponseReceived != null)
-                        {
-                            ResponseReceived(sipResponse);
-                        }
+                        ResponseReceived?.Invoke(sipResponse);
                     }
                 }
                 else
                 {
-                    if (ResponseReceived != null)
-                    {
-                        ResponseReceived(sipResponse);
-                    }
+                    ResponseReceived?.Invoke(sipResponse);
                 }
             }
             catch (Exception excp)
