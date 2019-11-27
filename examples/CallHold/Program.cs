@@ -1,8 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example program of how to use the SIPSorcery core library to place a SIP call
-// and then place it on and off hold.
+// Description: An example program of how to use the SIPSorcery core library to 
+// place a SIP call and then place it on and off hold.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -51,7 +51,7 @@ namespace SIPSorcery
         private static readonly string RTP_ATTRIBUTE_SENDRECV = "sendrecv"; // 2-way media stream.
         private static readonly string RTP_ATTRIBUTE_SENDONLY = "sendonly"; // The SIP endpoint would only send and not receive media.
         private static readonly string RTP_ATTRIBUTE_RECVONLY = "recvonly"; // The SIP endpoint would only receive (listen mode) and not send media.
-        //private static readonly string RTP_ATTRIBUTE_INACTIVE = "inactive"; // The SIP endpoint would neither send nor receive media.
+        private static readonly string RTP_ATTRIBUTE_INACTIVE = "inactive"; // The SIP endpoint would neither send nor receive media.
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -146,11 +146,11 @@ namespace SIPSorcery
                 Log.LogInformation($"Call hungup by remote party.");
                 exitCts.Cancel();
             };
-            userAgent.CallRemoteSDPChanged += RemoteSDPChanged;
+            userAgent.OnReinviteRequest += ReinviteRequestReceived;
 
-            // The only incoming request that needs to be explicitly handled for this example is if the remote end hangs up the call.
-            // Only new non-transaction requests need to be handled here.  
-            _sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+            // The only incoming requests that need to be explicitly in this example program are in-dialog
+            // re-INVITE requests that are being used to place the call on/off hold.  
+            _sipTransport.SIPTransportRequestReceived += (localSIPEndPoint, remoteEndPoint, sipRequest) =>
             {
                 try
                 {
@@ -159,11 +159,7 @@ namespace SIPSorcery
                         sipRequest.Header.To != null &&
                         sipRequest.Header.To.ToTag != null)
                     {
-                        userAgent.InCallRequestReceivedAsync(sipRequest).Wait();
-                    }
-                    else if (sipRequest.Method == SIPMethodsEnum.INVITE)
-                    {
-                        // New call request for the User Agent Server.
+                        userAgent.InDialogRequestReceivedAsync(sipRequest).Wait();
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                     {
@@ -209,7 +205,7 @@ namespace SIPSorcery
                         if (keyProps.KeyChar == 'h')
                         {
                             // Place call on/off hold.
-                            if(userAgent.IsAnswered)
+                            if (userAgent.IsAnswered)
                             {
                                 if (_holdStatus == HoldStatus.None)
                                 {
@@ -218,7 +214,7 @@ namespace SIPSorcery
                                     _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_SENDONLY);
                                     userAgent.SendReInviteRequest(_ourSDP);
                                 }
-                                else if(_holdStatus == HoldStatus.WePutOnHold)
+                                else if (_holdStatus == HoldStatus.WePutOnHold)
                                 {
                                     Log.LogInformation("Removing the remote call party from hold.");
                                     _holdStatus = HoldStatus.None;
@@ -291,52 +287,55 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        /// Event handler for receiving a re-INVITE request from the remote call party.
+        /// Event handler for receiving a re-INVITE request on an established call.
+        /// In call requests can be used for multitude of different purposes. In this  
+        /// example program we're only concerned with re-INVITE requests being used 
+        /// to place a call on/off hold.
         /// </summary>
-        /// <param name="sipRequest">The re-INVITE request.</param>
-        /// <param name="originalSDP">The SDP from the ooriginal call request.</param>
-        /// <param name="newSDP">The SDP from the re-INVITE request.</param>
-        private static void RemoteSDPChanged(SIPRequest sipRequest, SDP originalSDP, SDP newSDP)
+        /// <param name="uasTransaction">The user agent server invite transaction that
+        /// was created for the request. It needs to be used for sending responses 
+        /// to ensure reliable delivery.</param>
+        private static void ReinviteRequestReceived(UASInviteTransaction uasTransaction)
         {
-            // A new SDP received can mean a few different things. The remote RTP socket has changed,
-            // the call has been put on/off hold, codec changed etc. This logic could need to be fairly
-            // sophisiticated to determine the course of action. What's shown here is only a simple example
-            // handling some common scenarios.
+            SIPRequest reinviteRequest = uasTransaction.TransactionRequest;
 
             // Re-INVITEs can also be changing the RTP end point. We can update this each time.
-            IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+            IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(reinviteRequest.Body);
             _remoteRtpEndPoint = dstRtpEndPoint;
 
             // If the RTP callfow attribute has changed it's most likely due to being placed on/off hold.
-            if (newSDP.Media.First().ExtraAttributes.Any(x => x.Contains($"a={RTP_ATTRIBUTE_SENDONLY}")))
+            SDP newSDP = SDP.ParseSDPDescription(reinviteRequest.Body);
+            if (GetRTPStatusAttribute(newSDP) == RTP_ATTRIBUTE_SENDONLY)
             {
                 Log.LogInformation("Remote call party has placed us on hold.");
                 _holdStatus = HoldStatus.RemotePutOnHold;
 
                 _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_RECVONLY);
-                var okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                var okResponse = SIPTransport.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
+                okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
                 okResponse.Body = _ourSDP.ToString();
-                _sipTransport.SendResponse(okResponse);
+                uasTransaction.SendFinalResponse(okResponse);
             }
-            else if (newSDP.Media.First().ExtraAttributes.Any(x => x.Contains($"a={RTP_ATTRIBUTE_SENDRECV}")) &&
-                !originalSDP.Media.First().ExtraAttributes.Any(x => x.Contains($"a={RTP_ATTRIBUTE_SENDRECV}")))
+            else if (GetRTPStatusAttribute(newSDP) == RTP_ATTRIBUTE_SENDRECV && _holdStatus != HoldStatus.None)
             {
                 Log.LogInformation("Remote call party has taken us off hold.");
                 _holdStatus = HoldStatus.None;
 
                 _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_SENDRECV);
-                var okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                var okResponse = SIPTransport.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
+                okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
                 okResponse.Body = _ourSDP.ToString();
-                _sipTransport.SendResponse(okResponse);
+                uasTransaction.SendFinalResponse(okResponse);
             }
             else
             {
                 Log.LogWarning("Not sure what the remote call party wants us to do...");
 
                 // We'll just reply Ok and hope eveything is good.
-                var okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                var okResponse = SIPTransport.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
+                okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
                 okResponse.Body = _ourSDP.ToString();
-                _sipTransport.SendResponse(okResponse);
+                uasTransaction.SendFinalResponse(okResponse);
             }
         }
 
@@ -398,7 +397,8 @@ namespace SIPSorcery
                             // This is typically where RTCP receiver (SR) reports would be sent. Omitted here for brevity.
                             lastRecvReportAt = DateTime.Now;
                             var remoteRtpEndPoint = recvResult.RemoteEndPoint as IPEndPoint;
-                            Log.LogDebug($"RTP recv report {rtpSocket.LocalEndPoint}<-{remoteRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
+                            Log.LogDebug($"RTP recv report {rtpSocket.LocalEndPoint}<-{remoteRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}" +
+                                ((_holdStatus != HoldStatus.None) ? " (" + _holdStatus + ")" : null));
                         }
                     }
                 }
@@ -460,14 +460,15 @@ namespace SIPSorcery
                                     packetSentCount++;
                                     bytesSentCount += (uint)sample.Length;
                                 }
+                            }
 
-                                if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
-                                {
-                                    // This is typically where RTCP sender (SR) reports would be sent. Omitted here for brevity.
-                                    lastSendReportAt = DateTime.Now;
-                                    var remoteRtpEndPoint = _remoteRtpEndPoint as IPEndPoint;
-                                    Log.LogDebug($"RTP send report {rtpSocket.LocalEndPoint}->{remoteRtpEndPoint} pkts {packetSentCount} bytes {bytesSentCount}");
-                                }
+                            if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
+                            {
+                                // This is typically where RTCP sender (SR) reports would be sent. Omitted here for brevity.
+                                lastSendReportAt = DateTime.Now;
+                                var remoteRtpEndPoint = _remoteRtpEndPoint as IPEndPoint;
+                                Log.LogDebug($"RTP send report {rtpSocket.LocalEndPoint}->{remoteRtpEndPoint} pkts {packetSentCount} bytes {bytesSentCount}" +
+                                    ((_holdStatus != HoldStatus.None) ? " (" + _holdStatus + ")" : null));
                             }
                         };
 
@@ -509,6 +510,33 @@ namespace SIPSorcery
             sdp.Media.Add(audioAnnouncement);
 
             return sdp;
+        }
+
+        /// <summary>
+        /// Gets the RTP status attribute from the first media offer in the SDP payload. In this
+        /// example the RTP status is being used to indicate whether the call is on hold or not.
+        /// </summary>
+        /// <param name="sdp">The SDP to get the status for.</param>
+        private static string GetRTPStatusAttribute(SDP sdp)
+        {
+            foreach(var attribute in sdp.Media.First().ExtraAttributes)
+            {
+                switch (attribute.ToLower())
+                {
+                    case "a=sendrecv": 
+                        return RTP_ATTRIBUTE_SENDRECV;
+                    case "a=sendonly":
+                        return RTP_ATTRIBUTE_SENDONLY;
+                    case "a=recvonly":
+                        return RTP_ATTRIBUTE_RECVONLY;
+                    case "a=inactive":
+                        return RTP_ATTRIBUTE_INACTIVE;
+                    default:
+                        break;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
