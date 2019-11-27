@@ -48,7 +48,7 @@ namespace SIPSorcery.SIP
             bool disablePrackSupport = false)
             : base(sipTransport, sipRequest, outboundProxy)
         {
-            TransactionType = SIPTransactionTypesEnum.InivteClient;
+            TransactionType = SIPTransactionTypesEnum.InviteClient;
             m_localTag = sipRequest.Header.From.FromTag;
             CDR = new SIPCDR(SIPCallDirection.Out, sipRequest.URI, sipRequest.Header.From, sipRequest.Header.CallId, sipRequest.LocalSIPEndPoint, sipRequest.RemoteSIPEndPoint);
             _sendOkAckManually = sendOkAckManually;

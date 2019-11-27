@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CallHold": {
+      "commandName": "Project",
+      "commandLineArgs": "100@192.168.11.50:51781"
+    }
+  }
+}
