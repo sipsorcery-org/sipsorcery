@@ -165,8 +165,7 @@ namespace Heijden.DNS
 
         private void Verbose(string format, params object[] args)
         {
-            if (OnVerbose != null)
-                OnVerbose(this, new VerboseEventArgs(string.Format(format, args)));
+            OnVerbose?.Invoke(this, new VerboseEventArgs(string.Format(format, args)));
         }
 
         /// <summary>
@@ -196,7 +195,9 @@ namespace Heijden.DNS
             set
             {
                 if (value >= 1)
+                {
                     m_Retries = value;
+                }
             }
         }
 
@@ -527,7 +528,9 @@ namespace Heijden.DNS
                             //Debug.WriteLine("Received "+ (intLength+2)+" bytes in "+sw.ElapsedMilliseconds +" mS");
 
                             if (response.header.RCODE != RCode.NOERROR)
+                            {
                                 return response;
+                            }
 
                             if (response.Questions[0].QType != QType.AXFR)
                             {
@@ -538,13 +541,18 @@ namespace Heijden.DNS
                             // Zone transfer!!
 
                             if (TransferResponse.Questions.Count == 0)
+                            {
                                 TransferResponse.Questions.AddRange(response.Questions);
+                            }
+
                             TransferResponse.Answers.AddRange(response.Answers);
                             TransferResponse.Authorities.AddRange(response.Authorities);
                             TransferResponse.Additionals.AddRange(response.Additionals);
 
                             if (response.Answers[0].Type == DnsType.SOA)
+                            {
                                 intSoa++;
+                            }
 
                             if (intSoa == 2)
                             {
@@ -612,7 +620,9 @@ namespace Heijden.DNS
             Question question = new Question(name, qtype, qclass);
             DNSResponse response = SearchInCache(question);
             if (response != null)
+            {
                 return response;
+            }
 
             DNSRequest request = new DNSRequest();
             request.AddQuestion(question);
@@ -631,7 +641,9 @@ namespace Heijden.DNS
             Question question = new Question(name, qtype, QClass.IN);
             DNSResponse response = SearchInCache(question);
             if (response != null)
+            {
                 return response;
+            }
 
             DNSRequest request = new DNSRequest();
             request.AddQuestion(question);
@@ -643,7 +655,9 @@ namespace Heijden.DNS
             Question question = new Question(name, qtype, QClass.IN);
             DNSResponse response = SearchInCache(question);
             if (response != null)
+            {
                 return response;
+            }
 
             DNSRequest request = new DNSRequest();
             request.AddQuestion(question);
@@ -735,7 +749,9 @@ namespace Heijden.DNS
                 else
                 {
                     if (answerRR.Type == DnsType.CNAME)
+                    {
                         Aliases.Add(answerRR.NAME);
+                    }
                 }
             }
             entry.AddressList = AddressList.ToArray();
@@ -787,9 +803,13 @@ namespace Heijden.DNS
         {
             DNSResponse response = Query(GetArpaFromIp(ip), QType.PTR, QClass.IN, DEFAULT_TIMEOUT);
             if (response.RecordsPTR.Length > 0)
+            {
                 return MakeEntry(response.RecordsPTR[0].PTRDNAME, DEFAULT_TIMEOUT);
+            }
             else
+            {
                 return new IPHostEntry();
+            }
         }
 
         /// <summary>
@@ -804,9 +824,13 @@ namespace Heijden.DNS
         {
             IPAddress iPAddress;
             if (IPAddress.TryParse(hostNameOrAddress, out iPAddress))
+            {
                 return GetHostEntry(iPAddress);
+            }
             else
+            {
                 return MakeEntry(hostNameOrAddress, DEFAULT_TIMEOUT);
+            }
         }
 
         private delegate IPHostEntry GetHostEntryViaIPDelegate(IPAddress ip);

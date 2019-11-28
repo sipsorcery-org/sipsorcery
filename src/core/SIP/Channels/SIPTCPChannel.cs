@@ -131,7 +131,11 @@ namespace SIPSorcery.SIP
                 m_tcpServerListener = new TcpListener(listenEndPoint);
                 m_tcpServerListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 m_tcpServerListener.Server.LingerState = new LingerOption(true, 0);
-                if (listenEndPoint.AddressFamily == AddressFamily.InterNetworkV6) m_tcpServerListener.Server.DualMode = true;
+                if (listenEndPoint.AddressFamily == AddressFamily.InterNetworkV6)
+                {
+                    m_tcpServerListener.Server.DualMode = true;
+                }
+
                 m_tcpServerListener.Start(MAX_TCP_CONNECTIONS);
 
                 if (listenEndPoint.Port == 0)
@@ -335,10 +339,19 @@ namespace SIPSorcery.SIP
                 TaskCompletionSource<SocketError> connectTcs = new TaskCompletionSource<SocketError>();
                 connectArgs.Completed += (sender, sockArgs) =>
                 {
-                    if (sockArgs.LastOperation == SocketAsyncOperation.Connect) connectTcs.SetResult(sockArgs.SocketError);
+                    if (sockArgs.LastOperation == SocketAsyncOperation.Connect)
+                    {
+                        connectTcs.SetResult(sockArgs.SocketError);
+                    }
                 };
                 bool willRaiseEvent = clientSocket.ConnectAsync(connectArgs);
-                if (!willRaiseEvent) if (connectArgs.LastOperation == SocketAsyncOperation.Connect) connectTcs.SetResult(connectArgs.SocketError);
+                if (!willRaiseEvent)
+                {
+                    if (connectArgs.LastOperation == SocketAsyncOperation.Connect)
+                    {
+                        connectTcs.SetResult(connectArgs.SocketError);
+                    }
+                }
 
                 var connectResult = await connectTcs.Task;
 

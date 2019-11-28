@@ -22,3 +22,6 @@ csharp_space_after_keywords_in_control_flow_statements = true
 # Wrapping preferences
 csharp_preserve_single_line_statements = false
 csharp_preserve_single_line_blocks = true
+
+# Don't allow single line if/else blocks without braces.
+csharp_prefer_braces = true:error 

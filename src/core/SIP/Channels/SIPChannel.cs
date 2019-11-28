@@ -176,18 +176,18 @@ namespace SIPSorcery.SIP
 
         public SIPChannel()
         {
-            for (int i=0; i< CREATE_CHANNELID_ATTEMPTS; i++)
+            for (int i = 0; i < CREATE_CHANNELID_ATTEMPTS; i++)
             {
                 int id = Crypto.GetRandomInt(CHANNEL_ID_LENGTH);
-                if(!_inUseChannelIDs.ContainsKey(id))
+                if (!_inUseChannelIDs.ContainsKey(id))
                 {
                     _inUseChannelIDs.TryAdd(id, 0);
                     ID = id.ToString();
                     break;
                 }
-            } 
-            
-            if(ID == null)
+            }
+
+            if (ID == null)
             {
                 throw new ApplicationException("Failed to create a random channel ID in SIPChannel constructor.");
             }

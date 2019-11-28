@@ -353,7 +353,7 @@ namespace SIPSorcery.SIP
             SIPToHeader toHeader = SIPToHeader.ParseToHeader(RemoteUserField.ToString());
             int cseq = CSeq;
 
-            SIPHeader header = new SIPHeader(fromHeader,toHeader, cseq, CallId);
+            SIPHeader header = new SIPHeader(fromHeader, toHeader, cseq, CallId);
             header.CSeqMethod = method;
             inDialogRequest.Header = header;
             inDialogRequest.Header.Routes = RouteSet;

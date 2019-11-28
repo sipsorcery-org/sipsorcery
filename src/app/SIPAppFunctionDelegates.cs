@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using SIPSorcery.Net;
 
 namespace SIPSorcery.SIP.App
 {

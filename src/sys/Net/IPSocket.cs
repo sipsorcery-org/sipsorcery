@@ -152,7 +152,7 @@ namespace SIPSorcery.Sys
 
             return port;
         }
-        
+
         /// <summary>
         /// (convenience method) check if string can be parsed as IPAddress
         /// </summary>

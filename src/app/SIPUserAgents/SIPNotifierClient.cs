@@ -102,7 +102,8 @@ namespace SIPSorcery.SIP.App
         public void Start()
         {
             m_exit = false;
-            ThreadPool.QueueUserWorkItem(delegate { StartSubscription(); });
+            ThreadPool.QueueUserWorkItem(delegate
+            { StartSubscription(); });
         }
 
         public void Stop()
@@ -115,7 +116,8 @@ namespace SIPSorcery.SIP.App
 
                     m_exit = true;
                     m_attempts = 0;
-                    ThreadPool.QueueUserWorkItem(delegate { Subscribe(m_resourceURI, 0, m_sipEventPackage, m_subscribeCallID, null); });
+                    ThreadPool.QueueUserWorkItem(delegate
+                    { Subscribe(m_resourceURI, 0, m_sipEventPackage, m_subscribeCallID, null); });
                 }
             }
             catch (Exception excp)

@@ -156,7 +156,7 @@ namespace SIPSorcery.SIP
                 int bytesSent = await m_udpClientWrapper.SendAsync(buffer, buffer.Length, dstEndPoint);
                 return (bytesSent > 0) ? SocketError.Success : SocketError.ConnectionReset;
             }
-            catch (ObjectDisposedException) { return SocketError.NotConnected;  } // Thrown when socket is closed. Can be safely ignored.
+            catch (ObjectDisposedException) { return SocketError.NotConnected; } // Thrown when socket is closed. Can be safely ignored.
             catch (SocketException sockExcp)
             {
                 return sockExcp.SocketErrorCode;
