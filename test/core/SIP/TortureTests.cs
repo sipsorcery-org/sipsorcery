@@ -10,8 +10,11 @@
 //-----------------------------------------------------------------------------
 
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Net;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -82,7 +85,17 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sip = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            Assert.Equal(SIPMethodsEnum.REGISTER, sipRequest.Method);
+            IPAddress ip6;
+            Assert.NotEmpty(sipRequest.Header.Vias.Via);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.NotEmpty(sipRequest.Header.Contact);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Contact[0].ContactURI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.True(IPAddress.TryParse(sipRequest.URI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -111,10 +124,9 @@ namespace SIPSorcery.SIP.UnitTests
 "CSeq: 98176 REGISTER" + CRLF +
 "Content-Length: 0";
 
-            //A SIP implementation receiving this request should respond with a 400 Bad Request error.
-
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            Assert.True(sipMessageBuffer == null, "The SIP message parsed correctly.");
+            Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
+            Assert.Throws<SIPValidationException>(() => SIPRequest.ParseSIPRequest(sipMessageBuffer));
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -154,7 +166,17 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sip = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            Assert.Equal(SIPMethodsEnum.REGISTER, sipRequest.Method);
+            IPAddress ip6;
+            Assert.NotEmpty(sipRequest.Header.Vias.Via);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.NotEmpty(sipRequest.Header.Contact);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Contact[0].ContactURI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.True(IPAddress.TryParse(sipRequest.URI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -185,8 +207,18 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sip = SIPRequest.ParseSIPRequest(sipMessageBuffer);
-            Assert.True(sip.URI.HostPort == "5070", "The Remoteport should be 5070.");
+            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            Assert.Equal("5070", sipRequest.URI.HostPort);
+            Assert.Equal(SIPMethodsEnum.REGISTER, sipRequest.Method);
+            IPAddress ip6;
+            Assert.NotEmpty(sipRequest.Header.Vias.Via);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.NotEmpty(sipRequest.Header.Contact);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Contact[0].ContactURI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.True(IPAddress.TryParse(sipRequest.URI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -217,8 +249,16 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sip = SIPRequest.ParseSIPRequest(sipMessageBuffer);
-            //TODO: assert-test on via-received ipv6 address
+            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            Assert.Equal(SIPMethodsEnum.BYE, sipRequest.Method);
+            IPAddress ip6;
+            Assert.NotEmpty(sipRequest.Header.Vias.Via);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromIPAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.True(IPAddress.TryParse(sipRequest.URI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -238,7 +278,7 @@ namespace SIPSorcery.SIP.UnitTests
 "OPTIONS sip:[2001:db8::10] SIP/2.0" + CRLF +
 "To: sip:user @example.com" + CRLF +
 "From: sip:user @example.com; tag=81x2" + CRLF +
-"Via: SIP/2.0/UDP[2001:db8::9:1];received=2001:db8::9:255;branch=z9hG4bKas3" + CRLF +
+"Via: SIP/2.0/UDP [2001:db8::9:1];received=2001:db8::9:255;branch=z9hG4bKas3" + CRLF +
 "Call-ID: SSG95523997077 @hlau_4100" + CRLF +
 "Max-Forwards: 70" + CRLF +
 "Contact: \"Caller\" <sip:caller@[2001:db8::9:1]>" + CRLF +
@@ -247,8 +287,19 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sip = SIPRequest.ParseSIPRequest(sipMessageBuffer);
-            //TODO: assert-test on via-received ipv6 address
+            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            Assert.Equal(SIPMethodsEnum.OPTIONS, sipRequest.Method);
+            IPAddress ip6;
+            Assert.NotEmpty(sipRequest.Header.Vias.Via);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromIPAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.NotEmpty(sipRequest.Header.Contact);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Contact[0].ContactURI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.True(IPAddress.TryParse(sipRequest.URI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -289,8 +340,24 @@ CRLF +
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sip = SIPRequest.ParseSIPRequest(sipMessageBuffer);
-            //TODO: assert-test on ipv6 address in sdp
+            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            Assert.Equal(SIPMethodsEnum.INVITE, sipRequest.Method);
+            IPAddress ip6;
+            Assert.NotEmpty(sipRequest.Header.Vias.Via);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.NotEmpty(sipRequest.Header.Contact);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Contact[0].ContactURI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.True(IPAddress.TryParse(sipRequest.URI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.False(string.IsNullOrWhiteSpace(sipRequest.Body));
+            SDP sdp = SDP.ParseSDPDescription(sipRequest.Body);
+            Assert.NotNull(sdp);
+            Assert.NotNull(sdp.Connection);
+            Assert.True(IPAddress.TryParse(sdp.Connection.ConnectionAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.NotEmpty(sdp.Media);
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -321,8 +388,25 @@ CRLF +
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sip = SIPRequest.ParseSIPRequest(sipMessageBuffer);
-            //TODO: assert-test on address in all via-headers 
+            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            Assert.Equal(SIPMethodsEnum.BYE, sipRequest.Method);
+            IPAddress ip6, ip4;
+            Assert.NotEmpty(sipRequest.Header.Vias.Via);
+            Assert.True(sipRequest.Header.Vias.Length == 3);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.Equal(SIPProtocolsEnum.udp, sipRequest.Header.Vias.TopViaHeader.Transport);
+            Assert.Equal(6050, sipRequest.Header.Vias.TopViaHeader.Port);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.BottomViaHeader.Host, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.BottomViaHeader.ReceivedFromIPAddress, out ip4));
+            Assert.Equal(AddressFamily.InterNetwork, ip4.AddressFamily);
+            Assert.Equal(SIPProtocolsEnum.tcp, sipRequest.Header.Vias.BottomViaHeader.Transport);
+            sipRequest.Header.Vias.PopTopViaHeader();
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromAddress, out ip4));
+            Assert.Equal(AddressFamily.InterNetwork, ip4.AddressFamily);
+            Assert.Equal(SIPProtocolsEnum.udp, sipRequest.Header.Vias.TopViaHeader.Transport);
+            Assert.False(IPAddress.TryParse(sipRequest.URI.HostAddress, out ip6));
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -363,8 +447,30 @@ CRLF +
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sip = SIPRequest.ParseSIPRequest(sipMessageBuffer);
-            //TODO: assert-test on all addresses in sdp
+            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            Assert.Equal(SIPMethodsEnum.INVITE, sipRequest.Method);
+            IPAddress ip6, ip4;
+            Assert.NotEmpty(sipRequest.Header.Vias.Via);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.NotEmpty(sipRequest.Header.Contact);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Contact[0].ContactURI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.True(IPAddress.TryParse(sipRequest.URI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.False(string.IsNullOrWhiteSpace(sipRequest.Body));
+            SDP sdp = SDP.ParseSDPDescription(sipRequest.Body);
+            Assert.NotNull(sdp);
+            Assert.NotNull(sdp.Connection);
+            Assert.True(IPAddress.TryParse(sdp.Connection.ConnectionAddress, out ip4));
+            Assert.Equal(AddressFamily.InterNetwork, ip4.AddressFamily);
+            Assert.NotEmpty(sdp.Media);
+            Assert.NotNull(sdp.Media[0].Connection);
+            Assert.True(IPAddress.TryParse(sdp.Media[0].Connection.ConnectionAddress, out ip4));
+            Assert.Equal(AddressFamily.InterNetwork, ip4.AddressFamily);
+            Assert.NotNull(sdp.Media[1].Connection);
+            Assert.True(IPAddress.TryParse(sdp.Media[1].Connection.ConnectionAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -408,8 +514,26 @@ CRLF +
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sip = SIPRequest.ParseSIPRequest(sipMessageBuffer);
-            //TODO: assert-test on all addresses if they are valid IPv6 mapped IPv4
+            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            Assert.Equal(SIPMethodsEnum.INVITE, sipRequest.Method);
+            IPAddress ip6;
+            Assert.NotEmpty(sipRequest.Header.Vias.Via);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.Host, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.Equal(19823, sipRequest.Header.Vias.TopViaHeader.Port);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Vias.BottomViaHeader.ReceivedFromAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.NotEmpty(sipRequest.Header.Contact);
+            Assert.True(IPAddress.TryParse(sipRequest.Header.Contact[0].ContactURI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.False(IPAddress.TryParse(sipRequest.URI.HostAddress, out ip6));
+            Assert.False(string.IsNullOrWhiteSpace(sipRequest.Body));
+            SDP sdp = SDP.ParseSDPDescription(sipRequest.Body);
+            Assert.NotNull(sdp);
+            Assert.NotNull(sdp.Connection);
+            Assert.True(IPAddress.TryParse(sdp.Connection.ConnectionAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
+            Assert.NotEmpty(sdp.Media);
 
             logger.LogDebug("-----------------------------------------");
         }
@@ -442,8 +566,13 @@ CRLF +
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sip = SIPRequest.ParseSIPRequest(sipMessageBuffer);
-            //TODO: assert-test on all addresses if they are valid IPv6 mapped IPv4
+            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            Assert.Equal(SIPMethodsEnum.OPTIONS, sipRequest.Method);
+            IPAddress ip6;
+            Assert.NotEmpty(sipRequest.Header.Vias.Via);
+            Assert.False(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromAddress, out ip6));
+            Assert.True(IPAddress.TryParse(sipRequest.URI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
 
 
             logger.LogDebug("-----------------------------------------");
@@ -451,13 +580,8 @@ CRLF +
 
         /// <summary>
         /// 4.10.  IPv6 Reference Bug in RFC 3261 ABNF
-        /// The message below includes an extra colon in the IPv6 reference.  A
-        /// SIP implementation receiving such a message may exhibit robustness by
-        /// successfully parsing the IPv6 reference(it can choose to ignore the
-        /// extra colon when parsing the IPv6 reference.If the SIP
-        /// implementation is acting in the role of a proxy, it may additionally
-        /// serialize the message without the extra colon to aid the next
-        /// downstream server).
+        /// The next message has the correct syntax for the IPv6 reference in the
+        /// R-URI.
         /// </summary>
         [Fact]
         public void RFC5118_4_10_2()
@@ -476,8 +600,13 @@ CRLF +
 
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
-            SIPRequest sip = SIPRequest.ParseSIPRequest(sipMessageBuffer);
-            //TODO: assert-test correct syntax for the IPv6 reference in the R - URI.
+            SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+            Assert.Equal(SIPMethodsEnum.OPTIONS, sipRequest.Method);
+            IPAddress ip6;
+            Assert.NotEmpty(sipRequest.Header.Vias.Via);
+            Assert.False(IPAddress.TryParse(sipRequest.Header.Vias.TopViaHeader.ReceivedFromAddress, out ip6));
+            Assert.True(IPAddress.TryParse(sipRequest.URI.HostAddress, out ip6));
+            Assert.Equal(AddressFamily.InterNetworkV6, ip6.AddressFamily);
 
 
             logger.LogDebug("-----------------------------------------");
