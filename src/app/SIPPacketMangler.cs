@@ -6,10 +6,10 @@
 // of SIP messages.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 14 Sep 2008	    Aaron Clauson   Created  (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com)
+// 14 Sep 2008	    Aaron Clauson   Created, Hobart, Australia 
 //                                  (most methods extracted from StatefulProxyCore).
 //
 // License:
@@ -18,6 +18,7 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
@@ -42,19 +43,22 @@ namespace SIPSorcery.SIP.App
                     IPAddress pubaddr = IPAddress.Parse(publicIPAddress);
                     string sdpAddress = addr.ToString();
 
-                    if (IPSocket.IsPrivateAddress(sdpAddress) && publicIPAddress != sdpAddress && addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                    // Only mangle if there is something to change. For example the server could be on the same private subnet in which case it can't help.
+                    if (IPSocket.IsPrivateAddress(sdpAddress) && publicIPAddress != sdpAddress 
+                        && pubaddr.AddressFamily == AddressFamily.InterNetworkV6 
+                        && addr.AddressFamily == AddressFamily.InterNetworkV6)
                     {
-                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP6 (?<ipaddress>([:a-fA-F0-9]+))", "c=IN " + (pubaddr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? "IP6 " : "IP4 ") + publicIPAddress, RegexOptions.Singleline | RegexOptions.ExplicitCapture);
+                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP6 (?<ipaddress>([:a-fA-F0-9]+))", "c=IN IP6" + publicIPAddress, RegexOptions.Singleline);
                         wasMangled = true;
 
                         return mangledSDP;
                     }
-                    else
-                    // Only mangle if there is something to change. For example the server could be on the same private subnet in which case it can't help.
-                    if (IPSocket.IsPrivateAddress(sdpAddress) && publicIPAddress != sdpAddress)
+                    else if (IPSocket.IsPrivateAddress(sdpAddress) && publicIPAddress != sdpAddress
+                        && pubaddr.AddressFamily == AddressFamily.InterNetwork
+                        && addr.AddressFamily == AddressFamily.InterNetwork)
                     {
                         //logger.LogDebug("MangleSDP replacing private " + sdpAddress + " with " + publicIPAddress + ".");
-                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", "c=IN " + (pubaddr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? "IP6 " : "IP4 ") + publicIPAddress, RegexOptions.Singleline);
+                        string mangledSDP = Regex.Replace(sdpBody, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", "c=IN IP4 " + publicIPAddress, RegexOptions.Singleline);
                         wasMangled = true;
 
                         return mangledSDP;

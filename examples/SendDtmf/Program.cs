@@ -8,7 +8,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 12 Nov 2019	Aaron Clauson (aaron@sipsorcery.com)    Created, Dublin, Ireland.
+// 12 Nov 2019	Aaron Clauson   Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

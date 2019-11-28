@@ -45,7 +45,6 @@
 // ffmpeg -i Macroform_-_Simplicity.mp3 -ar 16k -acodec g722 Macroform_-_Simplicity.g722
 //-----------------------------------------------------------------------------
 
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -99,8 +98,14 @@ namespace SIPSorcery
                 }
                 else
                 {
-                    if (customListenAddress.AddressFamily == AddressFamily.InterNetwork) listenAddress = customListenAddress;
-                    if (customListenAddress.AddressFamily == AddressFamily.InterNetworkV6) listenIPv6Address = customListenAddress;
+                    if (customListenAddress.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        listenAddress = customListenAddress;
+                    }
+                    if (customListenAddress.AddressFamily == AddressFamily.InterNetworkV6)
+                    {
+                        listenIPv6Address = customListenAddress;
+                    }
                 }
             }
 
@@ -170,7 +175,10 @@ namespace SIPSorcery
                         {
                             // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
                             // means this example can be kept simpler.
-                            if (uas?.IsHungup == false) uas?.Hangup(false);
+                            if (uas?.IsHungup == false)
+                            {
+                                uas?.Hangup(false);
+                            }
                             rtpCts?.Cancel();
 
                             UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, null);
@@ -188,7 +196,13 @@ namespace SIPSorcery
                             IPEndPoint rtpEndPoint = new IPEndPoint(rtpAddress, (rtpSocket.LocalEndPoint as IPEndPoint).Port);
 
                             var rtpTask = Task.Run(() => SendRecvRtp(rtpSocket, rtpSession, dstRtpEndPoint, audioFile, rtpCts))
-                                .ContinueWith(_ => { if (uas?.IsHungup == false) uas?.Hangup(false); });
+                                .ContinueWith(_ => 
+                                {
+                                    if (uas?.IsHungup == false)
+                                    {
+                                        uas?.Hangup(false);
+                                    }
+                                });
 
                             uas.Answer(SDP.SDP_MIME_CONTENTTYPE, GetSDP(rtpEndPoint).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
                         }
