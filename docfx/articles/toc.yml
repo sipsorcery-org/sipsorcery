@@ -20,3 +20,5 @@
       href: calltransfer.md
     - name: Send DTMF
       href: senddtmf.md
+    - name: Call Hold
+      href: callhold.md
