@@ -663,7 +663,7 @@ namespace SIPSorcery.SIP
         /// <param name="sipResponse">The SIP response to send.</param>
         public async Task<SocketError> SendResponseAsync(SIPEndPoint dstEndPoint, SIPResponse sipResponse)
         {
-            if(dstEndPoint == null)
+            if (dstEndPoint == null)
             {
                 throw new ArgumentNullException("dstEndPoint", "The destination end point must be set for SendResponseAsync.");
             }

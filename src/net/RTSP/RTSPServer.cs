@@ -76,8 +76,10 @@ namespace SIPSorcery.Net
 
                 m_tcpServerListener.Start(MAX_TCP_CONNECTIONS);
 
-                ThreadPool.QueueUserWorkItem(delegate { AcceptConnections(ACCEPT_THREAD_NAME + m_localIPEndPoint.Port); });
-                ThreadPool.QueueUserWorkItem(delegate { PruneConnections(PRUNE_THREAD_NAME + m_localIPEndPoint.Port); });
+                ThreadPool.QueueUserWorkItem(delegate
+                { AcceptConnections(ACCEPT_THREAD_NAME + m_localIPEndPoint.Port); });
+                ThreadPool.QueueUserWorkItem(delegate
+                { PruneConnections(PRUNE_THREAD_NAME + m_localIPEndPoint.Port); });
 
                 logger.LogDebug("RTSP server listener created " + m_localIPEndPoint + ".");
             }
