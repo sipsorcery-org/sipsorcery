@@ -8,6 +8,7 @@
 //
 // History:
 // 20 Oct 2005	Aaron Clauson	Created, Dublin, Ireland.
+// 26 Nov 2019  Aaron Clauson   Added SIPMessageBase inheritance.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -15,21 +16,16 @@
 
 using System;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
     /// <summary>
     /// Represents a SIP Request.
     /// </summary>
-    public class SIPRequest
+    public class SIPRequest : SIPMessageBase
     {
-        private static ILogger logger = Log.Logger;
-
         private delegate bool IsLocalSIPSocketDelegate(string socket, SIPProtocolsEnum protocol);
 
-        private static string m_CRLF = SIPConstants.CRLF;
-        private static string m_sipFullVersion = SIPConstants.SIP_FULLVERSION_STRING;
         private static string m_sipVersion = SIPConstants.SIP_VERSION_STRING;
         private static int m_sipMajorVersion = SIPConstants.SIP_MAJOR_VERSION;
         private static int m_sipMinorVersion = SIPConstants.SIP_MINOR_VERSION;
@@ -45,42 +41,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         public SIPURI URI;
 
-        /// <summary>
-        /// The SIP request's headers collection.
-        /// </summary>
-        public SIPHeader Header;
-
-        /// <summary>
-        /// The optional body or payload for the SIP request.
-        /// </summary>
-        public string Body;
-
         public SIPRoute ReceivedRoute;
-
-        /// <summary>
-        /// Timestamp for the SIP request's creation.
-        /// </summary>
-        public DateTime Created = DateTime.Now;
-
-        /// <summary>
-        /// The remote SIP end point the request was received from.
-        /// </summary>
-        public SIPEndPoint RemoteSIPEndPoint { get; private set; }
-
-        /// <summary>
-        /// The local SIP end point the request was received on.
-        /// </summary>
-        public SIPEndPoint LocalSIPEndPoint { get; private set; }
-
-        /// <summary>
-        /// When the SIP transport layer has mutliple channels it will use this ID hint to choose amongst them.
-        /// </summary>
-        public string SendFromHintChannelID;
-
-        /// <summary>
-        /// For connection oriented SIP transport channels this ID provides a hint about the specific connection to use.
-        /// </summary>
-        public string SendFromHintConnectionID;
 
         /// <summary>
         /// The first line of the SIP request.
@@ -111,7 +72,7 @@ namespace SIPSorcery.SIP
             SIPVersion = m_sipFullVersion;
         }
 
-        public static SIPRequest ParseSIPRequest(SIPMessage sipMessage)
+        public static SIPRequest ParseSIPRequest(SIPMessageBuffer sipMessage)
         {
             try
             {
@@ -166,8 +127,8 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                SIPMessage sipMessage = SIPMessage.ParseSIPMessage(sipMessageStr, null, null);
-                return SIPRequest.ParseSIPRequest(sipMessage);
+                SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(sipMessageStr, null, null);
+                return SIPRequest.ParseSIPRequest(sipMessageBuffer);
             }
             catch (SIPValidationException)
             {

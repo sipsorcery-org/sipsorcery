@@ -134,19 +134,30 @@ namespace SIPSorcery.SIP
                 );
 
             // Add the optional information if available.
-            if (!CallID.IsNullOrBlank()) { eventDialogElement.Add(new XAttribute("call-id", CallID)); }
-            if (!LocalTag.IsNullOrBlank()) { eventDialogElement.Add(new XAttribute("local-tag", LocalTag)); }
-            if (!RemoteTag.IsNullOrBlank()) { eventDialogElement.Add(new XAttribute("remote-tag", RemoteTag)); }
-            if (Direction != SIPEventDialogDirectionEnum.none) { eventDialogElement.Add(new XAttribute("direction", Direction)); }
-            if (StateCode != 0) { eventDialogElement.Element(ns + "state").Add(new XAttribute("code", StateCode)); }
-            if (StateEvent != SIPEventDialogStateEvent.None) { eventDialogElement.Element(ns + "state").Add(new XAttribute("event", StateEvent.ToString())); }
-            if (Duration != 0) { eventDialogElement.Add(new XElement(ns + "duration", Duration)); }
-            if (BridgeID != null) { eventDialogElement.Add(new XElement(ss + "bridgeid", BridgeID)); }
-            if (SwitchboardOwner != null) { eventDialogElement.Add(new XElement(ss + "switchboardowner", SwitchboardOwner)); }
+            if (!CallID.IsNullOrBlank())
+            { eventDialogElement.Add(new XAttribute("call-id", CallID)); }
+            if (!LocalTag.IsNullOrBlank())
+            { eventDialogElement.Add(new XAttribute("local-tag", LocalTag)); }
+            if (!RemoteTag.IsNullOrBlank())
+            { eventDialogElement.Add(new XAttribute("remote-tag", RemoteTag)); }
+            if (Direction != SIPEventDialogDirectionEnum.none)
+            { eventDialogElement.Add(new XAttribute("direction", Direction)); }
+            if (StateCode != 0)
+            { eventDialogElement.Element(ns + "state").Add(new XAttribute("code", StateCode)); }
+            if (StateEvent != SIPEventDialogStateEvent.None)
+            { eventDialogElement.Element(ns + "state").Add(new XAttribute("event", StateEvent.ToString())); }
+            if (Duration != 0)
+            { eventDialogElement.Add(new XElement(ns + "duration", Duration)); }
+            if (BridgeID != null)
+            { eventDialogElement.Add(new XElement(ss + "bridgeid", BridgeID)); }
+            if (SwitchboardOwner != null)
+            { eventDialogElement.Add(new XElement(ss + "switchboardowner", SwitchboardOwner)); }
             //if (LocalParticipant != null) { eventDialogElement.Add(LocalParticipant.ToXML("local", filter)); }
-            if (LocalParticipant != null) { eventDialogElement.Add(LocalParticipant.ToXML("local")); }
+            if (LocalParticipant != null)
+            { eventDialogElement.Add(LocalParticipant.ToXML("local")); }
             //if (RemoteParticipant != null) { eventDialogElement.Add(RemoteParticipant.ToXML("remote", filter)); }
-            if (RemoteParticipant != null) { eventDialogElement.Add(RemoteParticipant.ToXML("remote")); }
+            if (RemoteParticipant != null)
+            { eventDialogElement.Add(RemoteParticipant.ToXML("remote")); }
 
             return eventDialogElement;
         }

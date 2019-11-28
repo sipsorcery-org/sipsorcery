@@ -115,9 +115,12 @@ namespace SIPSorcery.SIP
             get
             {
                 string canonicalAddress = Scheme + ":";
-                canonicalAddress += (User != null && User.Trim().Length > 0) ? User + "@" : null;
+                canonicalAddress += !String.IsNullOrEmpty(User) ? User + "@" : null;
 
-                if (Host.IndexOf(':') != -1)
+                // First expression is for IPv6 addresses with a port.
+                // Second expression is for IPv4 addresses and hostnames with a port.
+                if (Host.Contains("]:") ||
+                    (Host.IndexOf(':') != -1 && Host.IndexOf(':') == Host.LastIndexOf(':')))
                 {
                     canonicalAddress += Host;
                 }
@@ -127,6 +130,82 @@ namespace SIPSorcery.SIP
                 }
 
                 return canonicalAddress;
+            }
+        }
+
+        public string HostAddress
+        {
+            get
+            {
+                //rj2: colon might be IPv6 delimeter, not port delimeter, check first against IPv6 with Port notation, and then the occurance of multiple colon
+                if (Host.IndexOf("]:") > 0)
+                {
+                    return Host.Substring(0, Host.IndexOf("]:") + 1);
+                }
+                //if there are multiple colon, it's IPv6 without port, else IPv4 with port
+                else if (Host.IndexOf(':') > 0 && Host.IndexOf(':') != Host.LastIndexOf(':'))
+                {
+                    return Host;
+                }
+                else if (Host.IndexOf(':') > 0)
+                {
+                    return Host.Substring(0, Host.IndexOf(":"));
+                }
+                return Host;
+            }
+        }
+
+        public string MAddrOrHostAddress
+        {
+            get
+            {
+                return this.MAddr ?? this.HostAddress;
+            }
+        }
+
+        public string MAddrOrHost
+        {
+            get
+            {
+                if (this.HostPort.IsNullOrBlank())
+                {
+                    return MAddrOrHostAddress;
+                }
+                return MAddrOrHostAddress + ":" + this.HostPort;
+            }
+        }
+
+        public string MAddr
+        {
+            get
+            {
+                if (this.Parameters.Has(SIPHeaderAncillary.SIP_HEADERANC_MADDR))
+                {
+                    return this.Parameters.Get(SIPHeaderAncillary.SIP_HEADERANC_MADDR);
+                }
+                return null;
+            }
+        }
+
+        public string HostPort
+        {
+            get
+            {
+                //rj2: colon might be IPv6 delimeter, not port delimeter, check first against IPv6 with Port notation, and then the occurance of multiple colon
+                if (Host.IndexOf("]:") > 0)
+                {
+                    return Host.Substring(Host.IndexOf("]:") + 2);
+                }
+                //if there are multiple colon, it's IPv6 without port, else IPv4 with port
+                else if (Host.IndexOf(':') > 0 && Host.IndexOf(':') != Host.LastIndexOf(':'))
+                {
+                    return null;
+                }
+                else if (Host.IndexOf(':') > 0)
+                {
+                    return Host.Substring(Host.IndexOf(":") + 1);
+                }
+                return null;
             }
         }
 
@@ -183,7 +262,10 @@ namespace SIPSorcery.SIP
         public SIPURI(SIPSchemesEnum scheme, IPAddress address, int port)
         {
             Scheme = scheme;
-            Host = $"{address}:{port}";
+            if (address != null)
+            {
+                Host = address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? $"[{address}]:{port}" : $"{address}:{port}";
+            }
         }
 
         public static SIPURI ParseSIPURI(string uri)
@@ -267,6 +349,20 @@ namespace SIPSorcery.SIP
                             if (sipURI.Host.IndexOfAny(m_invalidSIPHostChars) != -1)
                             {
                                 throw new SIPValidationException(SIPValidationFieldsEnum.URI, "The SIP URI host portion contained an invalid character.");
+                            }
+                            else if (sipURI.Host.IndexOf(':') != sipURI.Host.LastIndexOf(':'))
+                            {
+                                // If the host contains multiple ':' characters then it must be an IPv6 address which require a start '[' and and end ']'.
+                                if (sipURI.Host.ToCharArray()[0] != '[')
+                                {
+                                    throw new SIPValidationException(SIPValidationFieldsEnum.URI, "The SIP URI host portion contained an IPv6 address that was missing the start '['.");
+                                }
+                                else if (!sipURI.Host.EndsWith("]") &&
+                                    (sipURI.Host.ToCharArray().Length < sipURI.Host.LastIndexOf(':') + 1 ||
+                                    sipURI.Host.ToCharArray()[sipURI.Host.LastIndexOf(':') - 1] != ']'))
+                                {
+                                    throw new SIPValidationException(SIPValidationFieldsEnum.URI, "The SIP URI host portion contained an IPv6 address that was missing the end ']'.");
+                                }
                             }
                         }
                     }

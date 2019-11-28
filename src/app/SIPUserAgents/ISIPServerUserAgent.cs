@@ -1,10 +1,13 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: ISIPServerUserAgent.cs
 //
-// Description: The interface definition for SIP Server User Agents (UAC).
-// 
+// Description: The interface definition for SIP Server User Agents (UAS).
+
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
 // History:
-// 30 Aug 2009	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery Ltd, London, UK (www.sipsorcery.com).
+// 30 Aug 2009	Aaron Clauson   Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -16,6 +19,10 @@ namespace SIPSorcery.SIP.App
 {
     public delegate void SIPUASDelegate(ISIPServerUserAgent uas);
 
+    /// <summary>
+    /// Interface for classes implementing SIP server user agent functionality. The
+    /// main function of a SIP client user agent is the ability to receive calls.
+    /// </summary>
     public interface ISIPServerUserAgent
     {
         SIPCallDirection CallDirection { get; }

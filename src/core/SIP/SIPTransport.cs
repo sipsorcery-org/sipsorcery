@@ -663,7 +663,7 @@ namespace SIPSorcery.SIP
         /// <param name="sipResponse">The SIP response to send.</param>
         public async Task<SocketError> SendResponseAsync(SIPEndPoint dstEndPoint, SIPResponse sipResponse)
         {
-            if(dstEndPoint == null)
+            if (dstEndPoint == null)
             {
                 throw new ArgumentNullException("dstEndPoint", "The destination end point must be set for SendResponseAsync.");
             }
@@ -690,11 +690,11 @@ namespace SIPSorcery.SIP
                 // Once the channel has been determined check some specific header fields and replace the placeholder end point.
                 AdjustHeadersForEndPoint(sendFromSIPEndPoint, ref sipResponse.Header);
 
-                // Now have a destination and sending channel, go ahead and forward.
-                FireSIPResponseOutTraceEvent(sendFromSIPEndPoint, dstEndPoint, sipResponse);
-
                 sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
 
+                FireSIPResponseOutTraceEvent(sendFromSIPEndPoint, dstEndPoint, sipResponse);
+
+                // Now have a destination and sending channel, go ahead and forward.
                 return await sendFromChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()), sipResponse.SendFromHintConnectionID);
             }
         }
@@ -1008,7 +1008,7 @@ namespace SIPSorcery.SIP
                         else
                         {
                             rawSIPMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
-                            if (rawSIPMessage.IsNullOrBlank())
+                            if (rawSIPMessage.IsNullOrBlank() || SIPMessageBuffer.IsPing(buffer))
                             {
                                 // An empty transmission has been received. More than likely this is a NAT keep alive and can be disregarded.
                                 return;
@@ -1019,17 +1019,17 @@ namespace SIPSorcery.SIP
                                 return;
                             }
 
-                            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(rawSIPMessage, localEndPoint, remoteEndPoint);
+                            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(rawSIPMessage, localEndPoint, remoteEndPoint);
 
-                            if (sipMessage != null)
+                            if (sipMessageBuffer != null)
                             {
-                                if (sipMessage.SIPMessageType == SIPMessageTypesEnum.Response)
+                                if (sipMessageBuffer.SIPMessageType == SIPMessageTypesEnum.Response)
                                 {
                                     #region SIP Response.
 
                                     try
                                     {
-                                        SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessage);
+                                        SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
                                         if (SIPResponseInTraceEvent != null)
                                         {
@@ -1058,7 +1058,7 @@ namespace SIPSorcery.SIP
                                     }
                                     catch (SIPValidationException sipValidationException)
                                     {
-                                        FireSIPBadResponseInTraceEvent(localEndPoint, remoteEndPoint, sipMessage.RawMessage, sipValidationException.SIPErrorField, sipMessage.RawMessage);
+                                        FireSIPBadResponseInTraceEvent(localEndPoint, remoteEndPoint, sipMessageBuffer.RawMessage, sipValidationException.SIPErrorField, sipMessageBuffer.RawMessage);
                                     }
 
                                     #endregion
@@ -1069,7 +1069,7 @@ namespace SIPSorcery.SIP
 
                                     try
                                     {
-                                        SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessage);
+                                        SIPRequest sipRequest = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
                                         SIPValidationFieldsEnum sipRequestErrorField = SIPValidationFieldsEnum.Unknown;
                                         string sipRequestValidationError = null;
@@ -1156,7 +1156,7 @@ namespace SIPSorcery.SIP
                                     }
                                     catch (SIPValidationException sipRequestExcp)
                                     {
-                                        FireSIPBadRequestInTraceEvent(localEndPoint, remoteEndPoint, sipRequestExcp.Message, sipRequestExcp.SIPErrorField, sipMessage.RawMessage);
+                                        FireSIPBadRequestInTraceEvent(localEndPoint, remoteEndPoint, sipRequestExcp.Message, sipRequestExcp.SIPErrorField, sipMessageBuffer.RawMessage);
                                         SIPResponse errorResponse = GetResponse(localEndPoint, remoteEndPoint, sipRequestExcp.SIPResponseErrorCode, sipRequestExcp.Message);
                                         await SendResponseAsync(errorResponse);
                                     }

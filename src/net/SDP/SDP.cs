@@ -341,7 +341,9 @@ namespace SIPSorcery.Net
         public void AddExtra(string attribute)
         {
             if (!string.IsNullOrWhiteSpace(attribute))
+            {
                 ExtraAttributes.Add(attribute);
+            }
         }
 
         public override string ToString()

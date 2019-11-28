@@ -11,13 +11,16 @@
 //
 // History:
 // 22 jun 2005	Aaron Clauson   Created, Dublin, Ireland.
+// rj2: need some more helper methods
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 
@@ -151,6 +154,24 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
+        /// (convenience method) check if string can be parsed as IPAddress
+        /// </summary>
+        /// <param name="socket">string to check</param>
+        /// <returns>true/false</returns>
+        public static bool IsIPAddress(string socket)
+        {
+            if (socket == null || socket.Trim().Length == 0)
+            {
+                return false;
+            }
+            else
+            {
+                IPAddress ipaddr;
+                return IPAddress.TryParse(socket, out ipaddr);
+            }
+        }
+
+        /// <summary>
         /// Checks the Contact SIP URI host and if it is recognised as a private address it is replaced with the socket
         /// the SIP message was received on.
         /// 
@@ -203,6 +224,204 @@ namespace SIPSorcery.Sys
             }
 
             return false;
+        }
+
+        //rj2: I had the requirement of parsing an IPEndpoint with IPv6, v4 and hostnames and getting them as string and int
+        /// <summary>
+        /// check if <paramref name="endpointstring"/> contains a hostname or ip-address and ip-port
+        /// accepts IPv4 and IPv6 and IPv6 mapped IPv4 addresses
+        /// return detected values in <paramref name="host"/> and <paramref name="port"/>
+        /// 
+        /// adapted from: http://stackoverflow.com/questions/2727609/best-way-to-create-ipendpoint-from-string
+        /// </summary>
+        /// <param name="endpointstring">string to checki</param>
+        /// <param name="host">host-portion of <paramref name="endpointstring"/>, if host can be parsed as IPAddress, then <paramref name="host"/> is IPAddress.ToString</param>
+        /// <param name="port">port-portion of <paramref name="endpointstring"/></param>
+        /// <returns>true if host-portion of endpointstring is valid ip-address</returns>
+        /// <exception cref="ArgumentException">if <paramref name="endpointstring"/> is null/empty </exception>
+        /// <exception cref="FormatException">if host looks like ip-address but can't be parsed</exception>
+        public static bool Parse(string endpointstring, out string host, out int port)
+        {
+            bool rc = false;
+            if (string.IsNullOrWhiteSpace(endpointstring))
+            {
+                throw new ArgumentException("Endpoint descriptor must not be empty.");
+            }
+
+            string[] values = null;
+            if (endpointstring.IndexOf(';') > 0)
+                values = endpointstring.Substring(0, endpointstring.IndexOf(';')).Split(new char[] { ':' });
+            else
+                values = endpointstring.Split(new char[] { ':' });
+            IPAddress ipaddr;
+            port = -1;
+
+            //check if we have an IPv6 or ports
+            if (values.Length <= 2) // ipv4 or hostname
+            {
+                if (values.Length == 1)
+                    //no port is specified, default
+                    port = -1;
+                else
+                    port = getPort(values[1]);
+
+                host = values[0];
+                //try to use the address as IPv4, otherwise get hostname
+                if (!IPAddress.TryParse(values[0], out ipaddr))
+                {
+                    host = values[0];
+                }
+                else
+                {
+                    host = ipaddr.ToString();
+                    rc = true;
+                }
+            }
+            else if (values.Length > 2) //ipv6
+            {
+                //could [a:b:c]:d
+                if (values[0].StartsWith("[") && values[values.Length - 2].EndsWith("]"))
+                {
+                    string ipaddressstring = string.Join(":", values.Take(values.Length - 1).ToArray());
+                    ipaddr = IPAddress.Parse(ipaddressstring);
+                    port = getPort(values[values.Length - 1]);
+                    host = ipaddr.ToString();
+                }
+                else //[a:b:c] or a:b:c
+                {
+                    if (endpointstring.IndexOf(';') > 0)
+                        ipaddr = IPAddress.Parse(endpointstring.Substring(0, endpointstring.IndexOf(';')));
+                    else
+                        ipaddr = IPAddress.Parse(endpointstring);
+                    host = ipaddr.ToString();
+                    port = -1;
+                }
+                rc = true;
+            }
+            else
+            {
+                throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpointstring));
+            }
+
+            return rc;
+        }
+        public static IPEndPoint Parse(string endpointstring, int defaultport = -1)
+        {
+            if (string.IsNullOrWhiteSpace(endpointstring))
+            {
+                throw new ArgumentException("Endpoint descriptor must not be empty.");
+            }
+
+            if (defaultport != -1 &&
+                (defaultport < IPEndPoint.MinPort
+                || defaultport > IPEndPoint.MaxPort))
+            {
+                throw new ArgumentException(string.Format("Invalid default port '{0}'", defaultport));
+            }
+
+            string[] values = endpointstring.Split(new char[] { ':' });
+            IPAddress ipaddr;
+            int port = -1;
+
+            //check if we have an IPv6 or ports
+            if (values.Length <= 2) // ipv4 or hostname
+            {
+                if (values.Length == 1)
+                    //no port is specified, default
+                    port = defaultport;
+                else
+                    port = getPort(values[1]);
+
+                //try to use the address as IPv4, otherwise get hostname
+                if (!IPAddress.TryParse(values[0], out ipaddr))
+                    ipaddr = getIPfromHost(values[0]);
+            }
+            else if (values.Length > 2) //ipv6
+            {
+                //could [a:b:c]:d
+                if (values[0].StartsWith("[") && values[values.Length - 2].EndsWith("]"))
+                {
+                    string ipaddressstring = string.Join(":", values.Take(values.Length - 1).ToArray());
+                    ipaddr = IPAddress.Parse(ipaddressstring);
+                    port = getPort(values[values.Length - 1]);
+                }
+                else //[a:b:c] or a:b:c
+                {
+                    ipaddr = IPAddress.Parse(endpointstring);
+                    port = defaultport;
+                }
+            }
+            else
+            {
+                throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpointstring));
+            }
+
+            if (port == -1)
+            {
+                //throw new ArgumentException(string.Format("No port specified: '{0}'", endpointstring));
+                port = 0;
+            }
+
+            return new IPEndPoint(ipaddr, port);
+        }
+
+        private static int getPort(string p)
+        {
+            int port;
+
+            if (!int.TryParse(p, out port)
+             || port < IPEndPoint.MinPort
+             || port > IPEndPoint.MaxPort)
+            {
+                throw new FormatException(string.Format("Invalid end point port '{0}'", p));
+            }
+
+            return port;
+        }
+
+        private static IPAddress getIPfromHost(string p)
+        {
+            var hosts = Dns.GetHostAddresses(p);
+
+            if (hosts == null || hosts.Length == 0)
+                throw new ArgumentException(string.Format("Host not found: {0}", p));
+
+            return hosts[0];
+        }
+
+        /// <summary>
+        /// Returns an IPv4 end point from a socket address in 10.0.0.1:5060 format.
+        /// </summary>>
+        public static IPEndPoint GetIPEndPoint(string IPSocket)
+        {
+            return Parse(IPSocket);
+
+            //if (IPSocket == null || IPSocket.Trim().Length == 0)
+            //{
+            //    throw new ApplicationException("IPSocket cannot parse an IPEndPoint from an empty string.");
+            //}
+
+            //try
+            //{
+            //    int colonIndex = IPSocket.LastIndexOf(":");
+
+            //    if (colonIndex != -1)
+            //    {
+            //        string ipAddress = IPSocket.Substring(0, colonIndex).Trim();
+            //        int port = Convert.ToInt32(IPSocket.Substring(colonIndex + 1).Trim());
+            //        IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
+
+            //        return endPoint;
+            //    }
+            //    else
+            //    {
+            //        return new IPEndPoint(IPAddress.Parse(IPSocket.Trim()), 0);
+            //    }
+            //}
+            //catch (Exception excp)
+            //{
+            //    throw new ApplicationException(excp.Message + "(" + IPSocket + ")", excp);
+            //}
         }
     }
 }

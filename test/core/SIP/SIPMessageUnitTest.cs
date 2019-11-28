@@ -16,7 +16,7 @@ using Xunit;
 namespace SIPSorcery.SIP.UnitTests
 {
     [Trait("Category", "unit")]
-    public class SIPMessageUnitTest
+    public class SIPMessageBufferUnitTest
     {
         private static string CRLF = SIPConstants.CRLF;
 
@@ -38,9 +38,9 @@ namespace SIPSorcery.SIP.UnitTests
                 "Contact: <sip:303@213.168.225.133>" + CRLF +
                 "Content-Length: 0" + CRLF + CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
 
-            Assert.True(sipMessage != null, "The SIP message not parsed correctly.");
+            Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
@@ -80,9 +80,9 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=fmtp:101 0-16" + CRLF +
                 "a=silenceSupp:off - - - -" + CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
 
-            Assert.True(sipMessage != null, "The SIP message not parsed correctly.");
+            Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
@@ -105,9 +105,9 @@ namespace SIPSorcery.SIP.UnitTests
                 "Contact: <sip:303@213.168.225.133>" + CRLF +
                 "Content-Length: 0" + CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
 
-            Assert.True(sipMessage != null, "The SIP message not parsed correctly.");
+            Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
         }
@@ -141,10 +141,10 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=rtpmap:8 PCMA/8000" + CRLF +
                 CRLF;
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
-            SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessage);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
+            SIPResponse sipResponse = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
-            Assert.True(sipMessage != null, "The SIP message not parsed correctly.");
+            Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
             Assert.True(sipResponse.Header.Vias.Length == 2, "The SIP reponse did not end up with the right number of Via headers.");
 
             Console.WriteLine("-----------------------------------------");
@@ -174,7 +174,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
-            int contentLength = SIPMessage.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+            int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
             Console.WriteLine("Content-Length " + contentLength + ".");
 
@@ -205,7 +205,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
-            int contentLength = SIPMessage.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+            int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
             Console.WriteLine("Content-Length " + contentLength + ".");
 
@@ -236,7 +236,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
-            int contentLength = SIPMessage.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+            int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
             Console.WriteLine("Content-Length " + contentLength + ".");
 
@@ -268,7 +268,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
 
-            int contentLength = SIPMessage.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
+            int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
             Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
@@ -295,7 +295,7 @@ namespace SIPSorcery.SIP.UnitTests
 "Event: dialog" + CRLF + CRLF;
 
             byte[] notifyRequestBytes = UTF8Encoding.UTF8.GetBytes(notifyRequest);
-            byte[] parsedNotifyBytes = SIPMessage.ParseSIPMessageFromStream(notifyRequestBytes, 0, notifyRequestBytes.Length, out _);
+            byte[] parsedNotifyBytes = SIPMessageBuffer.ParseSIPMessageFromStream(notifyRequestBytes, 0, notifyRequestBytes.Length, out _);
 
             Assert.True(notifyRequestBytes.Length == parsedNotifyBytes.Length, "The length of the parsed byte array was incorrect.");
         }
@@ -401,7 +401,7 @@ CRLF +
 "</dialog-info>";
 
             byte[] notifyRequestBytes = Encoding.ASCII.GetBytes(notifyRequest);
-            byte[] parsedNotifyBytes = SIPMessage.ParseSIPMessageFromStream(notifyRequestBytes, 0, notifyRequestBytes.Length, out _);
+            byte[] parsedNotifyBytes = SIPMessageBuffer.ParseSIPMessageFromStream(notifyRequestBytes, 0, notifyRequestBytes.Length, out _);
 
             Assert.True(notifyRequestBytes.Length == parsedNotifyBytes.Length, "The length of the parsed byte array was incorrect.");
         }
@@ -460,13 +460,13 @@ CRLF +
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
-            byte[] request1Bytes = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out _);
+            byte[] request1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out _);
             Console.WriteLine("Request1=" + UTF8Encoding.UTF8.GetString(request1Bytes));
 
-            byte[] request2Bytes = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, request1Bytes.Length, testReceiveBytes.Length, out _);
+            byte[] request2Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, request1Bytes.Length, testReceiveBytes.Length, out _);
             Console.WriteLine("Request2=" + UTF8Encoding.UTF8.GetString(request2Bytes));
 
-            byte[] response1Bytes = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, request1Bytes.Length + request2Bytes.Length, testReceiveBytes.Length, out _);
+            byte[] response1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, request1Bytes.Length + request2Bytes.Length, testReceiveBytes.Length, out _);
             Console.WriteLine("Response1=" + UTF8Encoding.UTF8.GetString(response1Bytes));
 
             Assert.True(request1Bytes.Length + request2Bytes.Length + response1Bytes.Length == testReceiveBytes.Length, "The length of the parsed requests and responses was incorrect.");
@@ -497,7 +497,7 @@ Event: dialog
 includesdp=tru";
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
-            byte[] request1Bytes = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out _);
+            byte[] request1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out _);
 
             Assert.True(request1Bytes == null, "The parsed bytes should have been empty.");
         }
@@ -527,7 +527,7 @@ CRLF +
 "includesdp=true!";
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
-            byte[] request1Bytes = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out _);
+            byte[] request1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out _);
 
             Assert.True(request1Bytes.Length == testReceiveBytes.Length - 1, "The parsed bytes was an incorrect length.");
         }
@@ -559,7 +559,7 @@ Event: dialog
 include                                               ";
 
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
-            byte[] request1Bytes = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length - 100, out _);
+            byte[] request1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length - 100, out _);
 
             Assert.True(request1Bytes == null, "A request array should not have been returned.");
         }
@@ -591,7 +591,7 @@ CRLF +
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
             int skippedBytes = 0;
-            byte[] request1Bytes = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out skippedBytes);
+            byte[] request1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out skippedBytes);
 
             Console.WriteLine(Encoding.UTF8.GetString(request1Bytes));
 
@@ -626,10 +626,50 @@ CRLF +
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
             int bytesSkipped = 0;
-            byte[] result = SIPMessage.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out bytesSkipped);
+            byte[] result = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out bytesSkipped);
 
             Assert.True(result != null, "The resultant array should not have been null.");
             Assert.True(bytesSkipped == 12, "The bytes skipped was incorrect.");
         }
+
+        //rj2
+        [Fact]
+        public void IsPingUnitTest()
+        {
+            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            byte[] buffer = new byte[] { 0x0d, 0x0a };//"\r\n"
+            Assert.True(SIPMessageBuffer.IsPing(buffer), "Buffer \\r\\n is not a Ping message.");
+
+            buffer = new byte[] { 0x0d, 0x0a, 0x0d, 0x0a };//"\r\n\r\n"
+            Assert.True(SIPMessageBuffer.IsPing(buffer), "Buffer \\r\\n\\r\\n is not a Ping message.");
+
+            buffer = new byte[] { 0x6a, 0x61, 0x4b, 0x00 };//"jaK\0"
+            Assert.True(SIPMessageBuffer.IsPing(buffer), "Buffer jaK\\0 is not a Ping message.");
+
+            buffer = new byte[] { 0x70, 0x6e, 0x67 };//"png"
+            Assert.True(SIPMessageBuffer.IsPing(buffer), "Buffer png is not a Ping message.");
+
+            buffer = new byte[] { 0x00, 0x00, 0x00, 0x00 };//"\0\0\0\0"
+            Assert.True(SIPMessageBuffer.IsPing(buffer), "Buffer \\0\\0\\0\\0 is not a Ping message.");
+
+            string sipMsg =
+                "SIP/2.0 100 Trying" + CRLF +
+                "Via: SIP/2.0/UDP 213.168.225.135:5060;branch=z9hG4bKD+ta2mJ+C+VV/L50aPO1lFJnrag=" + CRLF +
+                "Via: SIP/2.0/UDP 192.168.1.2:5065;received=220.240.255.198:64193;branch=z9hG4bKB86FC8D2431F49E9862D1EE439C78AD8" + CRLF +
+                "From: bluesipd <sip:bluesipd@bluesipd:5065>;tag=3272744142" + CRLF +
+                "To: <sip:303@bluesipd>" + CRLF +
+                "Call-ID: FE63F90D-4339-4AD0-9D44-59F44A1935E7@192.168.1.2" + CRLF +
+                "CSeq: 45560 INVITE" + CRLF +
+                "User-Agent: asterisk" + CRLF +
+                "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, NOTIFY" + CRLF +
+                "Contact: <sip:303@213.168.225.133>" + CRLF +
+                "Content-Length: 0" + CRLF + CRLF;
+
+            Assert.False(SIPMessageBuffer.IsPing(Encoding.UTF8.GetBytes(sipMsg)), "The SIP message is a Ping.");
+
+            Console.WriteLine("-----------------------------------------");
+        }
+
     }
 }

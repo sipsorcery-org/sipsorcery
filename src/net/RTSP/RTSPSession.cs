@@ -308,7 +308,8 @@ namespace SIPSorcery.Net
             {
                 _startedAt = DateTime.Now;
 
-                ThreadPool.QueueUserWorkItem(delegate { RTPReceive(); });
+                ThreadPool.QueueUserWorkItem(delegate
+                { RTPReceive(); });
 
                 _controlSocketBuffer = new byte[RECEIVE_BUFFER_SIZE];
                 _controlSocket.BeginReceive(_controlSocketBuffer, 0, _controlSocketBuffer.Length, SocketFlags.None, out _controlSocketError, ControlSocketReceive, null);
@@ -1133,7 +1134,8 @@ namespace SIPSorcery.Net
             // Bytes 1 to 3: Three byte fragment offset
             //http://tools.ietf.org/search/rfc2435#section-3.1.2
 
-            if (BitConverter.IsLittleEndian) fragmentOffset = NetConvert.DoReverseEndian(fragmentOffset);
+            if (BitConverter.IsLittleEndian)
+                fragmentOffset = NetConvert.DoReverseEndian(fragmentOffset);
 
             byte[] offsetBytes = BitConverter.GetBytes(fragmentOffset);
             rtpJpegHeader[1] = offsetBytes[2];

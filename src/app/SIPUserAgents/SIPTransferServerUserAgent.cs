@@ -1,13 +1,14 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SIPTransferServerUserAgent.cs
 //
-// Description: The interface definition for SIP Server User Agents (UAC).
+// Description: A server user agent that replaces an existing sip dialogue rather
+// than creating a new dialogue with a client user agent.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 21 Jan 2010	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery Ltd, London, UK (www.sipsorcery.com).
+// 21 Jan 2010	Aaron Clauson   Created, Hobart, Australia.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -127,14 +128,11 @@ namespace SIPSorcery.SIP.App
 
         public void Progress(SIPResponseStatusCodesEnum progressStatus, string reasonPhrase, string[] customHeaders, string progressContentType, string progressBody)
         {
-            if (UASStateChanged != null)
-            {
-                UASStateChanged(this, progressStatus, reasonPhrase);
-            }
+            UASStateChanged?.Invoke(this, progressStatus, reasonPhrase);
 
             if (progressBody != null)
             {
-                // Re-invite the remote dialogue so that they can listen to some real progress tones.
+                // TODO: Re-invite the remote dialogue so that they can listen to some real progress tones.
             }
         }
 
@@ -167,10 +165,7 @@ namespace SIPSorcery.SIP.App
                     m_answered = true;
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "A blind transfer received an answer.", m_owner));
 
-                    if (UASStateChanged != null)
-                    {
-                        UASStateChanged(this, SIPResponseStatusCodesEnum.Ok, null);
-                    }
+                    UASStateChanged?.Invoke(this, SIPResponseStatusCodesEnum.Ok, null);
 
                     BlindTransfer_External(m_dialogueToReplace, m_oppositeDialogue, answeredDialogue);
                 }
@@ -192,11 +187,7 @@ namespace SIPSorcery.SIP.App
         public void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders)
         {
             logger.LogWarning("SIPTransferServerUserAgent Reject called with " + failureStatus + " " + reasonPhrase + ".");
-
-            if (UASStateChanged != null)
-            {
-                UASStateChanged(this, failureStatus, reasonPhrase);
-            }
+            UASStateChanged?.Invoke(this, failureStatus, reasonPhrase);
         }
 
         public void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI)
@@ -255,10 +246,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                if (CallCancelled != null)
-                {
-                    CallCancelled(this);
-                }
+                CallCancelled?.Invoke(this);
             }
             catch (Exception excp)
             {

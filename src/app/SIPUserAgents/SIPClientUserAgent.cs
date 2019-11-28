@@ -2,9 +2,12 @@
 // Filename: SIPClientUserAgent.cs
 //
 // Description: Implementation of a SIP Client User Agent that can be used to initiate SIP calls.
-// 
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
 // History:
-// 22 Feb 2008	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 22 Feb 2008	Aaron Clauson   Created, Hobart, Australia.
 // 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 
@@ -486,12 +489,19 @@ namespace SIPSorcery.SIP.App
 
         public void Update(CRMHeaders crmHeaders)
         {
-            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Sending UPDATE to " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
+            try
+            {
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Sending UPDATE to " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
 
-            SIPRequest updateRequest = GetUpdateRequest(m_serverTransaction.TransactionRequest, crmHeaders);
-            SIPNonInviteTransaction updateTransaction = m_sipTransport.CreateNonInviteTransaction(updateRequest, m_outboundProxy);
-            updateTransaction.TransactionTraceMessage += TransactionTraceMessage;
-            updateTransaction.SendReliableRequest();
+                SIPRequest updateRequest = GetUpdateRequest(m_serverTransaction.TransactionRequest, crmHeaders);
+                SIPNonInviteTransaction updateTransaction = m_sipTransport.CreateNonInviteTransaction(updateRequest, m_outboundProxy);
+                updateTransaction.TransactionTraceMessage += TransactionTraceMessage;
+                updateTransaction.SendReliableRequest();
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception SIPClientUserAgent Update. " + excp.Message);
+            }
         }
 
         public void Hangup()

@@ -37,7 +37,7 @@ namespace SIPSorcery.SIP
     {
         InviteServer = 1,   // User agent server transaction.
         NonInvite = 2,
-        InivteClient = 3,   // User agent client transaction.
+        InviteClient = 3,   // User agent client transaction.
     }
 
     /// <note>
@@ -416,7 +416,7 @@ namespace SIPSorcery.SIP
         {
             FireTransactionTraceMessage($"Transaction send request reliable {TransactionRequest.StatusLine}");
 
-            if (TransactionType == SIPTransactionTypesEnum.InivteClient && this.TransactionRequest.Method == SIPMethodsEnum.INVITE)
+            if (TransactionType == SIPTransactionTypesEnum.InviteClient && this.TransactionRequest.Method == SIPMethodsEnum.INVITE)
             {
                 UpdateTransactionState(SIPTransactionStatesEnum.Calling);
             }

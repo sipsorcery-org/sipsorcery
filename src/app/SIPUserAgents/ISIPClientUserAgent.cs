@@ -2,9 +2,12 @@
 // Filename: ISIPClientUserAgent.cs
 //
 // Description: The interface definition for SIP Client User Agents (UAC).
-// 
+//
+// Author(s):
+// Aaron Clauson (aaron@sipsorcery.com)
+//
 // History:
-// 30 Aug 2009	Aaron Clauson   Created (aaron@sipsorcery.com), SIP Sorcery Ltd, London, UK (www.sipsorcery.com).
+// 30 Aug 2009	Aaron Clauson   Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -12,22 +15,18 @@
 
 namespace SIPSorcery.SIP.App
 {
-
+    /// <summary>
+    /// Interface for classes implementing SIP client user agent functionality. The
+    /// main function of a SIP client user agent is the ability to initiate calls.
+    /// </summary>
     public interface ISIPClientUserAgent
     {
-
         string Owner { get; }
         string AdminMemberId { get; }
         UACInviteTransaction ServerTransaction { get; }
         SIPDialogue SIPDialogue { get; }
         SIPCallDescriptor CallDescriptor { get; }
         bool IsUACAnswered { get; }
-
-        // Real-time call control properties.
-        //string AccountCode { get; set; }
-        //decimal ReservedCredit { get; set; }
-        //int ReservedSeconds { get; set; }
-        //decimal Rate { get; set; }
 
         event SIPCallResponseDelegate CallTrying;
         event SIPCallResponseDelegate CallRinging;

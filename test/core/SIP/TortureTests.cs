@@ -44,10 +44,10 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug(raw);
 
-            SIPMessage sipMessage = SIPMessage.ParseSIPMessage(Encoding.UTF8.GetBytes(raw), null, null);
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(raw), null, null);
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(raw);
 
-            Assert.NotNull(sipMessage);
+            Assert.NotNull(sipMessageBuffer);
             Assert.NotNull(inviteReq);
 
             logger.LogDebug("-----------------------------------------");
