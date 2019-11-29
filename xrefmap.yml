@@ -2376,6 +2376,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.RTPSession
   nameWithType: RTPSession.RTPSession
+- uid: SIPSorcery.Net.RTPSession.DestinationEndPoint
+  name: DestinationEndPoint
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_DestinationEndPoint
+  commentId: F:SIPSorcery.Net.RTPSession.DestinationEndPoint
+  fullName: SIPSorcery.Net.RTPSession.DestinationEndPoint
+  nameWithType: RTPSession.DestinationEndPoint
 - uid: SIPSorcery.Net.RTPSession.OctetsSent
   name: OctetsSent
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OctetsSent
@@ -2389,6 +2395,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.OctetsSent
   nameWithType: RTPSession.OctetsSent
+- uid: SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
+  name: OnReceiveFromEndPointChanged
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceiveFromEndPointChanged
+  commentId: E:SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
+  fullName: SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
+  nameWithType: RTPSession.OnReceiveFromEndPointChanged
 - uid: SIPSorcery.Net.RTPSession.PacketsSent
   name: PacketsSent
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_PacketsSent
@@ -2421,6 +2433,22 @@ references:
   commentId: F:SIPSorcery.Net.RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
   fullName: SIPSorcery.Net.RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
   nameWithType: RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
+- uid: SIPSorcery.Net.RTPSession.RtpReceive(System.Byte[],System.Int32,System.Int32,System.Net.IPEndPoint)
+  name: RtpReceive(Byte[], Int32, Int32, IPEndPoint)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RtpReceive_System_Byte___System_Int32_System_Int32_System_Net_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTPSession.RtpReceive(System.Byte[],System.Int32,System.Int32,System.Net.IPEndPoint)
+  name.vb: RtpReceive(Byte(), Int32, Int32, IPEndPoint)
+  fullName: SIPSorcery.Net.RTPSession.RtpReceive(System.Byte[], System.Int32, System.Int32, System.Net.IPEndPoint)
+  fullName.vb: SIPSorcery.Net.RTPSession.RtpReceive(System.Byte(), System.Int32, System.Int32, System.Net.IPEndPoint)
+  nameWithType: RTPSession.RtpReceive(Byte[], Int32, Int32, IPEndPoint)
+  nameWithType.vb: RTPSession.RtpReceive(Byte(), Int32, Int32, IPEndPoint)
+- uid: SIPSorcery.Net.RTPSession.RtpReceive*
+  name: RtpReceive
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RtpReceive_
+  commentId: Overload:SIPSorcery.Net.RTPSession.RtpReceive
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.RtpReceive
+  nameWithType: RTPSession.RtpReceive
 - uid: SIPSorcery.Net.RTPSession.SendAudioFrame(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32,System.Byte[])
   name: SendAudioFrame(Socket, IPEndPoint, UInt32, Byte[])
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudioFrame_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_System_Byte___
@@ -12805,6 +12833,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.SIPUserAgent
   nameWithType: SIPUserAgent.SIPUserAgent
+- uid: SIPSorcery.SIP.App.SIPUserAgent.AcceptCall(SIPSorcery.SIP.UASInviteTransaction)
+  name: AcceptCall(UASInviteTransaction)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_AcceptCall_SIPSorcery_SIP_UASInviteTransaction_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.AcceptCall(SIPSorcery.SIP.UASInviteTransaction)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.AcceptCall(SIPSorcery.SIP.UASInviteTransaction)
+  nameWithType: SIPUserAgent.AcceptCall(UASInviteTransaction)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.AcceptCall*
+  name: AcceptCall
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_AcceptCall_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.AcceptCall
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.AcceptCall
+  nameWithType: SIPUserAgent.AcceptCall
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.Net.SDP)
+  name: Answer(SDP)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_Net_SDP_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.Net.SDP)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.Net.SDP)
+  nameWithType: SIPUserAgent.Answer(SDP)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Answer*
+  name: Answer
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.Answer
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Answer
+  nameWithType: SIPUserAgent.Answer
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
   name: Call(SIPCallDescriptor)
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Call_SIPSorcery_SIP_App_SIPCallDescriptor_
