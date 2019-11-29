@@ -67,7 +67,7 @@ namespace SIPSorcery
             Console.WriteLine("Press ctrl-c to exit.");
 
             // Plumbing code to facilitate a graceful exit.
-            CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP trnasport and RTP stream.
+            CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
             bool isCallHungup = false;
             bool hasCallFailed = false;
 

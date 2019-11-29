@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -55,6 +56,25 @@ namespace SIPSorcery.Net
         /// Function pointer to an SRTCP context that encrypts an RTCP packet.
         /// </summary>
         public ProtectRtpPacket SrtcpProtect { get; private set; }
+
+        /// <summary>
+        /// Gets fired when the session detects that the remote end point 
+        /// has changed. This is useful because the RTP socket advertised in an SDP
+        /// payload will often be different to the one the packets arrive from due
+        /// to NAT.
+        /// 
+        /// The parameters for the event are:
+        ///  - Original remote end point,
+        ///  - Most recent remote end point.
+        /// </summary>
+        public event Action<IPEndPoint, IPEndPoint> OnReceiveFromEndPointChanged;
+
+        /// <summary>
+        /// The remote end point this session is sending to.
+        /// </summary>
+        public IPEndPoint DestinationEndPoint;
+
+        private IPEndPoint _lastReceiveFromEndPoint;
 
         /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
@@ -280,6 +300,25 @@ namespace SIPSorcery.Net
             {
                 logger.LogWarning("SendDtmfEvent was cancelled by caller.");
             }
+        }
+
+        /// <summary>
+        /// Processes received RTP packets.
+        /// </summary>
+        /// <param name="buffer">The raw data received on the RTP socket.</param>
+        /// <param name="offset">Offset in the buffer that the received data starts from.</param>
+        /// <param name="count">The number of bytes received.</param>
+        /// <param name="remoteEndPoint">The remote end point the receive was from.</param>
+        /// <returns>An RTP packet.</returns>
+        public RTPPacket RtpReceive(byte[] buffer, int offset, int count, IPEndPoint remoteEndPoint)
+        {
+            if(_lastReceiveFromEndPoint == null || !_lastReceiveFromEndPoint.Equals(remoteEndPoint))
+            {
+                OnReceiveFromEndPointChanged?.Invoke(_lastReceiveFromEndPoint, remoteEndPoint);
+                _lastReceiveFromEndPoint = remoteEndPoint;
+            }
+
+           return new RTPPacket(buffer.Skip(offset).Take(count).ToArray());
         }
 
         /// <summary>
