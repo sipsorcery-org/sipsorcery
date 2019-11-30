@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
@@ -364,6 +365,49 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// Initiates a blind transfer to the specified destination. 
+        /// </summary>
+        /// <param name="destination">The URI to transfer the call to.</param>
+        /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
+        /// <param name="ct">Cancellation token. Can be set to canel the transfer prior to it being
+        /// accepted or timing out.</param>
+        public async Task<bool> Transfer(SIPURI destination, TimeSpan timeout, CancellationToken ct)
+        {
+            if(Dialogue == null)
+            {
+                logger.LogWarning("Transfer was called on the SIPUserAgent when no dialogue was available.");
+                return false;
+            }
+            else
+            {
+                TaskCompletionSource<bool> transferAccepted = new TaskCompletionSource<bool>();
+
+                var referRequest = GetReferRequest(Dialogue, destination);
+
+                SIPNonInviteTransaction referTx = m_transport.CreateNonInviteTransaction(referRequest, null);
+
+                referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =>
+                {
+                    if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
+                    {
+                        logger.LogInformation("Call transfer was accepted by remote server.");
+
+                        // Existing call is now out of the loop, hang it up.
+                        Dialogue.Hangup(m_transport, m_outboundProxy);
+
+                        transferAccepted.SetResult(true);
+                    }
+                };
+
+                referTx.SendReliableRequest();
+
+                await Task.WhenAny(new Task[] { transferAccepted.Task, Task.Delay((int)timeout.TotalMilliseconds) });
+
+                return transferAccepted.Task.Result;
+            }
+        }
+
+        /// <summary>
         /// Takes care of sending a response based on whether the outbound proxy is set or not.
         /// </summary>
         /// <param name="response">The response to send.</param>
@@ -446,6 +490,33 @@ namespace SIPSorcery.SIP.App
             {
                 logger.LogDebug($"Call attempt to {m_uac.CallDescriptor.Uri} was answered.");
             }
+        }
+
+        /// <summary>
+        /// Builds the REFER request to initiate a blind transfer on an established call.
+        /// </summary>
+        /// <param name="sipDialogue">A SIP dialogue object representing the established call.</param>
+        /// <param name="referToUri">The SIP URI to transfer the call to.</param>
+        /// <returns>A SIP REFER request.</returns>
+        private SIPRequest GetReferRequest(SIPDialogue sipDialogue, SIPURI referToUri)
+        {
+            SIPRequest referRequest = new SIPRequest(SIPMethodsEnum.REFER, sipDialogue.RemoteTarget);
+
+            SIPFromHeader referFromHeader = SIPFromHeader.ParseFromHeader(sipDialogue.LocalUserField.ToString());
+            SIPToHeader referToHeader = SIPToHeader.ParseToHeader(sipDialogue.RemoteUserField.ToString());
+            int cseq = sipDialogue.CSeq + 1;
+            sipDialogue.CSeq++;
+
+            SIPHeader referHeader = new SIPHeader(referFromHeader, referToHeader, cseq, sipDialogue.CallId);
+            referHeader.CSeqMethod = SIPMethodsEnum.REFER;
+            referRequest.Header = referHeader;
+            referRequest.Header.Routes = sipDialogue.RouteSet;
+            referRequest.Header.ProxySendFrom = sipDialogue.ProxySendFrom;
+            referRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
+            referRequest.Header.ReferTo = referToUri.ToString();
+            referRequest.Header.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader() };
+
+            return referRequest;
         }
     }
 }

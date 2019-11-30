@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example of using a REFER request to transfer a  received call.
+// Description: An example of using a REFER request to transfer a received call.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -34,6 +34,8 @@ namespace SIPSorcery
     class Program
     {
         private static readonly string AUDIO_FILE_PCMU = @"media\Macroform_-_Simplicity.ulaw";
+        private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.48";  // The destination to transfer the accepted call to.
+        private static readonly int TRANSFER_TIMEOUT_SECONDS = 5;                               // If transfer isn't accepted after this time assume it's failed.
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
         private static int SIP_LISTEN_PORT = 5060;
         private static int RTP_PORT_START = 49000;
@@ -160,6 +162,42 @@ namespace SIPSorcery
                 rtpCts?.Cancel();
             };
 
+            // At this point the call has been initiated and everything will be handled in an event handler.
+            Task.Run(async () =>
+            {
+                try
+                {
+                    while (!exitCts.Token.WaitHandle.WaitOne(0))
+                    {
+                        var keyProps = Console.ReadKey();
+                        if(keyProps.KeyChar == 't')
+                        {
+                            // Initiate a transfer.
+                            bool transferResult = await userAgent.Transfer(SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI), new TimeSpan(0, 0, TRANSFER_TIMEOUT_SECONDS), exitCts.Token);
+                            if(transferResult)
+                            {
+                                // If the transfer was accepted the original call will already have been hungup.
+                                userAgent = null;
+                                exitCts.Cancel();
+                            }
+                            else
+                            {
+                                Log.LogWarning($"Transfer to {TRANSFER_DESTINATION_SIP_URI} failed.");
+                            }
+                        }
+                        else if (keyProps.KeyChar == 'q')
+                        {
+                            // Quit application.
+                            exitCts.Cancel();
+                        }
+                    }
+                }
+                catch (Exception excp)
+                {
+                   Log.LogError($"Exception Key Press listener. {excp.Message}.");
+                }
+            });
+
             // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
             exitCts.Token.WaitHandle.WaitOne();
 
@@ -278,39 +316,44 @@ namespace SIPSorcery
         /// <param name="cts">Cancellation token to stop the call.</param>
         private static async void SendRtp(Socket rtpSocket, RTPSession rtpSendSession, CancellationTokenSource cts)
         {
-            while (cts.IsCancellationRequested == false)
+            try
             {
-                uint timestamp = 0;
-                using (StreamReader sr = new StreamReader(AUDIO_FILE_PCMU))
+                while (cts.IsCancellationRequested == false)
                 {
-                    DateTime lastSendReportAt = DateTime.Now;
-                    uint packetsSentCount = 0;
-                    uint bytesSentCount = 0;
-                    byte[] buffer = new byte[320];
-                    int bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
-
-                    while (bytesRead > 0 && !cts.IsCancellationRequested)
+                    uint timestamp = 0;
+                    using (StreamReader sr = new StreamReader(AUDIO_FILE_PCMU))
                     {
-                        if (rtpSendSession.DestinationEndPoint != null)
+                        DateTime lastSendReportAt = DateTime.Now;
+                        uint packetsSentCount = 0;
+                        uint bytesSentCount = 0;
+                        byte[] buffer = new byte[320];
+                        int bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
+
+                        while (bytesRead > 0 && !cts.IsCancellationRequested)
                         {
-                            packetsSentCount++;
-                            bytesSentCount += (uint)bytesRead;
-                            rtpSendSession.SendAudioFrame(rtpSocket, rtpSendSession.DestinationEndPoint, timestamp, buffer);
+                            if (rtpSendSession.DestinationEndPoint != null)
+                            {
+                                packetsSentCount++;
+                                bytesSentCount += (uint)bytesRead;
+                                rtpSendSession.SendAudioFrame(rtpSocket, rtpSendSession.DestinationEndPoint, timestamp, buffer);
+                            }
+
+                            timestamp += (uint)buffer.Length;
+
+                            if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
+                            {
+                                lastSendReportAt = DateTime.Now;
+                                SIPSorcery.Sys.Log.Logger.LogDebug($"RTP send report {rtpSocket.LocalEndPoint}->{rtpSendSession.DestinationEndPoint} pkts {packetsSentCount} bytes {bytesSentCount}");
+                            }
+
+                            await Task.Delay(40, cts.Token);
+                            bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
                         }
-
-                        timestamp += (uint)buffer.Length;
-
-                        if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
-                        {
-                            lastSendReportAt = DateTime.Now;
-                            SIPSorcery.Sys.Log.Logger.LogDebug($"RTP send report {rtpSocket.LocalEndPoint}->{rtpSendSession.DestinationEndPoint} pkts {packetsSentCount} bytes {bytesSentCount}");
-                        }
-
-                        await Task.Delay(40, cts.Token);
-                        bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
                     }
                 }
             }
+            catch (ObjectDisposedException) // Gets thrown when the RTP socket is closed. Can safely ignore.
+            { }
         }
 
         /// <summary>
