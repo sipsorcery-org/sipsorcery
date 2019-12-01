@@ -65,8 +65,8 @@ namespace SIPSorcery
 {
     class Program
     {
-        private const int DEFAULT_SIP_CLIENT_PORT = 9060;
-        private const int DEFAULT_SIPS_CLIENT_PORT = 9061;
+        private const int DEFAULT_SIP_CLIENT_PORT = 0;
+        private const int DEFAULT_SIPS_CLIENT_PORT = 0;
 
         private static Microsoft.Extensions.Logging.ILogger logger;
 
@@ -162,7 +162,10 @@ namespace SIPSorcery
                     SIPTransport sipTransport = new SIPTransport();
                     sipTransport.AddSIPChannel(sipChannel);
 
-                    if (sendCount > 0 && options.Period > 0) await Task.Delay(options.Period * 1000);
+                    if (sendCount > 0 && options.Period > 0)
+                    {
+                        await Task.Delay(options.Period * 1000);
+                    }
 
                     sendCount++;
 
