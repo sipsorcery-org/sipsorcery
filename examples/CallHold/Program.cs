@@ -141,7 +141,7 @@ namespace SIPSorcery
                     Log.LogWarning($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
                 }
             };
-            userAgent.CallHungup += () =>
+            userAgent.OnCallHungup += () =>
             {
                 Log.LogInformation($"Call hungup by remote party.");
                 exitCts.Cancel();
@@ -159,7 +159,7 @@ namespace SIPSorcery
                         sipRequest.Header.To != null &&
                         sipRequest.Header.To.ToTag != null)
                     {
-                        userAgent.InDialogRequestReceivedAsync(sipRequest).Wait();
+                        userAgent.DialogRequestReceivedAsync(sipRequest).Wait();
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                     {
@@ -205,7 +205,7 @@ namespace SIPSorcery
                         if (keyProps.KeyChar == 'h')
                         {
                             // Place call on/off hold.
-                            if (userAgent.IsAnswered)
+                            if (userAgent.IsCallActive)
                             {
                                 if (_holdStatus == HoldStatus.None)
                                 {
@@ -259,7 +259,7 @@ namespace SIPSorcery
 
             if (!isCallHungup && userAgent != null)
             {
-                if (userAgent.IsAnswered)
+                if (userAgent.IsCallActive)
                 {
                     Log.LogInformation($"Hanging up call to {userAgent?.CallDescriptor?.To}.");
                     userAgent.Hangup();
