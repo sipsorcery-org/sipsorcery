@@ -14,10 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SIPSorcery.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="media\LICENSE-Macroform">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

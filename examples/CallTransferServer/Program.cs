@@ -34,7 +34,7 @@ namespace SIPSorcery
     class Program
     {
         // The HOMER constants are to allow logging/analysis on a HOMER server (see sipcapture.org).
-        private static readonly string HOMER_SERVER_ENDPOINT = "192.168.11.49:9060";
+        private static readonly string HOMER_SERVER_ENDPOINT = null; //"192.168.11.49:9060";
         private static readonly uint HOMER_AGENT_ID = 333;
         private static readonly string HOMER_SERVER_PASSWORD = "myHep";
 
