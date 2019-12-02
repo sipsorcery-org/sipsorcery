@@ -12885,12 +12885,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.CallDescriptor
   nameWithType: SIPUserAgent.CallDescriptor
-- uid: SIPSorcery.SIP.App.SIPUserAgent.CallHungup
-  name: CallHungup
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_CallHungup
-  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.CallHungup
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.CallHungup
-  nameWithType: SIPUserAgent.CallHungup
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Cancel
   name: Cancel()
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Cancel
@@ -12928,6 +12922,19 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.ClientCallTrying
   fullName: SIPSorcery.SIP.App.SIPUserAgent.ClientCallTrying
   nameWithType: SIPUserAgent.ClientCallTrying
+- uid: SIPSorcery.SIP.App.SIPUserAgent.DialogRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
+  name: DialogRequestReceivedAsync(SIPRequest)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_DialogRequestReceivedAsync_SIPSorcery_SIP_SIPRequest_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.DialogRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.DialogRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
+  nameWithType: SIPUserAgent.DialogRequestReceivedAsync(SIPRequest)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.DialogRequestReceivedAsync*
+  name: DialogRequestReceivedAsync
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_DialogRequestReceivedAsync_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.DialogRequestReceivedAsync
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.DialogRequestReceivedAsync
+  nameWithType: SIPUserAgent.DialogRequestReceivedAsync
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Dialogue
   name: Dialogue
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Dialogue
@@ -12954,32 +12961,25 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.Hangup
   nameWithType: SIPUserAgent.Hangup
-- uid: SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
-  name: InDialogRequestReceivedAsync(SIPRequest)
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_InDialogRequestReceivedAsync_SIPSorcery_SIP_SIPRequest_
-  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync(SIPSorcery.SIP.SIPRequest)
-  nameWithType: SIPUserAgent.InDialogRequestReceivedAsync(SIPRequest)
-- uid: SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync*
-  name: InDialogRequestReceivedAsync
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_InDialogRequestReceivedAsync_
-  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync
+- uid: SIPSorcery.SIP.App.SIPUserAgent.IsCallActive
+  name: IsCallActive
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_IsCallActive
+  commentId: P:SIPSorcery.SIP.App.SIPUserAgent.IsCallActive
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.IsCallActive
+  nameWithType: SIPUserAgent.IsCallActive
+- uid: SIPSorcery.SIP.App.SIPUserAgent.IsCallActive*
+  name: IsCallActive
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_IsCallActive_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.IsCallActive
   isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.InDialogRequestReceivedAsync
-  nameWithType: SIPUserAgent.InDialogRequestReceivedAsync
-- uid: SIPSorcery.SIP.App.SIPUserAgent.IsAnswered
-  name: IsAnswered
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_IsAnswered
-  commentId: P:SIPSorcery.SIP.App.SIPUserAgent.IsAnswered
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.IsAnswered
-  nameWithType: SIPUserAgent.IsAnswered
-- uid: SIPSorcery.SIP.App.SIPUserAgent.IsAnswered*
-  name: IsAnswered
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_IsAnswered_
-  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.IsAnswered
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.IsAnswered
-  nameWithType: SIPUserAgent.IsAnswered
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.IsCallActive
+  nameWithType: SIPUserAgent.IsCallActive
+- uid: SIPSorcery.SIP.App.SIPUserAgent.OnCallHungup
+  name: OnCallHungup
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnCallHungup
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnCallHungup
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.OnCallHungup
+  nameWithType: SIPUserAgent.OnCallHungup
 - uid: SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
   name: OnReinviteRequest
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnReinviteRequest
@@ -12999,6 +12999,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.SendReInviteRequest
   nameWithType: SIPUserAgent.SendReInviteRequest
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Transfer(SIPSorcery.SIP.SIPURI,System.TimeSpan,System.Threading.CancellationToken)
+  name: Transfer(SIPURI, TimeSpan, CancellationToken)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Transfer_SIPSorcery_SIP_SIPURI_System_TimeSpan_System_Threading_CancellationToken_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Transfer(SIPSorcery.SIP.SIPURI,System.TimeSpan,System.Threading.CancellationToken)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Transfer(SIPSorcery.SIP.SIPURI, System.TimeSpan, System.Threading.CancellationToken)
+  nameWithType: SIPUserAgent.Transfer(SIPURI, TimeSpan, CancellationToken)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Transfer*
+  name: Transfer
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Transfer_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.Transfer
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Transfer
+  nameWithType: SIPUserAgent.Transfer
 - uid: SIPSorcery.SIP.AuthHeaders
   name: AuthHeaders
   href: api/SIPSorcery.SIP.AuthHeaders.html
@@ -15116,32 +15129,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPDialogue.SDP
   nameWithType: SIPDialogue.SDP
-- uid: SIPSorcery.SIP.SIPDialogue.SwitchboardLineName
-  name: SwitchboardLineName
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_SwitchboardLineName
-  commentId: P:SIPSorcery.SIP.SIPDialogue.SwitchboardLineName
-  fullName: SIPSorcery.SIP.SIPDialogue.SwitchboardLineName
-  nameWithType: SIPDialogue.SwitchboardLineName
-- uid: SIPSorcery.SIP.SIPDialogue.SwitchboardLineName*
-  name: SwitchboardLineName
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_SwitchboardLineName_
-  commentId: Overload:SIPSorcery.SIP.SIPDialogue.SwitchboardLineName
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDialogue.SwitchboardLineName
-  nameWithType: SIPDialogue.SwitchboardLineName
-- uid: SIPSorcery.SIP.SIPDialogue.SwitchboardOwner
-  name: SwitchboardOwner
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_SwitchboardOwner
-  commentId: P:SIPSorcery.SIP.SIPDialogue.SwitchboardOwner
-  fullName: SIPSorcery.SIP.SIPDialogue.SwitchboardOwner
-  nameWithType: SIPDialogue.SwitchboardOwner
-- uid: SIPSorcery.SIP.SIPDialogue.SwitchboardOwner*
-  name: SwitchboardOwner
-  href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_SwitchboardOwner_
-  commentId: Overload:SIPSorcery.SIP.SIPDialogue.SwitchboardOwner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPDialogue.SwitchboardOwner
-  nameWithType: SIPDialogue.SwitchboardOwner
 - uid: SIPSorcery.SIP.SIPDialogue.TransferMode
   name: TransferMode
   href: api/SIPSorcery.SIP.SIPDialogue.html#SIPSorcery_SIP_SIPDialogue_TransferMode
@@ -15173,6 +15160,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPDialogueStateEnum.Early
   fullName: SIPSorcery.SIP.SIPDialogueStateEnum.Early
   nameWithType: SIPDialogueStateEnum.Early
+- uid: SIPSorcery.SIP.SIPDialogueStateEnum.Terminated
+  name: Terminated
+  href: api/SIPSorcery.SIP.SIPDialogueStateEnum.html#SIPSorcery_SIP_SIPDialogueStateEnum_Terminated
+  commentId: F:SIPSorcery.SIP.SIPDialogueStateEnum.Terminated
+  fullName: SIPSorcery.SIP.SIPDialogueStateEnum.Terminated
+  nameWithType: SIPDialogueStateEnum.Terminated
 - uid: SIPSorcery.SIP.SIPDialogueStateEnum.Unknown
   name: Unknown
   href: api/SIPSorcery.SIP.SIPDialogueStateEnum.html#SIPSorcery_SIP_SIPDialogueStateEnum_Unknown
@@ -16071,12 +16064,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPEventDialog.StateEvent
   fullName: SIPSorcery.SIP.SIPEventDialog.StateEvent
   nameWithType: SIPEventDialog.StateEvent
-- uid: SIPSorcery.SIP.SIPEventDialog.SwitchboardOwner
-  name: SwitchboardOwner
-  href: api/SIPSorcery.SIP.SIPEventDialog.html#SIPSorcery_SIP_SIPEventDialog_SwitchboardOwner
-  commentId: F:SIPSorcery.SIP.SIPEventDialog.SwitchboardOwner
-  fullName: SIPSorcery.SIP.SIPEventDialog.SwitchboardOwner
-  nameWithType: SIPEventDialog.SwitchboardOwner
 - uid: SIPSorcery.SIP.SIPEventDialog.ToXML
   name: ToXML()
   href: api/SIPSorcery.SIP.SIPEventDialog.html#SIPSorcery_SIP_SIPEventDialog_ToXML
