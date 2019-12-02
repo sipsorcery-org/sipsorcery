@@ -7,6 +7,144 @@ references:
   commentId: N:SIPSorcery.Net
   fullName: SIPSorcery.Net
   nameWithType: SIPSorcery.Net
+- uid: SIPSorcery.Net.CaptureProtocolTypeEnum
+  name: CaptureProtocolTypeEnum
+  href: api/SIPSorcery.Net.CaptureProtocolTypeEnum.html
+  commentId: T:SIPSorcery.Net.CaptureProtocolTypeEnum
+  fullName: SIPSorcery.Net.CaptureProtocolTypeEnum
+  nameWithType: CaptureProtocolTypeEnum
+- uid: SIPSorcery.Net.CaptureProtocolTypeEnum.Reserved
+  name: Reserved
+  href: api/SIPSorcery.Net.CaptureProtocolTypeEnum.html#SIPSorcery_Net_CaptureProtocolTypeEnum_Reserved
+  commentId: F:SIPSorcery.Net.CaptureProtocolTypeEnum.Reserved
+  fullName: SIPSorcery.Net.CaptureProtocolTypeEnum.Reserved
+  nameWithType: CaptureProtocolTypeEnum.Reserved
+- uid: SIPSorcery.Net.CaptureProtocolTypeEnum.RTCP_JSON
+  name: RTCP_JSON
+  href: api/SIPSorcery.Net.CaptureProtocolTypeEnum.html#SIPSorcery_Net_CaptureProtocolTypeEnum_RTCP_JSON
+  commentId: F:SIPSorcery.Net.CaptureProtocolTypeEnum.RTCP_JSON
+  fullName: SIPSorcery.Net.CaptureProtocolTypeEnum.RTCP_JSON
+  nameWithType: CaptureProtocolTypeEnum.RTCP_JSON
+- uid: SIPSorcery.Net.CaptureProtocolTypeEnum.RTP
+  name: RTP
+  href: api/SIPSorcery.Net.CaptureProtocolTypeEnum.html#SIPSorcery_Net_CaptureProtocolTypeEnum_RTP
+  commentId: F:SIPSorcery.Net.CaptureProtocolTypeEnum.RTP
+  fullName: SIPSorcery.Net.CaptureProtocolTypeEnum.RTP
+  nameWithType: CaptureProtocolTypeEnum.RTP
+- uid: SIPSorcery.Net.CaptureProtocolTypeEnum.SDP
+  name: SDP
+  href: api/SIPSorcery.Net.CaptureProtocolTypeEnum.html#SIPSorcery_Net_CaptureProtocolTypeEnum_SDP
+  commentId: F:SIPSorcery.Net.CaptureProtocolTypeEnum.SDP
+  fullName: SIPSorcery.Net.CaptureProtocolTypeEnum.SDP
+  nameWithType: CaptureProtocolTypeEnum.SDP
+- uid: SIPSorcery.Net.CaptureProtocolTypeEnum.SIP
+  name: SIP
+  href: api/SIPSorcery.Net.CaptureProtocolTypeEnum.html#SIPSorcery_Net_CaptureProtocolTypeEnum_SIP
+  commentId: F:SIPSorcery.Net.CaptureProtocolTypeEnum.SIP
+  fullName: SIPSorcery.Net.CaptureProtocolTypeEnum.SIP
+  nameWithType: CaptureProtocolTypeEnum.SIP
+- uid: SIPSorcery.Net.CaptureProtocolTypeEnum.XMPP
+  name: XMPP
+  href: api/SIPSorcery.Net.CaptureProtocolTypeEnum.html#SIPSorcery_Net_CaptureProtocolTypeEnum_XMPP
+  commentId: F:SIPSorcery.Net.CaptureProtocolTypeEnum.XMPP
+  fullName: SIPSorcery.Net.CaptureProtocolTypeEnum.XMPP
+  nameWithType: CaptureProtocolTypeEnum.XMPP
+- uid: SIPSorcery.Net.ChunkTypeEnum
+  name: ChunkTypeEnum
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html
+  commentId: T:SIPSorcery.Net.ChunkTypeEnum
+  fullName: SIPSorcery.Net.ChunkTypeEnum
+  nameWithType: ChunkTypeEnum
+- uid: SIPSorcery.Net.ChunkTypeEnum.AuthenticationKey
+  name: AuthenticationKey
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_AuthenticationKey
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.AuthenticationKey
+  fullName: SIPSorcery.Net.ChunkTypeEnum.AuthenticationKey
+  nameWithType: ChunkTypeEnum.AuthenticationKey
+- uid: SIPSorcery.Net.ChunkTypeEnum.CaptureAgentID
+  name: CaptureAgentID
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_CaptureAgentID
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.CaptureAgentID
+  fullName: SIPSorcery.Net.ChunkTypeEnum.CaptureAgentID
+  nameWithType: ChunkTypeEnum.CaptureAgentID
+- uid: SIPSorcery.Net.ChunkTypeEnum.CapturedPayload
+  name: CapturedPayload
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_CapturedPayload
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.CapturedPayload
+  fullName: SIPSorcery.Net.ChunkTypeEnum.CapturedPayload
+  nameWithType: ChunkTypeEnum.CapturedPayload
+- uid: SIPSorcery.Net.ChunkTypeEnum.DestinationPort
+  name: DestinationPort
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_DestinationPort
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.DestinationPort
+  fullName: SIPSorcery.Net.ChunkTypeEnum.DestinationPort
+  nameWithType: ChunkTypeEnum.DestinationPort
+- uid: SIPSorcery.Net.ChunkTypeEnum.IPFamily
+  name: IPFamily
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_IPFamily
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.IPFamily
+  fullName: SIPSorcery.Net.ChunkTypeEnum.IPFamily
+  nameWithType: ChunkTypeEnum.IPFamily
+- uid: SIPSorcery.Net.ChunkTypeEnum.IPProtocolID
+  name: IPProtocolID
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_IPProtocolID
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.IPProtocolID
+  fullName: SIPSorcery.Net.ChunkTypeEnum.IPProtocolID
+  nameWithType: ChunkTypeEnum.IPProtocolID
+- uid: SIPSorcery.Net.ChunkTypeEnum.IPv4DesinationAddress
+  name: IPv4DesinationAddress
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_IPv4DesinationAddress
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.IPv4DesinationAddress
+  fullName: SIPSorcery.Net.ChunkTypeEnum.IPv4DesinationAddress
+  nameWithType: ChunkTypeEnum.IPv4DesinationAddress
+- uid: SIPSorcery.Net.ChunkTypeEnum.IPv4SourceAddress
+  name: IPv4SourceAddress
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_IPv4SourceAddress
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.IPv4SourceAddress
+  fullName: SIPSorcery.Net.ChunkTypeEnum.IPv4SourceAddress
+  nameWithType: ChunkTypeEnum.IPv4SourceAddress
+- uid: SIPSorcery.Net.ChunkTypeEnum.IPv6DesinationAddress
+  name: IPv6DesinationAddress
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_IPv6DesinationAddress
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.IPv6DesinationAddress
+  fullName: SIPSorcery.Net.ChunkTypeEnum.IPv6DesinationAddress
+  nameWithType: ChunkTypeEnum.IPv6DesinationAddress
+- uid: SIPSorcery.Net.ChunkTypeEnum.IPv6SourceAddress
+  name: IPv6SourceAddress
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_IPv6SourceAddress
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.IPv6SourceAddress
+  fullName: SIPSorcery.Net.ChunkTypeEnum.IPv6SourceAddress
+  nameWithType: ChunkTypeEnum.IPv6SourceAddress
+- uid: SIPSorcery.Net.ChunkTypeEnum.KeepAliveTimeSeconds
+  name: KeepAliveTimeSeconds
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_KeepAliveTimeSeconds
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.KeepAliveTimeSeconds
+  fullName: SIPSorcery.Net.ChunkTypeEnum.KeepAliveTimeSeconds
+  nameWithType: ChunkTypeEnum.KeepAliveTimeSeconds
+- uid: SIPSorcery.Net.ChunkTypeEnum.ProtocolType
+  name: ProtocolType
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_ProtocolType
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.ProtocolType
+  fullName: SIPSorcery.Net.ChunkTypeEnum.ProtocolType
+  nameWithType: ChunkTypeEnum.ProtocolType
+- uid: SIPSorcery.Net.ChunkTypeEnum.SourcePort
+  name: SourcePort
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_SourcePort
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.SourcePort
+  fullName: SIPSorcery.Net.ChunkTypeEnum.SourcePort
+  nameWithType: ChunkTypeEnum.SourcePort
+- uid: SIPSorcery.Net.ChunkTypeEnum.TimestampMicroSeconds
+  name: TimestampMicroSeconds
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_TimestampMicroSeconds
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.TimestampMicroSeconds
+  fullName: SIPSorcery.Net.ChunkTypeEnum.TimestampMicroSeconds
+  nameWithType: ChunkTypeEnum.TimestampMicroSeconds
+- uid: SIPSorcery.Net.ChunkTypeEnum.TimestampSeconds
+  name: TimestampSeconds
+  href: api/SIPSorcery.Net.ChunkTypeEnum.html#SIPSorcery_Net_ChunkTypeEnum_TimestampSeconds
+  commentId: F:SIPSorcery.Net.ChunkTypeEnum.TimestampSeconds
+  fullName: SIPSorcery.Net.ChunkTypeEnum.TimestampSeconds
+  nameWithType: ChunkTypeEnum.TimestampSeconds
 - uid: SIPSorcery.Net.DNSManager
   name: DNSManager
   href: api/SIPSorcery.Net.DNSManager.html
@@ -116,6 +254,71 @@ references:
   commentId: F:SIPSorcery.Net.FrameTypesEnum.VP8
   fullName: SIPSorcery.Net.FrameTypesEnum.VP8
   nameWithType: FrameTypesEnum.VP8
+- uid: SIPSorcery.Net.HepChunk
+  name: HepChunk
+  href: api/SIPSorcery.Net.HepChunk.html
+  commentId: T:SIPSorcery.Net.HepChunk
+  fullName: SIPSorcery.Net.HepChunk
+  nameWithType: HepChunk
+- uid: SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum,System.Byte)
+  name: GetBytes(ChunkTypeEnum, Byte)
+  href: api/SIPSorcery.Net.HepChunk.html#SIPSorcery_Net_HepChunk_GetBytes_SIPSorcery_Net_ChunkTypeEnum_System_Byte_
+  commentId: M:SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum,System.Byte)
+  fullName: SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum, System.Byte)
+  nameWithType: HepChunk.GetBytes(ChunkTypeEnum, Byte)
+- uid: SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum,System.Byte[])
+  name: GetBytes(ChunkTypeEnum, Byte[])
+  href: api/SIPSorcery.Net.HepChunk.html#SIPSorcery_Net_HepChunk_GetBytes_SIPSorcery_Net_ChunkTypeEnum_System_Byte___
+  commentId: M:SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum,System.Byte[])
+  name.vb: GetBytes(ChunkTypeEnum, Byte())
+  fullName: SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum, System.Byte[])
+  fullName.vb: SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum, System.Byte())
+  nameWithType: HepChunk.GetBytes(ChunkTypeEnum, Byte[])
+  nameWithType.vb: HepChunk.GetBytes(ChunkTypeEnum, Byte())
+- uid: SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum,System.Net.IPAddress)
+  name: GetBytes(ChunkTypeEnum, IPAddress)
+  href: api/SIPSorcery.Net.HepChunk.html#SIPSorcery_Net_HepChunk_GetBytes_SIPSorcery_Net_ChunkTypeEnum_System_Net_IPAddress_
+  commentId: M:SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum,System.Net.IPAddress)
+  fullName: SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum, System.Net.IPAddress)
+  nameWithType: HepChunk.GetBytes(ChunkTypeEnum, IPAddress)
+- uid: SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum,System.UInt16)
+  name: GetBytes(ChunkTypeEnum, UInt16)
+  href: api/SIPSorcery.Net.HepChunk.html#SIPSorcery_Net_HepChunk_GetBytes_SIPSorcery_Net_ChunkTypeEnum_System_UInt16_
+  commentId: M:SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum,System.UInt16)
+  fullName: SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum, System.UInt16)
+  nameWithType: HepChunk.GetBytes(ChunkTypeEnum, UInt16)
+- uid: SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum,System.UInt32)
+  name: GetBytes(ChunkTypeEnum, UInt32)
+  href: api/SIPSorcery.Net.HepChunk.html#SIPSorcery_Net_HepChunk_GetBytes_SIPSorcery_Net_ChunkTypeEnum_System_UInt32_
+  commentId: M:SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum,System.UInt32)
+  fullName: SIPSorcery.Net.HepChunk.GetBytes(SIPSorcery.Net.ChunkTypeEnum, System.UInt32)
+  nameWithType: HepChunk.GetBytes(ChunkTypeEnum, UInt32)
+- uid: SIPSorcery.Net.HepChunk.GetBytes*
+  name: GetBytes
+  href: api/SIPSorcery.Net.HepChunk.html#SIPSorcery_Net_HepChunk_GetBytes_
+  commentId: Overload:SIPSorcery.Net.HepChunk.GetBytes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.HepChunk.GetBytes
+  nameWithType: HepChunk.GetBytes
+- uid: SIPSorcery.Net.HepPacket
+  name: HepPacket
+  href: api/SIPSorcery.Net.HepPacket.html
+  commentId: T:SIPSorcery.Net.HepPacket
+  fullName: SIPSorcery.Net.HepPacket
+  nameWithType: HepPacket
+- uid: SIPSorcery.Net.HepPacket.GetBytes(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.DateTime,System.UInt32,System.String,System.String)
+  name: GetBytes(SIPEndPoint, SIPEndPoint, DateTime, UInt32, String, String)
+  href: api/SIPSorcery.Net.HepPacket.html#SIPSorcery_Net_HepPacket_GetBytes_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_DateTime_System_UInt32_System_String_System_String_
+  commentId: M:SIPSorcery.Net.HepPacket.GetBytes(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.DateTime,System.UInt32,System.String,System.String)
+  fullName: SIPSorcery.Net.HepPacket.GetBytes(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, System.DateTime, System.UInt32, System.String, System.String)
+  nameWithType: HepPacket.GetBytes(SIPEndPoint, SIPEndPoint, DateTime, UInt32, String, String)
+- uid: SIPSorcery.Net.HepPacket.GetBytes*
+  name: GetBytes
+  href: api/SIPSorcery.Net.HepPacket.html#SIPSorcery_Net_HepPacket_GetBytes_
+  commentId: Overload:SIPSorcery.Net.HepPacket.GetBytes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.HepPacket.GetBytes
+  nameWithType: HepPacket.GetBytes
 - uid: SIPSorcery.Net.IceCandidate
   name: IceCandidate
   href: api/SIPSorcery.Net.IceCandidate.html
@@ -16827,6 +17030,12 @@ references:
   commentId: T:SIPSorcery.SIP.SIPExtensionHeaders
   fullName: SIPSorcery.SIP.SIPExtensionHeaders
   nameWithType: SIPExtensionHeaders
+- uid: SIPSorcery.SIP.SIPExtensionHeaders.NO_REFER_SUB
+  name: NO_REFER_SUB
+  href: api/SIPSorcery.SIP.SIPExtensionHeaders.html#SIPSorcery_SIP_SIPExtensionHeaders_NO_REFER_SUB
+  commentId: F:SIPSorcery.SIP.SIPExtensionHeaders.NO_REFER_SUB
+  fullName: SIPSorcery.SIP.SIPExtensionHeaders.NO_REFER_SUB
+  nameWithType: SIPExtensionHeaders.NO_REFER_SUB
 - uid: SIPSorcery.SIP.SIPExtensionHeaders.ParseSIPExtensions(System.String,System.String@)
   name: ParseSIPExtensions(String, out String)
   href: api/SIPSorcery.SIP.SIPExtensionHeaders.html#SIPSorcery_SIP_SIPExtensionHeaders_ParseSIPExtensions_System_String_System_String__
@@ -16861,6 +17070,12 @@ references:
   commentId: F:SIPSorcery.SIP.SIPExtensions.None
   fullName: SIPSorcery.SIP.SIPExtensions.None
   nameWithType: SIPExtensions.None
+- uid: SIPSorcery.SIP.SIPExtensions.NoReferSub
+  name: NoReferSub
+  href: api/SIPSorcery.SIP.SIPExtensions.html#SIPSorcery_SIP_SIPExtensions_NoReferSub
+  commentId: F:SIPSorcery.SIP.SIPExtensions.NoReferSub
+  fullName: SIPSorcery.SIP.SIPExtensions.NoReferSub
+  nameWithType: SIPExtensions.NoReferSub
 - uid: SIPSorcery.SIP.SIPExtensions.Prack
   name: Prack
   href: api/SIPSorcery.SIP.SIPExtensions.html#SIPSorcery_SIP_SIPExtensions_Prack
