@@ -1,9 +1,9 @@
 ﻿{
   "$schema": "https://xunit.github.io/schema/current/xunit.runner.schema.json",
   "appDomain": "ifAvailable",
-  "diagnosticMessages": true,
+  "diagnosticMessages": false,
   "internalDiagnosticMessages": false,
-  "longRunningTestSeconds": 4,
+  "longRunningTestSeconds": 10,
   "maxParallelThreads": 8,
   "methodDisplay": "classAndMethod",
   "methodDisplayOptions": "none",

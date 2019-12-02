@@ -9,39 +9,49 @@ before_build:
 build:
   project: src\SIPSorcery.sln
   publish_nuget: true
+  publish_nuget_symbols: true
   verbosity: quiet
 #test:
 #  categories:
 #    except:
 #    - IPv6
 #    - Integration
-#on_success:
-#  - ps: |
-#        if(-Not $env:APPVEYOR_PULL_REQUEST_TITLE)
-#        {
-#           git config --global credential.helper store
-#            Add-Content "$HOME\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`n"
-#            git config --global user.email "aaron@sipsorcery.com"
-#            git config --global user.name "Aaron Clauson"
-#            git fetch
-#            git checkout gh-pages -q
-#            git merge master
-#            choco install docfx -y
-#            & docfx docfx\docfx.json
-#            if ($lastexitcode -ne 0){
-#              throw [System.Exception] "docfx build failed with exit code $lastexitcode."
-#            }
-#            git add -A 2>&1
-#            git commit -am "Appveyor CI updates"
-#            git push origin gh-pages -q
-#        }
+on_success:
+  - ps: |
+        if(-Not $env:APPVEYOR_PULL_REQUEST_TITLE)
+        {
+           git config --global credential.helper store
+            Add-Content "$HOME\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`n"
+            git config --global user.email "aaron@sipsorcery.com"
+            git config --global user.name "Aaron Clauson"
+            git fetch
+            git checkout gh-pages -q
+            git merge master
+            choco install docfx -y
+            & docfx docfx\docfx.json
+            if ($lastexitcode -ne 0){
+              throw [System.Exception] "docfx build failed with exit code $lastexitcode."
+            }
+            git add -A 2>&1
+            git commit -am "Appveyor CI updates"
+            git push origin gh-pages -q
+        }
 deploy:
-  provider: NuGet
-  server:                  # remove to push to NuGet.org
-  api_key:
-    secure: MMAD8YSvIgFD6mUWB2tdEGzBNbyfW/9TeB+yN325nQ/nHJMLhv2hBYan1CU1O60z
-  skip_symbols: false
-  symbol_server:           # remove to push symbols to SymbolSource.org
-  artifact: /.*\.nupkg/
-  on:
-      appveyor_repo_tag: true
+  - provider: NuGet
+      server:                  # remove to push to NuGet.org
+      api_key:
+        secure: MMAD8YSvIgFD6mUWB2tdEGzBNbyfW/9TeB+yN325nQ/nHJMLhv2hBYan1CU1O60z
+      skip_symbols: false
+      symbol_server:           # remove to push symbols to SymbolSource.org
+      artifact: /.*\.nupkg/
+      on:
+         branch: master                # release from master branch only
+         APPVEYOR_REPO_TAG: true       # deploy on tag push only
+         appveyor_repo_tag: true
+  - provider: GitHub
+    artifact: /.*\.nupkg/           # upload all NuGet packages to release assets
+    draft: true
+    prerelease: true
+    on:
+      branch: master                # release from master branch only
+      APPVEYOR_REPO_TAG: true       # deploy on tag push only
