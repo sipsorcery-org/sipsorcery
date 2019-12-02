@@ -424,50 +424,52 @@ namespace SIPSorcery
 
             sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
             {
-                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
-                Log.LogDebug(req.ToString());
-
                 if (homerClient != null)
                 {
                     var buffer = HepPacket.GetBytes(remoteEP, localEP, DateTime.Now, HOMER_AGENT_ID, HOMER_SERVER_PASSWORD, req.ToString());
                     homerClient.SendAsync(buffer, buffer.Length, homerSvrEP);
                 }
+
+                Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
+                Log.LogDebug(req.ToString());
             };
 
             sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
             {
-                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
-                Log.LogDebug(req.ToString());
-
                 if (homerClient != null)
                 {
-                    var buffer = HepPacket.GetBytes(localEP, remoteEP, DateTime.Now, HOMER_AGENT_ID, HOMER_SERVER_PASSWORD, req.ToString());
+                    // Adding a little delay to get the call flow right. It takes us longer to get the HEP packet through than the softphone.
+                    var buffer = HepPacket.GetBytes(localEP, remoteEP, DateTime.Now.Subtract(TimeSpan.FromMilliseconds(100)), HOMER_AGENT_ID, HOMER_SERVER_PASSWORD, req.ToString());
                     homerClient.SendAsync(buffer, buffer.Length, homerSvrEP);
                 }
+
+                Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
+                Log.LogDebug(req.ToString());
             };
 
             sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
             {
-                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
-                Log.LogDebug(resp.ToString());
-
                 if (homerClient != null)
                 {
                     var buffer = HepPacket.GetBytes(remoteEP, localEP, DateTime.Now, HOMER_AGENT_ID, HOMER_SERVER_PASSWORD, resp.ToString());
                     homerClient.SendAsync(buffer, buffer.Length, homerSvrEP);
                 }
+
+                Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
+                Log.LogDebug(resp.ToString());
             };
 
             sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
             {
-                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
-                Log.LogDebug(resp.ToString());
-
                 if (homerClient != null)
                 {
-                    var buffer = HepPacket.GetBytes(localEP, remoteEP, DateTime.Now, HOMER_AGENT_ID, HOMER_SERVER_PASSWORD, resp.ToString());
+                    // Adding a little delay to get the call flow right. It takes us longer to get the HEP packet through than the softphone.
+                    var buffer = HepPacket.GetBytes(localEP, remoteEP, DateTime.Now.Subtract(TimeSpan.FromMilliseconds(100)), HOMER_AGENT_ID, HOMER_SERVER_PASSWORD, resp.ToString());
                     homerClient.SendAsync(buffer, buffer.Length, homerSvrEP);
                 }
+
+                Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
+                Log.LogDebug(resp.ToString());
             };
 
             sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
