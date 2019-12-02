@@ -33,6 +33,11 @@ namespace SIPSorcery
 {
     class Program
     {
+        // The HOMER constants are to allow logging/analysis on a HOMER server (see sipcapture.org).
+        private static readonly string HOMER_SERVER_ENDPOINT = "192.168.11.49:9060";
+        private static readonly uint HOMER_AGENT_ID = 333;
+        private static readonly string HOMER_SERVER_PASSWORD = "myHep";
+
         private static readonly string AUDIO_FILE_PCMU = @"media\Macroform_-_Simplicity.ulaw";
         private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.48";  // The destination to transfer the accepted call to.
         private static readonly int TRANSFER_TIMEOUT_SECONDS = 5;                               // If transfer isn't accepted after this time assume it's failed.
@@ -57,7 +62,8 @@ namespace SIPSorcery
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
 
             // Un/comment this line to see/hide each SIP message sent and received.
-            EnableTraceLogs(sipTransport);
+            IPEndPoint homerSvrEndPoint = !String.IsNullOrEmpty(HOMER_SERVER_ENDPOINT) ? IPEndPoint.Parse(HOMER_SERVER_ENDPOINT) : null;
+            EnableTraceLogs(sipTransport, homerSvrEndPoint);
 
             // To keep things a bit simpler this example only supports a single call at a time and the SIP server user agent
             // acts as a singleton
@@ -184,6 +190,8 @@ namespace SIPSorcery
                             if (transferResult)
                             {
                                 // If the transfer was accepted the original call will already have been hungup.
+                                // Wait a second for the transfer NOTIFY request to arrive.
+                                await Task.Delay(1000);
                                 exitCts.Cancel();
                             }
                             else
@@ -307,7 +315,9 @@ namespace SIPSorcery
             catch (TaskCanceledException) // Gets thrown when the task is deliberately. Can safely ignore.   
             { }
             catch (ObjectDisposedException) // This is how .Net deals with an in use socket being closed. Safe to ignore.
-            { } 
+            { }
+            catch (SocketException) // This will be thrown if the remote socket closes at the same time we tried to send. Safe to ignore.
+            { }
             catch (Exception excp)
             {
                 Log.LogError($"Exception RecvRTP. {excp}");
@@ -363,6 +373,8 @@ namespace SIPSorcery
             { }
             catch (ObjectDisposedException) // Gets thrown when the RTP socket is closed. Can safely ignore.
             { }
+            catch (SocketException) // This will be thrown if the remote socket closes at the same time we tried to send. Safe to ignore.
+            { }
             catch (Exception excp)
             {
                 Log.LogError($"Exception SendRTP. {excp}");
@@ -398,62 +410,64 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        /// Builds the REFER request to transfer an established call.
+        /// Enable detailed SIP log messages and optionally logging to a HOMER server.
         /// </summary>
-        /// <param name="sipDialogue">A SIP dialogue object representing the established call.</param>
-        /// <param name="referToUri">The SIP URI to transfer the call to.</param>
-        /// <returns>A SIP REFER request.</returns>
-        private static SIPRequest GetReferRequest(SIPClientUserAgent uac, SIPURI referToUri)
+        /// <param name="sipTransport">The transport layer to display trace logs for.</param>
+        /// <param name="homerSvrEP">Optional end point for a HOMER logging/diagnostics server.</param>
+        private static void EnableTraceLogs(SIPTransport sipTransport, IPEndPoint homerSvrEP)
         {
-            SIPDialogue sipDialogue = uac.SIPDialogue;
+            UdpClient homerClient = null;
+            if(homerSvrEP != null)
+            {
+                homerClient = new UdpClient(0, AddressFamily.InterNetwork);
+            }
 
-            SIPRequest referRequest = new SIPRequest(SIPMethodsEnum.REFER, sipDialogue.RemoteTarget);
-            referRequest.SetSendFromHints(uac.ServerTransaction.TransactionRequest.LocalSIPEndPoint);
-
-            SIPFromHeader referFromHeader = SIPFromHeader.ParseFromHeader(sipDialogue.LocalUserField.ToString());
-            SIPToHeader referToHeader = SIPToHeader.ParseToHeader(sipDialogue.RemoteUserField.ToString());
-            int cseq = sipDialogue.CSeq + 1;
-            sipDialogue.CSeq++;
-
-            SIPHeader referHeader = new SIPHeader(referFromHeader, referToHeader, cseq, sipDialogue.CallId);
-            referHeader.CSeqMethod = SIPMethodsEnum.REFER;
-            referRequest.Header = referHeader;
-            referRequest.Header.Routes = sipDialogue.RouteSet;
-            referRequest.Header.ProxySendFrom = sipDialogue.ProxySendFrom;
-            referRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
-            referRequest.Header.ReferTo = referToUri.ToString();
-            referRequest.Header.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader() };
-
-            return referRequest;
-        }
-
-        /// <summary>
-        /// Enable detailed SIP log messages.
-        /// </summary>
-        private static void EnableTraceLogs(SIPTransport sipTransport)
-        {
             sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
             {
                 Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
                 Log.LogDebug(req.ToString());
+
+                if (homerClient != null)
+                {
+                    var buffer = HepPacket.GetBytes(remoteEP, localEP, DateTime.Now, HOMER_AGENT_ID, HOMER_SERVER_PASSWORD, req.ToString());
+                    homerClient.SendAsync(buffer, buffer.Length, homerSvrEP);
+                }
             };
 
             sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
             {
                 Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
                 Log.LogDebug(req.ToString());
+
+                if (homerClient != null)
+                {
+                    var buffer = HepPacket.GetBytes(localEP, remoteEP, DateTime.Now, HOMER_AGENT_ID, HOMER_SERVER_PASSWORD, req.ToString());
+                    homerClient.SendAsync(buffer, buffer.Length, homerSvrEP);
+                }
             };
 
             sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
             {
                 Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
                 Log.LogDebug(resp.ToString());
+
+                if (homerClient != null)
+                {
+                    var buffer = HepPacket.GetBytes(remoteEP, localEP, DateTime.Now, HOMER_AGENT_ID, HOMER_SERVER_PASSWORD, resp.ToString());
+                    homerClient.SendAsync(buffer, buffer.Length, homerSvrEP);
+                }
             };
 
             sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
             {
                 Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
                 Log.LogDebug(resp.ToString());
+
+                if (homerClient != null)
+                {
+                    var buffer = HepPacket.GetBytes(localEP, remoteEP, DateTime.Now, HOMER_AGENT_ID, HOMER_SERVER_PASSWORD, resp.ToString());
+                    homerClient.SendAsync(buffer, buffer.Length, homerSvrEP);
+                }
             };
 
             sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>

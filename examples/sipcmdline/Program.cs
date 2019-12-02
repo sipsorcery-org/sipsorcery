@@ -261,18 +261,26 @@ namespace SIPSorcery
         {
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
 
+            //UdpClient hepClient = new UdpClient(0, AddressFamily.InterNetwork);
+
             try
             {
                 sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
                 {
                     logger.LogDebug($"Request sent: {localEP}->{remoteEP}");
                     logger.LogDebug(req.ToString());
+
+                    //var hepBuffer = HepPacket.GetBytes(localEP, remoteEP, DateTimeOffset.Now, 333, "myHep", req.ToString());
+                    //hepClient.SendAsync(hepBuffer, hepBuffer.Length, "192.168.11.49", 9060);
                 };
 
                 sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
                 {
                     logger.LogDebug($"Response received: {localEP}<-{remoteEP}");
                     logger.LogDebug(resp.ToString());
+
+                    //var hepBuffer = HepPacket.GetBytes(remoteEP, localEP, DateTimeOffset.Now, 333, "myHep", resp.ToString());
+                    //hepClient.SendAsync(hepBuffer, hepBuffer.Length, "192.168.11.49", 9060);
                 };
 
                 var optionsRequest = sipTransport.GetRequest(SIPMethodsEnum.OPTIONS, dst);
