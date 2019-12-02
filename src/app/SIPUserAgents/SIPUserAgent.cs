@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
@@ -54,24 +55,13 @@ namespace SIPSorcery.SIP.App
         private SIPEndPoint m_outboundProxy;
 
         /// <summary>
-        /// Inidicates whether the call has been answered or not.
+        /// Indicates whether there is an active call or not
         /// </summary>
-        public bool IsAnswered
+        public bool IsCallActive
         {
             get
             {
-                if (m_uac != null)
-                {
-                    return m_uac.IsUACAnswered;
-                }
-                else if (m_uas != null)
-                {
-                    return m_uas.IsUASAnswered;
-                }
-                else
-                {
-                    return false;
-                }
+                return Dialogue?.DialogueState == SIPDialogueStateEnum.Confirmed;
             }
         }
 
@@ -134,10 +124,11 @@ namespace SIPSorcery.SIP.App
         public event Action<UASInviteTransaction> OnReinviteRequest;
 
         /// <summary>
-        /// Call was hungup by the remote party. Applies to calls initiated by us and calls recevied
-        /// by us.
+        /// Call was hungup by the remote party. Applies to calls initiated by us and calls received
+        /// by us. An example of when this user agent will initiate a hang up is when a transfer is
+        /// accepted by the remote calling party.
         /// </summary>
-        public event Action CallHungup;
+        public event Action OnCallHungup;
 
         /// <summary>
         /// Creates a new SIP client and server combination user agent.
@@ -229,6 +220,7 @@ namespace SIPSorcery.SIP.App
         public void Answer(SDP sdp)
         {
             m_uas.Answer(m_sdpContentType, sdp.ToString(), null, SIPDialogueTransferModesEnum.Default);
+            Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
         }
 
         /// <summary>
@@ -239,7 +231,7 @@ namespace SIPSorcery.SIP.App
         /// application to deal with.
         /// </summary>
         /// <param name="request">The in dialog request received.</param>
-        public async Task InDialogRequestReceivedAsync(SIPRequest sipRequest)
+        public async Task DialogRequestReceivedAsync(SIPRequest sipRequest)
         {
             // Make sure the request matches our dialog and is not a stray.
             // A dialog request should match on to tag, from tag and call ID. We'll be more 
@@ -250,7 +242,7 @@ namespace SIPSorcery.SIP.App
                 var sendResult = await SendResponse(noCallLegResponse);
                 if (sendResult != SocketError.Success)
                 {
-                    logger.LogWarning($"SIPUserAgent send response failed in InCallRequestReceivedAsync with {sendResult}.");
+                    logger.LogWarning($"SIPUserAgent send response failed in DialogRequestReceivedAsync with {sendResult}.");
                 }
             }
             else
@@ -258,15 +250,12 @@ namespace SIPSorcery.SIP.App
                 if (sipRequest.Method == SIPMethodsEnum.BYE)
                 {
                     logger.LogDebug($"Matching dialogue found for {sipRequest.StatusLine}.");
+                    Dialogue.DialogueState = SIPDialogueStateEnum.Terminated;
 
-                    SIPNonInviteTransaction byeTransaction = m_transport.CreateNonInviteTransaction(sipRequest, m_outboundProxy);
-                    SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    byeTransaction.SendFinalResponse(byeResponse);
+                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await SendResponse(okResponse);
 
-                    CallHungup?.Invoke();
-
-                    m_uac = null;
-                    m_uas = null;
+                    OnCallHungup?.Invoke();
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
@@ -364,6 +353,49 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// Initiates a blind transfer by asking the remote call party to call the specified destination. 
+        /// </summary>
+        /// <param name="destination">The URI to transfer the call to.</param>
+        /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
+        /// <param name="ct">Cancellation token. Can be set to canel the transfer prior to it being
+        /// accepted or timing out.</param>
+        public async Task<bool> Transfer(SIPURI destination, TimeSpan timeout, CancellationToken ct)
+        {
+            if(Dialogue == null)
+            {
+                logger.LogWarning("Transfer was called on the SIPUserAgent when no dialogue was available.");
+                return false;
+            }
+            else
+            {
+                TaskCompletionSource<bool> transferAccepted = new TaskCompletionSource<bool>();
+
+                var referRequest = GetReferRequest(Dialogue, destination);
+
+                SIPNonInviteTransaction referTx = m_transport.CreateNonInviteTransaction(referRequest, null);
+
+                referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =>
+                {
+                    if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
+                    {
+                        logger.LogInformation("Call transfer was accepted by remote server.");
+
+                        // Existing call is now out of the loop, hang it up.
+                        Dialogue.Hangup(m_transport, m_outboundProxy);
+
+                        transferAccepted.SetResult(true);
+                    }
+                };
+
+                referTx.SendReliableRequest();
+
+                await Task.WhenAny(new Task[] { transferAccepted.Task, Task.Delay((int)timeout.TotalMilliseconds) });
+
+                return transferAccepted.Task.Result;
+            }
+        }
+
+        /// <summary>
         /// Takes care of sending a response based on whether the outbound proxy is set or not.
         /// </summary>
         /// <param name="response">The response to send.</param>
@@ -440,12 +472,26 @@ namespace SIPSorcery.SIP.App
         {
             if (ClientCallAnswered != null)
             {
+                Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
                 ClientCallAnswered(uac, sipResponse);
             }
             else
             {
                 logger.LogDebug($"Call attempt to {m_uac.CallDescriptor.Uri} was answered.");
             }
+        }
+
+        /// <summary>
+        /// Builds the REFER request to initiate a blind transfer on an established call.
+        /// </summary>
+        /// <param name="sipDialogue">A SIP dialogue object representing the established call.</param>
+        /// <param name="referToUri">The SIP URI to transfer the call to.</param>
+        /// <returns>A SIP REFER request.</returns>
+        private SIPRequest GetReferRequest(SIPDialogue sipDialogue, SIPURI referToUri)
+        {
+            SIPRequest referRequest = Dialogue.GetInDialogRequest(SIPMethodsEnum.REFER);
+            referRequest.Header.ReferTo = referToUri.ToString();
+            return referRequest;
         }
     }
 }

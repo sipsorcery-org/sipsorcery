@@ -25,6 +25,7 @@ namespace SIPSorcery.SIP
         Unknown = 0,
         Early = 1,
         Confirmed = 2,
+        Terminated = 3
     }
 
     public enum SIPDialogueTransferModesEnum
@@ -77,8 +78,6 @@ namespace SIPSorcery.SIP
         /// </summary>
         public SIPCallDirection Direction { get; set; }
 
-        public string SwitchboardOwner { get; set; }
-        public string SwitchboardLineName { get; set; }
         public string CRMPersonName { get; set; }
         public string CRMCompanyName { get; set; }
         public string CRMPictureURL { get; set; }
@@ -312,6 +311,8 @@ namespace SIPSorcery.SIP
         {
             try
             {
+                DialogueState = SIPDialogueStateEnum.Terminated;
+
                 SIPEndPoint byeOutboundProxy = null;
                 if (outboundProxy != null && IPAddress.IsLoopback(outboundProxy.Address))
                 {
