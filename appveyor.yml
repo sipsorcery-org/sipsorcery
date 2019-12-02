@@ -38,16 +38,16 @@ on_success:
         }
 deploy:
   - provider: NuGet
-      server:                  # remove to push to NuGet.org
-      api_key:
-        secure: MMAD8YSvIgFD6mUWB2tdEGzBNbyfW/9TeB+yN325nQ/nHJMLhv2hBYan1CU1O60z
-      skip_symbols: false
-      symbol_server:           # remove to push symbols to SymbolSource.org
-      artifact: /.*\.nupkg/
-      on:
-         branch: master                # release from master branch only
-         APPVEYOR_REPO_TAG: true       # deploy on tag push only
-         appveyor_repo_tag: true
+    server:                  # remove to push to NuGet.org
+    api_key:
+      secure: MMAD8YSvIgFD6mUWB2tdEGzBNbyfW/9TeB+yN325nQ/nHJMLhv2hBYan1CU1O60z
+    skip_symbols: false
+    symbol_server:           # remove to push symbols to SymbolSource.org
+    artifact: /.*\.nupkg/
+    on:
+      branch: master                # release from master branch only
+      APPVEYOR_REPO_TAG: true       # deploy on tag push only
+      appveyor_repo_tag: true
   - provider: GitHub
     artifact: /.*\.nupkg/           # upload all NuGet packages to release assets
     draft: true
