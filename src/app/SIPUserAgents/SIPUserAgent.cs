@@ -308,8 +308,14 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        //TODO: Add handling logic for indialog REFER requests.
+                        //TODO: Add handling logic for in transfer requests from the remote call party.
                     }
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
+                {
+                    // TODO: Determine if we want to do anything with notifications from REFER (transfer request) processing.
+                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await SendResponse(okResponse);
                 }
             }
         }
@@ -361,7 +367,7 @@ namespace SIPSorcery.SIP.App
         /// accepted or timing out.</param>
         public async Task<bool> Transfer(SIPURI destination, TimeSpan timeout, CancellationToken ct)
         {
-            if(Dialogue == null)
+            if (Dialogue == null)
             {
                 logger.LogWarning("Transfer was called on the SIPUserAgent when no dialogue was available.");
                 return false;
