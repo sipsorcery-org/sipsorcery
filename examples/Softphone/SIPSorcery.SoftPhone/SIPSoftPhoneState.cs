@@ -42,8 +42,6 @@ namespace SIPSorcery.SoftPhone
         public static readonly string SIPFromName = ConfigurationManager.AppSettings["SIPFromName"];    // Get the SIP From display name from the config file.
         public static readonly string DnsServer = ConfigurationManager.AppSettings["DnsServer"];        // Get the optional DNS server from the config file.
 
-        public static IPAddress DefaultLocalAddress;
-
         public static IPAddress PublicIPAddress;
 
         static SIPSoftPhoneState()
@@ -61,9 +59,6 @@ namespace SIPSorcery.SoftPhone
                 }
 
                 STUNServerHostname = ConfigurationManager.AppSettings[STUN_SERVER_KEY];
-
-                DefaultLocalAddress = LocalIPConfig.GetDefaultIPv4Address();
-                logger.Debug("Default local IPv4 address determined as " + DefaultLocalAddress + ".");
             }
             catch (Exception excp)
             {

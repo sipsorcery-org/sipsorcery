@@ -16,6 +16,7 @@
 using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
@@ -100,6 +101,14 @@ namespace SIPSorcery.SIP.App
         public UASInviteTransaction ClientTransaction
         {
             get { return m_uasTransaction; }
+        }
+
+        /// <summary>
+        /// The Session Description Protocol offer from the remote call party.
+        /// </summary>
+        public SDP OfferSDP
+        {
+            get { return SDP.ParseSDPDescription(m_uasTransaction.TransactionRequest.Body);  }
         }
 
         public event SIPUASDelegate CallCancelled;
