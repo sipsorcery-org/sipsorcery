@@ -1,7 +1,7 @@
 version: 1.0.{build}
 image: Visual Studio 2019
 before_build:
-- cmd: nuget restore -DisableParallelProcessing examples\softphone\SIPSorcery.SoftPhone.sln
+- cmd: nuget restore -DisableParallelProcessing examples\Softphone\SIPSorcery.SoftPhone.sln
 build:
-  project: examples\softphone\SIPSorcery.SoftPhone.sln
+  project: examples\Softphone\SIPSorcery.SoftPhone.sln
   verbosity: minimal

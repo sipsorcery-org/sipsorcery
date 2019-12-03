@@ -15,7 +15,7 @@
             <Button x:Name="m_cancelButton" Content="Cancel" Click="CancelButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,-0.203,8,0.203"/>
             <Button x:Name="m_byeButton" Content="Bye" Click="ByeButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,-0.203,8,0.203"/>
             <Button HorizontalAlignment="Right" x:Name="m_callButton" Width="64" Content="Call" Click="CallButton_Click" Margin="0,-0.203,8,0.203"/>
-            <TextBox FontSize="16" Margin="10,5,77.2,3" x:Name="m_uriEntryTextBox" TextWrapping="Wrap" Text="sip:music@iptel.org"/>
+            <TextBox FontSize="16" Margin="10,5,77.2,3" x:Name="m_uriEntryTextBox" TextWrapping="Wrap" Text="sip:*61@192.168.11.48"/>
         </Grid>
         <Grid Margin="2" x:Name="m_uasGrid" VerticalAlignment="Top" Height="31" d:IsHidden="True">
             <Button x:Name="m_hangupButton" Content="Hangup" Click="HangupButton_Click" HorizontalAlignment="Left" Margin="0,-0.203,0,0.203" Width="64"/>
@@ -56,7 +56,7 @@
         </Grid>
 
         <StatusBar VerticalAlignment="Bottom" Margin="0,5,0,0">
-            <Label x:Name="publicIPAddress" ToolTip="Public IP Address">Public IP: ?</Label>
+            <Label x:Name="publicIPAddress" ToolTip="Public IP Address"></Label>
         </StatusBar>
 
     </StackPanel>

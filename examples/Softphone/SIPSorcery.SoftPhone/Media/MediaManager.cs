@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -100,9 +101,9 @@ namespace SIPSorcery.SoftPhone
             _rtpManager.Close();
         }
 
-        public SDP GetSDP(bool usePublicIP)
+        public SDP GetSDP(IPAddress callDstAddress)
         {
-            return _rtpManager.GetSDP(usePublicIP);
+            return _rtpManager.GetSDP(callDstAddress);
         }
 
         public void SetRemoteSDP(SDP remoteSDP)
@@ -354,7 +355,7 @@ namespace SIPSorcery.SoftPhone
             _rtpManager = new RTPManager(false, true);
             _rtpManager.OnRemoteVideoSampleReady += EncodedVideoSampleReceived;
 
-            var sdp = _rtpManager.GetSDP(false);
+            var sdp = _rtpManager.GetSDP(IPAddress.Loopback);
             _rtpManager.SetRemoteSDP(sdp);
         }
     }

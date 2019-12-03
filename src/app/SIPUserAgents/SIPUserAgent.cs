@@ -116,6 +116,11 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public event SIPCallFailedDelegate ClientCallFailed;
 
+        public event SIPUASDelegate UasCallCancelled;
+        public event SIPUASDelegate UasNoRingTimeout;
+        public event SIPUASDelegate UasTransactionComplete;
+        public event SIPUASStateChangedDelegate UasStateChanged;
+
         /// <summary>
         /// The remote call party has sent us a new re-INVITE request. Common
         /// reasons are for placing a call on and off hold, changing RTP end points, 
@@ -188,37 +193,35 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// This method can be used to start the processing of a new incoming call request.
         /// The user agent will is acting as a server for this operation and it can be considered
-        /// the opposite of the Call method.
+        /// the opposite of the Call method. This is only the first step in answering an incoming
+        /// call. It can still be rejected or answered after this point.
         /// </summary>
-        /// <param name="uasInviteTx">The invite transaction representing the incoming call.</param>
-        /// <returns>True if the call is accepted, false otherwise.</returns>
-        public bool AcceptCall(UASInviteTransaction uasInviteTx)
+        /// <param name="inviteRequest">The invite requestn representing the incoming call.</param>
+        /// <returns>An ID string that needs to be supplied when the call is answered or rejected 
+        /// (used to manage multiple pending incoming calls).</returns>
+        public SIPServerUserAgent AcceptCall(SIPRequest inviteRequest)
         {
-            SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, null, null, SIPCallDirection.In, null, null, null, uasInviteTx);
-            uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+            UASInviteTransaction uasTransaction = m_transport.CreateUASTransaction(inviteRequest, m_outboundProxy);
+            SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
 
-            // TODO: Decide how to deal with multiple simultaneous calls.
-            if (m_uas != null)
-            {
-                uas.Reject(SIPResponseStatusCodesEnum.BusyHere, null, null);
-                return false;
-            }
-            else
-            {
-                uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
-                m_uas = uas;
-                return true;
-            }
+            uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+            uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
+
+            return uas;
         }
 
         /// <summary>
-        /// Answers the currently accepted call. The call must have been previously accepted using 
-        /// AcceptCall. The user agent is acting asd a server for this operation.
+        /// Answers the call request contained in the user agent server. Any existing call will
+        /// be hungup.
         /// </summary>
-        /// <param name="sdp">The session description payload to send to the remote call party
-        /// when answering.</param>
-        public void Answer(SDP sdp)
+        /// <param name="SIPServerUserAgen">The user agent server to answer.</param>
+        /// <param name="sdp">The session description payload to send to the remote call party.</param>
+        public void Answer(SIPServerUserAgent uas, SDP sdp)
         {
+            // This call is now taking over any existing call.
+            Hangup();
+
+            m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdp.ToString(), null, SIPDialogueTransferModesEnum.Default);
             Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
         }

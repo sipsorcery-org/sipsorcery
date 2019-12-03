@@ -33,8 +33,6 @@ namespace SIPSorcery.SoftPhone
         private const int VIDEO_PAYLOAD_TYPE = 96;
         private const string SDP_TRANSPORT = "RTP/AVP";
         
-        private IPAddress _defaultLocalAddress = SIPSoftPhoneState.DefaultLocalAddress;
-
         private ILog logger = AppState.logger;
 
         private SDP _remoteSDP;
@@ -74,13 +72,12 @@ namespace SIPSorcery.SoftPhone
         /// Gets an SDP packet that can be used by VoIP clients to negotiate an audio connection. The SDP will only
         /// offer PCMU since that's all I've gotten around to handling.
         /// </summary>
-        /// <param name="usePublicIP">If true and the public IP address is available from the STUN client then
-        /// the public IP address will be used in the SDP otherwise the host machine's default IPv4 address will
-        /// be used.</param>
+        /// <param name="callDstAddress">The destination address the call is being palced to. Given this address the 
+        /// RTP socket address can be chosen based on the local address chosen by the operating system to route to it.</param>
         /// <returns>An SDP packet that can be used by a VoIP client when initiating a call.</returns>
-        public SDP GetSDP(bool usePublicIP)
+        public SDP GetSDP(IPAddress callDstAddress)
         {
-            IPAddress rtpIPAddress = (usePublicIP && SIPSoftPhoneState.PublicIPAddress != null) ? SIPSoftPhoneState.PublicIPAddress : _defaultLocalAddress;
+            IPAddress rtpIPAddress = NetServices.GetLocalAddressForRemote(callDstAddress);
 
             var sdp = new SDP()
             {

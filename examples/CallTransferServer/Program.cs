@@ -90,8 +90,7 @@ namespace SIPSorcery
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.INVITE)
                     {
-                        // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
-                        // means this example can be kept simpler.
+                        // If there's already a call in progress we return busy.
                         if (userAgent?.IsCallActive == true)
                         {
                             UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, null);
@@ -100,7 +99,7 @@ namespace SIPSorcery
                         }
                         else
                         {
-                            SIPSorcery.Sys.Log.Logger.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
+                            Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
 
                             // Check there's a codec we support in the INVITE offer.
                             var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
@@ -164,7 +163,7 @@ namespace SIPSorcery
                 }
                 catch (Exception reqExcp)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
+                    Log.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
                 }
             };
 
@@ -360,7 +359,7 @@ namespace SIPSorcery
                             if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
                             {
                                 lastSendReportAt = DateTime.Now;
-                                SIPSorcery.Sys.Log.Logger.LogDebug($"RTP send report {rtpSocket.LocalEndPoint}->{rtpSendSession.DestinationEndPoint} pkts {packetsSentCount} bytes {bytesSentCount}");
+                                Log.LogDebug($"RTP send report {rtpSocket.LocalEndPoint}->{rtpSendSession.DestinationEndPoint} pkts {packetsSentCount} bytes {bytesSentCount}");
                             }
 
                             await Task.Delay(40, cts.Token);
