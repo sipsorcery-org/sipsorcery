@@ -12526,6 +12526,19 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPServerUserAgent.NoRingTimeout
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.NoRingTimeout
   nameWithType: SIPServerUserAgent.NoRingTimeout
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.OfferSDP
+  name: OfferSDP
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_OfferSDP
+  commentId: P:SIPSorcery.SIP.App.SIPServerUserAgent.OfferSDP
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.OfferSDP
+  nameWithType: SIPServerUserAgent.OfferSDP
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.OfferSDP*
+  name: OfferSDP
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_OfferSDP_
+  commentId: Overload:SIPSorcery.SIP.App.SIPServerUserAgent.OfferSDP
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.OfferSDP
+  nameWithType: SIPServerUserAgent.OfferSDP
 - uid: SIPSorcery.SIP.App.SIPServerUserAgent.Owner
   name: Owner
   href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Owner
@@ -13036,12 +13049,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.SIPUserAgent
   nameWithType: SIPUserAgent.SIPUserAgent
-- uid: SIPSorcery.SIP.App.SIPUserAgent.AcceptCall(SIPSorcery.SIP.UASInviteTransaction)
-  name: AcceptCall(UASInviteTransaction)
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_AcceptCall_SIPSorcery_SIP_UASInviteTransaction_
-  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.AcceptCall(SIPSorcery.SIP.UASInviteTransaction)
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.AcceptCall(SIPSorcery.SIP.UASInviteTransaction)
-  nameWithType: SIPUserAgent.AcceptCall(UASInviteTransaction)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.AcceptCall(SIPSorcery.SIP.SIPRequest)
+  name: AcceptCall(SIPRequest)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_AcceptCall_SIPSorcery_SIP_SIPRequest_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.AcceptCall(SIPSorcery.SIP.SIPRequest)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.AcceptCall(SIPSorcery.SIP.SIPRequest)
+  nameWithType: SIPUserAgent.AcceptCall(SIPRequest)
 - uid: SIPSorcery.SIP.App.SIPUserAgent.AcceptCall*
   name: AcceptCall
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_AcceptCall_
@@ -13049,12 +13062,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.AcceptCall
   nameWithType: SIPUserAgent.AcceptCall
-- uid: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.Net.SDP)
-  name: Answer(SDP)
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_Net_SDP_
-  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.Net.SDP)
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.Net.SDP)
-  nameWithType: SIPUserAgent.Answer(SDP)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.Net.SDP)
+  name: Answer(SIPServerUserAgent, SDP)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_SIP_App_SIPServerUserAgent_SIPSorcery_Net_SDP_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.Net.SDP)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent, SIPSorcery.Net.SDP)
+  nameWithType: SIPUserAgent.Answer(SIPServerUserAgent, SDP)
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Answer*
   name: Answer
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_
@@ -13215,6 +13228,30 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.Transfer
   nameWithType: SIPUserAgent.Transfer
+- uid: SIPSorcery.SIP.App.SIPUserAgent.UasCallCancelled
+  name: UasCallCancelled
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_UasCallCancelled
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.UasCallCancelled
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.UasCallCancelled
+  nameWithType: SIPUserAgent.UasCallCancelled
+- uid: SIPSorcery.SIP.App.SIPUserAgent.UasNoRingTimeout
+  name: UasNoRingTimeout
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_UasNoRingTimeout
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.UasNoRingTimeout
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.UasNoRingTimeout
+  nameWithType: SIPUserAgent.UasNoRingTimeout
+- uid: SIPSorcery.SIP.App.SIPUserAgent.UasStateChanged
+  name: UasStateChanged
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_UasStateChanged
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.UasStateChanged
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.UasStateChanged
+  nameWithType: SIPUserAgent.UasStateChanged
+- uid: SIPSorcery.SIP.App.SIPUserAgent.UasTransactionComplete
+  name: UasTransactionComplete
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_UasTransactionComplete
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.UasTransactionComplete
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.UasTransactionComplete
+  nameWithType: SIPUserAgent.UasTransactionComplete
 - uid: SIPSorcery.SIP.AuthHeaders
   name: AuthHeaders
   href: api/SIPSorcery.SIP.AuthHeaders.html
