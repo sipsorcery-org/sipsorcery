@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -102,8 +103,7 @@ namespace SIPSorcery.SoftPhone
                 m_sipPassword,
                 null,
                 m_sipServer,
-                // TODO: Fix GetDefaultSIPEndPoint() to use SIPSorcery 3.6.0 Nuget package.
-                new SIPURI(m_sipUsername, _sipClient.SIPClientTransport.GetDefaultSIPEndPoint().GetIPEndPoint().ToString(), null),
+                new SIPURI(m_sipUsername, IPAddress.Any.ToString(), null),
                 180,
                 null,
                 null,

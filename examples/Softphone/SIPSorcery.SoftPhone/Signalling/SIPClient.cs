@@ -35,8 +35,6 @@ namespace SIPSorcery.SoftPhone
         private ILog _sipTraceLogger = AppState.GetLogger("siptrace");
 
         private XmlNode m_sipSocketsNode = SIPSoftPhoneState.SIPSocketsNode;                // Optional XML node that can be used to configure the SIP channels used with the SIP transport layer.
-        private IPAddress _defaultLocalAddress = SIPSoftPhoneState.DefaultLocalAddress;     // The default IPv4 address for the machine running the application.
-        private int _defaultSIPUdpPort = SIPConstants.DEFAULT_SIP_PORT;                     // The default UDP SIP port.
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
@@ -96,7 +94,7 @@ namespace SIPSorcery.SoftPhone
                     }
 
                     // Configure the SIP transport layer.
-                    m_sipTransport = new SIPTransport(SIPDNSManager.ResolveSIPService, new SIPTransactionEngine());
+                    m_sipTransport = new SIPTransport();
                     bool sipChannelAdded = false;
 
                     if (m_sipSocketsNode != null)
@@ -113,8 +111,7 @@ namespace SIPSorcery.SoftPhone
                     if(sipChannelAdded == false)
                     {
                         // Use default options to set up a SIP channel.
-                        int port = FreePort.FindNextAvailableUDPPort(_defaultSIPUdpPort);
-                        var sipChannel = new SIPUDPChannel(new IPEndPoint(_defaultLocalAddress, port));
+                        var sipChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0));
                         m_sipTransport.AddSIPChannel(sipChannel);
                     }
                 });
@@ -144,7 +141,7 @@ namespace SIPSorcery.SoftPhone
                 {
                     // Call has been hungup by remote end.
                     StatusMessage("Call hungup by remote end.");
-                    SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                    SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, null);
                     SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     byeTransaction.SendFinalResponse(byeResponse);
                     CallFinished();
@@ -153,7 +150,7 @@ namespace SIPSorcery.SoftPhone
                 {
                     // Call has been hungup by remote end.
                     StatusMessage("Call hungup.");
-                    SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                    SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(sipRequest, null);
                     SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     byeTransaction.SendFinalResponse(byeResponse);
                     CallFinished();
@@ -168,7 +165,7 @@ namespace SIPSorcery.SoftPhone
             else if (sipRequest.Method == SIPMethodsEnum.INVITE)
             {
                 StatusMessage("Incoming call request: " + localSIPEndPoint + "<-" + remoteEndPoint + " " + sipRequest.URI.ToString() + ".");
-                UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, null);
+                UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest,null);
                 m_uas = new SIPServerUserAgent(m_sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
                 m_uas.CallCancelled += UASCallCancelled;
 
@@ -184,7 +181,7 @@ namespace SIPSorcery.SoftPhone
                 if (inviteTransaction != null)
                 {
                     StatusMessage("Call was cancelled by remote end.");
-                    SIPCancelTransaction cancelTransaction = m_sipTransport.CreateCancelTransaction(sipRequest, remoteEndPoint, localSIPEndPoint, inviteTransaction);
+                    SIPCancelTransaction cancelTransaction = m_sipTransport.CreateCancelTransaction(sipRequest, inviteTransaction);
                     cancelTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
                 }
                 else
