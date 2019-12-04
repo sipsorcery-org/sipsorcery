@@ -88,6 +88,7 @@ namespace SIPSorcery.Net
                 }
             }
         }
+
         public void SetFormatParameterAttribute(string attribute)
         {
             FormatParameterAttribute = attribute;

@@ -61,9 +61,7 @@ namespace SIPSorcery.SoftPhone
             InitializeComponent();
 
             // Do some UI initialisation.
-            m_uasGrid.Visibility = Visibility.Collapsed;
-            m_cancelButton.Visibility = Visibility.Collapsed;
-            m_byeButton.Visibility = Visibility.Collapsed;
+            ResetToCallStartState();
 
             // Set up the SIP client. It can receive calls and initiate outgoing calls.
             _sipClient = new SIPClient();
@@ -77,12 +75,8 @@ namespace SIPSorcery.SoftPhone
             {
                 _stunClient = new SoftphoneSTUNClient(SIPSoftPhoneState.STUNServerHostname);
                 _stunClient.PublicIPAddressDetected += (ip) =>
-                { 
+                {
                     SIPSoftPhoneState.PublicIPAddress = ip;
-                    UIHelper.DoOnUIThread(this, delegate
-                    {
-                        publicIPAddress.Content = $"Public IP: {ip}";
-                    });
                 };
                 _stunClient.Run();
             }
@@ -93,6 +87,19 @@ namespace SIPSorcery.SoftPhone
         private async void Initialise()
         {
             await _sipClient.InitialiseSIP();
+
+            string listeningEndPoints = null;
+            foreach (var sipChannel in _sipClient.SIPClientTransport.GetSIPChannels())
+            {
+                SIPEndPoint sipChannelEP = sipChannel.ListeningSIPEndPoint.CopyOf();
+                sipChannelEP.ChannelID = null;
+                listeningEndPoints += (listeningEndPoints == null) ? sipChannelEP.ToString() : $", {sipChannelEP}";
+            }
+
+            UIHelper.DoOnUIThread(this, delegate
+            {
+                listeningEndPoint.Content = $"Listening on: {listeningEndPoints}";
+            });
 
             _sipRegistrationClient = new SIPRegistrationUserAgent(
                 _sipClient.SIPClientTransport,
@@ -193,12 +200,11 @@ namespace SIPSorcery.SoftPhone
                 m_callButton.Visibility = Visibility.Visible;
                 m_cancelButton.Visibility = Visibility.Collapsed;
                 m_byeButton.Visibility = Visibility.Collapsed;
-                m_answerButton.Visibility = Visibility.Visible;
-                m_rejectButton.Visibility = Visibility.Visible;
-                m_redirectButton.Visibility = Visibility.Visible;
-                m_hangupButton.Visibility = Visibility.Visible;
-                m_uacGrid.Visibility = Visibility.Visible;
-                m_uasGrid.Visibility = Visibility.Collapsed;
+                m_answerButton.Visibility = Visibility.Collapsed;
+                m_rejectButton.Visibility = Visibility.Collapsed;
+                m_redirectButton.Visibility = Visibility.Collapsed;
+                m_transferButton.Visibility = Visibility.Collapsed;
+                SetStatusText(m_signallingStatus, "Ready");
             });
 
             _activeClient = null;
@@ -213,8 +219,13 @@ namespace SIPSorcery.SoftPhone
 
             UIHelper.DoOnUIThread(this, delegate
             {
-                m_uacGrid.Visibility = Visibility.Collapsed;
-                m_uasGrid.Visibility = Visibility.Visible;
+                m_callButton.Visibility = Visibility.Collapsed;
+                m_cancelButton.Visibility = Visibility.Collapsed;
+                m_byeButton.Visibility = Visibility.Collapsed;
+
+                m_answerButton.Visibility = Visibility.Visible;
+                m_rejectButton.Visibility = Visibility.Visible;
+                m_redirectButton.Visibility = Visibility.Visible;
             });
         }
 
@@ -229,6 +240,7 @@ namespace SIPSorcery.SoftPhone
                 m_callButton.Visibility = Visibility.Collapsed;
                 m_cancelButton.Visibility = Visibility.Collapsed;
                 m_byeButton.Visibility = Visibility.Visible;
+                m_transferButton.Visibility = Visibility.Visible;
             });
         }
 
@@ -288,16 +300,8 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void ByeButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (_activeClient != null)
-            {
-                _activeClient.Hangup();
-            }
-            else
-            {
-                // If no active client then it must be a loopback test that's ending.
-                _mediaManager.EndCall();
-                SetStatusText(m_signallingStatus, "Ready");
-            }
+            _activeClient?.Hangup();
+            _mediaManager.EndCall();
 
             ResetToCallStartState();
         }
@@ -310,6 +314,9 @@ namespace SIPSorcery.SoftPhone
             _activeClient.Answer(_mediaManager);
             m_answerButton.Visibility = Visibility.Collapsed;
             m_rejectButton.Visibility = Visibility.Collapsed;
+            m_redirectButton.Visibility = Visibility.Collapsed;
+            m_byeButton.Visibility = Visibility.Visible;
+            m_transferButton.Visibility = Visibility.Visible;
         }
 
         /// <summary>
@@ -326,17 +333,25 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void RedirectButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _activeClient.Redirect(m_redirectURIEntryTextBox.Text);
+            _activeClient.Redirect(m_uriEntryTextBox.Text);
             ResetToCallStartState();
         }
 
         /// <summary>
-        /// The button to hang up an incoming call.
+        /// The button to send a blind transfer request to the remote call party.
         /// </summary>
-        private void HangupButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private async void TransferButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _activeClient.Hangup();
-            ResetToCallStartState();
+            bool wasAccepted = await _activeClient.Transfer(m_uriEntryTextBox.Text);
+
+            if (wasAccepted)
+            {
+                ResetToCallStartState();
+            }
+            else
+            {
+                SetStatusText(m_signallingStatus, "The remote call party did not accept the transfer request.");
+            }
         }
 
         /// <summary>
@@ -346,7 +361,8 @@ namespace SIPSorcery.SoftPhone
         private void SetStatusText(TextBlock textBlock, string text)
         {
             logger.Debug(text);
-            UIHelper.DoOnUIThread(this, delegate { textBlock.Text = text; });
+            UIHelper.DoOnUIThread(this, delegate
+            { textBlock.Text = text; });
         }
 
         private void LocalAudioSampleReady(byte[] sample)

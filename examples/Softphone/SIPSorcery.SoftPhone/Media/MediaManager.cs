@@ -291,27 +291,18 @@ namespace SIPSorcery.SoftPhone
 
                 Marshal.FreeHGlobal(decodedSamplePtr);
 
-                if (OnRemoteVideoSampleReady != null)
-                {
-                    OnRemoteVideoSampleReady(bmp, Convert.ToInt32(decodedImgWidth), Convert.ToInt32(decodedImgHeight));
-                }
+                OnRemoteVideoSampleReady?.Invoke(bmp, Convert.ToInt32(decodedImgWidth), Convert.ToInt32(decodedImgHeight));
             }
         }
 
         public void RemoteAudioSampleReceived(byte[] sample, int length)
         {
-            if (_audioChannel != null)
-            {
-                _audioChannel.AudioSampleReceived(sample, 0);
-            }
+            _audioChannel?.AudioSampleReceived(sample, 0);
         }
 
         private void LocalVideoEncodedSampleReady(byte[] sample)
         {
-            if (_rtpManager != null)
-            {
-                _rtpManager.LocalVideoSampleReady(sample);
-            }
+            _rtpManager?.LocalVideoSampleReady(sample);
         }
 
         /// <summary>

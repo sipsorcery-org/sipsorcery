@@ -404,15 +404,16 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public static bool TryParse(string uri)
+        public static bool TryParse(string uriStr, out SIPURI uri)
         {
             try
             {
-                ParseSIPURIRelaxed(uri);
-                return true;
+                uri = ParseSIPURIRelaxed(uriStr);
+                return (uri != null);
             }
             catch
             {
+                uri = null;
                 return false;
             }
         }
