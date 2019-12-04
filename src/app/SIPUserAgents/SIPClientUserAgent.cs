@@ -317,9 +317,9 @@ namespace SIPSorcery.SIP.App
                                     AccountCode = customerAccount.AccountCode;
 
                                     string rateDestination = m_sipCallDescriptor.Uri;
-                                    if (SIPURI.TryParse(m_sipCallDescriptor.Uri))
+                                    if (SIPURI.TryParse(m_sipCallDescriptor.Uri, out var rateDstUri))
                                     {
-                                        rateDestination = SIPURI.ParseSIPURIRelaxed(m_sipCallDescriptor.Uri).User;
+                                        rateDestination = rateDstUri.User;
                                     }
 
                                     //var rate = m_customerAccountDataLayer.GetRate(Owner, m_sipCallDescriptor.RateCode, rateDestination, customerAccount.RatePlan);

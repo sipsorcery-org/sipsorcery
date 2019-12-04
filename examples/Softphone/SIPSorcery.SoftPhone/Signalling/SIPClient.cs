@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -31,11 +32,12 @@ namespace SIPSorcery.SoftPhone
     public class SIPClient : IVoIPClient
     {
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
+        private static int SIP_DEFAULT_PORT = SIPConstants.DEFAULT_SIP_PORT;
+        private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
 
         private ILog logger = AppState.logger;
-        private ILog _sipTraceLogger = AppState.GetLogger("siptrace");
 
-        private XmlNode m_sipSocketsNode = SIPSoftPhoneState.SIPSocketsNode;                // Optional XML node that can be used to configure the SIP channels used with the SIP transport layer.
+        private XmlNode m_sipSocketsNode = SIPSoftPhoneState.SIPSocketsNode;    // Optional XML node that can be used to configure the SIP channels used with the SIP transport layer.
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
@@ -43,12 +45,12 @@ namespace SIPSorcery.SoftPhone
         private string m_sipFromName = SIPSoftPhoneState.SIPFromName;
         private string m_DnsServer = SIPSoftPhoneState.DnsServer;
 
-        private SIPTransport m_sipTransport;                                                // SIP transport layer.
+        private SIPTransport m_sipTransport;
         private SIPUserAgent m_userAgent;
-        private ManualResetEvent m_dnsLookupComplete = new ManualResetEvent(false);
         private MediaManager _mediaManager;
         bool _isIntialised = false;
         private SIPServerUserAgent m_pendingIncomingCall;
+        private CancellationTokenSource _cts = new CancellationTokenSource();
 
         public event Action CallAnswer;                 // Fires when an outgoing SIP call is answered.
         public event Action CallEnded;                  // Fires when an incoming or outgoing call is over.
@@ -112,8 +114,18 @@ namespace SIPSorcery.SoftPhone
                     if (sipChannelAdded == false)
                     {
                         // Use default options to set up a SIP channel.
-                        var sipChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0));
-                        m_sipTransport.AddSIPChannel(sipChannel);
+                        SIPUDPChannel udpChannel = null;
+                        try
+                        {
+                            udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_DEFAULT_PORT));
+                        }
+                        catch(SocketException bindExcp)
+                        {
+                            logger.Warn($"Socket exception attempting to bind UDP channel to port {SIP_DEFAULT_PORT}, will use random port. {bindExcp.Message}.");
+                            udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0));
+                        }
+                        var tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Any, udpChannel.Port));
+                        m_sipTransport.AddSIPChannel(new List<SIPChannel> { udpChannel, tcpChannel });
                     }
                 });
 
@@ -125,12 +137,14 @@ namespace SIPSorcery.SoftPhone
                 m_userAgent.ClientCallRinging += CallRinging;
                 m_userAgent.ClientCallAnswered += CallAnswered;
                 m_userAgent.ClientCallFailed += CallFailed;
+                m_userAgent.OnCallHungup += CallFinished;
+                m_userAgent.ServerCallCancelled += IncomingCallCancelled;
 
                 // Log all SIP packets received to a log file.
-                m_sipTransport.SIPRequestInTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { _sipTraceLogger.Debug("Request Received : " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipRequest.ToString()); };
-                m_sipTransport.SIPRequestOutTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { _sipTraceLogger.Debug("Request Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipRequest.ToString()); };
-                m_sipTransport.SIPResponseInTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { _sipTraceLogger.Debug("Response Received: " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipResponse.ToString()); };
-                m_sipTransport.SIPResponseOutTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { _sipTraceLogger.Debug("Response Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipResponse.ToString()); };
+                m_sipTransport.SIPRequestInTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { logger.Debug("Request Received : " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipRequest.ToString()); };
+                m_sipTransport.SIPRequestOutTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { logger.Debug("Request Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipRequest.ToString()); };
+                m_sipTransport.SIPResponseInTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { logger.Debug("Response Received: " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipResponse.ToString()); };
+                m_sipTransport.SIPResponseOutTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { logger.Debug("Response Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipResponse.ToString()); };
             }
         }
 
@@ -150,13 +164,6 @@ namespace SIPSorcery.SoftPhone
                 // In dialog request will include BYE's.
                 m_userAgent.DialogRequestReceivedAsync(sipRequest).Wait();
             }
-            else if (sipRequest.Method == SIPMethodsEnum.BYE)
-            {
-                // If a BYE request isn't detected as belonging to our dialog then it;s an orphan.
-                logger.Debug("Unmatched BYE request received for " + sipRequest.URI.ToString() + ".");
-                SIPResponse noCallLegResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
-                m_sipTransport.SendResponse(noCallLegResponse);
-            }
             else if (sipRequest.Method == SIPMethodsEnum.INVITE)
             {
                 if (m_userAgent?.IsCallActive == true)
@@ -171,28 +178,8 @@ namespace SIPSorcery.SoftPhone
                 {
                     StatusMessage($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                     m_pendingIncomingCall = m_userAgent.AcceptCall(sipRequest);
-                    m_pendingIncomingCall.CallCancelled += UASCallCancelled;
                     IncomingCall();
                 }
-            }
-            else if (sipRequest.Method == SIPMethodsEnum.CANCEL)
-            {
-                UASInviteTransaction inviteTransaction = (UASInviteTransaction)m_sipTransport.GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE));
-
-                if (inviteTransaction != null)
-                {
-                    StatusMessage("Call was cancelled by remote end.");
-                    SIPCancelTransaction cancelTransaction = m_sipTransport.CreateCancelTransaction(sipRequest, inviteTransaction);
-                    cancelTransaction.GotRequest(localSIPEndPoint, remoteEndPoint, sipRequest);
-                }
-                else
-                {
-                    logger.Debug("No matching transaction was found for CANCEL to " + sipRequest.URI.ToString() + ".");
-                    SIPResponse noCallLegResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
-                    m_sipTransport.SendResponse(noCallLegResponse);
-                }
-
-                CallFinished();
             }
             else
             {
@@ -210,8 +197,6 @@ namespace SIPSorcery.SoftPhone
         /// be sent to the configured SIP server.</param>
         public async void Call(MediaManager mediaManager, string destination)
         {
-            //_initialisationTask.Wait(_cancelCallTokenSource.Token);
-
             _mediaManager = mediaManager;
             _mediaManager.NewCall();
 
@@ -262,22 +247,12 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
-        /// An incoming call was cancelled by the caller.
-        /// </summary>
-        private void UASCallCancelled(ISIPServerUserAgent uas)
-        {
-            //SetText(m_signallingStatus, "incoming call cancelled for: " + uas.CallDestination + ".");
-            CallFinished();
-        }
-
-        /// <summary>
         /// Cancels an outgoing SIP call that hasn't yet been answered.
         /// </summary>
         public void Cancel()
         {
             StatusMessage("Cancelling SIP call to " + m_userAgent.CallDescriptor?.Uri + ".");
             m_userAgent.Cancel();
-            //_cancelCallTokenSource.Cancel();
         }
 
         /// <summary>
@@ -327,6 +302,41 @@ namespace SIPSorcery.SoftPhone
         {
             m_userAgent.Hangup();
             CallFinished();
+        }
+
+        /// <summary>
+        /// Sends a request to the remote call party to initiate a blind transfer to the
+        /// supplied destination.
+        /// </summary>
+        /// <param name="destination">The SIP URI of the blind transfer destination.</param>
+        /// <returns>True if the transfer was accepted or false if not.</returns>
+        public async Task<bool> Transfer(string destination)
+        {
+            if (SIPURI.TryParse(destination, out var uri))
+            {
+                return await m_userAgent.Transfer(uri, TimeSpan.FromSeconds(TRANSFER_RESPONSE_TIMEOUT_SECONDS), _cts.Token);
+            }
+            else
+            {
+                StatusMessage($"The transfer destination was not a valid SIP URI.");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Puts the remote call party on hold.
+        /// </summary>
+        public void PutOnHold()
+        {
+
+        }
+
+        /// <summary>
+        /// Takes the remote call party off hold.
+        /// </summary>
+        public void TakeOffHold()
+        {
+
         }
 
         /// <summary>
@@ -405,6 +415,15 @@ namespace SIPSorcery.SoftPhone
             m_pendingIncomingCall = null;
 
             CallEnded();
+        }
+
+        /// <summary>
+        /// An incoming call was cancelled by the caller.
+        /// </summary>
+        private void IncomingCallCancelled(ISIPServerUserAgent uas)
+        {
+            //SetText(m_signallingStatus, "incoming call cancelled for: " + uas.CallDestination + ".");
+            CallFinished();
         }
     }
 }

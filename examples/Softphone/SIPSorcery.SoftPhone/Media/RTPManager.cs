@@ -32,7 +32,7 @@ namespace SIPSorcery.SoftPhone
         private const int VP8_TIMESTAMP_SPACING = 3000;
         private const int VIDEO_PAYLOAD_TYPE = 96;
         private const string SDP_TRANSPORT = "RTP/AVP";
-        
+
         private ILog logger = AppState.logger;
 
         private SDP _remoteSDP;
@@ -119,10 +119,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void SendRTPRaw(byte[] buffer, int length)
         {
-            if (_rtpAudioChannel != null)
-            {
-                _rtpAudioChannel.SendRTPRaw(buffer);
-            }
+            _rtpAudioChannel?.SendRTPRaw(buffer);
         }
 
         /// <summary>

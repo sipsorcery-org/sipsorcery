@@ -111,9 +111,26 @@ namespace SIPSorcery.SIP.App
             get { return SDP.ParseSDPDescription(m_uasTransaction.TransactionRequest.Body);  }
         }
 
+        /// <summary>
+        /// The caller cancelled the call request.
+        /// </summary>
         public event SIPUASDelegate CallCancelled;
+
+        /// <summary>
+        /// This end of the call timed out providing a ringing response. This situation can occur for SIP servers.
+        /// They will attempt to forward the call to a SIP account's contacts. If none reply then the will never
+        /// continue past the trying stage.
+        /// </summary>
         public event SIPUASDelegate NoRingTimeout;
+        
+        /// <summary>
+        /// The underlying invite transaction has reached the completed state.
+        /// </summary>
         public event SIPUASDelegate TransactionComplete;
+
+        /// <summary>
+        /// The underlying invite transaction has changed state.
+        /// </summary>
         public event SIPUASStateChangedDelegate UASStateChanged;
 
         public SIPServerUserAgent(
@@ -539,8 +556,6 @@ namespace SIPSorcery.SIP.App
             try
             {
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentServer, SIPMonitorEventTypesEnum.DialPlan, "UAS for " + m_uasTransaction.TransactionRequest.URI.ToString() + " timed out in transaction state " + m_uasTransaction.TransactionState + ".", null));
-                //SIPResponse rejectResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, SIPResponseStatusCodesEnum.ServerTimeout, "No info or final response received within timeout");
-                //m_uasTransaction.SendFinalResponse(rejectResponse);
 
                 if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Calling && NoRingTimeout != null)
                 {
