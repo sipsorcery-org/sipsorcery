@@ -92,6 +92,8 @@ the sole type is SIP).</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ICMPListener.html">ICMPListener</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.MediaStreamStatusType.html">MediaStreamStatusType</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.Mjpeg.html">Mjpeg</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.Mjpeg.Tags.html">Mjpeg.Tags</a></h4>
@@ -198,8 +200,6 @@ abs_path is defined in RFC2616 (HTTP 1.1) 3.2.1 which refers to RFC2396 (URI Gen
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaTypes.html">SDPMediaTypes</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.SessionDescriptionTypes.html">SessionDescriptionTypes</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAddressAttribute.html">STUNAddressAttribute</a></h4>
       <section><p>MAPPED-ADDRESS, RESPONSE-ADDRESS, CHANGED-ADDRESS, SOURCE-ADDRESS attributes use this format.
 The Send Keep Alive STUN request also uses an attribute with this format to specify the socket to send
@@ -280,6 +280,14 @@ THe reason for this is to stop NAT application layer gateways from doing string 
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.IceConnectionStatesEnum.html">IceConnectionStatesEnum</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.MediaStreamStatusEnum.html">MediaStreamStatusEnum</a></h4>
+      <section><p>The types of status that a media stream can have. Note that the stream status can
+be defined with an attribute at session level or at media element level. If no
+attribute is defined then the default is &quot;sendrecv&quot;.
+Note that this status applies to RTP streams only. If there is an RTCP stream
+associated with the RTP it should carry on as normal.
+See <a href="https://tools.ietf.org/html/rfc4566#section-6">https://tools.ietf.org/html/rfc4566#section-6</a></p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPReportTypesEnum.html">RTCPReportTypesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RtpMediaTypesEnum.html">RtpMediaTypesEnum</a></h4>

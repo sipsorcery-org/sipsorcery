@@ -757,6 +757,101 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.ICMPListener.Stop
   nameWithType: ICMPListener.Stop
+- uid: SIPSorcery.Net.MediaStreamStatusEnum
+  name: MediaStreamStatusEnum
+  href: api/SIPSorcery.Net.MediaStreamStatusEnum.html
+  commentId: T:SIPSorcery.Net.MediaStreamStatusEnum
+  fullName: SIPSorcery.Net.MediaStreamStatusEnum
+  nameWithType: MediaStreamStatusEnum
+- uid: SIPSorcery.Net.MediaStreamStatusEnum.Inactive
+  name: Inactive
+  href: api/SIPSorcery.Net.MediaStreamStatusEnum.html#SIPSorcery_Net_MediaStreamStatusEnum_Inactive
+  commentId: F:SIPSorcery.Net.MediaStreamStatusEnum.Inactive
+  fullName: SIPSorcery.Net.MediaStreamStatusEnum.Inactive
+  nameWithType: MediaStreamStatusEnum.Inactive
+- uid: SIPSorcery.Net.MediaStreamStatusEnum.None
+  name: None
+  href: api/SIPSorcery.Net.MediaStreamStatusEnum.html#SIPSorcery_Net_MediaStreamStatusEnum_None
+  commentId: F:SIPSorcery.Net.MediaStreamStatusEnum.None
+  fullName: SIPSorcery.Net.MediaStreamStatusEnum.None
+  nameWithType: MediaStreamStatusEnum.None
+- uid: SIPSorcery.Net.MediaStreamStatusEnum.RecvOnly
+  name: RecvOnly
+  href: api/SIPSorcery.Net.MediaStreamStatusEnum.html#SIPSorcery_Net_MediaStreamStatusEnum_RecvOnly
+  commentId: F:SIPSorcery.Net.MediaStreamStatusEnum.RecvOnly
+  fullName: SIPSorcery.Net.MediaStreamStatusEnum.RecvOnly
+  nameWithType: MediaStreamStatusEnum.RecvOnly
+- uid: SIPSorcery.Net.MediaStreamStatusEnum.SendOnly
+  name: SendOnly
+  href: api/SIPSorcery.Net.MediaStreamStatusEnum.html#SIPSorcery_Net_MediaStreamStatusEnum_SendOnly
+  commentId: F:SIPSorcery.Net.MediaStreamStatusEnum.SendOnly
+  fullName: SIPSorcery.Net.MediaStreamStatusEnum.SendOnly
+  nameWithType: MediaStreamStatusEnum.SendOnly
+- uid: SIPSorcery.Net.MediaStreamStatusEnum.SendRecv
+  name: SendRecv
+  href: api/SIPSorcery.Net.MediaStreamStatusEnum.html#SIPSorcery_Net_MediaStreamStatusEnum_SendRecv
+  commentId: F:SIPSorcery.Net.MediaStreamStatusEnum.SendRecv
+  fullName: SIPSorcery.Net.MediaStreamStatusEnum.SendRecv
+  nameWithType: MediaStreamStatusEnum.SendRecv
+- uid: SIPSorcery.Net.MediaStreamStatusType
+  name: MediaStreamStatusType
+  href: api/SIPSorcery.Net.MediaStreamStatusType.html
+  commentId: T:SIPSorcery.Net.MediaStreamStatusType
+  fullName: SIPSorcery.Net.MediaStreamStatusType
+  nameWithType: MediaStreamStatusType
+- uid: SIPSorcery.Net.MediaStreamStatusType.GetAttributeForMediaStreamStatus(SIPSorcery.Net.MediaStreamStatusEnum)
+  name: GetAttributeForMediaStreamStatus(MediaStreamStatusEnum)
+  href: api/SIPSorcery.Net.MediaStreamStatusType.html#SIPSorcery_Net_MediaStreamStatusType_GetAttributeForMediaStreamStatus_SIPSorcery_Net_MediaStreamStatusEnum_
+  commentId: M:SIPSorcery.Net.MediaStreamStatusType.GetAttributeForMediaStreamStatus(SIPSorcery.Net.MediaStreamStatusEnum)
+  fullName: SIPSorcery.Net.MediaStreamStatusType.GetAttributeForMediaStreamStatus(SIPSorcery.Net.MediaStreamStatusEnum)
+  nameWithType: MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatusEnum)
+- uid: SIPSorcery.Net.MediaStreamStatusType.GetAttributeForMediaStreamStatus*
+  name: GetAttributeForMediaStreamStatus
+  href: api/SIPSorcery.Net.MediaStreamStatusType.html#SIPSorcery_Net_MediaStreamStatusType_GetAttributeForMediaStreamStatus_
+  commentId: Overload:SIPSorcery.Net.MediaStreamStatusType.GetAttributeForMediaStreamStatus
+  isSpec: "True"
+  fullName: SIPSorcery.Net.MediaStreamStatusType.GetAttributeForMediaStreamStatus
+  nameWithType: MediaStreamStatusType.GetAttributeForMediaStreamStatus
+- uid: SIPSorcery.Net.MediaStreamStatusType.INACTIVE_ATTRIBUTE
+  name: INACTIVE_ATTRIBUTE
+  href: api/SIPSorcery.Net.MediaStreamStatusType.html#SIPSorcery_Net_MediaStreamStatusType_INACTIVE_ATTRIBUTE
+  commentId: F:SIPSorcery.Net.MediaStreamStatusType.INACTIVE_ATTRIBUTE
+  fullName: SIPSorcery.Net.MediaStreamStatusType.INACTIVE_ATTRIBUTE
+  nameWithType: MediaStreamStatusType.INACTIVE_ATTRIBUTE
+- uid: SIPSorcery.Net.MediaStreamStatusType.IsMediaStreamStatusAttribute(System.String,SIPSorcery.Net.MediaStreamStatusEnum@)
+  name: IsMediaStreamStatusAttribute(String, out MediaStreamStatusEnum)
+  href: api/SIPSorcery.Net.MediaStreamStatusType.html#SIPSorcery_Net_MediaStreamStatusType_IsMediaStreamStatusAttribute_System_String_SIPSorcery_Net_MediaStreamStatusEnum__
+  commentId: M:SIPSorcery.Net.MediaStreamStatusType.IsMediaStreamStatusAttribute(System.String,SIPSorcery.Net.MediaStreamStatusEnum@)
+  name.vb: IsMediaStreamStatusAttribute(String, ByRef MediaStreamStatusEnum)
+  fullName: SIPSorcery.Net.MediaStreamStatusType.IsMediaStreamStatusAttribute(System.String, out SIPSorcery.Net.MediaStreamStatusEnum)
+  fullName.vb: SIPSorcery.Net.MediaStreamStatusType.IsMediaStreamStatusAttribute(System.String, ByRef SIPSorcery.Net.MediaStreamStatusEnum)
+  nameWithType: MediaStreamStatusType.IsMediaStreamStatusAttribute(String, out MediaStreamStatusEnum)
+  nameWithType.vb: MediaStreamStatusType.IsMediaStreamStatusAttribute(String, ByRef MediaStreamStatusEnum)
+- uid: SIPSorcery.Net.MediaStreamStatusType.IsMediaStreamStatusAttribute*
+  name: IsMediaStreamStatusAttribute
+  href: api/SIPSorcery.Net.MediaStreamStatusType.html#SIPSorcery_Net_MediaStreamStatusType_IsMediaStreamStatusAttribute_
+  commentId: Overload:SIPSorcery.Net.MediaStreamStatusType.IsMediaStreamStatusAttribute
+  isSpec: "True"
+  fullName: SIPSorcery.Net.MediaStreamStatusType.IsMediaStreamStatusAttribute
+  nameWithType: MediaStreamStatusType.IsMediaStreamStatusAttribute
+- uid: SIPSorcery.Net.MediaStreamStatusType.RECV_ONLY_ATTRIBUTE
+  name: RECV_ONLY_ATTRIBUTE
+  href: api/SIPSorcery.Net.MediaStreamStatusType.html#SIPSorcery_Net_MediaStreamStatusType_RECV_ONLY_ATTRIBUTE
+  commentId: F:SIPSorcery.Net.MediaStreamStatusType.RECV_ONLY_ATTRIBUTE
+  fullName: SIPSorcery.Net.MediaStreamStatusType.RECV_ONLY_ATTRIBUTE
+  nameWithType: MediaStreamStatusType.RECV_ONLY_ATTRIBUTE
+- uid: SIPSorcery.Net.MediaStreamStatusType.SEND_ONLY_ATTRIBUTE
+  name: SEND_ONLY_ATTRIBUTE
+  href: api/SIPSorcery.Net.MediaStreamStatusType.html#SIPSorcery_Net_MediaStreamStatusType_SEND_ONLY_ATTRIBUTE
+  commentId: F:SIPSorcery.Net.MediaStreamStatusType.SEND_ONLY_ATTRIBUTE
+  fullName: SIPSorcery.Net.MediaStreamStatusType.SEND_ONLY_ATTRIBUTE
+  nameWithType: MediaStreamStatusType.SEND_ONLY_ATTRIBUTE
+- uid: SIPSorcery.Net.MediaStreamStatusType.SEND_RECV_ATTRIBUTE
+  name: SEND_RECV_ATTRIBUTE
+  href: api/SIPSorcery.Net.MediaStreamStatusType.html#SIPSorcery_Net_MediaStreamStatusType_SEND_RECV_ATTRIBUTE
+  commentId: F:SIPSorcery.Net.MediaStreamStatusType.SEND_RECV_ATTRIBUTE
+  fullName: SIPSorcery.Net.MediaStreamStatusType.SEND_RECV_ATTRIBUTE
+  nameWithType: MediaStreamStatusType.SEND_RECV_ATTRIBUTE
 - uid: SIPSorcery.Net.Mjpeg
   name: Mjpeg
   href: api/SIPSorcery.Net.Mjpeg.html
@@ -5502,12 +5597,25 @@ references:
   commentId: F:SIPSorcery.Net.SDP.CRLF
   fullName: SIPSorcery.Net.SDP.CRLF
   nameWithType: SDP.CRLF
-- uid: SIPSorcery.Net.SDP.ExtraAttributes
-  name: ExtraAttributes
-  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_ExtraAttributes
-  commentId: F:SIPSorcery.Net.SDP.ExtraAttributes
-  fullName: SIPSorcery.Net.SDP.ExtraAttributes
-  nameWithType: SDP.ExtraAttributes
+- uid: SIPSorcery.Net.SDP.ExtraSessionAttributes
+  name: ExtraSessionAttributes
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_ExtraSessionAttributes
+  commentId: F:SIPSorcery.Net.SDP.ExtraSessionAttributes
+  fullName: SIPSorcery.Net.SDP.ExtraSessionAttributes
+  nameWithType: SDP.ExtraSessionAttributes
+- uid: SIPSorcery.Net.SDP.GetMediaStreamStatus(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32)
+  name: GetMediaStreamStatus(SDPMediaTypesEnum, Int32)
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_GetMediaStreamStatus_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_
+  commentId: M:SIPSorcery.Net.SDP.GetMediaStreamStatus(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32)
+  fullName: SIPSorcery.Net.SDP.GetMediaStreamStatus(SIPSorcery.Net.SDPMediaTypesEnum, System.Int32)
+  nameWithType: SDP.GetMediaStreamStatus(SDPMediaTypesEnum, Int32)
+- uid: SIPSorcery.Net.SDP.GetMediaStreamStatus*
+  name: GetMediaStreamStatus
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_GetMediaStreamStatus_
+  commentId: Overload:SIPSorcery.Net.SDP.GetMediaStreamStatus
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDP.GetMediaStreamStatus
+  nameWithType: SDP.GetMediaStreamStatus
 - uid: SIPSorcery.Net.SDP.GetSDPRTPEndPoint(System.String)
   name: GetSDPRTPEndPoint(String)
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_GetSDPRTPEndPoint_System_String_
@@ -5631,6 +5739,19 @@ references:
   commentId: F:SIPSorcery.Net.SDP.SessionId
   fullName: SIPSorcery.Net.SDP.SessionId
   nameWithType: SDP.SessionId
+- uid: SIPSorcery.Net.SDP.SessionMediaStreamStatus
+  name: SessionMediaStreamStatus
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_SessionMediaStreamStatus
+  commentId: P:SIPSorcery.Net.SDP.SessionMediaStreamStatus
+  fullName: SIPSorcery.Net.SDP.SessionMediaStreamStatus
+  nameWithType: SDP.SessionMediaStreamStatus
+- uid: SIPSorcery.Net.SDP.SessionMediaStreamStatus*
+  name: SessionMediaStreamStatus
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_SessionMediaStreamStatus_
+  commentId: Overload:SIPSorcery.Net.SDP.SessionMediaStreamStatus
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDP.SessionMediaStreamStatus
+  nameWithType: SDP.SessionMediaStreamStatus
 - uid: SIPSorcery.Net.SDP.SessionName
   name: SessionName
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_SessionName
@@ -5834,12 +5955,12 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.Connection
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.Connection
   nameWithType: SDPMediaAnnouncement.Connection
-- uid: SIPSorcery.Net.SDPMediaAnnouncement.ExtraAttributes
-  name: ExtraAttributes
-  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_ExtraAttributes
-  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.ExtraAttributes
-  fullName: SIPSorcery.Net.SDPMediaAnnouncement.ExtraAttributes
-  nameWithType: SDPMediaAnnouncement.ExtraAttributes
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.ExtraMediaAttributes
+  name: ExtraMediaAttributes
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_ExtraMediaAttributes
+  commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.ExtraMediaAttributes
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.ExtraMediaAttributes
+  nameWithType: SDPMediaAnnouncement.ExtraMediaAttributes
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.GetFormatListAttributesToString
   name: GetFormatListAttributesToString()
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_GetFormatListAttributesToString
@@ -5909,6 +6030,19 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaAnnouncement.MediaFormats
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.MediaFormats
   nameWithType: SDPMediaAnnouncement.MediaFormats
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.MediaStreamStatus
+  name: MediaStreamStatus
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MediaStreamStatus
+  commentId: P:SIPSorcery.Net.SDPMediaAnnouncement.MediaStreamStatus
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.MediaStreamStatus
+  nameWithType: SDPMediaAnnouncement.MediaStreamStatus
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.MediaStreamStatus*
+  name: MediaStreamStatus
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_MediaStreamStatus_
+  commentId: Overload:SIPSorcery.Net.SDPMediaAnnouncement.MediaStreamStatus
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.MediaStreamStatus
+  nameWithType: SDPMediaAnnouncement.MediaStreamStatus
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.ParseMediaFormats(System.String)
   name: ParseMediaFormats(String)
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_ParseMediaFormats_System_String_
@@ -6190,24 +6324,6 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaTypesEnum.video
   fullName: SIPSorcery.Net.SDPMediaTypesEnum.video
   nameWithType: SDPMediaTypesEnum.video
-- uid: SIPSorcery.Net.SessionDescriptionTypes
-  name: SessionDescriptionTypes
-  href: api/SIPSorcery.Net.SessionDescriptionTypes.html
-  commentId: T:SIPSorcery.Net.SessionDescriptionTypes
-  fullName: SIPSorcery.Net.SessionDescriptionTypes
-  nameWithType: SessionDescriptionTypes
-- uid: SIPSorcery.Net.SessionDescriptionTypes.NETWORKTEST_CONTENTTYPE
-  name: NETWORKTEST_CONTENTTYPE
-  href: api/SIPSorcery.Net.SessionDescriptionTypes.html#SIPSorcery_Net_SessionDescriptionTypes_NETWORKTEST_CONTENTTYPE
-  commentId: F:SIPSorcery.Net.SessionDescriptionTypes.NETWORKTEST_CONTENTTYPE
-  fullName: SIPSorcery.Net.SessionDescriptionTypes.NETWORKTEST_CONTENTTYPE
-  nameWithType: SessionDescriptionTypes.NETWORKTEST_CONTENTTYPE
-- uid: SIPSorcery.Net.SessionDescriptionTypes.SDP_CONTENTTYPE
-  name: SDP_CONTENTTYPE
-  href: api/SIPSorcery.Net.SessionDescriptionTypes.html#SIPSorcery_Net_SessionDescriptionTypes_SDP_CONTENTTYPE
-  commentId: F:SIPSorcery.Net.SessionDescriptionTypes.SDP_CONTENTTYPE
-  fullName: SIPSorcery.Net.SessionDescriptionTypes.SDP_CONTENTTYPE
-  nameWithType: SessionDescriptionTypes.SDP_CONTENTTYPE
 - uid: SIPSorcery.Net.STUNAddressAttribute
   name: STUNAddressAttribute
   href: api/SIPSorcery.Net.STUNAddressAttribute.html
@@ -13196,12 +13312,50 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnCallHungup
   fullName: SIPSorcery.SIP.App.SIPUserAgent.OnCallHungup
   nameWithType: SIPUserAgent.OnCallHungup
+- uid: SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromLocal
+  name: OnHoldFromLocal
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnHoldFromLocal
+  commentId: P:SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromLocal
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromLocal
+  nameWithType: SIPUserAgent.OnHoldFromLocal
+- uid: SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromLocal*
+  name: OnHoldFromLocal
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnHoldFromLocal_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromLocal
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromLocal
+  nameWithType: SIPUserAgent.OnHoldFromLocal
+- uid: SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromRemote
+  name: OnHoldFromRemote
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnHoldFromRemote
+  commentId: P:SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromRemote
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromRemote
+  nameWithType: SIPUserAgent.OnHoldFromRemote
+- uid: SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromRemote*
+  name: OnHoldFromRemote
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnHoldFromRemote_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromRemote
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromRemote
+  nameWithType: SIPUserAgent.OnHoldFromRemote
 - uid: SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
   name: OnReinviteRequest
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnReinviteRequest
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
   fullName: SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
   nameWithType: SIPUserAgent.OnReinviteRequest
+- uid: SIPSorcery.SIP.App.SIPUserAgent.RemotePutOnHold
+  name: RemotePutOnHold
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_RemotePutOnHold
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.RemotePutOnHold
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.RemotePutOnHold
+  nameWithType: SIPUserAgent.RemotePutOnHold
+- uid: SIPSorcery.SIP.App.SIPUserAgent.RemoteTookOffHold
+  name: RemoteTookOffHold
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_RemoteTookOffHold
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.RemoteTookOffHold
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.RemoteTookOffHold
+  nameWithType: SIPUserAgent.RemoteTookOffHold
 - uid: SIPSorcery.SIP.App.SIPUserAgent.SendReInviteRequest(SIPSorcery.Net.SDP)
   name: SendReInviteRequest(SDP)
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_SendReInviteRequest_SIPSorcery_Net_SDP_
@@ -13215,6 +13369,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.SendReInviteRequest
   nameWithType: SIPUserAgent.SendReInviteRequest
+- uid: SIPSorcery.SIP.App.SIPUserAgent.ServerCallCancelled
+  name: ServerCallCancelled
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_ServerCallCancelled
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.ServerCallCancelled
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.ServerCallCancelled
+  nameWithType: SIPUserAgent.ServerCallCancelled
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Transfer(SIPSorcery.SIP.SIPURI,System.TimeSpan,System.Threading.CancellationToken)
   name: Transfer(SIPURI, TimeSpan, CancellationToken)
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Transfer_SIPSorcery_SIP_SIPURI_System_TimeSpan_System_Threading_CancellationToken_
@@ -13228,30 +13388,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.Transfer
   nameWithType: SIPUserAgent.Transfer
-- uid: SIPSorcery.SIP.App.SIPUserAgent.UasCallCancelled
-  name: UasCallCancelled
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_UasCallCancelled
-  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.UasCallCancelled
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.UasCallCancelled
-  nameWithType: SIPUserAgent.UasCallCancelled
-- uid: SIPSorcery.SIP.App.SIPUserAgent.UasNoRingTimeout
-  name: UasNoRingTimeout
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_UasNoRingTimeout
-  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.UasNoRingTimeout
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.UasNoRingTimeout
-  nameWithType: SIPUserAgent.UasNoRingTimeout
-- uid: SIPSorcery.SIP.App.SIPUserAgent.UasStateChanged
-  name: UasStateChanged
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_UasStateChanged
-  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.UasStateChanged
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.UasStateChanged
-  nameWithType: SIPUserAgent.UasStateChanged
-- uid: SIPSorcery.SIP.App.SIPUserAgent.UasTransactionComplete
-  name: UasTransactionComplete
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_UasTransactionComplete
-  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.UasTransactionComplete
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.UasTransactionComplete
-  nameWithType: SIPUserAgent.UasTransactionComplete
 - uid: SIPSorcery.SIP.AuthHeaders
   name: AuthHeaders
   href: api/SIPSorcery.SIP.AuthHeaders.html
@@ -22848,12 +22984,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPURI.ToString
   nameWithType: SIPURI.ToString
-- uid: SIPSorcery.SIP.SIPURI.TryParse(System.String)
-  name: TryParse(String)
-  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_TryParse_System_String_
-  commentId: M:SIPSorcery.SIP.SIPURI.TryParse(System.String)
-  fullName: SIPSorcery.SIP.SIPURI.TryParse(System.String)
-  nameWithType: SIPURI.TryParse(String)
+- uid: SIPSorcery.SIP.SIPURI.TryParse(System.String,SIPSorcery.SIP.SIPURI@)
+  name: TryParse(String, out SIPURI)
+  href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_TryParse_System_String_SIPSorcery_SIP_SIPURI__
+  commentId: M:SIPSorcery.SIP.SIPURI.TryParse(System.String,SIPSorcery.SIP.SIPURI@)
+  name.vb: TryParse(String, ByRef SIPURI)
+  fullName: SIPSorcery.SIP.SIPURI.TryParse(System.String, out SIPSorcery.SIP.SIPURI)
+  fullName.vb: SIPSorcery.SIP.SIPURI.TryParse(System.String, ByRef SIPSorcery.SIP.SIPURI)
+  nameWithType: SIPURI.TryParse(String, out SIPURI)
+  nameWithType.vb: SIPURI.TryParse(String, ByRef SIPURI)
 - uid: SIPSorcery.SIP.SIPURI.TryParse*
   name: TryParse
   href: api/SIPSorcery.SIP.SIPURI.html#SIPSorcery_SIP_SIPURI_TryParse_

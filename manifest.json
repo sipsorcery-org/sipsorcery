@@ -137,6 +137,30 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.MediaStreamStatusEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.MediaStreamStatusEnum.html",
+          "hash": "7LT2JIr6pu/9ZZ587YpZfA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.MediaStreamStatusType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.MediaStreamStatusType.html",
+          "hash": "4LPiNfYBpIraZSA1ILerHA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.Mjpeg.Tags.yml",
       "output": {
         ".html": {
@@ -309,7 +333,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTPChannel.html",
-          "hash": "3aJYOvmVg4uQuD64RuNSeA=="
+          "hash": "73x1D4kLhT7qaCZUxZa4Ug=="
         }
       },
       "is_incremental": false,
@@ -765,7 +789,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDP.html",
-          "hash": "iN+/EoMF32A/g/M2RAGg6w=="
+          "hash": "8gG/IDMps1C4G+ySd8UZKg=="
         }
       },
       "is_incremental": false,
@@ -789,7 +813,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDPMediaAnnouncement.html",
-          "hash": "fKaaD/PlOBkJzwa/xyqd+w=="
+          "hash": "l7UQdFuZsDFdUMkgLNmgtw=="
         }
       },
       "is_incremental": false,
@@ -801,7 +825,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDPMediaFormat.html",
-          "hash": "uHmBH8sbQQ3vNIujJWB4cw=="
+          "hash": "SkAV+uFuXTVNpGkmNLyvrw=="
         }
       },
       "is_incremental": false,
@@ -825,7 +849,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDPMediaTypes.html",
-          "hash": "+Jdir+rAuDYWGK5iZw5Qgw=="
+          "hash": "l6/CfEDg8outjSScblFQZg=="
         }
       },
       "is_incremental": false,
@@ -837,7 +861,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDPMediaTypesEnum.html",
-          "hash": "PSwYtIDKgOSD/XEN/kWUcw=="
+          "hash": "jPo5PPAc+I/GhQFCS6yWxA=="
         }
       },
       "is_incremental": false,
@@ -1193,18 +1217,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.SessionDescriptionTypes.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.SessionDescriptionTypes.html",
-          "hash": "9Hxvp/Z6wyvjj/8kmptMvg=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.TurnServer.yml",
       "output": {
         ".html": {
@@ -1257,7 +1269,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "AIGV+axBtHh5UTN8/w9U+Q=="
+          "hash": "G17eo7rmE2aWs7fDudyfMA=="
         }
       },
       "is_incremental": false,
@@ -1857,7 +1869,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPServerUserAgent.html",
-          "hash": "yb56rG+ngNGiRzlBRRsJZg=="
+          "hash": "B6MXabfHEw1tmh6dPnvoXg=="
         }
       },
       "is_incremental": false,
@@ -1905,7 +1917,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPUserAgent.html",
-          "hash": "dlZX1HzyEZE3d1Epv1Hbww=="
+          "hash": "EepehaDBhWIAifkTnwDHAQ=="
         }
       },
       "is_incremental": false,
@@ -1917,7 +1929,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.html",
-          "hash": "0m5vdmF2pNEmYvqVbM+9Ig=="
+          "hash": "1e2AcdOOO6KAkXFnxti7/Q=="
         }
       },
       "is_incremental": false,
@@ -2961,7 +2973,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTransport.html",
-          "hash": "ww1l7e9PaSk50e8XQB7TTQ=="
+          "hash": "+GAErhr8S/xqs/RK12+8rw=="
         }
       },
       "is_incremental": false,
@@ -3033,7 +3045,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPURI.html",
-          "hash": "68Fi6lxOBvqFpL+jxu/ZQg=="
+          "hash": "oqbEXPtIYnebkX/d/cTUKw=="
         }
       },
       "is_incremental": false,
@@ -3477,7 +3489,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "YqpMjX+/tX+npt44Nf60/w=="
+          "hash": "haUImyInbyWEUDC1VNt/tA=="
         }
       },
       "is_incremental": false,
@@ -3686,17 +3698,10 @@
         "full_build_reason_code": "NoAvailableBuildCache"
       },
       "processors": {
-        "TocDocumentProcessor": {
-          "can_incremental": false,
-          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
-          "incrementalPhase": "build",
-          "total_file_count": 0,
-          "skipped_file_count": 0
-        },
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 288,
+          "total_file_count": 289,
           "skipped_file_count": 0
         },
         "ConceptualDocumentProcessor": {
@@ -3708,6 +3713,13 @@
         "ResourceDocumentProcessor": {
           "can_incremental": false,
           "details": "Processor ResourceDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build",
+          "total_file_count": 0,
+          "skipped_file_count": 0
+        },
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
           "incrementalPhase": "build",
           "total_file_count": 0,
           "skipped_file_count": 0
