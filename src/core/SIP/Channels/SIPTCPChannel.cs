@@ -327,11 +327,14 @@ namespace SIPSorcery.SIP
                     RemoteEndPoint = dstEndPoint
                 };
 
+                // NOTE: The approach of setting the buffer on the connect args worked properly on Windows BUT
+                // not so on Linux. Since it's such a tiny saving skip setting the buffer on the connect and 
+                // do the send once the sockets are connected (use SendOnConnected).
                 // If this is a TCP channel can take a shortcut and set the first send payload on the connect args.
-                if (buffer != null && buffer.Length > 0 && serverCertificateName == null)
-                {
-                    connectArgs.SetBuffer(buffer, 0, buffer.Length);
-                }
+                //if (buffer != null && buffer.Length > 0 && serverCertificateName == null)
+                //{
+                //    connectArgs.SetBuffer(buffer, 0, buffer.Length);
+                //}
 
                 logger.LogDebug($"Attempting TCP connection from {localEndPoint} to {dstEndPoint}.");
 
@@ -369,6 +372,8 @@ namespace SIPSorcery.SIP
                     m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
 
                     await OnClientConnect(sipStmConn, buffer, serverCertificateName);
+
+                    SendOnConnected(sipStmConn, buffer);
                 }
 
                 return connectResult;
@@ -544,16 +549,16 @@ namespace SIPSorcery.SIP
                         // Important: Due to the way TCP works the end of the connection that initiates the close
                         // is meant to go into a TIME_WAIT state. On Windows that results in the same pair of sockets
                         // being unable to reconnect for 30s. SIP can deal with stray and duplicate messages at the 
-                        // appliction layer so the TIME_WAIT is not that useful. While not useful it is also a major annoyance
+                        // appliction layer so the TIME_WAIT is not that useful. In fact it TIME_WAIT is a major annoyance for SIP
                         // as if a connection is dropped for whatever reason, such as a parser error or inactivity, it will
-                        // prevent the connection being re-established.
+                        // prevent the connection being re-established for the TIME_WAIT period.
                         //
                         // For this reason this implementation uses a hard RST close for client initiated socket closes. This
                         // results in a TCP RST packet instead of the graceful FIN-ACK sequence. Two things are necessary with
                         // WinSock2 to force the hard RST:
                         //
                         // - the Linger option must be set on the raw socket before binding as Linger option {1, 0}.
-                        // - the close method must be called on teh socket without shutting down the stream.
+                        // - the close method must be called on the socket without shutting down the stream.
 
                         socket.Close();
                     }
@@ -621,6 +626,17 @@ namespace SIPSorcery.SIP
 
                 try
                 {
+                    logger.LogDebug($"Stopping SIP {ProtDescr} Channel listener {ListeningEndPoint}.");
+
+                    if (Environment.OSVersion.Platform == PlatformID.Unix)
+                    {
+                        // Had problems closing down the listener on Linux. The TcpListener.Stop method was hanging.
+                        // Shutting down the socket first stops the hang but throws a not connected exception.
+                        // TODO: Track down why the Stop method hangs.
+                        //m_tcpServerListener.Server.Shutdown(SocketShutdown.Both);
+                        //m_tcpServerListener.Server.Close();
+                    }
+
                     m_tcpServerListener.Stop();
                 }
                 catch (Exception excp)

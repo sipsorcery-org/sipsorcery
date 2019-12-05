@@ -181,7 +181,7 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-                var clientChannel = new SIPTCPChannel(IPAddress.Any, 7065);
+                var clientChannel = new SIPTCPChannel(IPAddress.Loopback, 7065);
                 clientChannel.DisableLocalTCPSocketsCheck = true;
                 SIPURI serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback);
 
@@ -199,6 +199,8 @@ namespace SIPSorcery.SIP.UnitTests
                 Assert.True(testComplete.Task.Result);
 
                 logger.LogDebug($"Completed for test run {i}.");
+
+                Task.Delay(1000).Wait();
             }
 
             cancelServer.Cancel();
@@ -214,9 +216,9 @@ namespace SIPSorcery.SIP.UnitTests
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-            Assert.True(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
+            Assert.True(File.Exists(@"certs/localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
-            var serverCertificate = new X509Certificate2(@"certs\localhost.pfx", "");
+            var serverCertificate = new X509Certificate2(@"certs/localhost.pfx", "");
             var verifyCert = serverCertificate.Verify();
             logger.LogDebug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
 
@@ -250,9 +252,9 @@ namespace SIPSorcery.SIP.UnitTests
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-            Assert.True(File.Exists(@"certs\localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
+            Assert.True(File.Exists(@"certs/localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
-            var serverCertificate = new X509Certificate2(@"certs\localhost.pfx", "");
+            var serverCertificate = new X509Certificate2(@"certs/localhost.pfx", "");
             var verifyCert = serverCertificate.Verify();
             logger.LogDebug("Server Certificate loaded from file, Subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
 
@@ -341,11 +343,17 @@ namespace SIPSorcery.SIP.UnitTests
                 logger.LogDebug(sipResponse.ToString());
             };
 
-            tcpChannel.ConnectClientAsync(listenEP, null, null).Wait();
+            tcpChannel.ConnectClientAsync(listenEP, null, null).Wait(TimeSpan.FromMilliseconds(TRANSPORT_TEST_TIMEOUT));
+
+            logger.LogDebug("Test client connected.");
 
             Task.WhenAny(new Task[] { testComplete.Task, Task.Delay(TRANSPORT_TEST_TIMEOUT) }).Wait();
 
+            logger.LogDebug("Test completed, shutting down SIP transport layer.");
+
             transport.Shutdown();
+
+            logger.LogDebug("SIP transport layer shutdown.");
 
             // Give the SIP transport time to shutdown. Keeps exception messages out of the logs.
             Task.Delay(500).Wait();
