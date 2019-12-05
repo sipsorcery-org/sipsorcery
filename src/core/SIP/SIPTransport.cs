@@ -154,9 +154,9 @@ namespace SIPSorcery.SIP
 
             ResolveSIPEndPoint_External = sipResolver;
             m_transactionEngine = transactionEngine;
-            AddSIPChannel(sipChannel);
-
             m_queueIncoming = queueIncoming;
+
+            AddSIPChannel(sipChannel);
         }
 
         /// <summary>

@@ -13,7 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using Xunit;
@@ -24,6 +24,8 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPTransactionEngineUnitTest
     {
+        private const int TRANSACTION_EXCHANGE_TIMEOUT_MS = 5000;
+
         private class MockSIPDNSManager
         {
             public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool async)
@@ -106,6 +108,8 @@ namespace SIPSorcery.SIP.UnitTests
 
             try
             {
+                TaskCompletionSource<bool> uasConfirmedTask = new TaskCompletionSource<bool>();
+
                 SIPTransactionEngine clientEngine = new SIPTransactionEngine();     // Client side of the INVITE.
                 clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)), false);
                 SetTransportTraceEvents(clientTransport);
@@ -119,6 +123,21 @@ namespace SIPSorcery.SIP.UnitTests
                     logger.LogDebug("Server Transport Request In: " + sipRequest.Method + ".");
                     serverTransaction = serverTransport.CreateUASTransaction(sipRequest, null);
                     SetTransactionTraceEvents(serverTransaction);
+                    serverTransaction.NewCallReceived += (lep, rep, sipTransaction, newCallRequest) =>
+                    {
+                        logger.LogDebug("Server new call receeived.");
+                        //var ringingResponse = SIPTransport.GetResponse(newCallRequest, SIPResponseStatusCodesEnum.Ringing, null);
+                        //sipTransaction.SendProvisionalResponse(ringingResponse);
+                        var busyResponse = SIPTransport.GetResponse(newCallRequest, SIPResponseStatusCodesEnum.BusyHere, null);
+                        sipTransaction.SendFinalResponse(busyResponse);
+                    };
+                    serverTransaction.TransactionStateChanged += (tx) =>
+                    {
+                        if(tx.TransactionState == SIPTransactionStatesEnum.Confirmed)
+                        {
+                            uasConfirmedTask.SetResult(true);
+                        }
+                    };
                     serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
                 };
 
@@ -132,7 +151,7 @@ namespace SIPSorcery.SIP.UnitTests
                 clientEngine.AddTransaction(clientTransaction);
                 clientTransaction.SendInviteRequest(inviteRequest);
 
-                Thread.Sleep(500);
+                uasConfirmedTask.Task.Wait(TRANSACTION_EXCHANGE_TIMEOUT_MS);
 
                 Assert.True(clientTransaction.TransactionState == SIPTransactionStatesEnum.Completed, "Client transaction in incorrect state.");
                 Assert.True(serverTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed, "Server transaction in incorrect state.");
