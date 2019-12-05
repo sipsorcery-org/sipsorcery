@@ -43,7 +43,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// Tests that an OPTIONS request can be sent and received on two separate IPv6 sockets using the loopback address.
         /// </summary>
         [Fact]
-        //[TestCategory("IPv6")]
+        [Trait("Category", "IPv6")]
         public void IPv6LoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -103,7 +103,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// Tests that an OPTIONS request can be sent and received on two separate TCP IPv6 sockets using the loopback address.
         /// </summary>
         [Fact]
-        //[TestCategory("IPv6")]
+        [Trait("Category", "IPv6")]
         public void IPv6TcpLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
@@ -215,7 +215,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// Tests that an OPTIONS request can be sent and received on two separate TLS IPv6 sockets using the loopback address.
         /// </summary>
         [Fact]
-        //[TestCategory("IPv6")]
+        [Trait("Category", "IPv6")]
         public void IPv6TlsLoopbackSendReceiveTest()
         {
             CancellationTokenSource cancelServer = new CancellationTokenSource();
