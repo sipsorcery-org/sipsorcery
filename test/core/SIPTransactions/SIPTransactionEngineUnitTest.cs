@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -106,12 +107,12 @@ namespace SIPSorcery.SIP.UnitTests
             try
             {
                 SIPTransactionEngine clientEngine = new SIPTransactionEngine();     // Client side of the INVITE.
-                clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)), false);
+                clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)), false);
                 SetTransportTraceEvents(clientTransport);
 
                 SIPTransactionEngine serverEngine = new SIPTransactionEngine();     // Server side of the INVITE.
                 UASInviteTransaction serverTransaction = null;
-                serverTransport = new SIPTransport(MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)), false);
+                serverTransport = new SIPTransport(MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)), false);
                 SetTransportTraceEvents(serverTransport);
                 serverTransport.SIPTransportRequestReceived += (localEndPoint, remoteEndPoint, sipRequest) =>
                 {
@@ -121,7 +122,8 @@ namespace SIPSorcery.SIP.UnitTests
                     serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
                 };
 
-                SIPURI dummyURI = SIPURI.ParseSIPURI("sip:dummy@" + serverTransport.GetSIPChannels().First().GetLocalSIPEndPointForDestination(IPAddress.Loopback).GetIPEndPoint());
+                SIPURI dummyURI = new SIPURI("dummy", serverTransport.GetSIPChannels().First().ListeningEndPoint.ToString(), null, SIPSchemesEnum.sip);
+                //SIPURI dummyURI = SIPURI.ParseSIPURI("sip:dummy@" + serverTransport.GetSIPChannels().First().GetLocalSIPEndPointForDestination(IPAddress.Loopback).GetIPEndPoint());
                 SIPRequest inviteRequest = GetDummyINVITERequest(dummyURI);
 
                 // Send the invite to the server side.
@@ -137,15 +139,8 @@ namespace SIPSorcery.SIP.UnitTests
             }
             finally
             {
-                if (clientTransport != null)
-                {
-                    clientTransport.Shutdown();
-                }
-
-                if (serverTransport != null)
-                {
-                    serverTransport.Shutdown();
-                }
+                clientTransport.Shutdown();
+                serverTransport.Shutdown();
             }
         }
 
@@ -196,17 +191,16 @@ namespace SIPSorcery.SIP.UnitTests
         private SIPRequest GetDummyINVITERequest(SIPURI dummyURI)
         {
             string dummyFrom = "<sip:unittest@mysipswitch.com>";
-            string dummyContact = "sip:127.0.0.1:1234";
             SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, dummyURI);
 
             SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader(dummyFrom), new SIPToHeader(null, dummyURI, null), 1, CallProperties.CreateNewCallId());
             inviteHeader.From.FromTag = CallProperties.CreateNewTag();
-            inviteHeader.Contact = SIPContactHeader.ParseContactHeader(dummyContact);
+            inviteHeader.Contact = new List<SIPContactHeader> { SIPContactHeader.GetDefaultSIPContactHeader() };
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
             inviteHeader.UserAgent = "unittest";
             inviteRequest.Header = inviteHeader;
 
-            SIPViaHeader viaHeader = new SIPViaHeader("127.0.0.1", 1234, CallProperties.CreateBranchId(), SIPProtocolsEnum.udp);
+            SIPViaHeader viaHeader = SIPViaHeader.GetDefaultSIPViaHeader();
             inviteRequest.Header.Vias.PushViaHeader(viaHeader);
 
             inviteRequest.Body = "dummy";
