@@ -17,6 +17,7 @@ jobs:
       with:
         dotnet-version: 2.2.108
     - name: Build with dotnet
-      run: dotnet build src/SIPSorcery.sln --framework netcoreapp2.2 --configuration Release
+      # Only build the library project and not the solution. The unit test project requires > dotnet 3.0.
+      run: dotnet build src/SIPSorcery.csproj --framework netcoreapp2.2 --configuration Release 
     - name: Unit tests
       run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.0
