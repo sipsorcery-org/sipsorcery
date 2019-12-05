@@ -221,13 +221,13 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public void ReceiveMessage(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
+        public async void ReceiveMessage(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
         {
             try
             {
                 if (!m_queueIncoming)
                 {
-                    SIPMessageReceived(sipChannel, localEndPoint, remoteEndPoint, buffer).Wait();
+                    await SIPMessageReceived(sipChannel, localEndPoint, remoteEndPoint, buffer);
                 }
                 else
                 {
