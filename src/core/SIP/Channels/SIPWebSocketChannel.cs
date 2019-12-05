@@ -211,7 +211,7 @@ namespace SIPSorcery.SIP
         /// <param name="destinationEndPoint">The remote destiation end point to send the data to.</param>
         /// <param name="buffer">The data to send.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override void Send(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
+        public async override void Send(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
         {
             if (destinationEndPoint == null)
             {
@@ -222,7 +222,7 @@ namespace SIPSorcery.SIP
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPWebSocketChannel.");
             }
 
-            SendAsync(destinationEndPoint, buffer, connectionIDHint).Wait();
+            await SendAsync(destinationEndPoint, buffer, connectionIDHint);
         }
 
         /// <summary>

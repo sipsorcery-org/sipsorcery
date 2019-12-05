@@ -125,9 +125,7 @@ namespace SIPSorcery.SIP.UnitTests
                     SetTransactionTraceEvents(serverTransaction);
                     serverTransaction.NewCallReceived += (lep, rep, sipTransaction, newCallRequest) =>
                     {
-                        logger.LogDebug("Server new call receeived.");
-                        //var ringingResponse = SIPTransport.GetResponse(newCallRequest, SIPResponseStatusCodesEnum.Ringing, null);
-                        //sipTransaction.SendProvisionalResponse(ringingResponse);
+                        logger.LogDebug("Server new call received.");
                         var busyResponse = SIPTransport.GetResponse(newCallRequest, SIPResponseStatusCodesEnum.BusyHere, null);
                         sipTransaction.SendFinalResponse(busyResponse);
                     };
@@ -142,7 +140,6 @@ namespace SIPSorcery.SIP.UnitTests
                 };
 
                 SIPURI dummyURI = new SIPURI("dummy", serverTransport.GetSIPChannels().First().ListeningEndPoint.ToString(), null, SIPSchemesEnum.sip);
-                //SIPURI dummyURI = SIPURI.ParseSIPURI("sip:dummy@" + serverTransport.GetSIPChannels().First().GetLocalSIPEndPointForDestination(IPAddress.Loopback).GetIPEndPoint());
                 SIPRequest inviteRequest = GetDummyINVITERequest(dummyURI);
 
                 // Send the invite to the server side.
@@ -264,7 +261,7 @@ namespace SIPSorcery.SIP.UnitTests
 
         void transport_UnrecognisedMessageReceived(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, byte[] buffer)
         {
-            logger.LogDebug("Unrecognised: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + buffer.Length + " bytes.");
+            logger.LogDebug("Unrecognised: " + localEndPoint + "<-" + fromEndPoint + " " + buffer.Length + " bytes.");
         }
 
         void transport_STUNRequestReceived(IPEndPoint receivedEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength)
@@ -279,27 +276,27 @@ namespace SIPSorcery.SIP.UnitTests
 
         void transport_SIPResponseInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, SIPResponse sipResponse)
         {
-            logger.LogDebug("Response In: " + localEndPoint + "<-" + fromEndPoint.ToString() + "\n" + sipResponse.ToString());
+            logger.LogDebug("Response In: " + localEndPoint + "<-" + fromEndPoint + "\n" + sipResponse.ToString());
         }
 
         void transport_SIPRequestOutTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint toEndPoint, SIPRequest sipRequest)
         {
-            logger.LogDebug("Request Out: " + localEndPoint + "->" + toEndPoint.ToString() + "\n" + sipRequest.ToString());
+            logger.LogDebug("Request Out: " + localEndPoint + "->" + toEndPoint + "\n" + sipRequest.ToString());
         }
 
         void transport_SIPRequestInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, SIPRequest sipRequest)
         {
-            logger.LogDebug("Request In: " + localEndPoint + "<-" + fromEndPoint.ToString() + "\n" + sipRequest.ToString());
+            logger.LogDebug("Request In: " + localEndPoint + "<-" + fromEndPoint + "\n" + sipRequest.ToString());
         }
 
         void transport_SIPBadResponseInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, string message, SIPValidationFieldsEnum errorField, string rawMessage)
         {
-            logger.LogDebug("Bad Response: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + errorField + ". " + message + "\n" + rawMessage);
+            logger.LogDebug("Bad Response: " + localEndPoint + "<-" + fromEndPoint + " " + errorField + ". " + message + "\n" + rawMessage);
         }
 
         void transport_SIPBadRequestInTraceEvent(SIPEndPoint localEndPoint, SIPEndPoint fromEndPoint, string message, SIPValidationFieldsEnum errorField, string rawMessage)
         {
-            logger.LogDebug("Bad Request: " + localEndPoint + "<-" + fromEndPoint.ToString() + " " + errorField + "." + message + "\n" + rawMessage);
+            logger.LogDebug("Bad Request: " + localEndPoint + "<-" + fromEndPoint + " " + errorField + "." + message + "\n" + rawMessage);
         }
     }
 }
