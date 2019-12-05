@@ -1,4 +1,4 @@
-name: dotnet-core22-build 
+name: sipsorcery-core22 
 
 on:
   push:
