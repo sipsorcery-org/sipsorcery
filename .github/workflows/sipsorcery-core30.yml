@@ -1,4 +1,4 @@
-name: sipsorcery-core30-dev
+name: sipsorcery-core30
 
 on:
   push:
