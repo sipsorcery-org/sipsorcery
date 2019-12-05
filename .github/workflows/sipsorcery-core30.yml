@@ -1,4 +1,4 @@
-name: sipsorcery-core22 
+name: sipsorcery-core30 
 
 on:
   push:
@@ -16,7 +16,5 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.0.100
-    - name: Build with dotnet
-      run: dotnet build src/SIPSorcery.sln --framework netcoreapp3.0 --configuration Release 
     - name: Unit tests
       run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.0
