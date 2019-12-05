@@ -1,6 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <Compile Remove="core\Properties\**" />
+    <EmbeddedResource Remove="core\Properties\**" />
+    <None Remove="core\Properties\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="core\SIPEvents\Dialog\EventDialogSchema.xsd" />
     <None Remove="core\SIPEvents\Presence\PIDFSchema.xsd" />
     <None Include="icon.png" Pack="true" PackagePath="" />
