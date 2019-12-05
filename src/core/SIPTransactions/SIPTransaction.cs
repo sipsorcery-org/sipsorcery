@@ -398,13 +398,13 @@ namespace SIPSorcery.SIP
             await m_sipTransport.SendRequestAsync(dstEndPoint, sipRequest);
         }
 
-        public void SendRequest(SIPRequest sipRequest)
+        public async void SendRequest(SIPRequest sipRequest)
         {
             var lookupResult = m_sipTransport.GetRequestEndPoint(sipRequest, OutboundProxy, true);
 
             if (lookupResult != null && lookupResult.LookupError == null)
             {
-                SendRequest(lookupResult.GetSIPEndPoint(), sipRequest).Wait();
+                await SendRequest(lookupResult.GetSIPEndPoint(), sipRequest);
             }
             else
             {
@@ -412,7 +412,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public void SendReliableRequest()
+        public async void SendReliableRequest()
         {
             FireTransactionTraceMessage($"Transaction send request reliable {TransactionRequest.StatusLine}");
 
@@ -421,7 +421,7 @@ namespace SIPSorcery.SIP
                 UpdateTransactionState(SIPTransactionStatesEnum.Calling);
             }
 
-            m_sipTransport.SendSIPReliable(this);
+            await m_sipTransport.SendSIPReliableAsync(this);
         }
 
         protected SIPResponse GetInfoResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum sipResponseCode)

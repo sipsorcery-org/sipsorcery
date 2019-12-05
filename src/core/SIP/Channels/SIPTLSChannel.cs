@@ -162,13 +162,13 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="sipStreamConn">The stream connection object that holds the SSL stream.</param>
         /// <param name="buffer">The data to send.</param>
-        protected override void SendOnConnected(SIPStreamConnection sipStreamConn, byte[] buffer)
+        protected async override void SendOnConnected(SIPStreamConnection sipStreamConn, byte[] buffer)
         {
             IPEndPoint dstEndPoint = sipStreamConn.RemoteEndPoint;
 
             try
             {
-                sipStreamConn.SslStream.WriteAsync(buffer, 0, buffer.Length).Wait();
+                await sipStreamConn.SslStream.WriteAsync(buffer, 0, buffer.Length);
             }
             catch (SocketException sockExcp)
             {

@@ -376,9 +376,9 @@ namespace SIPSorcery.SIP
         /// - find the most appropriate local SIP channel in this SIP transport to send the request on.
         /// </summary>
         /// <param name="sipRequest">The SIP request to send.</param>
-        public void SendRequest(SIPRequest sipRequest)
+        public async void SendRequest(SIPRequest sipRequest)
         {
-            SendRequestAsync(sipRequest).Wait();
+            await SendRequestAsync(sipRequest);
         }
 
         /// <summary>
@@ -435,9 +435,9 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dstEndPoint">The destination end point to send the request to.</param>
         /// <param name="sipRequest">The SIP request to send.</param>
-        public void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
+        public async void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
-            SendRequestAsync(dstEndPoint, sipRequest).Wait();
+            await SendRequestAsync(dstEndPoint, sipRequest);
         }
 
         /// <summary>
@@ -523,9 +523,9 @@ namespace SIPSorcery.SIP
         /// Sends a SIP transaction reliably where reliably for UDP means retransmitting the message up to eleven times.
         /// </summary>
         /// <param name="sipTransaction">The transaction to send.</param>
-        public void SendSIPReliable(SIPTransaction sipTransaction)
+        public async void SendSIPReliable(SIPTransaction sipTransaction)
         {
-            SendSIPReliableAsync(sipTransaction).Wait();
+            await SendSIPReliableAsync(sipTransaction);
         }
 
         /// <summary>
@@ -607,9 +607,9 @@ namespace SIPSorcery.SIP
         /// Attempts to send a SIP response back to the SIP request origin.
         /// </summary>
         /// <param name="sipResponse">The SIP response to send.</param>
-        public void SendResponse(SIPResponse sipResponse)
+        public async void SendResponse(SIPResponse sipResponse)
         {
-            SendResponseAsync(sipResponse).Wait();
+            await SendResponseAsync(sipResponse);
         }
 
         /// <summary>
@@ -794,7 +794,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void ProcessInMessage()
+        private async void ProcessInMessage()
         {
             try
             {
@@ -807,7 +807,7 @@ namespace SIPSorcery.SIP
                         m_inMessageQueue.TryDequeue(out var incomingMessage);
                         if (incomingMessage != null)
                         {
-                            SIPMessageReceived(incomingMessage.LocalSIPChannel, incomingMessage.LocalEndPoint, incomingMessage.RemoteEndPoint, incomingMessage.Buffer).Wait();
+                            await SIPMessageReceived(incomingMessage.LocalSIPChannel, incomingMessage.LocalEndPoint, incomingMessage.RemoteEndPoint, incomingMessage.Buffer);
                         }
                     }
 
