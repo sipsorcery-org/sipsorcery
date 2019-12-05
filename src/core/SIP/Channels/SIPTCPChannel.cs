@@ -168,11 +168,12 @@ namespace SIPSorcery.SIP
             {
                 try
                 {
-                    Socket clientSocket = m_tcpServerListener.AcceptSocket();
-                    logger.LogDebug($"SIP {ProtDescr} Channel connection accepted from {clientSocket.RemoteEndPoint} by {clientSocket.LocalEndPoint}.");
+                    Socket clientSocket = await m_tcpServerListener.AcceptSocketAsync();
 
                     if (!Closed)
                     {
+                        logger.LogDebug($"SIP {ProtDescr} Channel connection accepted from {clientSocket.RemoteEndPoint} by {clientSocket.LocalEndPoint}.");
+
                         clientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                         clientSocket.LingerState = new LingerOption(true, 0);
 
@@ -183,6 +184,11 @@ namespace SIPSorcery.SIP
 
                         await OnAccept(sipStmConn);
                     }
+                }
+                catch(ObjectDisposedException)
+                {
+                    // This is a result of the transport channel being closed. Safe to ignore.
+                    logger.LogDebug($"SIP {ProtDescr} Channel accepts for {ListeningEndPoint} cancelled.");
                 }
                 catch (SocketException acceptSockExcp) when (acceptSockExcp.SocketErrorCode == SocketError.Interrupted)
                 {
@@ -560,6 +566,10 @@ namespace SIPSorcery.SIP
                         // - the Linger option must be set on the raw socket before binding as Linger option {1, 0}.
                         // - the close method must be called on the socket without shutting down the stream.
 
+                        // Linux (WSL) note: This mechanism does not work. Calling socket close does not send the RST and instead
+                        // sends the graceful FIN-ACK.
+                        // TODO: Research if there is a way to force a socket reset with dotnet on LINUX.
+
                         socket.Close();
                     }
                 }
@@ -615,10 +625,14 @@ namespace SIPSorcery.SIP
                 {
                     foreach (SIPStreamConnection streamConnection in m_connections.Values)
                     {
-                        if (streamConnection.StreamSocket != null)
+                        try
                         {
                             // See explanation in OnSIPStreamSocketDisconnected on why the close is done on the socket and NOT the stream.
-                            streamConnection.StreamSocket.Close();
+                            streamConnection.StreamSocket?.Close();
+                        }
+                        catch(Exception closeExcp)
+                        {
+                            logger.LogError($"Exception closing SIP connection on {ProtDescr}. {closeExcp.Message}");
                         }
                     }
                     m_connections.Clear();
@@ -628,21 +642,14 @@ namespace SIPSorcery.SIP
                 {
                     logger.LogDebug($"Stopping SIP {ProtDescr} Channel listener {ListeningEndPoint}.");
 
-                    if (Environment.OSVersion.Platform == PlatformID.Unix)
-                    {
-                        // Had problems closing down the listener on Linux. The TcpListener.Stop method was hanging.
-                        // Shutting down the socket first stops the hang but throws a not connected exception.
-                        // TODO: Track down why the Stop method hangs.
-                        //m_tcpServerListener.Server.Shutdown(SocketShutdown.Both);
-                        //m_tcpServerListener.Server.Close();
-                    }
-
                     m_tcpServerListener.Stop();
                 }
-                catch (Exception excp)
+                catch (Exception stopExcp)
                 {
-                    logger.LogWarning($"Exception SIP {ProtDescr} Channel Close (shutting down listener). {excp.Message}");
+                    logger.LogError($"Exception SIP {ProtDescr} Channel Close (shutting down listener). {stopExcp.Message}");
                 }
+
+                logger.LogDebug($"Successfully closed SIP {ProtDescr} Channel for {ListeningEndPoint}.");
             }
         }
 
