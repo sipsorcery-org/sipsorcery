@@ -87,9 +87,8 @@ namespace SIPSorcery.SIP
         /// For the TLS channel once the TCP client socket is connected it needs to be wrapped up in an SSL stream.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly connected client socket.</param>
-        /// <param name="buffer">The data to send.</param>
         /// <param name="serverCertificateName">The expected common name on the SSL certificate supplied by the server.</param>
-        protected override async Task OnClientConnect(SIPStreamConnection streamConnection, byte[] buffer, string serverCertificateName)
+        protected override async Task OnClientConnect(SIPStreamConnection streamConnection, string serverCertificateName)
         {
             NetworkStream networkStream = new NetworkStream(streamConnection.StreamSocket, true);
             SslStream sslStream = new SslStream(networkStream, false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
@@ -102,8 +101,6 @@ namespace SIPSorcery.SIP
             logger.LogDebug($"SIP TLS Channel successfully upgraded client connection to SSL stream for {ListeningEndPoint}->{streamConnection.StreamSocket.RemoteEndPoint}.");
 
             sslStream.BeginRead(streamConnection.SslStreamBuffer, 0, SIPStreamConnection.MaxSIPTCPMessageSize, new AsyncCallback(OnReadCallback), streamConnection);
-
-            await sslStream.WriteAsync(buffer, 0, buffer.Length);
         }
 
         /// <summary>
