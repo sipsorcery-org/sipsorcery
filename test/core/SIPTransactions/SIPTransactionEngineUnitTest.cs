@@ -106,12 +106,12 @@ namespace SIPSorcery.SIP.UnitTests
             try
             {
                 SIPTransactionEngine clientEngine = new SIPTransactionEngine();     // Client side of the INVITE.
-                clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)), false);
+                clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)), false);
                 SetTransportTraceEvents(clientTransport);
 
                 SIPTransactionEngine serverEngine = new SIPTransactionEngine();     // Server side of the INVITE.
                 UASInviteTransaction serverTransaction = null;
-                serverTransport = new SIPTransport(MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)), false);
+                serverTransport = new SIPTransport(MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)), false);
                 SetTransportTraceEvents(serverTransport);
                 serverTransport.SIPTransportRequestReceived += (localEndPoint, remoteEndPoint, sipRequest) =>
                 {
