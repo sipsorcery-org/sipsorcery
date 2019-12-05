@@ -3,7 +3,7 @@ name: sipsorcery-core30-dev
 on:
   push:
     branches:
-      - ghactions
+      - master
 
 jobs:
   build:
