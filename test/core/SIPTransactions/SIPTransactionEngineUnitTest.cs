@@ -139,15 +139,8 @@ namespace SIPSorcery.SIP.UnitTests
             }
             finally
             {
-                if (clientTransport != null)
-                {
-                    clientTransport.Shutdown();
-                }
-
-                if (serverTransport != null)
-                {
-                    serverTransport.Shutdown();
-                }
+                clientTransport.Shutdown();
+                serverTransport.Shutdown();
             }
         }
 
@@ -198,7 +191,6 @@ namespace SIPSorcery.SIP.UnitTests
         private SIPRequest GetDummyINVITERequest(SIPURI dummyURI)
         {
             string dummyFrom = "<sip:unittest@mysipswitch.com>";
-            //string dummyContact = "sip:127.0.0.1:1234";
             SIPRequest inviteRequest = new SIPRequest(SIPMethodsEnum.INVITE, dummyURI);
 
             SIPHeader inviteHeader = new SIPHeader(SIPFromHeader.ParseFromHeader(dummyFrom), new SIPToHeader(null, dummyURI, null), 1, CallProperties.CreateNewCallId());
