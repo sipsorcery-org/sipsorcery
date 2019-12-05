@@ -20853,15 +20853,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.OnAccept
   nameWithType: SIPTCPChannel.OnAccept
-- uid: SIPSorcery.SIP.SIPTCPChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.Byte[],System.String)
-  name: OnClientConnect(SIPStreamConnection, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.Byte[],System.String)
-  name.vb: OnClientConnect(SIPStreamConnection, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection, System.Byte(), System.String)
-  nameWithType: SIPTCPChannel.OnClientConnect(SIPStreamConnection, Byte[], String)
-  nameWithType.vb: SIPTCPChannel.OnClientConnect(SIPStreamConnection, Byte(), String)
+- uid: SIPSorcery.SIP.SIPTCPChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.String)
+  name: OnClientConnect(SIPStreamConnection, String)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_String_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.String)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection, System.String)
+  nameWithType: SIPTCPChannel.OnClientConnect(SIPStreamConnection, String)
 - uid: SIPSorcery.SIP.SIPTCPChannel.OnClientConnect*
   name: OnClientConnect
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_OnClientConnect_
@@ -21059,15 +21056,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTLSChannel.OnAccept
   nameWithType: SIPTLSChannel.OnAccept
-- uid: SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.Byte[],System.String)
-  name: OnClientConnect(SIPStreamConnection, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.Byte[],System.String)
-  name.vb: OnClientConnect(SIPStreamConnection, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection, System.Byte(), System.String)
-  nameWithType: SIPTLSChannel.OnClientConnect(SIPStreamConnection, Byte[], String)
-  nameWithType.vb: SIPTLSChannel.OnClientConnect(SIPStreamConnection, Byte(), String)
+- uid: SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.String)
+  name: OnClientConnect(SIPStreamConnection, String)
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_String_
+  commentId: M:SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.String)
+  fullName: SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection, System.String)
+  nameWithType: SIPTLSChannel.OnClientConnect(SIPStreamConnection, String)
 - uid: SIPSorcery.SIP.SIPTLSChannel.OnClientConnect*
   name: OnClientConnect
   href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_
