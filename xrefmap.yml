@@ -5923,6 +5923,12 @@ references:
   commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute(System.Int32,System.String)
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute(System.Int32, System.String)
   nameWithType: SDPMediaAnnouncement.AddFormatAttribute(Int32, String)
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute(System.String,System.String)
+  name: AddFormatAttribute(String, String)
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_AddFormatAttribute_System_String_System_String_
+  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute(System.String,System.String)
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute(System.String, System.String)
+  nameWithType: SDPMediaAnnouncement.AddFormatAttribute(String, String)
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatAttribute*
   name: AddFormatAttribute
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_AddFormatAttribute_
@@ -5936,6 +5942,12 @@ references:
   commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute(System.Int32,System.String)
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute(System.Int32, System.String)
   nameWithType: SDPMediaAnnouncement.AddFormatParameterAttribute(Int32, String)
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute(System.String,System.String)
+  name: AddFormatParameterAttribute(String, String)
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_AddFormatParameterAttribute_System_String_System_String_
+  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute(System.String,System.String)
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute(System.String, System.String)
+  nameWithType: SDPMediaAnnouncement.AddFormatParameterAttribute(String, String)
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.AddFormatParameterAttribute*
   name: AddFormatParameterAttribute
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_AddFormatParameterAttribute_
@@ -5993,6 +6005,12 @@ references:
   commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat(System.Int32)
   fullName: SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat(System.Int32)
   nameWithType: SDPMediaAnnouncement.HasMediaFormat(Int32)
+- uid: SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat(System.String)
+  name: HasMediaFormat(String)
+  href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_HasMediaFormat_System_String_
+  commentId: M:SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat(System.String)
+  fullName: SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat(System.String)
+  nameWithType: SDPMediaAnnouncement.HasMediaFormat(String)
 - uid: SIPSorcery.Net.SDPMediaAnnouncement.HasMediaFormat*
   name: HasMediaFormat
   href: api/SIPSorcery.Net.SDPMediaAnnouncement.html#SIPSorcery_Net_SDPMediaAnnouncement_HasMediaFormat_
@@ -6111,6 +6129,12 @@ references:
   commentId: M:SIPSorcery.Net.SDPMediaFormat.#ctor(System.Int32,System.String,System.Int32)
   fullName: SIPSorcery.Net.SDPMediaFormat.SDPMediaFormat(System.Int32, System.String, System.Int32)
   nameWithType: SDPMediaFormat.SDPMediaFormat(Int32, String, Int32)
+- uid: SIPSorcery.Net.SDPMediaFormat.#ctor(System.String)
+  name: SDPMediaFormat(String)
+  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat__ctor_System_String_
+  commentId: M:SIPSorcery.Net.SDPMediaFormat.#ctor(System.String)
+  fullName: SIPSorcery.Net.SDPMediaFormat.SDPMediaFormat(System.String)
+  nameWithType: SDPMediaFormat.SDPMediaFormat(String)
 - uid: SIPSorcery.Net.SDPMediaFormat.#ctor*
   name: SDPMediaFormat
   href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat__ctor_
@@ -6275,6 +6299,12 @@ references:
   commentId: T:SIPSorcery.Net.SDPMediaTypes
   fullName: SIPSorcery.Net.SDPMediaTypes
   nameWithType: SDPMediaTypes
+- uid: SIPSorcery.Net.SDPMediaTypes.GetSDPMediaType(System.Int32)
+  name: GetSDPMediaType(Int32)
+  href: api/SIPSorcery.Net.SDPMediaTypes.html#SIPSorcery_Net_SDPMediaTypes_GetSDPMediaType_System_Int32_
+  commentId: M:SIPSorcery.Net.SDPMediaTypes.GetSDPMediaType(System.Int32)
+  fullName: SIPSorcery.Net.SDPMediaTypes.GetSDPMediaType(System.Int32)
+  nameWithType: SDPMediaTypes.GetSDPMediaType(Int32)
 - uid: SIPSorcery.Net.SDPMediaTypes.GetSDPMediaType(System.String)
   name: GetSDPMediaType(String)
   href: api/SIPSorcery.Net.SDPMediaTypes.html#SIPSorcery_Net_SDPMediaTypes_GetSDPMediaType_System_String_
@@ -6318,6 +6348,12 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaTypesEnum.data
   fullName: SIPSorcery.Net.SDPMediaTypesEnum.data
   nameWithType: SDPMediaTypesEnum.data
+- uid: SIPSorcery.Net.SDPMediaTypesEnum.image
+  name: image
+  href: api/SIPSorcery.Net.SDPMediaTypesEnum.html#SIPSorcery_Net_SDPMediaTypesEnum_image
+  commentId: F:SIPSorcery.Net.SDPMediaTypesEnum.image
+  fullName: SIPSorcery.Net.SDPMediaTypesEnum.image
+  nameWithType: SDPMediaTypesEnum.image
 - uid: SIPSorcery.Net.SDPMediaTypesEnum.video
   name: video
   href: api/SIPSorcery.Net.SDPMediaTypesEnum.html#SIPSorcery_Net_SDPMediaTypesEnum_video
