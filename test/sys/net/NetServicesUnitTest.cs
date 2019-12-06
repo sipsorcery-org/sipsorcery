@@ -68,7 +68,7 @@ namespace SIPSorcery.Sys.UnitTests
         /// Tests that the IPv6 loopback address is returned for an IPv6 loopback destination.
         /// </summary>
         [Fact]
-        //[TestCategory("IPv6")]
+        [Trait("Category", "IPv6")]
         public void GetLocalForIPv6LoopbackAddressUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -83,7 +83,7 @@ namespace SIPSorcery.Sys.UnitTests
         /// Tests that a local IPv6 interface is matched against a destination address on the same network.
         /// </summary>
         [Fact]
-        //[TestCategory("IPv6")]
+        [Trait("Category", "IPv6")]
         public void GetLocalIPv6AddressUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -99,7 +99,7 @@ namespace SIPSorcery.Sys.UnitTests
         /// Tests that the a local address is returned for an Internet IPv6 destination.
         /// </summary>
         [Fact(Skip = "Only works if machine running the test has a public IPv6 address assigned.")]
-        //[TestCategory("IPv6")]
+        [Trait("Category", "IPv6")]
         //[Ignore] // Only works if machine running the test has a public IPv6 address assigned.
         public void GetLocalForInternetIPv6AdressUnitTest()
         {
