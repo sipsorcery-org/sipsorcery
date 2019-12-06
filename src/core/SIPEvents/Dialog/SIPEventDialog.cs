@@ -39,7 +39,6 @@ namespace SIPSorcery.SIP
         public SIPEventDialogParticipant LocalParticipant;
         public SIPEventDialogParticipant RemoteParticipant;
         public string BridgeID;                             // SIPSorcery custom field that is used to show when two dialogues are bridged together by the B2BUA.
-        public string SwitchboardOwner;                     // SIP Sorcery custom field that can be used to specify a sub-account as the owner of the call this dialog belongs to.
         public bool HasBeenSent;                            // Can be used by a subscription manager to indicate the event has been included in a notify request.
 
         private SIPEventDialog()
@@ -62,21 +61,18 @@ namespace SIPSorcery.SIP
                 //RemoteParticipant = new SIPEventDialogParticipant(sipDialogue.RemoteUserField.Name, sipDialogue.RemoteUserField.URI, sipDialogue.RemoteTarget, sipDialogue.CSeq, sipDialogue.RemoteSDP);
                 RemoteParticipant = new SIPEventDialogParticipant(sipDialogue.RemoteUserField.Name, sipDialogue.RemoteUserField.URI, sipDialogue.RemoteTarget, sipDialogue.CSeq);
                 BridgeID = (sipDialogue.BridgeId != Guid.Empty) ? sipDialogue.BridgeId.ToString() : null;
-                SwitchboardOwner = (sipDialogue.SwitchboardOwner != null) ? sipDialogue.SwitchboardOwner : null;
 
                 if (sipDialogue.Direction == SIPCallDirection.In)
                 {
                     RemoteParticipant.CRMPersonName = sipDialogue.CRMPersonName;
                     RemoteParticipant.CRMCompanyName = sipDialogue.CRMCompanyName;
                     RemoteParticipant.CRMPictureURL = sipDialogue.CRMPictureURL;
-                    LocalParticipant.SwitchboardLineName = sipDialogue.SwitchboardLineName;
                 }
                 else if (sipDialogue.Direction == SIPCallDirection.Out)
                 {
                     LocalParticipant.CRMPersonName = sipDialogue.CRMPersonName;
                     LocalParticipant.CRMCompanyName = sipDialogue.CRMCompanyName;
                     LocalParticipant.CRMPictureURL = sipDialogue.CRMPictureURL;
-                    RemoteParticipant.SwitchboardLineName = sipDialogue.SwitchboardLineName;
                 }
             }
         }
@@ -115,7 +111,6 @@ namespace SIPSorcery.SIP
 
             eventDialog.Duration = (dialogElement.Element(ns + "duration") != null) ? Convert.ToInt32(dialogElement.Element(ns + "duration").Value) : 0;
             eventDialog.BridgeID = (dialogElement.Element(ss + "bridgeid") != null) ? dialogElement.Element(ss + "bridgeid").Value : null;
-            eventDialog.SwitchboardOwner = (dialogElement.Element(ss + "switchboardowner") != null) ? dialogElement.Element(ss + "switchboardowner").Value : null;
 
             eventDialog.LocalParticipant = (dialogElement.Element(ns + "local") != null) ? SIPEventDialogParticipant.Parse(dialogElement.Element(ns + "local")) : null;
             eventDialog.RemoteParticipant = (dialogElement.Element(ns + "remote") != null) ? SIPEventDialogParticipant.Parse(dialogElement.Element(ns + "remote")) : null;
@@ -134,19 +129,28 @@ namespace SIPSorcery.SIP
                 );
 
             // Add the optional information if available.
-            if (!CallID.IsNullOrBlank()) { eventDialogElement.Add(new XAttribute("call-id", CallID)); }
-            if (!LocalTag.IsNullOrBlank()) { eventDialogElement.Add(new XAttribute("local-tag", LocalTag)); }
-            if (!RemoteTag.IsNullOrBlank()) { eventDialogElement.Add(new XAttribute("remote-tag", RemoteTag)); }
-            if (Direction != SIPEventDialogDirectionEnum.none) { eventDialogElement.Add(new XAttribute("direction", Direction)); }
-            if (StateCode != 0) { eventDialogElement.Element(ns + "state").Add(new XAttribute("code", StateCode)); }
-            if (StateEvent != SIPEventDialogStateEvent.None) { eventDialogElement.Element(ns + "state").Add(new XAttribute("event", StateEvent.ToString())); }
-            if (Duration != 0) { eventDialogElement.Add(new XElement(ns + "duration", Duration)); }
-            if (BridgeID != null) { eventDialogElement.Add(new XElement(ss + "bridgeid", BridgeID)); }
-            if (SwitchboardOwner != null) { eventDialogElement.Add(new XElement(ss + "switchboardowner", SwitchboardOwner)); }
+            if (!CallID.IsNullOrBlank())
+            { eventDialogElement.Add(new XAttribute("call-id", CallID)); }
+            if (!LocalTag.IsNullOrBlank())
+            { eventDialogElement.Add(new XAttribute("local-tag", LocalTag)); }
+            if (!RemoteTag.IsNullOrBlank())
+            { eventDialogElement.Add(new XAttribute("remote-tag", RemoteTag)); }
+            if (Direction != SIPEventDialogDirectionEnum.none)
+            { eventDialogElement.Add(new XAttribute("direction", Direction)); }
+            if (StateCode != 0)
+            { eventDialogElement.Element(ns + "state").Add(new XAttribute("code", StateCode)); }
+            if (StateEvent != SIPEventDialogStateEvent.None)
+            { eventDialogElement.Element(ns + "state").Add(new XAttribute("event", StateEvent.ToString())); }
+            if (Duration != 0)
+            { eventDialogElement.Add(new XElement(ns + "duration", Duration)); }
+            if (BridgeID != null)
+            { eventDialogElement.Add(new XElement(ss + "bridgeid", BridgeID)); }
             //if (LocalParticipant != null) { eventDialogElement.Add(LocalParticipant.ToXML("local", filter)); }
-            if (LocalParticipant != null) { eventDialogElement.Add(LocalParticipant.ToXML("local")); }
+            if (LocalParticipant != null)
+            { eventDialogElement.Add(LocalParticipant.ToXML("local")); }
             //if (RemoteParticipant != null) { eventDialogElement.Add(RemoteParticipant.ToXML("remote", filter)); }
-            if (RemoteParticipant != null) { eventDialogElement.Add(RemoteParticipant.ToXML("remote")); }
+            if (RemoteParticipant != null)
+            { eventDialogElement.Add(RemoteParticipant.ToXML("remote")); }
 
             return eventDialogElement;
         }

@@ -150,7 +150,14 @@ namespace SIPSorcery.Net
         // Media.
         public List<SDPMediaAnnouncement> Media = new List<SDPMediaAnnouncement>();
 
-        public List<string> ExtraAttributes = new List<string>();  // Attributes that were not recognised.
+        /// <summary>
+        /// The stream status of this session. Note that None means no explicit value has been set
+        /// and the default is sendrecv. Also if child media announcements have an explicit status set then 
+        /// it takes precedence.
+        /// </summary>
+        public MediaStreamStatusEnum SessionMediaStreamStatus { get; set; } = MediaStreamStatusEnum.None;
+
+        public List<string> ExtraSessionAttributes = new List<string>();  // Attributes that were not recognised.
 
         public SDP()
         { }
@@ -311,6 +318,17 @@ namespace SIPSorcery.Net
 
                             sdp.IceCandidates.Add(IceCandidate.Parse(sdpLine.Substring(sdpLine.IndexOf(':') + 1)));
                         }
+                        else if(MediaStreamStatusType.IsMediaStreamStatusAttribute(sdpLine.Trim(), out var mediaStreamStatus))
+                        {
+                            if (activeAnnouncement != null)
+                            {
+                                activeAnnouncement.MediaStreamStatus = mediaStreamStatus;
+                            }
+                            else
+                            {
+                                sdp.SessionMediaStreamStatus = mediaStreamStatus;
+                            }
+                        }
                         else
                         {
                             if (activeAnnouncement != null)
@@ -341,7 +359,9 @@ namespace SIPSorcery.Net
         public void AddExtra(string attribute)
         {
             if (!string.IsNullOrWhiteSpace(attribute))
-                ExtraAttributes.Add(attribute);
+            {
+                ExtraSessionAttributes.Add(attribute);
+            }
         }
 
         public override string ToString()
@@ -379,9 +399,14 @@ namespace SIPSorcery.Net
                 }
             }
 
-            foreach (string extra in ExtraAttributes)
+            foreach (string extra in ExtraSessionAttributes)
             {
                 sdp += string.IsNullOrWhiteSpace(extra) ? null : extra + CRLF;
+            }
+
+            if (SessionMediaStreamStatus != MediaStreamStatusEnum.None)
+            {
+                sdp += MediaStreamStatusType.GetAttributeForMediaStreamStatus(SessionMediaStreamStatus) + CRLF;
             }
 
             foreach (SDPMediaAnnouncement media in Media)
@@ -399,25 +424,6 @@ namespace SIPSorcery.Net
         /// <returns>The RTP end point for the first media end point.</returns>
         public static IPEndPoint GetSDPRTPEndPoint(string sdpMessage)
         {
-            // Process the SDP payload.
-            //Match portMatch = Regex.Match(sdpMessage, @"m=audio (?<port>\d+)", RegexOptions.Singleline);
-            //if (portMatch.Success)
-            //{
-            //    int rtpServerPort = Convert.ToInt32(portMatch.Result("${port}"));
-
-            //    Match serverMatch = Regex.Match(sdpMessage, @"c=IN IP4 (?<ipaddress>(\d+\.){3}\d+)", RegexOptions.Singleline);
-            //    if (serverMatch.Success)
-            //    {
-            //        string rtpServerAddress = serverMatch.Result("${ipaddress}");
-
-            //        if(IPAddress.TryParse(rtpServerAddress, out var ipAddress))
-            //        {
-            //            IPEndPoint serverEndPoint = new IPEndPoint(ipAddress, rtpServerPort);
-            //            return serverEndPoint;
-            //        }
-            //    }
-            //}
-
             SDP sdp = SDP.ParseSDPDescription(sdpMessage);
 
             // Find first media offer.
@@ -431,6 +437,40 @@ namespace SIPSorcery.Net
             else
             {
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets the media stream staus for the specified media announcement.
+        /// </summary>
+        /// <param name="mediaType">The type of media (audio, video etc) to get the status for.</param>
+        /// <param name="announcementIndex">THe index of the announcement to get the status for.</param>
+        /// <returns>The media stream status set on the announcement or if there is none the session. If
+        /// there is also no status set on the session then the default value of sendrecv is returned.</returns>
+        public MediaStreamStatusEnum GetMediaStreamStatus(SDPMediaTypesEnum mediaType, int announcementIndex)
+        {
+            var announcements = Media.Where(x => x.Media == mediaType).ToList();
+
+            if (announcements == null || announcements.Count() < announcementIndex + 1)
+            {
+                return MediaStreamStatusEnum.None;
+            }
+            else
+            {
+                var announcement = announcements[announcementIndex];
+
+                if(announcement.MediaStreamStatus != MediaStreamStatusEnum.None)
+                {
+                    return announcement.MediaStreamStatus;
+                }
+                else if(SessionMediaStreamStatus != MediaStreamStatusEnum.None)
+                {
+                    return SessionMediaStreamStatus;
+                }
+                else
+                {
+                    return MediaStreamStatusEnum.SendRecv;
+                }
             }
         }
     }

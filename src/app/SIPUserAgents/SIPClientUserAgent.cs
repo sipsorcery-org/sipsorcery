@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
@@ -316,9 +317,9 @@ namespace SIPSorcery.SIP.App
                                     AccountCode = customerAccount.AccountCode;
 
                                     string rateDestination = m_sipCallDescriptor.Uri;
-                                    if (SIPURI.TryParse(m_sipCallDescriptor.Uri))
+                                    if (SIPURI.TryParse(m_sipCallDescriptor.Uri, out var rateDstUri))
                                     {
-                                        rateDestination = SIPURI.ParseSIPURIRelaxed(m_sipCallDescriptor.Uri).User;
+                                        rateDestination = rateDstUri.User;
                                     }
 
                                     //var rate = m_customerAccountDataLayer.GetRate(Owner, m_sipCallDescriptor.RateCode, rateDestination, customerAccount.RatePlan);
@@ -412,6 +413,15 @@ namespace SIPSorcery.SIP.App
                 m_serverTransaction?.CancelCall(appExcp.Message);
                 CallFailed?.Invoke(this, appExcp.Message);
             }
+            catch (AggregateException aggExcp)
+            {
+                foreach (var innerExcp in aggExcp.InnerExceptions)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Exception UserAgentClient Call. " + innerExcp.Message, Owner));
+                }
+                m_serverTransaction?.CancelCall($"Aggregate exception, inner exception count {aggExcp.InnerExceptions.Count}.");
+                CallFailed?.Invoke(this, aggExcp.InnerExceptions.First().Message);
+            }
             catch (Exception excp)
             {
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Exception UserAgentClient Call. " + excp.Message, Owner));
@@ -489,12 +499,19 @@ namespace SIPSorcery.SIP.App
 
         public void Update(CRMHeaders crmHeaders)
         {
-            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Sending UPDATE to " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
+            try
+            {
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Sending UPDATE to " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
 
-            SIPRequest updateRequest = GetUpdateRequest(m_serverTransaction.TransactionRequest, crmHeaders);
-            SIPNonInviteTransaction updateTransaction = m_sipTransport.CreateNonInviteTransaction(updateRequest, m_outboundProxy);
-            updateTransaction.TransactionTraceMessage += TransactionTraceMessage;
-            updateTransaction.SendReliableRequest();
+                SIPRequest updateRequest = GetUpdateRequest(m_serverTransaction.TransactionRequest, crmHeaders);
+                SIPNonInviteTransaction updateTransaction = m_sipTransport.CreateNonInviteTransaction(updateRequest, m_outboundProxy);
+                updateTransaction.TransactionTraceMessage += TransactionTraceMessage;
+                updateTransaction.SendReliableRequest();
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception SIPClientUserAgent Update. " + excp.Message);
+            }
         }
 
         public void Hangup()

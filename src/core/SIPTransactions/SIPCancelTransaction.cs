@@ -48,10 +48,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                if (CancelTransactionFinalResponseReceived != null)
-                {
-                    CancelTransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
-                }
+                CancelTransactionFinalResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
             }
         }
 
@@ -59,15 +56,10 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                //logger.LogDebug("CANCEL request received, attempting to locate and cancel transaction.");
-
-                //UASInviteTransaction originalTransaction = (UASInviteTransaction)GetTransaction(GetRequestTransactionId(sipRequest.Header.Via.TopViaHeader.Branch, SIPMethodsEnum.INVITE));
-
                 SIPResponse cancelResponse;
 
                 if (m_originalTransaction != null)
                 {
-                    //logger.LogDebug("Transaction found to cancel " + originalTransaction.TransactionId + " type " + originalTransaction.TransactionType + ".");
                     m_originalTransaction.CancelCall();
                     cancelResponse = GetCancelResponse(sipRequest, SIPResponseStatusCodesEnum.Ok);
                 }
@@ -76,7 +68,6 @@ namespace SIPSorcery.SIP
                     cancelResponse = GetCancelResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist);
                 }
 
-                //UpdateTransactionState(SIPTransactionStatesEnum.Completed);
                 SendFinalResponse(cancelResponse);
             }
             catch (Exception excp)

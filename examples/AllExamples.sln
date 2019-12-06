@@ -13,8 +13,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallTransfer", "CallTransfe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sipcmdline", "sipcmdline\sipcmdline.csproj", "{4E7907DC-52E7-4DE7-9EAE-31F279748C71}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIPProxy", "SIPProxy\SIPProxy.csproj", "{6D9D74C7-5718-44F7-A4AC-D0C258C2EE48}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SendDtmf", "SendDtmf\SendDtmf.csproj", "{D4DDFD00-197A-4C22-9E61-EE3927495CEC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserAgentClient", "UserAgentClient\UserAgentClient.csproj", "{7FC8F539-4DC4-4FED-BC9E-528458D61FFF}"
@@ -24,6 +22,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserAgentServer", "UserAgentServer\UserAgentServer.csproj", "{B379B9C9-4300-4B9C-A75B-66D87634159B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallHold", "CallHold\CallHold.csproj", "{DDE7D3EF-E005-4D8E-A7EB-F1CB446B680B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallTransferServer", "CallTransferServer\CallTransferServer.csproj", "{E5CB199D-701C-4D22-ADC4-54D591E51459}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -73,14 +73,6 @@ Global
 		{4E7907DC-52E7-4DE7-9EAE-31F279748C71}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4E7907DC-52E7-4DE7-9EAE-31F279748C71}.Release|x64.ActiveCfg = Release|Any CPU
 		{4E7907DC-52E7-4DE7-9EAE-31F279748C71}.Release|x64.Build.0 = Release|Any CPU
-		{6D9D74C7-5718-44F7-A4AC-D0C258C2EE48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6D9D74C7-5718-44F7-A4AC-D0C258C2EE48}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6D9D74C7-5718-44F7-A4AC-D0C258C2EE48}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{6D9D74C7-5718-44F7-A4AC-D0C258C2EE48}.Debug|x64.Build.0 = Debug|Any CPU
-		{6D9D74C7-5718-44F7-A4AC-D0C258C2EE48}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6D9D74C7-5718-44F7-A4AC-D0C258C2EE48}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6D9D74C7-5718-44F7-A4AC-D0C258C2EE48}.Release|x64.ActiveCfg = Release|Any CPU
-		{6D9D74C7-5718-44F7-A4AC-D0C258C2EE48}.Release|x64.Build.0 = Release|Any CPU
 		{D4DDFD00-197A-4C22-9E61-EE3927495CEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D4DDFD00-197A-4C22-9E61-EE3927495CEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4DDFD00-197A-4C22-9E61-EE3927495CEC}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -121,6 +113,14 @@ Global
 		{DDE7D3EF-E005-4D8E-A7EB-F1CB446B680B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DDE7D3EF-E005-4D8E-A7EB-F1CB446B680B}.Release|x64.ActiveCfg = Release|Any CPU
 		{DDE7D3EF-E005-4D8E-A7EB-F1CB446B680B}.Release|x64.Build.0 = Release|Any CPU
+		{E5CB199D-701C-4D22-ADC4-54D591E51459}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5CB199D-701C-4D22-ADC4-54D591E51459}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5CB199D-701C-4D22-ADC4-54D591E51459}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E5CB199D-701C-4D22-ADC4-54D591E51459}.Debug|x64.Build.0 = Debug|Any CPU
+		{E5CB199D-701C-4D22-ADC4-54D591E51459}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5CB199D-701C-4D22-ADC4-54D591E51459}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5CB199D-701C-4D22-ADC4-54D591E51459}.Release|x64.ActiveCfg = Release|Any CPU
+		{E5CB199D-701C-4D22-ADC4-54D591E51459}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

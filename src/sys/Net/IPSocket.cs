@@ -152,7 +152,7 @@ namespace SIPSorcery.Sys
 
             return port;
         }
-        
+
         /// <summary>
         /// (convenience method) check if string can be parsed as IPAddress
         /// </summary>
@@ -396,32 +396,32 @@ namespace SIPSorcery.Sys
         {
             return Parse(IPSocket);
 
-            if (IPSocket == null || IPSocket.Trim().Length == 0)
-            {
-                throw new ApplicationException("IPSocket cannot parse an IPEndPoint from an empty string.");
-            }
+            //if (IPSocket == null || IPSocket.Trim().Length == 0)
+            //{
+            //    throw new ApplicationException("IPSocket cannot parse an IPEndPoint from an empty string.");
+            //}
 
-            try
-            {
-                int colonIndex = IPSocket.LastIndexOf(":");
+            //try
+            //{
+            //    int colonIndex = IPSocket.LastIndexOf(":");
 
-                if (colonIndex != -1)
-                {
-                    string ipAddress = IPSocket.Substring(0, colonIndex).Trim();
-                    int port = Convert.ToInt32(IPSocket.Substring(colonIndex + 1).Trim());
-                    IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
+            //    if (colonIndex != -1)
+            //    {
+            //        string ipAddress = IPSocket.Substring(0, colonIndex).Trim();
+            //        int port = Convert.ToInt32(IPSocket.Substring(colonIndex + 1).Trim());
+            //        IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
 
-                    return endPoint;
-                }
-                else
-                {
-                    return new IPEndPoint(IPAddress.Parse(IPSocket.Trim()), 0);
-                }
-            }
-            catch (Exception excp)
-            {
-                throw new ApplicationException(excp.Message + "(" + IPSocket + ")", excp);
-            }
+            //        return endPoint;
+            //    }
+            //    else
+            //    {
+            //        return new IPEndPoint(IPAddress.Parse(IPSocket.Trim()), 0);
+            //    }
+            //}
+            //catch (Exception excp)
+            //{
+            //    throw new ApplicationException(excp.Message + "(" + IPSocket + ")", excp);
+            //}
         }
     }
 }

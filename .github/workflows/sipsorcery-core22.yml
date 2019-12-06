@@ -1,0 +1,21 @@
+name: sipsorcery-core22 
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 2.2.108
+    - name: Build with dotnet
+      # Only build the library project and not the solution. The unit test project requires > dotnet 3.0.
+      run: dotnet build src/SIPSorcery.csproj --framework netcoreapp2.2 --configuration Release

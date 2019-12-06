@@ -5,10 +5,10 @@
 // transport options, retransmits, timeouts and transaction matching.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 14 Feb 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 14 Feb 2006	Aaron Clauson	Created, Dublin, Ireland.
 // 26 Apr 2008  Aaron Clauson   Added TCP support.
 // 16 Oct 2019  Aaron Clauson   Added IPv6 support.
 // 25 Oct 2019  Aaron Clauson   Added async options for sending requests and responses.
@@ -36,9 +36,9 @@ namespace SIPSorcery.SIP
     public class SIPTransport
     {
         private const int MAX_QUEUEWAIT_PERIOD = 2000;              // Maximum time to wait to check the message received queue if no events are received.
-        private const int PENDINGREQUESTS_CHECK_PERIOD = 500;       // Time between checking the pending requests queue to resend reliable requests that have not been responded to.
+        private const int PENDINGREQUESTS_CHECK_PERIOD = 500;      // Time between checking the pending requests queue to resend reliable requests that have not been responded to.
         private const int MAX_INMESSAGE_QUEUECOUNT = 5000;          // The maximum number of messages that can be stored in the incoming message queue.
-        private const int MAX_RELIABLETRANSMISSIONS_COUNT = 5000;   // The maximum number of messages that can be maintained for reliable transmissions.
+        private const int MAX_RELIABLETRANSMISSIONS_COUNT = 5000;  // The maximum number of messages that can be maintained for reliable transmissions.
 
         public const string ALLOWED_SIP_METHODS = "ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE";
 
@@ -51,7 +51,7 @@ namespace SIPSorcery.SIP
         private static ILogger logger = Log.Logger;
 
         /// <summary>
-        /// Dictates whether the transport later will queue incoming requests for processing on a separate thread of process
+        /// Determines whether the transport later will queue incoming requests for processing on a separate thread of process
         /// immediately on the same thread. Most SIP elements with the exception of Stateless Proxies will typically want to 
         /// queue incoming SIP messages.
         /// </summary>
@@ -69,11 +69,11 @@ namespace SIPSorcery.SIP
         private Dictionary<string, SIPChannel> m_sipChannels = new Dictionary<string, SIPChannel>();
 
         private SIPTransactionEngine m_transactionEngine;
+        private ResolveSIPEndPointDelegate ResolveSIPEndPoint_External;
 
         public event SIPTransportRequestDelegate SIPTransportRequestReceived;
         public event SIPTransportResponseDelegate SIPTransportResponseReceived;
         public event STUNRequestReceivedDelegate STUNRequestReceived;
-        private ResolveSIPEndPointDelegate ResolveSIPEndPoint_External;
 
         public event SIPTransportRequestDelegate SIPRequestInTraceEvent;
         public event SIPTransportRequestDelegate SIPRequestOutTraceEvent;
@@ -663,7 +663,7 @@ namespace SIPSorcery.SIP
         /// <param name="sipResponse">The SIP response to send.</param>
         public async Task<SocketError> SendResponseAsync(SIPEndPoint dstEndPoint, SIPResponse sipResponse)
         {
-            if(dstEndPoint == null)
+            if (dstEndPoint == null)
             {
                 throw new ArgumentNullException("dstEndPoint", "The destination end point must be set for SendResponseAsync.");
             }
@@ -690,11 +690,11 @@ namespace SIPSorcery.SIP
                 // Once the channel has been determined check some specific header fields and replace the placeholder end point.
                 AdjustHeadersForEndPoint(sendFromSIPEndPoint, ref sipResponse.Header);
 
-                // Now have a destination and sending channel, go ahead and forward.
-                FireSIPResponseOutTraceEvent(sendFromSIPEndPoint, dstEndPoint, sipResponse);
-
                 sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
 
+                FireSIPResponseOutTraceEvent(sendFromSIPEndPoint, dstEndPoint, sipResponse);
+
+                // Now have a destination and sending channel, go ahead and forward.
                 return await sendFromChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()), sipResponse.SendFromHintConnectionID);
             }
         }
@@ -1007,6 +1007,8 @@ namespace SIPSorcery.SIP
                         }
                         else
                         {
+                            // TODO: Future improvement (4.5.2 doesn't support) is to use a ReadOnlySpan to check for the existence 
+                            // of 'S', 'I', 'P' before the first EOL.
                             rawSIPMessage = Encoding.UTF8.GetString(buffer, 0, buffer.Length);
                             if (rawSIPMessage.IsNullOrBlank() || SIPMessageBuffer.IsPing(buffer))
                             {
@@ -1119,6 +1121,13 @@ namespace SIPSorcery.SIP
                                             {
                                                 logger.LogWarning("Transaction already exists, ignoring duplicate request, " + sipRequest.Method + " " + sipRequest.URI.ToString() + ".");
                                             }
+                                        }
+                                        else if (m_transactionEngine != null && sipRequest.Method == SIPMethodsEnum.CANCEL &&
+                                            GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE)) != null)
+                                        {
+                                            UASInviteTransaction inviteTransaction = (UASInviteTransaction)GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE));
+                                            SIPCancelTransaction cancelTransaction = CreateCancelTransaction(sipRequest, inviteTransaction);
+                                            cancelTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
                                         }
                                         else if (SIPTransportRequestReceived != null)
                                         {

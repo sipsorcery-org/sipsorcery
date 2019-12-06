@@ -1,7 +1,7 @@
-| SIPSorcery    | Examples    |
-| ------------- |:-------------
-[![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | [![Examples build status](https://ci.appveyor.com/api/projects/status/4myf11mda0p69ysm/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-mre1o/branch/master)
-![](https://github.com/sipsorcery/sipsorcery/workflows/dotnet-core22-build/badge.svg) | 
+| SIPSorcery    | Examples     | Softphone
+| ------------- |:-------------|:---------
+[![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | [![Examples build status](https://ci.appveyor.com/api/projects/status/4myf11mda0p69ysm/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-mre1o/branch/master) | [![Softphone build status](https://ci.appveyor.com/api/projects/status/xx1bcttkk4gbrd3y/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-0p6s4/branch/master)
+![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core22/badge.svg) | ![](https://github.com/sipsorcery/sipsorcery/workflows/examples-core30/badge.svg) |
 
 This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261) including IPv6 support. In addition 
 there is partial support for the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550), Web Real-Time Communication [(WebRTC)](https://en.wikipedia.org/wiki/WebRTC) and a number of related protocols such as RTCP, STUN, SDP and RTSP. Work is ongoing to fully support RTP.

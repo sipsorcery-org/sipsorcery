@@ -25,6 +25,7 @@ namespace SIPSorcery.SIP
         Unknown = 0,
         Early = 1,
         Confirmed = 2,
+        Terminated = 3
     }
 
     public enum SIPDialogueTransferModesEnum
@@ -77,8 +78,6 @@ namespace SIPSorcery.SIP
         /// </summary>
         public SIPCallDirection Direction { get; set; }
 
-        public string SwitchboardOwner { get; set; }
-        public string SwitchboardLineName { get; set; }
         public string CRMPersonName { get; set; }
         public string CRMCompanyName { get; set; }
         public string CRMPictureURL { get; set; }
@@ -302,10 +301,18 @@ namespace SIPSorcery.SIP
             }
         }
 
+        /// <summary>
+        /// Generates a BYE request for this dialog and forwards it to the remote cal party.
+        /// This has the effect of hanging up the call.
+        /// </summary>
+        /// <param name="sipTransport">The transport layer to use for sending the request.</param>
+        /// <param name="outboundProxy">Optional. If set an end point that the BYE request will be directly forwarded to.</param>
         public void Hangup(SIPTransport sipTransport, SIPEndPoint outboundProxy)
         {
             try
             {
+                DialogueState = SIPDialogueStateEnum.Terminated;
+
                 SIPEndPoint byeOutboundProxy = null;
                 if (outboundProxy != null && IPAddress.IsLoopback(outboundProxy.Address))
                 {
@@ -320,7 +327,7 @@ namespace SIPSorcery.SIP
                     byeOutboundProxy = outboundProxy;
                 }
 
-                SIPRequest byeRequest = GetByeRequest();
+                SIPRequest byeRequest = GetInDialogRequest(SIPMethodsEnum.BYE);
                 SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, byeOutboundProxy);
 
                 byeTransaction.SendReliableRequest();
@@ -328,37 +335,33 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPDialogue Hangup. " + excp.Message);
-                throw;
             }
         }
 
-        private SIPProtocolsEnum GetRemoteTargetProtocol()
+        /// <summary>
+        /// Builds a basic SIP request with the header fields set to correctly identify it as an 
+        /// in dialog request. Calling this method also increments the dialog's local CSeq counter.
+        /// This is safe to do even if the request does not end up being sent.
+        /// </summary>
+        /// <param name="method">The method of the SIP request to create.</param>
+        /// <returns>An in dailog SIP request.</returns>
+        public SIPRequest GetInDialogRequest(SIPMethodsEnum method)
         {
-            SIPURI dstURI = (RouteSet == null) ? RemoteTarget : RouteSet.TopRoute.URI;
-            return dstURI.Protocol;
-        }
+            CSeq++;
 
-        private SIPEndPoint GetRemoteTargetEndpoint()
-        {
-            SIPURI dstURI = (RouteSet == null) ? RemoteTarget : RouteSet.TopRoute.URI;
-            return dstURI.ToSIPEndPoint();
-        }
+            SIPRequest inDialogRequest = new SIPRequest(method, RemoteTarget);
+            SIPFromHeader fromHeader = SIPFromHeader.ParseFromHeader(LocalUserField.ToString());
+            SIPToHeader toHeader = SIPToHeader.ParseToHeader(RemoteUserField.ToString());
+            int cseq = CSeq;
 
-        private SIPRequest GetByeRequest()
-        {
-            SIPRequest byeRequest = new SIPRequest(SIPMethodsEnum.BYE, RemoteTarget);
-            SIPFromHeader byeFromHeader = SIPFromHeader.ParseFromHeader(LocalUserField.ToString());
-            SIPToHeader byeToHeader = SIPToHeader.ParseToHeader(RemoteUserField.ToString());
-            int cseq = CSeq + 1;
+            SIPHeader header = new SIPHeader(fromHeader, toHeader, cseq, CallId);
+            header.CSeqMethod = method;
+            inDialogRequest.Header = header;
+            inDialogRequest.Header.Routes = RouteSet;
+            inDialogRequest.Header.ProxySendFrom = ProxySendFrom;
+            inDialogRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
 
-            SIPHeader byeHeader = new SIPHeader(byeFromHeader, byeToHeader, cseq, CallId);
-            byeHeader.CSeqMethod = SIPMethodsEnum.BYE;
-            byeRequest.Header = byeHeader;
-            byeRequest.Header.Routes = RouteSet;
-            byeRequest.Header.ProxySendFrom = ProxySendFrom;
-            byeRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
-
-            return byeRequest;
+            return inDialogRequest;
         }
     }
 }

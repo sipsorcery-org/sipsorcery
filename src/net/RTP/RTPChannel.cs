@@ -4,10 +4,10 @@
 // Description: Communications channel to send and receive RTP packets.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 27 Feb 2012	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com).
+// 27 Feb 2012	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -19,6 +19,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -223,8 +224,8 @@ namespace SIPSorcery.Net
             {
                 StartedAt = DateTime.Now;
 
-                ThreadPool.QueueUserWorkItem(delegate { RTPReceive(); });
-                ThreadPool.QueueUserWorkItem(delegate { ProcessRTPPackets(); });
+                Task.Run((Action)RTPReceive);
+                Task.Run((Action)ProcessRTPPackets);
 
                 _controlSocketBuffer = new byte[RECEIVE_BUFFER_SIZE];
                 _controlSocket.BeginReceive(_controlSocketBuffer, 0, _controlSocketBuffer.Length, SocketFlags.None, out _controlSocketError, ControlSocketReceive, null);
@@ -247,16 +248,8 @@ namespace SIPSorcery.Net
                     logger.LogDebug("RTPChannel closing, RTP port " + RTPPort + ".");
 
                     _isClosed = true;
-
-                    if (_rtpSocket != null)
-                    {
-                        _rtpSocket.Close();
-                    }
-
-                    if (_controlSocket != null)
-                    {
-                        _controlSocket.Close();
-                    }
+                    _rtpSocket?.Close();
+                    _controlSocket?.Close();
                 }
                 catch (Exception excp)
                 {
@@ -414,6 +407,10 @@ namespace SIPSorcery.Net
                             }
                         }
                     }
+                    catch (TaskCanceledException) // Gets thrown when the task is deliberately. Can safely ignore.   
+                    { }
+                    catch (ObjectDisposedException) // This is how .Net deals with an in use socket being closed. Safe to ignore.
+                    { }
                     catch (Exception excp)
                     {
                         if (!_isClosed)
@@ -584,6 +581,10 @@ namespace SIPSorcery.Net
                     }
                 }
             }
+            catch (TaskCanceledException) // Gets thrown when the task is deliberately. Can safely ignore.   
+            { }
+            catch (ObjectDisposedException) // This is how .Net deals with an in use socket being closed. Safe to ignore.
+            { }
             catch (Exception excp)
             {
                 logger.LogError("Exception RTPChannel.ProcessRTPPackets. " + excp);
@@ -619,6 +620,10 @@ namespace SIPSorcery.Net
                 //    }
                 //}
             }
+            catch (TaskCanceledException) // Gets thrown when the task is deliberately. Can safely ignore.   
+            { }
+            catch (ObjectDisposedException) // This is how .Net deals with an in use socket being closed. Safe to ignore.
+            { }
             catch (Exception excp)
             {
                 if (!_isClosed)
@@ -1022,7 +1027,10 @@ namespace SIPSorcery.Net
             // Bytes 1 to 3: Three byte fragment offset
             //http://tools.ietf.org/search/rfc2435#section-3.1.2
 
-            if (BitConverter.IsLittleEndian) fragmentOffset = NetConvert.DoReverseEndian(fragmentOffset);
+            if (BitConverter.IsLittleEndian)
+            {
+                fragmentOffset = NetConvert.DoReverseEndian(fragmentOffset);
+            }
 
             byte[] offsetBytes = BitConverter.GetBytes(fragmentOffset);
             rtpJpegHeader[1] = offsetBytes[2];

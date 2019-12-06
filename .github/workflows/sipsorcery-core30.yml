@@ -1,4 +1,4 @@
-name: dotnet-core22-build 
+name: sipsorcery-core30 
 
 on:
   push:
@@ -15,6 +15,6 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 2.2.108
-    - name: Build with dotnet
-      run: dotnet build src/SIPSorcery.csproj --framework netcoreapp2.2 --configuration Release
+        dotnet-version: 3.0.100
+    - name: Unit tests
+      run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.0 --filter "Category!=IPv6"
