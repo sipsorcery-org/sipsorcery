@@ -27,7 +27,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -36,6 +35,13 @@ namespace SIPSorcery.SIP
         private readonly Socket m_udpSocket;
         private readonly UdpClient m_udpClientWrapper;  // Wrapper around the socket. Allows access to SendAsync methods.
         private byte[] m_recvBuffer;
+
+        /// <summary>
+        /// Keep a list of transient send failures to remote end points. With UDP a failure is detected if an ICMP packet is received 
+        /// on a receive.
+        /// TODO: Keep looking for a way to access the raw ICMP packet that causes the receive exception.
+        /// </summary>
+        //private static ConcurrentDictionary<IPEndPoint, Tuple<IPEndPoint, DateTime>> m_sendFailures = new ConcurrentDictionary<IPEndPoint, Tuple<IPEndPoint, DateTime>>();
 
         /// <summary>
         /// Creates a SIP channel to listen for and send SIP messages over UDP.
@@ -78,11 +84,12 @@ namespace SIPSorcery.SIP
                 EndPoint recvEndPoint = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
                 m_udpSocket.BeginReceiveMessageFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveMessageFrom, null);
             }
+            catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
             catch (Exception excp)
             {
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
                 // the BeginReceiveMessageFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
-                // case the sopcket can be considered to be unusable adn there's no point trying another receive.
+                // case the sopcket can be considered to be unusable and there's no point trying another receive.
                 logger.LogError($"Exception Receive. {excp.Message}");
                 logger.LogDebug($"SIPUDPChannel socket on {ListeningEndPoint} listening halted.");
                 Closed = true;
@@ -117,7 +124,7 @@ namespace SIPSorcery.SIP
             catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
             catch (Exception excp)
             {
-                logger.LogError($"Exception SIPUDPChannel.EndReceiveMessageFrome. {excp.Message}");
+                logger.LogError($"Exception SIPUDPChannel.EndReceiveMessageFrom. {excp.Message}");
             }
             finally
             {
@@ -149,6 +156,7 @@ namespace SIPSorcery.SIP
                 int bytesSent = await m_udpClientWrapper.SendAsync(buffer, buffer.Length, dstEndPoint);
                 return (bytesSent > 0) ? SocketError.Success : SocketError.ConnectionReset;
             }
+            catch (ObjectDisposedException) { return SocketError.NotConnected;  } // Thrown when socket is closed. Can be safely ignored.
             catch (SocketException sockExcp)
             {
                 return sockExcp.SocketErrorCode;

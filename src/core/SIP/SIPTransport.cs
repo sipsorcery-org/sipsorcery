@@ -690,11 +690,11 @@ namespace SIPSorcery.SIP
                 // Once the channel has been determined check some specific header fields and replace the placeholder end point.
                 AdjustHeadersForEndPoint(sendFromSIPEndPoint, ref sipResponse.Header);
 
-                // Now have a destination and sending channel, go ahead and forward.
-                FireSIPResponseOutTraceEvent(sendFromSIPEndPoint, dstEndPoint, sipResponse);
-
                 sipResponse.Header.ContentLength = (sipResponse.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipResponse.Body) : 0;
 
+                FireSIPResponseOutTraceEvent(sendFromSIPEndPoint, dstEndPoint, sipResponse);
+
+                // Now have a destination and sending channel, go ahead and forward.
                 return await sendFromChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()), sipResponse.SendFromHintConnectionID);
             }
         }

@@ -97,6 +97,11 @@ namespace SIPSorcery.SIP.App
             get { return m_isHungup; }
         }
 
+        public UASInviteTransaction ClientTransaction
+        {
+            get { return m_uasTransaction; }
+        }
+
         public event SIPUASDelegate CallCancelled;
         public event SIPUASDelegate NoRingTimeout;
         public event SIPUASDelegate TransactionComplete;
