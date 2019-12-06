@@ -181,21 +181,17 @@ namespace SIPSorcery.Net
             {
                 foreach (SDPMediaFormat mediaFormat in MediaFormats.Where(x => x.IsStandardAttribute == false))
                 {
-                    int fmtId = 0;
-                    if (int.TryParse(mediaFormat.FormatID, out fmtId))
+                    if (mediaFormat.FormatAttribute != null)
                     {
-                        if (mediaFormat.FormatAttribute != null)
-                        {
-                            formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatAttribute + m_CRLF;
-                        }
-                        else
-                        {
-                            formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.Name + "/" + mediaFormat.ClockRate + m_CRLF;
-                        }
-                        if (mediaFormat.FormatParameterAttribute != null)
-                        {
-                            formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatParameterAttribute + m_CRLF;
-                        }
+                        formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatAttribute + m_CRLF;
+                    }
+                    else
+                    {
+                        formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.Name + "/" + mediaFormat.ClockRate + m_CRLF;
+                    }
+                    if (mediaFormat.FormatParameterAttribute != null)
+                    {
+                        formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatParameterAttribute + m_CRLF;
                     }
                 }
             }
