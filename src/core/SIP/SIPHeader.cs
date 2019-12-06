@@ -325,7 +325,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                throw new SIPValidationException(SIPValidationFieldsEnum.ViaHeader, "Via list was empty."); ;
+                throw new SIPValidationException(SIPValidationFieldsEnum.ViaHeader, "Via list was empty.");
             }
         }
 

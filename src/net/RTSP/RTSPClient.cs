@@ -248,8 +248,10 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Play()
         {
-            ThreadPool.QueueUserWorkItem(delegate { ProcessRTPPackets(); });
-            ThreadPool.QueueUserWorkItem(delegate { SendKeepAlives(); });
+            ThreadPool.QueueUserWorkItem(delegate
+            { ProcessRTPPackets(); });
+            ThreadPool.QueueUserWorkItem(delegate
+            { SendKeepAlives(); });
 
             RTSPRequest playRequest = new RTSPRequest(RTSPMethodsEnum.PLAY, _url);
             RTSPHeader playHeader = new RTSPHeader(_cseq++, _rtspSession.SessionID);

@@ -17,7 +17,7 @@
   
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net452;netcoreapp2.2</TargetFrameworks>
-	<Version>4.0.0.0-rc</Version>
+	<Version>4.0.1.0-rc</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -39,8 +39,8 @@
 	<PackageTags>SIP RTP RTCP STUN WebRTC SDP SIPSorcery</PackageTags>
 	<PackageReleaseNotes>- Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.</PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
-	<AssemblyVersion>4.0.0.1</AssemblyVersion>
-	<FileVersion>4.0.0.1</FileVersion>
+	<AssemblyVersion>4.0.1.0</AssemblyVersion>
+	<FileVersion>4.0.1.0</FileVersion>
   </PropertyGroup>    
 
 </Project>

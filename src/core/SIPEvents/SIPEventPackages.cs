@@ -70,11 +70,16 @@ namespace SIPSorcery.SIP
                 string trimmedValue = value.Trim().ToLower();
                 switch (trimmedValue)
                 {
-                    case "dialog": return SIPEventPackage.Dialog;
-                    case "message-summary": return SIPEventPackage.MessageSummary;
-                    case "presence": return SIPEventPackage.Presence;
-                    case "refer": return SIPEventPackage.Refer;
-                    default: throw new ArgumentException("The value is not valid for a SIPEventPackage.");
+                    case "dialog":
+                        return SIPEventPackage.Dialog;
+                    case "message-summary":
+                        return SIPEventPackage.MessageSummary;
+                    case "presence":
+                        return SIPEventPackage.Presence;
+                    case "refer":
+                        return SIPEventPackage.Refer;
+                    default:
+                        throw new ArgumentException("The value is not valid for a SIPEventPackage.");
                 }
             }
         }
@@ -176,14 +181,22 @@ namespace SIPSorcery.SIP
                 string trimmedValue = value.Trim().ToLower();
                 switch (trimmedValue)
                 {
-                    case "cancelled": return SIPEventDialogStateEvent.Cancelled;
-                    case "error": return SIPEventDialogStateEvent.Error;
-                    case "local-bye": return SIPEventDialogStateEvent.LocalBye;
-                    case "rejected": return SIPEventDialogStateEvent.Rejected;
-                    case "replaced": return SIPEventDialogStateEvent.Replaced;
-                    case "remote-bye": return SIPEventDialogStateEvent.RemoteBye;
-                    case "timeout": return SIPEventDialogStateEvent.Timeout;
-                    default: throw new ArgumentException("The value is not valid for a SIPEventDialogStateEvent.");
+                    case "cancelled":
+                        return SIPEventDialogStateEvent.Cancelled;
+                    case "error":
+                        return SIPEventDialogStateEvent.Error;
+                    case "local-bye":
+                        return SIPEventDialogStateEvent.LocalBye;
+                    case "rejected":
+                        return SIPEventDialogStateEvent.Rejected;
+                    case "replaced":
+                        return SIPEventDialogStateEvent.Replaced;
+                    case "remote-bye":
+                        return SIPEventDialogStateEvent.RemoteBye;
+                    case "timeout":
+                        return SIPEventDialogStateEvent.Timeout;
+                    default:
+                        throw new ArgumentException("The value is not valid for a SIPEventDialogStateEvent.");
                 }
             }
         }

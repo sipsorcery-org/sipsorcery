@@ -198,7 +198,10 @@ namespace SIPSorcery.Net
             result.Add(0x00);//Thumb Data
 
             //Data Restart Invertval
-            if (dri > 0) result.AddRange(CreateDataRestartIntervalMarker(dri));
+            if (dri > 0)
+            {
+                result.AddRange(CreateDataRestartIntervalMarker(dri));
+            }
 
             //Quantization Tables
             result.AddRange(CreateQuantizationTablesMarker(tables, precision));
@@ -311,7 +314,10 @@ namespace SIPSorcery.Net
             int tableCount = tables.Count / (precision > 0 ? 128 : 64);
 
             //??Some might have more then 2?
-            if (tableCount > 2) throw new ArgumentOutOfRangeException("tableCount");
+            if (tableCount > 2)
+            {
+                throw new ArgumentOutOfRangeException("tableCount");
+            }
 
             int tableSize = tables.Count / tableCount;
 
@@ -479,7 +485,10 @@ namespace SIPSorcery.Net
 
                     Type = (uint)(packet.Payload[offset++]);
                     type = Type & 1;
-                    if (type > 3 || type > 6) throw new ArgumentException("Type numbers 2-5 are reserved and SHOULD NOT be used.  Applications on RFC 2035 should be updated to indicate the presence of restart markers with type 64 or 65 and the Restart Marker header.");
+                    if (type > 3 || type > 6)
+                    {
+                        throw new ArgumentException("Type numbers 2-5 are reserved and SHOULD NOT be used.  Applications on RFC 2035 should be updated to indicate the presence of restart markers with type 64 or 65 and the Restart Marker header.");
+                    }
 
                     Quality = (uint)packet.Payload[offset++];
                     Width = (uint)(packet.Payload[offset++] * 8); // This should have been 128 or > and the standard would have worked for all resolutions

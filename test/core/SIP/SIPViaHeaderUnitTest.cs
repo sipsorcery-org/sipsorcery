@@ -65,7 +65,8 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Parsed header = " + sipViaHeaders[0].ToString());
 
             Assert.True("SIP/2.0" == sipViaHeaders[0].Version, "The Via header Version was not correctly parsed, " + sipViaHeaders[0].Version + ".");
-            Assert.True(SIPProtocolsEnum.udp == sipViaHeaders[0].Transport, "The Via header Transport was not correctly parsed, " + sipViaHeaders[0].Transport + "."); Assert.True("192.168.1.2:5065" == sipViaHeaders[0].ContactAddress, "The Via header contact address was not correctly parsed, " + sipViaHeaders[0].ContactAddress + ".");
+            Assert.True(SIPProtocolsEnum.udp == sipViaHeaders[0].Transport, "The Via header Transport was not correctly parsed, " + sipViaHeaders[0].Transport + ".");
+            Assert.True("192.168.1.2:5065" == sipViaHeaders[0].ContactAddress, "The Via header contact address was not correctly parsed, " + sipViaHeaders[0].ContactAddress + ".");
             Assert.True("88.99.88.99" == sipViaHeaders[0].ReceivedFromIPAddress, "The Via header received field was not correctly parsed, " + sipViaHeaders[0].ReceivedFromIPAddress + ".");
             Assert.True(10060 == sipViaHeaders[0].ReceivedFromPort, "The Via header rport field was not correctly parsed, " + sipViaHeaders[0].ReceivedFromPort + ".");
             Assert.True("z9hG4bKFBB7EAC06934405182D13950BD51F001" == sipViaHeaders[0].Branch, "The Via header branch was not correctly parsed, " + sipViaHeaders[0].Branch + ".");
