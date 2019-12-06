@@ -1,35 +1,16 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An exmaple of using a REFER request to transfer an established call.
+// Description: An exmaple of using a REFER request to transfer a  receivd call.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 11 Nov 2019	Aaron Clauson   Created, Dublin, Ireland.
+// 28 Nov 2019	Aaron Clauson   Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Note on call flow and destinations being used in this sample.
-//
-// The steps involved in the call flow are:
-// 1. Attempt a normal call to an external SIP agent (destination set in DEFAULT_DESTINATION_SIP_URI).
-// 2. If the call is answered wait 10 seconds (time set by DELAY_UNTIL_TRANSFER_MILLISECONDS).
-// 3. Send a REFER request that asks the remote SIP agent from step 1 to call a new destination
-//    (set by TRANSFER_DESTINATION_SIP_URI) and if successful use it to replace the current call.
-//
-// The scenario used in development used an Asterisk/FreePBX server on 192.168.11.48.
-// The first destination of sip:100@192.168.11.48 was to a softphone that was registered 
-// with the Asterisk server.
-// The transfer destination of sip:*60@192.168.11.48 was to a talking clock extension on 
-// the same Asterisk server.
-//
-// The outcome of the transfer is that the softphone receives a call, answers it and then after
-// a 10s delay gets the transfer request and starts listening to the talking clock.
 //-----------------------------------------------------------------------------
 
 using System;
@@ -86,7 +67,7 @@ namespace SIPSorcery
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)));
 
             // Un/comment this line to see/hide each SIP message sent and received.
-            //EnableTraceLogs(sipTransport);
+            EnableTraceLogs(sipTransport);
 
             // Determine the local IP address to use for our RTP end point based on the address it will be sending to.
             var lookupResult = sipTransport.GetURIEndPoint(callUri, false);
