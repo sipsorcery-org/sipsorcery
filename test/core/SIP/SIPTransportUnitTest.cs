@@ -286,15 +286,30 @@ namespace SIPSorcery.SIP.UnitTests
 
         /// <summary>
         /// Tests that SIP messages can be correctly extracted from a TCP stream when arbitrarily fragmented.
+        /// This test is a little bit tricky. The pseudo code is:
+        /// - Create a standard TCP server (not a SIP channel) to listen on a random end point.
+        /// - Create a SIP TCP channel to listen on a random end point.
+        /// - Repeat N times:
+        ///   - Initiate a connection from the SIP TCP channel to the listening server,
+        ///   - The server will acecpt the connection and create a new OPTIONS request and send it 
+        ///     to the client socket.
+        ///   - The connection is closed.
+        /// - Keep track of the number of requests that are received from the SIP TCP channel initiated
+        ///   connections and if it matches N the test passes.
         /// </summary>
         [Fact]
         public void TcpTrickleReceiveTest()
-        {
+        { 
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
-            IPEndPoint listenEP = new IPEndPoint(IPAddress.Loopback, 9067);
+            // TCP server.
+            TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            var actualEP = listener.LocalEndpoint as IPEndPoint;
+
+            // SIP TCP Channel
             var transport = new SIPTransport();
-            var tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Loopback, 9066));
+            var tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Loopback, 0));
             tcpChannel.DisableLocalTCPSocketsCheck = true;
             transport.AddSIPChannel(tcpChannel);
 
@@ -305,15 +320,13 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 try
                 {
-                    TcpListener listener = new TcpListener(listenEP);
-                    listener.Start();
                     var tcpClient = listener.AcceptTcpClient();
                     logger.LogDebug($"Dummy TCP listener accepted client with remote end point {tcpClient.Client.RemoteEndPoint}.");
                     for (int i = 0; i < requestCount; i++)
                     {
                         logger.LogDebug($"Sending request {i}.");
 
-                        var req = transport.GetRequest(SIPMethodsEnum.OPTIONS, tcpChannel.GetContactURI(SIPSchemesEnum.sip, listenEP.Address));
+                        var req = transport.GetRequest(SIPMethodsEnum.OPTIONS, new SIPURI(SIPSchemesEnum.sip, tcpChannel.ListeningSIPEndPoint));
                         byte[] reqBytes = Encoding.UTF8.GetBytes(req.ToString());
 
                         tcpClient.GetStream().Write(reqBytes, 0, reqBytes.Length);
@@ -348,7 +361,7 @@ namespace SIPSorcery.SIP.UnitTests
                 logger.LogDebug(sipResponse.ToString());
             };
 
-            tcpChannel.ConnectClientAsync(listenEP, null, null).Wait(TimeSpan.FromMilliseconds(TRANSPORT_TEST_TIMEOUT));
+            tcpChannel.ConnectClientAsync(actualEP, null, null).Wait(TimeSpan.FromMilliseconds(TRANSPORT_TEST_TIMEOUT));
 
             logger.LogDebug("Test client connected.");
 

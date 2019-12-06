@@ -125,7 +125,14 @@ namespace SIPSorcery.SIP
                         }
                         else
                         {
-                            return ipEndPoint.Address.ToString();
+                            if (ipEndPoint.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                            {
+                                return "[" + ipEndPoint.Address.ToString() + "]";
+                            }
+                            else
+                            {
+                                return ipEndPoint.Address.ToString();
+                            }
                         }
                     }
                     else
@@ -164,11 +171,27 @@ namespace SIPSorcery.SIP
                 }
                 else if (ReceivedFromPort != 0)
                 {
-                    return Host + ":" + ReceivedFromPort;
+                    if (IPAddress.TryParse(Host, out IPAddress hostip))
+                    {
+                        IPEndPoint ep = new IPEndPoint(hostip, ReceivedFromPort);
+                        return ep.ToString();
+                    }
+                    else
+                    {
+                        return Host + ":" + ReceivedFromPort;
+                    }
                 }
                 else if (Port != 0)
                 {
-                    return Host + ":" + Port;
+                    if (IPAddress.TryParse(Host, out IPAddress hostip))
+                    {
+                        IPEndPoint ep = new IPEndPoint(hostip, Port);
+                        return ep.ToString();
+                    }
+                    else
+                    {
+                        return Host + ":" + Port;
+                    }
                 }
                 else
                 {

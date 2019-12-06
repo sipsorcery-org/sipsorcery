@@ -377,7 +377,7 @@ namespace SIPSorcery.SIP
 
                     m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
 
-                    await OnClientConnect(sipStmConn, buffer, serverCertificateName);
+                    await OnClientConnect(sipStmConn, serverCertificateName);
 
                     SendOnConnected(sipStmConn, buffer);
                 }
@@ -396,8 +396,7 @@ namespace SIPSorcery.SIP
         /// Can start receiving immeidately.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly connected client socket.</param>
-        /// <param name="buffer">Optional parameter that contains the data that still needs to be sent once the connection is established.</param>
-        protected virtual Task OnClientConnect(SIPStreamConnection streamConnection, byte[] buffer, string certificateName)
+        protected virtual Task OnClientConnect(SIPStreamConnection streamConnection, string certificateName)
         {
             SocketAsyncEventArgs recvArgs = streamConnection.RecvSocketArgs;
             recvArgs.AcceptSocket = streamConnection.StreamSocket;
