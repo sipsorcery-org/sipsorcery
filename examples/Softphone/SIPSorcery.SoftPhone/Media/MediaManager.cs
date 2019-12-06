@@ -42,6 +42,7 @@ namespace SIPSorcery.SoftPhone
         private bool _stop = false;
         private int _encodingSample = 1;
         private bool _useVideo = false;
+        private MediaStreamStatusEnum _streamStatusType = MediaStreamStatusEnum.SendRecv;
 
         // Audio and Video events.
         public event Action<byte[], int, int> OnLocalVideoSampleReady;      // [sample, width, height] Fires when a local video sample is ready for display.
@@ -117,7 +118,7 @@ namespace SIPSorcery.SoftPhone
         /// <param name="sample">The audio sample ready for transmission.</param>
         private void AudioChannelSampleReady(byte[] sample)
         {
-            if (sample != null && _rtpManager != null)
+            if (sample != null && _rtpManager != null && _streamStatusType != MediaStreamStatusEnum.RecvOnly && _streamStatusType != MediaStreamStatusEnum.Inactive)
             {
                 _rtpManager.AudioChannelSampleReady(sample);
             }
@@ -210,7 +211,7 @@ namespace SIPSorcery.SoftPhone
                         OnLocalVideoSampleReady?.Invoke(videoSample, videoSampler.Width, videoSampler.Height);
 
                         // This event encodes the sample and forwards it to the RTP manager for network transmission.
-                        if (_rtpManager != null)
+                        if (_rtpManager != null && _streamStatusType != MediaStreamStatusEnum.RecvOnly && _streamStatusType != MediaStreamStatusEnum.Inactive)
                         {
                             IntPtr rawSamplePtr = Marshal.AllocHGlobal(videoSample.Length);
                             Marshal.Copy(videoSample, 0, rawSamplePtr, videoSample.Length);
@@ -348,6 +349,23 @@ namespace SIPSorcery.SoftPhone
 
             var sdp = _rtpManager.GetSDP(IPAddress.Loopback);
             _rtpManager.SetRemoteSDP(sdp);
+        }
+
+        /// <summary>
+        /// Stop sending RTP but leave the session running. This is typically done when
+        /// a call is put on hold.
+        /// </summary>
+        public void StopSending()
+        {
+            _streamStatusType = MediaStreamStatusEnum.RecvOnly;
+        }
+
+        /// <summary>
+        /// Restart sending RTP. This is typically done when a call is taken off hold.
+        /// </summary>
+        public void RestartSending()
+        {
+            _streamStatusType = MediaStreamStatusEnum.SendRecv;
         }
     }
 }

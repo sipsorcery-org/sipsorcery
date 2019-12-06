@@ -55,6 +55,8 @@ namespace SIPSorcery.SoftPhone
         public event Action CallAnswer;                 // Fires when an outgoing SIP call is answered.
         public event Action CallEnded;                  // Fires when an incoming or outgoing call is over.
         public event Action IncomingCall;               // Fires when an incoming call request is received.
+        public event Action RemotePutOnHold;            // Fires when the remote call party puts us on hold.
+        public event Action RemoteTookOffHold;          // Fires when the remote call party takes us off hold.
         public event Action<string> StatusMessage;      // Fires when the SIP client has a status message it wants to inform the UI about.
 
         public SIPTransport SIPClientTransport
@@ -139,6 +141,8 @@ namespace SIPSorcery.SoftPhone
                 m_userAgent.ClientCallFailed += CallFailed;
                 m_userAgent.OnCallHungup += CallFinished;
                 m_userAgent.ServerCallCancelled += IncomingCallCancelled;
+                m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
+                m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
 
                 // Log all SIP packets received to a log file.
                 m_sipTransport.SIPRequestInTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { logger.Debug("Request Received : " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipRequest.ToString()); };
@@ -154,7 +158,7 @@ namespace SIPSorcery.SoftPhone
         /// <param name="localSIPEndPoint">The end point the request was received on.</param>
         /// <param name="remoteEndPoint">The end point the request came from.</param>
         /// <param name="sipRequest">The SIP request received.</param>
-        private void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             if (sipRequest.Header.From != null &&
                 sipRequest.Header.From.FromTag != null &&
@@ -162,7 +166,7 @@ namespace SIPSorcery.SoftPhone
                 sipRequest.Header.To.ToTag != null)
             {
                 // In dialog request will include BYE's.
-                m_userAgent.DialogRequestReceivedAsync(sipRequest).Wait();
+                await m_userAgent.DialogRequestReceivedAsync(sipRequest);
             }
             else if (sipRequest.Method == SIPMethodsEnum.INVITE)
             {
@@ -328,7 +332,10 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void PutOnHold()
         {
-
+            m_userAgent.PutOnHold();
+            // At this point we could stop listening to the remote party's RTP and play something 
+            // else and also stop sending our microphone output and play some music.
+            StatusMessage("Remote party put on hold");
         }
 
         /// <summary>
@@ -336,7 +343,28 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void TakeOffHold()
         {
+            m_userAgent.TakeOffHold();
+            // At ths point we should reverse whatever changes we made to the media stream when we
+            // put the remote call part on hold.
+            StatusMessage("Remote taken off on hold");
+        }
 
+        /// <summary>
+        /// Event handler that notifies us the remote party has put us on hold.
+        /// </summary>
+        private void OnRemotePutOnHold()
+        {
+            _mediaManager.StopSending();
+            RemotePutOnHold?.Invoke();
+        }
+
+        /// <summary>
+        /// Event handler that notifies us the remote party has taken us off hold.
+        /// </summary>
+        private void OnRemoteTookOffHold()
+        {
+            _mediaManager.RestartSending();
+            RemoteTookOffHold?.Invoke();
         }
 
         /// <summary>
@@ -409,8 +437,6 @@ namespace SIPSorcery.SoftPhone
                 _mediaManager.EndCall();
                 _mediaManager = null;
             }
-
-            //_cancelCallTokenSource.Cancel();
 
             m_pendingIncomingCall = null;
 
