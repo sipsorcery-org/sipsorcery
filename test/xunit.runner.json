@@ -3,7 +3,7 @@
   "appDomain": "ifAvailable",
   "diagnosticMessages": true,
   "internalDiagnosticMessages": false,
-  "longRunningTestSeconds": 4,
+  "longRunningTestSeconds": 10,
   "maxParallelThreads": 8,
   "methodDisplay": "classAndMethod",
   "methodDisplayOptions": "none",

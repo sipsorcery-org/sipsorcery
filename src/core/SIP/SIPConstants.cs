@@ -514,7 +514,8 @@ namespace SIPSorcery.SIP
     public enum SIPExtensions
     {
         None = 0,
-        Prack = 1,  // Reliable provisional responses as per RFC3262.
+        Prack = 1,          // Reliable provisional responses as per RFC3262.
+        NoReferSub = 2,     // No subscription for REFERs as per RFC4488.
     }
 
     /// <summary>
@@ -524,6 +525,7 @@ namespace SIPSorcery.SIP
     public class SIPExtensionHeaders
     {
         public const string PRACK = "100rel";
+        public const string NO_REFER_SUB = "norefersub";
 
         /// <summary>
         /// Parses a string containing a list of SIP extensions into a list of extensions that this library
@@ -548,6 +550,10 @@ namespace SIPSorcery.SIP
                         if (extension.Trim().ToLower() == PRACK)
                         {
                             knownExtensions.Add(SIPExtensions.Prack);
+                        }
+                        else if(extension.Trim().ToLower() == NO_REFER_SUB)
+                        {
+                            knownExtensions.Add(SIPExtensions.NoReferSub);
                         }
                         else
                         {

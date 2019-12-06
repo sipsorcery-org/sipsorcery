@@ -2,7 +2,7 @@
   "profiles": {
     "sipcmdline": {
       "commandName": "Project",
-      "commandLineArgs": "-d sips:[::1]"
+      "commandLineArgs": "-d 192.168.11.49"
     },
     "Docker": {
       "commandName": "Docker"

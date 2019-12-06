@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -100,9 +101,9 @@ namespace SIPSorcery.SoftPhone
             _rtpManager.Close();
         }
 
-        public SDP GetSDP(bool usePublicIP)
+        public SDP GetSDP(IPAddress callDstAddress)
         {
-            return _rtpManager.GetSDP(usePublicIP);
+            return _rtpManager.GetSDP(callDstAddress);
         }
 
         public void SetRemoteSDP(SDP remoteSDP)
@@ -290,27 +291,18 @@ namespace SIPSorcery.SoftPhone
 
                 Marshal.FreeHGlobal(decodedSamplePtr);
 
-                if (OnRemoteVideoSampleReady != null)
-                {
-                    OnRemoteVideoSampleReady(bmp, Convert.ToInt32(decodedImgWidth), Convert.ToInt32(decodedImgHeight));
-                }
+                OnRemoteVideoSampleReady?.Invoke(bmp, Convert.ToInt32(decodedImgWidth), Convert.ToInt32(decodedImgHeight));
             }
         }
 
         public void RemoteAudioSampleReceived(byte[] sample, int length)
         {
-            if (_audioChannel != null)
-            {
-                _audioChannel.AudioSampleReceived(sample, 0);
-            }
+            _audioChannel?.AudioSampleReceived(sample, 0);
         }
 
         private void LocalVideoEncodedSampleReady(byte[] sample)
         {
-            if (_rtpManager != null)
-            {
-                _rtpManager.LocalVideoSampleReady(sample);
-            }
+            _rtpManager?.LocalVideoSampleReady(sample);
         }
 
         /// <summary>
@@ -354,7 +346,7 @@ namespace SIPSorcery.SoftPhone
             _rtpManager = new RTPManager(false, true);
             _rtpManager.OnRemoteVideoSampleReady += EncodedVideoSampleReceived;
 
-            var sdp = _rtpManager.GetSDP(false);
+            var sdp = _rtpManager.GetSDP(IPAddress.Loopback);
             _rtpManager.SetRemoteSDP(sdp);
         }
     }

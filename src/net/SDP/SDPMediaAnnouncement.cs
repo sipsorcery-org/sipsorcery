@@ -4,10 +4,10 @@
 // Description: 
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// ??	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// ??	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -36,7 +36,13 @@ namespace SIPSorcery.Net
 
         public List<string> BandwidthAttributes = new List<string>();
         public List<SDPMediaFormat> MediaFormats = new List<SDPMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
-        public List<string> ExtraAttributes = new List<string>();  // Attributes that were not recognised.
+        public List<string> ExtraMediaAttributes = new List<string>();  // Attributes that were not recognised.
+
+        /// <summary>
+        /// The stream status of this media announcement. Note that None means no explicit value has been set
+        /// and unless there is a session level value then the implicit default is sendrecv.
+        /// </summary>
+        public MediaStreamStatusEnum MediaStreamStatus { get; set; } = MediaStreamStatusEnum.None;
 
         public SDPMediaAnnouncement()
         { }
@@ -124,9 +130,14 @@ namespace SIPSorcery.Net
 
             announcement += GetFormatListAttributesToString();
 
-            foreach (string extra in ExtraAttributes)
+            foreach (string extra in ExtraMediaAttributes)
             {
                 announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
+            }
+
+            if(MediaStreamStatus != MediaStreamStatusEnum.None)
+            {
+                announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus);
             }
 
             return announcement;
@@ -163,20 +174,18 @@ namespace SIPSorcery.Net
                     {
                         formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatParameterAttribute + m_CRLF;
                     }
-                    //else if(SDPMediaFormat.GetDefaultFormatAttribute(mediaFormat.FormatID) != null)
-                    //{
-                    //    formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + SDPMediaFormat.GetDefaultFormatAttribute(mediaFormat.FormatID) + m_CRLF;
-                    //}
                 }
             }
 
             return formatAttributes;
         }
+
         public void AddExtra(string attribute)
         {
             if (!string.IsNullOrWhiteSpace(attribute))
-                ExtraAttributes.Add(attribute);
+            {
+                ExtraMediaAttributes.Add(attribute);
+            }
         }
-
     }
 }

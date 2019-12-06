@@ -194,7 +194,7 @@ namespace SIPSorcery
 
                 if (!hasCallFailed)
                 {
-                    SIPRequest referRequest = GetReferRequest(uac, SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI));
+                    SIPRequest referRequest = GetReferRequest(uac.SIPDialogue, SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI));
                     SIPNonInviteTransaction referTx = sipTransport.CreateNonInviteTransaction(referRequest, null);
 
                     referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =>
@@ -387,17 +387,14 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        /// Builds the REFER request to transfer an established call.
+        /// Builds the REFER request to initiate a blind transfer on an established call.
         /// </summary>
         /// <param name="sipDialogue">A SIP dialogue object representing the established call.</param>
         /// <param name="referToUri">The SIP URI to transfer the call to.</param>
         /// <returns>A SIP REFER request.</returns>
-        private static SIPRequest GetReferRequest(SIPClientUserAgent uac, SIPURI referToUri)
+        private static SIPRequest GetReferRequest(SIPDialogue sipDialogue, SIPURI referToUri)
         {
-            SIPDialogue sipDialogue = uac.SIPDialogue;
-
             SIPRequest referRequest = new SIPRequest(SIPMethodsEnum.REFER, sipDialogue.RemoteTarget);
-            referRequest.SetSendFromHints(uac.ServerTransaction.TransactionRequest.LocalSIPEndPoint);
 
             SIPFromHeader referFromHeader = SIPFromHeader.ParseFromHeader(sipDialogue.LocalUserField.ToString());
             SIPToHeader referToHeader = SIPToHeader.ParseToHeader(sipDialogue.RemoteUserField.ToString());
