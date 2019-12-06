@@ -34,7 +34,7 @@ namespace SIPSorcery.Net
     {
         private const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
 
-        public int FormatID;
+        public string FormatID; //rj2: FormatID MUST be string (not int), in case ID is 't38' and type is 'image'
         public string FormatAttribute { get; private set; }
         public string FormatParameterAttribute { get; private set; }
         public string Name { get; private set; }
@@ -43,24 +43,26 @@ namespace SIPSorcery.Net
 
         public SDPMediaFormat(int formatID)
         {
-            FormatID = formatID;
+            FormatID = formatID.ToString();
             if (Enum.IsDefined(typeof(SDPMediaFormatsEnum), formatID))
             {
                 Name = Enum.Parse(typeof(SDPMediaFormatsEnum), formatID.ToString(), true).ToString();
             }
             ClockRate = DEFAULT_AUDIO_CLOCK_RATE;
         }
-
-        public SDPMediaFormat(int formatID, string name)
+        public SDPMediaFormat(string formatID)
         {
-            FormatID = formatID;
+            Name = FormatID = formatID;
+        }
+
+        public SDPMediaFormat(int formatID, string name) : this(formatID)
+        {
             Name = name;
             FormatAttribute = (ClockRate == 0) ? Name : Name;
         }
 
-        public SDPMediaFormat(int formatID, string name, int clockRate)
+        public SDPMediaFormat(int formatID, string name, int clockRate) : this(formatID)
         {
-            FormatID = formatID;
             Name = name;
             ClockRate = clockRate;
             FormatAttribute = (ClockRate == 0) ? Name : Name + "/" + ClockRate;
@@ -68,7 +70,7 @@ namespace SIPSorcery.Net
 
         public SDPMediaFormat(SDPMediaFormatsEnum format)
         {
-            FormatID = (int)format;
+            FormatID = ((int)format).ToString();
             Name = format.ToString();
             IsStandardAttribute = true;
         }

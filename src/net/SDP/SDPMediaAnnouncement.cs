@@ -78,12 +78,31 @@ namespace SIPSorcery.Net
                         {
                             MediaFormats.Add(new SDPMediaFormat(format));
                         }
+                        else
+                        {
+                            MediaFormats.Add(new SDPMediaFormat(formatID));
+                        }
                     }
                 }
             }
         }
 
         public bool HasMediaFormat(int formatID)
+        {
+            return HasMediaFormat(formatID.ToString());
+        }
+
+        public void AddFormatAttribute(int formatID, string formatAttribute)
+        {
+            AddFormatAttribute(formatID.ToString(), formatAttribute);
+        }
+
+        public void AddFormatParameterAttribute(int formatID, string formatAttribute)
+        {
+            AddFormatParameterAttribute(formatID.ToString(), formatAttribute);
+        }
+
+        public bool HasMediaFormat(string formatID)
         {
             foreach (SDPMediaFormat mediaFormat in MediaFormats)
             {
@@ -96,7 +115,7 @@ namespace SIPSorcery.Net
             return false;
         }
 
-        public void AddFormatAttribute(int formatID, string formatAttribute)
+        public void AddFormatAttribute(string formatID, string formatAttribute)
         {
             for (int index = 0; index < MediaFormats.Count; index++)
             {
@@ -107,7 +126,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public void AddFormatParameterAttribute(int formatID, string formatAttribute)
+        public void AddFormatParameterAttribute(string formatID, string formatAttribute)
         {
             for (int index = 0; index < MediaFormats.Count; index++)
             {
@@ -135,7 +154,7 @@ namespace SIPSorcery.Net
                 announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
             }
 
-            if(MediaStreamStatus != MediaStreamStatusEnum.None)
+            if (MediaStreamStatus != MediaStreamStatusEnum.None)
             {
                 announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus);
             }
