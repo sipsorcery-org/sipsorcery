@@ -156,7 +156,7 @@ namespace SIPSorcery.Net
 
             if (MediaStreamStatus != MediaStreamStatusEnum.None)
             {
-                announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus);
+                announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus) + m_CRLF;
             }
 
             return announcement;

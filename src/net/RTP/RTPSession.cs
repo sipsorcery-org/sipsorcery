@@ -74,6 +74,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public IPEndPoint DestinationEndPoint;
 
+        public event Action<byte[]> OnSampleReady;
+
         private IPEndPoint _lastReceiveFromEndPoint;
 
         /// <summary>
@@ -90,6 +92,19 @@ namespace SIPSorcery.Net
             SrtcpProtect = srtcpProtect;
             Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
             SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+        }
+
+        public void RtpPacketReceived(IPEndPoint remoteEndPoint, byte[] buffer)
+        {
+            if (_lastReceiveFromEndPoint == null || !_lastReceiveFromEndPoint.Equals(remoteEndPoint))
+            {
+                OnReceiveFromEndPointChanged?.Invoke(_lastReceiveFromEndPoint, remoteEndPoint);
+                _lastReceiveFromEndPoint = remoteEndPoint;
+            }
+
+            var rtpPacket = new RTPPacket(buffer);
+            
+            OnSampleReady?.Invoke(rtpPacket.Payload);
         }
 
         /// <summary>
@@ -133,6 +148,49 @@ namespace SIPSorcery.Net
                 }
             }
             catch (System.Net.Sockets.SocketException sockExcp)
+            {
+                logger.LogError("SocketException SendAudioFrame. " + sockExcp.Message);
+            }
+        }
+
+        public void SendAudioFrame(RTPChannel2 rtpChannel, IPEndPoint dstRtpSocket, uint timestamp, byte[] buffer)
+        {
+            try
+            {
+                for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
+                {
+                    SeqNum = (ushort)(SeqNum % UInt16.MaxValue);
+
+                    int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
+                    int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
+                    int srtpProtectionLength = (SrtpProtect != null) ? SRTP_AUTH_KEY_LENGTH : 0;
+
+                    RTPPacket rtpPacket = new RTPPacket(payloadLength + srtpProtectionLength);
+                    rtpPacket.Header.SyncSource = Ssrc;
+                    rtpPacket.Header.SequenceNumber = SeqNum++;
+                    rtpPacket.Header.Timestamp = timestamp;
+                    rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
+                    rtpPacket.Header.PayloadType = (int)PayloadType;
+
+                    Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, 0, payloadLength);
+
+                    var rtpBuffer = rtpPacket.GetBytes();
+
+                    int rtperr = SrtpProtect == null ? 0 : SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength);
+                    if (rtperr != 0)
+                    {
+                        logger.LogError("SendAudioFrame SRTP packet protection failed, result " + rtperr + ".");
+                    }
+                    else
+                    {
+                        rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer);
+                    }
+
+                    PacketsSent++;
+                    OctetsSent += (uint)payloadLength;
+                }
+            }
+            catch (SocketException sockExcp)
             {
                 logger.LogError("SocketException SendAudioFrame. " + sockExcp.Message);
             }
@@ -185,7 +243,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public void SendRtcpSenderReport(Socket srcRtpSocket, IPEndPoint dstRtpSocket, uint timestamp)
+        public void SendRtcpSenderReport(Socket srcControlSocket, IPEndPoint dstRtpSocket, uint timestamp)
         {
             try
             {
@@ -194,7 +252,7 @@ namespace SIPSorcery.Net
 
                 if (SrtcpProtect == null)
                 {
-                    srcRtpSocket.SendTo(rtcpSRPacket.GetBytes(), dstRtpSocket);
+                    srcControlSocket.SendTo(rtcpSRPacket.GetBytes(), dstRtpSocket);
                 }
                 else
                 {
@@ -209,7 +267,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        srcRtpSocket.SendTo(sendBuffer, dstRtpSocket);
+                        srcControlSocket.SendTo(sendBuffer, dstRtpSocket);
                     }
                 }
             }
@@ -312,13 +370,13 @@ namespace SIPSorcery.Net
         /// <returns>An RTP packet.</returns>
         public RTPPacket RtpReceive(byte[] buffer, int offset, int count, IPEndPoint remoteEndPoint)
         {
-            if(_lastReceiveFromEndPoint == null || !_lastReceiveFromEndPoint.Equals(remoteEndPoint))
+            if (_lastReceiveFromEndPoint == null || !_lastReceiveFromEndPoint.Equals(remoteEndPoint))
             {
                 OnReceiveFromEndPointChanged?.Invoke(_lastReceiveFromEndPoint, remoteEndPoint);
                 _lastReceiveFromEndPoint = remoteEndPoint;
             }
 
-           return new RTPPacket(buffer.Skip(offset).Take(count).ToArray());
+            return new RTPPacket(buffer.Skip(offset).Take(count).ToArray());
         }
 
         /// <summary>

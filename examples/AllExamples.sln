@@ -25,6 +25,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallHold", "CallHold\CallHo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallTransferServer", "CallTransferServer\CallTransferServer.csproj", "{E5CB199D-701C-4D22-ADC4-54D591E51459}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\src\SIPSorcery.csproj", "{4AAECC57-F0F3-459E-A345-FDA43A811BCA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,6 +123,14 @@ Global
 		{E5CB199D-701C-4D22-ADC4-54D591E51459}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E5CB199D-701C-4D22-ADC4-54D591E51459}.Release|x64.ActiveCfg = Release|Any CPU
 		{E5CB199D-701C-4D22-ADC4-54D591E51459}.Release|x64.Build.0 = Release|Any CPU
+		{4AAECC57-F0F3-459E-A345-FDA43A811BCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4AAECC57-F0F3-459E-A345-FDA43A811BCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4AAECC57-F0F3-459E-A345-FDA43A811BCA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4AAECC57-F0F3-459E-A345-FDA43A811BCA}.Debug|x64.Build.0 = Debug|Any CPU
+		{4AAECC57-F0F3-459E-A345-FDA43A811BCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4AAECC57-F0F3-459E-A345-FDA43A811BCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4AAECC57-F0F3-459E-A345-FDA43A811BCA}.Release|x64.ActiveCfg = Release|Any CPU
+		{4AAECC57-F0F3-459E-A345-FDA43A811BCA}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
