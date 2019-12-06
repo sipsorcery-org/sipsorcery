@@ -22,7 +22,7 @@
   </ItemGroup>
   
   <PropertyGroup>
-  <TargetFrameworks>netstandard2.0;net452;netcoreapp2.2</TargetFrameworks>
+  <TargetFrameworks>netstandard2.0;net452;netcoreapp2.2;netcoreapp3.0</TargetFrameworks>
 	<Version>4.0.2.0-rc</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
