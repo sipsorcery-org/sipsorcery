@@ -13,4 +13,17 @@
     <PackageReference Include="SIPSorcery" Version="4.0.1-rc" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SIPSorcery.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="media\LICENSE-Macroform">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="media\Macroform_-_Simplicity.ulaw">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -24,7 +24,7 @@ namespace SIPSorcery.SIP.App
     /// <summary>
     /// This class represents a back-to-back (B2B) user agent (UA) that is used to attach an outgoing
     /// call (UAC) to an incoming (UAS) call. Normally the UAC call would be the client side of a call that
-    /// is placed to an external UAS in this case it's the client side of a call to a UAS in the same process.
+    /// is placed to an external UAS. In this case it's the client side of a call to a UAS in the same process.
     /// The use for this class is to allow an outgoing call from a SIP Account to another SIP Account's incoming
     /// dial plan.
     /// </summary>

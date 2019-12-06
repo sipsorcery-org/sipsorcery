@@ -195,6 +195,43 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// This method can be used to start the processing of a new incoming call request.
+        /// The user agent will is acting as a server for this operation and it can be considered
+        /// the opposite of the Call method.
+        /// </summary>
+        /// <param name="uasInviteTx">The invite transaction representing the incoming call.</param>
+        /// <returns>True if the call is accepted, false otherwise.</returns>
+        public bool AcceptCall(UASInviteTransaction uasInviteTx)
+        {
+            SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, null, null, SIPCallDirection.In, null, null, null, uasInviteTx);
+            uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+
+            // TODO: Decide how to deal with multiple simultaneous calls.
+            if (m_uas != null)
+            {
+                uas.Reject(SIPResponseStatusCodesEnum.BusyHere, null, null);
+                return false;
+            }
+            else
+            {
+                uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
+                m_uas = uas;
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Answers the currently accepted call. The call must have been previously accepted using 
+        /// AcceptCall. The user agent is acting asd a server for this operation.
+        /// </summary>
+        /// <param name="sdp">The session description payload to send to the remote call party
+        /// when answering.</param>
+        public void Answer(SDP sdp)
+        {
+            m_uas.Answer(m_sdpContentType, sdp.ToString(), null, SIPDialogueTransferModesEnum.Default);
+        }
+
+        /// <summary>
         /// Handler for when an in dialog request is received on an established call.
         /// Typical types of request will be re-INVITES for things like putting a call on or
         /// off hold and REFER requests for transfers. Some in dialog request types, such 
