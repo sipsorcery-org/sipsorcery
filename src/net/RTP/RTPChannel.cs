@@ -224,8 +224,8 @@ namespace SIPSorcery.Net
             {
                 StartedAt = DateTime.Now;
 
-                Task.Run(RTPReceive);
-                Task.Run(ProcessRTPPackets);
+                Task.Run((Action)RTPReceive);
+                Task.Run((Action)ProcessRTPPackets);
 
                 _controlSocketBuffer = new byte[RECEIVE_BUFFER_SIZE];
                 _controlSocket.BeginReceive(_controlSocketBuffer, 0, _controlSocketBuffer.Length, SocketFlags.None, out _controlSocketError, ControlSocketReceive, null);
