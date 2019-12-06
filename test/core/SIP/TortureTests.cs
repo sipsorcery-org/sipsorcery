@@ -67,6 +67,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// header field, and Contact header field.
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_1()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -109,6 +110,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// Bad Request error.
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_2()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -145,6 +147,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// complete list of fields where a SIP URI can appear.
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_3()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -189,6 +192,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// per the grammar in [RFC3261].
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_4()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -233,6 +237,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// the request.
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_5_1()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -270,6 +275,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// is valid according to the grammar in [RFC3261].
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_5_2()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -311,6 +317,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// do not have the delimiting "[" and "]".
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_6()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -369,6 +376,7 @@ CRLF +
         /// references.
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_7()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -418,6 +426,7 @@ CRLF +
         /// line is identified by a different network connection address.
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_8()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -484,6 +493,7 @@ CRLF +
         /// header includes a port number that is appropriately delimited by "]".
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_9()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -549,6 +559,7 @@ CRLF +
         /// downstream server).
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_10_1()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -584,6 +595,7 @@ CRLF +
         /// R-URI.
         /// </summary>
         [Fact]
+        [Trait("Category", "IPv6")]
         public void RFC5118_4_10_2()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
