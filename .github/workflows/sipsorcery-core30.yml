@@ -17,5 +17,5 @@ jobs:
       with:
         dotnet-version: 3.0.100
     - name: Unit tests
-      run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.0 -c Release --filter "Category!=IPv6"
+      run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.0 -c Release --filter "Category!=IPv6&(FullyQualifiedName~Trickle|FullyQualifiedName~AckRecognitionUnitTest)"
       #run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.0 -c Release --filter "Category!=IPv6&(FullyQualifiedName~Trickle|FullyQualifiedName~AckRecognitionUnitTest)" -v n
