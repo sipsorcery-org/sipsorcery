@@ -68,6 +68,8 @@ namespace SIPSorcery.SoftPhone
             _sipClient.IncomingCall += SIPCallIncoming;
             _sipClient.CallAnswer += SIPCallAnswered;
             _sipClient.CallEnded += ResetToCallStartState;
+            _sipClient.RemotePutOnHold += RemotePutOnHold;
+            _sipClient.RemoteTookOffHold += RemoteTookOffHold;
             _sipClient.StatusMessage += (message) => { SetStatusText(m_signallingStatus, message); };
 
             // If a STUN server hostname has been specified start the STUN client to lookup and periodically update the public IP address of the host machine.
@@ -204,6 +206,8 @@ namespace SIPSorcery.SoftPhone
                 m_rejectButton.Visibility = Visibility.Collapsed;
                 m_redirectButton.Visibility = Visibility.Collapsed;
                 m_transferButton.Visibility = Visibility.Collapsed;
+                m_holdButton.Visibility = Visibility.Collapsed;
+                m_offHoldButton.Visibility = Visibility.Collapsed;
                 SetStatusText(m_signallingStatus, "Ready");
             });
 
@@ -317,6 +321,7 @@ namespace SIPSorcery.SoftPhone
             m_redirectButton.Visibility = Visibility.Collapsed;
             m_byeButton.Visibility = Visibility.Visible;
             m_transferButton.Visibility = Visibility.Visible;
+            m_holdButton.Visibility = Visibility.Visible;
         }
 
         /// <summary>
@@ -352,6 +357,51 @@ namespace SIPSorcery.SoftPhone
             {
                 SetStatusText(m_signallingStatus, "The remote call party did not accept the transfer request.");
             }
+        }
+
+        /// <summary>
+        /// The remote call party put us on hold.
+        /// </summary>
+        private void RemotePutOnHold()
+        {
+            // We can't put them on hold if they've already put us on hold.
+            SetStatusText(m_signallingStatus, "Put on hold by remote party.");
+            UIHelper.DoOnUIThread(this, delegate
+            {
+                m_holdButton.Visibility = Visibility.Collapsed;
+            });
+        }
+
+        /// <summary>
+        /// The remote call party has taken us off hold.
+        /// </summary>
+        private void RemoteTookOffHold()
+        {
+            SetStatusText(m_signallingStatus, "Taken off hold by remote party.");
+            UIHelper.DoOnUIThread(this, delegate
+            {
+                m_holdButton.Visibility = Visibility.Visible;
+            });
+        }
+        
+        /// <summary>
+        /// We are putting the remote call party on hold.
+        /// </summary>
+        private void HoldButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            m_holdButton.Visibility = Visibility.Collapsed;
+            m_offHoldButton.Visibility = Visibility.Visible;
+            _sipClient.PutOnHold();
+        }
+
+        /// <summary>
+        /// We are taking the remote call party off hold.
+        /// </summary>
+        private void OffHoldButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            m_holdButton.Visibility = Visibility.Visible;
+            m_offHoldButton.Visibility = Visibility.Collapsed;
+            _sipClient.TakeOffHold();
         }
 
         /// <summary>

@@ -109,7 +109,7 @@ namespace SIPSorcery.SIP.App
         {
             get
             {
-                if (Dialogue == null || Dialogue.RemoteSDP == null)
+                if (Dialogue?.RemoteSDP != null)
                 {
                     SDP remoteSDP = SDP.ParseSDPDescription(Dialogue.RemoteSDP);
                     var firstAudioStreamStatus = remoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
@@ -127,7 +127,7 @@ namespace SIPSorcery.SIP.App
         {
             get
             {
-                if (Dialogue == null || Dialogue.RemoteSDP == null)
+                if (Dialogue?.SDP != null)
                 {
                     SDP localSDP = SDP.ParseSDPDescription(Dialogue.SDP);
                     var firstAudioStreamStatus = localSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
@@ -285,6 +285,28 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// Send a re-INVITE request to put the remote call party on hold.
+        /// </summary>
+        public void PutOnHold()
+        {
+            SDP localSDP = SDP.ParseSDPDescription(Dialogue.SDP);
+            localSDP.Media.First(x => x.Media == SDPMediaTypesEnum.audio).MediaStreamStatus = MediaStreamStatusEnum.SendOnly;
+            Dialogue.SDP = localSDP.ToString();
+            SendReInviteRequest(localSDP);
+        }
+
+        /// <summary>
+        /// Send a re-INVITE request to take the remote call party on hold.
+        /// </summary>
+        public void TakeOffHold()
+        {
+            SDP localSDP = SDP.ParseSDPDescription(Dialogue.SDP);
+            localSDP.Media.First(x => x.Media == SDPMediaTypesEnum.audio).MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
+            Dialogue.SDP = localSDP.ToString();
+            SendReInviteRequest(localSDP);
+        }
+
+        /// <summary>
         /// Handler for when an in dialog request is received on an established call.
         /// Typical types of request will be re-INVITES for things like putting a call on or
         /// off hold and REFER requests for transfers. Some in dialog request types, such 
@@ -326,35 +348,19 @@ namespace SIPSorcery.SIP.App
 
                     // Check for remote party putting us on and off hold.
                     SDP newSDPOffer = SDP.ParseSDPDescription(sipRequest.Body);
-                    if(newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendRecv && OnHoldFromRemote)
+                    if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendRecv && OnHoldFromRemote)
                     {
                         // We've been taken off hold.
-                        SDP localSDP = SDP.ParseSDPDescription(Dialogue.SDP);
-                        localSDP.Media.First(x => x.Media == SDPMediaTypesEnum.audio).MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
-                        Dialogue.SDP = localSDP.ToString();
-                        Dialogue.RemoteSDP = sipRequest.Body;
-                        Dialogue.RemoteCSeq = sipRequest.Header.CSeq;
-
-                        var okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
-                        okResponse.Body = Dialogue.SDP;
-                        reInviteTransaction.SendFinalResponse(okResponse);
+                        var offHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.SendRecv);
+                        reInviteTransaction.SendFinalResponse(offHoldResponse);
 
                         RemoteTookOffHold?.Invoke();
                     }
-                    else if(newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendOnly && !OnHoldFromRemote)
+                    else if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendOnly && !OnHoldFromRemote)
                     {
                         // We've been put on hold.
-                        SDP localSDP = SDP.ParseSDPDescription(Dialogue.SDP);
-                        localSDP.Media.First(x => x.Media == SDPMediaTypesEnum.audio).MediaStreamStatus = MediaStreamStatusEnum.RecvOnly;
-                        Dialogue.SDP = localSDP.ToString();
-                        Dialogue.RemoteSDP = sipRequest.Body;
-                        Dialogue.RemoteCSeq = sipRequest.Header.CSeq;
-
-                        var okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
-                        okResponse.Body = Dialogue.SDP;
-                        reInviteTransaction.SendFinalResponse(okResponse);
+                        var onHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.RecvOnly);
+                        reInviteTransaction.SendFinalResponse(onHoldResponse);
 
                         RemotePutOnHold?.Invoke();
                     }
@@ -450,6 +456,27 @@ namespace SIPSorcery.SIP.App
 
                 UACInviteTransaction reinviteTransaction = m_transport.CreateUACTransaction(reinviteRequest, m_outboundProxy);
                 reinviteTransaction.SendReliableRequest();
+                reinviteTransaction.UACInviteTransactionFinalResponseReceived += ReinviteRequestFinalResponseReceived;
+            }
+        }
+
+        /// <summary>
+        /// Handles responses to our re-INVITE requests.
+        /// </summary>
+        /// <param name="localSIPEndPoint">The local end point the response was received on.</param>
+        /// <param name="remoteEndPoint">The remote end point the response came from.</param>
+        /// <param name="sipTransaction">The UAS transaction the response is part of.</param>
+        /// <param name="sipResponse">The SIP response.</param>
+        private void ReinviteRequestFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        {
+            if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
+            {
+                // Update the remote party's SDP.
+                Dialogue.RemoteSDP = sipResponse.Body;
+            }
+            else
+            {
+                logger.LogWarning($"Re-INVITE request failed with response {sipResponse.ShortDescription}.");
             }
         }
 
@@ -485,6 +512,10 @@ namespace SIPSorcery.SIP.App
                         Dialogue.Hangup(m_transport, m_outboundProxy);
 
                         transferAccepted.SetResult(true);
+                    }
+                    else
+                    {
+                        transferAccepted.SetResult(false);
                     }
                 };
 
@@ -593,7 +624,30 @@ namespace SIPSorcery.SIP.App
             SIPRequest referRequest = Dialogue.GetInDialogRequest(SIPMethodsEnum.REFER);
             referRequest.Header.ReferTo = referToUri.ToString();
             referRequest.Header.Supported = SIPExtensionHeaders.NO_REFER_SUB;
+            referRequest.Header.Contact = new List<SIPContactHeader> { SIPContactHeader.GetDefaultSIPContactHeader() };
             return referRequest;
+        }
+
+        /// <summary>
+        /// This method updates the dialogue and generates the response when we detect the remote
+        /// party sending us an on or off hold re-INVITE request.
+        /// </summary>
+        /// <param name="sipRequest">The re-INVITE request putting us on or off hold.</param>
+        /// <param name="localMediaStreamStatus">The stream status to set on our local SDP.</param>
+        /// <returns>The re-INVITE response to send back to the remote call party.</returns>
+        private SIPResponse ProcessRemoteHoldRequest(SIPRequest sipRequest, MediaStreamStatusEnum localMediaStreamStatus)
+        {
+            SDP localSDP = SDP.ParseSDPDescription(Dialogue.SDP);
+            localSDP.Media.First(x => x.Media == SDPMediaTypesEnum.audio).MediaStreamStatus = localMediaStreamStatus;
+            Dialogue.SDP = localSDP.ToString();
+            Dialogue.RemoteSDP = sipRequest.Body;
+            Dialogue.RemoteCSeq = sipRequest.Header.CSeq;
+
+            var okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+            okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
+            okResponse.Body = Dialogue.SDP;
+
+            return okResponse;
         }
     }
 }
