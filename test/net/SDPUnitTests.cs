@@ -54,7 +54,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
             Assert.True(sdp.Media[0].Port == 12228, "The connection port was not parsed correctly.");
             Assert.True(sdp.Media[0].GetFormatListToString() == "0 101", "The media format list was incorrect.");
-            Assert.True(sdp.Media[0].MediaFormats[0].FormatID == 0, "The highest priority media format ID was incorrect.");
+            Assert.True(sdp.Media[0].MediaFormats[0].FormatID == "0", "The highest priority media format ID was incorrect.");
             Assert.True(sdp.Media[0].MediaFormats[0].Name == "PCMU", "The highest priority media format name was incorrect.");
             Assert.True(sdp.Media[0].MediaFormats[0].ClockRate == 8000, "The highest priority media format clockrate was incorrect.");
         }
@@ -158,6 +158,35 @@ namespace SIPSorcery.Net.UnitTests
             Logger.LogDebug(sdp.ToString());
 
             Assert.True(sdp.Connection.ConnectionAddress == "101.180.234.134", "The connection address was not parsed correctly.");
+            Assert.NotEmpty(sdp.Media);
+            Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
+            Assert.True(sdp.Media[1].Media == SDPMediaTypesEnum.video, "The media type not parsed correctly.");
+            Assert.True(sdp.Media[1].Connection.ConnectionAddress == "10.0.0.10", "The connection address was not parsed correctly.");
+        }
+
+        [Fact]
+        public void ParseMediaTypeImageUnitTest()
+        {
+            Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr = "v=0" + m_CRLF +
+                "o=OfficeMasterDirectSIP 806542878 806542879 IN IP4 10.2.0.110" + m_CRLF +
+                "s=FOIP Call" + m_CRLF +
+                "c=IN IP4 10.2.0.110" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=image 50594 udptl t38" + m_CRLF +
+                "a=T38FaxRateManagement:transferredTCF" + m_CRLF +
+                "a=T38FaxVersion:0";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Logger.LogDebug(sdp.ToString());
+
+            Assert.True(sdp.Connection.ConnectionAddress == "10.2.0.110", "The connection address was not parsed correctly.");
+            Assert.NotEmpty(sdp.Media);
+            Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.image, "The media type not parsed correctly.");
+            Assert.True(sdp.Media[0].HasMediaFormat("t38"), "The highest priority media format ID was incorrect.");
+            Assert.True(sdp.Media[0].Transport == "udptl", "The media transport string was incorrect.");
         }
 
         /// <summary>
@@ -237,7 +266,7 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that the first RTP end point corresponding to a media offer can be extracted.
         /// </summary>
         [Fact]
-        public void GetFirstMedaiOfferRTPSocketUnitTest()
+        public void GetFirstMediaOfferRTPSocketUnitTest()
         {
             Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
@@ -265,7 +294,7 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that the first IPv6 RTP end point corresponding to a media offer can be extracted.
         /// </summary>
         [Fact]
-        public void GetFirstMedaiOfferIPv6RTPSocketUnitTest()
+        public void GetFirstMediaOfferIPv6RTPSocketUnitTest()
         {
             Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
