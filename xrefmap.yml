@@ -13380,6 +13380,19 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
   fullName: SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
   nameWithType: SIPUserAgent.OnReinviteRequest
+- uid: SIPSorcery.SIP.App.SIPUserAgent.PutOnHold
+  name: PutOnHold()
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_PutOnHold
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.PutOnHold
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.PutOnHold()
+  nameWithType: SIPUserAgent.PutOnHold()
+- uid: SIPSorcery.SIP.App.SIPUserAgent.PutOnHold*
+  name: PutOnHold
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_PutOnHold_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.PutOnHold
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.PutOnHold
+  nameWithType: SIPUserAgent.PutOnHold
 - uid: SIPSorcery.SIP.App.SIPUserAgent.RemotePutOnHold
   name: RemotePutOnHold
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_RemotePutOnHold
@@ -13411,6 +13424,19 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.ServerCallCancelled
   fullName: SIPSorcery.SIP.App.SIPUserAgent.ServerCallCancelled
   nameWithType: SIPUserAgent.ServerCallCancelled
+- uid: SIPSorcery.SIP.App.SIPUserAgent.TakeOffHold
+  name: TakeOffHold()
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_TakeOffHold
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.TakeOffHold
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.TakeOffHold()
+  nameWithType: SIPUserAgent.TakeOffHold()
+- uid: SIPSorcery.SIP.App.SIPUserAgent.TakeOffHold*
+  name: TakeOffHold
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_TakeOffHold_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.TakeOffHold
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.TakeOffHold
+  nameWithType: SIPUserAgent.TakeOffHold
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Transfer(SIPSorcery.SIP.SIPURI,System.TimeSpan,System.Threading.CancellationToken)
   name: Transfer(SIPURI, TimeSpan, CancellationToken)
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Transfer_SIPSorcery_SIP_SIPURI_System_TimeSpan_System_Threading_CancellationToken_
