@@ -7,6 +7,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="net\RTP\RTPChannel2.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="core\SIPEvents\Dialog\EventDialogSchema.xsd" />
     <None Remove="core\SIPEvents\Presence\PIDFSchema.xsd" />
     <None Include="icon.png" Pack="true" PackagePath="" />
