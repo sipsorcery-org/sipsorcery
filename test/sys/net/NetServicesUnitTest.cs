@@ -99,7 +99,7 @@ namespace SIPSorcery.Sys.UnitTests
         /// Tests that the a local address is returned for an Internet IPv6 destination.
         /// </summary>
         [Fact(Skip = "Only works if machine running the test has a public IPv6 address assigned.")]
-        //[TestCategory("IPv6")]
+        [Trait("Category", "IPv6")]
         //[Ignore] // Only works if machine running the test has a public IPv6 address assigned.
         public void GetLocalForInternetIPv6AdressUnitTest()
         {
