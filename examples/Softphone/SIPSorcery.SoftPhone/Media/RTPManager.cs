@@ -7,7 +7,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 12 Dec 2014	Aaron Clauson	Refactored from MediaManager, Hobart, Australia.
+// 12 Dec 2014  Aaron Clauson   Refactored from MediaManager, Hobart, Australia.
 // 10 Feb 2015  Aaron Clauson   Switched from using internal RTP channel to use http://net7mma.codeplex.com/ (and then back again).
 //
 // License: 
