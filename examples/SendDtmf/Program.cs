@@ -315,7 +315,7 @@ namespace SIPSorcery
             uint bufferSize = (uint)SILENCE_SAMPLE_PERIOD;
             uint rtpSendTimestamp = 0;
             uint packetSentCount = 0;
-            uint bytesSentCount = 0;
+            uint bytesSentCount = 0; 
 
             while (cts.IsCancellationRequested == false)
             {
