@@ -146,7 +146,7 @@ namespace SIPSorcery.SIP.App
                 //uacInviteRequest.RemoteSIPEndPoint = m_blackhole;
 
                 // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
-                m_uacTransaction = m_sipTransport.CreateUACTransaction(uacInviteRequest, null);
+                m_uacTransaction = new UACInviteTransaction(m_sipTransport, uacInviteRequest, null);
                 if (m_uacTransaction.CDR != null)
                 {
                     m_uacTransaction.CDR.Owner = m_uacOwner;
@@ -165,7 +165,7 @@ namespace SIPSorcery.SIP.App
                 //uasInviteRequest.LocalSIPEndPoint = m_blackhole;
                 //uasInviteRequest.RemoteSIPEndPoint = m_blackhole;
                 uasInviteRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
-                m_uasTransaction = m_sipTransport.CreateUASTransaction(uasInviteRequest, null);
+                m_uasTransaction = new UASInviteTransaction(m_sipTransport, uasInviteRequest, null);
 
                 SetOwner(sipCallDescriptor.ToSIPAccount.Owner, sipCallDescriptor.ToSIPAccount.AdminMemberId);
                 //m_uasTransaction.TransactionTraceMessage += TransactionTraceMessage;
@@ -188,10 +188,7 @@ namespace SIPSorcery.SIP.App
                 m_uasTransaction.CancelCall();
                 m_uacTransaction.CancelCall();
 
-                if (CallCancelled != null)
-                {
-                    CallCancelled(this);
-                }
+                CallCancelled?.Invoke(this);
             }
             catch (Exception excp)
             {
@@ -247,10 +244,10 @@ namespace SIPSorcery.SIP.App
                         else
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "B2BUA call progressing with " + progressStatus + ".", m_uacOwner));
-                            SIPResponse uasProgressResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, progressStatus, reasonPhrase);
+                            SIPResponse uasProgressResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, progressStatus, reasonPhrase);
                             m_uasTransaction.SendProvisionalResponse(uasProgressResponse);
 
-                            SIPResponse uacProgressResponse = SIPTransport.GetResponse(m_uacTransaction.TransactionRequest, progressStatus, reasonPhrase);
+                            SIPResponse uacProgressResponse = SIPResponse.GetResponse(m_uacTransaction.TransactionRequest, progressStatus, reasonPhrase);
                             if (!progressBody.IsNullOrBlank())
                             {
                                 uacProgressResponse.Body = progressBody;
@@ -296,11 +293,11 @@ namespace SIPSorcery.SIP.App
                     UASStateChanged(this, SIPResponseStatusCodesEnum.Ok, null);
                 }
 
-                SIPResponse uasOkResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, SIPResponseStatusCodesEnum.Ok, null);
+                SIPResponse uasOkResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, SIPResponseStatusCodesEnum.Ok, null);
                 m_uasTransaction.SendFinalResponse(uasOkResponse);
                 m_uasTransaction.ACKReceived(m_blackhole, m_blackhole, null);
 
-                SIPResponse uacOkResponse = SIPTransport.GetResponse(m_uacTransaction.TransactionRequest, SIPResponseStatusCodesEnum.Ok, null);
+                SIPResponse uacOkResponse = SIPResponse.GetResponse(m_uacTransaction.TransactionRequest, SIPResponseStatusCodesEnum.Ok, null);
                 uacOkResponse.Header.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, new SIPURI(SIPSchemesEnum.sip, m_blackhole)) };
                 m_uacTransaction.GotResponse(m_blackhole, m_blackhole, uacOkResponse);
                 uacOkResponse.Header.ContentType = contentType;
@@ -333,10 +330,10 @@ namespace SIPSorcery.SIP.App
                 UASStateChanged(this, rejectCode, rejectReason);
             }
 
-            SIPResponse uasfailureResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, rejectCode, rejectReason);
+            SIPResponse uasfailureResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, rejectCode, rejectReason);
             m_uasTransaction.SendFinalResponse(uasfailureResponse);
 
-            SIPResponse uacfailureResponse = SIPTransport.GetResponse(m_uacTransaction.TransactionRequest, rejectCode, rejectReason);
+            SIPResponse uacfailureResponse = SIPResponse.GetResponse(m_uacTransaction.TransactionRequest, rejectCode, rejectReason);
             if (customHeaders != null && customHeaders.Length > 0)
             {
                 foreach (string header in customHeaders)

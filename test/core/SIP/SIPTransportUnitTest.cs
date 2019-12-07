@@ -326,7 +326,7 @@ namespace SIPSorcery.SIP.UnitTests
                     {
                         logger.LogDebug($"Sending request {i}.");
 
-                        var req = transport.GetRequest(SIPMethodsEnum.OPTIONS, new SIPURI(SIPSchemesEnum.sip, tcpChannel.ListeningSIPEndPoint));
+                        var req = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, new SIPURI(SIPSchemesEnum.sip, tcpChannel.ListeningSIPEndPoint));
                         byte[] reqBytes = Encoding.UTF8.GetBytes(req.ToString());
 
                         tcpClient.GetStream().Write(reqBytes, 0, reqBytes.Length);
@@ -402,7 +402,7 @@ namespace SIPSorcery.SIP.UnitTests
 
                     if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                     {
-                        SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         logger.LogDebug(optionsResponse.ToString());
                         serverSIPTransport.SendResponse(optionsResponse);
                     }
@@ -475,7 +475,7 @@ namespace SIPSorcery.SIP.UnitTests
                     logger.LogDebug(sipResponse.ToString());
                 };
 
-                var optionsRequest = clientSIPTransport.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
+                var optionsRequest = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
 
                 clientSIPTransport.SendRequest(optionsRequest);
 

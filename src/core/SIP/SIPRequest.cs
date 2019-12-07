@@ -7,7 +7,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 20 Oct 2005	Aaron Clauson	Created, Dublin, Ireland.
+// 20 Oct 2005	Aaron Clauson   Created, Dublin, Ireland.
 // 26 Nov 2019  Aaron Clauson   Added SIPMessageBase inheritance.
 //
 // License: 
@@ -26,13 +26,7 @@ namespace SIPSorcery.SIP
     {
         private delegate bool IsLocalSIPSocketDelegate(string socket, SIPProtocolsEnum protocol);
 
-        private static string m_sipVersion = SIPConstants.SIP_VERSION_STRING;
-        private static int m_sipMajorVersion = SIPConstants.SIP_MAJOR_VERSION;
-        private static int m_sipMinorVersion = SIPConstants.SIP_MINOR_VERSION;
-
-        public string SIPVersion = m_sipVersion;
-        public int SIPMajorVersion = m_sipMajorVersion;
-        public int SIPMinorVersion = m_sipMinorVersion;
+        public string SIPVersion = m_sipFullVersion;
         public SIPMethodsEnum Method;
         public string UnknownMethod = null;
 
@@ -173,9 +167,9 @@ namespace SIPSorcery.SIP
         public SIPRequest Copy()
         {
             SIPRequest copy = new SIPRequest();
-            copy.SIPVersion = m_sipVersion;
-            copy.SIPMajorVersion = m_sipMajorVersion;
-            copy.SIPMinorVersion = m_sipMinorVersion;
+            copy.SIPVersion = SIPVersion;
+            //copy.SIPMajorVersion = m_sipMajorVersion;
+            //copy.SIPMinorVersion = m_sipMinorVersion;
             copy.Method = Method;
             copy.UnknownMethod = UnknownMethod;
             copy.URI = URI?.CopyOf();
@@ -262,6 +256,54 @@ namespace SIPSorcery.SIP
         {
             SendFromHintChannelID = localEndPoint?.ChannelID;
             SendFromHintConnectionID = localEndPoint?.ConnectionID;
+        }
+
+        /// <summary>
+        /// Builds a very basic SIP request. In most cases additional headers will need to be added in order for it to be useful.
+        /// When this method is called the channel used for sending the request has not been decided. The headers below depend on 
+        /// the sending channel. By setting them to "0.0.0.0:0" the send request methods will substitute in the appropriate value
+        /// at send time:
+        /// - Top Via header.
+        /// - From header.
+        /// - Contact header.
+        /// </summary>
+        /// <param name="method">The method for the SIP request.</param>
+        /// <param name="uri">The destination URI for the request.</param>
+        /// <returns>A SIP request object.</returns>
+        public static SIPRequest GetRequest(SIPMethodsEnum method, SIPURI uri)
+        {
+            return GetRequest(
+                method,
+                uri,
+                new SIPToHeader(null, new SIPURI(uri.User, uri.Host, null, uri.Scheme, SIPProtocolsEnum.udp), null),
+                SIPFromHeader.GetDefaultSIPFromHeader(uri.Scheme));
+        }
+
+        /// <summary>
+        /// Builds a very basic SIP request. In most cases additional headers will need to be added in order for it to be useful.
+        /// When this method is called the channel used for sending the request has not been decided. The headers below depend on 
+        /// the sending channel. By setting them to "0.0.0.0:0" the send request methods will substitute in the appropriate value
+        /// at send time:
+        /// - Top Via header.
+        /// - From header.
+        /// - Contact header.
+        /// </summary>
+        /// <param name="method">The method for the SIP request.</param>
+        /// <param name="uri">The destination URI for the request.</param>
+        /// <param name="to">The To header for the request.</param>
+        /// <param name="from">The From header for the request.</param>
+        /// <returns>A SIP request object.</returns>
+        public static SIPRequest GetRequest(SIPMethodsEnum method, SIPURI uri, SIPToHeader to, SIPFromHeader from)
+        {
+            SIPRequest request = new SIPRequest(method, uri);
+
+            SIPHeader header = new SIPHeader(from, to, 1, CallProperties.CreateNewCallId());
+            request.Header = header;
+            header.CSeqMethod = method;
+            header.Allow = m_allowedSIPMethods;
+            header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
+
+            return request;
         }
     }
 }

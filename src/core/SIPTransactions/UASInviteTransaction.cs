@@ -36,7 +36,7 @@ namespace SIPSorcery.SIP
         public event SIPTransactionRequestReceivedDelegate NewCallReceived;
         public event SIPTransactionTimedOutDelegate UASInviteTransactionTimedOut;
 
-        internal UASInviteTransaction(
+        public UASInviteTransaction(
             SIPTransport sipTransport,
             SIPRequest sipRequest,
             SIPEndPoint outboundProxy,
@@ -121,7 +121,7 @@ namespace SIPSorcery.SIP
                     else
                     {
                         // Nobody wants to answer this call so return an error response.
-                        SIPResponse declinedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
+                        SIPResponse declinedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
                         SendFinalResponse(declinedResponse);
                     }
                 }
@@ -168,7 +168,7 @@ namespace SIPSorcery.SIP
                 {
                     base.Cancel();
 
-                    SIPResponse cancelResponse = SIPTransport.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
+                    SIPResponse cancelResponse = SIPResponse.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
                     SendFinalResponse(cancelResponse);
 
                     UASInviteTransactionCancelled?.Invoke(this);

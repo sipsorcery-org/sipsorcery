@@ -12,7 +12,7 @@
 // 17 Nov 2019  Aaron Clauson   Added IPAddress.Any support, see https://github.com/sipsorcery/sipsorcery/issues/97.
 //
 // Notes:
-// This class is using the "Asychronous Programming Model" (APM)* BeginReceiveMessageFrom/EndReceiveMessageFrom approach. 
+// This class is using the "Asychronous Programming Model" (APM*) BeginReceiveMessageFrom/EndReceiveMessageFrom approach. 
 // The motivation for the decision is that it's the only one of the UDP socket receives methods that provides access to 
 // the received on IP address when listening on IPAddress.Any.
 //
@@ -56,7 +56,7 @@ namespace SIPSorcery.SIP
             ListeningIPAddress = endPoint.Address;
             Port = endPoint.Port;
             SIPProtocol = SIPProtocolsEnum.udp;
-            IsReliable = true;
+            IsReliable = false;
 
             m_udpSocket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             m_udpSocket.Bind(endPoint);
@@ -120,7 +120,7 @@ namespace SIPSorcery.SIP
                 logger.LogWarning($"SocketException SIPUDPChannel EndReceiveMessageFrom ({sockExcp.ErrorCode}). {sockExcp.Message}");
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { } 
+            { }
             catch (Exception excp)
             {
                 logger.LogError($"Exception SIPUDPChannel EndReceiveMessageFrom. {excp.Message}");
@@ -152,23 +152,20 @@ namespace SIPSorcery.SIP
 
             try
             {
-                //System.Diagnostics.Debug.WriteLine($"SendAsync starting: {buffer.Length} to {dstEndPoint}.");
-
                 m_udpSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, dstEndPoint);
                 return Task.FromResult(SocketError.Success);
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             {
                 return Task.FromResult(SocketError.Disconnecting);
-            } 
+            }
             catch (SocketException sockExcp)
             {
-                System.Diagnostics.Debug.WriteLine($"Exception SIPUDPChannel SocketException.");
                 return Task.FromResult(sockExcp.SocketErrorCode);
             }
             catch (Exception excp)
             {
-                System.Diagnostics.Debug.WriteLine($"Exception SIPUDPChannel.SendAsync. {excp.Message}");
+                logger.LogError($"Exception SIPUDPChannel.SendAsync. {excp}");
                 return Task.FromResult(SocketError.Fault);
             }
         }
@@ -180,8 +177,6 @@ namespace SIPSorcery.SIP
                 IPEndPoint dstEndPoint = (IPEndPoint)ar.AsyncState;
 
                 int bytesSent = m_udpSocket.EndSendTo(ar);
-
-                //System.Diagnostics.Debug.WriteLine($"EndSendTo: {bytesSent} to {dstEndPoint}.");
             }
             catch (SocketException sockExcp)
             {
@@ -191,7 +186,7 @@ namespace SIPSorcery.SIP
                 logger.LogWarning($"SocketException SIPUDPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { } 
+            { }
             catch (Exception excp)
             {
                 logger.LogError($"Exception SIPUDPChannel EndSendTo. {excp.Message}");

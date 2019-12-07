@@ -168,7 +168,7 @@ namespace SIPSorcery
                         if (rtpSession == null)
                         {
                             // Didn't get a match on the codecs we support.
-                            SIPResponse noMatchingCodecResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptableHere, null);
+                            SIPResponse noMatchingCodecResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptableHere, null);
                             sipTransport.SendResponse(noMatchingCodecResponse);
                         }
                         else
@@ -181,7 +181,7 @@ namespace SIPSorcery
                             }
                             rtpCts?.Cancel();
 
-                            UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, null);
+                            UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
                             uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
                             rtpCts = new CancellationTokenSource();
 
@@ -210,8 +210,8 @@ namespace SIPSorcery
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)
                     {
                         SIPSorcery.Sys.Log.Logger.LogInformation("Call hungup.");
-                        SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, null);
-                        SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(sipTransport, sipRequest, null);
+                        SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         byeTransaction.SendFinalResponse(byeResponse);
                         uas?.Hangup(true);
                         rtpCts?.Cancel();
@@ -220,12 +220,12 @@ namespace SIPSorcery
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
                     {
-                        SIPResponse notAllowededResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                        SIPResponse notAllowededResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
                         sipTransport.SendResponse(notAllowededResponse);
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.OPTIONS || sipRequest.Method == SIPMethodsEnum.REGISTER)
                     {
-                        SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         sipTransport.SendResponse(optionsResponse);
                     }
                 }
@@ -455,7 +455,7 @@ namespace SIPSorcery
                                                             new SDPMediaFormat((int)SDPMediaFormatsEnum.G722, "G722", 8000) }
             };
             audioAnnouncement.Port = rtpSocket.Port;
-            audioAnnouncement.ExtraAttributes.Add("a=sendrecv");
+            audioAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
             sdp.Media.Add(audioAnnouncement);
 
             return sdp;

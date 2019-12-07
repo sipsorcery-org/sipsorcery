@@ -61,7 +61,7 @@ namespace SIPSorcery.SIP.App
             try
             {
                 SIPRequest req = GetRequest(method);
-                SIPNonInviteTransaction tran = m_sipTransport.CreateNonInviteTransaction(req, m_outboundProxy);
+                SIPNonInviteTransaction tran = new SIPNonInviteTransaction(m_sipTransport, req, m_outboundProxy);
 
                 ManualResetEvent waitForResponse = new ManualResetEvent(false);
                 tran.NonInviteTransactionTimedOut += RequestTimedOut;
@@ -94,7 +94,7 @@ namespace SIPSorcery.SIP.App
                         if ((m_callDescriptor.Username != null || m_callDescriptor.AuthUsername != null) && m_callDescriptor.Password != null)
                         {
                             SIPRequest authenticatedRequest = GetAuthenticatedRequest(sipTransaction.TransactionRequest, sipResponse);
-                            SIPNonInviteTransaction authTransaction = m_sipTransport.CreateNonInviteTransaction(authenticatedRequest, m_outboundProxy);
+                            SIPNonInviteTransaction authTransaction = new SIPNonInviteTransaction(m_sipTransport, authenticatedRequest, m_outboundProxy);
                             authTransaction.NonInviteTransactionFinalResponseReceived += AuthResponseReceived;
                             authTransaction.NonInviteTransactionTimedOut += RequestTimedOut;
                             m_sipTransport.SendSIPReliable(authTransaction);

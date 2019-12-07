@@ -42,7 +42,7 @@ namespace SIPSorcery.Register
             var sipChannel = new SIPUDPChannel(IPAddress.Any, 0);
             sipTransport.AddSIPChannel(sipChannel);
 
-            //EnableTraceLogs(sipTransport);
+            EnableTraceLogs(sipTransport);
 
             // Create a client user agent to maintain a periodic registration with a SIP server.
             var regUserAgent = new SIPRegistrationUserAgent(

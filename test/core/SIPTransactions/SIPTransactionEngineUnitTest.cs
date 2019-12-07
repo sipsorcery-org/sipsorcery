@@ -121,12 +121,12 @@ namespace SIPSorcery.SIP.UnitTests
                 serverTransport.SIPTransportRequestReceived += (localEndPoint, remoteEndPoint, sipRequest) =>
                 {
                     logger.LogDebug("Server Transport Request In: " + sipRequest.Method + ".");
-                    serverTransaction = serverTransport.CreateUASTransaction(sipRequest, null);
+                    serverTransaction = new UASInviteTransaction(serverTransport, sipRequest, null);
                     SetTransactionTraceEvents(serverTransaction);
                     serverTransaction.NewCallReceived += (lep, rep, sipTransaction, newCallRequest) =>
                     {
                         logger.LogDebug("Server new call received.");
-                        var busyResponse = SIPTransport.GetResponse(newCallRequest, SIPResponseStatusCodesEnum.BusyHere, null);
+                        var busyResponse = SIPResponse.GetResponse(newCallRequest, SIPResponseStatusCodesEnum.BusyHere, null);
                         sipTransaction.SendFinalResponse(busyResponse);
                     };
                     serverTransaction.TransactionStateChanged += (tx) =>
