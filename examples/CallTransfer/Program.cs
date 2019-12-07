@@ -147,8 +147,8 @@ namespace SIPSorcery
                 {
                     if (sipRequest.Method == SIPMethodsEnum.BYE)
                     {
-                        SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, null);
-                        SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(sipTransport, sipRequest, null);
+                        SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         byeTransaction.SendFinalResponse(byeResponse);
 
                         if (uac.IsUACAnswered)
@@ -195,7 +195,7 @@ namespace SIPSorcery
                 if (!hasCallFailed)
                 {
                     SIPRequest referRequest = GetReferRequest(uac.SIPDialogue, SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI));
-                    SIPNonInviteTransaction referTx = sipTransport.CreateNonInviteTransaction(referRequest, null);
+                    SIPNonInviteTransaction referTx = new SIPNonInviteTransaction(sipTransport, referRequest, null);
 
                     referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =>
                     {
@@ -380,7 +380,7 @@ namespace SIPSorcery
                 MediaFormats = new List<SDPMediaFormat>() { new SDPMediaFormat((int)SDPMediaFormatsEnum.PCMU, "PCMU", 8000) }
             };
             audioAnnouncement.Port = rtpSocket.Port;
-            audioAnnouncement.ExtraAttributes.Add("a=sendrecv");
+            audioAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
             sdp.Media.Add(audioAnnouncement);
 
             return sdp;

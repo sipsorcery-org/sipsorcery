@@ -26,53 +26,9 @@ namespace SIPSorcery.SIP.UnitTests
 
         private readonly ITestOutputHelper output;
 
-        private class MockSIPDNSManager
-        {
-            public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool synchronous)
-            {
-                // This assumes the input SIP URI has an IP address as the host!
-                return new SIPDNSLookupResult(sipURI);
-            }
-        }
-
-        private List<LocalSIPSocket> m_sipSockets = new List<LocalSIPSocket>();
-
-        private struct LocalSIPSocket
-        {
-            public string Socket;
-            public SIPProtocolsEnum Protocol;
-
-            public LocalSIPSocket(string socket, SIPProtocolsEnum protocol)
-            {
-                Socket = socket;
-                Protocol = protocol;
-            }
-        }
-
         public SIPRequestUnitTest(ITestOutputHelper output)
         {
             this.output = output;
-        }
-
-        private bool IsLocalSIPSocket(string socket, SIPProtocolsEnum protocol)
-        {
-            foreach (LocalSIPSocket sipSocket in m_sipSockets)
-            {
-                if (sipSocket.Socket == socket && sipSocket.Protocol == protocol)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        [Fact]
-        public void SampleTest()
-        {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
-            Assert.True(true, "True was false.");
         }
 
         [Fact]
@@ -116,8 +72,8 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine("Body:\r\n" + inviteReq.Body + ".");
 
             Assert.True(inviteReq.Method == SIPMethodsEnum.INVITE, "The SIP request method was not parsed correctly.");
-            Assert.True(inviteReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
-            Assert.True(inviteReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
+            //Assert.True(inviteReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
+            //Assert.True(inviteReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
             Assert.True(inviteReq.URI.User == "303", "The SIP request URI Name was not parsed correctly.");
             Assert.True(inviteReq.URI.Host == "sip.blueface.ie", "The SIP request URI Host was not parsed correctly.");
             Assert.True(inviteReq.Body != null && inviteReq.Body.Length == 271, "The SIP content body was not parsed correctly.");
@@ -169,8 +125,8 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Assert.True(ackReq.Method == SIPMethodsEnum.ACK, "The SIP request method was not parsed correctly.");
-            Assert.True(ackReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
-            Assert.True(ackReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
+            //Assert.True(ackReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
+            //Assert.True(ackReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
             Assert.True(ackReq.URI.User == "303", "The SIP request URI was not parsed correctly.");
             Assert.True(ackReq.URI.Host == "213.168.225.133", "The SIP request URI Host was not parsed correctly.");
 
@@ -201,8 +157,8 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRequest ackReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Assert.True(ackReq.Method == SIPMethodsEnum.ACK, "The SIP request method was not parsed correctly.");
-            Assert.True(ackReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
-            Assert.True(ackReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
+            //Assert.True(ackReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
+            //Assert.True(ackReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
             Assert.True(ackReq.URI.User == "303", "The SIP request URI was not parsed correctly.");
             Assert.True(ackReq.URI.Host == "213.168.225.133:5061", "The SIP request URI Host was not parsed correctly.");
 
@@ -231,8 +187,8 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Assert.True(byeReq.Method == SIPMethodsEnum.BYE, "The SIP request method was not parsed correctly.");
-            Assert.True(byeReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
-            Assert.True(byeReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
+            //Assert.True(byeReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
+            //Assert.True(byeReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
             Assert.True(byeReq.URI.User == "303", "The SIP request URI name was not parsed correctly.");
 
             Console.WriteLine("-----------------------------------------");
@@ -259,8 +215,8 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             Assert.True(byeReq.Method == SIPMethodsEnum.BYE, "The SIP request method was not parsed correctly.");
-            Assert.True(byeReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
-            Assert.True(byeReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
+            //Assert.True(byeReq.SIPMajorVersion == 2, "The SIP Major version was not parsed correctly.");
+            //Assert.True(byeReq.SIPMinorVersion == 0, "The SIP Minor version was not parsed correctly.");
             Assert.True(byeReq.URI.User == "bluesipd", "The SIP request URI Name was not parsed correctly.");
             Assert.True(byeReq.URI.Host == "192.168.1.2:5065", "The SIP request URI Host was not parsed correctly.");
 
@@ -1034,6 +990,105 @@ namespace SIPSorcery.SIP.UnitTests
             Console.WriteLine(ackReq.ToString());
 
             Console.WriteLine("-----------------------------------------");
+        }
+
+        /// <summary>
+        /// Tests that a SIP request is serialised to a string correctly.
+        /// </summary>
+        [Fact]
+        public void ToStringSerialisationTest()
+        {
+            output.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
+            SIPRequest registerRequest = SIPRequest.GetRequest(SIPMethodsEnum.REGISTER, uri);
+            registerRequest.Header.Vias.TopViaHeader.Branch = "z9hG4bKb4313133e5fe42da87034c2b22ac2aab";
+            registerRequest.Header.From.FromTag = "OLBDXPNBTJ";
+            registerRequest.Header.CallId = "2b79ac74010c494aa1eaaacb9819d77d";
+            
+            output.WriteLine(registerRequest.ToString());
+
+            string expectedSerialisation = @"REGISTER sip:dummy@dummy SIP/2.0
+Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport
+To: <sip:dummy@dummy>
+From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ
+Call-ID: 2b79ac74010c494aa1eaaacb9819d77d
+CSeq: 1 REGISTER
+Max-Forwards: 70
+Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE
+Content-Length: 0
+
+";
+            Assert.Equal(expectedSerialisation, registerRequest.ToString());
+        }
+
+        /// <summary>
+        /// Tests that a copied SIP request is serialised to a string correctly.
+        /// </summary>
+        [Fact]
+        public void CopyToStringSerialisationTest()
+        {
+            output.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
+            SIPRequest registerRequest = SIPRequest.GetRequest(SIPMethodsEnum.REGISTER, uri);
+            registerRequest.Header.Vias.TopViaHeader.Branch = "z9hG4bKb4313133e5fe42da87034c2b22ac2aab";
+            registerRequest.Header.From.FromTag = "OLBDXPNBTJ";
+            registerRequest.Header.CallId = "2b79ac74010c494aa1eaaacb9819d77d";
+
+            SIPRequest copy = registerRequest.Copy();
+
+            output.WriteLine(copy.ToString());
+
+            string expectedSerialisation = @"REGISTER sip:dummy@dummy SIP/2.0
+Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport
+To: <sip:dummy@dummy>
+From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ
+Call-ID: 2b79ac74010c494aa1eaaacb9819d77d
+CSeq: 1 REGISTER
+Max-Forwards: 70
+Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE
+Content-Length: 0
+
+";
+            Assert.Equal(expectedSerialisation, copy.ToString());
+        }
+
+        /// <summary>
+        /// Tests that a parsed SIP request is serialised to a string correctly.
+        /// </summary>
+        [Fact]
+        public void ParsedToStringSerialisationTest()
+        {
+            output.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sipRequestStr = @"REGISTER sip:dummy@dummy SIP/2.0
+Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport
+To: <sip:dummy@dummy>
+From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ
+Call-ID: 2b79ac74010c494aa1eaaacb9819d77d
+CSeq: 1 REGISTER
+Max-Forwards: 70
+Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE
+Content-Length: 0
+
+";
+            SIPRequest registerRequest = SIPRequest.ParseSIPRequest(sipRequestStr);
+
+            output.WriteLine(registerRequest.ToString());
+
+            string expectedSerialisation = @"REGISTER sip:dummy@dummy SIP/2.0
+Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport
+To: <sip:dummy@dummy>
+From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ
+Call-ID: 2b79ac74010c494aa1eaaacb9819d77d
+CSeq: 1 REGISTER
+Max-Forwards: 70
+Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE
+Content-Length: 0
+
+";
+            Assert.Equal(expectedSerialisation, registerRequest.ToString());
         }
     }
 }

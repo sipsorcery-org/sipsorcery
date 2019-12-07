@@ -120,7 +120,7 @@ namespace SIPSorcery.SIP
                 logger.LogWarning($"SocketException SIPUDPChannel EndReceiveMessageFrom ({sockExcp.ErrorCode}). {sockExcp.Message}");
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { } 
+            { }
             catch (Exception excp)
             {
                 logger.LogError($"Exception SIPUDPChannel EndReceiveMessageFrom. {excp.Message}");
@@ -158,7 +158,7 @@ namespace SIPSorcery.SIP
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             {
                 return Task.FromResult(SocketError.Disconnecting);
-            } 
+            }
             catch (SocketException sockExcp)
             {
                 return Task.FromResult(sockExcp.SocketErrorCode);
@@ -186,7 +186,7 @@ namespace SIPSorcery.SIP
                 logger.LogWarning($"SocketException SIPUDPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { } 
+            { }
             catch (Exception excp)
             {
                 logger.LogError($"Exception SIPUDPChannel EndSendTo. {excp.Message}");

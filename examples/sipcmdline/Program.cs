@@ -228,9 +228,9 @@ namespace SIPSorcery
 
             SIPURI dstUri = null;
             // Don't attempt a SIP URI parse for serialised SIPEndPoints.
-            if (Regex.IsMatch(dst, "^(udp|tcp|tls|ws|wss)") == false && SIPURI.TryParse(dst))
+            if (Regex.IsMatch(dst, "^(udp|tcp|tls|ws|wss)") == false && SIPURI.TryParse(dst, out var argUri))
             {
-                dstUri = SIPURI.ParseSIPURIRelaxed(dst);
+                dstUri = argUri;
             }
             else
             {
@@ -283,7 +283,7 @@ namespace SIPSorcery
                     //hepClient.SendAsync(hepBuffer, hepBuffer.Length, "192.168.11.49", 9060);
                 };
 
-                var optionsRequest = sipTransport.GetRequest(SIPMethodsEnum.OPTIONS, dst);
+                var optionsRequest = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, dst);
 
                 sipTransport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
                 {

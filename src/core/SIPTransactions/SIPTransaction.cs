@@ -129,20 +129,6 @@ namespace SIPSorcery.SIP
             get { return m_transactionRequest.Header.From.FromUserField; }
         }
 
-
-        /// <summary>
-        /// The remote socket that caused the transaction to be created or the socket a newly 
-        /// created transaction request was sent to. 
-        /// </summary>
-        //public SIPEndPoint RemoteEndPoint;
-
-        /// <summary>
-        /// The local SIP endpoint the remote request was received on or if created by us 
-        /// the local SIP end point used to send the initial transaction request (note will be null
-        /// until the request is sent).
-        /// </summary>
-        //public SIPEndPoint LocalSIPEndPoint;
-
         /// <summary>
         /// If not null this value is where ALL transaction requests should be sent to.
         /// </summary>
@@ -482,7 +468,7 @@ namespace SIPSorcery.SIP
 
             // We don't keep track of previous provisional response ACK's so always return OK if the request matched the 
             // transaction and got this far.
-            var prackResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+            var prackResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
             m_sipTransport.SendResponse(prackResponse);
         }
 

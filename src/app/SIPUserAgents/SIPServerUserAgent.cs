@@ -108,7 +108,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public SDP OfferSDP
         {
-            get { return SDP.ParseSDPDescription(m_uasTransaction.TransactionRequest.Body);  }
+            get { return SDP.ParseSDPDescription(m_uasTransaction.TransactionRequest.Body); }
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace SIPSorcery.SIP.App
         /// continue past the trying stage.
         /// </summary>
         public event SIPUASDelegate NoRingTimeout;
-        
+
         /// <summary>
         /// The underlying invite transaction has reached the completed state.
         /// </summary>
@@ -277,7 +277,7 @@ namespace SIPSorcery.SIP.App
                         else
                         {
                             // Send authorisation failure or required response
-                            SIPResponse authReqdResponse = SIPTransport.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
+                            SIPResponse authReqdResponse = SIPResponse.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
                             authReqdResponse.Header.AuthenticationHeader = authenticationResult.AuthenticationRequiredHeader;
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call not authenticated for " + m_sipUsername + "@" + m_sipDomain + ", responding with " + authenticationResult.ErrorResponse + ".", null));
                             m_uasTransaction.SendFinalResponse(authReqdResponse);
@@ -318,7 +318,7 @@ namespace SIPSorcery.SIP.App
                         else
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "UAS call progressing with " + progressStatus + ".", m_owner));
-                            SIPResponse progressResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, progressStatus, reasonPhrase);
+                            SIPResponse progressResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, progressStatus, reasonPhrase);
 
                             if (progressResponse.Status != SIPResponseStatusCodesEnum.Trying)
                             {
@@ -424,7 +424,7 @@ namespace SIPSorcery.SIP.App
                         string failureReason = (!reasonPhrase.IsNullOrBlank()) ? " and " + reasonPhrase : null;
 
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "UAS call failed with a response status of " + (int)failureStatus + failureReason + ".", m_owner));
-                        SIPResponse failureResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, failureStatus, reasonPhrase);
+                        SIPResponse failureResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, failureStatus, reasonPhrase);
 
                         if (customHeaders != null && customHeaders.Length > 0)
                         {
@@ -454,7 +454,7 @@ namespace SIPSorcery.SIP.App
             {
                 if (m_uasTransaction.TransactionFinalResponse == null)
                 {
-                    SIPResponse redirectResponse = SIPTransport.GetResponse(m_uasTransaction.TransactionRequest, redirectCode, null);
+                    SIPResponse redirectResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, redirectCode, null);
                     redirectResponse.Header.Contact = SIPContactHeader.CreateSIPContactList(redirectURI);
                     m_uasTransaction.SendFinalResponse(redirectResponse);
                 }
@@ -498,7 +498,7 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         SIPRequest byeRequest = GetByeRequest();
-                        SIPNonInviteTransaction byeTransaction = m_sipTransport.CreateNonInviteTransaction(byeRequest, m_outboundProxy);
+                        SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
                         byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
                         byeTransaction.SendReliableRequest();
                     }
@@ -534,7 +534,7 @@ namespace SIPSorcery.SIP.App
                     authByeRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                     authByeRequest.Header.CSeq = authByeRequest.Header.CSeq + 1;
 
-                    SIPNonInviteTransaction bTransaction = m_sipTransport.CreateNonInviteTransaction(authByeRequest, null);
+                    SIPNonInviteTransaction bTransaction = new SIPNonInviteTransaction(m_sipTransport, authByeRequest, null);
                     bTransaction.SendReliableRequest();
                 }
             }

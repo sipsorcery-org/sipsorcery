@@ -328,8 +328,7 @@ namespace SIPSorcery.SIP
                 }
 
                 SIPRequest byeRequest = GetInDialogRequest(SIPMethodsEnum.BYE);
-                SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(byeRequest, byeOutboundProxy);
-
+                SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(sipTransport, byeRequest, byeOutboundProxy);
                 byeTransaction.SendReliableRequest();
             }
             catch (Exception excp)

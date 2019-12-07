@@ -318,7 +318,7 @@ namespace SIPSorcery.Net
 
                             sdp.IceCandidates.Add(IceCandidate.Parse(sdpLine.Substring(sdpLine.IndexOf(':') + 1)));
                         }
-                        else if(MediaStreamStatusType.IsMediaStreamStatusAttribute(sdpLine.Trim(), out var mediaStreamStatus))
+                        else if (MediaStreamStatusType.IsMediaStreamStatusAttribute(sdpLine.Trim(), out var mediaStreamStatus))
                         {
                             if (activeAnnouncement != null)
                             {
@@ -459,11 +459,11 @@ namespace SIPSorcery.Net
             {
                 var announcement = announcements[announcementIndex];
 
-                if(announcement.MediaStreamStatus != MediaStreamStatusEnum.None)
+                if (announcement.MediaStreamStatus != MediaStreamStatusEnum.None)
                 {
                     return announcement.MediaStreamStatus;
                 }
-                else if(SessionMediaStreamStatus != MediaStreamStatusEnum.None)
+                else if (SessionMediaStreamStatus != MediaStreamStatusEnum.None)
                 {
                     return SessionMediaStreamStatus;
                 }

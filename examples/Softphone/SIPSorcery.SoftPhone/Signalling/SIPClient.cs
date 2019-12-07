@@ -174,8 +174,8 @@ namespace SIPSorcery.SoftPhone
                 {
                     StatusMessage($"Busy response returned for incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                     // If we are already on a call return a busy response.
-                    UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, null);
-                    SIPResponse busyResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
+                    UASInviteTransaction uasTransaction = new UASInviteTransaction(m_sipTransport, sipRequest, null);
+                    SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
                     uasTransaction.SendFinalResponse(busyResponse);
                 }
                 else
@@ -188,7 +188,7 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 logger.Debug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
-                SIPResponse notAllowedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
                 m_sipTransport.SendResponse(notAllowedResponse);
             }
         }

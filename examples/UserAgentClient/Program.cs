@@ -111,8 +111,8 @@ namespace SIPSorcery
             {
                 if (sipRequest.Method == SIPMethodsEnum.BYE)
                 {
-                    SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, null);
-                    SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(sipTransport, sipRequest, null);
+                    SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     byeTransaction.SendFinalResponse(byeResponse);
 
                     if (uac.IsUACAnswered)

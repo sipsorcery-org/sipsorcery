@@ -93,8 +93,8 @@ namespace SIPSorcery
                         // If there's already a call in progress we return busy.
                         if (userAgent?.IsCallActive == true)
                         {
-                            UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, null);
-                            SIPResponse busyResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
+                            UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
+                            SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
                             uasTransaction.SendFinalResponse(busyResponse);
                         }
                         else
@@ -117,47 +117,45 @@ namespace SIPSorcery
                             if (rtpSession == null)
                             {
                                 // Didn't get a match on the codecs we support.
-                                UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, null);
-                                SIPResponse noMatchingCodecResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptableHere, null);
+                                UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
+                                SIPResponse noMatchingCodecResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptableHere, null);
                                 uasTransaction.SendFinalResponse(noMatchingCodecResponse);
                             }
                             else
                             {
-                                UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, null);
-                                if (userAgent.AcceptCall(uasTransaction))
+                                var uas = userAgent.AcceptCall(sipRequest);
+
+                                rtpCts = new CancellationTokenSource();
+
+                                // The RTP socket is listening on IPAddress.Any but the IP address placed into the SDP needs to be one the caller can reach.
+                                IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
+                                // Initialise an RTP session to receive the RTP packets from the remote SIP server.
+                                NetServices.CreateRtpSocket(rtpAddress, RTP_PORT_START, RTP_PORT_END, false, out rtpSocket, out controlSocket);
+
+                                var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+                                var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+                                rtpSendSession.DestinationEndPoint = dstRtpEndPoint;
+                                rtpRecvSession.OnReceiveFromEndPointChanged += (oldEP, newEP) =>
                                 {
-                                    rtpCts = new CancellationTokenSource();
+                                    Log.LogDebug($"RTP destination end point changed from {oldEP} to {newEP}.");
+                                    rtpSendSession.DestinationEndPoint = newEP;
+                                };
 
-                                    // The RTP socket is listening on IPAddress.Any but the IP address placed into the SDP needs to be one the caller can reach.
-                                    IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
-                                    // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-                                    NetServices.CreateRtpSocket(rtpAddress, RTP_PORT_START, RTP_PORT_END, false, out rtpSocket, out controlSocket);
+                                Task.Run(() => RecvRtp(rtpSocket, rtpRecvSession, rtpCts));
+                                Task.Run(() => SendRtp(rtpSocket, rtpSendSession, rtpCts));
 
-                                    var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
-                                    var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
-                                    rtpSendSession.DestinationEndPoint = dstRtpEndPoint;
-                                    rtpRecvSession.OnReceiveFromEndPointChanged += (oldEP, newEP) =>
-                                    {
-                                        Log.LogDebug($"RTP destination end point changed from {oldEP} to {newEP}.");
-                                        rtpSendSession.DestinationEndPoint = newEP;
-                                    };
-
-                                    Task.Run(() => RecvRtp(rtpSocket, rtpRecvSession, rtpCts));
-                                    Task.Run(() => SendRtp(rtpSocket, rtpSendSession, rtpCts));
-
-                                    userAgent.Answer(GetSDP(rtpSocket.LocalEndPoint as IPEndPoint));
-                                }
+                                userAgent.Answer(uas, GetSDP(rtpSocket.LocalEndPoint as IPEndPoint));
                             }
                         }
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
                     {
-                        SIPResponse notAllowededResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                        SIPResponse notAllowededResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
                         sipTransport.SendResponse(notAllowededResponse);
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.OPTIONS || sipRequest.Method == SIPMethodsEnum.REGISTER)
                     {
-                        SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         sipTransport.SendResponse(optionsResponse);
                     }
                 }
@@ -402,7 +400,7 @@ namespace SIPSorcery
                 MediaFormats = new List<SDPMediaFormat>() { new SDPMediaFormat((int)SDPMediaFormatsEnum.PCMU, "PCMU", 8000) }
             };
             audioAnnouncement.Port = rtpSocket.Port;
-            audioAnnouncement.ExtraAttributes.Add("a=sendrecv");
+            audioAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
             sdp.Media.Add(audioAnnouncement);
 
             return sdp;
@@ -416,7 +414,7 @@ namespace SIPSorcery
         private static void EnableTraceLogs(SIPTransport sipTransport, IPEndPoint homerSvrEP)
         {
             UdpClient homerClient = null;
-            if(homerSvrEP != null)
+            if (homerSvrEP != null)
             {
                 homerClient = new UdpClient(0, AddressFamily.InterNetwork);
             }

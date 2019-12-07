@@ -145,7 +145,7 @@ namespace SIPSorcery.Net
 
         private const int MEDIA_PORT_START = 10000;             // Arbitrary port number to start allocating RTP and control ports from.
         private const int MEDIA_PORT_END = 40000;               // Arbitrary port number that RTP and control ports won't be allocated above.
-        
+
         private static ILogger logger = Log.Logger;
 
         private Socket _rtpSocket;
@@ -327,9 +327,9 @@ namespace SIPSorcery.Net
             try
             {
                 Socket sendSocket = _rtpSocket;
-                if(sendOn == RTPChannelSocketsEnum.Control)
+                if (sendOn == RTPChannelSocketsEnum.Control)
                 {
-                    if(_controlSocket == null)
+                    if (_controlSocket == null)
                     {
                         throw new ApplicationException("RTPChannel was asekd to send on the control socket but none exists.");
                     }

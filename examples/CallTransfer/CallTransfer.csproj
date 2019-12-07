@@ -13,4 +13,8 @@
     <PackageReference Include="SIPSorcery" Version="4.0.2-rc" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SIPSorcery.csproj" />
+  </ItemGroup>
+
 </Project>

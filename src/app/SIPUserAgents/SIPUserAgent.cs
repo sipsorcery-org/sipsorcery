@@ -255,7 +255,7 @@ namespace SIPSorcery.SIP.App
         /// (used to manage multiple pending incoming calls).</returns>
         public SIPServerUserAgent AcceptCall(SIPRequest inviteRequest)
         {
-            UASInviteTransaction uasTransaction = m_transport.CreateUASTransaction(inviteRequest, m_outboundProxy);
+            UASInviteTransaction uasTransaction = new UASInviteTransaction(m_transport, inviteRequest, m_outboundProxy);
             SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
             uas.CallCancelled += (pendingUas) =>
             {
@@ -321,8 +321,8 @@ namespace SIPSorcery.SIP.App
             // accepting just in case the sender got the tags wrong.
             if (Dialogue == null || sipRequest.Header.CallId != Dialogue.CallId)
             {
-                var noCallLegResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
-                var sendResult = await SendResponse(noCallLegResponse);
+                var noCallLegResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
+                var sendResult = await SendResponseAsync(noCallLegResponse);
                 if (sendResult != SocketError.Success)
                 {
                     logger.LogWarning($"SIPUserAgent send response failed in DialogRequestReceivedAsync with {sendResult}.");
@@ -335,8 +335,8 @@ namespace SIPSorcery.SIP.App
                     logger.LogDebug($"Matching dialogue found for {sipRequest.StatusLine}.");
                     Dialogue.DialogueState = SIPDialogueStateEnum.Terminated;
 
-                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await SendResponse(okResponse);
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await SendResponseAsync(okResponse);
 
                     OnCallHungup?.Invoke();
                 }
@@ -344,7 +344,7 @@ namespace SIPSorcery.SIP.App
                 {
                     logger.LogDebug($"Re-INVITE request received {sipRequest.StatusLine}.");
 
-                    UASInviteTransaction reInviteTransaction = m_transport.CreateUASTransaction(sipRequest, m_outboundProxy);
+                    UASInviteTransaction reInviteTransaction = new UASInviteTransaction(m_transport, sipRequest, m_outboundProxy);
 
                     // Check for remote party putting us on and off hold.
                     SDP newSDPOffer = SDP.ParseSDPDescription(sipRequest.Body);
@@ -367,13 +367,13 @@ namespace SIPSorcery.SIP.App
                     else if (OnReinviteRequest == null)
                     {
                         // The application isn't prepared to accept re-INVITE requests. We'll reject as gently as we can to try and not lose the call.
-                        SIPResponse notAcceptableResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, null);
+                        SIPResponse notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, null);
                         reInviteTransaction.SendFinalResponse(notAcceptableResponse);
                     }
                     else
                     {
                         // The application is going to handle the re-INVITE request. We'll send a Trying response as a precursor.
-                        SIPResponse tryingResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
+                        SIPResponse tryingResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
                         reInviteTransaction.SendProvisionalResponse(tryingResponse);
                         OnReinviteRequest(reInviteTransaction);
                     }
@@ -381,30 +381,26 @@ namespace SIPSorcery.SIP.App
                 else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                 {
                     //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "OPTIONS request for established dialogue " + dialogue.DialogueName + ".", dialogue.Owner));
-                    SIPNonInviteTransaction optionsTransaction = m_transport.CreateNonInviteTransaction(sipRequest, m_outboundProxy);
-                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     okResponse.Body = Dialogue.RemoteSDP;
                     okResponse.Header.ContentLength = okResponse.Body.Length;
                     okResponse.Header.ContentType = m_sdpContentType;
-                    optionsTransaction.SendFinalResponse(okResponse);
+                    await SendResponseAsync(okResponse);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.MESSAGE)
                 {
                     //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "MESSAGE for call " + sipRequest.URI.ToString() + ": " + sipRequest.Body + ".", dialogue.Owner));
-                    SIPNonInviteTransaction messageTransaction = m_transport.CreateNonInviteTransaction(sipRequest, m_outboundProxy);
-                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    messageTransaction.SendFinalResponse(okResponse);
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await m_transport.SendResponseAsync(okResponse);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.REFER)
                 {
-                    SIPNonInviteTransaction referTransaction = m_transport.CreateNonInviteTransaction(sipRequest, m_outboundProxy);
-
                     if (sipRequest.Header.ReferTo.IsNullOrBlank())
                     {
                         // A REFER request must have a Refer-To header.
                         //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Bad REFER request, no Refer-To header.", dialogue.Owner));
-                        SIPResponse invalidResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, "Missing mandatory Refer-To header");
-                        referTransaction.SendFinalResponse(invalidResponse);
+                        SIPResponse invalidResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, "Missing mandatory Refer-To header");
+                        await SendResponseAsync(invalidResponse);
                     }
                     else
                     {
@@ -415,8 +411,8 @@ namespace SIPSorcery.SIP.App
                 {
                     // These are likely tp be notifications from REFER (transfer request) processing.
                     // We don't do anything with them at the moment.
-                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await SendResponse(okResponse);
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await SendResponseAsync(okResponse);
                 }
             }
         }
@@ -454,7 +450,7 @@ namespace SIPSorcery.SIP.App
                     reinviteRequest.Header.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader() };
                 }
 
-                UACInviteTransaction reinviteTransaction = m_transport.CreateUACTransaction(reinviteRequest, m_outboundProxy);
+                UACInviteTransaction reinviteTransaction = new UACInviteTransaction(m_transport, reinviteRequest, m_outboundProxy);
                 reinviteTransaction.SendReliableRequest();
                 reinviteTransaction.UACInviteTransactionFinalResponseReceived += ReinviteRequestFinalResponseReceived;
             }
@@ -500,7 +496,7 @@ namespace SIPSorcery.SIP.App
 
                 var referRequest = GetReferRequest(Dialogue, destination);
 
-                SIPNonInviteTransaction referTx = m_transport.CreateNonInviteTransaction(referRequest, null);
+                SIPNonInviteTransaction referTx = new SIPNonInviteTransaction(m_transport, referRequest, null);
 
                 referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =>
                 {
@@ -523,7 +519,15 @@ namespace SIPSorcery.SIP.App
 
                 await Task.WhenAny(new Task[] { transferAccepted.Task, Task.Delay((int)timeout.TotalMilliseconds) });
 
-                return transferAccepted.Task.Result;
+                if (transferAccepted.Task.IsCompleted)
+                {
+                    return transferAccepted.Task.Result;
+                }
+                else
+                {
+                    logger.LogWarning($"Call transfer request timed out after {timeout.TotalMilliseconds}ms.");
+                    return false;
+                }
             }
         }
 
@@ -532,7 +536,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="response">The response to send.</param>
         /// <returns>Send result.</returns>
-        private async Task<SocketError> SendResponse(SIPResponse response)
+        private async Task<SocketError> SendResponseAsync(SIPResponse response)
         {
             if (m_outboundProxy != null)
             {
@@ -643,7 +647,7 @@ namespace SIPSorcery.SIP.App
             Dialogue.RemoteSDP = sipRequest.Body;
             Dialogue.RemoteCSeq = sipRequest.Header.CSeq;
 
-            var okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+            var okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
             okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
             okResponse.Body = Dialogue.SDP;
 

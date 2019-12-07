@@ -48,11 +48,6 @@ namespace SIPSorcery
         private static readonly string SIP_PASSWORD = "password";
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
 
-        private static readonly string RTP_ATTRIBUTE_SENDRECV = "sendrecv"; // 2-way media stream.
-        private static readonly string RTP_ATTRIBUTE_SENDONLY = "sendonly"; // The SIP endpoint would only send and not receive media.
-        private static readonly string RTP_ATTRIBUTE_RECVONLY = "recvonly"; // The SIP endpoint would only receive (listen mode) and not send media.
-        private static readonly string RTP_ATTRIBUTE_INACTIVE = "inactive"; // The SIP endpoint would neither send nor receive media.
-
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
         private static SIPTransport _sipTransport;
@@ -77,13 +72,13 @@ namespace SIPSorcery
             SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
             if (args != null && args.Length > 0)
             {
-                if (!SIPURI.TryParse(args[0]))
+                if (!SIPURI.TryParse(args[0], out var argUri))
                 {
                     Log.LogWarning($"Command line argument could not be parsed as a SIP URI {args[0]}");
                 }
                 else
                 {
-                    callUri = SIPURI.ParseSIPURIRelaxed(args[0]);
+                    callUri = argUri;
                 }
             }
             Log.LogInformation($"Call destination {callUri}.");
@@ -107,7 +102,7 @@ namespace SIPSorcery
             var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
             var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
 
-            _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_SENDRECV);
+            _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, MediaStreamStatusEnum.SendRecv);
 
             // Create a client/server user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var userAgent = new SIPUserAgent(_sipTransport, null);
@@ -163,7 +158,7 @@ namespace SIPSorcery
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                     {
-                        SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         _sipTransport.SendResponse(optionsResponse);
                     }
                 }
@@ -211,14 +206,14 @@ namespace SIPSorcery
                                 {
                                     Log.LogInformation("Placing the remote call party on hold.");
                                     _holdStatus = HoldStatus.WePutOnHold;
-                                    _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_SENDONLY);
+                                    _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, MediaStreamStatusEnum.SendOnly);
                                     userAgent.SendReInviteRequest(_ourSDP);
                                 }
                                 else if (_holdStatus == HoldStatus.WePutOnHold)
                                 {
                                     Log.LogInformation("Removing the remote call party from hold.");
                                     _holdStatus = HoldStatus.None;
-                                    _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_SENDRECV);
+                                    _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, MediaStreamStatusEnum.SendRecv);
                                     userAgent.SendReInviteRequest(_ourSDP);
                                 }
                                 else
@@ -305,24 +300,24 @@ namespace SIPSorcery
 
             // If the RTP callfow attribute has changed it's most likely due to being placed on/off hold.
             SDP newSDP = SDP.ParseSDPDescription(reinviteRequest.Body);
-            if (GetRTPStatusAttribute(newSDP) == RTP_ATTRIBUTE_SENDONLY)
+            if (newSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendOnly)
             {
                 Log.LogInformation("Remote call party has placed us on hold.");
                 _holdStatus = HoldStatus.RemotePutOnHold;
 
-                _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_RECVONLY);
-                var okResponse = SIPTransport.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
+                _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, MediaStreamStatusEnum.RecvOnly);
+                var okResponse = SIPResponse.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
                 okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
                 okResponse.Body = _ourSDP.ToString();
                 uasTransaction.SendFinalResponse(okResponse);
             }
-            else if (GetRTPStatusAttribute(newSDP) == RTP_ATTRIBUTE_SENDRECV && _holdStatus != HoldStatus.None)
+            else if (newSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendRecv && _holdStatus != HoldStatus.None)
             {
                 Log.LogInformation("Remote call party has taken us off hold.");
                 _holdStatus = HoldStatus.None;
 
-                _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_SENDRECV);
-                var okResponse = SIPTransport.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
+                _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, MediaStreamStatusEnum.SendRecv);
+                var okResponse = SIPResponse.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
                 okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
                 okResponse.Body = _ourSDP.ToString();
                 uasTransaction.SendFinalResponse(okResponse);
@@ -332,7 +327,7 @@ namespace SIPSorcery
                 Log.LogWarning("Not sure what the remote call party wants us to do...");
 
                 // We'll just reply Ok and hope eveything is good.
-                var okResponse = SIPTransport.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
+                var okResponse = SIPResponse.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
                 okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
                 okResponse.Body = _ourSDP.ToString();
                 uasTransaction.SendFinalResponse(okResponse);
@@ -489,7 +484,7 @@ namespace SIPSorcery
             }
         }
 
-        private static SDP GetSDP(IPEndPoint rtpSocket, string rtpFlowAttribute)
+        private static SDP GetSDP(IPEndPoint rtpSocket, MediaStreamStatusEnum mediaStreamStatus)
         {
             var sdp = new SDP()
             {
@@ -506,37 +501,10 @@ namespace SIPSorcery
                 MediaFormats = new List<SDPMediaFormat>() { new SDPMediaFormat((int)SDPMediaFormatsEnum.PCMU, "PCMU", 8000) }
             };
             audioAnnouncement.Port = rtpSocket.Port;
-            audioAnnouncement.ExtraAttributes.Add($"a={rtpFlowAttribute}");
+            audioAnnouncement.MediaStreamStatus = mediaStreamStatus;
             sdp.Media.Add(audioAnnouncement);
 
             return sdp;
-        }
-
-        /// <summary>
-        /// Gets the RTP status attribute from the first media offer in the SDP payload. In this
-        /// example the RTP status is being used to indicate whether the call is on hold or not.
-        /// </summary>
-        /// <param name="sdp">The SDP to get the status for.</param>
-        private static string GetRTPStatusAttribute(SDP sdp)
-        {
-            foreach(var attribute in sdp.Media.First().ExtraAttributes)
-            {
-                switch (attribute.ToLower())
-                {
-                    case "a=sendrecv": 
-                        return RTP_ATTRIBUTE_SENDRECV;
-                    case "a=sendonly":
-                        return RTP_ATTRIBUTE_SENDONLY;
-                    case "a=recvonly":
-                        return RTP_ATTRIBUTE_RECVONLY;
-                    case "a=inactive":
-                        return RTP_ATTRIBUTE_INACTIVE;
-                    default:
-                        break;
-                }
-            }
-
-            return null;
         }
 
         /// <summary>

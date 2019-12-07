@@ -137,8 +137,8 @@ namespace SIPSorcery
             {
                 if (sipRequest.Method == SIPMethodsEnum.BYE)
                 {
-                    SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, null);
-                    SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(sipTransport, sipRequest, null);
+                    SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     byeTransaction.SendFinalResponse(byeResponse);
 
                     if (uac.IsUACAnswered)
@@ -374,9 +374,9 @@ namespace SIPSorcery
                 MediaFormats = new List<SDPMediaFormat>() { new SDPMediaFormat((int)audioPayloadType, "PCMU", samplingFrequency) }
             };
             audioAnnouncement.Port = rtpSocket.Port;
-            audioAnnouncement.ExtraAttributes.Add("a=sendrecv");
-            audioAnnouncement.ExtraAttributes.Add($"a=rtpmap:{DTMF_EVENT_PAYLOAD_ID} telephone-event/{samplingFrequency}");
-            audioAnnouncement.ExtraAttributes.Add($"a=fmtp:{DTMF_EVENT_PAYLOAD_ID} 0-15");
+            audioAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
+            audioAnnouncement.ExtraMediaAttributes.Add($"a=rtpmap:{DTMF_EVENT_PAYLOAD_ID} telephone-event/{samplingFrequency}");
+            audioAnnouncement.ExtraMediaAttributes.Add($"a=fmtp:{DTMF_EVENT_PAYLOAD_ID} 0-15");
             sdp.Media.Add(audioAnnouncement);
 
             return sdp;

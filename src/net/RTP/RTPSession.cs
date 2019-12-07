@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
             }
 
             var rtpPacket = new RTPPacket(buffer);
-            
+
             OnSampleReady?.Invoke(rtpPacket.Payload);
         }
 

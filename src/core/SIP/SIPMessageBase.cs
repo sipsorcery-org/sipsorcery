@@ -25,8 +25,9 @@ namespace SIPSorcery.SIP
     {
         protected static ILogger logger = Log.Logger;
 
-        protected static string m_CRLF = SIPConstants.CRLF;
-        protected static string m_sipFullVersion = SIPConstants.SIP_FULLVERSION_STRING;
+        protected const string m_CRLF = SIPConstants.CRLF;
+        protected const string m_sipFullVersion = SIPConstants.SIP_FULLVERSION_STRING;
+        protected const string m_allowedSIPMethods = SIPConstants.ALLOWED_SIP_METHODS;
 
         /// <summary>
         /// The SIP request/response's headers collection.
