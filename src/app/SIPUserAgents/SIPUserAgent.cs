@@ -241,6 +241,7 @@ namespace SIPSorcery.SIP.App
             if (Dialogue != null)
             {
                 Dialogue.Hangup(m_transport, m_outboundProxy);
+                CallEnded();
             }
         }
 
@@ -337,6 +338,8 @@ namespace SIPSorcery.SIP.App
 
                     SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     await SendResponseAsync(okResponse);
+
+                    CallEnded();
 
                     OnCallHungup?.Invoke();
                 }
@@ -652,6 +655,15 @@ namespace SIPSorcery.SIP.App
             okResponse.Body = Dialogue.SDP;
 
             return okResponse;
+        }
+
+        /// <summary>
+        /// The current call ahs ended. Reset teh state of the user agent.
+        /// </summary>
+        private void CallEnded()
+        {
+            m_uac = null;
+            m_uas = null;
         }
     }
 }
