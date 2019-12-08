@@ -99,8 +99,8 @@ namespace SIPSorcery
             _ourRtpSocket = null;
             Socket controlSocket = null;
             NetServices.CreateRtpSocket(localIPAddress, 48000, 48100, false, out _ourRtpSocket, out controlSocket);
-            var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
-            var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+            var rtpRecvSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null);
+            var rtpSendSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null);
 
             _ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, MediaStreamStatusEnum.SendRecv);
 

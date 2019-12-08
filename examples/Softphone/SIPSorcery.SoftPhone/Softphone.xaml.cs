@@ -34,7 +34,7 @@ namespace SIPSorcery.SoftPhone
     {
         private const string VIDEO_LOOPBACK_CALL_DESTINATION = "loop";     // If this destination is called a video loopback call will be attempted.
 
-        // Currently only supporting this mode(s) from local web cams. Extra work to convert other formats to bitmaps that can be displayed by WPF.
+        // Currently only supporting these mode(s) from local web cams. Extra work to convert other formats to bitmaps that can be displayed by WPF.
         private static readonly List<MFVideoSubTypesEnum> _supportedVideoModes = new List<MFVideoSubTypesEnum>() { MFVideoSubTypesEnum.MFVideoFormat_RGB24 };
 
         private ILog logger = AppState.logger;

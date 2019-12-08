@@ -101,8 +101,8 @@ namespace SIPSorcery
                 Socket rtpSocket = null;
                 Socket controlSocket = null;
                 NetServices.CreateRtpSocket(rtpAddress, 49000, 49100, false, out rtpSocket, out controlSocket);
-                var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
-                var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+                var rtpRecvSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null);
+                var rtpSendSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null);
 
                 // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
                 var uac = new SIPClientUserAgent(sipTransport);

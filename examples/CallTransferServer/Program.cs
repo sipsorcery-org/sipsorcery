@@ -107,10 +107,10 @@ namespace SIPSorcery
                             RTPSession rtpSession = null;
                             string audioFile = null;
 
-                            if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)RTPPayloadTypesEnum.PCMU)))
+                            if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
                             {
                                 Log.LogDebug($"Using PCMU RTP media type and audio file {AUDIO_FILE_PCMU}.");
-                                rtpSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+                                rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null);
                                 audioFile = AUDIO_FILE_PCMU;
                             }
 
@@ -132,8 +132,8 @@ namespace SIPSorcery
                                 // Initialise an RTP session to receive the RTP packets from the remote SIP server.
                                 NetServices.CreateRtpSocket(rtpAddress, RTP_PORT_START, RTP_PORT_END, false, out rtpSocket, out controlSocket);
 
-                                var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
-                                var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+                                var rtpRecvSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null);
+                                var rtpSendSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null);
                                 rtpSendSession.DestinationEndPoint = dstRtpEndPoint;
                                 rtpRecvSession.OnReceiveFromEndPointChanged += (oldEP, newEP) =>
                                 {

@@ -71,8 +71,8 @@ namespace SIPSorcery
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
             RTPChannel2 rtpChannel = new RTPChannel2(IPAddress.Any, true);
-            var rtpRecvSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
-            var rtpSendSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+            var rtpRecvSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null);
+            var rtpSendSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null);
             rtpChannel.OnRTPDataReceived += rtpRecvSession.RtpPacketReceived;
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
@@ -107,13 +107,12 @@ namespace SIPSorcery
             };
 
             // The only incoming request that needs to be explicitly handled for this example is if the remote end hangs up the call.
-            sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+            sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
             {
                 if (sipRequest.Method == SIPMethodsEnum.BYE)
                 {
-                    SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(sipTransport, sipRequest, null);
-                    SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    byeTransaction.SendFinalResponse(byeResponse);
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await sipTransport.SendResponseAsync(okResponse);
 
                     if (uac.IsUACAnswered)
                     {
@@ -126,7 +125,7 @@ namespace SIPSorcery
 
             // Wire up the RTP receive session to the audio input device.
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
-            rtpRecvSession.OnSampleReady += (sample) =>
+            rtpRecvSession.OnReceivedSampleReady += (sample) =>
             {
                 for (int index = 0; index < sample.Length; index++)
                 {
@@ -222,7 +221,7 @@ namespace SIPSorcery
 
         /// <summary>
         /// Get the audio output device, e.g. speaker.
-        /// Note that NAUdio.Wave.WaveOut is not available for .Net Standard so no easy way to check if 
+        /// Note that NAudio.Wave.WaveOut is not available for .Net Standard so no easy way to check if 
         /// there's a speaker.
         /// </summary>
         private static (WaveOutEvent, BufferedWaveProvider) GetAudioOutputDevice()

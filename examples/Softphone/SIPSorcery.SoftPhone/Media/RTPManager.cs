@@ -69,8 +69,7 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
-        /// Gets an SDP packet that can be used by VoIP clients to negotiate an audio connection. The SDP will only
-        /// offer PCMU since that's all I've gotten around to handling.
+        /// Gets an SDP packet that can be used by VoIP clients to negotiate an audio and/or video stream.
         /// </summary>
         /// <param name="callDstAddress">The destination address the call is being palced to. Given this address the 
         /// RTP socket address can be chosen based on the local address chosen by the operating system to route to it.</param>

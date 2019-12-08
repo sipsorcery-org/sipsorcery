@@ -315,7 +315,7 @@ namespace SIPSorcery.SIP.App
         /// application to deal with.
         /// </summary>
         /// <param name="request">The in dialog request received.</param>
-        public async Task DialogRequestReceivedAsync(SIPRequest sipRequest)
+        public async Task DialogRequestReceivedAsync(SIPRequest sipRequest) 
         {
             // Make sure the request matches our dialog and is not a stray.
             // A dialog request should match on to tag, from tag and call ID. We'll be more 
