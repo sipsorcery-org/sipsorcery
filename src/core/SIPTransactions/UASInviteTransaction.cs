@@ -185,14 +185,14 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public SIPResponse GetOkResponse(SIPRequest sipRequest, string contentType, string messageBody)
+        public SIPResponse GetOkResponse(string contentType, string messageBody)
         {
             try
             {
                 SIPResponse okResponse = new SIPResponse(SIPResponseStatusCodesEnum.Ok, null);
-                okResponse.SetSendFromHints(sipRequest.LocalSIPEndPoint);
+                okResponse.SetSendFromHints(TransactionRequest.LocalSIPEndPoint);
 
-                SIPHeader requestHeader = sipRequest.Header;
+                SIPHeader requestHeader = TransactionRequest.Header;
                 okResponse.Header = new SIPHeader(SIPContactHeader.GetDefaultSIPContactHeader(), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
                 okResponse.Header.To.ToTag = m_localTag;
                 okResponse.Header.CSeqMethod = requestHeader.CSeqMethod;

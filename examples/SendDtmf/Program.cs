@@ -25,7 +25,7 @@
 //
 // Example Aterisk dialplan snippet to repeat back any DTMF tones received:
 //
-// exten => *63,1(start),Gotoif($[ "${LEN(${extensao})}" < "5"]?collect:bye)
+// exten => *63,1(start),Gotoif($[ "${LEN(${extensao})}" < "3"]?collect:bye)
 // exten => *63,n(collect),Read(digito,,1)
 // exten => *63,n,SayDigits(${digito})
 // exten => *63,n,Set(extensao=${extensao}${digito})
@@ -53,7 +53,8 @@ namespace SIPSorcery
     class Program
     {
         private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*63@192.168.11.48";   // Custom Asterisk dialplan to speak back DTMF tones.
-        private static readonly int DTMF_EVENT_PAYLOAD_ID = 101;
+
+        private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
 
         /// <summary>
         /// PCMU encoding for silence, http://what-when-how.com/voip/g-711-compression-voip/
@@ -63,9 +64,6 @@ namespace SIPSorcery
         private static readonly int SILENCE_SAMPLE_PERIOD = 50; // In milliseconds (PCM is 64kbit/s).
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
-
-        private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
-        private static IPEndPoint _remoteRtpEndPoint = null;
 
         static void Main()
         {
@@ -93,12 +91,8 @@ namespace SIPSorcery
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(callUri.ToSIPEndPoint().Address);
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            RTPChannel2 rtpChannel = new RTPChannel2(IPAddress.Any, true);
-            var offerSDP = GetSDP(new IPEndPoint(localIPAddress, rtpChannel.RTPPort), SDPMediaFormatsEnum.PCMU);
-
-            var rtpRecvSession = new RTPSession(offerSDP.Media.First(), (int)SDPMediaFormatsEnum.PCMU, null, null);
-            var rtpSendSession = new RTPSession(offerSDP.Media.First(), (int)SDPMediaFormatsEnum.PCMU, null, null);
-            rtpChannel.OnRTPDataReceived += rtpRecvSession.RtpPacketReceived;
+            var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, true);
+            var offerSDP = rtpSession.GetSDP(localIPAddress);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var uac = new SIPClientUserAgent(sipTransport);
@@ -118,8 +112,8 @@ namespace SIPSorcery
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                    _remoteRtpEndPoint = SDP.GetSDPRTPEndPoint(resp.Body);
-                    Log.LogDebug($"Remote RTP socket {_remoteRtpEndPoint}.");
+                    rtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(resp.Body);
+                    Log.LogDebug($"Remote RTP socket {rtpSession.DestinationEndPoint}.");
                 }
                 else
                 {
@@ -144,9 +138,9 @@ namespace SIPSorcery
                 }
             };
 
-            // Wire up the RTP receive session to the audio input device.
+            // Wire up the RTP receive session to the default speaker.
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
-            rtpRecvSession.OnReceivedSampleReady += (sample) => 
+            rtpSession.OnReceivedSampleReady += (sample) => 
             {
                 for (int index = 0; index < sample.Length; index++)
                 {
@@ -156,10 +150,8 @@ namespace SIPSorcery
                 }
             };
 
-            // Start the RTP and Control socket receivers.
-            rtpChannel.Start();
-
-            Task.Run(() => SendSilence(rtpChannel, rtpSendSession, rtpCts));
+            // Send audio packets (in this case silence) to the callee.
+            Task.Run(() => SendSilence(rtpSession, rtpCts));
 
             // Start the thread that places the call.
             SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
@@ -186,23 +178,23 @@ namespace SIPSorcery
             Task.Delay(3000).Wait();
 
             // Send some DTMF key presses via RTP events.
-            var dtmf5 = new RTPEvent(0x05, false, RTPEvent.DEFAULT_VOLUME, 1200, DTMF_EVENT_PAYLOAD_ID);
-            rtpSendSession.SendDtmfEvent(rtpChannel, _remoteRtpEndPoint, dtmf5, rtpCts).Wait();
+            var dtmf5 = new RTPEvent(0x05, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            rtpSession.SendDtmfEvent(dtmf5, rtpCts).Wait();
             Task.Delay(2000, rtpCts.Token).Wait();
 
-            var dtmf9 = new RTPEvent(0x09, false, RTPEvent.DEFAULT_VOLUME, 1200, DTMF_EVENT_PAYLOAD_ID);
-            rtpSendSession.SendDtmfEvent(rtpChannel, _remoteRtpEndPoint, dtmf9, rtpCts).Wait();
+            var dtmf9 = new RTPEvent(0x09, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            rtpSession.SendDtmfEvent(dtmf9, rtpCts).Wait();
             Task.Delay(2000, rtpCts.Token).Wait();
 
-            var dtmf2 = new RTPEvent(0x02, false, RTPEvent.DEFAULT_VOLUME, 1200, DTMF_EVENT_PAYLOAD_ID);
-            rtpSendSession.SendDtmfEvent(rtpChannel, _remoteRtpEndPoint, dtmf2, rtpCts).Wait();
-            Task.Delay(2000, rtpCts.Token).Wait();
+            var dtmf2 = new RTPEvent(0x02, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            rtpSession.SendDtmfEvent(dtmf2, rtpCts).Wait();
+            Task.Delay(2000, rtpCts.Token).ContinueWith((task) => { }).Wait(); // Don't care about the exception if the cancellation token is set.
 
             Log.LogInformation("Exiting...");
 
             rtpCts.Cancel();
             audioOutEvent?.Stop();
-            rtpChannel.Close();
+            rtpSession.Close();
 
             if (!isCallHungup && uac != null)
             {
@@ -254,16 +246,16 @@ namespace SIPSorcery
         /// <param name="rtpChannel">The RTP channel we're sending from.</param>
         /// <param name="rtpSendSession">Our RTP sending session.</param>
         /// <param name="cts">Cancellation token to stop the call.</param>
-        private static async void SendSilence(RTPChannel2 rtpChannel, RTPSession rtpSendSession, CancellationTokenSource cts)
+        private static async void SendSilence(RTPSession rtpSession, CancellationTokenSource cts)
         {
-            int samplingFrequency = rtpSendSession.MediaFormat.GetClockRate();
+            int samplingFrequency = rtpSession.MediaFormat.GetClockRate();
             uint rtpTimestampStep = (uint)(samplingFrequency * SILENCE_SAMPLE_PERIOD / 1000);
             uint bufferSize = (uint)SILENCE_SAMPLE_PERIOD;
             uint rtpSampleTimestamp = 0;
 
             while (cts.IsCancellationRequested == false)
             {
-                if (_remoteRtpEndPoint != null)
+                if (rtpSession.DestinationEndPoint != null)
                 {
                     byte[] sample = new byte[bufferSize / 2];
                     int sampleIndex = 0;
@@ -274,41 +266,12 @@ namespace SIPSorcery
                         sample[sampleIndex + 1] = PCMU_SILENCE_BYTE_ONE;
                     }
 
-                    rtpSendSession.SendAudioFrame(rtpChannel, _remoteRtpEndPoint, rtpSampleTimestamp, sample);
+                    rtpSession.SendAudioFrame(rtpSampleTimestamp, sample);
                     rtpSampleTimestamp += rtpTimestampStep;
                 }
 
                 await Task.Delay(SILENCE_SAMPLE_PERIOD);
             }
-        }
-
-        private static SDP GetSDP(IPEndPoint rtpSocket, SDPMediaFormatsEnum audioPayloadType)
-        {
-            int clockRate = SDPMediaFormatInfo.GetClockRate(audioPayloadType);
-
-            var sdp = new SDP()
-            {
-                SessionId = Crypto.GetRandomInt(5).ToString(),
-                Address = rtpSocket.Address.ToString(),
-                SessionName = "sipsorcery",
-                Timing = "0 0",
-                Connection = new SDPConnectionInformation(rtpSocket.Address.ToString()),
-            };
-
-            SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
-            rtpEventFormat.SetFormatAttribute($"telephone-event/{clockRate}");
-            rtpEventFormat.SetFormatParameterAttribute("0-15");
-
-            var audioAnnouncement = new SDPMediaAnnouncement()
-            {
-                Media = SDPMediaTypesEnum.audio,
-                MediaFormats = new List<SDPMediaFormat>() { new SDPMediaFormat(audioPayloadType), rtpEventFormat }
-            };
-            audioAnnouncement.Port = rtpSocket.Port;
-            audioAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
-            sdp.Media.Add(audioAnnouncement);
-
-            return sdp;
         }
 
         /// <summary>

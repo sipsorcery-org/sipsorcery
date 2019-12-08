@@ -121,7 +121,7 @@ namespace SIPSorcery.SoftPhone
                         {
                             udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_DEFAULT_PORT));
                         }
-                        catch(SocketException bindExcp)
+                        catch (SocketException bindExcp)
                         {
                             logger.Warn($"Socket exception attempting to bind UDP channel to port {SIP_DEFAULT_PORT}, will use random port. {bindExcp.Message}.");
                             udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0));
@@ -158,17 +158,9 @@ namespace SIPSorcery.SoftPhone
         /// <param name="localSIPEndPoint">The end point the request was received on.</param>
         /// <param name="remoteEndPoint">The end point the request came from.</param>
         /// <param name="sipRequest">The SIP request received.</param>
-        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            if (sipRequest.Header.From != null &&
-                sipRequest.Header.From.FromTag != null &&
-                sipRequest.Header.To != null &&
-                sipRequest.Header.To.ToTag != null)
-            {
-                // In dialog request will include BYE's.
-                await m_userAgent.DialogRequestReceivedAsync(sipRequest);
-            }
-            else if (sipRequest.Method == SIPMethodsEnum.INVITE)
+            if (sipRequest.Method == SIPMethodsEnum.INVITE)
             {
                 if (m_userAgent?.IsCallActive == true)
                 {

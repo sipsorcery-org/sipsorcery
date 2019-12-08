@@ -1,21 +1,20 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An abbreviated example program of how to use the SIPSorcery core library to place a SIP call.
-// The example program depends on one audio input and one audio output being available.
+// Description: An example program of how to use the SIPSorcery core library to 
+// place a SIP call and then place it on and off hold.
 //
 // Author(s):
-// Aaron Clauson  (aaron@sipsorcery.com)
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 26 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
+// 25 Nov 2019	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,60 +30,75 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*61@192.168.11.48";
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@sipsorcery.com";  // Talking Clock.
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:echo@sipsorcery.com"; // Echo Test.
+        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*61@192.168.11.48";
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7000@192.168.11.48";
+        private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.48";  // The destination to transfer the intial call to.
+        private static readonly string SIP_USERNAME = "7001";
+        private static readonly string SIP_PASSWORD = "password";
+        private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
+        private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 20;           // This sets the frequency of the RTP packets.
+        private static int TRANSFER_TIMEOUT_SECONDS = 10;                    // Give up on transfer if no response within this period.
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
-        private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 20;           // This sets the frequency of the RTP packets.
-
-        static void Main()
+        static void Main(string[] args)
         {
-            Console.WriteLine("SIPSorcery client user agent example.");
+            Console.WriteLine("SIPSorcery call hold example.");
             Console.WriteLine("Press ctrl-c to exit.");
 
             // Plumbing code to facilitate a graceful exit.
-            ManualResetEvent exitMre = new ManualResetEvent(false);
+            CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
             bool isCallHungup = false;
             bool hasCallFailed = false;
 
             AddConsoleLogger();
 
+            // Check whether an override desination has been entered on the command line.
             SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
+            if (args != null && args.Length > 0)
+            {
+                if (!SIPURI.TryParse(args[0], out var argUri))
+                {
+                    Log.LogWarning($"Command line argument could not be parsed as a SIP URI {args[0]}");
+                }
+                else
+                {
+                    callUri = argUri;
+                }
+            }
             Log.LogInformation($"Call destination {callUri}.");
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)));
 
-            EnableTraceLogs(sipTransport);
+            //EnableTraceLogs(sipTransport);
 
-            // Get the IP address the RTP will be sent from. While we can listen on IPAddress.Any
-            // we can't put 0.0.0.0 in the SDP or the callee will ignore us.
             var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
             Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
             var dstAddress = lookupResult.GetSIPEndPoint().Address;
+
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(dstAddress);
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
             var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, true);
-            var offerSDP = rtpSession.GetSDP(localIPAddress);
+            var sdpOffer = rtpSession.GetSDP(localIPAddress);
 
-            // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
-            var uac = new SIPClientUserAgent(sipTransport);
-            uac.CallTrying += (uac, resp) =>
+            // Create a client/server user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
+            var userAgent = new SIPUserAgent(sipTransport, null);
+
+            userAgent.ClientCallTrying += (uac, resp) =>
             {
                 Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
             };
-            uac.CallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
-            uac.CallFailed += (uac, err) =>
+            userAgent.ClientCallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
+            userAgent.ClientCallFailed += (uac, err) =>
             {
                 Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                 hasCallFailed = true;
+                exitCts.Cancel();
             };
-            uac.CallAnswered += (uac, resp) =>
+            userAgent.ClientCallAnswered += (uac, resp) =>
             {
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
@@ -102,25 +116,28 @@ namespace SIPSorcery
                     Log.LogWarning($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
                 }
             };
-
-            // The only incoming request that needs to be explicitly handled for this example is if the remote end hangs up the call.
-            sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+            userAgent.OnCallHungup += () =>
             {
-                if (sipRequest.Method == SIPMethodsEnum.BYE)
-                {
-                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await sipTransport.SendResponseAsync(okResponse);
+                Log.LogInformation($"Call hungup by remote party.");
+                exitCts.Cancel();
+            };
+            userAgent.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
+            userAgent.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
+            userAgent.OnReinviteRequest += (uasInviteTx) =>
+            {
+                Log.LogDebug("Reinvite request received.");
 
-                    if (uac.IsUACAnswered)
-                    {
-                        Log.LogInformation("Call was hungup by remote server.");
-                        isCallHungup = true;
-                        exitMre.Set();
-                    }
+                // Re-INVITEs can also be changing the RTP end point. We can update this each time.
+                IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(uasInviteTx.TransactionRequest.Body);
+                if(rtpSession.DestinationEndPoint != dstRtpEndPoint)
+                {
+                    Log.LogDebug($"Remote call party RTP end point changed from {rtpSession.DestinationEndPoint} to {dstRtpEndPoint}.");
+                    rtpSession.DestinationEndPoint = dstRtpEndPoint;
                 }
+                uasInviteTx.SendFinalResponse(uasInviteTx.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, userAgent.Dialogue.SDP));
             };
 
-            // Wire up the RTP receive session to the audio input device.
+            // Wire up the RTP receive session to the default speaker.
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
             rtpSession.OnReceivedSampleReady += (sample) =>
             {
@@ -157,46 +174,102 @@ namespace SIPSorcery
 
             // Start the thread that places the call.
             SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
-                SIPConstants.SIP_DEFAULT_USERNAME,
-                null,
+                SIP_USERNAME,
+                SIP_PASSWORD,
                 callUri.ToString(),
-                SIPConstants.SIP_DEFAULT_FROMURI,
+                $"sip:{SIP_USERNAME}@localhost",
                 callUri.CanonicalAddress,
                 null, null, null,
                 SIPCallDirection.Out,
                 SDP.SDP_MIME_CONTENTTYPE,
-                offerSDP.ToString(),
+                sdpOffer.ToString(),
                 null);
 
-            uac.Call(callDescriptor);
+            userAgent.Call(callDescriptor);
+
+            // At this point the call has been initiated and everything will be handled in an event handler.
+            Task.Run(async () =>
+            {
+                try
+                {
+                    while (!exitCts.Token.WaitHandle.WaitOne(0))
+                    {
+                        var keyProps = Console.ReadKey();
+                        if (keyProps.KeyChar == 'h')
+                        {
+                            // Place call on/off hold.
+                            if (userAgent.IsCallActive)
+                            {
+                                if (userAgent.OnHoldFromLocal)
+                                {
+                                    Log.LogInformation("Taking the remote call party off hold.");
+                                    userAgent.TakeOffHold();
+                                }
+                                else
+                                {
+                                    Log.LogInformation("Placing the remote call party on hold.");
+                                    userAgent.PutOnHold();
+                                }
+                            }
+                        }
+                        else if(keyProps.KeyChar == 't')
+                        {
+                            var transferURI = SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI);
+                            bool result = await userAgent.Transfer(transferURI, TimeSpan.FromSeconds(TRANSFER_TIMEOUT_SECONDS), exitCts.Token);
+                            if(result)
+                            {
+                                // If the transfer was accepted the original call will already have been hungup.
+                                // Wait a second for the transfer NOTIFY request to arrive.
+                                await Task.Delay(1000);
+                                exitCts.Cancel();
+                            }
+                            else
+                            {
+                                Log.LogWarning($"Transfer to {TRANSFER_DESTINATION_SIP_URI} failed.");
+                            }
+                        }
+                        else if (keyProps.KeyChar == 'q')
+                        {
+                            // Quit application.
+                            exitCts.Cancel();
+                        }
+                    }
+                }
+                catch (Exception excp)
+                {
+                    SIPSorcery.Sys.Log.Logger.LogError($"Exception Key Press listener. {excp.Message}.");
+                }
+            });
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
-                exitMre.Set();
+                exitCts.Cancel();
             };
 
             // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
-            exitMre.WaitOne();
+            exitCts.Token.WaitHandle.WaitOne();
+
+            #region Cleanup.
 
             Log.LogInformation("Exiting...");
 
+            rtpSession?.Close();
             waveInEvent?.StopRecording();
             audioOutEvent?.Stop();
-            rtpSession.Close();
 
-            if (!isCallHungup && uac != null)
+            if (!isCallHungup && userAgent != null)
             {
-                if (uac.IsUACAnswered)
+                if (userAgent.IsCallActive)
                 {
-                    Log.LogInformation($"Hanging up call to {uac.CallDescriptor.To}.");
-                    uac.Hangup();
+                    Log.LogInformation($"Hanging up call to {userAgent?.CallDescriptor?.To}.");
+                    userAgent.Hangup();
                 }
                 else if (!hasCallFailed)
                 {
-                    Log.LogInformation($"Cancelling call to {uac.CallDescriptor.To}.");
-                    uac.Cancel();
+                    Log.LogInformation($"Cancelling call to {userAgent?.CallDescriptor?.To}.");
+                    userAgent.Cancel();
                 }
 
                 // Give the BYE or CANCEL request time to be transmitted.
@@ -211,11 +284,13 @@ namespace SIPSorcery
                 Log.LogInformation("Shutting down SIP transport...");
                 sipTransport.Shutdown();
             }
+
+            #endregion
         }
 
         /// <summary>
         /// Get the audio output device, e.g. speaker.
-        /// Note that NAudio.Wave.WaveOut is not available for .Net Standard so no easy way to check if 
+        /// Note that NAUdio.Wave.WaveOut is not available for .Net Standard so no easy way to check if 
         /// there's a speaker.
         /// </summary>
         private static (WaveOutEvent, BufferedWaveProvider) GetAudioOutputDevice()
@@ -243,7 +318,7 @@ namespace SIPSorcery
             {
                 WaveInEvent waveInEvent = new WaveInEvent();
                 WaveFormat waveFormat = _waveFormat;
-                waveInEvent.BufferMilliseconds = INPUT_SAMPLE_PERIOD_MILLISECONDS; 
+                waveInEvent.BufferMilliseconds = INPUT_SAMPLE_PERIOD_MILLISECONDS;
                 waveInEvent.NumberOfBuffers = 1;
                 waveInEvent.DeviceNumber = 0;
                 waveInEvent.WaveFormat = waveFormat;
