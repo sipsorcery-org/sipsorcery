@@ -3038,15 +3038,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SendRtcpSenderReport
   nameWithType: RTPSession.SendRtcpSenderReport
-- uid: SIPSorcery.Net.RTPSession.SendVp8Frame(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32,System.Byte[])
-  name: SendVp8Frame(Socket, IPEndPoint, UInt32, Byte[])
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVp8Frame_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_System_Byte___
-  commentId: M:SIPSorcery.Net.RTPSession.SendVp8Frame(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32,System.Byte[])
-  name.vb: SendVp8Frame(Socket, IPEndPoint, UInt32, Byte())
-  fullName: SIPSorcery.Net.RTPSession.SendVp8Frame(System.Net.Sockets.Socket, System.Net.IPEndPoint, System.UInt32, System.Byte[])
-  fullName.vb: SIPSorcery.Net.RTPSession.SendVp8Frame(System.Net.Sockets.Socket, System.Net.IPEndPoint, System.UInt32, System.Byte())
-  nameWithType: RTPSession.SendVp8Frame(Socket, IPEndPoint, UInt32, Byte[])
-  nameWithType.vb: RTPSession.SendVp8Frame(Socket, IPEndPoint, UInt32, Byte())
+- uid: SIPSorcery.Net.RTPSession.SendVp8Frame(System.UInt32,System.Byte[])
+  name: SendVp8Frame(UInt32, Byte[])
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVp8Frame_System_UInt32_System_Byte___
+  commentId: M:SIPSorcery.Net.RTPSession.SendVp8Frame(System.UInt32,System.Byte[])
+  name.vb: SendVp8Frame(UInt32, Byte())
+  fullName: SIPSorcery.Net.RTPSession.SendVp8Frame(System.UInt32, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTPSession.SendVp8Frame(System.UInt32, System.Byte())
+  nameWithType: RTPSession.SendVp8Frame(UInt32, Byte[])
+  nameWithType.vb: RTPSession.SendVp8Frame(UInt32, Byte())
 - uid: SIPSorcery.Net.RTPSession.SendVp8Frame*
   name: SendVp8Frame
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVp8Frame_
