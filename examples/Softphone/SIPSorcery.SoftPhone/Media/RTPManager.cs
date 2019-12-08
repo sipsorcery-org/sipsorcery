@@ -40,7 +40,6 @@ namespace SIPSorcery.SoftPhone
         private RTPChannel2 _rtpVideoChannel;            // Manages the UDP connection that RTP video packets will be sent back and forth on.
         private RTPSession _rtpAudioSession;
         private RTPChannel2 _rtpAudioChannel;            // Manages the UDP connection that RTP video packets will be sent back and forth on.
-        private bool _stop = false;
 
         private IPEndPoint _remoteAudioEP;
         private IPEndPoint _remoteVideoEP;
@@ -55,14 +54,14 @@ namespace SIPSorcery.SoftPhone
             {
                 // Create an RTP channel for sending and receiving RTP audio packets.
                 _rtpAudioChannel = new RTPChannel2(IPAddress.Any, true);
-                _rtpAudioSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null);
+                _rtpAudioSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, true);
                 _rtpAudioSession.OnReceivedSampleReady += (sample) => OnRemoteAudioSampleReady?.Invoke(sample, sample.Length);
             }
 
             if (includeVideo)
             {
                 _rtpVideoChannel = new RTPChannel2(IPAddress.Any, true);
-                _rtpVideoSession = new RTPSession(VIDEO_PAYLOAD_TYPE, null, null);
+                _rtpVideoSession = new RTPSession(VIDEO_PAYLOAD_TYPE, null, null, true);
                 _rtpVideoSession.OnReceivedSampleReady += (sample) => OnRemoteVideoSampleReady?.Invoke(sample, sample.Length);
             }
         }
@@ -157,7 +156,7 @@ namespace SIPSorcery.SoftPhone
             {
                 _remoteAudioEP = new IPEndPoint(remoteRTPIPAddress, remoteAudioPort);
                 logger.Debug("RTP channel remote end point set to audio socket of " + _remoteAudioEP + ".");
-                _rtpAudioChannel.RemoteEndPoint = _remoteAudioEP;
+                _rtpAudioSession.DestinationEndPoint = _remoteAudioEP;
                 _rtpAudioChannel.Start();
             }
 
@@ -165,7 +164,7 @@ namespace SIPSorcery.SoftPhone
             {
                 _remoteVideoEP = new IPEndPoint(remoteRTPIPAddress, remoteVideoPort);
                 logger.Debug("RTP channel remote end point set to video socket of " + _remoteVideoEP + ".");
-                _rtpVideoChannel.RemoteEndPoint = new IPEndPoint(remoteRTPIPAddress, remoteVideoPort);
+                _rtpVideoSession.DestinationEndPoint = new IPEndPoint(remoteRTPIPAddress, remoteVideoPort);
                 _rtpVideoChannel.Start();
             }
 
@@ -181,12 +180,12 @@ namespace SIPSorcery.SoftPhone
         /// <param name="sample">The audio sample ready for transmission.</param>
         public void AudioChannelSampleReady(byte[] sample)
         {
-                _rtpAudioSession.SendAudioFrame(_rtpAudioChannel, _rtpAudioSession.RemoteEndPoint, sample, 160);
+            _rtpAudioSession.SendAudioFrame(160, sample);
         }
 
         public void LocalVideoSampleReady(byte[] sample)
         {
-                _rtpVideoChannel.SendVP8Frame(sample, VP8_TIMESTAMP_SPACING, VIDEO_PAYLOAD_TYPE);
+            _rtpVideoSession.SendVp8Frame(VP8_TIMESTAMP_SPACING, sample);
         }
 
         /// <summary>
@@ -198,20 +197,8 @@ namespace SIPSorcery.SoftPhone
             try
             {
                 logger.Debug("RTP Manager closing.");
-
-                _stop = true;
-
-                if (_rtpAudioChannel != null)
-                {
-                    _rtpAudioChannel.OnFrameReady -= AudioFrameReady;
-                    _rtpAudioChannel.Close();
-                }
-
-                if (_rtpVideoChannel != null)
-                {
-                    _rtpVideoChannel.OnFrameReady -= VideoFrameReady;
-                    _rtpVideoChannel.Close();
-                }
+                _rtpAudioSession?.Close();
+                _rtpVideoSession?.Close();
             }
             catch (Exception excp)
             {

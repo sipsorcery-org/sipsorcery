@@ -212,7 +212,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public void SendVp8Frame(Socket srcRtpSocket, IPEndPoint dstRtpSocket, uint timestamp, byte[] buffer)
+        public void SendVp8Frame(uint timestamp, byte[] buffer)
         {
             if (m_rtpEventInProgress || DestinationEndPoint == null)
             {
@@ -250,7 +250,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        srcRtpSocket.SendTo(rtpBuffer, dstRtpSocket);
+                        RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
                     }
 
                     PacketsSent++;
