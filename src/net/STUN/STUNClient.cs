@@ -29,13 +29,13 @@ namespace SIPSorcery.Net
 
         private static ILogger logger = Log.Logger;
 
-        public static IPAddress GetPublicIPAddress(string stunServer)
+        public static IPAddress GetPublicIPAddress(string stunServer, int port = DEFAULT_STUN_PORT)
         {
             try
             {
                 logger.LogDebug("STUNClient attempting to determine public IP from " + stunServer + ".");
 
-                using (UdpClient udpClient = new UdpClient(stunServer, DEFAULT_STUN_PORT))
+                using (UdpClient udpClient = new UdpClient(stunServer, port))
                 {
                     STUNMessage initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
                     byte[] stunMessageBytes = initMessage.ToByteBuffer();
