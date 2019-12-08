@@ -6642,12 +6642,12 @@ references:
   commentId: F:SIPSorcery.Net.STUNClient.DEFAULT_STUN_PORT
   fullName: SIPSorcery.Net.STUNClient.DEFAULT_STUN_PORT
   nameWithType: STUNClient.DEFAULT_STUN_PORT
-- uid: SIPSorcery.Net.STUNClient.GetPublicIPAddress(System.String)
-  name: GetPublicIPAddress(String)
-  href: api/SIPSorcery.Net.STUNClient.html#SIPSorcery_Net_STUNClient_GetPublicIPAddress_System_String_
-  commentId: M:SIPSorcery.Net.STUNClient.GetPublicIPAddress(System.String)
-  fullName: SIPSorcery.Net.STUNClient.GetPublicIPAddress(System.String)
-  nameWithType: STUNClient.GetPublicIPAddress(String)
+- uid: SIPSorcery.Net.STUNClient.GetPublicIPAddress(System.String,System.Int32)
+  name: GetPublicIPAddress(String, Int32)
+  href: api/SIPSorcery.Net.STUNClient.html#SIPSorcery_Net_STUNClient_GetPublicIPAddress_System_String_System_Int32_
+  commentId: M:SIPSorcery.Net.STUNClient.GetPublicIPAddress(System.String,System.Int32)
+  fullName: SIPSorcery.Net.STUNClient.GetPublicIPAddress(System.String, System.Int32)
+  nameWithType: STUNClient.GetPublicIPAddress(String, Int32)
 - uid: SIPSorcery.Net.STUNClient.GetPublicIPAddress*
   name: GetPublicIPAddress
   href: api/SIPSorcery.Net.STUNClient.html#SIPSorcery_Net_STUNClient_GetPublicIPAddress_
