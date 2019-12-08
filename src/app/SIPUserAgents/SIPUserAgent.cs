@@ -199,6 +199,8 @@ namespace SIPSorcery.SIP.App
         {
             m_transport = transport;
             m_outboundProxy = outboundProxy;
+
+            m_transport.SIPTransportRequestReceived += SIPTransportRequestReceived;
         }
 
         /// <summary>
@@ -315,7 +317,7 @@ namespace SIPSorcery.SIP.App
         /// application to deal with.
         /// </summary>
         /// <param name="request">The in dialog request received.</param>
-        public async Task DialogRequestReceivedAsync(SIPRequest sipRequest)
+        public async Task DialogRequestReceivedAsync(SIPRequest sipRequest) 
         {
             // Make sure the request matches our dialog and is not a stray.
             // A dialog request should match on to tag, from tag and call ID. We'll be more 
@@ -460,6 +462,27 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// This user agent will check incoming SIP requests for any that match its current dialog.
+        /// </summary>
+        /// <param name="localSIPEndPoint">The local end point the request was received on.</param>
+        /// <param name="remoteEndPoint">The remote end point the request came from.</param>
+        /// <param name="sipRequest">The SIP request.</param>
+        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        {
+            if (Dialogue != null)
+            {
+                if (sipRequest.Header.From != null &&
+                    sipRequest.Header.From.FromTag != null &&
+                    sipRequest.Header.To != null &&
+                    sipRequest.Header.To.ToTag != null)
+                {
+                    // In dialog request will include BYE's.
+                    await DialogRequestReceivedAsync(sipRequest);
+                }
+            }
+        }
+
+        /// <summary>
         /// Handles responses to our re-INVITE requests.
         /// </summary>
         /// <param name="localSIPEndPoint">The local end point the response was received on.</param>
@@ -480,7 +503,8 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
-        /// Initiates a blind transfer by asking the remote call party to call the specified destination. 
+        /// Initiates a blind transfer by asking the remote call party to call the specified destination. If the
+        /// transfer is accepted the current call will be hungup.
         /// </summary>
         /// <param name="destination">The URI to transfer the call to.</param>
         /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
@@ -611,8 +635,16 @@ namespace SIPSorcery.SIP.App
         {
             if (ClientCallAnswered != null)
             {
-                Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
-                ClientCallAnswered(uac, sipResponse);
+                if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
+                {
+                    Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+                    ClientCallAnswered(uac, sipResponse);
+                }
+                else
+                {
+                    logger.LogDebug($"Call attempt was answered with failure response {sipResponse.ShortDescription}.");
+                    ClientCallFailed?.Invoke(uac, sipResponse.ReasonPhrase);
+                }
             }
             else
             {

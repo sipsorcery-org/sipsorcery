@@ -378,7 +378,7 @@ namespace SIPSorcery.SIP.App
                         m_uasTransaction.LocalTag = toTag;
                     }
 
-                    SIPResponse okResponse = m_uasTransaction.GetOkResponse(m_uasTransaction.TransactionRequest, contentType, body);
+                    SIPResponse okResponse = m_uasTransaction.GetOkResponse(contentType, body);
 
                     if (body != null)
                     {

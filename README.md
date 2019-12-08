@@ -48,7 +48,7 @@ namespace demo
       Console.WriteLine("SIPSorcery demo");
 
       var sipTransport = new SIPTransport();
-      var sipChannel = new SIPUDPChannel(IPAddress.Loopback, 5060);
+      var sipChannel = new SIPUDPChannel(IPAddress.Any, 5060);
       sipTransport.AddSIPChannel(sipChannel);
 
       sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -57,7 +57,7 @@ namespace demo
 
         if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
         {
-          SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+          SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
           sipTransport.SendResponse(optionsResponse);
         }
       };

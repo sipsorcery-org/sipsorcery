@@ -36,7 +36,7 @@ namespace SIPSorcery.Net
 
         public List<string> BandwidthAttributes = new List<string>();
         public List<SDPMediaFormat> MediaFormats = new List<SDPMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
-        public List<string> ExtraMediaAttributes = new List<string>();  // Attributes that were not recognised.
+        public List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
 
         /// <summary>
         /// The stream status of this media announcement. Note that None means no explicit value has been set

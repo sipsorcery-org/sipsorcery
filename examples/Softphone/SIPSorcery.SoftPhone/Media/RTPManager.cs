@@ -36,8 +36,10 @@ namespace SIPSorcery.SoftPhone
         private ILog logger = AppState.logger;
 
         private SDP _remoteSDP;
-        private RTPChannel _rtpVideoChannel;            // Manages the UDP connection that RTP video packets will be sent back and forth on.
-        private RTPChannel _rtpAudioChannel;            // Manages the UDP connection that RTP video packets will be sent back and forth on.
+        private RTPSession _rtpVideoSession;
+        private RTPChannel2 _rtpVideoChannel;            // Manages the UDP connection that RTP video packets will be sent back and forth on.
+        private RTPSession _rtpAudioSession;
+        private RTPChannel2 _rtpAudioChannel;            // Manages the UDP connection that RTP video packets will be sent back and forth on.
         private bool _stop = false;
 
         private IPEndPoint _remoteAudioEP;
@@ -51,26 +53,22 @@ namespace SIPSorcery.SoftPhone
         {
             if (includeAudio)
             {
-                // Create a UDP socket to use for sending and receiving RTP audio packets.
-                _rtpAudioChannel = new RTPChannel();
-                _rtpAudioChannel.SetFrameType(FrameTypesEnum.Audio);
-                _rtpAudioChannel.ReservePorts(DEFAULT_START_RTP_PORT, DEFAULT_END_RTP_PORT);
-                _rtpAudioChannel.OnFrameReady += AudioFrameReady;
+                // Create an RTP channel for sending and receiving RTP audio packets.
+                _rtpAudioChannel = new RTPChannel2(IPAddress.Any, true);
+                _rtpAudioSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null);
+                _rtpAudioSession.OnReceivedSampleReady += (sample) => OnRemoteAudioSampleReady?.Invoke(sample, sample.Length);
             }
 
             if (includeVideo)
             {
-                _rtpVideoChannel = new RTPChannel();
-                _rtpVideoChannel.SetFrameType(FrameTypesEnum.VP8);
-                _rtpVideoChannel.ReservePorts(DEFAULT_START_RTP_PORT, DEFAULT_END_RTP_PORT);
-                _rtpVideoChannel.OnFrameReady += VideoFrameReady;
-                _rtpVideoChannel.OnRTPSocketDisconnected += () => { };
+                _rtpVideoChannel = new RTPChannel2(IPAddress.Any, true);
+                _rtpVideoSession = new RTPSession(VIDEO_PAYLOAD_TYPE, null, null);
+                _rtpVideoSession.OnReceivedSampleReady += (sample) => OnRemoteVideoSampleReady?.Invoke(sample, sample.Length);
             }
         }
 
         /// <summary>
-        /// Gets an SDP packet that can be used by VoIP clients to negotiate an audio connection. The SDP will only
-        /// offer PCMU since that's all I've gotten around to handling.
+        /// Gets an SDP packet that can be used by VoIP clients to negotiate an audio and/or video stream.
         /// </summary>
         /// <param name="callDstAddress">The destination address the call is being palced to. Given this address the 
         /// RTP socket address can be chosen based on the local address chosen by the operating system to route to it.</param>
@@ -114,15 +112,6 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
-        /// Allows an arbitrary block of bytes to be sent on the RTP channel. This is mainly used for the Gingle
-        /// client which needs to send a STUN binding request to the Google Voice gateway.
-        /// </summary>
-        public void SendRTPRaw(byte[] buffer, int length)
-        {
-            _rtpAudioChannel?.SendRTPRaw(buffer);
-        }
-
-        /// <summary>
         /// Sets the remote end point for the RTP channel. This will be set from the SDP packet received from the remote
         /// end of the VoIP call.
         /// </summary>
@@ -132,35 +121,15 @@ namespace SIPSorcery.SoftPhone
             if (audioRemoteEndPoint != null)
             {
                 logger.Debug("Remote RTP audio end point set as " + audioRemoteEndPoint + ".");
-                _rtpAudioChannel.RemoteEndPoint = audioRemoteEndPoint;
+                _rtpAudioSession.DestinationEndPoint = audioRemoteEndPoint;
                 _rtpAudioChannel.Start();
             }
             else if (videoRemoteEndPoint != null)
             {
                 logger.Debug("Remote RTP video end point set as " + videoRemoteEndPoint + ".");
                 _remoteVideoEP = videoRemoteEndPoint;
-                _rtpVideoChannel.RemoteEndPoint = videoRemoteEndPoint;
+                _rtpVideoSession.DestinationEndPoint = videoRemoteEndPoint;
                 _rtpVideoChannel.Start();
-            }
-        }
-
-        private void AudioFrameReady(RTPFrame frame)
-        {
-            if (OnRemoteAudioSampleReady != null)
-            {
-                var payload = frame.GetFramePayload();
-                //System.Diagnostics.Debug.WriteLine("Remote audio frame received " + payload.Length + " bytes.");
-                OnRemoteAudioSampleReady(payload, payload.Length);
-            }
-        }
-
-        private void VideoFrameReady(RTPFrame frame)
-        {
-            if (OnRemoteVideoSampleReady != null)
-            {
-                //System.Diagnostics.Debug.WriteLine("Remote video frame received " + frame.FramePayload.Length + " bytes.");
-                var payload = frame.GetFramePayload();
-                OnRemoteVideoSampleReady(payload, payload.Length);
             }
         }
 
@@ -208,22 +177,16 @@ namespace SIPSorcery.SoftPhone
 
         /// <summary>
         /// Event handler for processing audio samples from the audio channel.
-        /// </summary>
+        /// </summary> 
         /// <param name="sample">The audio sample ready for transmission.</param>
         public void AudioChannelSampleReady(byte[] sample)
         {
-            if (_rtpAudioChannel.RemoteEndPoint != null)
-            {
-                _rtpAudioChannel.SendAudioFrame(sample, 160, (int)SDPMediaFormatsEnum.PCMU);
-            }
+                _rtpAudioSession.SendAudioFrame(_rtpAudioChannel, _rtpAudioSession.RemoteEndPoint, sample, 160);
         }
 
         public void LocalVideoSampleReady(byte[] sample)
         {
-            if (sample != null && _remoteVideoEP != null && !_stop)
-            {
                 _rtpVideoChannel.SendVP8Frame(sample, VP8_TIMESTAMP_SPACING, VIDEO_PAYLOAD_TYPE);
-            }
         }
 
         /// <summary>
