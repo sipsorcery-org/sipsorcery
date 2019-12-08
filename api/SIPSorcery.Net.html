@@ -126,21 +126,10 @@ the sole type is SIP).</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPPacket.html">RTPPacket</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPPayloadTypes.html">RTPPayloadTypes</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPReceiveRecord.html">RTPReceiveRecord</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPSession.html">RTPSession</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPSink.html">RTPSink</a></h4>
-      <section><p>Threads used:</p>
-<ol>
-<li>ListenerThread to listen for incoming RTP packets on the listener socket,</li>
-<li>ListenerTimeoutThread shuts down the stream if a packet is not received in NO_RTP_TIMEOUT or if the stream's lifetime
-exceeds RTPMaxStayAlive (and RTPMaxStayAlive has been set &gt; 0),</li>
-<li>SenderThread sends RTP packets to remote socket.</li>
-</ol>
-</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPVP8Header.html">RTPVP8Header</a></h4>
       <section><p>Examples of size Payload Header size calculations:</p>
 <p>For length of first parition 54: S0 = 4, S1 = 0x32, S2 = 0.
@@ -199,6 +188,12 @@ abs_path is defined in RFC2616 (HTTP 1.1) 3.2.1 which refers to RFC2396 (URI Gen
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaAnnouncement.html">SDPMediaAnnouncement</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaFormat.html">SDPMediaFormat</a></h4>
+      <section><p>Represents a single media format within a media announcement. Often the whole media format can
+be represented and described by a single character, e.g. &quot;0&quot; without additional info represents
+standard &quot;PCMU&quot;, &quot;8&quot; represents &quot;PCMA&quot; etc. For other media types that have variable parameters
+additional attributes can be provided.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPMediaFormatInfo.html">SDPMediaFormatInfo</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaTypes.html">SDPMediaTypes</a></h4>
       <section></section>
@@ -298,8 +293,6 @@ See <a href="https://tools.ietf.org/html/rfc4566#section-6">https://tools.ietf.o
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RtpMediaTypesEnum.html">RtpMediaTypesEnum</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPPayloadTypesEnum.html">RTPPayloadTypesEnum</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPHeaderError.html">RTSPHeaderError</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPHeaderParserError.html">RTSPHeaderParserError</a></h4>
@@ -315,9 +308,19 @@ See <a href="https://tools.ietf.org/html/rfc4566#section-6">https://tools.ietf.o
       <h4><a class="xref" href="SIPSorcery.Net.RTSPResponseStatusCodesEnum.html">RTSPResponseStatusCodesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaFormatsEnum.html">SDPMediaFormatsEnum</a></h4>
-      <section></section>
+      <section><p>A list of standard media formats that can be idenitifed by an ID if
+there is no qualifiying format attribute provided.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPNonStandardMediaFormatsEnum.html">SDPNonStandardMediaFormatsEnum</a></h4>
+      <section><p>A list of standard media types that do not have a a recognised ID but still do have
+recognised properties.</p>
+<pre><code>// Example
+m=video 49170 RTP/AVPF 98   // &quot;98&quot; is not a standard ID for VP8 and could be anything.
+a=rtpmap:98 VP8/90000
+a=fmtp:98 max-fr=30; max-fs=3600;</code></pre>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAttributeTypesEnum.html">STUNAttributeTypesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNMessageTypesEnum.html">STUNMessageTypesEnum</a></h4>
@@ -335,17 +338,7 @@ See <a href="https://tools.ietf.org/html/rfc4566#section-6">https://tools.ietf.o
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTCPReportRecievedDelegate.html">RTCPReportRecievedDelegate</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPSampleReadyDelegate.html">RTCPSampleReadyDelegate</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPDataReceived.html">RTPDataReceived</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPDataSent.html">RTPDataSent</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPRemoteEndPointChanged.html">RTPRemoteEndPointChanged</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPSinkClosed.html">RTPSinkClosed</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNMessageReceived.html">STUNMessageReceived</a></h4>
       <section></section>
