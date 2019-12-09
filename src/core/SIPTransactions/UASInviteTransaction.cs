@@ -36,7 +36,7 @@ namespace SIPSorcery.SIP
         public event SIPTransactionRequestReceivedDelegate NewCallReceived;
         public event SIPTransactionTimedOutDelegate UASInviteTransactionTimedOut;
 
-        internal UASInviteTransaction(
+        public UASInviteTransaction(
             SIPTransport sipTransport,
             SIPRequest sipRequest,
             SIPEndPoint outboundProxy,
@@ -121,7 +121,7 @@ namespace SIPSorcery.SIP
                     else
                     {
                         // Nobody wants to answer this call so return an error response.
-                        SIPResponse declinedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
+                        SIPResponse declinedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
                         SendFinalResponse(declinedResponse);
                     }
                 }
@@ -168,7 +168,7 @@ namespace SIPSorcery.SIP
                 {
                     base.Cancel();
 
-                    SIPResponse cancelResponse = SIPTransport.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
+                    SIPResponse cancelResponse = SIPResponse.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
                     SendFinalResponse(cancelResponse);
 
                     UASInviteTransactionCancelled?.Invoke(this);
@@ -185,14 +185,14 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public SIPResponse GetOkResponse(SIPRequest sipRequest, string contentType, string messageBody)
+        public SIPResponse GetOkResponse(string contentType, string messageBody)
         {
             try
             {
                 SIPResponse okResponse = new SIPResponse(SIPResponseStatusCodesEnum.Ok, null);
-                okResponse.SetSendFromHints(sipRequest.LocalSIPEndPoint);
+                okResponse.SetSendFromHints(TransactionRequest.LocalSIPEndPoint);
 
-                SIPHeader requestHeader = sipRequest.Header;
+                SIPHeader requestHeader = TransactionRequest.Header;
                 okResponse.Header = new SIPHeader(SIPContactHeader.GetDefaultSIPContactHeader(), requestHeader.From, requestHeader.To, requestHeader.CSeq, requestHeader.CallId);
                 okResponse.Header.To.ToTag = m_localTag;
                 okResponse.Header.CSeqMethod = requestHeader.CSeqMethod;

@@ -4,10 +4,10 @@
 // Description: SIP transaction manager.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// ??	        Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, Hobart, Australia (www.sipsorcery.com)
+// ??	        Aaron Clauson	Created, Hobart, Australia
 // 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 
@@ -52,6 +52,11 @@ namespace SIPSorcery.SIP
                     throw new ApplicationException("An attempt was made to add a duplicate SIP transaction.");
                 }
             }
+        }
+
+        public bool Exists(string transactionID)
+        {
+            return m_transactions.ContainsKey(transactionID);
         }
 
         public bool Exists(SIPRequest sipRequest)

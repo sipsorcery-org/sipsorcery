@@ -55,6 +55,8 @@ namespace SIPSorcery.SoftPhone
         public event Action CallAnswer;                 // Fires when an outgoing SIP call is answered.
         public event Action CallEnded;                  // Fires when an incoming or outgoing call is over.
         public event Action IncomingCall;               // Fires when an incoming call request is received.
+        public event Action RemotePutOnHold;            // Fires when the remote call party puts us on hold.
+        public event Action RemoteTookOffHold;          // Fires when the remote call party takes us off hold.
         public event Action<string> StatusMessage;      // Fires when the SIP client has a status message it wants to inform the UI about.
 
         public SIPTransport SIPClientTransport
@@ -119,7 +121,7 @@ namespace SIPSorcery.SoftPhone
                         {
                             udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_DEFAULT_PORT));
                         }
-                        catch(SocketException bindExcp)
+                        catch (SocketException bindExcp)
                         {
                             logger.Warn($"Socket exception attempting to bind UDP channel to port {SIP_DEFAULT_PORT}, will use random port. {bindExcp.Message}.");
                             udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0));
@@ -139,6 +141,8 @@ namespace SIPSorcery.SoftPhone
                 m_userAgent.ClientCallFailed += CallFailed;
                 m_userAgent.OnCallHungup += CallFinished;
                 m_userAgent.ServerCallCancelled += IncomingCallCancelled;
+                m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
+                m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
 
                 // Log all SIP packets received to a log file.
                 m_sipTransport.SIPRequestInTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { logger.Debug("Request Received : " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipRequest.ToString()); };
@@ -161,8 +165,7 @@ namespace SIPSorcery.SoftPhone
                 sipRequest.Header.To != null &&
                 sipRequest.Header.To.ToTag != null)
             {
-                // In dialog request will include BYE's.
-                m_userAgent.DialogRequestReceivedAsync(sipRequest).Wait();
+                // This is an in-dialog request that will be handled directly by a user agent instance.
             }
             else if (sipRequest.Method == SIPMethodsEnum.INVITE)
             {
@@ -170,8 +173,8 @@ namespace SIPSorcery.SoftPhone
                 {
                     StatusMessage($"Busy response returned for incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                     // If we are already on a call return a busy response.
-                    UASInviteTransaction uasTransaction = m_sipTransport.CreateUASTransaction(sipRequest, null);
-                    SIPResponse busyResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
+                    UASInviteTransaction uasTransaction = new UASInviteTransaction(m_sipTransport, sipRequest, null);
+                    SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
                     uasTransaction.SendFinalResponse(busyResponse);
                 }
                 else
@@ -184,7 +187,7 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 logger.Debug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
-                SIPResponse notAllowedResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
                 m_sipTransport.SendResponse(notAllowedResponse);
             }
         }
@@ -328,7 +331,10 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void PutOnHold()
         {
-
+            m_userAgent.PutOnHold();
+            // At this point we could stop listening to the remote party's RTP and play something 
+            // else and also stop sending our microphone output and play some music.
+            StatusMessage("Remote party put on hold");
         }
 
         /// <summary>
@@ -336,7 +342,28 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void TakeOffHold()
         {
+            m_userAgent.TakeOffHold();
+            // At ths point we should reverse whatever changes we made to the media stream when we
+            // put the remote call part on hold.
+            StatusMessage("Remote taken off on hold");
+        }
 
+        /// <summary>
+        /// Event handler that notifies us the remote party has put us on hold.
+        /// </summary>
+        private void OnRemotePutOnHold()
+        {
+            _mediaManager.StopSending();
+            RemotePutOnHold?.Invoke();
+        }
+
+        /// <summary>
+        /// Event handler that notifies us the remote party has taken us off hold.
+        /// </summary>
+        private void OnRemoteTookOffHold()
+        {
+            _mediaManager.RestartSending();
+            RemoteTookOffHold?.Invoke();
         }
 
         /// <summary>
@@ -409,8 +436,6 @@ namespace SIPSorcery.SoftPhone
                 _mediaManager.EndCall();
                 _mediaManager = null;
             }
-
-            //_cancelCallTokenSource.Cancel();
 
             m_pendingIncomingCall = null;
 

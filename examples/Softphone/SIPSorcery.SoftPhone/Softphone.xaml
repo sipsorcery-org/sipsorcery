@@ -16,6 +16,8 @@
                 <Button x:Name="m_answerButton" Content="Answer" Click="AnswerButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64"/>
                 <Button x:Name="m_rejectButton" Content="Reject" Click="RejectButton_Click" HorizontalAlignment="Left" Margin="4,0,0,0" Width="64"/>
                 <Button x:Name="m_redirectButton" Content="Redirect" Click="RedirectButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64"/>
+                <Button x:Name="m_holdButton" Content="Hold" Click="HoldButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64"/>
+                <Button x:Name="m_offHoldButton" Content="Off Hold" Click="OffHoldButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64"/>
                 <Button x:Name="m_transferButton" Content="Transfer" Click="TransferButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64"/>
             </StackPanel>
             <Button x:Name="m_cancelButton" Content="Cancel" Click="CancelButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,8,0"/>

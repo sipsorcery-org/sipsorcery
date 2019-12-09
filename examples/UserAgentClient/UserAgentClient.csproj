@@ -14,9 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="localhost.pfx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <ProjectReference Include="..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,9 +1,9 @@
-name: sipsorcery-std20-dev
+name: sipsorcery-std20
 
 on:
   push:
     branches:
-      - ghactions
+      - master
 
 jobs:
   build:

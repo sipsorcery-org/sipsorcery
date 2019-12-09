@@ -25,6 +25,7 @@ namespace SIPSorcery.Net
         application = 3,
         data = 4,
         control = 5,
+        image = 6
     }
 
     public class SDPMediaTypes
@@ -32,6 +33,10 @@ namespace SIPSorcery.Net
         public static SDPMediaTypesEnum GetSDPMediaType(string mediaType)
         {
             return (SDPMediaTypesEnum)Enum.Parse(typeof(SDPMediaTypesEnum), mediaType, true);
+        }
+        public static SDPMediaTypesEnum GetSDPMediaType(int mediaType)
+        {
+            return (SDPMediaTypesEnum)mediaType;
         }
     }
 

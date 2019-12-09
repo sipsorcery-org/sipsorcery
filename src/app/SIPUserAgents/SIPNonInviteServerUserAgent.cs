@@ -239,7 +239,7 @@ namespace SIPSorcery.SIP.App
                         else
                         {
                             // Send authorisation failure or required response
-                            SIPResponse authReqdResponse = SIPTransport.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
+                            SIPResponse authReqdResponse = SIPResponse.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
                             authReqdResponse.Header.AuthenticationHeader = authenticationResult.AuthenticationRequiredHeader;
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, m_transaction.TransactionRequest.Method + " request not authenticated for " + m_sipUsername + "@" + m_sipDomain + ", responding with " + authenticationResult.ErrorResponse + ".", null));
                             m_transaction.SendFinalResponse(authReqdResponse);
@@ -274,7 +274,7 @@ namespace SIPSorcery.SIP.App
         public void AnswerNonInvite(SIPResponseStatusCodesEnum answerStatus, string reasonPhrase, string[] customHeaders, string contentType, string body)
         {
             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, m_transaction.TransactionRequest.Method + " request succeeded with a response status of " + (int)answerStatus + " " + reasonPhrase + ".", m_owner));
-            SIPResponse answerResponse = SIPTransport.GetResponse(m_transaction.TransactionRequest, answerStatus, reasonPhrase);
+            SIPResponse answerResponse = SIPResponse.GetResponse(m_transaction.TransactionRequest, answerStatus, reasonPhrase);
 
             if (customHeaders != null && customHeaders.Length > 0)
             {
@@ -296,7 +296,7 @@ namespace SIPSorcery.SIP.App
         public void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders)
         {
             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, m_transaction.TransactionRequest.Method + " request failed with a response status of " + (int)failureStatus + " " + reasonPhrase + ".", m_owner));
-            SIPResponse failureResponse = SIPTransport.GetResponse(m_transaction.TransactionRequest, failureStatus, reasonPhrase);
+            SIPResponse failureResponse = SIPResponse.GetResponse(m_transaction.TransactionRequest, failureStatus, reasonPhrase);
             m_transaction.SendFinalResponse(failureResponse);
         }
 

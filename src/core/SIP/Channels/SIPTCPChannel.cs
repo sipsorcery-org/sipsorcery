@@ -185,7 +185,7 @@ namespace SIPSorcery.SIP
                         await OnAccept(sipStmConn);
                     }
                 }
-                catch(ObjectDisposedException)
+                catch (ObjectDisposedException)
                 {
                     // This is a result of the transport channel being closed. Safe to ignore.
                     logger.LogDebug($"SIP {ProtDescr} Channel accepts for {ListeningEndPoint} cancelled.");
@@ -629,7 +629,7 @@ namespace SIPSorcery.SIP
                             // See explanation in OnSIPStreamSocketDisconnected on why the close is done on the socket and NOT the stream.
                             streamConnection.StreamSocket?.Close();
                         }
-                        catch(Exception closeExcp)
+                        catch (Exception closeExcp)
                         {
                             logger.LogError($"Exception closing SIP connection on {ProtDescr}. {closeExcp.Message}");
                         }

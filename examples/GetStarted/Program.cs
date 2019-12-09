@@ -48,7 +48,7 @@ namespace demo
 
                 if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                 {
-                    SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     sipTransport.SendResponse(optionsResponse);
                 }
             };
