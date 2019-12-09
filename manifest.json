@@ -705,7 +705,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SDP.html",
-          "hash": "I5XtwKqUSUON2IaAtVOskg=="
+          "hash": "PDXLTskju3XfZNVJabv+oA=="
         }
       },
       "is_incremental": false,
@@ -2925,7 +2925,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTransportConfig.html",
-          "hash": "/ZT+4zsf6b36WMH7/XGFvw=="
+          "hash": "e49KuZnsWQUmH74QYKvPcQ=="
         }
       },
       "is_incremental": false,
@@ -3233,18 +3233,6 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Sys.LocalIPConfig.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Sys.LocalIPConfig.html",
-          "hash": "+ssUshYmPKxcgJuQsmxvug=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Sys.Log.yml",
       "output": {
         ".html": {
@@ -3405,7 +3393,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Sys.html",
-          "hash": "HHmQDGpcaDdncnd/Jw495Q=="
+          "hash": "H0YjaRs9m5pMhmURWPLT3Q=="
         }
       },
       "is_incremental": false,
@@ -3429,7 +3417,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "vrCg9raSIpSCammFG/yHWA=="
+          "hash": "+ek7r7TatzPW5+fW+3wSNA=="
         }
       },
       "is_incremental": false,
@@ -3638,10 +3626,11 @@
         "full_build_reason_code": "NoAvailableBuildCache"
       },
       "processors": {
-        "ManagedReferenceDocumentProcessor": {
+        "ResourceDocumentProcessor": {
           "can_incremental": false,
+          "details": "Processor ResourceDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
           "incrementalPhase": "build",
-          "total_file_count": 284,
+          "total_file_count": 0,
           "skipped_file_count": 0
         },
         "ConceptualDocumentProcessor": {
@@ -3657,11 +3646,10 @@
           "total_file_count": 0,
           "skipped_file_count": 0
         },
-        "ResourceDocumentProcessor": {
+        "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
-          "details": "Processor ResourceDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
           "incrementalPhase": "build",
-          "total_file_count": 0,
+          "total_file_count": 283,
           "skipped_file_count": 0
         }
       }

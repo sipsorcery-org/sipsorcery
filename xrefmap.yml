@@ -5282,6 +5282,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDP.ParseSDPDescription
   nameWithType: SDP.ParseSDPDescription
+- uid: SIPSorcery.Net.SDP.RawString
+  name: RawString()
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_RawString
+  commentId: M:SIPSorcery.Net.SDP.RawString
+  fullName: SIPSorcery.Net.SDP.RawString()
+  nameWithType: SDP.RawString()
+- uid: SIPSorcery.Net.SDP.RawString*
+  name: RawString
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_RawString_
+  commentId: Overload:SIPSorcery.Net.SDP.RawString
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDP.RawString
+  nameWithType: SDP.RawString
 - uid: SIPSorcery.Net.SDP.SDP_MIME_CONTENTTYPE
   name: SDP_MIME_CONTENTTYPE
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_SDP_MIME_CONTENTTYPE
@@ -24471,89 +24484,6 @@ references:
   commentId: F:SIPSorcery.Sys.IPv4Packet.Payload
   fullName: SIPSorcery.Sys.IPv4Packet.Payload
   nameWithType: IPv4Packet.Payload
-- uid: SIPSorcery.Sys.LocalIPConfig
-  name: LocalIPConfig
-  href: api/SIPSorcery.Sys.LocalIPConfig.html
-  commentId: T:SIPSorcery.Sys.LocalIPConfig
-  fullName: SIPSorcery.Sys.LocalIPConfig
-  nameWithType: LocalIPConfig
-- uid: SIPSorcery.Sys.LocalIPConfig.ALL_LOCAL_IPADDRESSES_KEY
-  name: ALL_LOCAL_IPADDRESSES_KEY
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_ALL_LOCAL_IPADDRESSES_KEY
-  commentId: F:SIPSorcery.Sys.LocalIPConfig.ALL_LOCAL_IPADDRESSES_KEY
-  fullName: SIPSorcery.Sys.LocalIPConfig.ALL_LOCAL_IPADDRESSES_KEY
-  nameWithType: LocalIPConfig.ALL_LOCAL_IPADDRESSES_KEY
-- uid: SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv4Address
-  name: GetDefaultIPv4Address()
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_GetDefaultIPv4Address
-  commentId: M:SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv4Address
-  fullName: SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv4Address()
-  nameWithType: LocalIPConfig.GetDefaultIPv4Address()
-- uid: SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv4Address*
-  name: GetDefaultIPv4Address
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_GetDefaultIPv4Address_
-  commentId: Overload:SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv4Address
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv4Address
-  nameWithType: LocalIPConfig.GetDefaultIPv4Address
-- uid: SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv6Address
-  name: GetDefaultIPv6Address()
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_GetDefaultIPv6Address
-  commentId: M:SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv6Address
-  fullName: SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv6Address()
-  nameWithType: LocalIPConfig.GetDefaultIPv6Address()
-- uid: SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv6Address*
-  name: GetDefaultIPv6Address
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_GetDefaultIPv6Address_
-  commentId: Overload:SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv6Address
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.LocalIPConfig.GetDefaultIPv6Address
-  nameWithType: LocalIPConfig.GetDefaultIPv6Address
-- uid: SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4Addresses
-  name: GetLocalIPv4Addresses()
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_GetLocalIPv4Addresses
-  commentId: M:SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4Addresses
-  fullName: SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4Addresses()
-  nameWithType: LocalIPConfig.GetLocalIPv4Addresses()
-- uid: SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4Addresses*
-  name: GetLocalIPv4Addresses
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_GetLocalIPv4Addresses_
-  commentId: Overload:SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4Addresses
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4Addresses
-  nameWithType: LocalIPConfig.GetLocalIPv4Addresses
-- uid: SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4EndPoints(System.Int32)
-  name: GetLocalIPv4EndPoints(Int32)
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_GetLocalIPv4EndPoints_System_Int32_
-  commentId: M:SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4EndPoints(System.Int32)
-  fullName: SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4EndPoints(System.Int32)
-  nameWithType: LocalIPConfig.GetLocalIPv4EndPoints(Int32)
-- uid: SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4EndPoints*
-  name: GetLocalIPv4EndPoints
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_GetLocalIPv4EndPoints_
-  commentId: Overload:SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4EndPoints
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.LocalIPConfig.GetLocalIPv4EndPoints
-  nameWithType: LocalIPConfig.GetLocalIPv4EndPoints
-- uid: SIPSorcery.Sys.LocalIPConfig.LINK_LOCAL_BLOCK_PREFIX
-  name: LINK_LOCAL_BLOCK_PREFIX
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_LINK_LOCAL_BLOCK_PREFIX
-  commentId: F:SIPSorcery.Sys.LocalIPConfig.LINK_LOCAL_BLOCK_PREFIX
-  fullName: SIPSorcery.Sys.LocalIPConfig.LINK_LOCAL_BLOCK_PREFIX
-  nameWithType: LocalIPConfig.LINK_LOCAL_BLOCK_PREFIX
-- uid: SIPSorcery.Sys.LocalIPConfig.ParseIPSockets(System.Xml.XmlNode)
-  name: ParseIPSockets(XmlNode)
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_ParseIPSockets_System_Xml_XmlNode_
-  commentId: M:SIPSorcery.Sys.LocalIPConfig.ParseIPSockets(System.Xml.XmlNode)
-  fullName: SIPSorcery.Sys.LocalIPConfig.ParseIPSockets(System.Xml.XmlNode)
-  nameWithType: LocalIPConfig.ParseIPSockets(XmlNode)
-- uid: SIPSorcery.Sys.LocalIPConfig.ParseIPSockets*
-  name: ParseIPSockets
-  href: api/SIPSorcery.Sys.LocalIPConfig.html#SIPSorcery_Sys_LocalIPConfig_ParseIPSockets_
-  commentId: Overload:SIPSorcery.Sys.LocalIPConfig.ParseIPSockets
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.LocalIPConfig.ParseIPSockets
-  nameWithType: LocalIPConfig.ParseIPSockets
 - uid: SIPSorcery.Sys.Log
   name: Log
   href: api/SIPSorcery.Sys.Log.html
