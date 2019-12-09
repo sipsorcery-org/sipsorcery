@@ -36,6 +36,7 @@ namespace SIPSorcery.Net
         private const int RTP_MAX_PAYLOAD = 1400;
         private const int SRTP_AUTH_KEY_LENGTH = 10;
         private const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
+        public const int H264_RTP_HEADER_LENGTH = 2;
 
         public const int RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS = 50; // Default sample period for an RTP event as specified by RFC2833.
 
@@ -57,7 +58,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The RTP communications channel this session is sending and receiving on.
         /// </summary>
-        public RTPChannel2 RtpChannel { get; private set; }
+        public RTPChannel RtpChannel { get; private set; }
 
         /// <summary>
         /// The media announcement from the Session Description Protocol that describes this RTP session.
@@ -154,7 +155,7 @@ namespace SIPSorcery.Net
             Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
             SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
 
-            RtpChannel = new RTPChannel2(IPAddress.Any, true);
+            RtpChannel = new RTPChannel(IPAddress.Any, true);
 
             MediaAnnouncement.Port = RtpChannel.RTPPort;
             RtpChannel.OnRTPDataReceived += RtpPacketReceived;
@@ -261,6 +262,127 @@ namespace SIPSorcery.Net
             catch (SocketException sockExcp)
             {
                 logger.LogError("SocketException SendVp8Frame. " + sockExcp.Message);
+            }
+        }
+
+        /// <summary>
+        /// Helper method to send a low quality JPEG image over RTP. This method supports a very abbreviated version of RFC 2435 "RTP Payload Format for JPEG-compressed Video".
+        /// It's intended as a quick convenient way to send something like a test pattern image over an RTSP connection. More than likely it won't be suitable when a high
+        /// quality image is required since the header used in this method does not support quantization tables.
+        /// </summary>
+        /// <param name="jpegBytes">The raw encoded bytes of teh JPEG image to transmit.</param>
+        /// <param name="jpegQuality">The encoder quality of the JPEG image.</param>
+        /// <param name="jpegWidth">The width of the JPEG image.</param>
+        /// <param name="jpegHeight">The height of the JPEG image.</param>
+        /// <param name="framesPerSecond">The rate at which the JPEG frames are being transmitted at. used to calculate the timestamp.</param>
+        public void SendJpegFrame(uint timestamp, byte[] jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight, int framesPerSecond)
+        {
+            if (m_rtpEventInProgress || DestinationEndPoint == null)
+            {
+                return;
+            }
+
+            try
+            {
+                //_timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + (uint)(RFC_2435_FREQUENCY_BASELINE / framesPerSecond)) % UInt32.MaxValue;
+
+                //System.Diagnostics.Debug.WriteLine("Sending " + jpegBytes.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ", image dimensions " + jpegWidth + " x " + jpegHeight + ".");
+
+                for (int index = 0; index * RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
+                {
+                    uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
+                    int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? RTP_MAX_PAYLOAD : jpegBytes.Length - index * RTP_MAX_PAYLOAD;
+
+                    byte[] jpegHeader = CreateLowQualityRtpJpegHeader(offset, jpegQuality, jpegWidth, jpegHeight);
+
+                    List<byte> packetPayload = new List<byte>();
+                    packetPayload.AddRange(jpegHeader);
+                    packetPayload.AddRange(jpegBytes.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength));
+
+                    RTPPacket rtpPacket = new RTPPacket(packetPayload.Count);
+                    rtpPacket.Header.SyncSource = Ssrc;
+                    rtpPacket.Header.SequenceNumber = SeqNum++;
+                    rtpPacket.Header.Timestamp = timestamp;
+                    rtpPacket.Header.MarkerBit = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1;
+                    rtpPacket.Header.PayloadType = (int)SDPMediaFormatsEnum.JPEG;
+                    rtpPacket.Payload = packetPayload.ToArray();
+
+                    byte[] rtpBytes = rtpPacket.GetBytes();
+
+                    RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBytes);
+                }
+            }
+            catch (SocketException sockExcp)
+            {
+                logger.LogError("SocketException SendJpegFrame. " + sockExcp.Message);
+            }
+        }
+
+        /// <summary>
+        /// H264 frames need a two byte header when transmitted over RTP.
+        /// </summary>
+        /// <param name="frame">The H264 encoded frame to transmit.</param>
+        /// <param name="frameSpacing">The increment to add to the RTP timestamp for each new frame.</param>
+        /// <param name="payloadType">The payload type to set on the RTP packet.</param>
+        public void SendH264Frame(uint timestamp, byte[] frame, uint frameSpacing, int payloadType)
+        {
+            if (m_rtpEventInProgress || DestinationEndPoint == null)
+            {
+                return;
+            }
+
+            try
+            {
+                //_timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + frameSpacing) % UInt32.MaxValue;
+
+                //System.Diagnostics.Debug.WriteLine("Sending " + frame.Length + " H264 encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
+
+                for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
+                {
+                    uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
+                    int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
+
+                    RTPPacket rtpPacket = new RTPPacket(payloadLength + H264_RTP_HEADER_LENGTH);
+                    rtpPacket.Header.SyncSource = Ssrc;
+                    rtpPacket.Header.SequenceNumber = SeqNum++;
+                    rtpPacket.Header.Timestamp = timestamp;
+                    rtpPacket.Header.MarkerBit = 0;
+                    rtpPacket.Header.PayloadType = payloadType;
+
+                    // Start RTP packet in frame 0x1c 0x89
+                    // Middle RTP packet in frame 0x1c 0x09
+                    // Last RTP packet in frame 0x1c 0x49
+
+                    byte[] h264Header = new byte[] { 0x1c, 0x09 };
+
+                    if (index == 0 && frame.Length < RTP_MAX_PAYLOAD)
+                    {
+                        // First and last RTP packet in the frame.
+                        h264Header = new byte[] { 0x1c, 0x49 };
+                        rtpPacket.Header.MarkerBit = 1;
+                    }
+                    else if (index == 0)
+                    {
+                        h264Header = new byte[] { 0x1c, 0x89 };
+                    }
+                    else if ((index + 1) * RTP_MAX_PAYLOAD > frame.Length)
+                    {
+                        h264Header = new byte[] { 0x1c, 0x49 };
+                        rtpPacket.Header.MarkerBit = 1;
+                    }
+
+                    var h264Stream = frame.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength).ToList();
+                    h264Stream.InsertRange(0, h264Header);
+                    rtpPacket.Payload = h264Stream.ToArray();
+
+                    byte[] rtpBytes = rtpPacket.GetBytes();
+
+                    RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBytes);
+                }
+            }
+            catch (SocketException sockExcp)
+            {
+                logger.LogError("SocketException SendH264Frame. " + sockExcp.Message);
             }
         }
 
@@ -478,7 +600,7 @@ namespace SIPSorcery.Net
         /// <param name="timestamp">The RTP header timestamp.</param>
         /// <param name="markerBit">The RTP header marker bit.</param>
         /// <param name="payloadType">The RTP header payload type.</param>
-        private void SendRtpPacket(RTPChannel2 rtpChannel, IPEndPoint dstRtpSocket, byte[] data, uint timestamp, int markerBit, int payloadType)
+        private void SendRtpPacket(RTPChannel rtpChannel, IPEndPoint dstRtpSocket, byte[] data, uint timestamp, int markerBit, int payloadType)
         {
             int srtpProtectionLength = (SrtpProtect != null) ? SRTP_AUTH_KEY_LENGTH : 0;
 
@@ -502,6 +624,59 @@ namespace SIPSorcery.Net
             {
                 rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer);
             }
+        }
+
+        /// <summary>
+        /// Utility function to create RtpJpegHeader either for initial packet or template for further packets
+        /// 
+        /// <code>
+        /// 0                   1                   2                   3
+        /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// | Type-specific |              Fragment Offset                  |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// |      Type     |       Q       |     Width     |     Height    |
+        /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        /// </code>
+        /// </summary>
+        /// <param name="fragmentOffset"></param>
+        /// <param name="quality"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <returns></returns>
+        private static byte[] CreateLowQualityRtpJpegHeader(uint fragmentOffset, int quality, int width, int height)
+        {
+            byte[] rtpJpegHeader = new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00 };
+
+            // Byte 0: Type specific
+            //http://tools.ietf.org/search/rfc2435#section-3.1.1
+
+            // Bytes 1 to 3: Three byte fragment offset
+            //http://tools.ietf.org/search/rfc2435#section-3.1.2
+
+            if (BitConverter.IsLittleEndian)
+            {
+                fragmentOffset = NetConvert.DoReverseEndian(fragmentOffset);
+            }
+
+            byte[] offsetBytes = BitConverter.GetBytes(fragmentOffset);
+            rtpJpegHeader[1] = offsetBytes[2];
+            rtpJpegHeader[2] = offsetBytes[1];
+            rtpJpegHeader[3] = offsetBytes[0];
+
+            // Byte 4: JPEG Type.
+            //http://tools.ietf.org/search/rfc2435#section-3.1.3
+
+            //Byte 5: http://tools.ietf.org/search/rfc2435#section-3.1.4 (Q)
+            rtpJpegHeader[5] = (byte)quality;
+
+            // Byte 6: http://tools.ietf.org/search/rfc2435#section-3.1.5 (Width)
+            rtpJpegHeader[6] = (byte)(width / 8);
+
+            // Byte 7: http://tools.ietf.org/search/rfc2435#section-3.1.6 (Height)
+            rtpJpegHeader[7] = (byte)(height / 8);
+
+            return rtpJpegHeader;
         }
     }
 }
