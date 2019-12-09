@@ -2,7 +2,7 @@
 // Filename: MediaManager.cs
 //
 // Description: This class manages different media channels that can be included in a call, e.g.
-// aduio and video. It also controls the RTP transmission and reception.
+// audio and video. It also controls the RTP transmission and reception.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -16,10 +16,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using SIPSorceryMedia;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
@@ -43,15 +45,35 @@ namespace SIPSorcery.SoftPhone
         private int _encodingSample = 1;
         private bool _useVideo = false;
         private MediaStreamStatusEnum _streamStatusType = MediaStreamStatusEnum.SendRecv;
+        private UIElement m_uiElement;
 
-        // Audio and Video events.
-        public event Action<byte[], int, int> OnLocalVideoSampleReady;      // [sample, width, height] Fires when a local video sample is ready for display.
-        public event Action<byte[], int, int> OnRemoteVideoSampleReady;     // [sample, width, height] Fires when a remote video sample is ready for display.
-        public event Action<string> OnLocalVideoError = delegate { };       // Fires when there is an error communicating with the local webcam.
-        //public event Action<string> OnRemoteVideoError;
+        /// <summary>
+        /// Fires when a local video sample is ready for display.
+        /// [sample, width, height] 
+        /// </summary>
+        public event Action<byte[], int, int> OnLocalVideoSampleReady;
 
-        public MediaManager(bool useVideo = false)
+        /// <summary>
+        /// Fires when a remote video sample is ready for display.
+        /// [sample, width, height] 
+        /// </summary>
+        public event Action<byte[], int, int> OnRemoteVideoSampleReady;
+
+        /// <summary>
+        /// Fires when there is an error communicating with the local webcam.
+        /// </summary>
+        public event Action<string> OnLocalVideoError = delegate { };
+
+        /// <summary>
+        /// This class manages different media channels that can be included in a call, e.g. audio and video.
+        /// </summary>
+        /// <param name="uiElement">Need a UI element so tasks can be marshalled back to the UI thread. For exmaple this object
+        /// gets created when a button is clicked on and is therefore owned by the UI thread. When a call transfer completes the
+        /// resources need to be closed without any UI interaction. In that case need to marshal cak to the UI thread.</param>
+        /// <param name="useVideo">Set to true if the current call is going to be using video.</param>
+        public MediaManager(UIElement uiElement, bool useVideo = false)
         {
+            m_uiElement = uiElement;
             _useVideo = useVideo;
 
             if (_useVideo == true)
@@ -92,9 +114,12 @@ namespace SIPSorcery.SoftPhone
         {
             if (_audioChannel != null)
             {
-                _audioChannel.SampleReady -= AudioChannelSampleReady;
-                _audioChannel.Close();
-                _audioChannel = null;
+                UIHelper.DoOnUIThread(m_uiElement, () =>
+                {
+                    _audioChannel.SampleReady -= AudioChannelSampleReady;
+                    _audioChannel.Close();
+                    _audioChannel = null;
+                });
             }
 
             _rtpManager.OnRemoteVideoSampleReady -= EncodedVideoSampleReceived;
@@ -109,7 +134,24 @@ namespace SIPSorcery.SoftPhone
 
         public void SetRemoteSDP(SDP remoteSDP)
         {
-            _rtpManager.SetRemoteSDP(remoteSDP);
+            IPEndPoint audioEndPoint = null;
+            IPEndPoint videoEndPoint = null;
+
+            IPAddress offerIPAddress = IPAddress.Parse(remoteSDP.Connection.ConnectionAddress);
+
+            if (remoteSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
+            {
+                int audioPort = remoteSDP.Media.FirstOrDefault(x => x.Media == SDPMediaTypesEnum.audio).Port;
+                audioEndPoint = new IPEndPoint(offerIPAddress, audioPort);
+            }
+
+            if (remoteSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
+            {
+                int videoPort = remoteSDP.Media.FirstOrDefault(x => x.Media == SDPMediaTypesEnum.video).Port;
+                videoEndPoint = new IPEndPoint(offerIPAddress, videoPort);
+            }
+
+            _rtpManager.SetRemoteRTPEndPoints(audioEndPoint, videoEndPoint);
         }
 
         /// <summary>
@@ -153,14 +195,14 @@ namespace SIPSorcery.SoftPhone
                     if (result == NAudio.MediaFoundation.MediaFoundationErrors.MF_E_HW_MFT_FAILED_START_STREAMING)
                     {
                         logger.Warn("An audio sample could not be acquired from the local source. Check that it is not already in use.");
-                        //OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use.");
-                        break;
+                    //OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use.");
+                    break;
                     }
                     else if (result != 0)
                     {
                         logger.Warn("An audio sample could not be acquired from the local source. Check that it is not already in use. Error code: " + result);
-                        //OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use. Error code: " + result);
-                        break;
+                    //OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use. Error code: " + result);
+                    break;
                     }
                     else if (audioSample != null)
                     {
@@ -348,7 +390,7 @@ namespace SIPSorcery.SoftPhone
             _rtpManager.OnRemoteVideoSampleReady += EncodedVideoSampleReceived;
 
             var sdp = _rtpManager.GetSDP(IPAddress.Loopback);
-            _rtpManager.SetRemoteSDP(sdp);
+            SetRemoteSDP(sdp);
         }
 
         /// <summary>
