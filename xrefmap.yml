@@ -946,12 +946,6 @@ references:
   commentId: F:SIPSorcery.Net.Mjpeg.Tags.TextComment
   fullName: SIPSorcery.Net.Mjpeg.Tags.TextComment
   nameWithType: Mjpeg.Tags.TextComment
-- uid: SIPSorcery.Net.PacketReceivedDelegate
-  name: PacketReceivedDelegate
-  href: api/SIPSorcery.Net.PacketReceivedDelegate.html
-  commentId: T:SIPSorcery.Net.PacketReceivedDelegate
-  fullName: SIPSorcery.Net.PacketReceivedDelegate
-  nameWithType: PacketReceivedDelegate
 - uid: SIPSorcery.Net.ProtectRtpPacket
   name: ProtectRtpPacket
   href: api/SIPSorcery.Net.ProtectRtpPacket.html
@@ -1683,18 +1677,18 @@ references:
   commentId: T:SIPSorcery.Net.RTPChannel
   fullName: SIPSorcery.Net.RTPChannel
   nameWithType: RTPChannel
-- uid: SIPSorcery.Net.RTPChannel.#ctor
-  name: RTPChannel()
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor
-  commentId: M:SIPSorcery.Net.RTPChannel.#ctor
-  fullName: SIPSorcery.Net.RTPChannel.RTPChannel()
-  nameWithType: RTPChannel.RTPChannel()
-- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPEndPoint)
-  name: RTPChannel(IPEndPoint)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Net.IPEndPoint)
-  nameWithType: RTPChannel.RTPChannel(IPEndPoint)
+- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean)
+  name: RTPChannel(IPAddress, Boolean)
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Net_IPAddress_System_Boolean_
+  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean)
+  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Net.IPAddress, System.Boolean)
+  nameWithType: RTPChannel.RTPChannel(IPAddress, Boolean)
+- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint)
+  name: RTPChannel(IPAddress, Boolean, IPEndPoint, IPEndPoint)
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Net_IPAddress_System_Boolean_System_Net_IPEndPoint_System_Net_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint)
+  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Net.IPAddress, System.Boolean, System.Net.IPEndPoint, System.Net.IPEndPoint)
+  nameWithType: RTPChannel.RTPChannel(IPAddress, Boolean, IPEndPoint, IPEndPoint)
 - uid: SIPSorcery.Net.RTPChannel.#ctor*
   name: RTPChannel
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_
@@ -1754,38 +1748,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.CreatedAt
   nameWithType: RTPChannel.CreatedAt
-- uid: SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32(System.DateTime)
-  name: DateTimeToNptTimestamp32(DateTime)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_DateTimeToNptTimestamp32_System_DateTime_
-  commentId: M:SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32(System.DateTime)
-  fullName: SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32(System.DateTime)
-  nameWithType: RTPChannel.DateTimeToNptTimestamp32(DateTime)
-- uid: SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32*
-  name: DateTimeToNptTimestamp32
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_DateTimeToNptTimestamp32_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.DateTimeToNptTimestamp32
-  nameWithType: RTPChannel.DateTimeToNptTimestamp32
-- uid: SIPSorcery.Net.RTPChannel.DontTimeout
-  name: DontTimeout
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_DontTimeout
-  commentId: P:SIPSorcery.Net.RTPChannel.DontTimeout
-  fullName: SIPSorcery.Net.RTPChannel.DontTimeout
-  nameWithType: RTPChannel.DontTimeout
-- uid: SIPSorcery.Net.RTPChannel.DontTimeout*
-  name: DontTimeout
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_DontTimeout_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.DontTimeout
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.DontTimeout
-  nameWithType: RTPChannel.DontTimeout
-- uid: SIPSorcery.Net.RTPChannel.H264_RTP_HEADER_LENGTH
-  name: H264_RTP_HEADER_LENGTH
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_H264_RTP_HEADER_LENGTH
-  commentId: F:SIPSorcery.Net.RTPChannel.H264_RTP_HEADER_LENGTH
-  fullName: SIPSorcery.Net.RTPChannel.H264_RTP_HEADER_LENGTH
-  nameWithType: RTPChannel.H264_RTP_HEADER_LENGTH
 - uid: SIPSorcery.Net.RTPChannel.IsClosed
   name: IsClosed
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_IsClosed
@@ -1799,12 +1761,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.IsClosed
   nameWithType: RTPChannel.IsClosed
-- uid: SIPSorcery.Net.RTPChannel.JPEG_RTP_HEADER_LENGTH
-  name: JPEG_RTP_HEADER_LENGTH
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_JPEG_RTP_HEADER_LENGTH
-  commentId: F:SIPSorcery.Net.RTPChannel.JPEG_RTP_HEADER_LENGTH
-  fullName: SIPSorcery.Net.RTPChannel.JPEG_RTP_HEADER_LENGTH
-  nameWithType: RTPChannel.JPEG_RTP_HEADER_LENGTH
 - uid: SIPSorcery.Net.RTPChannel.OnControlDataReceived
   name: OnControlDataReceived
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnControlDataReceived
@@ -1817,56 +1773,44 @@ references:
   commentId: E:SIPSorcery.Net.RTPChannel.OnControlSocketDisconnected
   fullName: SIPSorcery.Net.RTPChannel.OnControlSocketDisconnected
   nameWithType: RTPChannel.OnControlSocketDisconnected
-- uid: SIPSorcery.Net.RTPChannel.OnFrameReady
-  name: OnFrameReady
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnFrameReady
-  commentId: E:SIPSorcery.Net.RTPChannel.OnFrameReady
-  fullName: SIPSorcery.Net.RTPChannel.OnFrameReady
-  nameWithType: RTPChannel.OnFrameReady
-- uid: SIPSorcery.Net.RTPChannel.OnRTPQueueFull
-  name: OnRTPQueueFull
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnRTPQueueFull
-  commentId: E:SIPSorcery.Net.RTPChannel.OnRTPQueueFull
-  fullName: SIPSorcery.Net.RTPChannel.OnRTPQueueFull
-  nameWithType: RTPChannel.OnRTPQueueFull
+- uid: SIPSorcery.Net.RTPChannel.OnRTPDataReceived
+  name: OnRTPDataReceived
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnRTPDataReceived
+  commentId: E:SIPSorcery.Net.RTPChannel.OnRTPDataReceived
+  fullName: SIPSorcery.Net.RTPChannel.OnRTPDataReceived
+  nameWithType: RTPChannel.OnRTPDataReceived
 - uid: SIPSorcery.Net.RTPChannel.OnRTPSocketDisconnected
   name: OnRTPSocketDisconnected
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnRTPSocketDisconnected
   commentId: E:SIPSorcery.Net.RTPChannel.OnRTPSocketDisconnected
   fullName: SIPSorcery.Net.RTPChannel.OnRTPSocketDisconnected
   nameWithType: RTPChannel.OnRTPSocketDisconnected
-- uid: SIPSorcery.Net.RTPChannel.RemoteEndPoint
-  name: RemoteEndPoint
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RemoteEndPoint
-  commentId: P:SIPSorcery.Net.RTPChannel.RemoteEndPoint
-  fullName: SIPSorcery.Net.RTPChannel.RemoteEndPoint
-  nameWithType: RTPChannel.RemoteEndPoint
-- uid: SIPSorcery.Net.RTPChannel.RemoteEndPoint*
-  name: RemoteEndPoint
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RemoteEndPoint_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.RemoteEndPoint
+- uid: SIPSorcery.Net.RTPChannel.RemoteControlEndPoint
+  name: RemoteControlEndPoint
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RemoteControlEndPoint
+  commentId: P:SIPSorcery.Net.RTPChannel.RemoteControlEndPoint
+  fullName: SIPSorcery.Net.RTPChannel.RemoteControlEndPoint
+  nameWithType: RTPChannel.RemoteControlEndPoint
+- uid: SIPSorcery.Net.RTPChannel.RemoteControlEndPoint*
+  name: RemoteControlEndPoint
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RemoteControlEndPoint_
+  commentId: Overload:SIPSorcery.Net.RTPChannel.RemoteControlEndPoint
   isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.RemoteEndPoint
-  nameWithType: RTPChannel.RemoteEndPoint
-- uid: SIPSorcery.Net.RTPChannel.ReservePorts
-  name: ReservePorts()
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_ReservePorts
-  commentId: M:SIPSorcery.Net.RTPChannel.ReservePorts
-  fullName: SIPSorcery.Net.RTPChannel.ReservePorts()
-  nameWithType: RTPChannel.ReservePorts()
-- uid: SIPSorcery.Net.RTPChannel.ReservePorts(System.Int32,System.Int32)
-  name: ReservePorts(Int32, Int32)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_ReservePorts_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.RTPChannel.ReservePorts(System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.RTPChannel.ReservePorts(System.Int32, System.Int32)
-  nameWithType: RTPChannel.ReservePorts(Int32, Int32)
-- uid: SIPSorcery.Net.RTPChannel.ReservePorts*
-  name: ReservePorts
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_ReservePorts_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.ReservePorts
+  fullName: SIPSorcery.Net.RTPChannel.RemoteControlEndPoint
+  nameWithType: RTPChannel.RemoteControlEndPoint
+- uid: SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint
+  name: RemoteRTPEndPoint
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RemoteRTPEndPoint
+  commentId: P:SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint
+  fullName: SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint
+  nameWithType: RTPChannel.RemoteRTPEndPoint
+- uid: SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint*
+  name: RemoteRTPEndPoint
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RemoteRTPEndPoint_
+  commentId: Overload:SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint
   isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.ReservePorts
-  nameWithType: RTPChannel.ReservePorts
+  fullName: SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint
+  nameWithType: RTPChannel.RemoteRTPEndPoint
 - uid: SIPSorcery.Net.RTPChannel.RTPLastActivityAt
   name: RTPLastActivityAt
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RTPLastActivityAt
@@ -1880,6 +1824,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.RTPLastActivityAt
   nameWithType: RTPChannel.RTPLastActivityAt
+- uid: SIPSorcery.Net.RTPChannel.RTPLocalEndPoint
+  name: RTPLocalEndPoint
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RTPLocalEndPoint
+  commentId: P:SIPSorcery.Net.RTPChannel.RTPLocalEndPoint
+  fullName: SIPSorcery.Net.RTPChannel.RTPLocalEndPoint
+  nameWithType: RTPChannel.RTPLocalEndPoint
+- uid: SIPSorcery.Net.RTPChannel.RTPLocalEndPoint*
+  name: RTPLocalEndPoint
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RTPLocalEndPoint_
+  commentId: Overload:SIPSorcery.Net.RTPChannel.RTPLocalEndPoint
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPChannel.RTPLocalEndPoint
+  nameWithType: RTPChannel.RTPLocalEndPoint
 - uid: SIPSorcery.Net.RTPChannel.RTPPort
   name: RTPPort
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RTPPort
@@ -1893,99 +1850,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.RTPPort
   nameWithType: RTPChannel.RTPPort
-- uid: SIPSorcery.Net.RTPChannel.SendAudioFrame(System.Byte[],System.UInt32,System.Int32)
-  name: SendAudioFrame(Byte[], UInt32, Int32)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendAudioFrame_System_Byte___System_UInt32_System_Int32_
-  commentId: M:SIPSorcery.Net.RTPChannel.SendAudioFrame(System.Byte[],System.UInt32,System.Int32)
-  name.vb: SendAudioFrame(Byte(), UInt32, Int32)
-  fullName: SIPSorcery.Net.RTPChannel.SendAudioFrame(System.Byte[], System.UInt32, System.Int32)
-  fullName.vb: SIPSorcery.Net.RTPChannel.SendAudioFrame(System.Byte(), System.UInt32, System.Int32)
-  nameWithType: RTPChannel.SendAudioFrame(Byte[], UInt32, Int32)
-  nameWithType.vb: RTPChannel.SendAudioFrame(Byte(), UInt32, Int32)
-- uid: SIPSorcery.Net.RTPChannel.SendAudioFrame*
-  name: SendAudioFrame
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendAudioFrame_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.SendAudioFrame
+- uid: SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
+  name: SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
+  name.vb: SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte())
+  fullName: SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte())
+  nameWithType: RTPChannel.SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])
+  nameWithType.vb: RTPChannel.SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte())
+- uid: SIPSorcery.Net.RTPChannel.SendAsync*
+  name: SendAsync
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendAsync_
+  commentId: Overload:SIPSorcery.Net.RTPChannel.SendAsync
   isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.SendAudioFrame
-  nameWithType: RTPChannel.SendAudioFrame
-- uid: SIPSorcery.Net.RTPChannel.SendH264Frame(System.Byte[],System.UInt32,System.Int32)
-  name: SendH264Frame(Byte[], UInt32, Int32)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendH264Frame_System_Byte___System_UInt32_System_Int32_
-  commentId: M:SIPSorcery.Net.RTPChannel.SendH264Frame(System.Byte[],System.UInt32,System.Int32)
-  name.vb: SendH264Frame(Byte(), UInt32, Int32)
-  fullName: SIPSorcery.Net.RTPChannel.SendH264Frame(System.Byte[], System.UInt32, System.Int32)
-  fullName.vb: SIPSorcery.Net.RTPChannel.SendH264Frame(System.Byte(), System.UInt32, System.Int32)
-  nameWithType: RTPChannel.SendH264Frame(Byte[], UInt32, Int32)
-  nameWithType.vb: RTPChannel.SendH264Frame(Byte(), UInt32, Int32)
-- uid: SIPSorcery.Net.RTPChannel.SendH264Frame*
-  name: SendH264Frame
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendH264Frame_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.SendH264Frame
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.SendH264Frame
-  nameWithType: RTPChannel.SendH264Frame
-- uid: SIPSorcery.Net.RTPChannel.SendJpegFrame(System.Byte[],System.Int32,System.Int32,System.Int32,System.Int32)
-  name: SendJpegFrame(Byte[], Int32, Int32, Int32, Int32)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendJpegFrame_System_Byte___System_Int32_System_Int32_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.RTPChannel.SendJpegFrame(System.Byte[],System.Int32,System.Int32,System.Int32,System.Int32)
-  name.vb: SendJpegFrame(Byte(), Int32, Int32, Int32, Int32)
-  fullName: SIPSorcery.Net.RTPChannel.SendJpegFrame(System.Byte[], System.Int32, System.Int32, System.Int32, System.Int32)
-  fullName.vb: SIPSorcery.Net.RTPChannel.SendJpegFrame(System.Byte(), System.Int32, System.Int32, System.Int32, System.Int32)
-  nameWithType: RTPChannel.SendJpegFrame(Byte[], Int32, Int32, Int32, Int32)
-  nameWithType.vb: RTPChannel.SendJpegFrame(Byte(), Int32, Int32, Int32, Int32)
-- uid: SIPSorcery.Net.RTPChannel.SendJpegFrame*
-  name: SendJpegFrame
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendJpegFrame_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.SendJpegFrame
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.SendJpegFrame
-  nameWithType: RTPChannel.SendJpegFrame
-- uid: SIPSorcery.Net.RTPChannel.SendRTPRaw(System.Byte[])
-  name: SendRTPRaw(Byte[])
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendRTPRaw_System_Byte___
-  commentId: M:SIPSorcery.Net.RTPChannel.SendRTPRaw(System.Byte[])
-  name.vb: SendRTPRaw(Byte())
-  fullName: SIPSorcery.Net.RTPChannel.SendRTPRaw(System.Byte[])
-  fullName.vb: SIPSorcery.Net.RTPChannel.SendRTPRaw(System.Byte())
-  nameWithType: RTPChannel.SendRTPRaw(Byte[])
-  nameWithType.vb: RTPChannel.SendRTPRaw(Byte())
-- uid: SIPSorcery.Net.RTPChannel.SendRTPRaw*
-  name: SendRTPRaw
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendRTPRaw_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.SendRTPRaw
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.SendRTPRaw
-  nameWithType: RTPChannel.SendRTPRaw
-- uid: SIPSorcery.Net.RTPChannel.SendVP8Frame(System.Byte[],System.UInt32,System.Int32)
-  name: SendVP8Frame(Byte[], UInt32, Int32)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendVP8Frame_System_Byte___System_UInt32_System_Int32_
-  commentId: M:SIPSorcery.Net.RTPChannel.SendVP8Frame(System.Byte[],System.UInt32,System.Int32)
-  name.vb: SendVP8Frame(Byte(), UInt32, Int32)
-  fullName: SIPSorcery.Net.RTPChannel.SendVP8Frame(System.Byte[], System.UInt32, System.Int32)
-  fullName.vb: SIPSorcery.Net.RTPChannel.SendVP8Frame(System.Byte(), System.UInt32, System.Int32)
-  nameWithType: RTPChannel.SendVP8Frame(Byte[], UInt32, Int32)
-  nameWithType.vb: RTPChannel.SendVP8Frame(Byte(), UInt32, Int32)
-- uid: SIPSorcery.Net.RTPChannel.SendVP8Frame*
-  name: SendVP8Frame
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendVP8Frame_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.SendVP8Frame
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.SendVP8Frame
-  nameWithType: RTPChannel.SendVP8Frame
-- uid: SIPSorcery.Net.RTPChannel.SetFrameType(SIPSorcery.Net.FrameTypesEnum)
-  name: SetFrameType(FrameTypesEnum)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SetFrameType_SIPSorcery_Net_FrameTypesEnum_
-  commentId: M:SIPSorcery.Net.RTPChannel.SetFrameType(SIPSorcery.Net.FrameTypesEnum)
-  fullName: SIPSorcery.Net.RTPChannel.SetFrameType(SIPSorcery.Net.FrameTypesEnum)
-  nameWithType: RTPChannel.SetFrameType(FrameTypesEnum)
-- uid: SIPSorcery.Net.RTPChannel.SetFrameType*
-  name: SetFrameType
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SetFrameType_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.SetFrameType
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.SetFrameType
-  nameWithType: RTPChannel.SetFrameType
+  fullName: SIPSorcery.Net.RTPChannel.SendAsync
+  nameWithType: RTPChannel.SendAsync
 - uid: SIPSorcery.Net.RTPChannel.Start
   name: Start()
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Start
@@ -2012,233 +1892,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.StartedAt
   nameWithType: RTPChannel.StartedAt
-- uid: SIPSorcery.Net.RTPChannel.VP8_RTP_HEADER_LENGTH
-  name: VP8_RTP_HEADER_LENGTH
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_VP8_RTP_HEADER_LENGTH
-  commentId: F:SIPSorcery.Net.RTPChannel.VP8_RTP_HEADER_LENGTH
-  fullName: SIPSorcery.Net.RTPChannel.VP8_RTP_HEADER_LENGTH
-  nameWithType: RTPChannel.VP8_RTP_HEADER_LENGTH
-- uid: SIPSorcery.Net.RTPChannel2
-  name: RTPChannel2
-  href: api/SIPSorcery.Net.RTPChannel2.html
-  commentId: T:SIPSorcery.Net.RTPChannel2
-  fullName: SIPSorcery.Net.RTPChannel2
-  nameWithType: RTPChannel2
-- uid: SIPSorcery.Net.RTPChannel2.#ctor(System.Net.IPAddress,System.Boolean)
-  name: RTPChannel2(IPAddress, Boolean)
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2__ctor_System_Net_IPAddress_System_Boolean_
-  commentId: M:SIPSorcery.Net.RTPChannel2.#ctor(System.Net.IPAddress,System.Boolean)
-  fullName: SIPSorcery.Net.RTPChannel2.RTPChannel2(System.Net.IPAddress, System.Boolean)
-  nameWithType: RTPChannel2.RTPChannel2(IPAddress, Boolean)
-- uid: SIPSorcery.Net.RTPChannel2.#ctor(System.Net.IPAddress,System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint)
-  name: RTPChannel2(IPAddress, Boolean, IPEndPoint, IPEndPoint)
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2__ctor_System_Net_IPAddress_System_Boolean_System_Net_IPEndPoint_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTPChannel2.#ctor(System.Net.IPAddress,System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTPChannel2.RTPChannel2(System.Net.IPAddress, System.Boolean, System.Net.IPEndPoint, System.Net.IPEndPoint)
-  nameWithType: RTPChannel2.RTPChannel2(IPAddress, Boolean, IPEndPoint, IPEndPoint)
-- uid: SIPSorcery.Net.RTPChannel2.#ctor*
-  name: RTPChannel2
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2__ctor_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.RTPChannel2
-  nameWithType: RTPChannel2.RTPChannel2
-- uid: SIPSorcery.Net.RTPChannel2.Close
-  name: Close()
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_Close
-  commentId: M:SIPSorcery.Net.RTPChannel2.Close
-  fullName: SIPSorcery.Net.RTPChannel2.Close()
-  nameWithType: RTPChannel2.Close()
-- uid: SIPSorcery.Net.RTPChannel2.Close*
-  name: Close
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_Close_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.Close
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.Close
-  nameWithType: RTPChannel2.Close
-- uid: SIPSorcery.Net.RTPChannel2.ControlLastActivityAt
-  name: ControlLastActivityAt
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_ControlLastActivityAt
-  commentId: P:SIPSorcery.Net.RTPChannel2.ControlLastActivityAt
-  fullName: SIPSorcery.Net.RTPChannel2.ControlLastActivityAt
-  nameWithType: RTPChannel2.ControlLastActivityAt
-- uid: SIPSorcery.Net.RTPChannel2.ControlLastActivityAt*
-  name: ControlLastActivityAt
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_ControlLastActivityAt_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.ControlLastActivityAt
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.ControlLastActivityAt
-  nameWithType: RTPChannel2.ControlLastActivityAt
-- uid: SIPSorcery.Net.RTPChannel2.ControlPort
-  name: ControlPort
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_ControlPort
-  commentId: P:SIPSorcery.Net.RTPChannel2.ControlPort
-  fullName: SIPSorcery.Net.RTPChannel2.ControlPort
-  nameWithType: RTPChannel2.ControlPort
-- uid: SIPSorcery.Net.RTPChannel2.ControlPort*
-  name: ControlPort
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_ControlPort_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.ControlPort
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.ControlPort
-  nameWithType: RTPChannel2.ControlPort
-- uid: SIPSorcery.Net.RTPChannel2.CreatedAt
-  name: CreatedAt
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_CreatedAt
-  commentId: P:SIPSorcery.Net.RTPChannel2.CreatedAt
-  fullName: SIPSorcery.Net.RTPChannel2.CreatedAt
-  nameWithType: RTPChannel2.CreatedAt
-- uid: SIPSorcery.Net.RTPChannel2.CreatedAt*
-  name: CreatedAt
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_CreatedAt_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.CreatedAt
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.CreatedAt
-  nameWithType: RTPChannel2.CreatedAt
-- uid: SIPSorcery.Net.RTPChannel2.IsClosed
-  name: IsClosed
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_IsClosed
-  commentId: P:SIPSorcery.Net.RTPChannel2.IsClosed
-  fullName: SIPSorcery.Net.RTPChannel2.IsClosed
-  nameWithType: RTPChannel2.IsClosed
-- uid: SIPSorcery.Net.RTPChannel2.IsClosed*
-  name: IsClosed
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_IsClosed_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.IsClosed
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.IsClosed
-  nameWithType: RTPChannel2.IsClosed
-- uid: SIPSorcery.Net.RTPChannel2.OnControlDataReceived
-  name: OnControlDataReceived
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_OnControlDataReceived
-  commentId: E:SIPSorcery.Net.RTPChannel2.OnControlDataReceived
-  fullName: SIPSorcery.Net.RTPChannel2.OnControlDataReceived
-  nameWithType: RTPChannel2.OnControlDataReceived
-- uid: SIPSorcery.Net.RTPChannel2.OnControlSocketDisconnected
-  name: OnControlSocketDisconnected
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_OnControlSocketDisconnected
-  commentId: E:SIPSorcery.Net.RTPChannel2.OnControlSocketDisconnected
-  fullName: SIPSorcery.Net.RTPChannel2.OnControlSocketDisconnected
-  nameWithType: RTPChannel2.OnControlSocketDisconnected
-- uid: SIPSorcery.Net.RTPChannel2.OnRTPDataReceived
-  name: OnRTPDataReceived
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_OnRTPDataReceived
-  commentId: E:SIPSorcery.Net.RTPChannel2.OnRTPDataReceived
-  fullName: SIPSorcery.Net.RTPChannel2.OnRTPDataReceived
-  nameWithType: RTPChannel2.OnRTPDataReceived
-- uid: SIPSorcery.Net.RTPChannel2.OnRTPSocketDisconnected
-  name: OnRTPSocketDisconnected
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_OnRTPSocketDisconnected
-  commentId: E:SIPSorcery.Net.RTPChannel2.OnRTPSocketDisconnected
-  fullName: SIPSorcery.Net.RTPChannel2.OnRTPSocketDisconnected
-  nameWithType: RTPChannel2.OnRTPSocketDisconnected
-- uid: SIPSorcery.Net.RTPChannel2.RemoteControlEndPoint
-  name: RemoteControlEndPoint
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_RemoteControlEndPoint
-  commentId: P:SIPSorcery.Net.RTPChannel2.RemoteControlEndPoint
-  fullName: SIPSorcery.Net.RTPChannel2.RemoteControlEndPoint
-  nameWithType: RTPChannel2.RemoteControlEndPoint
-- uid: SIPSorcery.Net.RTPChannel2.RemoteControlEndPoint*
-  name: RemoteControlEndPoint
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_RemoteControlEndPoint_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.RemoteControlEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.RemoteControlEndPoint
-  nameWithType: RTPChannel2.RemoteControlEndPoint
-- uid: SIPSorcery.Net.RTPChannel2.RemoteRTPEndPoint
-  name: RemoteRTPEndPoint
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_RemoteRTPEndPoint
-  commentId: P:SIPSorcery.Net.RTPChannel2.RemoteRTPEndPoint
-  fullName: SIPSorcery.Net.RTPChannel2.RemoteRTPEndPoint
-  nameWithType: RTPChannel2.RemoteRTPEndPoint
-- uid: SIPSorcery.Net.RTPChannel2.RemoteRTPEndPoint*
-  name: RemoteRTPEndPoint
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_RemoteRTPEndPoint_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.RemoteRTPEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.RemoteRTPEndPoint
-  nameWithType: RTPChannel2.RemoteRTPEndPoint
-- uid: SIPSorcery.Net.RTPChannel2.RTPLastActivityAt
-  name: RTPLastActivityAt
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_RTPLastActivityAt
-  commentId: P:SIPSorcery.Net.RTPChannel2.RTPLastActivityAt
-  fullName: SIPSorcery.Net.RTPChannel2.RTPLastActivityAt
-  nameWithType: RTPChannel2.RTPLastActivityAt
-- uid: SIPSorcery.Net.RTPChannel2.RTPLastActivityAt*
-  name: RTPLastActivityAt
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_RTPLastActivityAt_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.RTPLastActivityAt
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.RTPLastActivityAt
-  nameWithType: RTPChannel2.RTPLastActivityAt
-- uid: SIPSorcery.Net.RTPChannel2.RTPLocalEndPoint
-  name: RTPLocalEndPoint
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_RTPLocalEndPoint
-  commentId: P:SIPSorcery.Net.RTPChannel2.RTPLocalEndPoint
-  fullName: SIPSorcery.Net.RTPChannel2.RTPLocalEndPoint
-  nameWithType: RTPChannel2.RTPLocalEndPoint
-- uid: SIPSorcery.Net.RTPChannel2.RTPLocalEndPoint*
-  name: RTPLocalEndPoint
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_RTPLocalEndPoint_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.RTPLocalEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.RTPLocalEndPoint
-  nameWithType: RTPChannel2.RTPLocalEndPoint
-- uid: SIPSorcery.Net.RTPChannel2.RTPPort
-  name: RTPPort
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_RTPPort
-  commentId: P:SIPSorcery.Net.RTPChannel2.RTPPort
-  fullName: SIPSorcery.Net.RTPChannel2.RTPPort
-  nameWithType: RTPChannel2.RTPPort
-- uid: SIPSorcery.Net.RTPChannel2.RTPPort*
-  name: RTPPort
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_RTPPort_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.RTPPort
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.RTPPort
-  nameWithType: RTPChannel2.RTPPort
-- uid: SIPSorcery.Net.RTPChannel2.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
-  name: SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.Net.RTPChannel2.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
-  name.vb: SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte())
-  fullName: SIPSorcery.Net.RTPChannel2.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.Net.RTPChannel2.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte())
-  nameWithType: RTPChannel2.SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])
-  nameWithType.vb: RTPChannel2.SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte())
-- uid: SIPSorcery.Net.RTPChannel2.SendAsync*
-  name: SendAsync
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_SendAsync_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.SendAsync
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.SendAsync
-  nameWithType: RTPChannel2.SendAsync
-- uid: SIPSorcery.Net.RTPChannel2.Start
-  name: Start()
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_Start
-  commentId: M:SIPSorcery.Net.RTPChannel2.Start
-  fullName: SIPSorcery.Net.RTPChannel2.Start()
-  nameWithType: RTPChannel2.Start()
-- uid: SIPSorcery.Net.RTPChannel2.Start*
-  name: Start
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_Start_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.Start
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.Start
-  nameWithType: RTPChannel2.Start
-- uid: SIPSorcery.Net.RTPChannel2.StartedAt
-  name: StartedAt
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_StartedAt
-  commentId: P:SIPSorcery.Net.RTPChannel2.StartedAt
-  fullName: SIPSorcery.Net.RTPChannel2.StartedAt
-  nameWithType: RTPChannel2.StartedAt
-- uid: SIPSorcery.Net.RTPChannel2.StartedAt*
-  name: StartedAt
-  href: api/SIPSorcery.Net.RTPChannel2.html#SIPSorcery_Net_RTPChannel2_StartedAt_
-  commentId: Overload:SIPSorcery.Net.RTPChannel2.StartedAt
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel2.StartedAt
-  nameWithType: RTPChannel2.StartedAt
 - uid: SIPSorcery.Net.RTPChannelSocketsEnum
   name: RTPChannelSocketsEnum
   href: api/SIPSorcery.Net.RTPChannelSocketsEnum.html
@@ -2897,6 +2550,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.GetSDP
   nameWithType: RTPSession.GetSDP
+- uid: SIPSorcery.Net.RTPSession.H264_RTP_HEADER_LENGTH
+  name: H264_RTP_HEADER_LENGTH
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_H264_RTP_HEADER_LENGTH
+  commentId: F:SIPSorcery.Net.RTPSession.H264_RTP_HEADER_LENGTH
+  fullName: SIPSorcery.Net.RTPSession.H264_RTP_HEADER_LENGTH
+  nameWithType: RTPSession.H264_RTP_HEADER_LENGTH
 - uid: SIPSorcery.Net.RTPSession.MediaAnnouncement
   name: MediaAnnouncement
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_MediaAnnouncement
@@ -3025,6 +2684,38 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SendDtmfEvent
   nameWithType: RTPSession.SendDtmfEvent
+- uid: SIPSorcery.Net.RTPSession.SendH264Frame(System.UInt32,System.Byte[],System.UInt32,System.Int32)
+  name: SendH264Frame(UInt32, Byte[], UInt32, Int32)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendH264Frame_System_UInt32_System_Byte___System_UInt32_System_Int32_
+  commentId: M:SIPSorcery.Net.RTPSession.SendH264Frame(System.UInt32,System.Byte[],System.UInt32,System.Int32)
+  name.vb: SendH264Frame(UInt32, Byte(), UInt32, Int32)
+  fullName: SIPSorcery.Net.RTPSession.SendH264Frame(System.UInt32, System.Byte[], System.UInt32, System.Int32)
+  fullName.vb: SIPSorcery.Net.RTPSession.SendH264Frame(System.UInt32, System.Byte(), System.UInt32, System.Int32)
+  nameWithType: RTPSession.SendH264Frame(UInt32, Byte[], UInt32, Int32)
+  nameWithType.vb: RTPSession.SendH264Frame(UInt32, Byte(), UInt32, Int32)
+- uid: SIPSorcery.Net.RTPSession.SendH264Frame*
+  name: SendH264Frame
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendH264Frame_
+  commentId: Overload:SIPSorcery.Net.RTPSession.SendH264Frame
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.SendH264Frame
+  nameWithType: RTPSession.SendH264Frame
+- uid: SIPSorcery.Net.RTPSession.SendJpegFrame(System.UInt32,System.Byte[],System.Int32,System.Int32,System.Int32,System.Int32)
+  name: SendJpegFrame(UInt32, Byte[], Int32, Int32, Int32, Int32)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendJpegFrame_System_UInt32_System_Byte___System_Int32_System_Int32_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.RTPSession.SendJpegFrame(System.UInt32,System.Byte[],System.Int32,System.Int32,System.Int32,System.Int32)
+  name.vb: SendJpegFrame(UInt32, Byte(), Int32, Int32, Int32, Int32)
+  fullName: SIPSorcery.Net.RTPSession.SendJpegFrame(System.UInt32, System.Byte[], System.Int32, System.Int32, System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Net.RTPSession.SendJpegFrame(System.UInt32, System.Byte(), System.Int32, System.Int32, System.Int32, System.Int32)
+  nameWithType: RTPSession.SendJpegFrame(UInt32, Byte[], Int32, Int32, Int32, Int32)
+  nameWithType.vb: RTPSession.SendJpegFrame(UInt32, Byte(), Int32, Int32, Int32, Int32)
+- uid: SIPSorcery.Net.RTPSession.SendJpegFrame*
+  name: SendJpegFrame
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendJpegFrame_
+  commentId: Overload:SIPSorcery.Net.RTPSession.SendJpegFrame
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.SendJpegFrame
+  nameWithType: RTPSession.SendJpegFrame
 - uid: SIPSorcery.Net.RTPSession.SendRtcpSenderReport(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32)
   name: SendRtcpSenderReport(Socket, IPEndPoint, UInt32)
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpSenderReport_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_
@@ -8200,63 +7891,6 @@ references:
   commentId: F:SIPSorcery.Net.TurnServer.Username
   fullName: SIPSorcery.Net.TurnServer.Username
   nameWithType: TurnServer.Username
-- uid: SIPSorcery.Net.UdpReceiver
-  name: UdpReceiver
-  href: api/SIPSorcery.Net.UdpReceiver.html
-  commentId: T:SIPSorcery.Net.UdpReceiver
-  fullName: SIPSorcery.Net.UdpReceiver
-  nameWithType: UdpReceiver
-- uid: SIPSorcery.Net.UdpReceiver.#ctor(System.Net.Sockets.Socket)
-  name: UdpReceiver(Socket)
-  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver__ctor_System_Net_Sockets_Socket_
-  commentId: M:SIPSorcery.Net.UdpReceiver.#ctor(System.Net.Sockets.Socket)
-  fullName: SIPSorcery.Net.UdpReceiver.UdpReceiver(System.Net.Sockets.Socket)
-  nameWithType: UdpReceiver.UdpReceiver(Socket)
-- uid: SIPSorcery.Net.UdpReceiver.#ctor*
-  name: UdpReceiver
-  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver__ctor_
-  commentId: Overload:SIPSorcery.Net.UdpReceiver.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.Net.UdpReceiver.UdpReceiver
-  nameWithType: UdpReceiver.UdpReceiver
-- uid: SIPSorcery.Net.UdpReceiver.BeginReceive
-  name: BeginReceive()
-  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_BeginReceive
-  commentId: M:SIPSorcery.Net.UdpReceiver.BeginReceive
-  fullName: SIPSorcery.Net.UdpReceiver.BeginReceive()
-  nameWithType: UdpReceiver.BeginReceive()
-- uid: SIPSorcery.Net.UdpReceiver.BeginReceive*
-  name: BeginReceive
-  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_BeginReceive_
-  commentId: Overload:SIPSorcery.Net.UdpReceiver.BeginReceive
-  isSpec: "True"
-  fullName: SIPSorcery.Net.UdpReceiver.BeginReceive
-  nameWithType: UdpReceiver.BeginReceive
-- uid: SIPSorcery.Net.UdpReceiver.Close
-  name: Close()
-  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_Close
-  commentId: M:SIPSorcery.Net.UdpReceiver.Close
-  fullName: SIPSorcery.Net.UdpReceiver.Close()
-  nameWithType: UdpReceiver.Close()
-- uid: SIPSorcery.Net.UdpReceiver.Close*
-  name: Close
-  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_Close_
-  commentId: Overload:SIPSorcery.Net.UdpReceiver.Close
-  isSpec: "True"
-  fullName: SIPSorcery.Net.UdpReceiver.Close
-  nameWithType: UdpReceiver.Close
-- uid: SIPSorcery.Net.UdpReceiver.OnPacketReceived
-  name: OnPacketReceived
-  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_OnPacketReceived
-  commentId: E:SIPSorcery.Net.UdpReceiver.OnPacketReceived
-  fullName: SIPSorcery.Net.UdpReceiver.OnPacketReceived
-  nameWithType: UdpReceiver.OnPacketReceived
-- uid: SIPSorcery.Net.UdpReceiver.OnReceiveError
-  name: OnReceiveError
-  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_OnReceiveError
-  commentId: E:SIPSorcery.Net.UdpReceiver.OnReceiveError
-  fullName: SIPSorcery.Net.UdpReceiver.OnReceiveError
-  nameWithType: UdpReceiver.OnReceiveError
 - uid: SIPSorcery.Net.Utility
   name: Utility
   href: api/SIPSorcery.Net.Utility.html
