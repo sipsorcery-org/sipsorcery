@@ -124,7 +124,7 @@ namespace SIPSorcery.SoftPhone
         {
             Task.Run(() =>
             {
-                _mediaManager = new MediaManager();
+                _mediaManager = new MediaManager(this);
                 logger.Debug("Media Manager Initialised.");
                 _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
                 _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;

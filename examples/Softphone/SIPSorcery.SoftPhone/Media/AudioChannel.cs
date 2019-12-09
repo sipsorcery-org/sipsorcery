@@ -34,7 +34,7 @@ namespace SIPSorcery.SoftPhone
         private WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);   // The format that both the input and output audio streams will use, i.e. PCMU.
         private bool _recordingStarted;            // When true indicates that the input device has been opended to start receiving samples.
 
-        public readonly List<SDPMediaFormat> SupportedAudioTypes = new List<SDPMediaFormat>(){ new SDPMediaFormat((int)SDPMediaFormatsEnum.PCMU) };
+        public readonly List<SDPMediaFormat> SupportedAudioTypes = new List<SDPMediaFormat>() { new SDPMediaFormat((int)SDPMediaFormatsEnum.PCMU) };
 
         public event Action<byte[]> SampleReady;
 
@@ -80,7 +80,7 @@ namespace SIPSorcery.SoftPhone
 
         public void StartRecording()
         {
-            if(!_recordingStarted)
+            if (!_recordingStarted)
             {
                 _recordingStarted = true;
                 m_waveInEvent?.StartRecording();
@@ -98,7 +98,7 @@ namespace SIPSorcery.SoftPhone
             {
                 for (int index = offset; index < sample.Length; index++)
                 {
-                     short pcm = MuLawDecoder.MuLawToLinearSample(sample[index]);
+                    short pcm = MuLawDecoder.MuLawToLinearSample(sample[index]);
                     byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
                     m_waveProvider.AddSamples(pcmSample, 0, 2);
                 }
@@ -145,12 +145,13 @@ namespace SIPSorcery.SoftPhone
                 if (_recordingStarted)
                 {
                     _recordingStarted = false;
+                    
                     m_waveInEvent?.StopRecording();
                 }
 
                 if (m_waveOut.PlaybackState == PlaybackState.Playing)
                 {
-                    m_waveOut.Stop(); 
+                    m_waveOut.Stop();
                     m_waveOut.Dispose();
                 }
             }

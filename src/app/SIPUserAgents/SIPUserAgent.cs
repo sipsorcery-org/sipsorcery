@@ -353,21 +353,21 @@ namespace SIPSorcery.SIP.App
 
                     // Check for remote party putting us on and off hold.
                     SDP newSDPOffer = SDP.ParseSDPDescription(sipRequest.Body);
-                    if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendRecv && OnHoldFromRemote)
-                    {
-                        // We've been taken off hold.
-                        var offHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.SendRecv);
-                        reInviteTransaction.SendFinalResponse(offHoldResponse);
-
-                        RemoteTookOffHold?.Invoke();
-                    }
-                    else if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendOnly && !OnHoldFromRemote)
+                    if(newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendOnly)
                     {
                         // We've been put on hold.
                         var onHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.RecvOnly);
                         reInviteTransaction.SendFinalResponse(onHoldResponse);
 
                         RemotePutOnHold?.Invoke();
+                    }
+                    else if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendRecv && OnHoldFromRemote)
+                    {
+                        // We've been taken off hold.
+                        var offHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.SendRecv);
+                        reInviteTransaction.SendFinalResponse(offHoldResponse);
+
+                        RemoteTookOffHold?.Invoke();
                     }
                     else if (OnReinviteRequest == null)
                     {

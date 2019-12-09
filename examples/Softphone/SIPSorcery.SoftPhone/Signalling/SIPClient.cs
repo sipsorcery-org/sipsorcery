@@ -160,7 +160,14 @@ namespace SIPSorcery.SoftPhone
         /// <param name="sipRequest">The SIP request received.</param>
         private void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            if (sipRequest.Method == SIPMethodsEnum.INVITE)
+            if (sipRequest.Header.From != null &&
+                sipRequest.Header.From.FromTag != null &&
+                sipRequest.Header.To != null &&
+                sipRequest.Header.To.ToTag != null)
+            {
+                // This is an in-dialog request that will be handled directly by a user agent instance.
+            }
+            else if (sipRequest.Method == SIPMethodsEnum.INVITE)
             {
                 if (m_userAgent?.IsCallActive == true)
                 {
