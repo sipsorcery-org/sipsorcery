@@ -75,6 +75,49 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         [Fact]
+        public void ParseBadFormatSDPUnitTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                " v=0" + m_CRLF +
+                " o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                " s=session" + m_CRLF +
+                " c=IN IP4 10.0.0.4" + m_CRLF +
+                " t=0 0" + m_CRLF +
+                " m=audio 12228 RTP/AVP 0 101" + m_CRLF +
+                " a=rtpmap:0 PCMU/8000" + m_CRLF +
+                " a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                " a=fmtp:101 0-16" + m_CRLF +
+                " a=silenceSupp:off - - - -" + m_CRLF +
+                " a=ptime:20" + m_CRLF +
+                " a=sendrecv";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Debug.WriteLine(sdp.ToString());
+
+            Assert.True(sdp.Connection.ConnectionAddress == "10.0.0.4", "The connection address was not parsed  correctly.");
+            Assert.True(sdp.Username == "root", "The owner was not parsed correctly.");
+            Assert.True(sdp.SessionName == "session", "The SessionName was not parsed correctly.");
+            Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
+        }
+
+        [Fact]
+        public void ParseBadFormatBriaSDPUnitTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            string sdpStr = " v=0\r\no=- 5 2 IN IP4 10.1.1.2\r\n s=CounterPath Bria\r\nc=IN IP4 144.137.16.240\r\nt=0 0\r\n m=audio 34640 RTP/AVP 0 8 101\r\na=sendrecv\r\na=rtpmap:101 telephone-event/8000\r\na=fmtp:101 0-15\r\na=alt:1 1 : STu/ZtOu 7hiLQmUp 10.1.1.2 34640\r\n";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Debug.WriteLine(sdp.ToString());
+
+            Assert.True(sdp.Connection.ConnectionAddress == "144.137.16.240", "The connection address was not parsed correctly.");
+            Assert.True(sdp.SessionName == "CounterPath Bria", "The SessionName was not parsed correctly.");
+        }
+
+        [Fact]
         public void ParseICESessionAttributesUnitTest()
         {
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
