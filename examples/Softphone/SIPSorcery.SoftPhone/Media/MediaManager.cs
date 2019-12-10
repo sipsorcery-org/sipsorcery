@@ -1,8 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: MediaManager.cs
 //
-// Description: This class manages different media channels that can be included in a call, e.g.
-// audio and video. It also controls the RTP transmission and reception.
+// Description: This class manages different media channels that can be included 
+// in a call, e.g. audio and video.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -16,14 +16,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using SIPSorceryMedia;
-using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using log4net;
 
@@ -33,28 +30,40 @@ namespace SIPSorcery.SoftPhone
     {
         private ILog logger = AppState.logger;
 
-        private RTPManager _rtpManager;
         private AudioChannel _audioChannel;
         private VPXEncoder _vpxDecoder;
         private ImageConvert _imageConverter;
 
         private Task _localVideoSamplingTask;
-        private Task _localAudioSamplingTask;
+        //private Task _localAudioSamplingTask;
         private CancellationTokenSource _localVideoSamplingCancelTokenSource;
         private bool _stop = false;
         private int _encodingSample = 1;
         private bool _useVideo = false;
-        private MediaStreamStatusEnum _streamStatusType = MediaStreamStatusEnum.SendRecv;
         private UIElement m_uiElement;
 
         /// <summary>
-        /// Fires when a local video sample is ready for display.
+        /// Fires when an audio sample is available from the local input device (microphone).
+        /// [sample].
+        /// </summary>
+        public event Action<byte[]> OnLocalAudioSampleReady;
+
+        /// <summary>
+        /// Fires when a local video sample has been received from a capture device (webcam) and 
+        /// is ready for display in the local UI.
         /// [sample, width, height] 
         /// </summary>
         public event Action<byte[], int, int> OnLocalVideoSampleReady;
 
         /// <summary>
-        /// Fires when a remote video sample is ready for display.
+        /// Fires when a local video sample has been encoded and is ready for transmission
+        /// over an RTP channel.
+        /// </summary>
+        public event Action<byte[]> OnLocalVideoEncodedSampleReady;
+
+        /// <summary>
+        /// Fires when a remote video sample has been decoded and is ready for display in the local
+        /// UI.
         /// [sample, width, height] 
         /// </summary>
         public event Action<byte[], int, int> OnRemoteVideoSampleReady;
@@ -65,7 +74,7 @@ namespace SIPSorcery.SoftPhone
         public event Action<string> OnLocalVideoError = delegate { };
 
         /// <summary>
-        /// This class manages different media channels that can be included in a call, e.g. audio and video.
+        /// This class manages different media renderers that can be included in a call, e.g. audio and video.
         /// </summary>
         /// <param name="uiElement">Need a UI element so tasks can be marshalled back to the UI thread. For exmaple this object
         /// gets created when a button is clicked on and is therefore owned by the UI thread. When a call transfer completes the
@@ -95,78 +104,29 @@ namespace SIPSorcery.SoftPhone
             return videoDevices;
         }
 
-        public void NewCall()
+        public void StartAudio()
         {
             _audioChannel = new AudioChannel();
-            _audioChannel.SampleReady += AudioChannelSampleReady;
-
-            _rtpManager = new RTPManager(true, _useVideo);
-            _rtpManager.OnRemoteVideoSampleReady += EncodedVideoSampleReceived;
-            _rtpManager.OnRemoteAudioSampleReady += RemoteAudioSampleReceived;
-
             if (_audioChannel != null)
             {
                 _audioChannel.StartRecording();
+                _audioChannel.SampleReady += (sample) => OnLocalAudioSampleReady?.Invoke(sample);
             }
         }
 
-        public void EndCall()
+        public void StopAudio()
         {
             if (_audioChannel != null)
             {
                 UIHelper.DoOnUIThread(m_uiElement, () =>
                 {
-                    _audioChannel.SampleReady -= AudioChannelSampleReady;
                     _audioChannel.Close();
                     _audioChannel = null;
                 });
             }
-
-            _rtpManager.OnRemoteVideoSampleReady -= EncodedVideoSampleReceived;
-            _rtpManager.OnRemoteAudioSampleReady -= RemoteAudioSampleReceived;
-            _rtpManager.Close();
         }
 
-        public SDP GetSDP(IPAddress callDstAddress)
-        {
-            return _rtpManager.GetSDP(callDstAddress);
-        }
-
-        public void SetRemoteSDP(SDP remoteSDP)
-        {
-            IPEndPoint audioEndPoint = null;
-            IPEndPoint videoEndPoint = null;
-
-            IPAddress offerIPAddress = IPAddress.Parse(remoteSDP.Connection.ConnectionAddress);
-
-            if (remoteSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
-            {
-                int audioPort = remoteSDP.Media.FirstOrDefault(x => x.Media == SDPMediaTypesEnum.audio).Port;
-                audioEndPoint = new IPEndPoint(offerIPAddress, audioPort);
-            }
-
-            if (remoteSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
-            {
-                int videoPort = remoteSDP.Media.FirstOrDefault(x => x.Media == SDPMediaTypesEnum.video).Port;
-                videoEndPoint = new IPEndPoint(offerIPAddress, videoPort);
-            }
-
-            _rtpManager.SetRemoteRTPEndPoints(audioEndPoint, videoEndPoint);
-        }
-
-        /// <summary>
-        /// Event handler for processing audio samples from the audio channel.
-        /// </summary>
-        /// <param name="sample">The audio sample ready for transmission.</param>
-        private void AudioChannelSampleReady(byte[] sample)
-        {
-            if (sample != null && _rtpManager != null && _streamStatusType != MediaStreamStatusEnum.RecvOnly && _streamStatusType != MediaStreamStatusEnum.Inactive)
-            {
-                _rtpManager.AudioChannelSampleReady(sample);
-            }
-        }
-
-        public void StartLocalVideo(VideoMode videoMode)
+        public void StartVideo(VideoMode videoMode)
         {
             if (_localVideoSamplingTask != null && !_localVideoSamplingTask.IsCompleted && _localVideoSamplingCancelTokenSource != null)
             {
@@ -183,36 +143,36 @@ namespace SIPSorcery.SoftPhone
 
             _localVideoSamplingTask = Task.Run(() => SampleWebCam(videoSampler, videoMode, _localVideoSamplingCancelTokenSource));
 
-            _localAudioSamplingTask = Task.Factory.StartNew(() =>
-            {
-                Thread.CurrentThread.Name = "audsampler_" + videoMode.DeviceIndex;
+            //_localAudioSamplingTask = Task.Factory.StartNew(() =>
+            //{
+            //    Thread.CurrentThread.Name = "audsampler_" + videoMode.DeviceIndex;
 
-                while (!_stop && !cancellationToken.IsCancellationRequested)
-                {
-                    byte[] audioSample = null;
-                    int result = videoSampler.GetAudioSample(ref audioSample);
+            //    while (!_stop && !cancellationToken.IsCancellationRequested)
+            //    {
+            //        byte[] audioSample = null;
+            //        int result = videoSampler.GetAudioSample(ref audioSample);
 
-                    if (result == NAudio.MediaFoundation.MediaFoundationErrors.MF_E_HW_MFT_FAILED_START_STREAMING)
-                    {
-                        logger.Warn("An audio sample could not be acquired from the local source. Check that it is not already in use.");
-                    //OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use.");
-                    break;
-                    }
-                    else if (result != 0)
-                    {
-                        logger.Warn("An audio sample could not be acquired from the local source. Check that it is not already in use. Error code: " + result);
-                    //OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use. Error code: " + result);
-                    break;
-                    }
-                    else if (audioSample != null)
-                    {
-                        if (_audioChannel != null)
-                        {
-                            _audioChannel.AudioSampleReceived(audioSample, 0);
-                        }
-                    }
-                }
-            }, cancellationToken);
+            //        if (result == NAudio.MediaFoundation.MediaFoundationErrors.MF_E_HW_MFT_FAILED_START_STREAMING)
+            //        {
+            //            logger.Warn("An audio sample could not be acquired from the local source. Check that it is not already in use.");
+            //        //OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use.");
+            //        break;
+            //        }
+            //        else if (result != 0)
+            //        {
+            //            logger.Warn("An audio sample could not be acquired from the local source. Check that it is not already in use. Error code: " + result);
+            //        //OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use. Error code: " + result);
+            //        break;
+            //        }
+            //        else if (audioSample != null)
+            //        {
+            //            if (_audioChannel != null)
+            //            {
+            //                _audioChannel.AudioSampleReceived(audioSample, 0);
+            //            }
+            //        }
+            //    }
+            //}, cancellationToken);
         }
 
         private void SampleWebCam(MFVideoSampler videoSampler, VideoMode videoMode, CancellationTokenSource cts)
@@ -253,7 +213,7 @@ namespace SIPSorcery.SoftPhone
                         OnLocalVideoSampleReady?.Invoke(videoSample, videoSampler.Width, videoSampler.Height);
 
                         // This event encodes the sample and forwards it to the RTP manager for network transmission.
-                        if (_rtpManager != null && _streamStatusType != MediaStreamStatusEnum.RecvOnly && _streamStatusType != MediaStreamStatusEnum.Inactive)
+                        if (OnLocalVideoEncodedSampleReady != null)
                         {
                             IntPtr rawSamplePtr = Marshal.AllocHGlobal(videoSample.Length);
                             Marshal.Copy(videoSample, 0, rawSamplePtr, videoSample.Length);
@@ -281,8 +241,7 @@ namespace SIPSorcery.SoftPhone
 
                             Marshal.FreeHGlobal(yuvPtr);
 
-                            //if(encodedBuffer )
-                            _rtpManager.LocalVideoSampleReady(encodedBuffer);
+                            OnLocalVideoEncodedSampleReady(encodedBuffer);
                         }
                     }
                 }
@@ -296,7 +255,7 @@ namespace SIPSorcery.SoftPhone
             }
         }
 
-        public void StopLocalVideo()
+        public void StopVideo()
         {
             if (_localVideoSamplingTask != null && !_localVideoSamplingTask.IsCompleted && _localVideoSamplingCancelTokenSource != null)
             {
@@ -304,6 +263,11 @@ namespace SIPSorcery.SoftPhone
             }
         }
 
+        /// <summary>
+        /// This method gets called when an encoded video sample has been received from the remote call party.
+        /// The sample needs to be decoded and then handed off to the UI for display.
+        /// </summary>
+        /// <param name="sample">The encoded video sample.</param>
         public void EncodedVideoSampleReceived(byte[] sample, int length)
         {
             IntPtr encodedBufferPtr = Marshal.AllocHGlobal(length);
@@ -338,14 +302,14 @@ namespace SIPSorcery.SoftPhone
             }
         }
 
-        public void RemoteAudioSampleReceived(byte[] sample, int length)
+        /// <summary>
+        /// This method gets called when an encoded audio sample has been received from the remote call party.
+        /// The sample need to be decoded and then submitted to the local audio output device for playback.
+        /// </summary>
+        /// <param name="sample">The encoded audio sample.</param>
+        public void EncodedAudioSampleReceived(byte[] sample)
         {
             _audioChannel?.AudioSampleReceived(sample, 0);
-        }
-
-        private void LocalVideoEncodedSampleReady(byte[] sample)
-        {
-            _rtpManager?.LocalVideoSampleReady(sample);
         }
 
         /// <summary>
@@ -360,18 +324,8 @@ namespace SIPSorcery.SoftPhone
 
                 _stop = true;
 
-                if (_audioChannel != null)
-                {
-                    _audioChannel.SampleReady -= AudioChannelSampleReady;
-                    _audioChannel.Close();
-                }
-
-                if (_rtpManager != null)
-                {
-                    _rtpManager.OnRemoteVideoSampleReady -= EncodedVideoSampleReceived;
-                    _rtpManager.OnRemoteAudioSampleReady -= RemoteAudioSampleReceived;
-                    _rtpManager.Close();
-                }
+                StopAudio();
+                StopVideo();
             }
             catch (Exception excp)
             {
@@ -386,28 +340,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void RunLoopbackTest()
         {
-            _rtpManager = new RTPManager(false, true);
-            _rtpManager.OnRemoteVideoSampleReady += EncodedVideoSampleReceived;
-
-            var sdp = _rtpManager.GetSDP(IPAddress.Loopback);
-            SetRemoteSDP(sdp);
-        }
-
-        /// <summary>
-        /// Stop sending RTP but leave the session running. This is typically done when
-        /// a call is put on hold.
-        /// </summary>
-        public void StopSending()
-        {
-            _streamStatusType = MediaStreamStatusEnum.RecvOnly;
-        }
-
-        /// <summary>
-        /// Restart sending RTP. This is typically done when a call is taken off hold.
-        /// </summary>
-        public void RestartSending()
-        {
-            _streamStatusType = MediaStreamStatusEnum.SendRecv;
+            throw new NotImplementedException("TODO");
         }
     }
 }
