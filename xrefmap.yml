@@ -17662,6 +17662,19 @@ references:
   commentId: F:SIPSorcery.SIP.SIPFromHeader.DEFAULT_FROM_URI
   fullName: SIPSorcery.SIP.SIPFromHeader.DEFAULT_FROM_URI
   nameWithType: SIPFromHeader.DEFAULT_FROM_URI
+- uid: SIPSorcery.SIP.SIPFromHeader.FriendlyDescription
+  name: FriendlyDescription()
+  href: api/SIPSorcery.SIP.SIPFromHeader.html#SIPSorcery_SIP_SIPFromHeader_FriendlyDescription
+  commentId: M:SIPSorcery.SIP.SIPFromHeader.FriendlyDescription
+  fullName: SIPSorcery.SIP.SIPFromHeader.FriendlyDescription()
+  nameWithType: SIPFromHeader.FriendlyDescription()
+- uid: SIPSorcery.SIP.SIPFromHeader.FriendlyDescription*
+  name: FriendlyDescription
+  href: api/SIPSorcery.SIP.SIPFromHeader.html#SIPSorcery_SIP_SIPFromHeader_FriendlyDescription_
+  commentId: Overload:SIPSorcery.SIP.SIPFromHeader.FriendlyDescription
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPFromHeader.FriendlyDescription
+  nameWithType: SIPFromHeader.FriendlyDescription
 - uid: SIPSorcery.SIP.SIPFromHeader.FromName
   name: FromName
   href: api/SIPSorcery.SIP.SIPFromHeader.html#SIPSorcery_SIP_SIPFromHeader_FromName
