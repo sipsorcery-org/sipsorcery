@@ -101,7 +101,6 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="AppState.cs" />
-    <Compile Include="Media\RTPManager.cs" />
     <Compile Include="Media\VideoSubTypes.cs" />
     <Compile Include="Signalling\IVoIPClient.cs" />
     <Compile Include="Media\MediaManager.cs" />

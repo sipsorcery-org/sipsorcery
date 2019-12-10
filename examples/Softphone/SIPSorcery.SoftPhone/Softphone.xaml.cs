@@ -305,7 +305,7 @@ namespace SIPSorcery.SoftPhone
         private void ByeButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             _activeClient?.Hangup();
-            _mediaManager.EndCall();
+            _mediaManager.Close();
 
             ResetToCallStartState();
         }
@@ -383,7 +383,7 @@ namespace SIPSorcery.SoftPhone
                 m_holdButton.Visibility = Visibility.Visible;
             });
         }
-        
+
         /// <summary>
         /// We are putting the remote call party on hold.
         /// </summary>
@@ -413,11 +413,6 @@ namespace SIPSorcery.SoftPhone
             logger.Debug(text);
             UIHelper.DoOnUIThread(this, delegate
             { textBlock.Text = text; });
-        }
-
-        private void LocalAudioSampleReady(byte[] sample)
-        {
-
         }
 
         private void LocalVideoSampleReady(byte[] sample, int width, int height)
@@ -495,36 +490,12 @@ namespace SIPSorcery.SoftPhone
             {
                 if (error.NotNullOrBlank())
                 {
-                    _localVideoStatus.Text = error;
-                    _localVideoStatusBorder.Visibility = System.Windows.Visibility.Visible;
+                    SetStatusText(m_signallingStatus, error);
                     _startLocalVideoButton.IsEnabled = true;
                     _stopLocalVideoButton.IsEnabled = false;
                     _localVideoDevices.IsEnabled = true;
                 }
-                else
-                {
-                    _localVideoStatus.Text = null;
-                    _localVideoStatusBorder.Visibility = System.Windows.Visibility.Collapsed;
-                }
             });
-        }
-
-        /// <summary>
-        /// Event handler for clicking on the local video error status text box.
-        /// </summary>
-        private void HideLocalVideoError(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            _localVideoStatusBorder.Visibility = System.Windows.Visibility.Collapsed;
-            _localVideoStatus.Text = null;
-        }
-
-        /// <summary>
-        /// Event handler for clicking on the remote video error status text box.
-        /// </summary>
-        private void HideRemoteVideoError(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            _remoteVideoStatusBorder.Visibility = System.Windows.Visibility.Collapsed;
-            _remoteVideoStatus.Text = null;
         }
 
         private void StartLocalVideo(object sender, System.Windows.RoutedEventArgs e)
@@ -539,16 +510,20 @@ namespace SIPSorcery.SoftPhone
                 _stopLocalVideoButton.IsEnabled = true;
                 _localVideoDevices.IsEnabled = false;
 
-                _mediaManager.StartLocalVideo(_localVideoMode);
+                _mediaManager.StartVideo(_localVideoMode);
             }
         }
 
         private void StopLocalVideo(object sender, System.Windows.RoutedEventArgs e)
         {
-            _mediaManager.StopLocalVideo();
+            _mediaManager.StopVideo();
             _startLocalVideoButton.IsEnabled = true;
             _stopLocalVideoButton.IsEnabled = false;
             _localVideoDevices.IsEnabled = true;
+        }
+
+        private void KeyPadButton_Click(object sender, RoutedEventArgs e)
+        {
         }
     }
 }

@@ -2,7 +2,7 @@
 // Filename: AudioChannel.cs
 //
 // Description: This class manages the coding and decoding of audio from physical
-// devices into and for RTP packets. 
+// devices and playback from samples recevied from RTP packets. 
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -26,6 +26,8 @@ namespace SIPSorcery.SoftPhone
 {
     public class AudioChannel
     {
+        public const int AUDIO_INPUT_BUFFER_MILLISECONDS = 80;
+
         private ILog logger = AppState.logger;
 
         private BufferedWaveProvider m_waveProvider;
@@ -57,7 +59,7 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 m_waveInEvent = new WaveInEvent();
-                m_waveInEvent.BufferMilliseconds = 20;
+                m_waveInEvent.BufferMilliseconds = AUDIO_INPUT_BUFFER_MILLISECONDS;
                 m_waveInEvent.NumberOfBuffers = 1;
                 m_waveInEvent.DeviceNumber = 0;
                 m_waveInEvent.DataAvailable += AudioSampleAvailable;
