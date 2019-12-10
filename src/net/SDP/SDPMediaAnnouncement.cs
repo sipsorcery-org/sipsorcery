@@ -8,6 +8,7 @@
 //
 // History:
 // ??	Aaron Clauson	Created, Hobart, Australia.
+// rj2: add SDPSecurityDescription parser
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -37,6 +38,7 @@ namespace SIPSorcery.Net
         public List<string> BandwidthAttributes = new List<string>();
         public List<SDPMediaFormat> MediaFormats = new List<SDPMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
         public List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
+        public List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
 
         /// <summary>
         /// The stream status of this media announcement. Note that None means no explicit value has been set
@@ -154,6 +156,10 @@ namespace SIPSorcery.Net
                 announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
             }
 
+            foreach (SDPSecurityDescription desc in this.SecurityDescriptions)
+            {
+                announcement += desc.ToString() + m_CRLF;
+            }
             if (MediaStreamStatus != MediaStreamStatusEnum.None)
             {
                 announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus) + m_CRLF;
@@ -205,6 +211,45 @@ namespace SIPSorcery.Net
             {
                 ExtraMediaAttributes.Add(attribute);
             }
+        }
+
+        public bool HasCryptoLine(SDPSecurityDescription.CryptoSuites cryptoSuite)
+        {
+            if (this.SecurityDescriptions == null)
+            {
+                return false;
+            }
+            foreach (SDPSecurityDescription secdesc in this.SecurityDescriptions)
+            {
+                if (secdesc.CryptoSuite == cryptoSuite)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public SDPSecurityDescription GetCryptoLine(SDPSecurityDescription.CryptoSuites cryptoSuite)
+        {
+            if (this.SecurityDescriptions == null)
+            {
+                return null;
+            }
+            foreach (SDPSecurityDescription secdesc in this.SecurityDescriptions)
+            {
+                if (secdesc.CryptoSuite == cryptoSuite)
+                {
+                    return secdesc;
+                }
+            }
+
+            return null;
+        }
+
+        public void AddCryptoLine(string crypto)
+        {
+            this.SecurityDescriptions.Add(SDPSecurityDescription.Parse(crypto));
         }
     }
 }
