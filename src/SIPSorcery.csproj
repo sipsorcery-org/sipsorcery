@@ -23,7 +23,7 @@
   
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net452;netcoreapp3.0</TargetFrameworks>
-	<Version>4.0.2.0-rc</Version>
+	<Version>4.0.3.0-rc</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -44,10 +44,11 @@
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP RTP RTCP STUN WebRTC SDP SIPSorcery</PackageTags>
 	<PackageReleaseNotes>- Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
-- Version 4.0.2 - New SIPUserAgent class, combination of client and server user agents. Support for HOMER logging.</PackageReleaseNotes>
+- Version 4.0.2 - New SIPUserAgent class, combination of client and server user agents. Support for HOMER logging.
+- Version 4.0.3 - Refactor of RTPChannel and RTPSession. SIPUserAgent class incoporates RTPSession (much easier to use).</PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
-	<AssemblyVersion>4.0.2.0</AssemblyVersion>
-	<FileVersion>4.0.2.0</FileVersion>
+	<AssemblyVersion>4.0.3.0</AssemblyVersion>
+	<FileVersion>4.0.3.0</FileVersion>
   </PropertyGroup>    
 
 </Project>
