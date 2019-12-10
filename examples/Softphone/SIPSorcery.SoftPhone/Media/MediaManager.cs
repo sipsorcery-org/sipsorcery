@@ -20,9 +20,9 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using SIPSorceryMedia;
-using SIPSorcery.Sys;
 using log4net;
+using SIPSorcery.Sys;
+using SIPSorceryMedia;
 
 namespace SIPSorcery.SoftPhone
 {

@@ -17,8 +17,8 @@ using System;
 using System.Configuration;
 using System.Net;
 using System.Xml;
-using SIPSorcery.Sys;
 using log4net;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone
 {

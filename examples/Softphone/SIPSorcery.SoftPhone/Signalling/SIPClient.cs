@@ -21,11 +21,11 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using log4net;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using log4net;
 
 namespace SIPSorcery.SoftPhone
 {
