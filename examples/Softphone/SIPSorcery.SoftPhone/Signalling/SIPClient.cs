@@ -180,7 +180,7 @@ namespace SIPSorcery.SoftPhone
                 }
                 else
                 {
-                    StatusMessage($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
+                    StatusMessage($"Incoming call from {sipRequest.Header.From.FriendlyDescription()}.");
                     m_pendingIncomingCall = m_userAgent.AcceptCall(sipRequest);
                     IncomingCall();
                 }
@@ -353,6 +353,20 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
+        /// Sends a DTMF event to the remote call party.
+        /// </summary>
+        /// <param name="key">The key for the event to send. Can only be 0 to 9, * and #.</param>
+        public async Task SendDTMF(byte key)
+        {
+            if (m_userAgent.IsCallActive)
+            {
+                CancellationTokenSource cts = new CancellationTokenSource();
+                var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+                await m_userAgent.RtpSession.SendDtmfEvent(dtmfEvent, cts);
+            }
+        }
+
+        /// <summary>
         /// Event handler that notifies us the remote party has put us on hold.
         /// </summary>
         private void OnRemotePutOnHold()
@@ -421,7 +435,11 @@ namespace SIPSorcery.SoftPhone
                 else
                 {
                     m_userAgent.RtpSession.OnReceivedSampleReady += (sample) => _mediaManager?.EncodedAudioSampleReceived(sample);
-                    _mediaManager.OnLocalAudioSampleReady += (sample) => m_userAgent?.RtpSession?.SendAudioFrame(m_audioTimestamp, sample);
+                    _mediaManager.OnLocalAudioSampleReady += (sample) =>
+                    {
+                        m_userAgent?.RtpSession?.SendAudioFrame(m_audioTimestamp, sample);
+                        m_audioTimestamp += (uint)(8000 / sample.Length);
+                    };
                     CallAnswer();
                 }
             }

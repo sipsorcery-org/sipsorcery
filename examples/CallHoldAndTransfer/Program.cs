@@ -124,9 +124,7 @@ namespace SIPSorcery
 
                         PlayRemoteMedia(userAgent.RtpSession, audioOutProvider);
 
-                        string caller = sipRequest.Header.From.FromURI.ToString();
-                        caller = (string.IsNullOrEmpty(sipRequest.Header.From.FromName)) ? caller : sipRequest.Header.From.FromName + " " + caller;
-                        Log.LogInformation($"Answered incoming call from {caller} at {remoteEndPoint}.");
+                        Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
                 }
                 else
