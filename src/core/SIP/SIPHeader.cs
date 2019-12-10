@@ -467,6 +467,18 @@ namespace SIPSorcery.SIP
         {
             return m_userField.ToString();
         }
+
+        /// <summary>
+        /// Returns a friendly description of the caller that's suitable for humans. Leaves out
+        /// all the parameters etc.
+        /// </summary>
+        /// <returns>A string representing a friendly description of the From header.</returns>
+        public string FriendlyDescription()
+        {
+            string caller = FromURI.ToAOR();
+            caller = (!string.IsNullOrEmpty(FromName)) ? FromName + " " + caller : caller;
+            return caller;
+        }
     }
 
     /// <bnf>

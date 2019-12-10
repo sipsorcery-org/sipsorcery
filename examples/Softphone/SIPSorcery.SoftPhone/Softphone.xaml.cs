@@ -412,7 +412,9 @@ namespace SIPSorcery.SoftPhone
         {
             logger.Debug(text);
             UIHelper.DoOnUIThread(this, delegate
-            { textBlock.Text = text; });
+            { 
+                textBlock.Text = text; 
+            });
         }
 
         private void LocalVideoSampleReady(byte[] sample, int width, int height)
@@ -522,8 +524,30 @@ namespace SIPSorcery.SoftPhone
             _localVideoDevices.IsEnabled = true;
         }
 
-        private void KeyPadButton_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// When on a call key pad presses will send a DTMF RTP event to the remote
+        /// call party.
+        /// </summary>
+        /// <param name="sender">The button that was pressed.</param>
+        /// <param name="e"></param>
+        private async void KeyPadButton_Click(object sender, RoutedEventArgs e)
         {
+            Button keyButton = sender as Button;
+            char keyPressed = (keyButton.Content as string).ToCharArray()[0];
+            SetStatusText(m_signallingStatus, $"Key pressed {keyPressed}.");
+
+            if(keyPressed >= 48 && keyPressed <=57)
+            {
+                await _sipClient.SendDTMF((byte)(keyPressed - 48));
+            }
+            else if(keyPressed == '*')
+            {
+                await _sipClient.SendDTMF((byte)10);
+            }
+            else if(keyPressed == '#')
+            {
+                await _sipClient.SendDTMF((byte)11);
+            }
         }
     }
 }
