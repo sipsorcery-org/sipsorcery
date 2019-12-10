@@ -195,6 +195,29 @@ additional attributes can be provided.</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaTypes.html">SDPMediaTypes</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.html">SDPSecurityDescription</a></h4>
+      <section><p>(SDP) Security Descriptions for Media Streams implementation as basically defined in RFC 4568.</p>
+<pre><code>Example 1: Parse crypto attribute
+
+string crypto = &quot;a=crypto:1 AES_256_CM_HMAC_SHA1_80 inline:GTuZoqOsesiK4wfyL7Rsq6uHHwhqVGA+aVuAUnsmWktYacZyJu6/6tUQeUti0Q==&quot;;
+SDPSecurityDescription localcrypto = SDPSecurityDescription.Parse(crypto);</code></pre>
+<pre><code>Example 2: Parse crypto attribute
+
+SDPMediaAnnouncement mediaAudio = new SDPMediaAnnouncement();
+//[...]set some SDPMediaAnnouncement properties
+SDPSecurityDescription localcrypto = SDPSecurityDescription.CreateNew();
+localcrypto.KeyParams.Clear();
+localcrypto.KeyParams.Add(SDPSecurityDescription.KeyParameter.CreateNew(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_32));
+mediaAudio.SecurityDescriptions.Add(localcrypto);
+mediaAudio.ToString();
+
+string crypto = &quot;a=crypto:1 AES_256_CM_HMAC_SHA1_80 inline:GTuZoqOsesiK4wfyL7Rsq6uHHwhqVGA+aVuAUnsmWktYacZyJu6/6tUQeUti0Q==&quot;;
+SDPSecurityDescription desc = SDPSecurityDescription.Parse(crypto);</code></pre>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.KeyParameter.html">SDPSecurityDescription.KeyParameter</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.SessionParameter.html">SDPSecurityDescription.SessionParameter</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAddressAttribute.html">STUNAddressAttribute</a></h4>
       <section><p>MAPPED-ADDRESS, RESPONSE-ADDRESS, CHANGED-ADDRESS, SOURCE-ADDRESS attributes use this format.
 The Send Keep Alive STUN request also uses an attribute with this format to specify the socket to send
@@ -317,6 +340,12 @@ m=video 49170 RTP/AVPF 98   // &quot;98&quot; is not a standard ID for VP8 and c
 a=rtpmap:98 VP8/90000
 a=fmtp:98 max-fr=30; max-fs=3600;</code></pre>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.CryptoSuites.html">SDPSecurityDescription.CryptoSuites</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.SessionParameter.FecTypes.html">SDPSecurityDescription.SessionParameter.FecTypes</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.SessionParameter.SrtpSessionParams.html">SDPSecurityDescription.SessionParameter.SrtpSessionParams</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAttributeTypesEnum.html">STUNAttributeTypesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNMessageTypesEnum.html">STUNMessageTypesEnum</a></h4>
