@@ -21,8 +21,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserAgentServer", "UserAgen
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallHoldAndTransfer", "CallHoldAndTransfer\CallHoldAndTransfer.csproj", "{46AFC2CC-9B9D-41AB-99C4-84A7FCC2086E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\src\SIPSorcery.csproj", "{BC04CD65-AA43-4DAD-AB81-1B680C05D7B0}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -103,14 +101,6 @@ Global
 		{46AFC2CC-9B9D-41AB-99C4-84A7FCC2086E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{46AFC2CC-9B9D-41AB-99C4-84A7FCC2086E}.Release|x64.ActiveCfg = Release|Any CPU
 		{46AFC2CC-9B9D-41AB-99C4-84A7FCC2086E}.Release|x64.Build.0 = Release|Any CPU
-		{BC04CD65-AA43-4DAD-AB81-1B680C05D7B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BC04CD65-AA43-4DAD-AB81-1B680C05D7B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BC04CD65-AA43-4DAD-AB81-1B680C05D7B0}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{BC04CD65-AA43-4DAD-AB81-1B680C05D7B0}.Debug|x64.Build.0 = Debug|Any CPU
-		{BC04CD65-AA43-4DAD-AB81-1B680C05D7B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BC04CD65-AA43-4DAD-AB81-1B680C05D7B0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BC04CD65-AA43-4DAD-AB81-1B680C05D7B0}.Release|x64.ActiveCfg = Release|Any CPU
-		{BC04CD65-AA43-4DAD-AB81-1B680C05D7B0}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
