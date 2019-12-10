@@ -59,9 +59,9 @@ namespace SIPSorcery.SoftPhone
 
         public static MFVideoSubTypesEnum FindVideoSubTypeForGuid(Guid videoSubTypeGuid)
         {
-            if(videoSubTypeGuid == MFVideoSubTypesEnum.MFVideoFormat_RGB24.GetSubTypeGuid()) return MFVideoSubTypesEnum.MFVideoFormat_RGB24;
-            if (videoSubTypeGuid == MFVideoSubTypesEnum.MFVideoFormat_I420.GetSubTypeGuid()) return MFVideoSubTypesEnum.MFVideoFormat_I420;
-            if (videoSubTypeGuid == MFVideoSubTypesEnum.MFVideoFormat_YUY2.GetSubTypeGuid()) return MFVideoSubTypesEnum.MFVideoFormat_YUY2;
+            if (videoSubTypeGuid == MFVideoSubTypesEnum.MFVideoFormat_RGB24.GetSubTypeGuid()) { return MFVideoSubTypesEnum.MFVideoFormat_RGB24; }
+            if (videoSubTypeGuid == MFVideoSubTypesEnum.MFVideoFormat_I420.GetSubTypeGuid()) { return MFVideoSubTypesEnum.MFVideoFormat_I420; }
+            if (videoSubTypeGuid == MFVideoSubTypesEnum.MFVideoFormat_YUY2.GetSubTypeGuid()) { return MFVideoSubTypesEnum.MFVideoFormat_YUY2;}
             return MFVideoSubTypesEnum.Unknown;
         }
     }

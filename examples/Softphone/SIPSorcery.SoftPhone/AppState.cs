@@ -125,7 +125,7 @@ namespace SIPSorcery.Sys
             log4net.Appender.ConsoleAppender appender = new log4net.Appender.ConsoleAppender();
 
             log4net.Layout.ILayout fallbackLayout = new log4net.Layout.PatternLayout("%m%n");
-            appender.Layout = fallbackLayout;           
+            appender.Layout = fallbackLayout;
             log4net.Config.BasicConfigurator.Configure(appender);
         }
 

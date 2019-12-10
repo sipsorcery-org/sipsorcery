@@ -16,11 +16,11 @@
 
 using System;
 using System.Collections.Generic;
-using SIPSorcery.Net;
-using SIPSorcery.Sys;
+using log4net;
 using NAudio.Codecs;
 using NAudio.Wave;
-using log4net;
+using SIPSorcery.Net;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone
 {
@@ -147,7 +147,7 @@ namespace SIPSorcery.SoftPhone
                 if (_recordingStarted)
                 {
                     _recordingStarted = false;
-                    
+
                     m_waveInEvent?.StopRecording();
                 }
 

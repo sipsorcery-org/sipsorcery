@@ -22,11 +22,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using SIPSorceryMedia;
+using log4net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using log4net;
+using SIPSorceryMedia;
 
 namespace SIPSorcery.SoftPhone
 {

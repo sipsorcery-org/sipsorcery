@@ -19,8 +19,8 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
-using System.Windows.Media.Imaging;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace SIPSorcery.SoftPhone
 {
@@ -233,7 +233,7 @@ namespace SIPSorcery.SoftPhone
 
                 enc.Frames.Add(BitmapFrame.Create(bmpSource));
                 enc.Save(memoryStream);
-                
+
                 memoryStream.Position = 0;
                 bitmapImage.BeginInit();
                 bitmapImage.StreamSource = memoryStream;
