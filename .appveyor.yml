@@ -1,6 +1,9 @@
 version: 1.0.{build}
 environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
+  access_token:
+    # Token for github pages publishing.
+    secure: 21m76jAVvcu7oACAHFnfCBltcwon+r5ZI3avfRmrNFAqJMn6RfLXwpBhPcJ617tD
 image: Visual Studio 2019
 configuration: Release
 before_build:
