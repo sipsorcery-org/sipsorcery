@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,11 +32,16 @@ namespace SIPSorcery.SIP.App
     /// A "full" SIP user agent that encompasses both client and server user agents.
     /// It is also able to manage in dialog operations after the call is established 
     /// (the client and server user agents don't handle in dialog operations).
+    /// 
+    /// Unlike other user agents this one also manages its own RTP session object
+    /// which means it can handle things like call on and off hold, RTP end point
+    /// changes and sending DTMF events.
     /// </summary>
     public class SIPUserAgent
     {
         private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
+        private static SDPMediaFormatsEnum m_defaultAudioFormat = SDPMediaFormatsEnum.PCMU;
 
         private static ILogger logger = Log.Logger;
 
@@ -59,6 +65,11 @@ namespace SIPSorcery.SIP.App
         /// request and response headers indicate.
         /// </summary>
         private SIPEndPoint m_outboundProxy;
+
+        /// <summary>
+        /// The RTP session in use for the current call.
+        /// </summary>
+        public RTPSession RtpSession { get; private set; }
 
         /// <summary>
         /// Indicates whether there is an active call or not
@@ -209,12 +220,29 @@ namespace SIPSorcery.SIP.App
         /// <param name="sipCallDescriptor">A call descriptor containing the information about how and where to place the call.</param>
         public void Call(SIPCallDescriptor sipCallDescriptor)
         {
+            RtpSession = new RTPSession((int)m_defaultAudioFormat, null, null, true);
+
             m_uac = new SIPClientUserAgent(m_transport);
             m_uac.CallTrying += ClientCallTryingHandler;
             m_uac.CallRinging += ClientCallRingingHandler;
             m_uac.CallAnswered += ClientCallAnsweredHandler;
             m_uac.CallFailed += ClientCallFailedHandler;
-            m_uac.Call(sipCallDescriptor);
+
+            SIPEndPoint serverEndPoint = m_uac.GetCallDestination(sipCallDescriptor);
+
+            if (serverEndPoint != null)
+            {
+                IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
+                var sdp = RtpSession.GetSDP(localIPAddress);
+                sipCallDescriptor.Content = sdp.ToString();
+
+                m_uac.Call(sipCallDescriptor);
+            }
+            else
+            {
+                ClientCallFailed?.Invoke(m_uac, $"Could not resolve destionation when placing call to {sipCallDescriptor.Uri}.");
+                CallEnded();
+            }
         }
 
         /// <summary>
@@ -222,6 +250,8 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void Cancel()
         {
+            RtpSession?.Close();
+
             if (m_uac != null)
             {
                 if (m_uac.IsUACAnswered == false)
@@ -240,11 +270,9 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void Hangup()
         {
-            if (Dialogue != null)
-            {
-                Dialogue.Hangup(m_transport, m_outboundProxy);
-                CallEnded();
-            }
+            RtpSession?.Close();
+            Dialogue.Hangup(m_transport, m_outboundProxy);
+            CallEnded();
         }
 
         /// <summary>
@@ -262,6 +290,7 @@ namespace SIPSorcery.SIP.App
             SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
             uas.CallCancelled += (pendingUas) =>
             {
+                CallEnded();
                 ServerCallCancelled?.Invoke(pendingUas);
             };
 
@@ -272,18 +301,28 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
-        /// Answers the call request contained in the user agent server. Any existing call will
-        /// be hungup.
+        /// Answers the call request contained in the user agent server parameter. Note the
+        /// <see cref="AcceptCall(SIPRequest)"/> method should be used to create the user agent server.
+        /// Any existing call will be hungup.
         /// </summary>
-        /// <param name="SIPServerUserAgen">The user agent server to answer.</param>
-        /// <param name="sdp">The session description payload to send to the remote call party.</param>
-        public void Answer(SIPServerUserAgent uas, SDP sdp)
+        /// <param name="uas">The user agent server holding the pending call to answer.</param>
+        public void Answer(SIPServerUserAgent uas)
         {
             // This call is now taking over any existing call.
-            Hangup();
+            if (IsCallActive)
+            {
+                Hangup();
+            }
+
+            RtpSession = new RTPSession((int)m_defaultAudioFormat, null, null, true);
+
+            var sipRequest = uas.ClientTransaction.TransactionRequest;
+            SDP remoteSDP = SDP.ParseSDPDescription(sipRequest.Body);
+            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse(remoteSDP.Connection.ConnectionAddress));
+            var sdpAnswer = RtpSession.GetSDP(localIPAddress);
 
             m_uas = uas;
-            m_uas.Answer(m_sdpContentType, sdp.ToString(), null, SIPDialogueTransferModesEnum.Default);
+            m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default);
             Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
         }
 
@@ -307,199 +346,6 @@ namespace SIPSorcery.SIP.App
             localSDP.Media.First(x => x.Media == SDPMediaTypesEnum.audio).MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
             Dialogue.SDP = localSDP.ToString();
             SendReInviteRequest(localSDP);
-        }
-
-        /// <summary>
-        /// Handler for when an in dialog request is received on an established call.
-        /// Typical types of request will be re-INVITES for things like putting a call on or
-        /// off hold and REFER requests for transfers. Some in dialog request types, such 
-        /// as re-INVITES have specific events so they can be bubbled up to the 
-        /// application to deal with.
-        /// </summary>
-        /// <param name="request">The in dialog request received.</param>
-        public async Task DialogRequestReceivedAsync(SIPRequest sipRequest) 
-        {
-            // Make sure the request matches our dialog and is not a stray.
-            // A dialog request should match on to tag, from tag and call ID. We'll be more 
-            // accepting just in case the sender got the tags wrong.
-            if (Dialogue == null || sipRequest.Header.CallId != Dialogue.CallId)
-            {
-                var noCallLegResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
-                var sendResult = await SendResponseAsync(noCallLegResponse);
-                if (sendResult != SocketError.Success)
-                {
-                    logger.LogWarning($"SIPUserAgent send response failed in DialogRequestReceivedAsync with {sendResult}.");
-                }
-            }
-            else
-            {
-                if (sipRequest.Method == SIPMethodsEnum.BYE)
-                {
-                    logger.LogDebug($"Matching dialogue found for {sipRequest.StatusLine}.");
-                    Dialogue.DialogueState = SIPDialogueStateEnum.Terminated;
-
-                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await SendResponseAsync(okResponse);
-
-                    CallEnded();
-
-                    OnCallHungup?.Invoke();
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.INVITE)
-                {
-                    logger.LogDebug($"Re-INVITE request received {sipRequest.StatusLine}.");
-
-                    UASInviteTransaction reInviteTransaction = new UASInviteTransaction(m_transport, sipRequest, m_outboundProxy);
-
-                    // Check for remote party putting us on and off hold.
-                    SDP newSDPOffer = SDP.ParseSDPDescription(sipRequest.Body);
-                    if(newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendOnly)
-                    {
-                        // We've been put on hold.
-                        var onHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.RecvOnly);
-                        reInviteTransaction.SendFinalResponse(onHoldResponse);
-
-                        RemotePutOnHold?.Invoke();
-                    }
-                    else if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendRecv && OnHoldFromRemote)
-                    {
-                        // We've been taken off hold.
-                        var offHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.SendRecv);
-                        reInviteTransaction.SendFinalResponse(offHoldResponse);
-
-                        RemoteTookOffHold?.Invoke();
-                    }
-                    else if (OnReinviteRequest == null)
-                    {
-                        // The application isn't prepared to accept re-INVITE requests. We'll reject as gently as we can to try and not lose the call.
-                        SIPResponse notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, null);
-                        reInviteTransaction.SendFinalResponse(notAcceptableResponse);
-                    }
-                    else
-                    {
-                        // The application is going to handle the re-INVITE request. We'll send a Trying response as a precursor.
-                        SIPResponse tryingResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
-                        reInviteTransaction.SendProvisionalResponse(tryingResponse);
-                        OnReinviteRequest(reInviteTransaction);
-                    }
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
-                {
-                    //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "OPTIONS request for established dialogue " + dialogue.DialogueName + ".", dialogue.Owner));
-                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    okResponse.Body = Dialogue.RemoteSDP;
-                    okResponse.Header.ContentLength = okResponse.Body.Length;
-                    okResponse.Header.ContentType = m_sdpContentType;
-                    await SendResponseAsync(okResponse);
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.MESSAGE)
-                {
-                    //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "MESSAGE for call " + sipRequest.URI.ToString() + ": " + sipRequest.Body + ".", dialogue.Owner));
-                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await m_transport.SendResponseAsync(okResponse);
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.REFER)
-                {
-                    if (sipRequest.Header.ReferTo.IsNullOrBlank())
-                    {
-                        // A REFER request must have a Refer-To header.
-                        //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Bad REFER request, no Refer-To header.", dialogue.Owner));
-                        SIPResponse invalidResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, "Missing mandatory Refer-To header");
-                        await SendResponseAsync(invalidResponse);
-                    }
-                    else
-                    {
-                        //TODO: Add handling logic for in transfer requests from the remote call party.
-                    }
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
-                {
-                    // These are likely tp be notifications from REFER (transfer request) processing.
-                    // We don't do anything with them at the moment.
-                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await SendResponseAsync(okResponse);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Sends a re-INVITE request to the remote call party with the supplied SDP.
-        /// </summary>
-        /// <param name="sdp">The SDP to send to the remote call party.</param>
-        public void SendReInviteRequest(SDP sdp)
-        {
-            if (Dialogue == null)
-            {
-                logger.LogWarning("No dialog available, re-INVITE request cannot be sent.");
-            }
-            else
-            {
-                var reinviteRequest = Dialogue.GetInDialogRequest(SIPMethodsEnum.INVITE);
-                reinviteRequest.Header.UserAgent = m_userAgent;
-                reinviteRequest.Header.ContentType = m_sdpContentType;
-                reinviteRequest.Body = sdp.ToString();
-                reinviteRequest.Header.Supported = SIPExtensionHeaders.PRACK;
-
-                if (m_uac != null)
-                {
-                    reinviteRequest.Header.Contact = m_uac.ServerTransaction.TransactionRequest.Header.Contact;
-                    reinviteRequest.SetSendFromHints(m_uac.ServerTransaction.TransactionRequest.LocalSIPEndPoint);
-                }
-                else if (m_uas != null)
-                {
-                    reinviteRequest.Header.Contact = m_uas.ClientTransaction.TransactionFinalResponse.Header.Contact;
-                    reinviteRequest.SetSendFromHints(m_uas.ClientTransaction.TransactionFinalResponse.LocalSIPEndPoint);
-                }
-                else
-                {
-                    reinviteRequest.Header.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader() };
-                }
-
-                UACInviteTransaction reinviteTransaction = new UACInviteTransaction(m_transport, reinviteRequest, m_outboundProxy);
-                reinviteTransaction.SendReliableRequest();
-                reinviteTransaction.UACInviteTransactionFinalResponseReceived += ReinviteRequestFinalResponseReceived;
-            }
-        }
-
-        /// <summary>
-        /// This user agent will check incoming SIP requests for any that match its current dialog.
-        /// </summary>
-        /// <param name="localSIPEndPoint">The local end point the request was received on.</param>
-        /// <param name="remoteEndPoint">The remote end point the request came from.</param>
-        /// <param name="sipRequest">The SIP request.</param>
-        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
-        {
-            if (Dialogue != null)
-            {
-                if (sipRequest.Header.From != null &&
-                    sipRequest.Header.From.FromTag != null &&
-                    sipRequest.Header.To != null &&
-                    sipRequest.Header.To.ToTag != null)
-                {
-                    // In dialog request will include BYE's.
-                    await DialogRequestReceivedAsync(sipRequest);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Handles responses to our re-INVITE requests.
-        /// </summary>
-        /// <param name="localSIPEndPoint">The local end point the response was received on.</param>
-        /// <param name="remoteEndPoint">The remote end point the response came from.</param>
-        /// <param name="sipTransaction">The UAS transaction the response is part of.</param>
-        /// <param name="sipResponse">The SIP response.</param>
-        private void ReinviteRequestFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
-        {
-            if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
-            {
-                // Update the remote party's SDP.
-                Dialogue.RemoteSDP = sipResponse.Body;
-            }
-            else
-            {
-                logger.LogWarning($"Re-INVITE request failed with response {sipResponse.ShortDescription}.");
-            }
         }
 
         /// <summary>
@@ -555,6 +401,220 @@ namespace SIPSorcery.SIP.App
                     logger.LogWarning($"Call transfer request timed out after {timeout.TotalMilliseconds}ms.");
                     return false;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Handler for when an in dialog request is received on an established call.
+        /// Typical types of request will be re-INVITES for things like putting a call on or
+        /// off hold and REFER requests for transfers. Some in dialog request types, such 
+        /// as re-INVITES have specific events so they can be bubbled up to the 
+        /// application to deal with.
+        /// </summary>
+        /// <param name="request">The in dialog request received.</param>
+        private async Task DialogRequestReceivedAsync(SIPRequest sipRequest)
+        {
+            // Make sure the request matches our dialog and is not a stray.
+            // A dialog request should match on to tag, from tag and call ID. We'll be more 
+            // accepting just in case the sender got the tags wrong.
+            if (Dialogue == null || sipRequest.Header.CallId != Dialogue.CallId)
+            {
+                var noCallLegResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
+                var sendResult = await SendResponseAsync(noCallLegResponse);
+                if (sendResult != SocketError.Success)
+                {
+                    logger.LogWarning($"SIPUserAgent send response failed in DialogRequestReceivedAsync with {sendResult}.");
+                }
+            }
+            else
+            {
+                if (sipRequest.Method == SIPMethodsEnum.BYE)
+                {
+                    logger.LogDebug($"Matching dialogue found for {sipRequest.StatusLine}.");
+                    Dialogue.DialogueState = SIPDialogueStateEnum.Terminated;
+
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await SendResponseAsync(okResponse);
+
+                    CallEnded();
+
+                    OnCallHungup?.Invoke();
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.INVITE)
+                {
+                    logger.LogDebug($"Re-INVITE request received {sipRequest.StatusLine}.");
+
+                    UASInviteTransaction reInviteTransaction = new UASInviteTransaction(m_transport, sipRequest, m_outboundProxy);
+
+                    // Re-INVITEs can also be changing the RTP end point. We can update this each time.
+                    bool wasDestinationChanged = false;
+                    IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+                    if (RtpSession.DestinationEndPoint != dstRtpEndPoint)
+                    {
+                        logger.LogDebug($"Remote call party RTP end point changed from {RtpSession.DestinationEndPoint} to {dstRtpEndPoint}.");
+                        RtpSession.DestinationEndPoint = dstRtpEndPoint;
+                        wasDestinationChanged = true;
+                    }
+
+                    // Check for remote party putting us on and off hold.
+                    SDP newSDPOffer = SDP.ParseSDPDescription(sipRequest.Body);
+                    if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendOnly)
+                    {
+                        // We've been put on hold.
+                        var onHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.RecvOnly);
+                        reInviteTransaction.SendFinalResponse(onHoldResponse);
+
+                        RemotePutOnHold?.Invoke();
+                    }
+                    else if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendRecv && OnHoldFromRemote)
+                    {
+                        // We've been taken off hold.
+                        var offHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.SendRecv);
+                        reInviteTransaction.SendFinalResponse(offHoldResponse);
+
+                        RemoteTookOffHold?.Invoke();
+                    }
+                    else if (OnReinviteRequest == null)
+                    {
+                        if (wasDestinationChanged)
+                        {
+                            // The destination RTP end point was changed.
+                            var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, Dialogue.SDP);
+                            reInviteTransaction.SendFinalResponse(okResponse);
+                        }
+                        else
+                        {
+                            // The application isn't prepared to accept re-INVITE requests and we can't work out what it was for. 
+                            // We'll reject as gently as we can to try and not lose the call.
+                            SIPResponse notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, null);
+                            reInviteTransaction.SendFinalResponse(notAcceptableResponse);
+                        }
+                    }
+                    else
+                    {
+                        // The application is going to handle the re-INVITE request. We'll send a Trying response as a precursor.
+                        SIPResponse tryingResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
+                        reInviteTransaction.SendProvisionalResponse(tryingResponse);
+                        OnReinviteRequest(reInviteTransaction);
+                    }
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
+                {
+                    //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "OPTIONS request for established dialogue " + dialogue.DialogueName + ".", dialogue.Owner));
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    okResponse.Body = Dialogue.RemoteSDP;
+                    okResponse.Header.ContentLength = okResponse.Body.Length;
+                    okResponse.Header.ContentType = m_sdpContentType;
+                    await SendResponseAsync(okResponse);
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.MESSAGE)
+                {
+                    //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "MESSAGE for call " + sipRequest.URI.ToString() + ": " + sipRequest.Body + ".", dialogue.Owner));
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await m_transport.SendResponseAsync(okResponse);
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.REFER)
+                {
+                    if (sipRequest.Header.ReferTo.IsNullOrBlank())
+                    {
+                        // A REFER request must have a Refer-To header.
+                        //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Bad REFER request, no Refer-To header.", dialogue.Owner));
+                        SIPResponse invalidResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, "Missing mandatory Refer-To header");
+                        await SendResponseAsync(invalidResponse);
+                    }
+                    else
+                    {
+                        //TODO: Add handling logic for in transfer requests from the remote call party.
+                    }
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
+                {
+                    // These are likely tp be notifications from REFER (transfer request) processing.
+                    // We don't do anything with them at the moment.
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await SendResponseAsync(okResponse);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends a re-INVITE request to the remote call party with the supplied SDP.
+        /// </summary>
+        /// <param name="sdp">The SDP to send to the remote call party.</param>
+        private void SendReInviteRequest(SDP sdp)
+        {
+            if (Dialogue == null)
+            {
+                logger.LogWarning("No dialog available, re-INVITE request cannot be sent.");
+            }
+            else
+            {
+                var reinviteRequest = Dialogue.GetInDialogRequest(SIPMethodsEnum.INVITE);
+                reinviteRequest.Header.UserAgent = m_userAgent;
+                reinviteRequest.Header.ContentType = m_sdpContentType;
+                reinviteRequest.Body = sdp.ToString();
+                reinviteRequest.Header.Supported = SIPExtensionHeaders.PRACK;
+
+                if (m_uac != null)
+                {
+                    reinviteRequest.Header.Contact = m_uac.ServerTransaction.TransactionRequest.Header.Contact;
+                    reinviteRequest.SetSendFromHints(m_uac.ServerTransaction.TransactionRequest.LocalSIPEndPoint);
+                }
+                else if (m_uas != null)
+                {
+                    reinviteRequest.Header.Contact = m_uas.ClientTransaction.TransactionFinalResponse.Header.Contact;
+                    reinviteRequest.SetSendFromHints(m_uas.ClientTransaction.TransactionFinalResponse.LocalSIPEndPoint);
+                }
+                else
+                {
+                    reinviteRequest.Header.Contact = new List<SIPContactHeader>() { SIPContactHeader.GetDefaultSIPContactHeader() };
+                }
+
+                UACInviteTransaction reinviteTransaction = new UACInviteTransaction(m_transport, reinviteRequest, m_outboundProxy);
+                reinviteTransaction.SendReliableRequest();
+                ;
+                reinviteTransaction.UACInviteTransactionFinalResponseReceived += ReinviteRequestFinalResponseReceived;
+            }
+        }
+
+        /// <summary>
+        /// This user agent will check incoming SIP requests for any that match its current dialog.
+        /// </summary>
+        /// <param name="localSIPEndPoint">The local end point the request was received on.</param>
+        /// <param name="remoteEndPoint">The remote end point the request came from.</param>
+        /// <param name="sipRequest">The SIP request.</param>
+        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        {
+            if (Dialogue != null)
+            {
+                if (sipRequest.Header.From != null &&
+                    sipRequest.Header.From.FromTag != null &&
+                    sipRequest.Header.To != null &&
+                    sipRequest.Header.To.ToTag != null)
+                {
+                    // In dialog request will include BYE's.
+                    await DialogRequestReceivedAsync(sipRequest);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles responses to our re-INVITE requests.
+        /// </summary>
+        /// <param name="localSIPEndPoint">The local end point the response was received on.</param>
+        /// <param name="remoteEndPoint">The remote end point the response came from.</param>
+        /// <param name="sipTransaction">The UAS transaction the response is part of.</param>
+        /// <param name="sipResponse">The SIP response.</param>
+        private void ReinviteRequestFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        {
+            if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
+            {
+                // Update the remote party's SDP.
+                Dialogue.RemoteSDP = sipResponse.Body;
+            }
+            else
+            {
+                logger.LogWarning($"Re-INVITE request failed with response {sipResponse.ShortDescription}.");
             }
         }
 
@@ -633,22 +693,31 @@ namespace SIPSorcery.SIP.App
         /// <param name="sipResponse">The INVITE success response.</param>
         private void ClientCallAnsweredHandler(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
-            if (ClientCallAnswered != null)
+            if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
-                if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
+                // Only set the remote RTP end point if there hasn't already been a packet received on it.
+                if (RtpSession.DestinationEndPoint == null)
                 {
-                    Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+                    RtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(sipResponse.Body);
+                    logger.LogDebug($"Remote RTP socket {RtpSession.DestinationEndPoint}.");
+                }
+
+                Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+
+                if (ClientCallAnswered != null)
+                {
                     ClientCallAnswered(uac, sipResponse);
                 }
                 else
                 {
-                    logger.LogDebug($"Call attempt was answered with failure response {sipResponse.ShortDescription}.");
-                    ClientCallFailed?.Invoke(uac, sipResponse.ReasonPhrase);
+                    logger.LogDebug($"Call attempt to {m_uac.CallDescriptor.Uri} was answered.");
                 }
             }
             else
             {
-                logger.LogDebug($"Call attempt to {m_uac.CallDescriptor.Uri} was answered.");
+                logger.LogDebug($"Call attempt was answered with failure response {sipResponse.ShortDescription}.");
+                ClientCallFailed?.Invoke(uac, sipResponse.ReasonPhrase);
+                CallEnded();
             }
         }
 
@@ -696,6 +765,8 @@ namespace SIPSorcery.SIP.App
         {
             m_uac = null;
             m_uas = null;
+            RtpSession?.Close();
+            RtpSession = null;
         }
     }
 }

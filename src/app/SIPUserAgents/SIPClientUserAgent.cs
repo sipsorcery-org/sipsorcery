@@ -146,6 +146,66 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// Gets the desintation of the remote SIP end point for this call.
+        /// </summary>
+        /// <param name="sipCallDescriptor">The call descriptor containing the settings to use to place the call.</param>
+        /// <returns>The server end point for the call.</returns>
+        public SIPEndPoint GetCallDestination(SIPCallDescriptor sipCallDescriptor)
+        {
+            SIPURI callURI = SIPURI.ParseSIPURI(sipCallDescriptor.Uri);
+            SIPEndPoint serverEndPoint = null;
+
+            // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
+            if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
+            {
+                serverEndPoint = m_outboundProxy;
+            }
+            else if (!sipCallDescriptor.ProxySendFrom.IsNullOrBlank())
+            {
+                // If the binding has a specific proxy end point sent then the request needs to be forwarded to the proxy's default end point for it to take care of.
+                SIPEndPoint outboundProxyEndPoint = SIPEndPoint.ParseSIPEndPoint(sipCallDescriptor.ProxySendFrom);
+                m_outboundProxy = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(outboundProxyEndPoint.Address, m_defaultSIPPort));
+                m_serverEndPoint = m_outboundProxy;
+                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "SIPClientUserAgent Call using alternate outbound proxy of " + m_outboundProxy + ".", Owner));
+            }
+            else if (m_outboundProxy != null)
+            {
+                // Using the system outbound proxy only, no additional user routing requirements.
+                serverEndPoint = m_outboundProxy;
+            }
+
+            // No outbound proxy, determine the forward destination based on the SIP request.
+            if (serverEndPoint == null)
+            {
+                SIPDNSLookupResult lookupResult = null;
+
+                if (sipCallDescriptor.RouteSet != null && sipCallDescriptor.RouteSet.IndexOf(OUTBOUNDPROXY_AS_ROUTESET_CHAR) != -1)
+                {
+                    var routeSet = new SIPRouteSet();
+                    routeSet.PushRoute(new SIPRoute(sipCallDescriptor.RouteSet, true));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Route set for call " + routeSet.ToString() + ".", Owner));
+                    lookupResult = m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI, false);
+                }
+                else
+                { 
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Attempting to resolve " + callURI.Host + ".", Owner));
+                    lookupResult = m_sipTransport.GetURIEndPoint(callURI, false);
+                }
+
+                if (lookupResult.LookupError != null)
+                {
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "DNS error resolving " + callURI.Host + ", " + lookupResult.LookupError + ". Call cannot proceed.", Owner));
+                }
+                else
+                {
+                    serverEndPoint = lookupResult.GetSIPEndPoint();
+                }
+            }
+
+            return serverEndPoint;
+        }
+
+        /// <summary>
         /// Initiates the call to the remote user agent server.
         /// </summary>
         /// <param name="sipCallDescriptor">The descriptor for the call that describes how to reach the user agent server and other properties.</param>
@@ -159,64 +219,7 @@ namespace SIPSorcery.SIP.App
 
                 if (!m_callCancelled)
                 {
-                    // If the outbound proxy is a loopback address, as it will normally be for local deployments, then it cannot be overriden.
-                    if (m_outboundProxy != null && IPAddress.IsLoopback(m_outboundProxy.Address))
-                    {
-                        m_serverEndPoint = m_outboundProxy;
-                    }
-                    else if (!sipCallDescriptor.ProxySendFrom.IsNullOrBlank())
-                    {
-                        // If the binding has a specific proxy end point sent then the request needs to be forwarded to the proxy's default end point for it to take care of.
-                        SIPEndPoint outboundProxyEndPoint = SIPEndPoint.ParseSIPEndPoint(sipCallDescriptor.ProxySendFrom);
-                        m_outboundProxy = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(outboundProxyEndPoint.Address, m_defaultSIPPort));
-                        m_serverEndPoint = m_outboundProxy;
-                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "SIPClientUserAgent Call using alternate outbound proxy of " + m_outboundProxy + ".", Owner));
-                    }
-                    else if (m_outboundProxy != null)
-                    {
-                        // Using the system outbound proxy only, no additional user routing requirements.
-                        m_serverEndPoint = m_outboundProxy;
-                    }
-
-                    // A custom route set may have been specified for the call.
-                    if (m_sipCallDescriptor.RouteSet != null && m_sipCallDescriptor.RouteSet.IndexOf(OUTBOUNDPROXY_AS_ROUTESET_CHAR) != -1)
-                    {
-                        try
-                        {
-                            routeSet = new SIPRouteSet();
-                            routeSet.PushRoute(new SIPRoute(m_sipCallDescriptor.RouteSet, true));
-                        }
-                        catch
-                        {
-                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Error an outbound proxy value was not recognised in SIPClientUserAgent Call. " + m_sipCallDescriptor.RouteSet + ".", Owner));
-                        }
-                    }
-
-                    // No outbound proxy, determine the forward destination based on the SIP request.
-                    if (m_serverEndPoint == null)
-                    {
-                        SIPDNSLookupResult lookupResult = null;
-
-                        if (routeSet == null || routeSet.Length == 0)
-                        {
-                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Attempting to resolve " + callURI.Host + ".", Owner));
-                            lookupResult = m_sipTransport.GetURIEndPoint(callURI, false);
-                        }
-                        else
-                        {
-                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Route set for call " + routeSet.ToString() + ".", Owner));
-                            lookupResult = m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI, false);
-                        }
-
-                        if (lookupResult.LookupError != null)
-                        {
-                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "DNS error resolving " + callURI.Host + ", " + lookupResult.LookupError + ". Call cannot proceed.", Owner));
-                        }
-                        else
-                        {
-                            m_serverEndPoint = lookupResult.GetSIPEndPoint();
-                        }
-                    }
+                    m_serverEndPoint = GetCallDestination(sipCallDescriptor);
 
                     if (m_callCancelled)
                     {
@@ -226,6 +229,20 @@ namespace SIPSorcery.SIP.App
                     else if (m_serverEndPoint != null)
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Switching to " + SIPURI.ParseSIPURI(m_sipCallDescriptor.Uri).CanonicalAddress + " via " + m_serverEndPoint + ".", Owner));
+
+                        // A custom route set may have been specified for the call.
+                        if (m_sipCallDescriptor.RouteSet != null && m_sipCallDescriptor.RouteSet.IndexOf(OUTBOUNDPROXY_AS_ROUTESET_CHAR) != -1)
+                        {
+                            try
+                            {
+                                routeSet = new SIPRouteSet();
+                                routeSet.PushRoute(new SIPRoute(m_sipCallDescriptor.RouteSet, true));
+                            }
+                            catch
+                            {
+                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Error an outbound proxy value was not recognised in SIPClientUserAgent Call. " + m_sipCallDescriptor.RouteSet + ".", Owner));
+                            }
+                        }
 
                         string content = sipCallDescriptor.Content;
 

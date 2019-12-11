@@ -323,6 +323,21 @@ namespace SIPSorcery.Net
 
                             sdp.IceCandidates.Add(IceCandidate.Parse(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1)));
                         }
+                        //2018-12-21 rj2: add a=crypto
+                        else if (sdpLineTrimmed.StartsWith(SDPSecurityDescription.CRYPTO_ATTRIBUE_PREFIX))
+                        {
+                            if (activeAnnouncement != null)
+                            {
+                                try
+                                {
+                                    activeAnnouncement.AddCryptoLine(sdpLineTrimmed);
+                                }
+                                catch (FormatException fex)
+                                {
+                                    logger.LogWarning("Error Parsing SDP-Line(a=crypto) " + fex);
+                                }
+                            }
+                        }
                         else if (MediaStreamStatusType.IsMediaStreamStatusAttribute(sdpLine.Trim(), out var mediaStreamStatus))
                         {
                             if (activeAnnouncement != null)
