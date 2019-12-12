@@ -250,9 +250,14 @@ namespace SIPSorcery.Sys
 
             string[] values = null;
             if (endpointstring.IndexOf(';') > 0)
+            {
                 values = endpointstring.Substring(0, endpointstring.IndexOf(';')).Split(new char[] { ':' });
+            }
             else
+            {
                 values = endpointstring.Split(new char[] { ':' });
+            }
+
             IPAddress ipaddr;
             port = -1;
 
@@ -260,10 +265,14 @@ namespace SIPSorcery.Sys
             if (values.Length <= 2) // ipv4 or hostname
             {
                 if (values.Length == 1)
+                {
                     //no port is specified, default
                     port = -1;
+                }
                 else
+                {
                     port = getPort(values[1]);
+                }
 
                 host = values[0];
                 //try to use the address as IPv4, otherwise get hostname
@@ -290,9 +299,14 @@ namespace SIPSorcery.Sys
                 else //[a:b:c] or a:b:c
                 {
                     if (endpointstring.IndexOf(';') > 0)
+                    {
                         ipaddr = IPAddress.Parse(endpointstring.Substring(0, endpointstring.IndexOf(';')));
+                    }
                     else
+                    {
                         ipaddr = IPAddress.Parse(endpointstring);
+                    }
+
                     host = ipaddr.ToString();
                     port = -1;
                 }
@@ -327,14 +341,27 @@ namespace SIPSorcery.Sys
             if (values.Length <= 2) // ipv4 or hostname
             {
                 if (values.Length == 1)
+                {
                     //no port is specified, default
                     port = defaultport;
+                }
                 else
+                {
                     port = getPort(values[1]);
+                }
 
                 //try to use the address as IPv4, otherwise get hostname
                 if (!IPAddress.TryParse(values[0], out ipaddr))
-                    ipaddr = getIPfromHost(values[0]);
+                {
+                    try
+                    {
+                        ipaddr = getIPfromHost(values[0]);
+                    }
+                    catch
+                    {
+                        throw new FormatException(string.Format("Invalid endpoint ipaddress '{0}'", endpointstring));
+                    }
+                }
             }
             else if (values.Length > 2) //ipv6
             {
