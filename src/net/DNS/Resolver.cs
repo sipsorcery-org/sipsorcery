@@ -473,38 +473,74 @@ namespace Heijden.DNS
             byte[] responseMessage = new byte[512];
 
             IPEndPoint activeDNSServer = GetActiveDNSServer();
+            if (dnsServers == null)
+            {
+                dnsServers = new List<IPEndPoint>();
+            }
+
+            if (dnsServers.Count == 0)
+            {
+                dnsServers.Add(activeDNSServer);
+            }
+
+            ResetAllTimeoutCountIfNecessary();
 
             string requestStr = request.Questions[0].QType + " " + request.Questions[0].QName;
-            logger.LogDebug("Resolver sending UDP DNS request to " + activeDNSServer + " for " + requestStr + ".");
+            for (int nAttempts = 0; nAttempts < m_Retries && !m_stop; nAttempts++)
+            {
+                for (int nDnsServer = 0; nDnsServer < dnsServers.Count && !m_stop; nDnsServer++)
+                {
+                    if (dnsServers[nDnsServer].Address.IsIPv6LinkLocal)
+                    {
+                        continue;
+                    }
+                    if (GetTimeoutCount(dnsServers[nDnsServer]) >= SWITCH_ACTIVE_TIMEOUT_COUNT)
+                    {
+                        logger.LogDebug("Resolver not sending UDP DNS request to " + dnsServers[nDnsServer] + " because of maximum count of request timeouts reached");
+                        continue;
+                    }
+                    string requestStrWithDns = "for '" + requestStr + "' on dns-server '" + dnsServers[nDnsServer] + "'";
+                    logger.LogDebug("Resolver sending UDP DNS request " + requestStrWithDns);
 
-            Socket socket = new Socket(activeDNSServer.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-            socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, timeout * 1000);
+                    Socket socket = new Socket(dnsServers[nDnsServer].AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                    socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, timeout * 1000);
 
-            try
-            {
-                socket.SendTo(request.Data, activeDNSServer);
-                int intReceived = socket.Receive(responseMessage);
-                ResetTimeoutCount(activeDNSServer);
-                byte[] data = new byte[intReceived];
-                Array.Copy(responseMessage, data, intReceived);
-                DNSResponse response = new DNSResponse(activeDNSServer, data);
-                return response;
-            }
-            catch (SocketException sockExcp)
-            {
-                IncrementTimeoutCount(activeDNSServer);
-                logger.LogWarning("Resolver connection to nameserver " + activeDNSServer + " failed. " + sockExcp.Message);
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception Resolver UdpRequest for " + requestStr + ". " + excp.Message);
-            }
-            finally
-            {
-                m_Unique++;
+                    try
+                    {
+                        socket.SendTo(request.Data, dnsServers[nDnsServer]);
+                        int nReceived = socket.Receive(responseMessage);
+                        ResetTimeoutCount(dnsServers[nDnsServer]);
+                        byte[] data = new byte[nReceived];
+                        Array.Copy(responseMessage, data, nReceived);
+                        DNSResponse response = new DNSResponse(dnsServers[nDnsServer], data);
+                        if (response.header.RCODE == RCode.NOERROR)
+                        {
+                            logger.LogInformation("Success in UdpRequest " + requestStrWithDns);
+                            return response;
+                        }
+                        else
+                        {
+                            logger.LogDebug("Error " + response.header.RCODE + " in Resolver UdpRequest " + requestStrWithDns);
+                        }
+                    }
+                    catch (SocketException sockExcp)
+                    {
+                        IncrementTimeoutCount(dnsServers[nDnsServer]);
+                        logger.LogWarning("SocketExcpetion(" + sockExcp.ErrorCode + ") Resolver UdpRequest connection to nameserver " + dnsServers[nDnsServer] + " failed. ", sockExcp);
+                        continue; // next try
+                    }
+                    catch (Exception excp)
+                    {
+                        logger.LogError("Exception Resolver UdpRequest " + requestStrWithDns + ". ", excp);
+                    }
+                    finally
+                    {
+                        m_Unique++;
 
-                // close the socket
-                socket.Close();
+                        // close the socket
+                        socket.Close();
+                    }
+                }
             }
 
             logger.LogWarning("Resolver UDP request timed out for " + requestStr + ".");
@@ -522,28 +558,51 @@ namespace Heijden.DNS
         /// <returns></returns>
         private DNSResponse TcpRequest(DNSRequest request, List<IPEndPoint> dnsServers, int timeout)
         {
-            //System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-            //sw.Start();
-
             byte[] responseMessage = new byte[512];
 
-            for (int intAttempts = 0; intAttempts < m_Retries; intAttempts++)
+            IPEndPoint activeDNSServer = GetActiveDNSServer();
+            if (dnsServers == null)
             {
-                for (int intDnsServer = 0; intDnsServer < dnsServers.Count; intDnsServer++)
+                dnsServers = new List<IPEndPoint>();
+            }
+
+            if (dnsServers.Count == 0)
+            {
+                dnsServers.Add(activeDNSServer);
+            }
+
+            ResetAllTimeoutCountIfNecessary();
+
+            string requestStr = request.Questions[0].QType + " " + request.Questions[0].QName;
+            for (int nAttempts = 0; nAttempts < m_Retries && !m_stop; nAttempts++)
+            {
+                for (int nDnsServer = 0; nDnsServer < dnsServers.Count && !m_stop; nDnsServer++)
                 {
+                    if (dnsServers[nDnsServer].Address.IsIPv6LinkLocal)
+                    {
+                        continue;
+                    }
+                    if (GetTimeoutCount(dnsServers[nDnsServer]) >= SWITCH_ACTIVE_TIMEOUT_COUNT)
+                    {
+                        logger.LogDebug("Resolver not sending TCP DNS request to " + dnsServers[nDnsServer] + " because of maximum count of request timeouts reached");
+                        continue;
+                    }
+                    string requestStrWithDns = "for '" + requestStr + "' on dns-server '" + dnsServers[nDnsServer] + "'";
+                    logger.LogDebug("Resolver sending TCP DNS request " + requestStrWithDns);
+
                     TcpClient tcpClient = new TcpClient();
                     tcpClient.ReceiveTimeout = timeout * 1000;
 
                     try
                     {
-                        IAsyncResult result = tcpClient.BeginConnect(dnsServers[intDnsServer].Address, dnsServers[intDnsServer].Port, null, null);
+                        IAsyncResult result = tcpClient.BeginConnect(dnsServers[nDnsServer].Address, dnsServers[nDnsServer].Port, null, null);
 
                         bool success = result.AsyncWaitHandle.WaitOne(timeout * 1000, true);
 
                         if (!success || !tcpClient.Connected)
                         {
                             tcpClient.Close();
-                            Verbose(string.Format(";; Connection to nameserver {0} failed", (intDnsServer + 1)));
+                            Verbose(string.Format(";; Connection to nameserver {0} failed", (nDnsServer + 1)));
                             continue;
                         }
 
@@ -567,7 +626,7 @@ namespace Heijden.DNS
                             if (intLength <= 0)
                             {
                                 tcpClient.Close();
-                                Verbose(string.Format(";; Connection to nameserver {0} failed", (intDnsServer + 1)));
+                                Verbose(string.Format(";; Connection to nameserver {0} failed", (nDnsServer + 1)));
                                 throw new SocketException(); // next try
                             }
 
@@ -575,7 +634,7 @@ namespace Heijden.DNS
 
                             data = new byte[intLength];
                             bs.Read(data, 0, intLength);
-                            DNSResponse response = new DNSResponse(m_DnsServers[intDnsServer], data);
+                            DNSResponse response = new DNSResponse(m_DnsServers[nDnsServer], data);
 
                             if (response.header.RCODE != RCode.NOERROR)
                             {
@@ -619,9 +678,15 @@ namespace Heijden.DNS
                             }
                         }
                     } // try
-                    catch (SocketException)
+                    catch (SocketException sockExcp)
                     {
+                        IncrementTimeoutCount(dnsServers[nDnsServer]);
+                        logger.LogWarning("SocketExcpetion(" + sockExcp.ErrorCode + ") Resolver TcpRequest connection to nameserver " + dnsServers[nDnsServer] + " failed. ", sockExcp);
                         continue; // next try
+                    }
+                    catch (Exception excp)
+                    {
+                        logger.LogError("Exception Resolver UdpRequest " + requestStrWithDns + ". ", excp);
                     }
                     finally
                     {
@@ -632,6 +697,8 @@ namespace Heijden.DNS
                     }
                 }
             }
+
+            logger.LogWarning("Resolver TCP request timed out for " + requestStr + ".");
             DNSResponse responseTimeout = new DNSResponse();
             responseTimeout.Timedout = true;
             responseTimeout.Error = "Timeout Error";
