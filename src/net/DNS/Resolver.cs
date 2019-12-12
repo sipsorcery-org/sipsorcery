@@ -267,7 +267,7 @@ namespace Heijden.DNS
         }
 
         /// <summary>
-        /// Gets first DNS server address or sets single DNS server to use
+        /// Gets first DNS server address or sets first DNS server to use
         /// </summary>
         public string DnsServer
         {
@@ -277,18 +277,33 @@ namespace Heijden.DNS
             }
             set
             {
-                IPAddress ip;
-                if (IPAddress.TryParse(value, out ip))
+                //rj2: use IPSocket.Parse to get Parse String as IPEndpoint
+                //with IPAddress.TryParse there would be no way to set DnsServer with (different) Port
+                IPEndPoint ep = null;
+                try
                 {
-                    m_DnsServers.Clear();
-                    m_DnsServers.Add(new IPEndPoint(ip, DefaultPort));
-                    return;
+                    ep = IPSocket.Parse(value, DefaultPort);
                 }
-                DNSResponse response = Query(value, QType.A, DEFAULT_TIMEOUT);
-                if (response.RecordsA.Length > 0)
+                catch
                 {
-                    m_DnsServers.Clear();
-                    m_DnsServers.Add(new IPEndPoint(response.RecordsA[0].Address, DefaultPort));
+
+                }
+                if (ep == null)
+                {
+                    DNSResponse response = Query(value, QType.A, DEFAULT_TIMEOUT);
+                    if (response.RecordsA.Length > 0 && response.Error.IsNullOrBlank())
+                    {
+                        ep = new IPEndPoint(response.RecordsA[0].Address, DefaultPort);
+                    }
+                }
+                if (m_DnsServers.Contains(ep))
+                {
+                    m_DnsServers.Remove(ep);
+                    m_DnsServers.Insert(0, ep);
+                }
+                else
+                {
+                    m_DnsServers.Insert(0, ep);
                 }
             }
         }
