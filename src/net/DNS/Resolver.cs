@@ -81,7 +81,9 @@ namespace Heijden.DNS
         private bool m_UseCache;
         private bool m_Recursion;
         private int m_Retries;
+        private int m_Timeout;
         private TransportType m_TransportType;
+        private bool m_stop;
 
         private List<IPEndPoint> m_DnsServers;
         private IPEndPoint m_activeDNSServer;   // The DNS server currently being used for lookups.
@@ -103,9 +105,11 @@ namespace Heijden.DNS
 
             m_Unique = (ushort)(new Random()).Next();
             m_Retries = 3;
+            m_Timeout = 1;
             m_Recursion = true;
             m_UseCache = true;
             m_TransportType = TransportType.Udp;
+            m_stop = false;
         }
 
         /// <summary>
@@ -180,6 +184,21 @@ namespace Heijden.DNS
             public VerboseEventArgs(string Message)
             {
                 this.Message = Message;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets timeout in milliseconds
+        /// </summary>
+        public int TimeOut
+        {
+            get
+            {
+                return m_Timeout;
+            }
+            set
+            {
+                m_Timeout = value;
             }
         }
 
@@ -287,6 +306,18 @@ namespace Heijden.DNS
                 {
                     m_ResponseCache.Clear();
                 }
+            }
+        }
+
+        public bool Stop
+        {
+            get
+            {
+                return this.m_stop;
+            }
+            set
+            {
+                this.m_stop = value;
             }
         }
 
