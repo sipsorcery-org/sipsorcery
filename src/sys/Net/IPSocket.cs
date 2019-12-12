@@ -321,7 +321,7 @@ namespace SIPSorcery.Sys
         }
         public static IPEndPoint Parse(string endpointstring, int defaultport = -1)
         {
-            if (string.IsNullOrWhiteSpace(endpointstring))
+            if (endpointstring.IsNullOrBlank())
             {
                 throw new ArgumentException("Endpoint descriptor must not be empty.");
             }
@@ -408,12 +408,20 @@ namespace SIPSorcery.Sys
 
         private static IPAddress getIPfromHost(string p)
         {
-            var hosts = Dns.GetHostAddresses(p);
+            try
+            {
+                var hosts = Dns.GetHostAddresses(p);
 
-            if (hosts == null || hosts.Length == 0)
+                if (hosts == null || hosts.Length == 0)
+                {
+                    throw new ArgumentException(string.Format("Host not found: {0}", p));
+                }
+                return hosts[0];
+            }
+            catch
+            {
                 throw new ArgumentException(string.Format("Host not found: {0}", p));
-
-            return hosts[0];
+            }
         }
 
         /// <summary>
