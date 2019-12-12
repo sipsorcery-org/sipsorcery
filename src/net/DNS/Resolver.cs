@@ -1024,5 +1024,42 @@ namespace Heijden.DNS
                 }
             }
         }
+
+        private int GetTimeoutCount(IPEndPoint dnsServer)
+        {
+            if (m_DnsServers != null && m_DnsServers.Count > 1)
+            {
+                if (m_receiveTimeouts.ContainsKey(dnsServer))
+                {
+                    return m_receiveTimeouts[dnsServer];
+                }
+            }
+            return 0;
+        }
+        private void ResetAllTimeoutCountIfNecessary()
+        {
+            if (m_DnsServers != null && m_DnsServers.Count > 1)
+            {
+                foreach (KeyValuePair<IPEndPoint, int> count in m_receiveTimeouts)
+                {
+                    //leave method if not every counter is set to maximum
+                    if (count.Value < SWITCH_ACTIVE_TIMEOUT_COUNT)
+                    {
+                        return;
+                    }
+                }
+                foreach (IPEndPoint dnsServer in m_DnsServers)
+                {
+                    if (!m_receiveTimeouts.ContainsKey(dnsServer))
+                    {
+                        m_receiveTimeouts.Add(dnsServer, 0);
+                    }
+                    else
+                    {
+                        m_receiveTimeouts[dnsServer] = 0;
+                    }
+                }
+            }
+        }
     }
 }
