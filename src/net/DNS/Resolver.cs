@@ -739,16 +739,7 @@ namespace Heijden.DNS
         /// <returns>Response of the query</returns>
         public DNSResponse Query(string name, QType qtype, QClass qclass, int timeout)
         {
-            Question question = new Question(name, qtype, qclass);
-            DNSResponse response = SearchInCache(question);
-            if (response != null)
-            {
-                return response;
-            }
-
-            DNSRequest request = new DNSRequest();
-            request.AddQuestion(question);
-            return GetResponse(request, m_DnsServers, timeout);
+            return this.Query(name, qtype, qclass, timeout, this.m_DnsServers);
         }
 
         /// <summary>
@@ -760,21 +751,25 @@ namespace Heijden.DNS
         /// <returns>Response of the query</returns>
         public DNSResponse Query(string name, QType qtype, int timeout)
         {
-            Question question = new Question(name, qtype, QClass.IN);
-            DNSResponse response = SearchInCache(question);
-            if (response != null)
-            {
-                return response;
-            }
-
-            DNSRequest request = new DNSRequest();
-            request.AddQuestion(question);
-            return GetResponse(request, m_DnsServers, timeout);
+            return this.Query(name, qtype, QClass.IN, timeout, this.m_DnsServers);
         }
 
         public DNSResponse Query(string name, QType qtype, int timeout, List<IPEndPoint> dnsServers)
         {
-            Question question = new Question(name, qtype, QClass.IN);
+            return this.Query(name, qtype, QClass.IN, timeout, dnsServers);
+        }
+
+        /// <summary>
+        /// Do an QClass=IN Query on specified DNS servers
+        /// </summary>
+        /// <param name="name">Name to query</param>
+        /// <param name="qtype">Question type</param>
+        /// <param name="qclass">Class type</param>
+        /// <param name="timeout">Timeout for lookup in seconds.</param>
+        /// <returns>Response of the query</returns>
+        public DNSResponse Query(string name, QType qtype, QClass qclass, int timeout, List<IPEndPoint> dnsServers)
+        {
+            Question question = new Question(name, qtype, qclass);
             DNSResponse response = SearchInCache(question);
             if (response != null)
             {
@@ -784,6 +779,34 @@ namespace Heijden.DNS
             DNSRequest request = new DNSRequest();
             request.AddQuestion(question);
             return GetResponse(request, dnsServers, timeout);
+        }
+
+        /// <summary>
+        /// Do Query on specified DNS servers
+        /// </summary>
+        /// <param name="name">Name to query</param>
+        /// <param name="qtype">Question type</param>
+        /// <param name="qclass">Class type</param>
+        /// <returns>Response of the query</returns>
+        public DNSResponse Query(string name, QType qtype, QClass qclass)
+        {
+            return this.Query(name, qtype, qclass, this.m_DnsServers);
+        }
+
+        public DNS.DNSResponse Query(string name, QType qtype, QClass qclass, List<IPEndPoint> dnsServers)
+        {
+            return this.Query(name, qtype, qclass, DEFAULT_TIMEOUT, dnsServers);
+        }
+
+        /// <summary>
+        /// Do an QClass=IN Query on specified DNS servers
+        /// </summary>
+        /// <param name="name">Name to query</param>
+        /// <param name="qtype">Question type</param>
+        /// <returns>Response of the query</returns>
+        public DNSResponse Query(string name, QType qtype)
+        {
+            return this.Query(name, qtype, QClass.IN, this.m_DnsServers);
         }
 
         private DNSResponse GetResponse(DNSRequest request, List<IPEndPoint> dnsServers, int timeout)
@@ -849,7 +872,7 @@ namespace Heijden.DNS
             return list.ToArray();
         }
 
-        private IPHostEntry MakeEntry(string HostName, int timeout)
+        private IPHostEntry MakeEntry(string HostName, int timeout = DEFAULT_TIMEOUT)
         {
             IPHostEntry entry = new IPHostEntry();
 
@@ -1013,12 +1036,12 @@ namespace Heijden.DNS
         //    if (aResult.AsyncDelegate is GetHostEntryDelegate)
         //    {
         //        GetHostEntryDelegate g = (GetHostEntryDelegate)aResult.AsyncDelegate;
-        //        return g.EndInvoke(AsyncResult);
+        //        return g?.EndInvoke(AsyncResult);
         //    }
         //    if (aResult.AsyncDelegate is GetHostEntryViaIPDelegate)
         //    {
         //        GetHostEntryViaIPDelegate g = (GetHostEntryViaIPDelegate)aResult.AsyncDelegate;
-        //        return g.EndInvoke(AsyncResult);
+        //        return g?.EndInvoke(AsyncResult);
         //    }
         //    return null;
         //}
