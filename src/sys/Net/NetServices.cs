@@ -116,13 +116,16 @@ namespace SIPSorcery.Sys
                         }
                         catch (System.Net.Sockets.SocketException sockExcp)
                         {
-                            if (controlPort != 0)
+                            if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
                             {
-                                logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort} and/or control port of {controlPort}, attempt {bindAttempts}.");
-                            }
-                            else
-                            {
-                                logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort}, attempt {bindAttempts}.");
+                                if (controlPort != 0)
+                                {
+                                    logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort} and/or control port of {controlPort}, attempt {bindAttempts}.");
+                                }
+                                else
+                                {
+                                    logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort}, attempt {bindAttempts}.");
+                                }
                             }
 
                             // Increment the port range in case there is an OS/network issue closing/cleaning up already used ports.
