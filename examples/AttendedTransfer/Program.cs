@@ -65,7 +65,7 @@ namespace SIPSorcery
             // Get the default speaker.
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
             m_audioOutProvider = audioOutProvider;
-            //PlayRemoteMedia(uactiveUserAgent, audioOutProvider);
+            WaveInEvent waveInEvent = GetAudioInputDevice();
 
             userAgent1.OnCallHungup += () => Log.LogInformation($"UA1: Call hungup by remote party.");
             userAgent1.ServerCallCancelled += (uas) => Log.LogInformation("UA1: Incoming call cancelled by caller.");
@@ -96,6 +96,7 @@ namespace SIPSorcery
 
                         activeUserAgent = userAgent1;
                         userAgent1.RtpSession.OnReceivedSampleReady += PlaySample;
+                        waveInEvent.StartRecording();
 
                         Log.LogInformation($"UA1: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
@@ -130,7 +131,6 @@ namespace SIPSorcery
             };
 
             // Wire up the RTP send session to the audio input device.
-            WaveInEvent waveInEvent = GetAudioInputDevice();
             uint rtpSendTimestamp = 0;
             waveInEvent.DataAvailable += (object sender, WaveInEventArgs args) =>
             {
@@ -148,8 +148,6 @@ namespace SIPSorcery
                     activeUserAgent.RtpSession.SendAudioFrame(rtpSendTimestamp, sample);
                     rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
                 }
-
-                waveInEvent.StartRecording();
             };
 
 

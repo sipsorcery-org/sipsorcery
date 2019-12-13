@@ -318,7 +318,9 @@ namespace SIPSorcery.SIP.App
 
             var sipRequest = uas.ClientTransaction.TransactionRequest;
             SDP remoteSDP = SDP.ParseSDPDescription(sipRequest.Body);
-            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse(remoteSDP.Connection.ConnectionAddress));
+            // TODO: Deal with multiple media offers.
+            RtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(RtpSession.DestinationEndPoint.Address);
             var sdpAnswer = RtpSession.GetSDP(localIPAddress);
 
             m_uas = uas;

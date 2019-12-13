@@ -62,6 +62,7 @@ namespace SIPSorcery
 
             // Get the default speaker.
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
+            WaveInEvent waveInEvent = GetAudioInputDevice();
 
             // Create a client/server user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var userAgent = new SIPUserAgent(sipTransport, null);
@@ -123,6 +124,7 @@ namespace SIPSorcery
                         userAgent.Answer(incomingCall);
 
                         PlayRemoteMedia(userAgent.RtpSession, audioOutProvider);
+                        waveInEvent.StartRecording();
 
                         Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
@@ -136,7 +138,6 @@ namespace SIPSorcery
             };
 
             // Wire up the RTP send session to the audio output device.
-            WaveInEvent waveInEvent = GetAudioInputDevice();
             uint rtpSendTimestamp = 0;
             waveInEvent.DataAvailable += (object sender, WaveInEventArgs args) =>
             {
@@ -154,8 +155,6 @@ namespace SIPSorcery
                     userAgent.RtpSession.SendAudioFrame(rtpSendTimestamp, sample);
                     rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
                 }
-
-                waveInEvent.StartRecording();
             };
 
             // At this point the call has been initiated and everything will be handled in an event handler.
@@ -205,7 +204,7 @@ namespace SIPSorcery
                             if (userAgent.IsCallActive)
                             {
                                 var transferURI = SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI);
-                                bool result = await userAgent.Transfer(transferURI, TimeSpan.FromSeconds(TRANSFER_TIMEOUT_SECONDS), exitCts.Token);
+                                bool result = await userAgent.BlindTransfer(transferURI, TimeSpan.FromSeconds(TRANSFER_TIMEOUT_SECONDS), exitCts.Token);
                                 if (result)
                                 {
                                     // If the transfer was accepted the original call will already have been hungup.
