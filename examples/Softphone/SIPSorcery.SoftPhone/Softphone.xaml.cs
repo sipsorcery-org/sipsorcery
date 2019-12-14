@@ -32,7 +32,8 @@ namespace SIPSorcery.SoftPhone
 {
     public partial class SoftPhone : Window
     {
-        private const string VIDEO_LOOPBACK_CALL_DESTINATION = "loop";     // If this destination is called a video loopback call will be attempted.
+        private const string VIDEO_LOOPBACK_CALL_DESTINATION = "loop";    // If this destination is called a video loopback call will be attempted.
+        private const int SIP_CLIENT_COUNT = 2;                             // The number of SIP clients (simultaneous calls) that the UI can handle.
 
         // Currently only supporting these mode(s) from local web cams. Extra work to convert other formats to bitmaps that can be displayed by WPF.
         private static readonly List<MFVideoSubTypesEnum> _supportedVideoModes = new List<MFVideoSubTypesEnum>() { MFVideoSubTypesEnum.MFVideoFormat_RGB24 };
@@ -43,7 +44,8 @@ namespace SIPSorcery.SoftPhone
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.SIPServer;
 
-        private SIPClient _sipClient;                               // SIP calls.
+        private SIPTransportManager _sipTransportManager;
+        private List<SIPClient> _sipClients;
         private IVoIPClient _activeClient;                          // The active client, either SIP or GV.
         private SoftphoneSTUNClient _stunClient;                    // STUN client to periodically check the public IP address.
         private SIPRegistrationUserAgent _sipRegistrationClient;    // Can be used to register with an external SIP provider if incoming calls are required.
@@ -63,16 +65,13 @@ namespace SIPSorcery.SoftPhone
             // Do some UI initialisation.
             ResetToCallStartState();
 
-            // Set up the SIP client. It can receive calls and initiate outgoing calls.
-            _sipClient = new SIPClient();
-            _sipClient.IncomingCall += SIPCallIncoming;
-            _sipClient.CallAnswer += SIPCallAnswered;
-            _sipClient.CallEnded += ResetToCallStartState;
-            _sipClient.RemotePutOnHold += RemotePutOnHold;
-            _sipClient.RemoteTookOffHold += RemoteTookOffHold;
-            _sipClient.StatusMessage += (message) => { SetStatusText(m_signallingStatus, message); };
+            _sipTransportManager = new SIPTransportManager();
+            _sipTransportManager.IncomingCall += SIPCallIncoming;
 
-            // If a STUN server hostname has been specified start the STUN client to lookup and periodically update the public IP address of the host machine.
+            _sipClients = new List<SIPClient>();
+
+            // If a STUN server hostname has been specified start the STUN client to lookup and periodically 
+            // update the public IP address of the host machine.
             if (!SIPSoftPhoneState.STUNServerHostname.IsNullOrBlank())
             {
                 _stunClient = new SoftphoneSTUNClient(SIPSoftPhoneState.STUNServerHostname);
@@ -88,10 +87,21 @@ namespace SIPSorcery.SoftPhone
 
         private async void Initialise()
         {
-            await _sipClient.InitialiseSIP();
+            await _sipTransportManager.InitialiseSIP();
+
+            for(int i =0; i<SIP_CLIENT_COUNT; i++)
+            {
+                var sipClient = new SIPClient(_sipTransportManager.SIPTransport);
+                sipClient.CallAnswer += SIPCallAnswered;
+                sipClient.CallEnded += ResetToCallStartState;
+                sipClient.RemotePutOnHold += RemotePutOnHold;
+                sipClient.RemoteTookOffHold += RemoteTookOffHold;
+                sipClient.StatusMessage += (message) => { SetStatusText(m_signallingStatus, message); };
+                _sipClients.Add(sipClient);
+            }
 
             string listeningEndPoints = null;
-            foreach (var sipChannel in _sipClient.SIPClientTransport.GetSIPChannels())
+            foreach (var sipChannel in _sipTransportManager.SIPTransport.GetSIPChannels())
             {
                 SIPEndPoint sipChannelEP = sipChannel.ListeningSIPEndPoint.CopyOf();
                 sipChannelEP.ChannelID = null;
@@ -104,7 +114,7 @@ namespace SIPSorcery.SoftPhone
             });
 
             _sipRegistrationClient = new SIPRegistrationUserAgent(
-                _sipClient.SIPClientTransport,
+                _sipTransportManager.SIPTransport,
                 null,
                 null,
                 new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
@@ -142,8 +152,13 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            foreach(var sipClient in _sipClients)
+            {
+                sipClient.Shutdown();
+            }
+
             _mediaManager.Close();
-            _sipClient.Shutdown();
+            _sipTransportManager.Shutdown();
 
             if (_stunClient != null)
             {
@@ -215,11 +230,18 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
-        /// Set up the UI to present the options for an incoming SIP call.
+        /// Checks if there is an client that can accept the call and if so sets up the UI
+        /// to present the handling options to the user.
         /// </summary>
-        private void SIPCallIncoming()
+        private bool SIPCallIncoming(SIPRequest sipRequest)
         {
-            _activeClient = _sipClient;
+            _activeClient = _sipClients[0];
+
+            //StatusMessage($"Incoming call from {sipRequest.Header.From.FriendlyDescription()}.");
+            //m_pendingIncomingCall = m_userAgent.AcceptCall(sipRequest);
+            //IncomingCall();
+
+            _sipClients[0].Accept(sipRequest);
 
             UIHelper.DoOnUIThread(this, delegate
             {
@@ -231,6 +253,8 @@ namespace SIPSorcery.SoftPhone
                 m_rejectButton.Visibility = Visibility.Visible;
                 m_redirectButton.Visibility = Visibility.Visible;
             });
+
+            return true;
         }
 
         /// <summary>
@@ -285,8 +309,9 @@ namespace SIPSorcery.SoftPhone
                 string destination = m_uriEntryTextBox.Text;
 
                 // SIP call.
-                _activeClient = _sipClient;
-                Task.Run(() => { _sipClient.Call(_mediaManager, destination); });
+                SIPClient activeClient = (sender == m_callButton) ? _sipClients[0] : _sipClients[1];
+                _activeClient = activeClient;
+                Task.Run(() => { activeClient.Call(_mediaManager, destination); });
             }
         }
 
@@ -345,7 +370,24 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// The button to send a blind transfer request to the remote call party.
         /// </summary>
-        private async void TransferButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private async void BlindTransferButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            bool wasAccepted = await _activeClient.Transfer(m_uriEntryTextBox.Text);
+
+            if (wasAccepted)
+            {
+                ResetToCallStartState();
+            }
+            else
+            {
+                SetStatusText(m_signallingStatus, "The remote call party did not accept the transfer request.");
+            }
+        }
+
+        /// <summary>
+        /// The button to initiate an attended transfer request between the two in active calls.
+        /// </summary>
+        private async void AttendedTransferButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             bool wasAccepted = await _activeClient.Transfer(m_uriEntryTextBox.Text);
 
@@ -391,7 +433,9 @@ namespace SIPSorcery.SoftPhone
         {
             m_holdButton.Visibility = Visibility.Collapsed;
             m_offHoldButton.Visibility = Visibility.Visible;
-            _sipClient.PutOnHold();
+
+            SIPClient activeClient = (sender == m_holdButton) ? _sipClients[0] : _sipClients[1];
+            activeClient.PutOnHold();
         }
 
         /// <summary>
@@ -401,7 +445,9 @@ namespace SIPSorcery.SoftPhone
         {
             m_holdButton.Visibility = Visibility.Visible;
             m_offHoldButton.Visibility = Visibility.Collapsed;
-            _sipClient.TakeOffHold();
+
+            SIPClient activeClient = (sender == m_offHoldButton) ? _sipClients[0] : _sipClients[1];
+            activeClient.TakeOffHold();
         }
 
         /// <summary>
@@ -536,17 +582,19 @@ namespace SIPSorcery.SoftPhone
             char keyPressed = (keyButton.Content as string).ToCharArray()[0];
             SetStatusText(m_signallingStatus, $"Key pressed {keyPressed}.");
 
+            SIPClient activeClient = _sipClients[0];
+
             if(keyPressed >= 48 && keyPressed <=57)
             {
-                await _sipClient.SendDTMF((byte)(keyPressed - 48));
+                await activeClient.SendDTMF((byte)(keyPressed - 48));
             }
             else if(keyPressed == '*')
             {
-                await _sipClient.SendDTMF((byte)10);
+                await activeClient.SendDTMF((byte)10);
             }
             else if(keyPressed == '#')
             {
-                await _sipClient.SendDTMF((byte)11);
+                await activeClient.SendDTMF((byte)11);
             }
         }
     }
