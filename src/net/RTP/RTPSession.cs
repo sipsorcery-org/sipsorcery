@@ -186,7 +186,7 @@ namespace SIPSorcery.Net
                     rtpPacket.Header.SequenceNumber = SeqNum++;
                     rtpPacket.Header.Timestamp = timestamp;
                     // RFC3551 specifies that for audio the marker bit should always be 0 except for when returning
-                    // from silence suppression. For video the amreker bit DOES get set to 1 for the last packet
+                    // from silence suppression. For video the marker bit DOES get set to 1 for the last packet
                     // in a frame.
                     rtpPacket.Header.MarkerBit = 0;
                     rtpPacket.Header.PayloadType = FormatTypeID;

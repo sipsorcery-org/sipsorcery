@@ -104,6 +104,7 @@
     <Compile Include="Media\VideoSubTypes.cs" />
     <Compile Include="Signalling\IVoIPClient.cs" />
     <Compile Include="Media\MediaManager.cs" />
+    <Compile Include="Signalling\SIPTransportManager.cs" />
     <Compile Include="Signalling\STUNClient.cs" />
     <Compile Include="UIHelper.cs" />
     <Page Include="Softphone.xaml">
