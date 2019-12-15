@@ -49,7 +49,6 @@ deploy:
     on:
       branch: master                # release from master branch only
       APPVEYOR_REPO_TAG: true       # deploy on tag push only
-      appveyor_repo_tag: true
 #  - provider: GitHub
 #    artifact: /.*\.nupkg/           # upload all NuGet packages to release assets
 #    draft: true
