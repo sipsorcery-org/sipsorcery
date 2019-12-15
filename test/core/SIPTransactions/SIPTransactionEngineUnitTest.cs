@@ -24,7 +24,7 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPTransactionEngineUnitTest
     {
-        private const int TRANSACTION_EXCHANGE_TIMEOUT_MS = 50000000; //5000;
+        private const int TRANSACTION_EXCHANGE_TIMEOUT_MS = 5000;
 
         private class MockSIPDNSManager
         {

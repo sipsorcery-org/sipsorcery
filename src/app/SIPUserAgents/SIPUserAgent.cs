@@ -426,15 +426,12 @@ namespace SIPSorcery.SIP.App
 
                 SIPTransactionResponseReceivedDelegate referTxStatusHandler = async (localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse) =>
                 {
+                    // This handler has to go on a separate thread or the recevigin SIP channel will be blocked.
                     await Task.Run(() =>
                     {
                         if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
                         {
                             logger.LogInformation("Call transfer was accepted by remote server.");
-
-                            // Existing call is now out of the loop, hang it up.
-                            //Dialogue.Hangup(m_transport, m_outboundProxy);
-
                             transferAccepted.SetResult(true);
                         }
                         else
@@ -591,7 +588,7 @@ namespace SIPSorcery.SIP.App
                     SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     await SendResponseAsync(okResponse);
 
-                    if(sipRequest.Body?.Length > 0 && sipRequest.Header.ContentType == m_sipReferContentType)
+                    if(sipRequest.Body?.Length > 0 && sipRequest.Header.ContentType?.Contains(m_sipReferContentType) == true)
                     {
                         OnTransferNotify?.Invoke(sipRequest.Body);
                     }

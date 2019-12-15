@@ -52,7 +52,7 @@ namespace SIPSorcery
             var sipTransport = new SIPTransport();
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
 
-            EnableTraceLogs(sipTransport);
+            //EnableTraceLogs(sipTransport);
 
             // Create two user agents. Each gets configured to answer an incoming call.
             var userAgent1 = new SIPUserAgent(sipTransport, null);
@@ -78,13 +78,15 @@ namespace SIPSorcery
             userAgent2.RemoteTookOffHold += () => Log.LogInformation("UA2: Remote call party took us off hold.");
             userAgent2.OnTransferNotify += (sipFrag) =>
             {
-                Log.LogInformation($"UA2: Transfer status update: {sipFrag}.");
-
-                if(sipFrag?.Contains("sip/2.0 200") == true)
+                if (!string.IsNullOrEmpty(sipFrag))
                 {
-                    // The transfer attempt got a succesful answer. Can hangup the remaining call.
-                    userAgent2.Hangup();
-                    exitCts.Cancel();
+                    Log.LogInformation($"UA2: Transfer status update: {sipFrag.Trim()}.");
+                    if (sipFrag?.Contains("SIP/2.0 200") == true)
+                    {
+                        // The transfer attempt got a succesful answer. Can hangup the call.
+                        userAgent2.Hangup();
+                        exitCts.Cancel();
+                    }
                 }
             };
 
@@ -95,8 +97,8 @@ namespace SIPSorcery
                     sipRequest.Header.To != null &&
                     sipRequest.Header.To.ToTag != null)
                 {
-                    // This is an in-dialog request that will be handled directly by a user agent instance.
-                }
+                        // This is an in-dialog request that will be handled directly by a user agent instance.
+                    }
                 else if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
                     if (!userAgent1.IsCallActive)
@@ -126,8 +128,8 @@ namespace SIPSorcery
                     }
                     else
                     {
-                        // If both user agents are already on a call return a busy response.
-                        Log.LogWarning($"Busy response returned for incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
+                            // If both user agents are already on a call return a busy response.
+                            Log.LogWarning($"Busy response returned for incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
                         SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
                         uasTransaction.SendFinalResponse(busyResponse);
@@ -174,7 +176,7 @@ namespace SIPSorcery
                         {
                             if (userAgent1.IsCallActive && userAgent2.IsCallActive)
                             {
-                                bool result = await userAgent1.AttendedTransfer(userAgent2.Dialogue, TimeSpan.FromSeconds(TRANSFER_TIMEOUT_SECONDS), exitCts.Token);
+                                bool result = await userAgent2.AttendedTransfer(userAgent1.Dialogue, TimeSpan.FromSeconds(TRANSFER_TIMEOUT_SECONDS), exitCts.Token);
                                 if (!result)
                                 {
                                     Log.LogWarning($"Attended transfer failed.");
@@ -187,8 +189,8 @@ namespace SIPSorcery
                         }
                         else if (keyProps.KeyChar == 'q')
                         {
-                            // Quit application.
-                            exitCts.Cancel();
+                                // Quit application.
+                                exitCts.Cancel();
                         }
                     }
                 }
