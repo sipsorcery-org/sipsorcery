@@ -35,12 +35,12 @@ namespace SIPSorcery.SoftPhone
         private ImageConvert _imageConverter;
 
         private Task _localVideoSamplingTask;
-        //private Task _localAudioSamplingTask;
         private CancellationTokenSource _localVideoSamplingCancelTokenSource;
         private bool _stop = false;
         private int _encodingSample = 1;
         private bool _useVideo = false;
         private UIElement m_uiElement;
+        private bool _isAudioStarted = false;
 
         /// <summary>
         /// Fires when an audio sample is available from the local input device (microphone).
@@ -106,11 +106,16 @@ namespace SIPSorcery.SoftPhone
 
         public void StartAudio()
         {
-            _audioChannel = new AudioChannel();
-            if (_audioChannel != null)
+            if (!_isAudioStarted)
             {
-                _audioChannel.StartRecording();
-                _audioChannel.SampleReady += (sample) => OnLocalAudioSampleReady?.Invoke(sample);
+                _isAudioStarted = true;
+
+                _audioChannel = new AudioChannel();
+                if (_audioChannel != null)
+                {
+                    _audioChannel.StartRecording();
+                    _audioChannel.SampleReady += (sample) => OnLocalAudioSampleReady?.Invoke(sample);
+                }
             }
         }
 
