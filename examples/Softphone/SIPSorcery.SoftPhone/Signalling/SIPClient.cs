@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
@@ -87,6 +88,7 @@ namespace SIPSorcery.SoftPhone
             m_userAgent.ServerCallCancelled += IncomingCallCancelled;
             m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
             m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
+            m_userAgent.OnTransferNotify += OnTransferNotify;
         }
 
         /// <summary>
@@ -369,6 +371,30 @@ namespace SIPSorcery.SoftPhone
         {
             //SetText(m_signallingStatus, "incoming call cancelled for: " + uas.CallDestination + ".");
             CallFinished();
+        }
+
+        /// <summary>
+        /// Event handler for NOTIFY requests that provide updates about the state of a 
+        /// transfer.
+        /// </summary>
+        /// <param name="sipFrag">The SIP snippet containing the transfer status update.</param>
+        private void OnTransferNotify(string sipFrag)
+        {
+            if (sipFrag?.Contains("SIP/2.0 200") == true)
+            {
+                // The transfer attempt got a succesful answer. Can hangup the call.
+                Hangup();
+            }
+            else
+            {
+                Match statusCodeMatch = Regex.Match(sipFrag, @"^SIP/2\.0 (?<statusCode>\d{3})");
+                if(statusCodeMatch.Success)
+                {
+                    int statusCode = Int32.Parse(statusCodeMatch.Result("${statusCode}"));
+                    SIPResponseStatusCodesEnum responseStatusCode = (SIPResponseStatusCodesEnum)statusCode;
+                    StatusMessage(this, $"Transfer failed {responseStatusCode}");
+                }
+            }
         }
     }
 }

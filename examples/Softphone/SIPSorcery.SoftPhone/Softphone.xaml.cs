@@ -333,7 +333,7 @@ namespace SIPSorcery.SoftPhone
                     m_bye2Button.Visibility = Visibility.Visible;
                     m_transfer2Button.Visibility = Visibility.Visible;
                     m_hold2Button.Visibility = Visibility.Visible;
-                    m_attendedTransferButton.Visibility = Visibility.Collapsed;
+                    m_attendedTransferButton.Visibility = Visibility.Visible;
                 });
             }
         }
@@ -526,11 +526,7 @@ namespace SIPSorcery.SoftPhone
         {
             bool wasAccepted = await _sipClients[1].AttendedTransfer(_sipClients[0].Dialogue);
 
-            if (wasAccepted)
-            {
-                //ResetToCallStartState(null);
-            }
-            else
+            if (!wasAccepted)
             {
                 SetStatusText(m_signallingStatus, "The remote call party did not accept the transfer request.");
             }
@@ -775,7 +771,6 @@ namespace SIPSorcery.SoftPhone
 
         private void RemoteAudioSampleReceived(byte[] sample)
         {
-            // TODO: Only play the sample if it's from the active client.
             _mediaManager.EncodedAudioSampleReceived(sample);
         }
 

@@ -309,7 +309,13 @@ namespace SIPSorcery.SIP
         {
             m_transactionFinalResponse = finalResponse;
             UpdateTransactionState(SIPTransactionStatesEnum.Completed);
-            string viaAddress = finalResponse.Header.Vias.TopViaHeader.ReceivedFromAddress;
+
+            // Reset transaction state variables to reset any provisional reliable responses.
+            InitialTransmit = DateTime.MinValue;
+            Retransmits = 0;
+            DeliveryPending = true;
+            DeliveryFailed = false;
+            HasTimedOut = false;
 
             if (TransactionType == SIPTransactionTypesEnum.InviteServer)
             {
