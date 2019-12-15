@@ -31,6 +31,10 @@ namespace SIPSorcery.SoftPhone
     {
         private static int SIP_DEFAULT_PORT = SIPConstants.DEFAULT_SIP_PORT;
 
+        // If set will mirror SIP packets to a Homer (sipcapture.org) logging and analysis server.
+        private static string HOMER_SERVER_ADDRESS = null; //"192.168.11.49";
+        private static int HOMER_SERVER_PORT = 9060;
+
         private ILog logger = AppState.logger;
 
         private XmlNode m_sipSocketsNode = SIPSoftPhoneState.SIPSocketsNode;    // Optional XML node that can be used to configure the SIP channels used with the SIP transport layer.
@@ -38,6 +42,7 @@ namespace SIPSorcery.SoftPhone
 
         private bool _isInitialised = false;
         public SIPTransport SIPTransport { get; private set; }
+        private UdpClient _homerSIPClient;
 
         /// <summary>
         /// Event to notify the application of a new incoming call request. The event handler
@@ -47,7 +52,12 @@ namespace SIPSorcery.SoftPhone
         public event Func<SIPRequest, bool> IncomingCall;
 
         public SIPTransportManager()
-        { }
+        {
+            if(HOMER_SERVER_ADDRESS != null)
+            {
+                _homerSIPClient = new UdpClient(0, AddressFamily.InterNetwork);
+            }
+        }
 
         /// <summary>
         /// Shutdown the SIP tranpsort layer and any other resources. Should only be called when the application exits.
@@ -117,10 +127,10 @@ namespace SIPSorcery.SoftPhone
                 SIPTransport.SIPTransportRequestReceived += SIPTransportRequestReceived;
 
                 // Log all SIP packets received to a log file.
-                SIPTransport.SIPRequestInTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { logger.Debug("Request Received : " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipRequest.ToString()); };
-                SIPTransport.SIPRequestOutTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { logger.Debug("Request Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipRequest.ToString()); };
-                SIPTransport.SIPResponseInTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { logger.Debug("Response Received: " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipResponse.ToString()); };
-                SIPTransport.SIPResponseOutTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { logger.Debug("Response Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipResponse.ToString()); };
+                SIPTransport.SIPRequestInTraceEvent += SIPRequestInTraceEvent;
+                SIPTransport.SIPRequestOutTraceEvent += SIPRequestOutTraceEvent;
+                SIPTransport.SIPResponseInTraceEvent += SIPResponseInTraceEvent;
+                SIPTransport.SIPResponseOutTraceEvent += SIPResponseOutTraceEvent;
             }
         }
 
@@ -143,7 +153,7 @@ namespace SIPSorcery.SoftPhone
             {
                 bool? callAccepted = IncomingCall?.Invoke(sipRequest);
 
-                if(callAccepted == false)
+                if (callAccepted == false)
                 {
                     // All user agents were already on a call return a busy response.
                     UASInviteTransaction uasTransaction = new UASInviteTransaction(SIPTransport, sipRequest, null);
@@ -156,6 +166,50 @@ namespace SIPSorcery.SoftPhone
                 logger.Debug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
                 SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
                 SIPTransport.SendResponse(notAllowedResponse);
+            }
+        }
+
+        private void SIPRequestInTraceEvent(SIPEndPoint localEP, SIPEndPoint remoteEP, SIPRequest sipRequest)
+        {
+            logger.Debug($"Request Received {localEP}<-{remoteEP}: {sipRequest.StatusLine}.");
+
+            if (_homerSIPClient != null)
+            {
+                var hepBuffer = HepPacket.GetBytes(remoteEP, localEP, DateTime.Now, 333, "myHep", sipRequest.ToString());
+                _homerSIPClient.SendAsync(hepBuffer, hepBuffer.Length, HOMER_SERVER_ADDRESS, HOMER_SERVER_PORT);
+            }
+        }
+
+        private void SIPRequestOutTraceEvent(SIPEndPoint localEP, SIPEndPoint remoteEP, SIPRequest sipRequest)
+        {
+            logger.Debug($"Request Sent {localEP}<-{remoteEP}: {sipRequest.StatusLine}.");
+
+            if (_homerSIPClient != null)
+            {
+                var hepBuffer = HepPacket.GetBytes(localEP, remoteEP, DateTime.Now, 333, "myHep", sipRequest.ToString());
+                _homerSIPClient.SendAsync(hepBuffer, hepBuffer.Length, HOMER_SERVER_ADDRESS, HOMER_SERVER_PORT);
+            }
+        }
+
+        private void SIPResponseInTraceEvent(SIPEndPoint localEP, SIPEndPoint remoteEP, SIPResponse sipResponse)
+        {
+            logger.Debug($"Response Received {localEP}<-{remoteEP}: {sipResponse.ShortDescription}.");
+
+            if (_homerSIPClient != null)
+            {
+                var hepBuffer = HepPacket.GetBytes(remoteEP, localEP, DateTime.Now, 333, "myHep", sipResponse.ToString());
+                _homerSIPClient.SendAsync(hepBuffer, hepBuffer.Length, HOMER_SERVER_ADDRESS, HOMER_SERVER_PORT);
+            }
+        }
+
+        private void SIPResponseOutTraceEvent(SIPEndPoint localEP, SIPEndPoint remoteEP, SIPResponse sipResponse)
+        {
+            logger.Debug($"Response Sent {localEP}<-{remoteEP}: {sipResponse.ShortDescription}.");
+
+            if (_homerSIPClient != null)
+            {
+                var hepBuffer = HepPacket.GetBytes(localEP, remoteEP, DateTime.Now, 333, "myHep", sipResponse.ToString());
+                _homerSIPClient.SendAsync(hepBuffer, hepBuffer.Length, HOMER_SERVER_ADDRESS, HOMER_SERVER_PORT);
             }
         }
     }
