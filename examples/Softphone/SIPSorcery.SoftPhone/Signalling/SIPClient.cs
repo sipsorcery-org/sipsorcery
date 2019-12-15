@@ -38,7 +38,7 @@ namespace SIPSorcery.SoftPhone
         private SIPUserAgent m_userAgent;
         private SIPServerUserAgent m_pendingIncomingCall;
         private CancellationTokenSource _cts = new CancellationTokenSource();
-        
+
         public event Action<SIPClient> CallAnswer;                 // Fires when an outgoing SIP call is answered.
         public event Action<SIPClient> CallEnded;                  // Fires when an incoming or outgoing call is over.
         public event Action<SIPClient> RemotePutOnHold;            // Fires when the remote call party puts us on hold.
@@ -57,6 +57,14 @@ namespace SIPSorcery.SoftPhone
         public RTPSession RtpSession
         {
             get { return m_userAgent.RtpSession; }
+        }
+
+        /// <summary>
+        /// Once a call is established this holds the properties of the established SIP dialogue.
+        /// </summary>
+        public SIPDialogue Dialogue
+        {
+            get { return m_userAgent.Dialogue; }
         }
 
         /// <summary>
@@ -201,17 +209,27 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         /// <param name="destination">The SIP URI of the blind transfer destination.</param>
         /// <returns>True if the transfer was accepted or false if not.</returns>
-        public async Task<bool> Transfer(string destination)
+        public async Task<bool> BlindTransfer(string destination)
         {
             if (SIPURI.TryParse(destination, out var uri))
             {
-                return await m_userAgent.Transfer(uri, TimeSpan.FromSeconds(TRANSFER_RESPONSE_TIMEOUT_SECONDS), _cts.Token);
+                return await m_userAgent.BlindTransfer(uri, TimeSpan.FromSeconds(TRANSFER_RESPONSE_TIMEOUT_SECONDS), _cts.Token);
             }
             else
             {
                 StatusMessage(this, $"The transfer destination was not a valid SIP URI.");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Sends a request to the remote call party to initiate an attended transfer.
+        /// </summary>
+        /// <param name="transferee">The dialog that will be replaced on the initial call party.</param>
+        /// <returns>True if the transfer was accepted or false if not.</returns>
+        public async Task<bool> AttendedTransfer(SIPDialogue transferee)
+        {
+            return await m_userAgent.AttendedTransfer(transferee, TimeSpan.FromSeconds(TRANSFER_RESPONSE_TIMEOUT_SECONDS), _cts.Token);
         }
 
         /// <summary>

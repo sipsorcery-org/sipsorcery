@@ -314,7 +314,7 @@ namespace SIPSorcery.SIP
             if (TransactionType == SIPTransactionTypesEnum.InviteServer)
             {
                 FireTransactionTraceMessage($"Transaction send final response reliable {finalResponse.ShortDescription}");
-                m_sipTransport.SendSIPReliable(this);
+                m_sipTransport.SendReliable(this);
             }
             else
             {
@@ -357,7 +357,7 @@ namespace SIPSorcery.SIP
                     }
 
                     ReliableProvisionalResponse = sipResponse;
-                    m_sipTransport.SendSIPReliable(this);
+                    m_sipTransport.SendReliable(this);
                 }
                 else
                 {
@@ -398,7 +398,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public async void SendReliableRequest()
+        public void SendReliableRequest()
         {
             FireTransactionTraceMessage($"Transaction send request reliable {TransactionRequest.StatusLine}");
 
@@ -407,7 +407,7 @@ namespace SIPSorcery.SIP
                 UpdateTransactionState(SIPTransactionStatesEnum.Calling);
             }
 
-            await m_sipTransport.SendSIPReliableAsync(this);
+            m_sipTransport.SendReliable(this);
         }
 
         protected SIPResponse GetInfoResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum sipResponseCode)

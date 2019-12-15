@@ -32,7 +32,7 @@ namespace SIPSorcery
         private static int SIP_LISTEN_PORT = 5060;
         private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
         private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 20;           // This sets the frequency of the RTP packets.
-        private static int TRANSFER_TIMEOUT_SECONDS = 10;                    // Give up on transfer if no response within this period.
+        private static int TRANSFER_TIMEOUT_SECONDS = 2; //10;                    // Give up on transfer if no response within this period.
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -76,6 +76,17 @@ namespace SIPSorcery
             userAgent2.ServerCallCancelled += (uas) => Log.LogInformation("UA2: Incoming call cancelled by caller.");
             userAgent2.RemotePutOnHold += () => Log.LogInformation("UA2: Remote call party has placed us on hold.");
             userAgent2.RemoteTookOffHold += () => Log.LogInformation("UA2: Remote call party took us off hold.");
+            userAgent2.OnTransferNotify += (sipFrag) =>
+            {
+                Log.LogInformation($"UA2: Transfer status update: {sipFrag}.");
+
+                if(sipFrag?.Contains("sip/2.0 200") == true)
+                {
+                    // The transfer attempt got a succesful answer. Can hangup the remaining call.
+                    userAgent2.Hangup();
+                    exitCts.Cancel();
+                }
+            };
 
             sipTransport.SIPTransportRequestReceived += (locelEndPoint, remoteEndPoint, sipRequest) =>
             {
@@ -146,10 +157,9 @@ namespace SIPSorcery
                 if (activeUserAgent?.RtpSession?.DestinationEndPoint != null)
                 {
                     activeUserAgent.RtpSession.SendAudioFrame(rtpSendTimestamp, sample);
-                    rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
+                    rtpSendTimestamp += (uint)sample.Length;
                 }
             };
-
 
             // At this point the call has been initiated and everything will be handled in an event handler.
             Task.Run(async () =>
@@ -165,14 +175,7 @@ namespace SIPSorcery
                             if (userAgent1.IsCallActive && userAgent2.IsCallActive)
                             {
                                 bool result = await userAgent1.AttendedTransfer(userAgent2.Dialogue, TimeSpan.FromSeconds(TRANSFER_TIMEOUT_SECONDS), exitCts.Token);
-                                if (result)
-                                {
-                                    // If the transfer was accepted the original call will already have been hungup.
-                                    // Wait a second for the transfer NOTIFY request to arrive.
-                                    await Task.Delay(1000);
-                                    exitCts.Cancel();
-                                }
-                                else
+                                if (!result)
                                 {
                                     Log.LogWarning($"Attended transfer failed.");
                                 }

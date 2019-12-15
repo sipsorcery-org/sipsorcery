@@ -28,7 +28,7 @@ namespace SIPSorcery.SoftPhone
         void Redirect(string destination);
         void PutOnHold();
         void TakeOffHold();
-        Task<bool> Transfer(string destination);
+        Task<bool> BlindTransfer(string destination);
         void Hangup();
         void Shutdown();
     }
