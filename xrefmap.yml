@@ -13720,6 +13720,12 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
   fullName: SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
   nameWithType: SIPUserAgent.OnReinviteRequest
+- uid: SIPSorcery.SIP.App.SIPUserAgent.OnTransferNotify
+  name: OnTransferNotify
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnTransferNotify
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnTransferNotify
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.OnTransferNotify
+  nameWithType: SIPUserAgent.OnTransferNotify
 - uid: SIPSorcery.SIP.App.SIPUserAgent.PutOnHold
   name: PutOnHold()
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_PutOnHold
@@ -22715,6 +22721,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.SendRaw
   nameWithType: SIPTransport.SendRaw
+- uid: SIPSorcery.SIP.SIPTransport.SendReliable(SIPSorcery.SIP.SIPTransaction)
+  name: SendReliable(SIPTransaction)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendReliable_SIPSorcery_SIP_SIPTransaction_
+  commentId: M:SIPSorcery.SIP.SIPTransport.SendReliable(SIPSorcery.SIP.SIPTransaction)
+  fullName: SIPSorcery.SIP.SIPTransport.SendReliable(SIPSorcery.SIP.SIPTransaction)
+  nameWithType: SIPTransport.SendReliable(SIPTransaction)
+- uid: SIPSorcery.SIP.SIPTransport.SendReliable*
+  name: SendReliable
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendReliable_
+  commentId: Overload:SIPSorcery.SIP.SIPTransport.SendReliable
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransport.SendReliable
+  nameWithType: SIPTransport.SendReliable
 - uid: SIPSorcery.SIP.SIPTransport.SendRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
   name: SendRequest(SIPEndPoint, SIPRequest)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_
@@ -22785,32 +22804,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.SendResponseAsync
   nameWithType: SIPTransport.SendResponseAsync
-- uid: SIPSorcery.SIP.SIPTransport.SendSIPReliable(SIPSorcery.SIP.SIPTransaction)
-  name: SendSIPReliable(SIPTransaction)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendSIPReliable_SIPSorcery_SIP_SIPTransaction_
-  commentId: M:SIPSorcery.SIP.SIPTransport.SendSIPReliable(SIPSorcery.SIP.SIPTransaction)
-  fullName: SIPSorcery.SIP.SIPTransport.SendSIPReliable(SIPSorcery.SIP.SIPTransaction)
-  nameWithType: SIPTransport.SendSIPReliable(SIPTransaction)
-- uid: SIPSorcery.SIP.SIPTransport.SendSIPReliable*
-  name: SendSIPReliable
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendSIPReliable_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.SendSIPReliable
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.SendSIPReliable
-  nameWithType: SIPTransport.SendSIPReliable
-- uid: SIPSorcery.SIP.SIPTransport.SendSIPReliableAsync(SIPSorcery.SIP.SIPTransaction)
-  name: SendSIPReliableAsync(SIPTransaction)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendSIPReliableAsync_SIPSorcery_SIP_SIPTransaction_
-  commentId: M:SIPSorcery.SIP.SIPTransport.SendSIPReliableAsync(SIPSorcery.SIP.SIPTransaction)
-  fullName: SIPSorcery.SIP.SIPTransport.SendSIPReliableAsync(SIPSorcery.SIP.SIPTransaction)
-  nameWithType: SIPTransport.SendSIPReliableAsync(SIPTransaction)
-- uid: SIPSorcery.SIP.SIPTransport.SendSIPReliableAsync*
-  name: SendSIPReliableAsync
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendSIPReliableAsync_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.SendSIPReliableAsync
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.SendSIPReliableAsync
-  nameWithType: SIPTransport.SendSIPReliableAsync
 - uid: SIPSorcery.SIP.SIPTransport.Shutdown
   name: Shutdown()
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_Shutdown
