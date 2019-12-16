@@ -2,123 +2,44 @@
 
 The [Call Hold and Transfer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/CallHoldAndTransfer) program contains an example of how to place an established call on and off hold as well as initiate blind transfers.
 
+The example program works in the follwing manner:
+
+1. Establish a call by using a different SIP device or softphone to "call" the sample. By default the program listens on all local IP addresses and port 5060. Alternatively the program will call the `DEFAULT_DESTINATION_SIP_URI` if the `c` key is pressed.
+
+2. Once a call is established press the `h` key to put the call on and off hold.
+
+3. A blind transfer to the hard coded `TRANSFER_DESTINATION_SIP_URI` can be initiated by pressing the `t` key. Once the transfer is accepted the program no longer has access to the established call and closes.
+
 ### Call Hold
 
 There are a number of different ways to put a SIP call on hold. This example uses SIP re-INVITE requests with the RTP flow attribute modified to indicate the call hold status.
 
-The majority of the code in the example is to set up the initial the call. The interesting pieces of code as far as putting the call on hold arein the `ReinviteRequestReceived` method and in the `Task` handling the key presses ('h' is used to put the remote party on hold). Those two blocks are shown below.
+The interest pieces of code as far as putting the call on hold is in the [SIPUserAgent](https://github.com/sipsorcery/sipsorcery/blob/master/src/app/SIPUserAgents/SIPUserAgent.cs) class and the `DialogRequestReceivedAsync`. The relevant code block from that method is shown below. It revolves around the checking and setting of the media stream status atttribute on an RTP stream.
 
 ````csharp
-/// <summary>
-/// Event handler for receiving a re-INVITE request on an established call.
-/// In call requests can be used for multitude of different purposes. In this  
-/// example program we're only concerned with re-INVITE requests being used 
-/// to place a call on/off hold.
-/// </summary>
-/// <param name="uasTransaction">The user agent server invite transaction that
-/// was created for the request. It needs to be used for sending responses 
-/// to ensure reliable delivery.</param>
-private static void ReinviteRequestReceived(UASInviteTransaction uasTransaction)
+// Check for remote party putting us on and off hold.
+SDP newSDPOffer = SDP.ParseSDPDescription(sipRequest.Body);
+if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendOnly)
 {
-	SIPRequest reinviteRequest = uasTransaction.TransactionRequest;
+	// We've been put on hold.
+	var onHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.RecvOnly);
+	reInviteTransaction.SendFinalResponse(onHoldResponse);
 
-	// Re-INVITEs can also be changing the RTP end point. We can update this each time.
-	IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(reinviteRequest.Body);
-	_remoteRtpEndPoint = dstRtpEndPoint;
+	RemotePutOnHold?.Invoke();
+}
+else if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendRecv && OnHoldFromRemote)
+{
+	// We've been taken off hold.
+	var offHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.SendRecv);
+	reInviteTransaction.SendFinalResponse(offHoldResponse);
 
-	// If the RTP callfow attribute has changed it's most likely due to being placed on/off hold.
-	SDP newSDP = SDP.ParseSDPDescription(reinviteRequest.Body);
-	if (GetRTPStatusAttribute(newSDP) == RTP_ATTRIBUTE_SENDONLY)
-	{
-		Log.LogInformation("Remote call party has placed us on hold.");
-		_holdStatus = HoldStatus.RemotePutOnHold;
-
-		_ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_RECVONLY);
-		var okResponse = SIPTransport.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
-		okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
-		okResponse.Body = _ourSDP.ToString();
-		uasTransaction.SendFinalResponse(okResponse);
-	}
-	else if (GetRTPStatusAttribute(newSDP) == RTP_ATTRIBUTE_SENDRECV && _holdStatus != HoldStatus.None)
-	{
-		Log.LogInformation("Remote call party has taken us off hold.");
-		_holdStatus = HoldStatus.None;
-
-		_ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_SENDRECV);
-		var okResponse = SIPTransport.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
-		okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
-		okResponse.Body = _ourSDP.ToString();
-		uasTransaction.SendFinalResponse(okResponse);
-	}
-	else
-	{
-		Log.LogWarning("Not sure what the remote call party wants us to do...");
-
-		// We'll just reply Ok and hope eveything is good.
-		var okResponse = SIPTransport.GetResponse(reinviteRequest, SIPResponseStatusCodesEnum.Ok, null);
-		okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
-		okResponse.Body = _ourSDP.ToString();
-		uasTransaction.SendFinalResponse(okResponse);
-	}
+	RemoteTookOffHold?.Invoke();
 }
 ````
 
-The task handling user key presses is shown below.
+The hold mechanism becomes more obvious by looking at the Session Description Protocol (SDP) payloads for the re-INVITE requests. Each call hold is done by changing a single attribute on the SDP and sending it to the remote party via a re-INVITE request.
 
-````csharp
-
-// At this point the call has been initiated and everything will be handled in an event handler.
-Task.Run(() =>
-{
-	try
-	{
-		while (!exitCts.Token.WaitHandle.WaitOne(0))
-		{
-			var keyProps = Console.ReadKey();
-			if (keyProps.KeyChar == 'h')
-			{
-				// Place call on/off hold.
-				if (userAgent.IsAnswered)
-				{
-					if (_holdStatus == HoldStatus.None)
-					{
-						Log.LogInformation("Placing the remote call party on hold.");
-						_holdStatus = HoldStatus.WePutOnHold;
-						_ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_SENDONLY);
-						userAgent.SendReInviteRequest(_ourSDP);
-					}
-					else if (_holdStatus == HoldStatus.WePutOnHold)
-					{
-						Log.LogInformation("Removing the remote call party from hold.");
-						_holdStatus = HoldStatus.None;
-						_ourSDP = GetSDP(_ourRtpSocket.LocalEndPoint as IPEndPoint, RTP_ATTRIBUTE_SENDRECV);
-						userAgent.SendReInviteRequest(_ourSDP);
-					}
-					else
-					{
-						Log.LogInformation("Sorry we're already on hold by the remote call party.");
-					}
-				}
-			}
-			else if (keyProps.KeyChar == 'q')
-			{
-				// Quit application.
-				exitCts.Cancel();
-			}
-		}
-	}
-	catch (Exception excp)
-	{
-		SIPSorcery.Sys.Log.Logger.LogError($"Exception Key Press listener. {excp.Message}.");
-	}
-});
-````
-
-In the case of the `ReinviteRequestReceived` the remote party is placing the call on and off hold. In the second case handlng it's the example program putting the call on and off hold.
-
-Each call hold is done by changing a single attribute on the SDP and sending it to the remote party via a re-INVITE request.
-
-For example the original SDP sent to establish the call will look something like the payload below. The important attribute is the last one `a=sendrecv`.
+The SDP below is for an RTP stream that is not on hold. The important attribute is the last one, `a=sendrecv`.
 
 ````
 v=0
@@ -144,7 +65,7 @@ a=rtpmap:0 PCMU/8000
 a=sendonly
 ````
 
-They will respond with an SDP payload along the lines of what's shown below. Again the line changing is the last attribute `a=recvonly`.
+They will respond with an SDP payload with the last attribute set as `a=recvonly`.
 
 ````
 v=0
@@ -156,77 +77,37 @@ m=audio 59228 RTP/AVP 0
 a=recvonly
 ````
 
-To take the call off hold it's a matter of setting the RTP flow attribute back to `sendrecv` as shown in the original SDP.
+To take the call off hold the RTP flow attribute needs to be set back to `sendrecv` as shown in the first SDP packet.
 
 ### Blind Transfer
 
-Another difference is this example uses the `SIPUserAgent` instead of the `SIPClientUserAgent`. The `SIPUserAgent` is a combination of the client and server user agents and also understands in dialog requests (things like call hold and transfer). By contrast the `SIPClientUserAgent` considers its job done once the call attempt it answered or rejected.
-
-The type of transfer used is a `Blind Transfer`. The remote call party is requested to place a new call directly. An `Attended Transfer` is where the transferee places the call, does some talking (assumedly) and then bridges the two parties together.
-
-The diagram below represents a typical call flow when using this program. The `softphone` calls the `sipsorcery` program. After answering the `sipsorcery` program transfers the `softphone` by requesting it to place a call to the `asterisk` server.
+The blind transfer function in the program demonstrates how to direct a remote call party to call a new destination. In a blind transfer the remote call party is requested to place a new call directly. An `Attended Transfer` is where the transferee places the call, does some talking (assumedly) and then bridges the two parties together.
 
 The example uses REFER requests as specified in [RFC3515](https://tools.ietf.org/html/rfc3515).
 
-![image](images/xfer_callflow.png)
-
-
-The key piece of code is:
+The key piece of code is again in the [SIPUserAgent](https://github.com/sipsorcery/sipsorcery/blob/master/src/app/SIPUserAgents/SIPUserAgent.cs) class and a combination of the `GetReferRequest` method, which is shown below and the `Transfer` method.
 
 ````csharp
-// At this point the call is established. We'll wait for a few seconds and then transfer.
-Task.Delay(DELAY_UNTIL_TRANSFER_MILLISECONDS).Wait();
-
-SIPRequest referRequest = GetReferRequest(uac, SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI));
-SIPNonInviteTransaction referTx = sipTransport.CreateNonInviteTransaction(referRequest, referRequest.RemoteSIPEndPoint, referRequest.LocalSIPEndPoint, null);
-
-referTx.NonInviteTransactionFinalResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse) =>
+/// <summary>
+/// Builds the REFER request to initiate a blind transfer on an established call.
+/// </summary>
+/// <param name="referToUri">The SIP URI to transfer the call to.</param>
+/// <returns>A SIP REFER request.</returns>
+private SIPRequest GetReferRequest(SIPURI referToUri)
 {
-	if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
-	{
-		Log.LogInformation("Call transfer was accepted by remote server.");
-		isCallHungup = true;
-		rtpCts.Cancel();
-	}
-};
-
-referTx.SendReliableRequest();
-
-// At this point the call transfer has been initiated and everything will be handled in an event handler or on the RTP
-// receive task. The code below is to gracefully exit.
-````
-
-The method used to construct the REFER request is:
-
-````csharp
-private static SIPRequest GetReferRequest(SIPClientUserAgent uac, SIPURI referToUri)
-{
-	SIPDialogue sipDialogue = uac.SIPDialogue;
-
-	SIPRequest referRequest = new SIPRequest(SIPMethodsEnum.REFER, sipDialogue.RemoteTarget);
-	SIPFromHeader referFromHeader = SIPFromHeader.ParseFromHeader(sipDialogue.LocalUserField.ToString());
-	SIPToHeader referToHeader = SIPToHeader.ParseToHeader(sipDialogue.RemoteUserField.ToString());
-	int cseq = sipDialogue.CSeq + 1;
-	sipDialogue.CSeq++;
-
-	SIPHeader referHeader = new SIPHeader(referFromHeader, referToHeader, cseq, sipDialogue.CallId);
-	referHeader.CSeqMethod = SIPMethodsEnum.REFER;
-	referRequest.Header = referHeader;
-	referRequest.Header.Routes = sipDialogue.RouteSet;
-	referRequest.Header.ProxySendFrom = sipDialogue.ProxySendFrom;
-
-	SIPViaHeader viaHeader = new SIPViaHeader(uac.ServerTransaction.LocalSIPEndPoint, CallProperties.CreateBranchId());
-	referRequest.Header.Vias.PushViaHeader(viaHeader);
-
+	SIPRequest referRequest = Dialogue.GetInDialogRequest(SIPMethodsEnum.REFER);
 	referRequest.Header.ReferTo = referToUri.ToString();
-	referRequest.Header.Contact = new List<SIPContactHeader>() { new SIPContactHeader(null, uac.ServerTransaction.TransactionRequest.Header.Contact.First().ContactURI) };
-	referRequest.RemoteSIPEndPoint = uac.ServerTransaction.RemoteEndPoint;
-
+	referRequest.Header.Supported = SIPExtensionHeaders.NO_REFER_SUB;
+	referRequest.Header.Contact = new List<SIPContactHeader> { SIPContactHeader.GetDefaultSIPContactHeader() };
 	return referRequest;
 }
 ````
 
-Within that method the most important part is the setting of the `ReferTo` header. It's what determines where the remote user agent will is being asked to place a new call to.
+The diagram below represents a typical call flow when using this program. The `softphone` calls the `sipsorcery` program. After answering the `sipsorcery` program transfers the `softphone` by requesting it to place a call to the `asterisk` server.
+
+![image](images/xfer_callflow.png)
+
+In the `REFER` request the mst important header is the `ReferTo`. It's what determines where the remote user agent will is being asked to place a new call to.
 
 **It's important to note that a REFER request "asks" the remote user agent to try placing a new call to the SIP URI specified. There is no guarantee it will or that the call will succeed. It's important to deal with cases where the REFER request is rejected.**
 
