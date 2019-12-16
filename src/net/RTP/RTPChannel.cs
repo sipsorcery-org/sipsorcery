@@ -249,21 +249,20 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="createControlSocket">Set to true if a separate RTCP control socket should be created. If RTP and
         /// RTCP are being multiplexed (as they are for WebRTC) there's no need to a separate control socket.</param>
-        public RTPChannel(IPAddress localAddress, bool createControlSocket)
-        {
-            CreatedAt = DateTime.Now;
-            NetServices.CreateRtpSocket(localAddress, MEDIA_PORT_START, MEDIA_PORT_END, createControlSocket, out _rtpSocket, out _controlSocket);
-        }
-
-        /// <summary>
-        /// Creates a new RTP channel and allows the initial remote end points to be set.
-        /// </summary>
-        /// <param name="createControlSocket">Set to true if a separate RTCP control socket should be created.</param>
         /// <param name="rtpRemoteEndPoint">The remote end point that the RTP socket is sending to.</param>
         /// <param name="controlEndPoint">The remote end point that the RTCP control socket is sending to.</param>
-        public RTPChannel(IPAddress localAddress, bool createControlSocket, IPEndPoint rtpRemoteEndPoint, IPEndPoint controlEndPoint)
-            : this(localAddress, createControlSocket)
+        /// <param name="mediaStartPort">The remote end point that the RTCP control socket is sending to.</param>
+        /// <param name="mediaEndPort">The remote end point that the RTCP control socket is sending to.</param>
+        public RTPChannel(IPAddress localAddress,
+                          bool createControlSocket,
+                          IPEndPoint rtpRemoteEndPoint = null,
+                          IPEndPoint controlEndPoint = null,
+                          int mediaStartPort = MEDIA_PORT_START,
+                          int mediaEndPort = MEDIA_PORT_END)
         {
+            CreatedAt = DateTime.Now;
+            NetServices.CreateRtpSocket(localAddress, mediaStartPort, mediaEndPort, createControlSocket, out _rtpSocket, out _controlSocket);
+
             RemoteRTPEndPoint = rtpRemoteEndPoint;
             RemoteControlEndPoint = controlEndPoint;
         }
