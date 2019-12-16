@@ -1373,12 +1373,15 @@ namespace SIPSorcery.SIP
 
         public SIPDNSLookupResult GetHostEndPoint(string host, bool async)
         {
-            return ResolveSIPEndPoint_External(SIPURI.ParseSIPURIRelaxed(host), async);
+            //return ResolveSIPEndPoint_External(SIPURI.ParseSIPURIRelaxed(host), async);
+            SIPURI uri = SIPURI.ParseSIPURIRelaxed(host);
+            return this.GetURIEndPoint(uri, async);
         }
 
         public SIPDNSLookupResult GetURIEndPoint(SIPURI uri, bool async)
         {
-            return ResolveSIPEndPoint_External(uri, async);
+            //return ResolveSIPEndPoint_External(uri, async);
+            return ResolveSIPEndPoint_External(uri, async, null);
         }
 
         /// <summary>
