@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Namespace SIPSorcery.SIP.App
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.48.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -144,7 +144,13 @@ uses XML to convey dialog notifications, RFC3842 uses plain text to convery mess
 a client user agent.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a></h4>
-      <section></section>
+      <section><p>A &quot;full&quot; SIP user agent that encompasses both client and server user agents.
+It is also able to manage in dialog operations after the call is established
+(the client and server user agents don't handle in dialog operations).</p>
+<p>Unlike other user agents this one also manages its own RTP session object
+which means it can handle things like call on and off hold, RTP end point
+changes and sending DTMF events.</p>
+</section>
     <h3 id="interfaces">Interfaces
   </h3>
       <h4><a class="xref" href="SIPSorcery.SIP.App.ISIPClientUserAgent.html">ISIPClientUserAgent</a></h4>

@@ -1,0 +1,560 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class SDPSecurityDescription
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class SDPSecurityDescription
+   ">
+    <meta name="generator" content="docfx 2.48.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.SDPSecurityDescription">
+  
+  
+  <h1 id="SIPSorcery_Net_SDPSecurityDescription" data-uid="SIPSorcery.Net.SDPSecurityDescription" class="text-break">Class SDPSecurityDescription
+  </h1>
+  <div class="markdown level0 summary"><p>(SDP) Security Descriptions for Media Streams implementation as basically defined in RFC 4568.</p>
+<pre><code>Example 1: Parse crypto attribute
+
+string crypto = &quot;a=crypto:1 AES_256_CM_HMAC_SHA1_80 inline:GTuZoqOsesiK4wfyL7Rsq6uHHwhqVGA+aVuAUnsmWktYacZyJu6/6tUQeUti0Q==&quot;;
+SDPSecurityDescription localcrypto = SDPSecurityDescription.Parse(crypto);</code></pre>
+<pre><code>Example 2: Parse crypto attribute
+
+SDPMediaAnnouncement mediaAudio = new SDPMediaAnnouncement();
+//[...]set some SDPMediaAnnouncement properties
+SDPSecurityDescription localcrypto = SDPSecurityDescription.CreateNew();
+localcrypto.KeyParams.Clear();
+localcrypto.KeyParams.Add(SDPSecurityDescription.KeyParameter.CreateNew(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_32));
+mediaAudio.SecurityDescriptions.Add(localcrypto);
+mediaAudio.ToString();
+
+string crypto = &quot;a=crypto:1 AES_256_CM_HMAC_SHA1_80 inline:GTuZoqOsesiK4wfyL7Rsq6uHHwhqVGA+aVuAUnsmWktYacZyJu6/6tUQeUti0Q==&quot;;
+SDPSecurityDescription desc = SDPSecurityDescription.Parse(crypto);</code></pre>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">SDPSecurityDescription</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Net_SDPSecurityDescription_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class SDPSecurityDescription</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L815">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPSecurityDescription__ctor_" data-uid="SIPSorcery.Net.SDPSecurityDescription.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_SDPSecurityDescription__ctor" data-uid="SIPSorcery.Net.SDPSecurityDescription.#ctor">SDPSecurityDescription()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SDPSecurityDescription()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription__ctor_System_UInt32_SIPSorcery_Net_SDPSecurityDescription_CryptoSuites_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription.%23ctor(System.UInt32%2CSIPSorcery.Net.SDPSecurityDescription.CryptoSuites)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L819">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPSecurityDescription__ctor_" data-uid="SIPSorcery.Net.SDPSecurityDescription.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_SDPSecurityDescription__ctor_System_UInt32_SIPSorcery_Net_SDPSecurityDescription_CryptoSuites_" data-uid="SIPSorcery.Net.SDPSecurityDescription.#ctor(System.UInt32,SIPSorcery.Net.SDPSecurityDescription.CryptoSuites)">SDPSecurityDescription(UInt32, SDPSecurityDescription.CryptoSuites)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SDPSecurityDescription(uint tag, SDPSecurityDescription.CryptoSuites cryptoSuite)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">tag</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.CryptoSuites.html">SDPSecurityDescription.CryptoSuites</a></td>
+        <td><span class="parametername">cryptoSuite</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription_CRYPTO_ATTRIBUE_PREFIX.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription.CRYPTO_ATTRIBUE_PREFIX%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L44">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_SDPSecurityDescription_CRYPTO_ATTRIBUE_PREFIX" data-uid="SIPSorcery.Net.SDPSecurityDescription.CRYPTO_ATTRIBUE_PREFIX">CRYPTO_ATTRIBUE_PREFIX</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const string CRYPTO_ATTRIBUE_PREFIX = &quot;a=crypto:&quot;</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription_CryptoSuite.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription.CryptoSuite%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L799">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPSecurityDescription_CryptoSuite_" data-uid="SIPSorcery.Net.SDPSecurityDescription.CryptoSuite*"></a>
+  <h4 id="SIPSorcery_Net_SDPSecurityDescription_CryptoSuite" data-uid="SIPSorcery.Net.SDPSecurityDescription.CryptoSuite">CryptoSuite</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SDPSecurityDescription.CryptoSuites CryptoSuite { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.CryptoSuites.html">SDPSecurityDescription.CryptoSuites</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription_KeyParams.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription.KeyParams%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L805">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPSecurityDescription_KeyParams_" data-uid="SIPSorcery.Net.SDPSecurityDescription.KeyParams*"></a>
+  <h4 id="SIPSorcery_Net_SDPSecurityDescription_KeyParams" data-uid="SIPSorcery.Net.SDPSecurityDescription.KeyParams">KeyParams</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;SDPSecurityDescription.KeyParameter&gt; KeyParams { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.KeyParameter.html">SDPSecurityDescription.KeyParameter</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription_SessionParam.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription.SessionParam%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L810">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPSecurityDescription_SessionParam_" data-uid="SIPSorcery.Net.SDPSecurityDescription.SessionParam*"></a>
+  <h4 id="SIPSorcery_Net_SDPSecurityDescription_SessionParam" data-uid="SIPSorcery.Net.SDPSecurityDescription.SessionParam">SessionParam</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SDPSecurityDescription.SessionParameter SessionParam { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.SessionParameter.html">SDPSecurityDescription.SessionParameter</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription_Tag.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription.Tag%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L779">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPSecurityDescription_Tag_" data-uid="SIPSorcery.Net.SDPSecurityDescription.Tag*"></a>
+  <h4 id="SIPSorcery_Net_SDPSecurityDescription_Tag" data-uid="SIPSorcery.Net.SDPSecurityDescription.Tag">Tag</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public uint Tag { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription_CreateNew_System_UInt32_SIPSorcery_Net_SDPSecurityDescription_CryptoSuites_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription.CreateNew(System.UInt32%2CSIPSorcery.Net.SDPSecurityDescription.CryptoSuites)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L826">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPSecurityDescription_CreateNew_" data-uid="SIPSorcery.Net.SDPSecurityDescription.CreateNew*"></a>
+  <h4 id="SIPSorcery_Net_SDPSecurityDescription_CreateNew_System_UInt32_SIPSorcery_Net_SDPSecurityDescription_CryptoSuites_" data-uid="SIPSorcery.Net.SDPSecurityDescription.CreateNew(System.UInt32,SIPSorcery.Net.SDPSecurityDescription.CryptoSuites)">CreateNew(UInt32, SDPSecurityDescription.CryptoSuites)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SDPSecurityDescription CreateNew(uint tag = 1U, SDPSecurityDescription.CryptoSuites cryptoSuite = SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_80)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">tag</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.CryptoSuites.html">SDPSecurityDescription.CryptoSuites</a></td>
+        <td><span class="parametername">cryptoSuite</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.html">SDPSecurityDescription</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription_Parse_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription.Parse(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L857">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPSecurityDescription_Parse_" data-uid="SIPSorcery.Net.SDPSecurityDescription.Parse*"></a>
+  <h4 id="SIPSorcery_Net_SDPSecurityDescription_Parse_System_String_" data-uid="SIPSorcery.Net.SDPSecurityDescription.Parse(System.String)">Parse(String)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SDPSecurityDescription Parse(string cryptoLine)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">cryptoLine</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.html">SDPSecurityDescription</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription_ToString.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription.ToString%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L833">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPSecurityDescription_ToString_" data-uid="SIPSorcery.Net.SDPSecurityDescription.ToString*"></a>
+  <h4 id="SIPSorcery_Net_SDPSecurityDescription_ToString" data-uid="SIPSorcery.Net.SDPSecurityDescription.ToString">ToString()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string ToString()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.ToString()</span></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription_TryParse_System_String_SIPSorcery_Net_SDPSecurityDescription__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription.TryParse(System.String%2CSIPSorcery.Net.SDPSecurityDescription%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L913">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_SDPSecurityDescription_TryParse_" data-uid="SIPSorcery.Net.SDPSecurityDescription.TryParse*"></a>
+  <h4 id="SIPSorcery_Net_SDPSecurityDescription_TryParse_System_String_SIPSorcery_Net_SDPSecurityDescription__" data-uid="SIPSorcery.Net.SDPSecurityDescription.TryParse(System.String,SIPSorcery.Net.SDPSecurityDescription@)">TryParse(String, out SDPSecurityDescription)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool TryParse(string cryptoLine, out SDPSecurityDescription securityDescription)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">cryptoLine</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.html">SDPSecurityDescription</a></td>
+        <td><span class="parametername">securityDescription</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_SDPSecurityDescription.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.SDPSecurityDescription%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/SDP/SDPSecurityDescription.cs/#L42" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

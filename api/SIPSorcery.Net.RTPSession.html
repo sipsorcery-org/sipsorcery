@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class RTPSession
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.48.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -114,20 +114,20 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession__ctor_System_Int32_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.%23ctor(System.Int32%2CSIPSorcery.Net.ProtectRtpPacket%2CSIPSorcery.Net.ProtectRtpPacket)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession__ctor_System_Int32_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.%23ctor(System.Int32%2CSIPSorcery.Net.ProtectRtpPacket%2CSIPSorcery.Net.ProtectRtpPacket%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L86">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L139">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession__ctor_" data-uid="SIPSorcery.Net.RTPSession.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_RTPSession__ctor_System_Int32_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_" data-uid="SIPSorcery.Net.RTPSession.#ctor(System.Int32,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)">RTPSession(Int32, ProtectRtpPacket, ProtectRtpPacket)</h4>
+  <h4 id="SIPSorcery_Net_RTPSession__ctor_System_Int32_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_System_Boolean_" data-uid="SIPSorcery.Net.RTPSession.#ctor(System.Int32,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,System.Boolean)">RTPSession(Int32, ProtectRtpPacket, ProtectRtpPacket, Boolean)</h4>
   <div class="markdown level1 summary"><p>Creates a new RTP session. The synchronisation source and sequence number are initialised to
 pseudo random values.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public RTPSession(int payloadType, ProtectRtpPacket srtpProtect, ProtectRtpPacket srtcpProtect)</code></pre>
+    <pre><code class="lang-csharp hljs">public RTPSession(int formatTypeID, ProtectRtpPacket srtpProtect, ProtectRtpPacket srtcpProtect, bool rtpEventSupport)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -141,8 +141,9 @@ pseudo random values.</p>
     <tbody>
       <tr>
         <td><span class="xref">System.Int32</span></td>
-        <td><span class="parametername">payloadType</span></td>
-        <td><p>The payload type for the media attached to the sync source.</p>
+        <td><span class="parametername">formatTypeID</span></td>
+        <td><p>The format type ID for the media. It's what gets set in the payload
+type ID field in the RTP header. A default media announcement will be created.</p>
 </td>
       </tr>
       <tr>
@@ -157,6 +158,12 @@ pseudo random values.</p>
         <td><p>Optional secure DTLS context for encrypting RTCP packets.</p>
 </td>
       </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">rtpEventSupport</span></td>
+        <td><p>True if RTP event sending and receiving should be supported.</p>
+</td>
+      </tr>
     </tbody>
   </table>
   <h3 id="fields">Fields
@@ -166,7 +173,7 @@ pseudo random values.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_DestinationEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.DestinationEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L75">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L101">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTPSession_DestinationEndPoint" data-uid="SIPSorcery.Net.RTPSession.DestinationEndPoint">DestinationEndPoint</h4>
   <div class="markdown level1 summary"><p>The remote end point this session is sending to.</p>
@@ -193,10 +200,68 @@ pseudo random values.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_DTMF_EVENT_PAYLOAD_ID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.DTMF_EVENT_PAYLOAD_ID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L44">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTPSession_DTMF_EVENT_PAYLOAD_ID" data-uid="SIPSorcery.Net.RTPSession.DTMF_EVENT_PAYLOAD_ID">DTMF_EVENT_PAYLOAD_ID</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int DTMF_EVENT_PAYLOAD_ID = 101</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_H264_RTP_HEADER_LENGTH.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.H264_RTP_HEADER_LENGTH%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L39">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTPSession_H264_RTP_HEADER_LENGTH" data-uid="SIPSorcery.Net.RTPSession.H264_RTP_HEADER_LENGTH">H264_RTP_HEADER_LENGTH</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int H264_RTP_HEADER_LENGTH = 2</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L36">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L42">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTPSession_RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS" data-uid="SIPSorcery.Net.RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS">RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS</h4>
   <div class="markdown level1 summary"></div>
@@ -220,14 +285,142 @@ pseudo random values.</p>
       </tr>
     </tbody>
   </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_TELEPHONE_EVENT_ATTRIBUTE.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.TELEPHONE_EVENT_ATTRIBUTE%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L40">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTPSession_TELEPHONE_EVENT_ATTRIBUTE" data-uid="SIPSorcery.Net.RTPSession.TELEPHONE_EVENT_ATTRIBUTE">TELEPHONE_EVENT_ATTRIBUTE</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const string TELEPHONE_EVENT_ATTRIBUTE = &quot;telephone-event&quot;</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="properties">Properties
   </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_FormatTypeID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.FormatTypeID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L86">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_FormatTypeID_" data-uid="SIPSorcery.Net.RTPSession.FormatTypeID*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_FormatTypeID" data-uid="SIPSorcery.Net.RTPSession.FormatTypeID">FormatTypeID</h4>
+  <div class="markdown level1 summary"><p>The selected format (codec) ID from the type available in the media announcment.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int FormatTypeID { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_MediaAnnouncement.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.MediaAnnouncement%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L76">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_MediaAnnouncement_" data-uid="SIPSorcery.Net.RTPSession.MediaAnnouncement*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_MediaAnnouncement" data-uid="SIPSorcery.Net.RTPSession.MediaAnnouncement">MediaAnnouncement</h4>
+  <div class="markdown level1 summary"><p>The media announcement from the Session Description Protocol that describes this RTP session.</p>
+<pre><code>// Example:
+m=audio 10000 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=sendrecv</code></pre>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SDPMediaAnnouncement MediaAnnouncement { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaAnnouncement.html">SDPMediaAnnouncement</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_MediaFormat.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.MediaFormat%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L81">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_MediaFormat_" data-uid="SIPSorcery.Net.RTPSession.MediaFormat*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_MediaFormat" data-uid="SIPSorcery.Net.RTPSession.MediaFormat">MediaFormat</h4>
+  <div class="markdown level1 summary"><p>The format from within the media announcement that the session is currently using.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SDPMediaFormat MediaFormat { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaFormat.html">SDPMediaFormat</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_OctetsSent.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.OctetsSent%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L48">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L58">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_OctetsSent_" data-uid="SIPSorcery.Net.RTPSession.OctetsSent*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_OctetsSent" data-uid="SIPSorcery.Net.RTPSession.OctetsSent">OctetsSent</h4>
@@ -257,7 +450,7 @@ pseudo random values.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_PacketsSent.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.PacketsSent%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L47">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L57">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_PacketsSent_" data-uid="SIPSorcery.Net.RTPSession.PacketsSent*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_PacketsSent" data-uid="SIPSorcery.Net.RTPSession.PacketsSent">PacketsSent</h4>
@@ -284,19 +477,19 @@ pseudo random values.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_PayloadType.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.PayloadType%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_RemoteSDP.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.RemoteSDP%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L43">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L106">View Source</a>
   </span>
-  <a id="SIPSorcery_Net_RTPSession_PayloadType_" data-uid="SIPSorcery.Net.RTPSession.PayloadType*"></a>
-  <h4 id="SIPSorcery_Net_RTPSession_PayloadType" data-uid="SIPSorcery.Net.RTPSession.PayloadType">PayloadType</h4>
-  <div class="markdown level1 summary"><p>The payload type for the RTP packet header.</p>
+  <a id="SIPSorcery_Net_RTPSession_RemoteSDP_" data-uid="SIPSorcery.Net.RTPSession.RemoteSDP*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_RemoteSDP" data-uid="SIPSorcery.Net.RTPSession.RemoteSDP">RemoteSDP</h4>
+  <div class="markdown level1 summary"><p>The SDP offered by the remote call party for this session.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int PayloadType { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public SDP RemoteSDP { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -308,7 +501,38 @@ pseudo random values.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Int32</span></td>
+        <td><a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_RtpChannel.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.RtpChannel%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L63">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_RtpChannel_" data-uid="SIPSorcery.Net.RTPSession.RtpChannel*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_RtpChannel" data-uid="SIPSorcery.Net.RTPSession.RtpChannel">RtpChannel</h4>
+  <div class="markdown level1 summary"><p>The RTP communications channel this session is sending and receiving on.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTPChannel RtpChannel { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTPChannel.html">RTPChannel</a></td>
         <td></td>
       </tr>
     </tbody>
@@ -318,7 +542,7 @@ pseudo random values.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SeqNum.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SeqNum%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L45">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L55">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_SeqNum_" data-uid="SIPSorcery.Net.RTPSession.SeqNum*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_SeqNum" data-uid="SIPSorcery.Net.RTPSession.SeqNum">SeqNum</h4>
@@ -348,7 +572,7 @@ pseudo random values.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SrtcpProtect.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SrtcpProtect%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L58">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L96">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_SrtcpProtect_" data-uid="SIPSorcery.Net.RTPSession.SrtcpProtect*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_SrtcpProtect" data-uid="SIPSorcery.Net.RTPSession.SrtcpProtect">SrtcpProtect</h4>
@@ -379,7 +603,7 @@ pseudo random values.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SrtpProtect.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SrtpProtect%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L53">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L91">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_SrtpProtect_" data-uid="SIPSorcery.Net.RTPSession.SrtpProtect*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_SrtpProtect" data-uid="SIPSorcery.Net.RTPSession.SrtpProtect">SrtpProtect</h4>
@@ -410,7 +634,7 @@ pseudo random values.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_Ssrc.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.Ssrc%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L44">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L54">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_Ssrc_" data-uid="SIPSorcery.Net.RTPSession.Ssrc*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_Ssrc" data-uid="SIPSorcery.Net.RTPSession.Ssrc">Ssrc</h4>
@@ -439,10 +663,78 @@ pseudo random values.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_Close.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.Close%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L595">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_Close_" data-uid="SIPSorcery.Net.RTPSession.Close*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_Close" data-uid="SIPSorcery.Net.RTPSession.Close">Close()</h4>
+  <div class="markdown level1 summary"><p>Close the session and RTP channel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Close()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_GetSDP_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.GetSDP(System.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L576">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_GetSDP_" data-uid="SIPSorcery.Net.RTPSession.GetSDP*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_GetSDP_System_Net_IPAddress_" data-uid="SIPSorcery.Net.RTPSession.GetSDP(System.Net.IPAddress)">GetSDP(IPAddress)</h4>
+  <div class="markdown level1 summary"><p>Gets the a basic Session Description Protocol object that describes this RTP session.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SDP GetSDP(IPAddress localAddress)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="parametername">localAddress</span></td>
+        <td><p>The RTP socket we will be sending from. Note this can't be IPAddress.Any as
+it's getting sent to the callee. An IP address of 0.0.0.0 or [::0] will typically be interpreted as
+&quot;don't send me any RTP&quot;.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a></td>
+        <td><p>An Session Description Protocol object that can be sent to a remote callee.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_RtpReceive_System_Byte___System_Int32_System_Int32_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.RtpReceive(System.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L313">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L724">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_RtpReceive_" data-uid="SIPSorcery.Net.RTPSession.RtpReceive*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_RtpReceive_System_Byte___System_Int32_System_Int32_System_Net_IPEndPoint_" data-uid="SIPSorcery.Net.RTPSession.RtpReceive(System.Byte[],System.Int32,System.Int32,System.Net.IPEndPoint)">RtpReceive(Byte[], Int32, Int32, IPEndPoint)</h4>
@@ -451,7 +743,8 @@ pseudo random values.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public RTPPacket RtpReceive(byte[] buffer, int offset, int count, IPEndPoint remoteEndPoint)</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;Use alternative receive method&quot;, true)]
+public RTPPacket RtpReceive(byte[] buffer, int offset, int count, IPEndPoint remoteEndPoint)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -507,19 +800,18 @@ pseudo random values.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendAudioFrame_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendAudioFrame(System.Net.Sockets.Socket%2CSystem.Net.IPEndPoint%2CSystem.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendAudioFrame_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendAudioFrame(System.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L98">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L208">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_SendAudioFrame_" data-uid="SIPSorcery.Net.RTPSession.SendAudioFrame*"></a>
-  <h4 id="SIPSorcery_Net_RTPSession_SendAudioFrame_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_System_Byte___" data-uid="SIPSorcery.Net.RTPSession.SendAudioFrame(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32,System.Byte[])">SendAudioFrame(Socket, IPEndPoint, UInt32, Byte[])</h4>
-  <div class="markdown level1 summary"><p>Packages and sends a single audio frame over one or more RTP packets.</p>
-</div>
+  <h4 id="SIPSorcery_Net_RTPSession_SendAudioFrame_System_UInt32_System_Byte___" data-uid="SIPSorcery.Net.RTPSession.SendAudioFrame(System.UInt32,System.Byte[])">SendAudioFrame(UInt32, Byte[])</h4>
+  <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SendAudioFrame(Socket srcRtpSocket, IPEndPoint dstRtpSocket, uint timestamp, byte[] buffer)</code></pre>
+    <pre><code class="lang-csharp hljs">public void SendAudioFrame(uint timestamp, byte[] buffer)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -531,16 +823,6 @@ pseudo random values.</p>
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><span class="xref">System.Net.Sockets.Socket</span></td>
-        <td><span class="parametername">srcRtpSocket</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
-        <td><span class="parametername">dstRtpSocket</span></td>
-        <td></td>
-      </tr>
       <tr>
         <td><span class="xref">System.UInt32</span></td>
         <td><span class="parametername">timestamp</span></td>
@@ -555,13 +837,13 @@ pseudo random values.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendDtmfEvent_System_Net_Sockets_Socket_System_Net_IPEndPoint_SIPSorcery_Net_RTPEvent_System_UInt32_System_UInt16_System_UInt16_System_Threading_CancellationTokenSource_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendDtmfEvent(System.Net.Sockets.Socket%2CSystem.Net.IPEndPoint%2CSIPSorcery.Net.RTPEvent%2CSystem.UInt32%2CSystem.UInt16%2CSystem.UInt16%2CSystem.Threading.CancellationTokenSource)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationTokenSource_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent%2CSystem.Threading.CancellationTokenSource)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L237">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L474">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_SendDtmfEvent_" data-uid="SIPSorcery.Net.RTPSession.SendDtmfEvent*"></a>
-  <h4 id="SIPSorcery_Net_RTPSession_SendDtmfEvent_System_Net_Sockets_Socket_System_Net_IPEndPoint_SIPSorcery_Net_RTPEvent_System_UInt32_System_UInt16_System_UInt16_System_Threading_CancellationTokenSource_" data-uid="SIPSorcery.Net.RTPSession.SendDtmfEvent(System.Net.Sockets.Socket,System.Net.IPEndPoint,SIPSorcery.Net.RTPEvent,System.UInt32,System.UInt16,System.UInt16,System.Threading.CancellationTokenSource)">SendDtmfEvent(Socket, IPEndPoint, RTPEvent, UInt32, UInt16, UInt16, CancellationTokenSource)</h4>
+  <h4 id="SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationTokenSource_" data-uid="SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent,System.Threading.CancellationTokenSource)">SendDtmfEvent(RTPEvent, CancellationTokenSource)</h4>
   <div class="markdown level1 summary"><p>Sends an RTP event for a DTMF tone as per RFC2833. Sending the event requires multiple packets to be sent.
 This method will hold onto the socket until all the packets required for the event have been sent. The send
 can be cancelled using the cancellation token.</p>
@@ -569,7 +851,7 @@ can be cancelled using the cancellation token.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Task SendDtmfEvent(Socket srcRtpSocket, IPEndPoint dstRtpSocket, RTPEvent rtpEvent, uint startTimestamp, ushort samplePeriod, ushort timestampStep, CancellationTokenSource cts)</code></pre>
+    <pre><code class="lang-csharp hljs">public Task SendDtmfEvent(RTPEvent rtpEvent, CancellationTokenSource cts)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -582,42 +864,9 @@ can be cancelled using the cancellation token.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.Sockets.Socket</span></td>
-        <td><span class="parametername">srcRtpSocket</span></td>
-        <td><p>The local RTP socket to send the event from.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
-        <td><span class="parametername">dstRtpSocket</span></td>
-        <td><p>The remote RTP socket to send the event to.</p>
-</td>
-      </tr>
-      <tr>
         <td><a class="xref" href="SIPSorcery.Net.RTPEvent.html">RTPEvent</a></td>
         <td><span class="parametername">rtpEvent</span></td>
         <td><p>The RTP event to send.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.UInt32</span></td>
-        <td><span class="parametername">startTimestamp</span></td>
-        <td><p>The RTP timestamp at the start of the event.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.UInt16</span></td>
-        <td><span class="parametername">samplePeriod</span></td>
-        <td><p>The sample period in milliseconds being used for the media stream that the event
-is being inserted into. Should be set to 50ms if main media stream is dynamic or sample period is unknown.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.UInt16</span></td>
-        <td><span class="parametername">timestampStep</span></td>
-        <td><p>The RTP timestamp step corresponding to the sampling period. This can change depending
-on the codec being used. For example using PCMU with a sampling frequency of 8000Hz the timestamp step
-for a sample period of 50ms is 400 (8000 / (1000 / 50)). For a sample period of 20ms it's 160 (8000 / (1000 / 20)).</p>
 </td>
       </tr>
       <tr>
@@ -645,10 +894,126 @@ for a sample period of 50ms is 400 (8000 / (1000 / 50)). For a sample period of 
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendH264Frame_System_UInt32_System_Byte___System_UInt32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendH264Frame(System.UInt32%2CSystem.Byte%5B%5D%2CSystem.UInt32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L371">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_SendH264Frame_" data-uid="SIPSorcery.Net.RTPSession.SendH264Frame*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_SendH264Frame_System_UInt32_System_Byte___System_UInt32_System_Int32_" data-uid="SIPSorcery.Net.RTPSession.SendH264Frame(System.UInt32,System.Byte[],System.UInt32,System.Int32)">SendH264Frame(UInt32, Byte[], UInt32, Int32)</h4>
+  <div class="markdown level1 summary"><p>H264 frames need a two byte header when transmitted over RTP.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SendH264Frame(uint timestamp, byte[] frame, uint frameSpacing, int payloadType)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">timestamp</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">frame</span></td>
+        <td><p>The H264 encoded frame to transmit.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">frameSpacing</span></td>
+        <td><p>The increment to add to the RTP timestamp for each new frame.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">payloadType</span></td>
+        <td><p>The payload type to set on the RTP packet.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendJpegFrame_System_UInt32_System_Byte___System_Int32_System_Int32_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendJpegFrame(System.UInt32%2CSystem.Byte%5B%5D%2CSystem.Int32%2CSystem.Int32%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L322">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_SendJpegFrame_" data-uid="SIPSorcery.Net.RTPSession.SendJpegFrame*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_SendJpegFrame_System_UInt32_System_Byte___System_Int32_System_Int32_System_Int32_System_Int32_" data-uid="SIPSorcery.Net.RTPSession.SendJpegFrame(System.UInt32,System.Byte[],System.Int32,System.Int32,System.Int32,System.Int32)">SendJpegFrame(UInt32, Byte[], Int32, Int32, Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>Helper method to send a low quality JPEG image over RTP. This method supports a very abbreviated version of RFC 2435 &quot;RTP Payload Format for JPEG-compressed Video&quot;.
+It's intended as a quick convenient way to send something like a test pattern image over an RTSP connection. More than likely it won't be suitable when a high
+quality image is required since the header used in this method does not support quantization tables.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SendJpegFrame(uint timestamp, byte[] jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight, int framesPerSecond)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">timestamp</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">jpegBytes</span></td>
+        <td><p>The raw encoded bytes of teh JPEG image to transmit.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">jpegQuality</span></td>
+        <td><p>The encoder quality of the JPEG image.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">jpegWidth</span></td>
+        <td><p>The width of the JPEG image.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">jpegHeight</span></td>
+        <td><p>The height of the JPEG image.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">framesPerSecond</span></td>
+        <td><p>The rate at which the JPEG frames are being transmitted at. used to calculate the timestamp.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendRtcpSenderReport_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendRtcpSenderReport(System.Net.Sockets.Socket%2CSystem.Net.IPEndPoint%2CSystem.UInt32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L188">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L433">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_SendRtcpSenderReport_" data-uid="SIPSorcery.Net.RTPSession.SendRtcpSenderReport*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_SendRtcpSenderReport_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_" data-uid="SIPSorcery.Net.RTPSession.SendRtcpSenderReport(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32)">SendRtcpSenderReport(Socket, IPEndPoint, UInt32)</h4>
@@ -656,7 +1021,7 @@ for a sample period of 50ms is 400 (8000 / (1000 / 50)). For a sample period of 
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SendRtcpSenderReport(Socket srcRtpSocket, IPEndPoint dstRtpSocket, uint timestamp)</code></pre>
+    <pre><code class="lang-csharp hljs">public void SendRtcpSenderReport(Socket srcControlSocket, IPEndPoint dstRtpSocket, uint timestamp)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -670,7 +1035,7 @@ for a sample period of 50ms is 400 (8000 / (1000 / 50)). For a sample period of 
     <tbody>
       <tr>
         <td><span class="xref">System.Net.Sockets.Socket</span></td>
-        <td><span class="parametername">srcRtpSocket</span></td>
+        <td><span class="parametername">srcControlSocket</span></td>
         <td></td>
       </tr>
       <tr>
@@ -687,18 +1052,18 @@ for a sample period of 50ms is 400 (8000 / (1000 / 50)). For a sample period of 
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendVp8Frame_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendVp8Frame(System.Net.Sockets.Socket%2CSystem.Net.IPEndPoint%2CSystem.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendVp8Frame_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendVp8Frame(System.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L141">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L260">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_SendVp8Frame_" data-uid="SIPSorcery.Net.RTPSession.SendVp8Frame*"></a>
-  <h4 id="SIPSorcery_Net_RTPSession_SendVp8Frame_System_Net_Sockets_Socket_System_Net_IPEndPoint_System_UInt32_System_Byte___" data-uid="SIPSorcery.Net.RTPSession.SendVp8Frame(System.Net.Sockets.Socket,System.Net.IPEndPoint,System.UInt32,System.Byte[])">SendVp8Frame(Socket, IPEndPoint, UInt32, Byte[])</h4>
+  <h4 id="SIPSorcery_Net_RTPSession_SendVp8Frame_System_UInt32_System_Byte___" data-uid="SIPSorcery.Net.RTPSession.SendVp8Frame(System.UInt32,System.Byte[])">SendVp8Frame(UInt32, Byte[])</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void SendVp8Frame(Socket srcRtpSocket, IPEndPoint dstRtpSocket, uint timestamp, byte[] buffer)</code></pre>
+    <pre><code class="lang-csharp hljs">public void SendVp8Frame(uint timestamp, byte[] buffer)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -710,16 +1075,6 @@ for a sample period of 50ms is 400 (8000 / (1000 / 50)). For a sample period of 
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><span class="xref">System.Net.Sockets.Socket</span></td>
-        <td><span class="parametername">srcRtpSocket</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
-        <td><span class="parametername">dstRtpSocket</span></td>
-        <td></td>
-      </tr>
       <tr>
         <td><span class="xref">System.UInt32</span></td>
         <td><span class="parametername">timestamp</span></td>
@@ -732,14 +1087,79 @@ for a sample period of 50ms is 400 (8000 / (1000 / 50)). For a sample period of 
       </tr>
     </tbody>
   </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SetRemoteSDP_SIPSorcery_Net_SDP_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SetRemoteSDP(SIPSorcery.Net.SDP)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L188">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_SetRemoteSDP_" data-uid="SIPSorcery.Net.RTPSession.SetRemoteSDP*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_SetRemoteSDP_SIPSorcery_Net_SDP_" data-uid="SIPSorcery.Net.RTPSession.SetRemoteSDP(SIPSorcery.Net.SDP)">SetRemoteSDP(SDP)</h4>
+  <div class="markdown level1 summary"><p>Sets the remote SDP offer for this RTP session. It contains required information about payload ID's
+for media formats and RTP evetns.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetRemoteSDP(SDP sdp)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a></td>
+        <td><span class="parametername">sdp</span></td>
+        <td><p>The SDP from the remote call party.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="events">Events
   </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_OnReceivedSampleReady.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.OnReceivedSampleReady%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L123">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTPSession_OnReceivedSampleReady" data-uid="SIPSorcery.Net.RTPSession.OnReceivedSampleReady">OnReceivedSampleReady</h4>
+  <div class="markdown level1 summary"><p>Gets fired when an RTP packet is received, has been identified and is ready for processing.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;byte[]&gt; OnReceivedSampleReady</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Byte</span>[]&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_OnReceiveFromEndPointChanged.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L70">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L118">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTPSession_OnReceiveFromEndPointChanged" data-uid="SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged">OnReceiveFromEndPointChanged</h4>
   <div class="markdown level1 summary"><p>Gets fired when the session detects that the remote end point
@@ -772,6 +1192,36 @@ to NAT.</p>
       </tr>
     </tbody>
   </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_OnRtpEvent.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.OnRtpEvent%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L128">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTPSession_OnRtpEvent" data-uid="SIPSorcery.Net.RTPSession.OnRtpEvent">OnRtpEvent</h4>
+  <div class="markdown level1 summary"><p>Gets fired when an RTP event is detected on the remote call party's RTP stream.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;RTPEvent&gt; OnRtpEvent</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTPEvent.html">RTPEvent</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
 </article>
           </div>
           
@@ -783,7 +1233,7 @@ to NAT.</p>
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L31" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L34" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

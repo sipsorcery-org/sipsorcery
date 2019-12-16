@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class SIPTLSChannel
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.48.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -385,19 +385,19 @@
   <div><a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_OnAccept_SIPSorcery_SIP_SIPStreamConnection_">SIPTCPChannel.OnAccept(SIPStreamConnection)</a></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_Byte___System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection%2CSystem.Byte%5B%5D%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L92">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L91">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_" data-uid="SIPSorcery.SIP.SIPTLSChannel.OnClientConnect*"></a>
-  <h4 id="SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_Byte___System_String_" data-uid="SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.Byte[],System.String)">OnClientConnect(SIPStreamConnection, Byte[], String)</h4>
+  <h4 id="SIPSorcery_SIP_SIPTLSChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_String_" data-uid="SIPSorcery.SIP.SIPTLSChannel.OnClientConnect(SIPSorcery.SIP.SIPStreamConnection,System.String)">OnClientConnect(SIPStreamConnection, String)</h4>
   <div class="markdown level1 summary"><p>For the TLS channel once the TCP client socket is connected it needs to be wrapped up in an SSL stream.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">protected override Task OnClientConnect(SIPStreamConnection streamConnection, byte[] buffer, string serverCertificateName)</code></pre>
+    <pre><code class="lang-csharp hljs">protected override Task OnClientConnect(SIPStreamConnection streamConnection, string serverCertificateName)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -413,12 +413,6 @@
         <td><a class="xref" href="SIPSorcery.SIP.SIPStreamConnection.html">SIPStreamConnection</a></td>
         <td><span class="parametername">streamConnection</span></td>
         <td><p>The stream connection holding the newly connected client socket.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Byte</span>[]</td>
-        <td><span class="parametername">buffer</span></td>
-        <td><p>The data to send.</p>
 </td>
       </tr>
       <tr>
@@ -445,13 +439,13 @@
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_Byte___System_String_">SIPTCPChannel.OnClientConnect(SIPStreamConnection, Byte[], String)</a></div>
+  <div><a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_OnClientConnect_SIPSorcery_SIP_SIPStreamConnection_System_String_">SIPTCPChannel.OnClientConnect(SIPStreamConnection, String)</a></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTLSChannel_SendOnConnected_SIPSorcery_SIP_SIPStreamConnection_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTLSChannel.SendOnConnected(SIPSorcery.SIP.SIPStreamConnection%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L165">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPTLSChannel.cs/#L162">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPTLSChannel_SendOnConnected_" data-uid="SIPSorcery.SIP.SIPTLSChannel.SendOnConnected*"></a>
   <h4 id="SIPSorcery_SIP_SIPTLSChannel_SendOnConnected_SIPSorcery_SIP_SIPStreamConnection_System_Byte___" data-uid="SIPSorcery.SIP.SIPTLSChannel.SendOnConnected(SIPSorcery.SIP.SIPStreamConnection,System.Byte[])">SendOnConnected(SIPStreamConnection, Byte[])</h4>

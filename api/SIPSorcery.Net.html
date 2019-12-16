@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Namespace SIPSorcery.Net
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.48.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -92,6 +92,8 @@ the sole type is SIP).</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ICMPListener.html">ICMPListener</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.MediaStreamStatusType.html">MediaStreamStatusType</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.Mjpeg.html">Mjpeg</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.Mjpeg.Tags.html">Mjpeg.Tags</a></h4>
@@ -122,21 +124,10 @@ the sole type is SIP).</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPPacket.html">RTPPacket</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPPayloadTypes.html">RTPPayloadTypes</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPReceiveRecord.html">RTPReceiveRecord</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPSession.html">RTPSession</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPSink.html">RTPSink</a></h4>
-      <section><p>Threads used:</p>
-<ol>
-<li>ListenerThread to listen for incoming RTP packets on the listener socket,</li>
-<li>ListenerTimeoutThread shuts down the stream if a packet is not received in NO_RTP_TIMEOUT or if the stream's lifetime
-exceeds RTPMaxStayAlive (and RTPMaxStayAlive has been set &gt; 0),</li>
-<li>SenderThread sends RTP packets to remote socket.</li>
-</ol>
-</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPVP8Header.html">RTPVP8Header</a></h4>
       <section><p>Examples of size Payload Header size calculations:</p>
 <p>For length of first parition 54: S0 = 4, S1 = 0x32, S2 = 0.
@@ -195,10 +186,37 @@ abs_path is defined in RFC2616 (HTTP 1.1) 3.2.1 which refers to RFC2396 (URI Gen
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaAnnouncement.html">SDPMediaAnnouncement</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaFormat.html">SDPMediaFormat</a></h4>
+      <section><p>Represents a single media format within a media announcement. Often the whole media format can
+be represented and described by a single character, e.g. &quot;0&quot; without additional info represents
+standard &quot;PCMU&quot;, &quot;8&quot; represents &quot;PCMA&quot; etc. For other media types that have variable parameters
+additional attributes can be provided.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPMediaFormatInfo.html">SDPMediaFormatInfo</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaTypes.html">SDPMediaTypes</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.SessionDescriptionTypes.html">SessionDescriptionTypes</a></h4>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.html">SDPSecurityDescription</a></h4>
+      <section><p>(SDP) Security Descriptions for Media Streams implementation as basically defined in RFC 4568.</p>
+<pre><code>Example 1: Parse crypto attribute
+
+string crypto = &quot;a=crypto:1 AES_256_CM_HMAC_SHA1_80 inline:GTuZoqOsesiK4wfyL7Rsq6uHHwhqVGA+aVuAUnsmWktYacZyJu6/6tUQeUti0Q==&quot;;
+SDPSecurityDescription localcrypto = SDPSecurityDescription.Parse(crypto);</code></pre>
+<pre><code>Example 2: Parse crypto attribute
+
+SDPMediaAnnouncement mediaAudio = new SDPMediaAnnouncement();
+//[...]set some SDPMediaAnnouncement properties
+SDPSecurityDescription localcrypto = SDPSecurityDescription.CreateNew();
+localcrypto.KeyParams.Clear();
+localcrypto.KeyParams.Add(SDPSecurityDescription.KeyParameter.CreateNew(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_32));
+mediaAudio.SecurityDescriptions.Add(localcrypto);
+mediaAudio.ToString();
+
+string crypto = &quot;a=crypto:1 AES_256_CM_HMAC_SHA1_80 inline:GTuZoqOsesiK4wfyL7Rsq6uHHwhqVGA+aVuAUnsmWktYacZyJu6/6tUQeUti0Q==&quot;;
+SDPSecurityDescription desc = SDPSecurityDescription.Parse(crypto);</code></pre>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.KeyParameter.html">SDPSecurityDescription.KeyParameter</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.SessionParameter.html">SDPSecurityDescription.SessionParameter</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAddressAttribute.html">STUNAddressAttribute</a></h4>
       <section><p>MAPPED-ADDRESS, RESPONSE-ADDRESS, CHANGED-ADDRESS, SOURCE-ADDRESS attributes use this format.
@@ -280,11 +298,19 @@ THe reason for this is to stop NAT application layer gateways from doing string 
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.IceConnectionStatesEnum.html">IceConnectionStatesEnum</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.MediaStreamStatusEnum.html">MediaStreamStatusEnum</a></h4>
+      <section><p>The types of status that a media stream can have. Note that the stream status can
+be defined with an attribute at session level or at media element level. If no
+attribute is defined then the default is &quot;sendrecv&quot;.
+Note that this status applies to RTP streams only. If there is an RTCP stream
+associated with the RTP it should carry on as normal.
+See <a href="https://tools.ietf.org/html/rfc4566#section-6">https://tools.ietf.org/html/rfc4566#section-6</a></p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPReportTypesEnum.html">RTCPReportTypesEnum</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RtpMediaTypesEnum.html">RtpMediaTypesEnum</a></h4>
+      <h4><a class="xref" href="SIPSorcery.Net.RTPChannelSocketsEnum.html">RTPChannelSocketsEnum</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPPayloadTypesEnum.html">RTPPayloadTypesEnum</a></h4>
+      <h4><a class="xref" href="SIPSorcery.Net.RtpMediaTypesEnum.html">RtpMediaTypesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPHeaderError.html">RTSPHeaderError</a></h4>
       <section></section>
@@ -301,8 +327,24 @@ THe reason for this is to stop NAT application layer gateways from doing string 
       <h4><a class="xref" href="SIPSorcery.Net.RTSPResponseStatusCodesEnum.html">RTSPResponseStatusCodesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaFormatsEnum.html">SDPMediaFormatsEnum</a></h4>
-      <section></section>
+      <section><p>A list of standard media formats that can be idenitifed by an ID if
+there is no qualifiying format attribute provided.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPNonStandardMediaFormatsEnum.html">SDPNonStandardMediaFormatsEnum</a></h4>
+      <section><p>A list of standard media types that do not have a a recognised ID but still do have
+recognised properties.</p>
+<pre><code>// Example
+m=video 49170 RTP/AVPF 98   // &quot;98&quot; is not a standard ID for VP8 and could be anything.
+a=rtpmap:98 VP8/90000
+a=fmtp:98 max-fr=30; max-fs=3600;</code></pre>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.CryptoSuites.html">SDPSecurityDescription.CryptoSuites</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.SessionParameter.FecTypes.html">SDPSecurityDescription.SessionParameter.FecTypes</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.SessionParameter.SrtpSessionParams.html">SDPSecurityDescription.SessionParameter.SrtpSessionParams</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAttributeTypesEnum.html">STUNAttributeTypesEnum</a></h4>
       <section></section>
@@ -319,17 +361,7 @@ THe reason for this is to stop NAT application layer gateways from doing string 
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTCPReportRecievedDelegate.html">RTCPReportRecievedDelegate</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPSampleReadyDelegate.html">RTCPSampleReadyDelegate</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPDataReceived.html">RTPDataReceived</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPDataSent.html">RTPDataSent</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPRemoteEndPointChanged.html">RTPRemoteEndPointChanged</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPSinkClosed.html">RTPSinkClosed</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNMessageReceived.html">STUNMessageReceived</a></h4>
       <section></section>
