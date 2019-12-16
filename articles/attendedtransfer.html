@@ -8,7 +8,7 @@
     <title>Attended Transfer </title>
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Attended Transfer ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.48.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -70,6 +70,15 @@
 <h2 id="attended-transfer">Attended Transfer</h2>
 
 <p>The <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/AttendedTransfer">Attended Transfer</a> program contains an example of how initiate an attended transfer between two established calls.</p>
+<p>The example program works in the following manner:</p>
+<ol>
+<li><p>Establish two calls by using a different SIP device or softphone to &quot;call&quot; the sample. By default the program listens on all local IP addresses and port 5060.</p>
+</li>
+<li><p>Once a call is established press the <code>t</code> key to initiate the attended transfer.</p>
+</li>
+<li><p>Once a notification is received that the transfer was accepted and successful the program will hangup the orphaned call leg and exit.</p>
+</li>
+</ol>
 </article>
           </div>
           

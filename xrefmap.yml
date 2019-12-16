@@ -22491,6 +22491,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.AddSIPChannel
   nameWithType: SIPTransport.AddSIPChannel
+- uid: SIPSorcery.SIP.SIPTransport.AddTransaction(SIPSorcery.SIP.SIPTransaction)
+  name: AddTransaction(SIPTransaction)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_AddTransaction_SIPSorcery_SIP_SIPTransaction_
+  commentId: M:SIPSorcery.SIP.SIPTransport.AddTransaction(SIPSorcery.SIP.SIPTransaction)
+  fullName: SIPSorcery.SIP.SIPTransport.AddTransaction(SIPSorcery.SIP.SIPTransaction)
+  nameWithType: SIPTransport.AddTransaction(SIPTransaction)
+- uid: SIPSorcery.SIP.SIPTransport.AddTransaction*
+  name: AddTransaction
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_AddTransaction_
+  commentId: Overload:SIPSorcery.SIP.SIPTransport.AddTransaction
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransport.AddTransaction
+  nameWithType: SIPTransport.AddTransaction
 - uid: SIPSorcery.SIP.SIPTransport.BlackholeAddress
   name: BlackholeAddress
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_BlackholeAddress
