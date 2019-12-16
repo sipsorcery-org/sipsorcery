@@ -518,56 +518,38 @@ namespace SIPSorcery.SIP.App
 
                     UASInviteTransaction reInviteTransaction = new UASInviteTransaction(m_transport, sipRequest, m_outboundProxy);
 
-                    // Re-INVITEs can also be changing the RTP end point. We can update this each time.
-                    bool wasDestinationChanged = false;
-                    IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
-                    if (RtpSession.DestinationEndPoint != dstRtpEndPoint)
-                    {
-                        logger.LogDebug($"Remote call party RTP end point changed from {RtpSession.DestinationEndPoint} to {dstRtpEndPoint}.");
-                        RtpSession.DestinationEndPoint = dstRtpEndPoint;
-                        wasDestinationChanged = true;
-                    }
-
-                    // Check for remote party putting us on and off hold.
                     SDP newSDPOffer = SDP.ParseSDPDescription(sipRequest.Body);
-                    if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendOnly)
-                    {
-                        // We've been put on hold.
-                        var onHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.RecvOnly);
-                        reInviteTransaction.SendFinalResponse(onHoldResponse);
 
-                        RemotePutOnHold?.Invoke();
-                    }
-                    else if (newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0) == MediaStreamStatusEnum.SendRecv && OnHoldFromRemote)
-                    {
-                        // We've been taken off hold.
-                        var offHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.SendRecv);
-                        reInviteTransaction.SendFinalResponse(offHoldResponse);
+                    var mediaStreamStatus = newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
+                    var oldMediaStreamStatus = SDP.ParseSDPDescription(Dialogue.RemoteSDP).GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
 
-                        RemoteTookOffHold?.Invoke();
-                    }
-                    else if (OnReinviteRequest == null)
+                    try
                     {
-                        if (wasDestinationChanged)
+                        SDP answerSdp = RtpSession.ReInvite(newSDPOffer);
+
+                        Dialogue.RemoteSDP = sipRequest.Body;
+                        Dialogue.SDP = answerSdp.ToString();
+                        Dialogue.RemoteCSeq = sipRequest.Header.CSeq;
+
+                        var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, Dialogue.SDP);
+                        reInviteTransaction.SendFinalResponse(okResponse);
+
+                        if (mediaStreamStatus == MediaStreamStatusEnum.SendOnly)
                         {
-                            // The destination RTP end point was changed.
-                            var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, Dialogue.SDP);
-                            reInviteTransaction.SendFinalResponse(okResponse);
+                            RemotePutOnHold?.Invoke();
                         }
-                        else
+                        else if (mediaStreamStatus == MediaStreamStatusEnum.SendRecv
+                              && oldMediaStreamStatus == MediaStreamStatusEnum.SendOnly)
                         {
-                            // The application isn't prepared to accept re-INVITE requests and we can't work out what it was for. 
-                            // We'll reject as gently as we can to try and not lose the call.
-                            SIPResponse notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, null);
-                            reInviteTransaction.SendFinalResponse(notAcceptableResponse);
+                            RemoteTookOffHold?.Invoke();
                         }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        // The application is going to handle the re-INVITE request. We'll send a Trying response as a precursor.
-                        SIPResponse tryingResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
-                        reInviteTransaction.SendProvisionalResponse(tryingResponse);
-                        OnReinviteRequest(reInviteTransaction);
+                        // The application isn't prepared to accept re-INVITE requests and we can't work out what it was for. 
+                        // We'll reject as gently as we can to try and not lose the call.
+                        SIPResponse notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, null);
+                        reInviteTransaction.SendFinalResponse(notAcceptableResponse);
                     }
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
