@@ -1677,18 +1677,12 @@ references:
   commentId: T:SIPSorcery.Net.RTPChannel
   fullName: SIPSorcery.Net.RTPChannel
   nameWithType: RTPChannel
-- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean)
-  name: RTPChannel(IPAddress, Boolean)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Net_IPAddress_System_Boolean_
-  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean)
-  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Net.IPAddress, System.Boolean)
-  nameWithType: RTPChannel.RTPChannel(IPAddress, Boolean)
-- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint)
-  name: RTPChannel(IPAddress, Boolean, IPEndPoint, IPEndPoint)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Net_IPAddress_System_Boolean_System_Net_IPEndPoint_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Net.IPAddress, System.Boolean, System.Net.IPEndPoint, System.Net.IPEndPoint)
-  nameWithType: RTPChannel.RTPChannel(IPAddress, Boolean, IPEndPoint, IPEndPoint)
+- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint,System.Int32,System.Int32)
+  name: RTPChannel(IPAddress, Boolean, IPEndPoint, IPEndPoint, Int32, Int32)
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Net_IPAddress_System_Boolean_System_Net_IPEndPoint_System_Net_IPEndPoint_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Net.IPAddress, System.Boolean, System.Net.IPEndPoint, System.Net.IPEndPoint, System.Int32, System.Int32)
+  nameWithType: RTPChannel.RTPChannel(IPAddress, Boolean, IPEndPoint, IPEndPoint, Int32, Int32)
 - uid: SIPSorcery.Net.RTPChannel.#ctor*
   name: RTPChannel
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_
