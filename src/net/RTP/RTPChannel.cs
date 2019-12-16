@@ -251,8 +251,8 @@ namespace SIPSorcery.Net
         /// RTCP are being multiplexed (as they are for WebRTC) there's no need to a separate control socket.</param>
         /// <param name="rtpRemoteEndPoint">The remote end point that the RTP socket is sending to.</param>
         /// <param name="controlEndPoint">The remote end point that the RTCP control socket is sending to.</param>
-        /// <param name="mediaStartPort">The remote end point that the RTCP control socket is sending to.</param>
-        /// <param name="mediaEndPort">The remote end point that the RTCP control socket is sending to.</param>
+        /// <param name="mediaStartPort">The media start port.</param>
+        /// <param name="mediaEndPort">The media end port.</param>
         public RTPChannel(IPAddress localAddress,
                           bool createControlSocket,
                           IPEndPoint rtpRemoteEndPoint = null,
