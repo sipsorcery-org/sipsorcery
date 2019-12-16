@@ -16,11 +16,9 @@
       href: websocket-sipchannel.md
     - name: STUN Server
       href: stunserver.md
-    - name: Call Transfer
-      href: calltransfer.md
+    - name: Call Hold and Transfer
+      href: callholdtransfer.md
     - name: Send DTMF
       href: senddtmf.md
-    - name: Call Hold
-      href: callhold.md
-    - name: Call Transfer (Server)
-      href: calltransferserver.md
+    - name: Attended Transfer
+      href: attendedtransfer.md
