@@ -26,9 +26,9 @@ namespace SIPSorcery.SIP.App.Media
             session.OnRtpEvent -= OnRemoteRtpEvent;
         }
 
-        public SDP GetAnswerSDP()
+        public SDP GetAnswerSDP(IPAddress destinationAddress)
         {
-            return GetOfferSDP(session.DestinationEndPoint.Address);
+            return GetOfferSDP(destinationAddress);
         }
 
         public SDP GetOfferSDP(IPAddress destinationAddress)

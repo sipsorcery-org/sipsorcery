@@ -342,7 +342,7 @@ namespace SIPSorcery.SIP.App
             // TODO: Deal with multiple media offers.
 
             RtpSession.SetRemoteOfferSDP(remoteSDP);
-            var sdpAnswer = RtpSession.GetAnswerSDP();
+            var sdpAnswer = RtpSession.GetAnswerSDP(remoteEndpoint.Address);
 
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default);
