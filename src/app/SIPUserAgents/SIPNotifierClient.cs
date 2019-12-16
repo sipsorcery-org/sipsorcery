@@ -267,7 +267,7 @@ namespace SIPSorcery.SIP.App
                     subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
                     subscribeTransaction.NonInviteTransactionTimedOut += SubsribeTransactionTimedOut;
 
-                    m_sipTransport.SendSIPReliable(subscribeTransaction);
+                    m_sipTransport.SendReliable(subscribeTransaction);
 
                     LastSubscribeAttempt = DateTime.Now;
                 }
@@ -367,7 +367,7 @@ namespace SIPSorcery.SIP.App
                             subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
                             subscribeTransaction.NonInviteTransactionTimedOut += SubsribeTransactionTimedOut;
 
-                            m_sipTransport.SendSIPReliable(subscribeTransaction);
+                            m_sipTransport.SendReliable(subscribeTransaction);
                         }
                     }
                     else
