@@ -21,7 +21,7 @@ namespace SIPSorcery.SIP.UnitTests
     {
         private class MockSIPDNSManager
         {
-            public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool async)
+            public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool async, bool? preferIPv6)
             {
                 // This assumes the input SIP URI has an IP address as the host!
                 IPSocket.TryParseIPEndPoint(sipURI.Host, out var ipEndPoint);

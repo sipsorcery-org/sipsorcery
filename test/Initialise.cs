@@ -92,7 +92,7 @@ namespace SIPSorcery.UnitTests
 
     public class MockSIPDNSManager
     {
-        public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool synchronous)
+        public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool async, bool? preferIPv6)
         {
             // This assumes the input SIP URI has an IP address as the host!
             return new SIPDNSLookupResult(sipURI);
