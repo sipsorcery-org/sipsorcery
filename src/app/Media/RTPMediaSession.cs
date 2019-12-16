@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
@@ -41,15 +42,39 @@ namespace SIPSorcery.SIP.App.Media
         {
             IPEndPoint dstRtpEndPoint = remoteSDP.GetSDPRTPEndPoint();
 
-            if (session.DestinationEndPoint != dstRtpEndPoint)
+            bool newEndpoint = session.DestinationEndPoint != dstRtpEndPoint;
+
+            var localSDP = GetAnswerSDP(dstRtpEndPoint.Address);
+
+            if (newEndpoint)
             {
                 logger.LogDebug($"Remote call party RTP end point changed from {session.DestinationEndPoint} to {dstRtpEndPoint}.");
             }
 
+            // Check for remote party putting us on and off hold.
+            var mediaStreamStatus = remoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
+            var oldMediaStreamStatus = session.RemoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
+
             SetRemoteSDP(remoteSDP);
 
-            return null;
+            if (mediaStreamStatus == MediaStreamStatusEnum.SendOnly)
+            {
+                ProcessRemoteHoldRequest(localSDP, MediaStreamStatusEnum.SendRecv);
+            }
+            else if (mediaStreamStatus == MediaStreamStatusEnum.SendRecv
+                  && oldMediaStreamStatus == MediaStreamStatusEnum.SendOnly)
+            {
+                ProcessRemoteHoldRequest(localSDP, MediaStreamStatusEnum.SendRecv);
+            }
+
+            return localSDP;
         }
+
+        private void ProcessRemoteHoldRequest(SDP localSDP, MediaStreamStatusEnum localMediaStreamStatus)
+        {
+            localSDP.Media.First(x => x.Media == SDPMediaTypesEnum.audio).MediaStreamStatus = localMediaStreamStatus;
+        }
+
 
         public void SetRemoteAnswerSDP(SDP remoteSDP)
         {
