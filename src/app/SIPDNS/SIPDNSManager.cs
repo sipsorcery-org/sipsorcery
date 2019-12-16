@@ -96,7 +96,7 @@ namespace SIPSorcery.SIP.App
                     throw new ArgumentNullException("sipURI", "Cannot resolve SIP service on a null URI.");
                 }
 
-                if (IPSocket.TryParseIPEndPoint(sipURI.MAddrOrHostAddress, out var ipEndPoint))
+                if (IPSocket.TryParseIPEndPoint(sipURI.MAddrOrHost, out var ipEndPoint))
                 {
                     // Target is an IP address, no DNS lookup required.
                     SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, ipEndPoint), 0);
@@ -261,7 +261,7 @@ namespace SIPSorcery.SIP.App
                     throw new ArgumentNullException("sipURI", "Cannot resolve SIP service on a null URI.");
                 }
 
-                if (IPSocket.TryParseIPEndPoint(sipURI.MAddrOrHostAddress, out var ipEndPoint))
+                if (IPSocket.TryParseIPEndPoint(sipURI.MAddrOrHost, out var ipEndPoint))
                 {
                     // Target is an IP address, no DNS lookup required.
                     SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, ipEndPoint), 0);
