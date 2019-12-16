@@ -91,9 +91,9 @@ namespace SIPSorcery.Net
         /// <code>
         /// // Example
         /// // Note in this example "0" is representing a standard format so the format attribute is optional.
-        /// m=audio 12228 RTP/AVP 0 101         // "0" is the media format ID
+        /// m=audio 12228 RTP/AVP 0 101         // "0" and "101" are media format ID's.
         /// a=rtpmap:0 PCMU/8000                // "0" is the media format ID.
-        /// a=rtpmap:101 telephone-event/8000 
+        /// a=rtpmap:101 telephone-event/8000   // "101" is the media format ID.
         /// a=fmtp:101 0-16
         /// </code>
         /// </summary>
