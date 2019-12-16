@@ -24,6 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
+using SIPSorcery.SIP.App.Media;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
@@ -42,11 +43,8 @@ namespace SIPSorcery.SIP.App
         private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static readonly string m_sipReferContentType = SIPMIMETypes.REFER_CONTENT_TYPE;
         private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
-        private static SDPMediaFormatsEnum m_defaultAudioFormat = SDPMediaFormatsEnum.PCMU;
 
         private static ILogger logger = Log.Logger;
-
-        private ushort m_remoteDtmfDuration;             // If a remote DTMF event is in progress this field tracks the duration.
 
         /// <summary>
         /// Client user agent for placing calls.
@@ -70,9 +68,15 @@ namespace SIPSorcery.SIP.App
         private SIPEndPoint m_outboundProxy;
 
         /// <summary>
+        /// The media session factory.
+        /// Used to create new media sessions that will handle the media for the session.
+        /// </summary>
+        IMediaSessionFactory m_mediaSessionFactory;
+
+        /// <summary>
         /// The RTP session in use for the current call.
         /// </summary>
-        public RTPSession RtpSession { get; private set; }
+        public IMediaSession RtpSession { get; private set; }
 
         /// <summary>
         /// Indicates whether there is an active call or not
@@ -220,10 +224,11 @@ namespace SIPSorcery.SIP.App
         /// <param name="transport">The transport layer to use for requests and responses.</param>
         /// <param name="outboundProxy">Optional. If set all requests and responses will be forwarded to this
         /// end point irrespective of their headers.</param>
-        public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy)
+        public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy, IMediaSessionFactory mediaSessionFactory)
         {
             m_transport = transport;
             m_outboundProxy = outboundProxy;
+            m_mediaSessionFactory = mediaSessionFactory;
 
             m_transport.SIPTransportRequestReceived += SIPTransportRequestReceived;
         }
@@ -234,9 +239,6 @@ namespace SIPSorcery.SIP.App
         /// <param name="sipCallDescriptor">A call descriptor containing the information about how and where to place the call.</param>
         public void Call(SIPCallDescriptor sipCallDescriptor)
         {
-            RtpSession = new RTPSession((int)m_defaultAudioFormat, null, null, true);
-            RtpSession.OnRtpEvent += OnRemoteRtpEvent;
-
             m_uac = new SIPClientUserAgent(m_transport);
             m_uac.CallTrying += ClientCallTryingHandler;
             m_uac.CallRinging += ClientCallRingingHandler;
@@ -247,8 +249,10 @@ namespace SIPSorcery.SIP.App
 
             if (serverEndPoint != null)
             {
-                IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
-                var sdp = RtpSession.GetSDP(localIPAddress);
+                RtpSession = m_mediaSessionFactory.Create();
+                RtpSession.DtmfCompleted += OnRemoteRtpEvent;
+
+                var sdp = RtpSession.GetOfferSDP(serverEndPoint.GetIPEndPoint().Address);
                 sipCallDescriptor.Content = sdp.ToString();
 
                 m_uac.Call(sipCallDescriptor);
@@ -329,16 +333,16 @@ namespace SIPSorcery.SIP.App
                 Hangup();
             }
 
-            RtpSession = new RTPSession((int)m_defaultAudioFormat, null, null, true);
-            RtpSession.OnRtpEvent += OnRemoteRtpEvent;
-
             var sipRequest = uas.ClientTransaction.TransactionRequest;
             SDP remoteSDP = SDP.ParseSDPDescription(sipRequest.Body);
+
+            RtpSession = m_mediaSessionFactory.Create();
+            RtpSession.DtmfCompleted += OnRemoteRtpEvent;
+
             // TODO: Deal with multiple media offers.
-            RtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
-            RtpSession.SetRemoteSDP(remoteSDP);
-            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(RtpSession.DestinationEndPoint.Address);
-            var sdpAnswer = RtpSession.GetSDP(localIPAddress);
+
+            RtpSession.SetRemoteOfferSDP(remoteSDP);
+            var sdpAnswer = RtpSession.GetAnswerSDP();
 
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default);
@@ -599,7 +603,7 @@ namespace SIPSorcery.SIP.App
                     SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     await SendResponseAsync(okResponse);
 
-                    if(sipRequest.Body?.Length > 0 && sipRequest.Header.ContentType?.Contains(m_sipReferContentType) == true)
+                    if (sipRequest.Body?.Length > 0 && sipRequest.Header.ContentType?.Contains(m_sipReferContentType) == true)
                     {
                         OnTransferNotify?.Invoke(sipRequest.Body);
                     }
@@ -775,13 +779,7 @@ namespace SIPSorcery.SIP.App
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                if (RtpSession.DestinationEndPoint == null)
-                {
-                    RtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(sipResponse.Body);
-                    logger.LogDebug($"Remote RTP socket {RtpSession.DestinationEndPoint}.");
-                }
-
-                RtpSession.SetRemoteSDP(SDP.ParseSDPDescription(sipResponse.Body));
+                RtpSession.SetRemoteAnswerSDP(SDP.ParseSDPDescription(sipResponse.Body));
 
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 
@@ -888,17 +886,9 @@ namespace SIPSorcery.SIP.App
         /// Event handler for RTP events from the remote call party.
         /// </summary>
         /// <param name="rtpEvent">The received RTP event.</param>
-        private void OnRemoteRtpEvent(RTPEvent rtpEvent)
+        private void OnRemoteRtpEvent(byte dtmf)
         {
-            if (rtpEvent.EndOfEvent == true)
-            {
-                m_remoteDtmfDuration = 0;
-            }
-            else if (m_remoteDtmfDuration == 0)
-            {
-                m_remoteDtmfDuration = rtpEvent.Duration;
-                OnDtmfEvent?.Invoke(rtpEvent.EventID);
-            }
+            OnDtmfEvent?.Invoke(dtmf);
         }
     }
 }
