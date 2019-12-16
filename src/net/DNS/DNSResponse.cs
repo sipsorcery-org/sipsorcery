@@ -239,7 +239,7 @@ namespace Heijden.DNS
         /// <summary>
         /// List of RecordNATPR in Response.Answers
         /// </summary>
-        public RecordNAPTR[] RecordNAPTR
+        public RecordNAPTR[] RecordsNAPTR
         {
             get
             {
