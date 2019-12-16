@@ -117,7 +117,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent__ctor_System_Byte_System_Boolean_System_UInt16_System_UInt16_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.%23ctor(System.Byte%2CSystem.Boolean%2CSystem.UInt16%2CSystem.UInt16%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L64">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L65">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPEvent__ctor_" data-uid="SIPSorcery.Net.RTPEvent.#ctor*"></a>
   <h4 id="SIPSorcery_Net_RTPEvent__ctor_System_Byte_System_Boolean_System_UInt16_System_UInt16_System_Int32_" data-uid="SIPSorcery.Net.RTPEvent.#ctor(System.Byte,System.Boolean,System.UInt16,System.UInt16,System.Int32)">RTPEvent(Byte, Boolean, UInt16, UInt16, Int32)</h4>
@@ -126,7 +126,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public RTPEvent(byte eventID, bool endOfEvent, ushort volume, ushort totalDduration, int payloadTypeID)</code></pre>
+    <pre><code class="lang-csharp hljs">public RTPEvent(byte eventID, bool endOfEvent, ushort volume, ushort totalDuration, int payloadTypeID)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -158,13 +158,48 @@
       </tr>
       <tr>
         <td><span class="xref">System.UInt16</span></td>
-        <td><span class="parametername">totalDduration</span></td>
-        <td></td>
+        <td><span class="parametername">totalDuration</span></td>
+        <td><p>The event duration.</p>
+</td>
       </tr>
       <tr>
         <td><span class="xref">System.Int32</span></td>
         <td><span class="parametername">payloadTypeID</span></td>
         <td><p>The ID of the event payload type. This gets set in the RTP header.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent__ctor_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.%23ctor(System.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L102">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPEvent__ctor_" data-uid="SIPSorcery.Net.RTPEvent.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_RTPEvent__ctor_System_Byte___" data-uid="SIPSorcery.Net.RTPEvent.#ctor(System.Byte[])">RTPEvent(Byte[])</h4>
+  <div class="markdown level1 summary"><p>Extract and load an RTP Event from a packet buffer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTPEvent(byte[] packet)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">packet</span></td>
+        <td><p>The packet buffer containing the RTP Event.</p>
 </td>
       </tr>
     </tbody>
@@ -176,7 +211,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent_DEFAULT_VOLUME.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.DEFAULT_VOLUME%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L23">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L24">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTPEvent_DEFAULT_VOLUME" data-uid="SIPSorcery.Net.RTPEvent.DEFAULT_VOLUME">DEFAULT_VOLUME</h4>
   <div class="markdown level1 summary"></div>
@@ -202,10 +237,39 @@
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent_DTMF_PACKET_LENGTH.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.DTMF_PACKET_LENGTH%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L23">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTPEvent_DTMF_PACKET_LENGTH" data-uid="SIPSorcery.Net.RTPEvent.DTMF_PACKET_LENGTH">DTMF_PACKET_LENGTH</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int DTMF_PACKET_LENGTH = 4</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent_DUPLICATE_COUNT.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.DUPLICATE_COUNT%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L24">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L25">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTPEvent_DUPLICATE_COUNT" data-uid="SIPSorcery.Net.RTPEvent.DUPLICATE_COUNT">DUPLICATE_COUNT</h4>
   <div class="markdown level1 summary"></div>
@@ -236,7 +300,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent_Duration.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.Duration%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L49">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L50">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPEvent_Duration_" data-uid="SIPSorcery.Net.RTPEvent.Duration*"></a>
   <h4 id="SIPSorcery_Net_RTPEvent_Duration" data-uid="SIPSorcery.Net.RTPEvent.Duration">Duration</h4>
@@ -267,7 +331,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent_EndOfEvent.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.EndOfEvent%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L34">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L35">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPEvent_EndOfEvent_" data-uid="SIPSorcery.Net.RTPEvent.EndOfEvent*"></a>
   <h4 id="SIPSorcery_Net_RTPEvent_EndOfEvent" data-uid="SIPSorcery.Net.RTPEvent.EndOfEvent">EndOfEvent</h4>
@@ -298,7 +362,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent_EventID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.EventID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L29">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L30">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPEvent_EventID_" data-uid="SIPSorcery.Net.RTPEvent.EventID*"></a>
   <h4 id="SIPSorcery_Net_RTPEvent_EventID" data-uid="SIPSorcery.Net.RTPEvent.EventID">EventID</h4>
@@ -329,7 +393,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent_PayloadTypeID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.PayloadTypeID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L54">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L55">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPEvent_PayloadTypeID_" data-uid="SIPSorcery.Net.RTPEvent.PayloadTypeID*"></a>
   <h4 id="SIPSorcery_Net_RTPEvent_PayloadTypeID" data-uid="SIPSorcery.Net.RTPEvent.PayloadTypeID">PayloadTypeID</h4>
@@ -360,7 +424,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent_TotalDuration.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.TotalDuration%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L44">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L45">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPEvent_TotalDuration_" data-uid="SIPSorcery.Net.RTPEvent.TotalDuration*"></a>
   <h4 id="SIPSorcery_Net_RTPEvent_TotalDuration" data-uid="SIPSorcery.Net.RTPEvent.TotalDuration">TotalDuration</h4>
@@ -391,7 +455,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent_Volume.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.Volume%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L39">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L40">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPEvent_Volume_" data-uid="SIPSorcery.Net.RTPEvent.Volume*"></a>
   <h4 id="SIPSorcery_Net_RTPEvent_Volume" data-uid="SIPSorcery.Net.RTPEvent.Volume">Volume</h4>
@@ -424,7 +488,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPEvent_GetEventPayload.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPEvent.GetEventPayload%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L77">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPEvent.cs/#L78">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPEvent_GetEventPayload_" data-uid="SIPSorcery.Net.RTPEvent.GetEventPayload*"></a>
   <h4 id="SIPSorcery_Net_RTPEvent_GetEventPayload" data-uid="SIPSorcery.Net.RTPEvent.GetEventPayload">GetEventPayload()</h4>

@@ -1916,6 +1916,15 @@ references:
   commentId: M:SIPSorcery.Net.RTPEvent.#ctor(System.Byte,System.Boolean,System.UInt16,System.UInt16,System.Int32)
   fullName: SIPSorcery.Net.RTPEvent.RTPEvent(System.Byte, System.Boolean, System.UInt16, System.UInt16, System.Int32)
   nameWithType: RTPEvent.RTPEvent(Byte, Boolean, UInt16, UInt16, Int32)
+- uid: SIPSorcery.Net.RTPEvent.#ctor(System.Byte[])
+  name: RTPEvent(Byte[])
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent__ctor_System_Byte___
+  commentId: M:SIPSorcery.Net.RTPEvent.#ctor(System.Byte[])
+  name.vb: RTPEvent(Byte())
+  fullName: SIPSorcery.Net.RTPEvent.RTPEvent(System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTPEvent.RTPEvent(System.Byte())
+  nameWithType: RTPEvent.RTPEvent(Byte[])
+  nameWithType.vb: RTPEvent.RTPEvent(Byte())
 - uid: SIPSorcery.Net.RTPEvent.#ctor*
   name: RTPEvent
   href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent__ctor_
@@ -1929,6 +1938,12 @@ references:
   commentId: F:SIPSorcery.Net.RTPEvent.DEFAULT_VOLUME
   fullName: SIPSorcery.Net.RTPEvent.DEFAULT_VOLUME
   nameWithType: RTPEvent.DEFAULT_VOLUME
+- uid: SIPSorcery.Net.RTPEvent.DTMF_PACKET_LENGTH
+  name: DTMF_PACKET_LENGTH
+  href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_DTMF_PACKET_LENGTH
+  commentId: F:SIPSorcery.Net.RTPEvent.DTMF_PACKET_LENGTH
+  fullName: SIPSorcery.Net.RTPEvent.DTMF_PACKET_LENGTH
+  nameWithType: RTPEvent.DTMF_PACKET_LENGTH
 - uid: SIPSorcery.Net.RTPEvent.DUPLICATE_COUNT
   name: DUPLICATE_COUNT
   href: api/SIPSorcery.Net.RTPEvent.html#SIPSorcery_Net_RTPEvent_DUPLICATE_COUNT
@@ -2601,6 +2616,12 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
   fullName: SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
   nameWithType: RTPSession.OnReceiveFromEndPointChanged
+- uid: SIPSorcery.Net.RTPSession.OnRtpEvent
+  name: OnRtpEvent
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpEvent
+  commentId: E:SIPSorcery.Net.RTPSession.OnRtpEvent
+  fullName: SIPSorcery.Net.RTPSession.OnRtpEvent
+  nameWithType: RTPSession.OnRtpEvent
 - uid: SIPSorcery.Net.RTPSession.PacketsSent
   name: PacketsSent
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_PacketsSent
@@ -2614,6 +2635,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.PacketsSent
   nameWithType: RTPSession.PacketsSent
+- uid: SIPSorcery.Net.RTPSession.RemoteSDP
+  name: RemoteSDP
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteSDP
+  commentId: P:SIPSorcery.Net.RTPSession.RemoteSDP
+  fullName: SIPSorcery.Net.RTPSession.RemoteSDP
+  nameWithType: RTPSession.RemoteSDP
+- uid: SIPSorcery.Net.RTPSession.RemoteSDP*
+  name: RemoteSDP
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteSDP_
+  commentId: Overload:SIPSorcery.Net.RTPSession.RemoteSDP
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.RemoteSDP
+  nameWithType: RTPSession.RemoteSDP
 - uid: SIPSorcery.Net.RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
   name: RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
@@ -2752,6 +2786,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SeqNum
   nameWithType: RTPSession.SeqNum
+- uid: SIPSorcery.Net.RTPSession.SetRemoteSDP(SIPSorcery.Net.SDP)
+  name: SetRemoteSDP(SDP)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetRemoteSDP_SIPSorcery_Net_SDP_
+  commentId: M:SIPSorcery.Net.RTPSession.SetRemoteSDP(SIPSorcery.Net.SDP)
+  fullName: SIPSorcery.Net.RTPSession.SetRemoteSDP(SIPSorcery.Net.SDP)
+  nameWithType: RTPSession.SetRemoteSDP(SDP)
+- uid: SIPSorcery.Net.RTPSession.SetRemoteSDP*
+  name: SetRemoteSDP
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetRemoteSDP_
+  commentId: Overload:SIPSorcery.Net.RTPSession.SetRemoteSDP
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.SetRemoteSDP
+  nameWithType: RTPSession.SetRemoteSDP
 - uid: SIPSorcery.Net.RTPSession.SrtcpProtect
   name: SrtcpProtect
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SrtcpProtect
@@ -2791,6 +2838,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.Ssrc
   nameWithType: RTPSession.Ssrc
+- uid: SIPSorcery.Net.RTPSession.TELEPHONE_EVENT_ATTRIBUTE
+  name: TELEPHONE_EVENT_ATTRIBUTE
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_TELEPHONE_EVENT_ATTRIBUTE
+  commentId: F:SIPSorcery.Net.RTPSession.TELEPHONE_EVENT_ATTRIBUTE
+  fullName: SIPSorcery.Net.RTPSession.TELEPHONE_EVENT_ATTRIBUTE
+  nameWithType: RTPSession.TELEPHONE_EVENT_ATTRIBUTE
 - uid: SIPSorcery.Net.RTPVP8Header
   name: RTPVP8Header
   href: api/SIPSorcery.Net.RTPVP8Header.html
@@ -13682,6 +13735,12 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnCallHungup
   fullName: SIPSorcery.SIP.App.SIPUserAgent.OnCallHungup
   nameWithType: SIPUserAgent.OnCallHungup
+- uid: SIPSorcery.SIP.App.SIPUserAgent.OnDtmfEvent
+  name: OnDtmfEvent
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnDtmfEvent
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnDtmfEvent
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.OnDtmfEvent
+  nameWithType: SIPUserAgent.OnDtmfEvent
 - uid: SIPSorcery.SIP.App.SIPUserAgent.OnHoldFromLocal
   name: OnHoldFromLocal
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnHoldFromLocal
