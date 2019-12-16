@@ -122,6 +122,13 @@ namespace SIPSorcery.Net
 
         private static bool m_close = false;    // Used to shutdown the DNS manager.
 
+        public static bool UseDNSSuffixes
+        {
+            get;
+            set;
+        }
+        private static string[] m_dnsSuffixes = null;
+
         static DNSManager()
         {
             try
@@ -154,11 +161,51 @@ namespace SIPSorcery.Net
             }
         }
 
+        public static string[] GetDnsSuffixes()
+        {
+            if (m_dnsSuffixes != null)
+            {
+                return m_dnsSuffixes;
+            }
+
+            List<string> list = new List<string>();
+
+            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (NetworkInterface n in adapters)
+            {
+                if (n.OperationalStatus == OperationalStatus.Up)
+                {
+                    IPInterfaceProperties ipProps = n.GetIPProperties();
+                    list.Add(ipProps.DnsSuffix);
+                }
+            }
+            m_dnsSuffixes = list.ToArray();
+            return m_dnsSuffixes;
+        }
+
         public static void SetDNSServers(List<IPEndPoint> dnsServers)
         {
             if (dnsServers != null && dnsServers.Count > 0)
             {
                 m_resolver = new Resolver(dnsServers.ToArray());
+            }
+        }
+
+        public static void SetDNSSuffixes(string[] suffixes)
+        {
+            m_dnsSuffixes = suffixes;
+
+            if (m_dnsSuffixes == null)
+            {
+                UseDNSSuffixes = false;
+            }
+            else if (m_dnsSuffixes.Length == 0)
+            {
+                UseDNSSuffixes = false;
+            }
+            else
+            {
+                UseDNSSuffixes = true;
             }
         }
 
