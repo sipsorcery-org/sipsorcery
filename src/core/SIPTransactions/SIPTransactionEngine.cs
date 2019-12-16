@@ -47,10 +47,10 @@ namespace SIPSorcery.SIP
                 {
                     m_transactions.Add(sipTransaction.TransactionId, sipTransaction);
                 }
-                else
-                {
-                    throw new ApplicationException("An attempt was made to add a duplicate SIP transaction.");
-                }
+                //else
+                //{
+                //    throw new ApplicationException("An attempt was made to add a duplicate SIP transaction.");
+                //}
             }
         }
 
