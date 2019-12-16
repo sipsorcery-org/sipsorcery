@@ -15,13 +15,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
-using log4net;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -32,165 +28,67 @@ namespace SIPSorcery.SoftPhone
     public class SIPClient : IVoIPClient
     {
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
-        private static int SIP_DEFAULT_PORT = SIPConstants.DEFAULT_SIP_PORT;
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
-
-        private ILog logger = AppState.logger;
-
-        private XmlNode m_sipSocketsNode = SIPSoftPhoneState.SIPSocketsNode;    // Optional XML node that can be used to configure the SIP channels used with the SIP transport layer.
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.SIPServer;
         private string m_sipFromName = SIPSoftPhoneState.SIPFromName;
-        private string m_DnsServer = SIPSoftPhoneState.DnsServer;
 
         private SIPTransport m_sipTransport;
         private SIPUserAgent m_userAgent;
-        private MediaManager _mediaManager;
-        bool _isIntialised = false;
         private SIPServerUserAgent m_pendingIncomingCall;
         private CancellationTokenSource _cts = new CancellationTokenSource();
-        private uint m_audioTimestamp;
 
-        public event Action CallAnswer;                 // Fires when an outgoing SIP call is answered.
-        public event Action CallEnded;                  // Fires when an incoming or outgoing call is over.
-        public event Action IncomingCall;               // Fires when an incoming call request is received.
-        public event Action RemotePutOnHold;            // Fires when the remote call party puts us on hold.
-        public event Action RemoteTookOffHold;          // Fires when the remote call party takes us off hold.
-        public event Action<string> StatusMessage;      // Fires when the SIP client has a status message it wants to inform the UI about.
-
-        public SIPTransport SIPClientTransport
-        {
-            get { return m_sipTransport; }
-        }
-
-        public SIPClient()
-        { }
+        public event Action<SIPClient> CallAnswer;                 // Fires when an outgoing SIP call is answered.
+        public event Action<SIPClient> CallEnded;                  // Fires when an incoming or outgoing call is over.
+        public event Action<SIPClient> RemotePutOnHold;            // Fires when the remote call party puts us on hold.
+        public event Action<SIPClient> RemoteTookOffHold;          // Fires when the remote call party takes us off hold.
+        public event Action<SIPClient, string> StatusMessage;      // Fires when the SIP client has a status message it wants to inform the UI about.
 
         /// <summary>
-        /// Shutdown the SIP tranpsort layer and any other resources the SIP client is using. Typically called when the application exits.
+        /// The RTP timestamp to set on audio packets sent for the RTP session
+        /// associated with this client.
         /// </summary>
-        public void Shutdown()
-        {
-            if (m_sipTransport != null)
-            {
-                m_sipTransport.Shutdown();
-            }
+        public uint AudioTimestamp;
 
-            DNSManager.Stop();
+        /// <summary>
+        /// The RTP session associated with this client.
+        /// </summary>
+        public RTPSession RtpSession
+        {
+            get { return m_userAgent.RtpSession; }
         }
 
         /// <summary>
-        /// Initialises the SIP transport layer.
+        /// Once a call is established this holds the properties of the established SIP dialogue.
         /// </summary>
-        public async Task InitialiseSIP()
+        public SIPDialogue Dialogue
         {
-            if (_isIntialised == false)
-            {
-                await Task.Run(() =>
-                {
-                    _isIntialised = true;
-
-                    if (String.IsNullOrEmpty(m_DnsServer) == false)
-                    {
-                        // Use a custom DNS server.
-                        m_DnsServer = m_DnsServer.Contains(":") ? m_DnsServer : m_DnsServer + ":53";
-                        DNSManager.SetDNSServers(new List<IPEndPoint> { IPSocket.ParseSocketString(m_DnsServer) });
-                    }
-
-                    // Configure the SIP transport layer.
-                    m_sipTransport = new SIPTransport();
-                    bool sipChannelAdded = false;
-
-                    if (m_sipSocketsNode != null)
-                    {
-                        // Set up the SIP channels based on the app.config file.
-                        List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(m_sipSocketsNode);
-                        if (sipChannels?.Count > 0)
-                        {
-                            m_sipTransport.AddSIPChannel(sipChannels);
-                            sipChannelAdded = true;
-                        }
-                    }
-
-                    if (sipChannelAdded == false)
-                    {
-                        // Use default options to set up a SIP channel.
-                        SIPUDPChannel udpChannel = null;
-                        try
-                        {
-                            udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_DEFAULT_PORT));
-                        }
-                        catch (SocketException bindExcp)
-                        {
-                            logger.Warn($"Socket exception attempting to bind UDP channel to port {SIP_DEFAULT_PORT}, will use random port. {bindExcp.Message}.");
-                            udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0));
-                        }
-                        var tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Any, udpChannel.Port));
-                        m_sipTransport.AddSIPChannel(new List<SIPChannel> { udpChannel, tcpChannel });
-                    }
-                });
-
-                // Wire up the transport layer so incoming SIP requests have somewhere to go.
-                m_sipTransport.SIPTransportRequestReceived += SIPTransportRequestReceived;
-
-                m_userAgent = new SIPUserAgent(m_sipTransport, null);
-                m_userAgent.ClientCallTrying += CallTrying;
-                m_userAgent.ClientCallRinging += CallRinging;
-                m_userAgent.ClientCallAnswered += CallAnswered;
-                m_userAgent.ClientCallFailed += CallFailed;
-                m_userAgent.OnCallHungup += CallFinished;
-                m_userAgent.ServerCallCancelled += IncomingCallCancelled;
-                m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
-                m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
-
-                // Log all SIP packets received to a log file.
-                m_sipTransport.SIPRequestInTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { logger.Debug("Request Received : " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipRequest.ToString()); };
-                m_sipTransport.SIPRequestOutTraceEvent += (localSIPEndPoint, endPoint, sipRequest) => { logger.Debug("Request Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipRequest.ToString()); };
-                m_sipTransport.SIPResponseInTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { logger.Debug("Response Received: " + localSIPEndPoint + "<-" + endPoint + "\r\n" + sipResponse.ToString()); };
-                m_sipTransport.SIPResponseOutTraceEvent += (localSIPEndPoint, endPoint, sipResponse) => { logger.Debug("Response Sent: " + localSIPEndPoint + "->" + endPoint + "\r\n" + sipResponse.ToString()); };
-            }
+            get { return m_userAgent.Dialogue; }
         }
 
         /// <summary>
-        /// Handler for processing incoming SIP requests.
+        /// Returns true of this SIP client is on an active call.
         /// </summary>
-        /// <param name="localSIPEndPoint">The end point the request was received on.</param>
-        /// <param name="remoteEndPoint">The end point the request came from.</param>
-        /// <param name="sipRequest">The SIP request received.</param>
-        private void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        public bool IsCallActive
         {
-            if (sipRequest.Header.From != null &&
-                sipRequest.Header.From.FromTag != null &&
-                sipRequest.Header.To != null &&
-                sipRequest.Header.To.ToTag != null)
-            {
-                // This is an in-dialog request that will be handled directly by a user agent instance.
-            }
-            else if (sipRequest.Method == SIPMethodsEnum.INVITE)
-            {
-                if (m_userAgent?.IsCallActive == true)
-                {
-                    StatusMessage($"Busy response returned for incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
-                    // If we are already on a call return a busy response.
-                    UASInviteTransaction uasTransaction = new UASInviteTransaction(m_sipTransport, sipRequest, null);
-                    SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
-                    uasTransaction.SendFinalResponse(busyResponse);
-                }
-                else
-                {
-                    StatusMessage($"Incoming call from {sipRequest.Header.From.FriendlyDescription()}.");
-                    m_pendingIncomingCall = m_userAgent.AcceptCall(sipRequest);
-                    IncomingCall();
-                }
-            }
-            else
-            {
-                logger.Debug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
-                SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                m_sipTransport.SendResponse(notAllowedResponse);
-            }
+            get { return m_userAgent.IsCallActive; }
+        }
+
+        public SIPClient(SIPTransport sipTransport)
+        {
+            m_sipTransport = sipTransport;
+            m_userAgent = new SIPUserAgent(m_sipTransport, null);
+            m_userAgent.ClientCallTrying += CallTrying;
+            m_userAgent.ClientCallRinging += CallRinging;
+            m_userAgent.ClientCallAnswered += CallAnswered;
+            m_userAgent.ClientCallFailed += CallFailed;
+            m_userAgent.OnCallHungup += CallFinished;
+            m_userAgent.ServerCallCancelled += IncomingCallCancelled;
+            m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
+            m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
+            m_userAgent.OnTransferNotify += OnTransferNotify;
         }
 
         /// <summary>
@@ -199,11 +97,8 @@ namespace SIPSorcery.SoftPhone
         /// <param name="destination">The SIP URI to place a call to. The destination can be a full SIP URI in which case the all will
         /// be placed anonymously directly to that URI. Alternatively it can be just the user portion of a URI in which case it will
         /// be sent to the configured SIP server.</param>
-        public async void Call(MediaManager mediaManager, string destination)
+        public async void Call(string destination)
         {
-            _mediaManager = mediaManager;
-            _mediaManager.StartAudio();
-
             // Determine if this is a direct anonymous call or whether it should be placed using the pre-configured SIP server account. 
             SIPURI callURI = null;
             string sipUsername = null;
@@ -225,7 +120,7 @@ namespace SIPSorcery.SoftPhone
                 fromHeader = (new SIPFromHeader(m_sipFromName, new SIPURI(m_sipUsername, m_sipServer, null), null)).ToString();
             }
 
-            StatusMessage($"Starting call to {callURI}.");
+            StatusMessage(this, $"Starting call to {callURI}.");
 
             var lookupResult = await Task.Run(() =>
             {
@@ -235,16 +130,13 @@ namespace SIPSorcery.SoftPhone
 
             if (lookupResult == null || lookupResult.LookupError != null)
             {
-                StatusMessage($"Call failed, could not resolve {callURI}.");
+                StatusMessage(this, $"Call failed, could not resolve {callURI}.");
             }
             else
             {
-                StatusMessage($"Call progressing, resolved {callURI} to {lookupResult.GetSIPEndPoint()}.");
+                StatusMessage(this, $"Call progressing, resolved {callURI} to {lookupResult.GetSIPEndPoint()}.");
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {lookupResult.GetSIPEndPoint()}.");
                 var dstAddress = lookupResult.GetSIPEndPoint().Address;
-
-                //SDP sdp = _mediaManager.GetSDP(dstAddress);
-                //System.Diagnostics.Debug.WriteLine(sdp.ToString());
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
                 m_userAgent.Call(callDescriptor);
             }
@@ -255,33 +147,32 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void Cancel()
         {
-            StatusMessage("Cancelling SIP call to " + m_userAgent.CallDescriptor?.Uri + ".");
+            StatusMessage(this, "Cancelling SIP call to " + m_userAgent.CallDescriptor?.Uri + ".");
             m_userAgent.Cancel();
+        }
+
+        /// <summary>
+        /// Accepts an incoming call. This is the first step in answering a call.
+        /// From this point the call can still be rejected, redirected or answered.
+        /// </summary>
+        /// <param name="sipRequest">The SIP request containing the incoming call request.</param>
+        public void Accept(SIPRequest sipRequest)
+        {
+            m_pendingIncomingCall = m_userAgent.AcceptCall(sipRequest);
         }
 
         /// <summary>
         /// Answers an incoming SIP call.
         /// </summary>
-        public void Answer(MediaManager mediaManager)
+        public void Answer()
         {
             if (m_pendingIncomingCall == null)
             {
-                StatusMessage($"There was no pending call available to answer.");
+                StatusMessage(this, $"There was no pending call available to answer.");
             }
             else
             {
-                _mediaManager = mediaManager;
-                _mediaManager.StartAudio();
-
                 m_userAgent.Answer(m_pendingIncomingCall);
-
-                m_userAgent.RtpSession.OnReceivedSampleReady += (sample) => _mediaManager?.EncodedAudioSampleReceived(sample);
-                _mediaManager.OnLocalAudioSampleReady += (sample) =>
-                {
-                    m_userAgent?.RtpSession?.SendAudioFrame(m_audioTimestamp, sample);
-                    m_audioTimestamp += AudioChannel.AUDIO_INPUT_BUFFER_MILLISECONDS;
-                };
-
                 m_pendingIncomingCall = null;
             }
         }
@@ -307,8 +198,11 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void Hangup()
         {
-            m_userAgent.Hangup();
-            CallFinished();
+            if (m_userAgent.IsCallActive)
+            {
+                m_userAgent.Hangup();
+                CallFinished();
+            }
         }
 
         /// <summary>
@@ -317,17 +211,27 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         /// <param name="destination">The SIP URI of the blind transfer destination.</param>
         /// <returns>True if the transfer was accepted or false if not.</returns>
-        public async Task<bool> Transfer(string destination)
+        public async Task<bool> BlindTransfer(string destination)
         {
             if (SIPURI.TryParse(destination, out var uri))
             {
-                return await m_userAgent.Transfer(uri, TimeSpan.FromSeconds(TRANSFER_RESPONSE_TIMEOUT_SECONDS), _cts.Token);
+                return await m_userAgent.BlindTransfer(uri, TimeSpan.FromSeconds(TRANSFER_RESPONSE_TIMEOUT_SECONDS), _cts.Token);
             }
             else
             {
-                StatusMessage($"The transfer destination was not a valid SIP URI.");
+                StatusMessage(this, $"The transfer destination was not a valid SIP URI.");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Sends a request to the remote call party to initiate an attended transfer.
+        /// </summary>
+        /// <param name="transferee">The dialog that will be replaced on the initial call party.</param>
+        /// <returns>True if the transfer was accepted or false if not.</returns>
+        public async Task<bool> AttendedTransfer(SIPDialogue transferee)
+        {
+            return await m_userAgent.AttendedTransfer(transferee, TimeSpan.FromSeconds(TRANSFER_RESPONSE_TIMEOUT_SECONDS), _cts.Token);
         }
 
         /// <summary>
@@ -338,7 +242,7 @@ namespace SIPSorcery.SoftPhone
             m_userAgent.PutOnHold();
             // At this point we could stop listening to the remote party's RTP and play something 
             // else and also stop sending our microphone output and play some music.
-            StatusMessage("Remote party put on hold");
+            StatusMessage(this, "Remote party put on hold");
         }
 
         /// <summary>
@@ -349,7 +253,7 @@ namespace SIPSorcery.SoftPhone
             m_userAgent.TakeOffHold();
             // At ths point we should reverse whatever changes we made to the media stream when we
             // put the remote call part on hold.
-            StatusMessage("Remote taken off on hold");
+            StatusMessage(this, "Remote taken off on hold");
         }
 
         /// <summary>
@@ -367,12 +271,20 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
+        /// Shuts down the SIP client.
+        /// </summary>
+        public void Shutdown()
+        {
+            Hangup();
+        }
+
+        /// <summary>
         /// Event handler that notifies us the remote party has put us on hold.
         /// </summary>
         private void OnRemotePutOnHold()
         {
             //_mediaManager.StopSending();
-            RemotePutOnHold?.Invoke();
+            RemotePutOnHold?.Invoke(this);
         }
 
         /// <summary>
@@ -381,7 +293,7 @@ namespace SIPSorcery.SoftPhone
         private void OnRemoteTookOffHold()
         {
             //_mediaManager.RestartSending();
-            RemoteTookOffHold?.Invoke();
+            RemoteTookOffHold?.Invoke(this);
         }
 
         /// <summary>
@@ -389,7 +301,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void CallTrying(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
-            StatusMessage("Call trying: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
+            StatusMessage(this, "Call trying: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
         }
 
         /// <summary>
@@ -397,7 +309,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void CallRinging(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
-            StatusMessage("Call ringing: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
+            StatusMessage(this, "Call ringing: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
         }
 
         /// <summary>
@@ -405,7 +317,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void CallFailed(ISIPClientUserAgent uac, string errorMessage)
         {
-            StatusMessage("Call failed: " + errorMessage + ".");
+            StatusMessage(this, "Call failed: " + errorMessage + ".");
             CallFinished();
         }
 
@@ -416,31 +328,25 @@ namespace SIPSorcery.SoftPhone
         /// <param name="sipResponse">The SIP answer response received from the remote party.</param>
         private void CallAnswered(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
-            StatusMessage("Call answered: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
+            StatusMessage(this, "Call answered: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
 
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 if (sipResponse.Header.ContentType != _sdpMimeContentType)
                 {
                     // Payload not SDP, I don't understand :(.
-                    StatusMessage("Call was hungup as the answer response content type was not recognised: " + sipResponse.Header.ContentType + ". :(");
+                    StatusMessage(this, "Call was hungup as the answer response content type was not recognised: " + sipResponse.Header.ContentType + ". :(");
                     Hangup();
                 }
                 else if (sipResponse.Body.IsNullOrBlank())
                 {
                     // They said SDP but didn't give us any :(.
-                    StatusMessage("Call was hungup as the answer response had an empty SDP payload. :(");
+                    StatusMessage(this, "Call was hungup as the answer response had an empty SDP payload. :(");
                     Hangup();
                 }
                 else
                 {
-                    m_userAgent.RtpSession.OnReceivedSampleReady += (sample) => _mediaManager?.EncodedAudioSampleReceived(sample);
-                    _mediaManager.OnLocalAudioSampleReady += (sample) =>
-                    {
-                        m_userAgent?.RtpSession?.SendAudioFrame(m_audioTimestamp, sample);
-                        m_audioTimestamp += (uint)(8000 / sample.Length);
-                    };
-                    CallAnswer();
+                    CallAnswer(this);
                 }
             }
             else
@@ -454,15 +360,8 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void CallFinished()
         {
-            if (_mediaManager != null)
-            {
-                _mediaManager.StopAudio();
-                _mediaManager = null;
-            }
-
             m_pendingIncomingCall = null;
-
-            CallEnded();
+            CallEnded(this);
         }
 
         /// <summary>
@@ -472,6 +371,30 @@ namespace SIPSorcery.SoftPhone
         {
             //SetText(m_signallingStatus, "incoming call cancelled for: " + uas.CallDestination + ".");
             CallFinished();
+        }
+
+        /// <summary>
+        /// Event handler for NOTIFY requests that provide updates about the state of a 
+        /// transfer.
+        /// </summary>
+        /// <param name="sipFrag">The SIP snippet containing the transfer status update.</param>
+        private void OnTransferNotify(string sipFrag)
+        {
+            if (sipFrag?.Contains("SIP/2.0 200") == true)
+            {
+                // The transfer attempt got a succesful answer. Can hangup the call.
+                Hangup();
+            }
+            else
+            {
+                Match statusCodeMatch = Regex.Match(sipFrag, @"^SIP/2\.0 (?<statusCode>\d{3})");
+                if(statusCodeMatch.Success)
+                {
+                    int statusCode = Int32.Parse(statusCodeMatch.Result("${statusCode}"));
+                    SIPResponseStatusCodesEnum responseStatusCode = (SIPResponseStatusCodesEnum)statusCode;
+                    StatusMessage(this, $"Transfer failed {responseStatusCode}");
+                }
+            }
         }
     }
 }

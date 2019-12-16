@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -32,7 +33,8 @@ namespace SIPSorcery.SoftPhone
 {
     public partial class SoftPhone : Window
     {
-        private const string VIDEO_LOOPBACK_CALL_DESTINATION = "loop";     // If this destination is called a video loopback call will be attempted.
+        private const string VIDEO_LOOPBACK_CALL_DESTINATION = "loop";    // If this destination is called a video loopback call will be attempted.
+        private const int SIP_CLIENT_COUNT = 2;                             // The number of SIP clients (simultaneous calls) that the UI can handle.
 
         // Currently only supporting these mode(s) from local web cams. Extra work to convert other formats to bitmaps that can be displayed by WPF.
         private static readonly List<MFVideoSubTypesEnum> _supportedVideoModes = new List<MFVideoSubTypesEnum>() { MFVideoSubTypesEnum.MFVideoFormat_RGB24 };
@@ -43,8 +45,8 @@ namespace SIPSorcery.SoftPhone
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.SIPServer;
 
-        private SIPClient _sipClient;                               // SIP calls.
-        private IVoIPClient _activeClient;                          // The active client, either SIP or GV.
+        private SIPTransportManager _sipTransportManager;
+        private List<SIPClient> _sipClients;
         private SoftphoneSTUNClient _stunClient;                    // STUN client to periodically check the public IP address.
         private SIPRegistrationUserAgent _sipRegistrationClient;    // Can be used to register with an external SIP provider if incoming calls are required.
 
@@ -61,18 +63,15 @@ namespace SIPSorcery.SoftPhone
             InitializeComponent();
 
             // Do some UI initialisation.
-            ResetToCallStartState();
+            ResetToCallStartState(null);
 
-            // Set up the SIP client. It can receive calls and initiate outgoing calls.
-            _sipClient = new SIPClient();
-            _sipClient.IncomingCall += SIPCallIncoming;
-            _sipClient.CallAnswer += SIPCallAnswered;
-            _sipClient.CallEnded += ResetToCallStartState;
-            _sipClient.RemotePutOnHold += RemotePutOnHold;
-            _sipClient.RemoteTookOffHold += RemoteTookOffHold;
-            _sipClient.StatusMessage += (message) => { SetStatusText(m_signallingStatus, message); };
+            _sipTransportManager = new SIPTransportManager();
+            _sipTransportManager.IncomingCall += SIPCallIncoming;
 
-            // If a STUN server hostname has been specified start the STUN client to lookup and periodically update the public IP address of the host machine.
+            _sipClients = new List<SIPClient>();
+
+            // If a STUN server hostname has been specified start the STUN client to lookup and periodically 
+            // update the public IP address of the host machine.
             if (!SIPSoftPhoneState.STUNServerHostname.IsNullOrBlank())
             {
                 _stunClient = new SoftphoneSTUNClient(SIPSoftPhoneState.STUNServerHostname);
@@ -88,10 +87,21 @@ namespace SIPSorcery.SoftPhone
 
         private async void Initialise()
         {
-            await _sipClient.InitialiseSIP();
+            await _sipTransportManager.InitialiseSIP();
+
+            for (int i = 0; i < SIP_CLIENT_COUNT; i++)
+            {
+                var sipClient = new SIPClient(_sipTransportManager.SIPTransport);
+                sipClient.CallAnswer += SIPCallAnswered;
+                sipClient.CallEnded += ResetToCallStartState;
+                sipClient.RemotePutOnHold += RemotePutOnHold;
+                sipClient.RemoteTookOffHold += RemoteTookOffHold;
+                sipClient.StatusMessage += (client, message) => { SetStatusText(m_signallingStatus, message); };
+                _sipClients.Add(sipClient);
+            }
 
             string listeningEndPoints = null;
-            foreach (var sipChannel in _sipClient.SIPClientTransport.GetSIPChannels())
+            foreach (var sipChannel in _sipTransportManager.SIPTransport.GetSIPChannels())
             {
                 SIPEndPoint sipChannelEP = sipChannel.ListeningSIPEndPoint.CopyOf();
                 sipChannelEP.ChannelID = null;
@@ -104,7 +114,7 @@ namespace SIPSorcery.SoftPhone
             });
 
             _sipRegistrationClient = new SIPRegistrationUserAgent(
-                _sipClient.SIPClientTransport,
+                _sipTransportManager.SIPTransport,
                 null,
                 null,
                 new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
@@ -129,6 +139,7 @@ namespace SIPSorcery.SoftPhone
                 _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
                 _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
                 _mediaManager.OnLocalVideoError += LocalVideoError;
+                _mediaManager.OnLocalAudioSampleReady += LocalAudioSampleReady;
 
                 if (_localVideoDevices.Items.Count == 0)
                 {
@@ -142,8 +153,13 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            foreach (var sipClient in _sipClients)
+            {
+                sipClient.Shutdown();
+            }
+
             _mediaManager.Close();
-            _sipClient.Shutdown();
+            _sipTransportManager.Shutdown();
 
             if (_stunClient != null)
             {
@@ -195,57 +211,131 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Reset the UI elements to their initial state at the end of a call.
         /// </summary>
-        private void ResetToCallStartState()
+        private void ResetToCallStartState(SIPClient sipClient)
         {
-            UIHelper.DoOnUIThread(this, delegate
+            if (sipClient != null && sipClient.RtpSession != null)
             {
-                m_callButton.Visibility = Visibility.Visible;
-                m_cancelButton.Visibility = Visibility.Collapsed;
-                m_byeButton.Visibility = Visibility.Collapsed;
-                m_answerButton.Visibility = Visibility.Collapsed;
-                m_rejectButton.Visibility = Visibility.Collapsed;
-                m_redirectButton.Visibility = Visibility.Collapsed;
-                m_transferButton.Visibility = Visibility.Collapsed;
-                m_holdButton.Visibility = Visibility.Collapsed;
-                m_offHoldButton.Visibility = Visibility.Collapsed;
-                SetStatusText(m_signallingStatus, "Ready");
-            });
+                sipClient.RtpSession.OnReceivedSampleReady -= RemoteAudioSampleReceived;
+            }
 
-            _activeClient = null;
+            if (sipClient == null || sipClient == _sipClients[0])
+            {
+                UIHelper.DoOnUIThread(this, delegate
+                {
+                    m_callButton.Visibility = Visibility.Visible;
+                    m_cancelButton.Visibility = Visibility.Collapsed;
+                    m_byeButton.Visibility = Visibility.Collapsed;
+                    m_answerButton.Visibility = Visibility.Collapsed;
+                    m_rejectButton.Visibility = Visibility.Collapsed;
+                    m_redirectButton.Visibility = Visibility.Collapsed;
+                    m_transferButton.Visibility = Visibility.Collapsed;
+                    m_holdButton.Visibility = Visibility.Collapsed;
+                    m_offHoldButton.Visibility = Visibility.Collapsed;
+                    SetStatusText(m_signallingStatus, "Ready");
+                });
+            }
+
+            if (sipClient == null || sipClient == _sipClients[1])
+            {
+                UIHelper.DoOnUIThread(this, delegate
+                {
+                    m_call2Button.Visibility = Visibility.Visible;
+                    m_cancel2Button.Visibility = Visibility.Collapsed;
+                    m_bye2Button.Visibility = Visibility.Collapsed;
+                    m_answer2Button.Visibility = Visibility.Collapsed;
+                    m_reject2Button.Visibility = Visibility.Collapsed;
+                    m_redirect2Button.Visibility = Visibility.Collapsed;
+                    m_transfer2Button.Visibility = Visibility.Collapsed;
+                    m_hold2Button.Visibility = Visibility.Collapsed;
+                    m_offHold2Button.Visibility = Visibility.Collapsed;
+                    m_attendedTransferButton.Visibility = Visibility.Collapsed;
+                    SetStatusText(m_signallingStatus, "Ready");
+                });
+            }
         }
 
         /// <summary>
-        /// Set up the UI to present the options for an incoming SIP call.
+        /// Checks if there is a client that can accept the call and if so sets up the UI
+        /// to present the handling options to the user.
         /// </summary>
-        private void SIPCallIncoming()
+        private bool SIPCallIncoming(SIPRequest sipRequest)
         {
-            _activeClient = _sipClient;
+            SetStatusText(m_signallingStatus, $"Incoming call from {sipRequest.Header.From.FriendlyDescription()}.");
 
-            UIHelper.DoOnUIThread(this, delegate
+            if (!_sipClients[0].IsCallActive)
             {
-                m_callButton.Visibility = Visibility.Collapsed;
-                m_cancelButton.Visibility = Visibility.Collapsed;
-                m_byeButton.Visibility = Visibility.Collapsed;
+                _sipClients[0].Accept(sipRequest);
 
-                m_answerButton.Visibility = Visibility.Visible;
-                m_rejectButton.Visibility = Visibility.Visible;
-                m_redirectButton.Visibility = Visibility.Visible;
-            });
+                UIHelper.DoOnUIThread(this, delegate
+                {
+                    m_callButton.Visibility = Visibility.Collapsed;
+                    m_cancelButton.Visibility = Visibility.Collapsed;
+                    m_byeButton.Visibility = Visibility.Collapsed;
+
+                    m_answerButton.Visibility = Visibility.Visible;
+                    m_rejectButton.Visibility = Visibility.Visible;
+                    m_redirectButton.Visibility = Visibility.Visible;
+                });
+
+                return true;
+            }
+            else if (!_sipClients[1].IsCallActive)
+            {
+                _sipClients[1].Accept(sipRequest);
+
+                UIHelper.DoOnUIThread(this, delegate
+                {
+                    m_call2Button.Visibility = Visibility.Collapsed;
+                    m_cancel2Button.Visibility = Visibility.Collapsed;
+                    m_bye2Button.Visibility = Visibility.Collapsed;
+
+                    m_answer2Button.Visibility = Visibility.Visible;
+                    m_reject2Button.Visibility = Visibility.Visible;
+                    m_redirect2Button.Visibility = Visibility.Visible;
+                });
+
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>
         /// Set up the UI to present options for an establisehd SIP call, i.e. hide the cancel 
         /// button and display they hangup button.
         /// </summary>
-        private void SIPCallAnswered()
+        private void SIPCallAnswered(SIPClient client)
         {
-            UIHelper.DoOnUIThread(this, delegate
+            _mediaManager.StartAudio();
+            client.RtpSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
+
+            if (client == _sipClients[0])
             {
-                m_callButton.Visibility = Visibility.Collapsed;
-                m_cancelButton.Visibility = Visibility.Collapsed;
-                m_byeButton.Visibility = Visibility.Visible;
-                m_transferButton.Visibility = Visibility.Visible;
-            });
+                UIHelper.DoOnUIThread(this, delegate
+                {
+                    m_callButton.Visibility = Visibility.Collapsed;
+                    m_cancelButton.Visibility = Visibility.Collapsed;
+                    m_byeButton.Visibility = Visibility.Visible;
+                    m_transferButton.Visibility = Visibility.Visible;
+                    m_holdButton.Visibility = Visibility.Visible;
+
+                    m_call2ActionsGrid.IsEnabled = true;
+                });
+            }
+            else if (client == _sipClients[1])
+            {
+                UIHelper.DoOnUIThread(this, delegate
+                {
+                    m_call2Button.Visibility = Visibility.Collapsed;
+                    m_cancel2Button.Visibility = Visibility.Collapsed;
+                    m_bye2Button.Visibility = Visibility.Visible;
+                    m_transfer2Button.Visibility = Visibility.Visible;
+                    m_hold2Button.Visibility = Visibility.Visible;
+                    m_attendedTransferButton.Visibility = Visibility.Visible;
+                });
+            }
         }
 
         /// <summary>
@@ -253,7 +343,13 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void CallButton_Click(object sender, RoutedEventArgs e)
         {
-            if (m_uriEntryTextBox.Text.IsNullOrBlank())
+            SIPClient client = (sender == m_callButton) ? _sipClients[0] : _sipClients[1];
+
+            if (client == _sipClients[0] && m_uriEntryTextBox.Text.IsNullOrBlank())
+            {
+                SetStatusText(m_signallingStatus, "No call destination was specified.");
+            }
+            else if (client == _sipClients[1] && m_uriEntry2TextBox.Text.IsNullOrBlank())
             {
                 SetStatusText(m_signallingStatus, "No call destination was specified.");
             }
@@ -276,17 +372,39 @@ namespace SIPSorcery.SoftPhone
             }
             else
             {
-                SetStatusText(m_signallingStatus, "calling " + m_uriEntryTextBox.Text + ".");
+                string callDestination = null;
 
-                m_callButton.Visibility = Visibility.Collapsed;
-                m_cancelButton.Visibility = Visibility.Visible;
-                m_byeButton.Visibility = Visibility.Collapsed;
+                if (client == _sipClients[0])
+                {
+                    callDestination = m_uriEntryTextBox.Text;
 
-                string destination = m_uriEntryTextBox.Text;
+                    SetStatusText(m_signallingStatus, $"calling {callDestination}.");
 
-                // SIP call.
-                _activeClient = _sipClient;
-                Task.Run(() => { _sipClient.Call(_mediaManager, destination); });
+                    m_callButton.Visibility = Visibility.Collapsed;
+                    m_cancelButton.Visibility = Visibility.Visible;
+                    m_byeButton.Visibility = Visibility.Collapsed;
+                }
+                else if (client == _sipClients[1])
+                {
+                    // Put the first call on hold.
+                    if (_sipClients[0].IsCallActive)
+                    {
+                        _sipClients[0].PutOnHold();
+                        m_holdButton.Visibility = Visibility.Collapsed;
+                        m_offHoldButton.Visibility = Visibility.Visible;
+                    }
+
+                    callDestination = m_uriEntry2TextBox.Text;
+
+                    SetStatusText(m_signallingStatus, $"calling {callDestination}.");
+
+                    m_call2Button.Visibility = Visibility.Collapsed;
+                    m_cancel2Button.Visibility = Visibility.Visible;
+                    m_bye2Button.Visibility = Visibility.Collapsed;
+                }
+
+                // Start SIP call.
+                Task.Run(() => { client.Call(callDestination); });
             }
         }
 
@@ -295,8 +413,9 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void CancelButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _activeClient.Cancel();
-            ResetToCallStartState();
+            var client = (sender == m_cancelButton) ? _sipClients[0] : _sipClients[1];
+            client.Cancel();
+            ResetToCallStartState(client);
         }
 
         /// <summary>
@@ -304,10 +423,11 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void ByeButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _activeClient?.Hangup();
-            _mediaManager.Close();
+            var client = (sender == m_byeButton) ? _sipClients[0] : _sipClients[1];
+            client.RtpSession.OnReceivedSampleReady -= RemoteAudioSampleReceived;
+            client.Hangup();
 
-            ResetToCallStartState();
+            ResetToCallStartState(client);
         }
 
         /// <summary>
@@ -315,13 +435,41 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void AnswerButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _activeClient.Answer(_mediaManager);
-            m_answerButton.Visibility = Visibility.Collapsed;
-            m_rejectButton.Visibility = Visibility.Collapsed;
-            m_redirectButton.Visibility = Visibility.Collapsed;
-            m_byeButton.Visibility = Visibility.Visible;
-            m_transferButton.Visibility = Visibility.Visible;
-            m_holdButton.Visibility = Visibility.Visible;
+            var client = (sender == m_answerButton) ? _sipClients[0] : _sipClients[1];
+
+            client.Answer();
+            client.RtpSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
+            _mediaManager.StartAudio();
+
+            if (client == _sipClients[0])
+            {
+                m_answerButton.Visibility = Visibility.Collapsed;
+                m_rejectButton.Visibility = Visibility.Collapsed;
+                m_redirectButton.Visibility = Visibility.Collapsed;
+                m_byeButton.Visibility = Visibility.Visible;
+                m_transferButton.Visibility = Visibility.Visible;
+                m_holdButton.Visibility = Visibility.Visible;
+
+                m_call2ActionsGrid.IsEnabled = true;
+            }
+            else if (client == _sipClients[1])
+            {
+                // Put the first call on hold.
+                if (_sipClients[0].IsCallActive)
+                {
+                    _sipClients[0].PutOnHold();
+                    m_holdButton.Visibility = Visibility.Collapsed;
+                    m_offHoldButton.Visibility = Visibility.Visible;
+                }
+
+                m_answer2Button.Visibility = Visibility.Collapsed;
+                m_reject2Button.Visibility = Visibility.Collapsed;
+                m_redirect2Button.Visibility = Visibility.Collapsed;
+                m_bye2Button.Visibility = Visibility.Visible;
+                m_transfer2Button.Visibility = Visibility.Visible;
+                m_hold2Button.Visibility = Visibility.Visible;
+                m_attendedTransferButton.Visibility = Visibility.Visible;
+            }
         }
 
         /// <summary>
@@ -329,8 +477,9 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void RejectButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _activeClient.Reject();
-            ResetToCallStartState();
+            var client = (sender == m_rejectButton) ? _sipClients[0] : _sipClients[1];
+            client.Reject();
+            ResetToCallStartState(client);
         }
 
         /// <summary>
@@ -338,20 +487,31 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void RedirectButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            _activeClient.Redirect(m_uriEntryTextBox.Text);
-            ResetToCallStartState();
+            var client = (sender == m_redirectButton) ? _sipClients[0] : _sipClients[1];
+
+            if (client == _sipClients[0])
+            {
+                client.Redirect(m_uriEntryTextBox.Text);
+            }
+            else if (client == _sipClients[1])
+            {
+                client.Redirect(m_uriEntry2TextBox.Text);
+            }
+
+            ResetToCallStartState(client);
         }
 
         /// <summary>
         /// The button to send a blind transfer request to the remote call party.
         /// </summary>
-        private async void TransferButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private async void BlindTransferButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            bool wasAccepted = await _activeClient.Transfer(m_uriEntryTextBox.Text);
+            var client = (sender == m_transferButton) ? _sipClients[0] : _sipClients[1];
+            bool wasAccepted = await client.BlindTransfer(m_uriEntryTextBox.Text);
 
             if (wasAccepted)
             {
-                ResetToCallStartState();
+                ResetToCallStartState(client);
             }
             else
             {
@@ -360,28 +520,63 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
+        /// The button to initiate an attended transfer request between the two in active calls.
+        /// </summary>
+        private async void AttendedTransferButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            bool wasAccepted = await _sipClients[1].AttendedTransfer(_sipClients[0].Dialogue);
+
+            if (!wasAccepted)
+            {
+                SetStatusText(m_signallingStatus, "The remote call party did not accept the transfer request.");
+            }
+        }
+
+        /// <summary>
         /// The remote call party put us on hold.
         /// </summary>
-        private void RemotePutOnHold()
+        private void RemotePutOnHold(SIPClient sipClient)
         {
             // We can't put them on hold if they've already put us on hold.
             SetStatusText(m_signallingStatus, "Put on hold by remote party.");
-            UIHelper.DoOnUIThread(this, delegate
+
+            if (sipClient == _sipClients[0])
             {
-                m_holdButton.Visibility = Visibility.Collapsed;
-            });
+                UIHelper.DoOnUIThread(this, delegate
+                {
+                    m_holdButton.Visibility = Visibility.Collapsed;
+                });
+            }
+            else if (sipClient == _sipClients[1])
+            {
+                UIHelper.DoOnUIThread(this, delegate
+                {
+                    m_hold2Button.Visibility = Visibility.Collapsed;
+                });
+            }
         }
 
         /// <summary>
         /// The remote call party has taken us off hold.
         /// </summary>
-        private void RemoteTookOffHold()
+        private void RemoteTookOffHold(SIPClient sipClient)
         {
             SetStatusText(m_signallingStatus, "Taken off hold by remote party.");
-            UIHelper.DoOnUIThread(this, delegate
+
+            if (sipClient == _sipClients[0])
             {
-                m_holdButton.Visibility = Visibility.Visible;
-            });
+                UIHelper.DoOnUIThread(this, delegate
+                {
+                    m_holdButton.Visibility = Visibility.Visible;
+                });
+            }
+            else if (sipClient == _sipClients[1])
+            {
+                UIHelper.DoOnUIThread(this, delegate
+                {
+                    m_hold2Button.Visibility = Visibility.Visible;
+                });
+            }
         }
 
         /// <summary>
@@ -389,9 +584,20 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void HoldButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            m_holdButton.Visibility = Visibility.Collapsed;
-            m_offHoldButton.Visibility = Visibility.Visible;
-            _sipClient.PutOnHold();
+            SIPClient client = (sender == m_holdButton) ? _sipClients[0] : _sipClients[1];
+
+            if (client == _sipClients[0])
+            {
+                m_holdButton.Visibility = Visibility.Collapsed;
+                m_offHoldButton.Visibility = Visibility.Visible;
+            }
+            else if (client == _sipClients[1])
+            {
+                m_hold2Button.Visibility = Visibility.Collapsed;
+                m_offHold2Button.Visibility = Visibility.Visible;
+            }
+
+            client.PutOnHold();
         }
 
         /// <summary>
@@ -399,9 +605,20 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void OffHoldButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            m_holdButton.Visibility = Visibility.Visible;
-            m_offHoldButton.Visibility = Visibility.Collapsed;
-            _sipClient.TakeOffHold();
+            SIPClient client = (sender == m_offHoldButton) ? _sipClients[0] : _sipClients[1];
+
+            if (client == _sipClients[0])
+            {
+                m_holdButton.Visibility = Visibility.Visible;
+                m_offHoldButton.Visibility = Visibility.Collapsed;
+            }
+            else if (client == _sipClients[1])
+            {
+                m_hold2Button.Visibility = Visibility.Visible;
+                m_offHold2Button.Visibility = Visibility.Collapsed;
+            }
+
+            client.TakeOffHold();
         }
 
         /// <summary>
@@ -412,8 +629,8 @@ namespace SIPSorcery.SoftPhone
         {
             logger.Debug(text);
             UIHelper.DoOnUIThread(this, delegate
-            { 
-                textBlock.Text = text; 
+            {
+                textBlock.Text = text;
             });
         }
 
@@ -536,17 +753,40 @@ namespace SIPSorcery.SoftPhone
             char keyPressed = (keyButton.Content as string).ToCharArray()[0];
             SetStatusText(m_signallingStatus, $"Key pressed {keyPressed}.");
 
-            if(keyPressed >= 48 && keyPressed <=57)
+            SIPClient client = _sipClients[0];
+
+            if (keyPressed >= 48 && keyPressed <= 57)
             {
-                await _sipClient.SendDTMF((byte)(keyPressed - 48));
+                await client.SendDTMF((byte)(keyPressed - 48));
             }
-            else if(keyPressed == '*')
+            else if (keyPressed == '*')
             {
-                await _sipClient.SendDTMF((byte)10);
+                await client.SendDTMF((byte)10);
             }
-            else if(keyPressed == '#')
+            else if (keyPressed == '#')
             {
-                await _sipClient.SendDTMF((byte)11);
+                await client.SendDTMF((byte)11);
+            }
+        }
+
+        private void RemoteAudioSampleReceived(byte[] sample)
+        {
+            _mediaManager.EncodedAudioSampleReceived(sample);
+        }
+
+        /// <summary>
+        /// Forwards samples from the local audio input device to each of the active RTP sessions.
+        /// We leave it up to the RTP session to decide if it wants to transmit the sample or not.
+        /// For example an RTP session will know whether it's on hold and whether it needs to send
+        /// audio to the remote call party or not.
+        /// </summary>
+        /// <param name="sample">The sample from the audio input device.</param>
+        private void LocalAudioSampleReady(byte[] sample)
+        {
+            foreach (SIPClient client in _sipClients.Where(x => x.IsCallActive))
+            {
+                client.RtpSession?.SendAudioFrame(client.AudioTimestamp, sample);
+                client.AudioTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
             }
         }
     }

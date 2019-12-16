@@ -185,7 +185,10 @@ namespace SIPSorcery.Net
                     rtpPacket.Header.SyncSource = Ssrc;
                     rtpPacket.Header.SequenceNumber = SeqNum++;
                     rtpPacket.Header.Timestamp = timestamp;
-                    rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
+                    // RFC3551 specifies that for audio the marker bit should always be 0 except for when returning
+                    // from silence suppression. For video the marker bit DOES get set to 1 for the last packet
+                    // in a frame.
+                    rtpPacket.Header.MarkerBit = 0;
                     rtpPacket.Header.PayloadType = FormatTypeID;
 
                     Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, 0, payloadLength);
