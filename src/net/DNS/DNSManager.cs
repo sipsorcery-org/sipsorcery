@@ -10,6 +10,7 @@
 // History:
 // 19 Oct 2007	Aaron Clauson	Created, (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland (www.sipsorcery.com).
 // 14 Oct 2019  Aaron Clauson   Updatyes after synchronsing DNS classes with source from https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
+// rj2: IDisposable for LookupRequest
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -29,7 +30,7 @@ namespace SIPSorcery.Net
 {
     public class DNSManager
     {
-        class LookupRequest
+        class LookupRequest : IDisposable
         {
             public static LookupRequest Empty = new LookupRequest(null, QType.NULL, DEFAULT_DNS_TIMEOUT, null, null);
 
@@ -48,6 +49,62 @@ namespace SIPSorcery.Net
                 DNSServers = dnsServers;
                 CompleteEvent = completeEvent;
             }
+
+            public string id()
+            {
+                return string.Format("{0}{1}", this.QueryType.ToString(), this.Hostname);
+            }
+            #region IDisposable Support
+            private bool disposedValue = false; // To detect redundant calls
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (!disposedValue)
+                {
+                    if (disposing)
+                    {
+                        // dispose managed state (managed objects).
+                        if (this.CompleteEvent != null)
+                        {
+                            this.CompleteEvent.Set();
+                            this.CompleteEvent.Dispose();
+                            this.CompleteEvent = null;
+                        }
+                        if (this.DNSServers != null)
+                        {
+                            this.DNSServers.Clear();
+                            this.DNSServers = null;
+                        }
+                        if (this.Duplicates != null)
+                        {
+                            this.Duplicates.Clear();
+                            this.Duplicates = null;
+                        }
+                    }
+
+                    // free unmanaged resources (unmanaged objects) and override a finalizer below.
+                    // set large fields to null.
+
+                    disposedValue = true;
+                }
+            }
+
+            // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+            ~LookupRequest()
+            {
+                //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+                Dispose(false);
+            }
+
+            // This code added to correctly implement the disposable pattern.
+            public void Dispose()
+            {
+                // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+                Dispose(true);
+                // TODO: uncomment the following line if the finalizer is overridden above.
+                // GC.SuppressFinalize(this);
+            }
+            #endregion
         }
 
         private const int NUMBER_LOOKUP_THREADS = 5;            // Number of threads that will be available to undertake DNS lookups.
