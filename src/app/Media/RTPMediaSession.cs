@@ -39,7 +39,7 @@ namespace SIPSorcery.SIP.App.Media
 
         public SDP ReInvite(SDP remoteSDP)
         {
-            IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(remoteSDP.ToString());
+            IPEndPoint dstRtpEndPoint = remoteSDP.GetSDPRTPEndPoint();
 
             if (session.DestinationEndPoint != dstRtpEndPoint)
             {

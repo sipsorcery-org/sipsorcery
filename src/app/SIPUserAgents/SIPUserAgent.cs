@@ -335,6 +335,7 @@ namespace SIPSorcery.SIP.App
 
             var sipRequest = uas.ClientTransaction.TransactionRequest;
             SDP remoteSDP = SDP.ParseSDPDescription(sipRequest.Body);
+            var remoteEndpoint = remoteSDP.GetSDPRTPEndPoint();
 
             RtpSession = m_mediaSessionFactory.Create();
             RtpSession.DtmfCompleted += OnRemoteRtpEvent;
@@ -646,7 +647,7 @@ namespace SIPSorcery.SIP.App
 
                 UACInviteTransaction reinviteTransaction = new UACInviteTransaction(m_transport, reinviteRequest, m_outboundProxy);
                 reinviteTransaction.SendReliableRequest();
-                
+
                 reinviteTransaction.UACInviteTransactionFinalResponseReceived += ReinviteRequestFinalResponseReceived;
             }
         }
@@ -799,7 +800,7 @@ namespace SIPSorcery.SIP.App
                 CallEnded();
             }
         }
-        
+
         /// <summary>
         /// Builds the REFER request to initiate a blind transfer on an established call.
         /// </summary>
@@ -824,7 +825,7 @@ namespace SIPSorcery.SIP.App
         private SIPRequest GetReferRequest(SIPDialogue target)
         {
             SIPRequest referRequest = Dialogue.GetInDialogRequest(SIPMethodsEnum.REFER);
-            SIPURI targetUri = target.RemoteTarget.CopyOf();          
+            SIPURI targetUri = target.RemoteTarget.CopyOf();
             referRequest.Header.Contact = new List<SIPContactHeader> { SIPContactHeader.GetDefaultSIPContactHeader() };
 
             SIPParameters replacesHeaders = new SIPParameters();

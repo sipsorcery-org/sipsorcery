@@ -448,15 +448,12 @@ namespace SIPSorcery.Net
         /// <summary>
         /// A convenience method to get the RTP end point for single audio offer SDP payloads.
         /// </summary>
-        /// <param name="sdpMessage">A string representing the SDP payload.</param>
         /// <returns>The RTP end point for the first media end point.</returns>
-        public static IPEndPoint GetSDPRTPEndPoint(string sdpMessage)
+        public IPEndPoint GetSDPRTPEndPoint()
         {
-            SDP sdp = SDP.ParseSDPDescription(sdpMessage);
-
             // Find first media offer.
-            var sessionConnection = sdp?.Connection;
-            var firstMediaOffer = sdp?.Media.FirstOrDefault();
+            var sessionConnection = Connection;
+            var firstMediaOffer = Media.FirstOrDefault();
 
             if (sessionConnection != null && firstMediaOffer != null)
             {
@@ -466,6 +463,17 @@ namespace SIPSorcery.Net
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// A convenience method to get the RTP end point for single audio offer SDP payloads.
+        /// </summary>
+        /// <param name="sdpMessage">A string representing the SDP payload.</param>
+        /// <returns>The RTP end point for the first media end point.</returns>
+        public static IPEndPoint GetSDPRTPEndPoint(string sdpMessage)
+        {
+            return ParseSDPDescription(sdpMessage)
+                .GetSDPRTPEndPoint();
         }
 
         /// <summary>
