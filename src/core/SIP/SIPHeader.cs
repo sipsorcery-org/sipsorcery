@@ -125,7 +125,14 @@ namespace SIPSorcery.SIP
                         }
                         else
                         {
-                            return ipEndPoint.Address.ToString();
+                            if (ipEndPoint.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+                            {
+                                return "[" + ipEndPoint.Address.ToString() + "]";
+                            }
+                            else
+                            {
+                                return ipEndPoint.Address.ToString();
+                            }
                         }
                     }
                     else
@@ -164,11 +171,27 @@ namespace SIPSorcery.SIP
                 }
                 else if (ReceivedFromPort != 0)
                 {
-                    return Host + ":" + ReceivedFromPort;
+                    if (IPAddress.TryParse(Host, out IPAddress hostip))
+                    {
+                        IPEndPoint ep = new IPEndPoint(hostip, ReceivedFromPort);
+                        return ep.ToString();
+                    }
+                    else
+                    {
+                        return Host + ":" + ReceivedFromPort;
+                    }
                 }
                 else if (Port != 0)
                 {
-                    return Host + ":" + Port;
+                    if (IPAddress.TryParse(Host, out IPAddress hostip))
+                    {
+                        IPEndPoint ep = new IPEndPoint(hostip, Port);
+                        return ep.ToString();
+                    }
+                    else
+                    {
+                        return Host + ":" + Port;
+                    }
                 }
                 else
                 {
@@ -443,6 +466,18 @@ namespace SIPSorcery.SIP
         public override string ToString()
         {
             return m_userField.ToString();
+        }
+
+        /// <summary>
+        /// Returns a friendly description of the caller that's suitable for humans. Leaves out
+        /// all the parameters etc.
+        /// </summary>
+        /// <returns>A string representing a friendly description of the From header.</returns>
+        public string FriendlyDescription()
+        {
+            string caller = FromURI.ToAOR();
+            caller = (!string.IsNullOrEmpty(FromName)) ? FromName + " " + caller : caller;
+            return caller;
         }
     }
 

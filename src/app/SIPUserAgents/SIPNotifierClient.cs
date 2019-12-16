@@ -132,7 +132,7 @@ namespace SIPSorcery.SIP.App
             {
                 logger.LogDebug("SIPNotifierClient GotNotificationRequest for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " " + sipRequest.Header.CSeq + ".");
 
-                SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                 m_sipTransport.SendResponse(okResponse);
 
                 //logger.LogDebug(sipRequest.ToString());
@@ -238,7 +238,7 @@ namespace SIPSorcery.SIP.App
                     m_attempts++;
                     m_localCSeq++;
 
-                    SIPRequest subscribeRequest = m_sipTransport.GetRequest(
+                    SIPRequest subscribeRequest = SIPRequest.GetRequest(
                         SIPMethodsEnum.SUBSCRIBE,
                         m_resourceURI,
                         new SIPToHeader(null, subscribeURI, m_subscriptionToTag),
@@ -263,11 +263,11 @@ namespace SIPSorcery.SIP.App
                         subscribeRequest.Header.ContentType = m_filterTextType;
                     }
 
-                    SIPNonInviteTransaction subscribeTransaction = m_sipTransport.CreateNonInviteTransaction(subscribeRequest, m_outboundProxy);
+                    SIPNonInviteTransaction subscribeTransaction = new SIPNonInviteTransaction(m_sipTransport, subscribeRequest, m_outboundProxy);
                     subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
                     subscribeTransaction.NonInviteTransactionTimedOut += SubsribeTransactionTimedOut;
 
-                    m_sipTransport.SendSIPReliable(subscribeTransaction);
+                    m_sipTransport.SendReliable(subscribeTransaction);
 
                     LastSubscribeAttempt = DateTime.Now;
                 }
@@ -363,11 +363,11 @@ namespace SIPSorcery.SIP.App
                             }
 
                             // Create a new transaction to establish the authenticated server call.
-                            SIPNonInviteTransaction subscribeTransaction = m_sipTransport.CreateNonInviteTransaction(authSubscribeRequest, m_outboundProxy);
+                            SIPNonInviteTransaction subscribeTransaction = new SIPNonInviteTransaction(m_sipTransport, authSubscribeRequest, m_outboundProxy);
                             subscribeTransaction.NonInviteTransactionFinalResponseReceived += SubscribeTransactionFinalResponseReceived;
                             subscribeTransaction.NonInviteTransactionTimedOut += SubsribeTransactionTimedOut;
 
-                            m_sipTransport.SendSIPReliable(subscribeTransaction);
+                            m_sipTransport.SendReliable(subscribeTransaction);
                         }
                     }
                     else

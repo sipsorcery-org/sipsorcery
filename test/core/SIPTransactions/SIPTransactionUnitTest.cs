@@ -79,7 +79,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
             SIPTransport sipTransport = new SIPTransport(MockSIPDNSManager.Resolve, transactionEngine);
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
-            SIPTransaction transaction = sipTransport.CreateUACTransaction(request, null);
+            SIPTransaction transaction = new UACInviteTransaction(sipTransport, request, null);
 
             Assert.True(transaction.TransactionRequest.URI.ToString() == "sip:023434211@213.200.94.182;switchtag=902888", "Transaction request URI was incorrect.");
         }

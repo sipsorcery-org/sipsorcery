@@ -168,11 +168,12 @@ namespace SIPSorcery.SIP
             {
                 try
                 {
-                    Socket clientSocket = m_tcpServerListener.AcceptSocket();
-                    logger.LogDebug($"SIP {ProtDescr} Channel connection accepted from {clientSocket.RemoteEndPoint} by {clientSocket.LocalEndPoint}.");
+                    Socket clientSocket = await m_tcpServerListener.AcceptSocketAsync();
 
                     if (!Closed)
                     {
+                        logger.LogDebug($"SIP {ProtDescr} Channel connection accepted from {clientSocket.RemoteEndPoint} by {clientSocket.LocalEndPoint}.");
+
                         clientSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                         clientSocket.LingerState = new LingerOption(true, 0);
 
@@ -183,6 +184,11 @@ namespace SIPSorcery.SIP
 
                         await OnAccept(sipStmConn);
                     }
+                }
+                catch (ObjectDisposedException)
+                {
+                    // This is a result of the transport channel being closed. Safe to ignore.
+                    logger.LogDebug($"SIP {ProtDescr} Channel accepts for {ListeningEndPoint} cancelled.");
                 }
                 catch (SocketException acceptSockExcp) when (acceptSockExcp.SocketErrorCode == SocketError.Interrupted)
                 {
@@ -327,11 +333,14 @@ namespace SIPSorcery.SIP
                     RemoteEndPoint = dstEndPoint
                 };
 
+                // NOTE: The approach of setting the buffer on the connect args worked properly on Windows BUT
+                // not so on Linux. Since it's such a tiny saving skip setting the buffer on the connect and 
+                // do the send once the sockets are connected (use SendOnConnected).
                 // If this is a TCP channel can take a shortcut and set the first send payload on the connect args.
-                if (buffer != null && buffer.Length > 0 && serverCertificateName == null)
-                {
-                    connectArgs.SetBuffer(buffer, 0, buffer.Length);
-                }
+                //if (buffer != null && buffer.Length > 0 && serverCertificateName == null)
+                //{
+                //    connectArgs.SetBuffer(buffer, 0, buffer.Length);
+                //}
 
                 logger.LogDebug($"Attempting TCP connection from {localEndPoint} to {dstEndPoint}.");
 
@@ -368,7 +377,9 @@ namespace SIPSorcery.SIP
 
                     m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
 
-                    await OnClientConnect(sipStmConn, buffer, serverCertificateName);
+                    await OnClientConnect(sipStmConn, serverCertificateName);
+
+                    SendOnConnected(sipStmConn, buffer);
                 }
 
                 return connectResult;
@@ -385,8 +396,7 @@ namespace SIPSorcery.SIP
         /// Can start receiving immeidately.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly connected client socket.</param>
-        /// <param name="buffer">Optional parameter that contains the data that still needs to be sent once the connection is established.</param>
-        protected virtual Task OnClientConnect(SIPStreamConnection streamConnection, byte[] buffer, string certificateName)
+        protected virtual Task OnClientConnect(SIPStreamConnection streamConnection, string certificateName)
         {
             SocketAsyncEventArgs recvArgs = streamConnection.RecvSocketArgs;
             recvArgs.AcceptSocket = streamConnection.StreamSocket;
@@ -544,16 +554,20 @@ namespace SIPSorcery.SIP
                         // Important: Due to the way TCP works the end of the connection that initiates the close
                         // is meant to go into a TIME_WAIT state. On Windows that results in the same pair of sockets
                         // being unable to reconnect for 30s. SIP can deal with stray and duplicate messages at the 
-                        // appliction layer so the TIME_WAIT is not that useful. While not useful it is also a major annoyance
+                        // appliction layer so the TIME_WAIT is not that useful. In fact it TIME_WAIT is a major annoyance for SIP
                         // as if a connection is dropped for whatever reason, such as a parser error or inactivity, it will
-                        // prevent the connection being re-established.
+                        // prevent the connection being re-established for the TIME_WAIT period.
                         //
                         // For this reason this implementation uses a hard RST close for client initiated socket closes. This
                         // results in a TCP RST packet instead of the graceful FIN-ACK sequence. Two things are necessary with
                         // WinSock2 to force the hard RST:
                         //
                         // - the Linger option must be set on the raw socket before binding as Linger option {1, 0}.
-                        // - the close method must be called on teh socket without shutting down the stream.
+                        // - the close method must be called on the socket without shutting down the stream.
+
+                        // Linux (WSL) note: This mechanism does not work. Calling socket close does not send the RST and instead
+                        // sends the graceful FIN-ACK.
+                        // TODO: Research if there is a way to force a socket reset with dotnet on LINUX.
 
                         socket.Close();
                     }
@@ -610,10 +624,14 @@ namespace SIPSorcery.SIP
                 {
                     foreach (SIPStreamConnection streamConnection in m_connections.Values)
                     {
-                        if (streamConnection.StreamSocket != null)
+                        try
                         {
                             // See explanation in OnSIPStreamSocketDisconnected on why the close is done on the socket and NOT the stream.
-                            streamConnection.StreamSocket.Close();
+                            streamConnection.StreamSocket?.Close();
+                        }
+                        catch (Exception closeExcp)
+                        {
+                            logger.LogError($"Exception closing SIP connection on {ProtDescr}. {closeExcp.Message}");
                         }
                     }
                     m_connections.Clear();
@@ -621,12 +639,16 @@ namespace SIPSorcery.SIP
 
                 try
                 {
+                    logger.LogDebug($"Stopping SIP {ProtDescr} Channel listener {ListeningEndPoint}.");
+
                     m_tcpServerListener.Stop();
                 }
-                catch (Exception excp)
+                catch (Exception stopExcp)
                 {
-                    logger.LogWarning($"Exception SIP {ProtDescr} Channel Close (shutting down listener). {excp.Message}");
+                    logger.LogError($"Exception SIP {ProtDescr} Channel Close (shutting down listener). {stopExcp.Message}");
                 }
+
+                logger.LogDebug($"Successfully closed SIP {ProtDescr} Channel for {ListeningEndPoint}.");
             }
         }
 

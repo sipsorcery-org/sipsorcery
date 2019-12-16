@@ -129,20 +129,6 @@ namespace SIPSorcery.SIP
             get { return m_transactionRequest.Header.From.FromUserField; }
         }
 
-
-        /// <summary>
-        /// The remote socket that caused the transaction to be created or the socket a newly 
-        /// created transaction request was sent to. 
-        /// </summary>
-        //public SIPEndPoint RemoteEndPoint;
-
-        /// <summary>
-        /// The local SIP endpoint the remote request was received on or if created by us 
-        /// the local SIP end point used to send the initial transaction request (note will be null
-        /// until the request is sent).
-        /// </summary>
-        //public SIPEndPoint LocalSIPEndPoint;
-
         /// <summary>
         /// If not null this value is where ALL transaction requests should be sent to.
         /// </summary>
@@ -323,12 +309,18 @@ namespace SIPSorcery.SIP
         {
             m_transactionFinalResponse = finalResponse;
             UpdateTransactionState(SIPTransactionStatesEnum.Completed);
-            string viaAddress = finalResponse.Header.Vias.TopViaHeader.ReceivedFromAddress;
+
+            // Reset transaction state variables to reset any provisional reliable responses.
+            InitialTransmit = DateTime.MinValue;
+            Retransmits = 0;
+            DeliveryPending = true;
+            DeliveryFailed = false;
+            HasTimedOut = false;
 
             if (TransactionType == SIPTransactionTypesEnum.InviteServer)
             {
                 FireTransactionTraceMessage($"Transaction send final response reliable {finalResponse.ShortDescription}");
-                m_sipTransport.SendSIPReliable(this);
+                m_sipTransport.SendReliable(this);
             }
             else
             {
@@ -371,7 +363,7 @@ namespace SIPSorcery.SIP
                     }
 
                     ReliableProvisionalResponse = sipResponse;
-                    m_sipTransport.SendSIPReliable(this);
+                    m_sipTransport.SendReliable(this);
                 }
                 else
                 {
@@ -398,13 +390,13 @@ namespace SIPSorcery.SIP
             await m_sipTransport.SendRequestAsync(dstEndPoint, sipRequest);
         }
 
-        public void SendRequest(SIPRequest sipRequest)
+        public async void SendRequest(SIPRequest sipRequest)
         {
             var lookupResult = m_sipTransport.GetRequestEndPoint(sipRequest, OutboundProxy, true);
 
             if (lookupResult != null && lookupResult.LookupError == null)
             {
-                SendRequest(lookupResult.GetSIPEndPoint(), sipRequest).Wait();
+                await SendRequest(lookupResult.GetSIPEndPoint(), sipRequest);
             }
             else
             {
@@ -421,7 +413,7 @@ namespace SIPSorcery.SIP
                 UpdateTransactionState(SIPTransactionStatesEnum.Calling);
             }
 
-            m_sipTransport.SendSIPReliable(this);
+            m_sipTransport.SendReliable(this);
         }
 
         protected SIPResponse GetInfoResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum sipResponseCode)
@@ -482,7 +474,7 @@ namespace SIPSorcery.SIP
 
             // We don't keep track of previous provisional response ACK's so always return OK if the request matched the 
             // transaction and got this far.
-            var prackResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+            var prackResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
             m_sipTransport.SendResponse(prackResponse);
         }
 

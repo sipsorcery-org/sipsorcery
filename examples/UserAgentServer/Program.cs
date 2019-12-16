@@ -73,8 +73,8 @@ namespace SIPSorcery
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
         private static int SIP_LISTEN_PORT = 5060;
         private static int SIPS_LISTEN_PORT = 5061;
-        private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
-        private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
+        //private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
+        //private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
         private static int RTP_PORT_START = 49000;
         private static int RTP_PORT_END = 49100;
 
@@ -118,15 +118,15 @@ namespace SIPSorcery
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(listenAddress, SIPS_LISTEN_PORT)));
-            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_WEBSOCKET_LISTEN_PORT));
-            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
+            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_WEBSOCKET_LISTEN_PORT));
+            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
 
             // IPv6 channels.
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(listenIPv6Address, SIPS_LISTEN_PORT)));
-            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_WEBSOCKET_LISTEN_PORT));
-            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
+            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_WEBSOCKET_LISTEN_PORT));
+            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
 
             EnableTraceLogs(sipTransport);
 
@@ -152,23 +152,23 @@ namespace SIPSorcery
                         RTPSession rtpSession = null;
                         string audioFile = null;
 
-                        if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)RTPPayloadTypesEnum.G722)))
+                        if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.G722)))
                         {
                             Log.LogDebug($"Using G722 RTP media type and audio file {AUDIO_FILE_G722}.");
-                            rtpSession = new RTPSession((int)RTPPayloadTypesEnum.G722, null, null);
+                            rtpSession = new RTPSession((int)SDPMediaFormatsEnum.G722, null, null, false);
                             audioFile = AUDIO_FILE_G722;
                         }
-                        else if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)RTPPayloadTypesEnum.PCMU)))
+                        else if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
                         {
                             Log.LogDebug($"Using PCMU RTP media type and audio file {AUDIO_FILE_PCMU}.");
-                            rtpSession = new RTPSession((int)RTPPayloadTypesEnum.PCMU, null, null);
+                            rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false);
                             audioFile = AUDIO_FILE_PCMU;
                         }
 
                         if (rtpSession == null)
                         {
                             // Didn't get a match on the codecs we support.
-                            SIPResponse noMatchingCodecResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptableHere, null);
+                            SIPResponse noMatchingCodecResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptableHere, null);
                             sipTransport.SendResponse(noMatchingCodecResponse);
                         }
                         else
@@ -181,7 +181,7 @@ namespace SIPSorcery
                             }
                             rtpCts?.Cancel();
 
-                            UASInviteTransaction uasTransaction = sipTransport.CreateUASTransaction(sipRequest, null);
+                            UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
                             uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
                             rtpCts = new CancellationTokenSource();
 
@@ -210,8 +210,8 @@ namespace SIPSorcery
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)
                     {
                         SIPSorcery.Sys.Log.Logger.LogInformation("Call hungup.");
-                        SIPNonInviteTransaction byeTransaction = sipTransport.CreateNonInviteTransaction(sipRequest, null);
-                        SIPResponse byeResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(sipTransport, sipRequest, null);
+                        SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         byeTransaction.SendFinalResponse(byeResponse);
                         uas?.Hangup(true);
                         rtpCts?.Cancel();
@@ -220,12 +220,12 @@ namespace SIPSorcery
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
                     {
-                        SIPResponse notAllowededResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                        SIPResponse notAllowededResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
                         sipTransport.SendResponse(notAllowededResponse);
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.OPTIONS || sipRequest.Method == SIPMethodsEnum.REGISTER)
                     {
-                        SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         sipTransport.SendResponse(optionsResponse);
                     }
                 }
@@ -362,7 +362,7 @@ namespace SIPSorcery
 
                                     if (!dstRtpEndPoint.Address.Equals(IPAddress.Any))
                                     {
-                                        rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
+                                        rtpSession.SendAudioFrame(timestamp, buffer);
                                     }
 
                                     timestamp += (uint)buffer.Length;
@@ -407,7 +407,7 @@ namespace SIPSorcery
 
                                         if (dstRtpEndPoint.Address != IPAddress.Any)
                                         {
-                                            rtpSession.SendAudioFrame(rtpSocket, dstRtpEndPoint, timestamp, buffer);
+                                            rtpSession.SendAudioFrame(timestamp, buffer);
                                         }
 
                                         timestamp += (uint)buffer.Length;
@@ -455,7 +455,7 @@ namespace SIPSorcery
                                                             new SDPMediaFormat((int)SDPMediaFormatsEnum.G722, "G722", 8000) }
             };
             audioAnnouncement.Port = rtpSocket.Port;
-            audioAnnouncement.ExtraAttributes.Add("a=sendrecv");
+            audioAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
             sdp.Media.Add(audioAnnouncement);
 
             return sdp;

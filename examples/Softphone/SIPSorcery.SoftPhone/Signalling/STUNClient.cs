@@ -17,9 +17,9 @@
 using System;
 using System.Net;
 using System.Threading;
+using log4net;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
-using log4net;
 
 namespace SIPSorcery.SoftPhone
 {
@@ -34,7 +34,7 @@ namespace SIPSorcery.SoftPhone
         private readonly TimeSpan updateIntervalShort = TimeSpan.FromSeconds(5);
 
         private readonly string m_stunServerHostname;
-        
+
         private volatile bool m_stop;
 
         public event Action<IPAddress> PublicIPAddressDetected;

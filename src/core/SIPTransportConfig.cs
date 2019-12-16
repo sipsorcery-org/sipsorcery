@@ -4,10 +4,10 @@
 // Description: Provides functions to configure the SIP Transport channels from an XML configuration node.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 25 Mar 2009	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 25 Mar 2009	Aaron Clauson	Created, Hobart, Australia (www.sipsorcery.com).
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml;
@@ -30,14 +29,12 @@ namespace SIPSorcery.SIP
         private const string CERTIFICATE_TYPE_PARAMETER = "certificatetype";    // Can be file or store, defaults to store.
         private const string CERTIFICATE_KEY_PASSWORD_PARAMETER = "certificatekeypassword";
         private const string SIP_PROTOCOL_PARAMETER = "protocol";
+        private const string ALL_LOCAL_IPADDRESSES_KEY  = "*";
 
         private const int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private const int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
-        private static readonly List<IPAddress> m_localIPAddresses = LocalIPConfig.GetLocalIPv4Addresses();
 
         private static readonly ILogger logger = Log.Logger;
-
-        private const string m_allIPAddresses = LocalIPConfig.ALL_LOCAL_IPADDRESSES_KEY;
 
         public static List<SIPChannel> ParseSIPChannelsNode(XmlNode sipChannelsNode, int port = 0)
         {
@@ -166,13 +163,15 @@ namespace SIPSorcery.SIP
                 }
             }
 
-            if (sipSocketString.StartsWith(m_allIPAddresses))
+            if (sipSocketString.StartsWith(ALL_LOCAL_IPADDRESSES_KEY))
             {
-                return m_localIPAddresses.Select(x => new SIPEndPoint(sipProtocol, new IPEndPoint(x, port)));
+                return new List<SIPEndPoint> { new SIPEndPoint(sipProtocol, new IPEndPoint(IPAddress.Any, port)) };
             }
-
-            var ipAddress = IPAddress.Parse(IPSocket.ParseHostFromSocket(sipSocketString));
-            return new List<SIPEndPoint> { new SIPEndPoint(sipProtocol, new IPEndPoint(ipAddress, port)) };
+            else
+            {
+                var ipAddress = IPAddress.Parse(IPSocket.ParseHostFromSocket(sipSocketString));
+                return new List<SIPEndPoint> { new SIPEndPoint(sipProtocol, new IPEndPoint(ipAddress, port)) };
+            }
         }
     }
 }

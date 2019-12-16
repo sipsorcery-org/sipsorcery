@@ -24,6 +24,8 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
+    public delegate void RTCPSampleReadyDelegate(RTCPReport report);
+
     public class RTPReceiveRecord
     {
         //public DateTime SendTime;                 // The send time of the RTP packet adjusted to be local time using a rolling average tranist time to calculate.

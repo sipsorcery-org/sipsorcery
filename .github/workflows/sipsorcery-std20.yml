@@ -1,4 +1,4 @@
-name: dotnet-core22-build 
+name: sipsorcery-std20
 
 on:
   push:
@@ -15,6 +15,6 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 2.2.108
+        dotnet-version: 3.0.100
     - name: Build with dotnet
-      run: dotnet build src/SIPSorcery.csproj --framework netcoreapp2.2 --configuration Release
+      run: dotnet build src/SIPSorcery.csproj --framework=netstandard2.0 --configuration Release

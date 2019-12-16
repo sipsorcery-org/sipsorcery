@@ -1,0 +1,20 @@
+name: sipsorcery-core30
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.0.100
+    - name: Unit tests
+      run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.0 -c Release --filter "Category!=IPv6&FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransactionEngineUnitTest.AckRecognitionUnitTest"

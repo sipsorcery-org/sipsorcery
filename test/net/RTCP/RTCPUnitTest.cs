@@ -271,7 +271,7 @@ namespace SIPSorcery.Net.UnitTests
             src.HeaderExtensionFlag = 1;
             src.MarkerBit = 1;
             src.CSRCCount = 3;
-            src.PayloadType = (int)RTPPayloadTypesEnum.PCMA;
+            src.PayloadType = (int)SDPMediaFormatsEnum.PCMA;
 
             byte[] headerBuffer = src.GetHeader(1, 0, 1);
 

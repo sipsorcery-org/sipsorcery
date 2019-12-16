@@ -89,4 +89,13 @@ namespace SIPSorcery.UnitTests
             throw new NotImplementedException();
         }
     }
+
+    public class MockSIPDNSManager
+    {
+        public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool synchronous)
+        {
+            // This assumes the input SIP URI has an IP address as the host!
+            return new SIPDNSLookupResult(sipURI);
+        }
+    }
 }

@@ -54,7 +54,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
             Assert.True(sdp.Media[0].Port == 12228, "The connection port was not parsed correctly.");
             Assert.True(sdp.Media[0].GetFormatListToString() == "0 101", "The media format list was incorrect.");
-            Assert.True(sdp.Media[0].MediaFormats[0].FormatID == 0, "The highest priority media format ID was incorrect.");
+            Assert.True(sdp.Media[0].MediaFormats[0].FormatID == "0", "The highest priority media format ID was incorrect.");
             Assert.True(sdp.Media[0].MediaFormats[0].Name == "PCMU", "The highest priority media format name was incorrect.");
             Assert.True(sdp.Media[0].MediaFormats[0].ClockRate == 8000, "The highest priority media format clockrate was incorrect.");
         }
@@ -72,6 +72,49 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(sdp.Connection.ConnectionAddress == "144.137.16.240", "The connection address was not parsed correctly.");
             Assert.True(sdp.Media[0].Port == 34640, "The connection port was not parsed correctly.");
             Assert.True(sdp.Media[0].MediaFormats[0].Name == "PCMU", "The highest priority media format name was incorrect.");
+        }
+
+        [Fact]
+        public void ParseBadFormatSDPUnitTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                " v=0" + m_CRLF +
+                " o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                " s=session" + m_CRLF +
+                " c=IN IP4 10.0.0.4" + m_CRLF +
+                " t=0 0" + m_CRLF +
+                " m=audio 12228 RTP/AVP 0 101" + m_CRLF +
+                " a=rtpmap:0 PCMU/8000" + m_CRLF +
+                " a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                " a=fmtp:101 0-16" + m_CRLF +
+                " a=silenceSupp:off - - - -" + m_CRLF +
+                " a=ptime:20" + m_CRLF +
+                " a=sendrecv";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Debug.WriteLine(sdp.ToString());
+
+            Assert.True(sdp.Connection.ConnectionAddress == "10.0.0.4", "The connection address was not parsed  correctly.");
+            Assert.True(sdp.Username == "root", "The owner was not parsed correctly.");
+            Assert.True(sdp.SessionName == "session", "The SessionName was not parsed correctly.");
+            Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
+        }
+
+        [Fact]
+        public void ParseBadFormatBriaSDPUnitTest()
+        {
+            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            string sdpStr = " v=0\r\no=- 5 2 IN IP4 10.1.1.2\r\n s=CounterPath Bria\r\nc=IN IP4 144.137.16.240\r\nt=0 0\r\n m=audio 34640 RTP/AVP 0 8 101\r\na=sendrecv\r\na=rtpmap:101 telephone-event/8000\r\na=fmtp:101 0-15\r\na=alt:1 1 : STu/ZtOu 7hiLQmUp 10.1.1.2 34640\r\n";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Debug.WriteLine(sdp.ToString());
+
+            Assert.True(sdp.Connection.ConnectionAddress == "144.137.16.240", "The connection address was not parsed correctly.");
+            Assert.True(sdp.SessionName == "CounterPath Bria", "The SessionName was not parsed correctly.");
         }
 
         [Fact]
@@ -158,6 +201,35 @@ namespace SIPSorcery.Net.UnitTests
             Logger.LogDebug(sdp.ToString());
 
             Assert.True(sdp.Connection.ConnectionAddress == "101.180.234.134", "The connection address was not parsed correctly.");
+            Assert.NotEmpty(sdp.Media);
+            Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
+            Assert.True(sdp.Media[1].Media == SDPMediaTypesEnum.video, "The media type not parsed correctly.");
+            Assert.True(sdp.Media[1].Connection.ConnectionAddress == "10.0.0.10", "The connection address was not parsed correctly.");
+        }
+
+        [Fact]
+        public void ParseMediaTypeImageUnitTest()
+        {
+            Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr = "v=0" + m_CRLF +
+                "o=OfficeMasterDirectSIP 806542878 806542879 IN IP4 10.2.0.110" + m_CRLF +
+                "s=FOIP Call" + m_CRLF +
+                "c=IN IP4 10.2.0.110" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=image 50594 udptl t38" + m_CRLF +
+                "a=T38FaxRateManagement:transferredTCF" + m_CRLF +
+                "a=T38FaxVersion:0";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Logger.LogDebug(sdp.ToString());
+
+            Assert.True(sdp.Connection.ConnectionAddress == "10.2.0.110", "The connection address was not parsed correctly.");
+            Assert.NotEmpty(sdp.Media);
+            Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.image, "The media type not parsed correctly.");
+            Assert.True(sdp.Media[0].HasMediaFormat("t38"), "The highest priority media format ID was incorrect.");
+            Assert.True(sdp.Media[0].Transport == "udptl", "The media transport string was incorrect.");
         }
 
         /// <summary>
@@ -237,7 +309,7 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that the first RTP end point corresponding to a media offer can be extracted.
         /// </summary>
         [Fact]
-        public void GetFirstMedaiOfferRTPSocketUnitTest()
+        public void GetFirstMediaOfferRTPSocketUnitTest()
         {
             Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
@@ -265,7 +337,7 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that the first IPv6 RTP end point corresponding to a media offer can be extracted.
         /// </summary>
         [Fact]
-        public void GetFirstMedaiOfferIPv6RTPSocketUnitTest()
+        public void GetFirstMediaOfferIPv6RTPSocketUnitTest()
         {
             Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
@@ -284,6 +356,150 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.True(audioRtpEndPoint.Address.Equals(IPAddress.Parse("FF1E:03AD::7F2E:172A:1E24")), "The media RTP address was not correct.");
             Assert.True(audioRtpEndPoint.Port == 6000, "The media RTP port was not correct.");
+        }
+
+        /// <summary>
+        /// Tests that the media stream status for the first media announcement is correctly parsed.
+        /// </summary>
+        [Fact]
+        public void GetFirstMediaSteamStatusUnitTest()
+        {
+            Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                "v=0" + m_CRLF +
+                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                "s=session" + m_CRLF +
+                "c=IN IP4 10.0.0.4" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
+                "a=rtpmap:0 PCMU/8000" + m_CRLF +
+                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                "a=fmtp:101 0-16" + m_CRLF +
+                "a=silenceSupp:off - - - -" + m_CRLF +
+                "a=ptime:20" + m_CRLF +
+                "a=sendrecv";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Assert.Equal(MediaStreamStatusEnum.SendRecv, sdp.Media.First().MediaStreamStatus);
+        }
+
+        /// <summary>
+        /// Tests that the media stream status for the first media announcement is correctly parsed when it's not the
+        /// default value.
+        /// </summary>
+        [Fact]
+        public void GetFirstMediaSteamStatusNonDefaultUnitTest()
+        {
+            Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                "v=0" + m_CRLF +
+                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                "s=session" + m_CRLF +
+                "c=IN IP4 10.0.0.4" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
+                "a=rtpmap:0 PCMU/8000" + m_CRLF +
+                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                "a=fmtp:101 0-16" + m_CRLF +
+                "a=silenceSupp:off - - - -" + m_CRLF +
+                "a=ptime:20" + m_CRLF +
+                "a=sendonly";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Assert.Equal(MediaStreamStatusEnum.SendOnly, sdp.Media.First().MediaStreamStatus);
+        }
+
+        /// <summary>
+        /// Tests that the media stream status for the session is parsed correctly.
+        /// </summary>
+        [Fact]
+        public void GetSessionMediaSteamStatusUnitTest()
+        {
+            Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                "v=0" + m_CRLF +
+                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                "s=session" + m_CRLF +
+                "c=IN IP4 10.0.0.4" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "a=recvonly" + m_CRLF +
+                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
+                "a=rtpmap:0 PCMU/8000" + m_CRLF +
+                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                "a=fmtp:101 0-16" + m_CRLF +
+                "a=silenceSupp:off - - - -" + m_CRLF +
+                "a=ptime:20";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Assert.Equal(MediaStreamStatusEnum.RecvOnly, sdp.SessionMediaStreamStatus);
+        }
+
+        /// <summary>
+        /// Tests that the media stream status for a media announcement is correctly parsed and serialised correctly.
+        /// </summary>
+        [Fact]
+        public void AnnouncementMediaSteamStatuRoundtripUnitTest()
+        {
+            Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                "v=0" + m_CRLF +
+                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                "s=session" + m_CRLF +
+                "c=IN IP4 10.0.0.4" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
+                "a=rtpmap:0 PCMU/8000" + m_CRLF +
+                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                "a=fmtp:101 0-16" + m_CRLF +
+                "a=silenceSupp:off - - - -" + m_CRLF +
+                "a=ptime:20" + m_CRLF +
+                "a=sendonly";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Console.WriteLine(sdp.ToString());
+
+            SDP sdpRoundTrip = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal(MediaStreamStatusEnum.SendOnly, sdpRoundTrip.Media.First().MediaStreamStatus);
+        }
+
+        /// <summary>
+        /// Tests that the media stream status for the session is parsed and serialised correctly.
+        /// </summary>
+        [Fact]
+        public void SessionMediaSteamStatusRoundTripUnitTest()
+        {
+            Logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                "v=0" + m_CRLF +
+                "o=root 3285 3285 IN IP4 10.0.0.4" + m_CRLF +
+                "s=session" + m_CRLF +
+                "c=IN IP4 10.0.0.4" + m_CRLF +
+                "t=0 0" + m_CRLF +
+                "a=recvonly" + m_CRLF +
+                "m=audio 12228 RTP/AVP 0 101" + m_CRLF +
+                "a=rtpmap:0 PCMU/8000" + m_CRLF +
+                "a=rtpmap:101 telephone-event/8000" + m_CRLF +
+                "a=fmtp:101 0-16" + m_CRLF +
+                "a=silenceSupp:off - - - -" + m_CRLF +
+                "a=ptime:20";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            Console.WriteLine(sdp.ToString());
+
+            SDP sdpRoundTrip = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal(MediaStreamStatusEnum.RecvOnly, sdpRoundTrip.SessionMediaStreamStatus);
         }
     }
 }

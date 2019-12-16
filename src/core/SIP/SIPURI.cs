@@ -363,6 +363,11 @@ namespace SIPSorcery.SIP
                                 {
                                     throw new SIPValidationException(SIPValidationFieldsEnum.URI, "The SIP URI host portion contained an IPv6 address that was missing the end ']'.");
                                 }
+                                //rj2: apply robustness principle mentioned in RFC 5118 4.10
+                                while (sipURI.Host.Contains(":::"))
+                                {
+                                    sipURI.Host = sipURI.Host.Replace(":::", "::");
+                                }
                             }
                         }
                     }
@@ -404,15 +409,16 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public static bool TryParse(string uri)
+        public static bool TryParse(string uriStr, out SIPURI uri)
         {
             try
             {
-                ParseSIPURIRelaxed(uri);
-                return true;
+                uri = ParseSIPURIRelaxed(uriStr);
+                return (uri != null);
             }
             catch
             {
+                uri = null;
                 return false;
             }
         }

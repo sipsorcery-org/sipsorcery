@@ -4,10 +4,10 @@
 // Description: SIP transaction manager.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// ??	        Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, Hobart, Australia (www.sipsorcery.com)
+// ??	        Aaron Clauson	Created, Hobart, Australia
 // 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
 //
 // License: 
@@ -54,6 +54,11 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public bool Exists(string transactionID)
+        {
+            return m_transactions.ContainsKey(transactionID);
+        }
+
         public bool Exists(SIPRequest sipRequest)
         {
             return GetTransaction(sipRequest) != null;
@@ -67,8 +72,8 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Transaction matching see RFC3261 17.1.3 &amp; 17.2.3 for matching client and server transactions respectively. 
         /// IMPORTANT NOTE this transaction matching applies to all requests and responses EXCEPT ACK requests to 2xx responses see 13.2.2.4. 
-        /// For ACK's to 2xx responses the ACK represents a separate transaction. However for a UAS sending an INVITE response the ACK still has to be 
-        /// matched to an existing server transaction in order to transition it to a Confirmed state.
+        /// For ACK's to 2xx responses the ACK represents a separate transaction. However for a UAS sending an INVITE response the ACK still 
+        /// has to be matched to an existing server transaction in order to transition it to a Confirmed state.
         /// 
         /// ACK's:
         ///  - The ACK for a 2xx response will have the same CallId, From Tag and To Tag.
@@ -144,7 +149,7 @@ namespace SIPSorcery.SIP
                                     transaction.TransactionFinalResponse.Header.CSeq == sipRequest.Header.CSeq &&
                                     IsCallIdUniqueForPending(sipRequest.Header.CallId))
                                 {
-                                    string requestEndPoint = (sipRequest.RemoteSIPEndPoint != null) ? sipRequest.RemoteSIPEndPoint.ToString() : " ? ";
+                                    //string requestEndPoint = (sipRequest.RemoteSIPEndPoint != null) ? sipRequest.RemoteSIPEndPoint.ToString() : " ? ";
                                     //logger.LogInformation("ACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched using Call-ID mechanism (to tags: " + transaction.TransactionFinalResponse.Header.To.ToTag + "=" + sipRequest.Header.To.ToTag + ", from tags:" + transaction.TransactionFinalResponse.Header.From.FromTag + "=" + sipRequest.Header.From.FromTag + ").");
                                     return transaction;
                                 }
@@ -158,13 +163,12 @@ namespace SIPSorcery.SIP
                             if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
                             {
                                 if (transaction.TransactionRequest.Header.CallId == sipRequest.Header.CallId &&
-                                    //transaction.ReliableProvisionalResponse.Header.To.ToTag == sipRequest.Header.To.ToTag &&
                                     transaction.ReliableProvisionalResponse.Header.From.FromTag == sipRequest.Header.From.FromTag &&
                                     transaction.ReliableProvisionalResponse.Header.CSeq == sipRequest.Header.RAckCSeq &&
                                     transaction.ReliableProvisionalResponse.Header.RSeq == sipRequest.Header.RAckRSeq &&
                                     transaction.ReliableProvisionalResponse.Header.CSeqMethod == sipRequest.Header.RAckCSeqMethod)
                                 {
-                                    logger.LogInformation("PRACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by callid, tags and cseq.");
+                                    //logger.LogDebug("PRACK for contact=" + contactAddress + ", cseq=" + sipRequest.Header.CSeq + " was matched by callid, tags and cseq.");
 
                                     return transaction;
                                 }

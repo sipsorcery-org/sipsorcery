@@ -4,10 +4,11 @@
 // Description: 
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// ??	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// ??	Aaron Clauson	Created, Hobart, Australia.
+// rj2: add SDPSecurityDescription parser
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -36,7 +37,14 @@ namespace SIPSorcery.Net
 
         public List<string> BandwidthAttributes = new List<string>();
         public List<SDPMediaFormat> MediaFormats = new List<SDPMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
-        public List<string> ExtraAttributes = new List<string>();  // Attributes that were not recognised.
+        public List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
+        public List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
+
+        /// <summary>
+        /// The stream status of this media announcement. Note that None means no explicit value has been set
+        /// and unless there is a session level value then the implicit default is sendrecv.
+        /// </summary>
+        public MediaStreamStatusEnum MediaStreamStatus { get; set; } = MediaStreamStatusEnum.None;
 
         public SDPMediaAnnouncement()
         { }
@@ -72,12 +80,31 @@ namespace SIPSorcery.Net
                         {
                             MediaFormats.Add(new SDPMediaFormat(format));
                         }
+                        else
+                        {
+                            MediaFormats.Add(new SDPMediaFormat(formatID));
+                        }
                     }
                 }
             }
         }
 
         public bool HasMediaFormat(int formatID)
+        {
+            return HasMediaFormat(formatID.ToString());
+        }
+
+        public void AddFormatAttribute(int formatID, string formatAttribute)
+        {
+            AddFormatAttribute(formatID.ToString(), formatAttribute);
+        }
+
+        public void AddFormatParameterAttribute(int formatID, string formatAttribute)
+        {
+            AddFormatParameterAttribute(formatID.ToString(), formatAttribute);
+        }
+
+        public bool HasMediaFormat(string formatID)
         {
             foreach (SDPMediaFormat mediaFormat in MediaFormats)
             {
@@ -90,7 +117,7 @@ namespace SIPSorcery.Net
             return false;
         }
 
-        public void AddFormatAttribute(int formatID, string formatAttribute)
+        public void AddFormatAttribute(string formatID, string formatAttribute)
         {
             for (int index = 0; index < MediaFormats.Count; index++)
             {
@@ -101,7 +128,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        public void AddFormatParameterAttribute(int formatID, string formatAttribute)
+        public void AddFormatParameterAttribute(string formatID, string formatAttribute)
         {
             for (int index = 0; index < MediaFormats.Count; index++)
             {
@@ -124,9 +151,18 @@ namespace SIPSorcery.Net
 
             announcement += GetFormatListAttributesToString();
 
-            foreach (string extra in ExtraAttributes)
+            foreach (string extra in ExtraMediaAttributes)
             {
                 announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
+            }
+
+            foreach (SDPSecurityDescription desc in this.SecurityDescriptions)
+            {
+                announcement += desc.ToString() + m_CRLF;
+            }
+            if (MediaStreamStatus != MediaStreamStatusEnum.None)
+            {
+                announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus) + m_CRLF;
             }
 
             return announcement;
@@ -163,20 +199,57 @@ namespace SIPSorcery.Net
                     {
                         formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + mediaFormat.FormatParameterAttribute + m_CRLF;
                     }
-                    //else if(SDPMediaFormat.GetDefaultFormatAttribute(mediaFormat.FormatID) != null)
-                    //{
-                    //    formatAttributes += SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.FormatID + " " + SDPMediaFormat.GetDefaultFormatAttribute(mediaFormat.FormatID) + m_CRLF;
-                    //}
                 }
             }
 
             return formatAttributes;
         }
+
         public void AddExtra(string attribute)
         {
             if (!string.IsNullOrWhiteSpace(attribute))
-                ExtraAttributes.Add(attribute);
+            {
+                ExtraMediaAttributes.Add(attribute);
+            }
         }
 
+        public bool HasCryptoLine(SDPSecurityDescription.CryptoSuites cryptoSuite)
+        {
+            if (this.SecurityDescriptions == null)
+            {
+                return false;
+            }
+            foreach (SDPSecurityDescription secdesc in this.SecurityDescriptions)
+            {
+                if (secdesc.CryptoSuite == cryptoSuite)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public SDPSecurityDescription GetCryptoLine(SDPSecurityDescription.CryptoSuites cryptoSuite)
+        {
+            if (this.SecurityDescriptions == null)
+            {
+                return null;
+            }
+            foreach (SDPSecurityDescription secdesc in this.SecurityDescriptions)
+            {
+                if (secdesc.CryptoSuite == cryptoSuite)
+                {
+                    return secdesc;
+                }
+            }
+
+            return null;
+        }
+
+        public void AddCryptoLine(string crypto)
+        {
+            this.SecurityDescriptions.Add(SDPSecurityDescription.Parse(crypto));
+        }
     }
 }

@@ -2,6 +2,7 @@ version: 1.0.{build}
 environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
   access_token:
+    # Token for github pages publishing.
     secure: 21m76jAVvcu7oACAHFnfCBltcwon+r5ZI3avfRmrNFAqJMn6RfLXwpBhPcJ617tD
 image: Visual Studio 2019
 configuration: Release
@@ -19,7 +20,7 @@ build:
 #    - Integration
 on_success:
   - ps: |
-        if(-Not $env:APPVEYOR_PULL_REQUEST_TITLE)
+        if($env:APPVEYOR_REPO_BRANCH -eq "master" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)
         {
            git config --global credential.helper store
             Add-Content "$HOME\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`n"
@@ -48,11 +49,12 @@ deploy:
     on:
       branch: master                # release from master branch only
       APPVEYOR_REPO_TAG: true       # deploy on tag push only
-      appveyor_repo_tag: true
-  - provider: GitHub
-    artifact: /.*\.nupkg/           # upload all NuGet packages to release assets
-    draft: true
-    prerelease: true
-    on:
-      branch: master                # release from master branch only
-      APPVEYOR_REPO_TAG: true       # deploy on tag push only
+#  - provider: GitHub
+#    artifact: /.*\.nupkg/           # upload all NuGet packages to release assets
+#    draft: true
+#    prerelease: true
+#    auth_token:
+#      secure: E58r+OknoQn8+bsPRT6l3U2K4kfOpDiGCo1C75LkVg+R/RBHpY//J8UCXEfVvyRB
+#    on:
+#      branch: master                # release from master branch only
+#      APPVEYOR_REPO_TAG: true       # deploy on tag push only

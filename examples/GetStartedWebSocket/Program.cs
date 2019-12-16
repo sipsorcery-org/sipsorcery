@@ -47,12 +47,12 @@ namespace demo
 
                 if (sipRequest.Method == SIPMethodsEnum.OPTIONS | sipRequest.Method == SIPMethodsEnum.MESSAGE)
                 {
-                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     sipTransport.SendResponse(okResponse);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.REGISTER)
                 {
-                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     okResponse.Header.Contact = sipRequest.Header.Contact;
                     sipTransport.SendResponse(okResponse);
                 }

@@ -52,6 +52,8 @@ namespace SIPSorcery.SIP
         public const int MAX_SIP_PORT = 65535;
 
         public const string NAT_SENDKEEPALIVES_VALUE = "y";
+
+        public const string ALLOWED_SIP_METHODS = "ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE";
     }
 
     public enum SIPMessageTypesEnum
@@ -551,7 +553,7 @@ namespace SIPSorcery.SIP
                         {
                             knownExtensions.Add(SIPExtensions.Prack);
                         }
-                        else if(extension.Trim().ToLower() == NO_REFER_SUB)
+                        else if (extension.Trim().ToLower() == NO_REFER_SUB)
                         {
                             knownExtensions.Add(SIPExtensions.NoReferSub);
                         }

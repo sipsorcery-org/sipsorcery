@@ -4,59 +4,90 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     x:Class="SIPSorcery.SoftPhone.SoftPhone"
-    Title="SIPSorcery SoftPhone" Width="676" Background="#FF808080" HorizontalAlignment="Left"  mc:Ignorable="d" Closing="Window_Closing" Icon="favicon.ico" MinHeight="435" Height="435" MinWidth="676" Loaded="OnWindowLoaded">
+    Title="SIPSorcery SoftPhone" Width="490" Background="#FF808080" HorizontalAlignment="Left" mc:Ignorable="d" Closing="Window_Closing" Icon="favicon.ico" MinHeight="560" Height="560" MinWidth="490" Loaded="OnWindowLoaded">
     <StackPanel>
 
         <Border x:Name="_statusBorder" BorderBrush="#FF807FC3" BorderThickness="2" Margin="2" CornerRadius="3" VerticalAlignment="Top" Height="32" Background="#FFCCD0EA">
             <TextBlock x:Name="m_signallingStatus" TextWrapping="Wrap" Margin="2" Background="#FFCCD0EA" Text="Ready" VerticalAlignment="Center"/>
         </Border>
 
-        <Grid Margin="1.333,0,6.667,0" VerticalAlignment="Top" Height="35.8" x:Name="m_uacGrid">
-            <Button x:Name="m_cancelButton" Content="Cancel" Click="CancelButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,-0.203,8,0.203"/>
-            <Button x:Name="m_byeButton" Content="Bye" Click="ByeButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,-0.203,8,0.203"/>
-            <Button HorizontalAlignment="Right" x:Name="m_callButton" Width="64" Content="Call" Click="CallButton_Click" Margin="0,-0.203,8,0.203"/>
-            <TextBox FontSize="16" Margin="10,5,77.2,3" x:Name="m_uriEntryTextBox" TextWrapping="Wrap" Text="sip:music@iptel.org"/>
-        </Grid>
-        <Grid Margin="2" x:Name="m_uasGrid" VerticalAlignment="Top" Height="31" d:IsHidden="True">
-            <Button x:Name="m_hangupButton" Content="Hangup" Click="HangupButton_Click" HorizontalAlignment="Left" Margin="0,-0.203,0,0.203" Width="64"/>
-            <Button x:Name="m_rejectButton" Content="Reject" Click="RejectButton_Click" HorizontalAlignment="Left" Margin="68,0,0,0" Width="64" IsCancel="False"/>
-            <Button x:Name="m_answerButton" Content="Answer" Click="AnswerButton_Click" Margin="0,-0.203,0,0.203" HorizontalAlignment="Left" Width="64"/>
-            <Button x:Name="m_redirectButton" Content="Redirect" Click="RedirectButton_Click" Margin="136,-0.203,0,0.203" HorizontalAlignment="Left" Width="64" IsCancel="False"/>
-            <TextBox FontSize="16" Margin="204,0,8,0" x:Name="m_redirectURIEntryTextBox" TextWrapping="Wrap"/>
-        </Grid>
+        <Border BorderBrush="#FF807FC3" BorderThickness="2">
+            <StackPanel Margin="2" VerticalAlignment="Top" Orientation="Horizontal" Height="36" x:Name="m_callActionsGrid" HorizontalAlignment="Right">
+                <Button x:Name="m_answerButton" Content="Answer" Click="AnswerButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed"/>
+                <Button x:Name="m_rejectButton" Content="Reject" Click="RejectButton_Click" HorizontalAlignment="Left" Margin="4,0,0,0" Width="64" Visibility="Collapsed"/>
+                <Button x:Name="m_redirectButton" Content="Redirect" Click="RedirectButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed" />
+                <Button x:Name="m_holdButton" Content="Hold" Click="HoldButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed"/>
+                <Button x:Name="m_offHoldButton" Content="Off Hold" Click="OffHoldButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed"/>
+                <Button x:Name="m_transferButton" Click="BlindTransferButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed">
+                    <TextBlock TextAlignment="Center">Blind<LineBreak/>Transfer</TextBlock>
+                </Button>
+                <TextBox FontSize="16" Margin="4,0,4,0" x:Name="m_uriEntryTextBox" HorizontalAlignment="Right" TextWrapping="NoWrap" Text="sip:*61@192.168.11.48" HorizontalContentAlignment="Stretch" MinWidth="200" VerticalContentAlignment="Center"/>
+                <Button x:Name="m_cancelButton" Content="Cancel" Click="CancelButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
+                <Button x:Name="m_byeButton" Content="Bye" Click="ByeButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
+                <Button HorizontalAlignment="Right" x:Name="m_callButton" Width="64" Content="Call" Click="CallButton_Click" Margin="0,0,4,0" />
+            </StackPanel>
+        </Border>
 
-        <Grid x:Name="_videoControlsGrid" Margin="2" MinHeight="276">
+        <Border BorderBrush="#FF807FC3" BorderThickness="2">
+            <StackPanel Margin="2" VerticalAlignment="Top" Orientation="Horizontal" Height="36" x:Name="m_call2ActionsGrid" HorizontalAlignment="Right" IsEnabled="False">
+                <Button x:Name="m_answer2Button" Content="Answer" Click="AnswerButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed"/>
+                <Button x:Name="m_reject2Button" Content="Reject" Click="RejectButton_Click" HorizontalAlignment="Left" Margin="4,0,0,0" Width="64" Visibility="Collapsed"/>
+                <Button x:Name="m_redirect2Button" Content="Redirect" Click="RedirectButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed" />
+                <Button x:Name="m_hold2Button" Content="Hold" Click="HoldButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed"/>
+                <Button x:Name="m_offHold2Button" Content="Off Hold" Click="OffHoldButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed"/>
+                <Button x:Name="m_transfer2Button" Click="BlindTransferButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed">
+                    <TextBlock TextAlignment="Center">Blind<LineBreak/>Transfer</TextBlock>
+                </Button>
+                <TextBox FontSize="16" Margin="4,0,4,0" x:Name="m_uriEntry2TextBox" HorizontalAlignment="Right" TextWrapping="NoWrap" Text="" HorizontalContentAlignment="Stretch" MinWidth="200" VerticalContentAlignment="Center"/>
+                <Button x:Name="m_cancel2Button" Content="Cancel" Click="CancelButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
+                <Button x:Name="m_bye2Button" Content="Bye" Click="ByeButton_Click" HorizontalAlignment="Right" Width="64" Margin="0,0,4,0" Visibility="Collapsed"/>
+                <Button HorizontalAlignment="Right" x:Name="m_call2Button" Width="64" Content="Call" Click="CallButton_Click" Margin="0,0,4,0"/>
+                <Button x:Name="m_attendedTransferButton" Click="AttendedTransferButton_Click" Margin="4,0,0,0" HorizontalAlignment="Left" Width="64" Visibility="Collapsed">
+                    <TextBlock TextAlignment="Center">Attended<LineBreak/>Transfer</TextBlock>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <Grid x:Name="_keypadGrid" Margin="8,8,8,8" MinHeight="300" HorizontalAlignment="Center" Width="300">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
-                <RowDefinition Height="30" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <StackPanel Grid.Column="0">
-                <Border BorderBrush="#FF807FC3" BorderThickness="2" CornerRadius="2">
-                    <Image x:Name="_localVideo" MinWidth="320" MinHeight="240"/>
-                </Border>
-                <Border x:Name="_localVideoStatusBorder"  BorderBrush="#FFE87A1E" BorderThickness="2" CornerRadius="3" Background="#FFF3F1EF" Margin="2,0"  MouseUp="HideLocalVideoError" Visibility="Collapsed">
-                    <TextBlock x:Name="_localVideoStatus" TextWrapping="Wrap" Margin="2" Background="#FFF3F1EF" Text="Local Video Error" VerticalAlignment="Center"/>
-                </Border>
-            </StackPanel>
-            <StackPanel Grid.Column="1">
-                <Border BorderBrush="#FF807FC3" BorderThickness="2" CornerRadius="2">
-                    <Image x:Name="_remoteVideo" MinWidth="320" MinHeight="240"/>
-                </Border>
-                <Border x:Name="_remoteVideoStatusBorder"  BorderBrush="#FFE87A1E" BorderThickness="2" CornerRadius="3" Background="#FFF3F1EF" Margin="2,0" MouseUp="HideRemoteVideoError" Visibility="Collapsed">
-                    <TextBlock x:Name="_remoteVideoStatus" TextWrapping="Wrap" Margin="2" Background="#FFF3F1EF" Text="Remote Video Error" VerticalAlignment="Center"/>
-                </Border>
-            </StackPanel>
-            <Button x:Name="_startLocalVideoButton" Content="Start Video" HorizontalAlignment="Left" Height="30" Margin="219,0,0,0" VerticalAlignment="Center" Width="70" Grid.Row="1" Click="StartLocalVideo" IsEnabled="False" />
-            <Button x:Name="_stopLocalVideoButton" Content="Stop Video" HorizontalAlignment="Left" Height="30" VerticalAlignment="Center" Width="70" Grid.Row="1" IsEnabled="False" Click="StopLocalVideo" Grid.ColumnSpan="2" Margin="295,0,0,0" />
-            <ComboBox x:Name="_localVideoDevices" DisplayMemberPath="Key" SelectedValuePath="Value" HorizontalAlignment="Left" Height="30" Grid.Row="1" VerticalAlignment="Center" Width="211" IsEnabled="False" SelectionChanged="VideoDeviceChanged" VerticalContentAlignment="Center"/>
+            <Border BorderBrush="#FF807FC3" BorderThickness="2" CornerRadius="2" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Grid.RowSpan="4">
+                <Image x:Name="_localVideo" MinWidth="160" MinHeight="300" Source="favicon.ico" Opacity="0.2"/>
+            </Border>
+            <Border BorderBrush="#FF807FC3" BorderThickness="2" CornerRadius="2" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Grid.RowSpan="4" Visibility="Collapsed">
+                <Image x:Name="_remoteVideo" MinWidth="160" MinHeight="300"/>
+            </Border>
+            <Button x:Name="m_keypad1Button" Content="1" Click="KeyPadButton_Click" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" Width="80" Margin="0,20,0,4"/>
+            <Button x:Name="m_keypad2Button" Content="2" Click="KeyPadButton_Click" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center" Width="80" Margin="0,20,0,4"/>
+            <Button x:Name="m_keypad3Button" Content="3" Click="KeyPadButton_Click" Grid.Row="0" Grid.Column="2" HorizontalAlignment="Center" Width="80" Margin="0,20,0,4"/>
+            <Button x:Name="m_keypad4Button" Content="4" Click="KeyPadButton_Click" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" Width="80" Margin="0,12,0,12"/>
+            <Button x:Name="m_keypad5Button" Content="5" Click="KeyPadButton_Click" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Center" Width="80" Margin="0,12,0,12"/>
+            <Button x:Name="m_keypad6Button" Content="6" Click="KeyPadButton_Click" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Center" Width="80" Margin="0,12,0,12"/>
+            <Button x:Name="m_keypad7Button" Content="7" Click="KeyPadButton_Click" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Center" Width="80" Margin="0,12,0,12"/>
+            <Button x:Name="m_keypad8Button" Content="8" Click="KeyPadButton_Click" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center" Width="80" Margin="0,12,0,12"/>
+            <Button x:Name="m_keypad9Button" Content="9" Click="KeyPadButton_Click" Grid.Row="2" Grid.Column="2" HorizontalAlignment="Center" Width="80" Margin="0,12,0,12"/>
+            <Button x:Name="m_keypadStarButton" Content="*" Click="KeyPadButton_Click" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Center" Width="80" Margin="0,4,0,20"/>
+            <Button x:Name="m_keypad0Button" Content="0" Click="KeyPadButton_Click" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Center" Width="80" Margin="0,4,0,20"/>
+            <Button x:Name="m_keypadHashButton" Content="#" Click="KeyPadButton_Click" Grid.Row="3" Grid.Column="2" HorizontalAlignment="Center" Width="80" Margin="0,4,0,20"/>
         </Grid>
 
-        <StatusBar VerticalAlignment="Bottom" Margin="0,5,0,0">
-            <Label x:Name="publicIPAddress" ToolTip="Public IP Address">Public IP: ?</Label>
+        <StackPanel Margin="2" VerticalAlignment="Top" Orientation="Horizontal" Height="36" x:Name="_videoControlsGrid" >
+            <Button x:Name="_startLocalVideoButton" Content="Start Video" HorizontalAlignment="Left" Height="30" Margin="4,0,0,0" VerticalAlignment="Center" Width="70" Click="StartLocalVideo" IsEnabled="False" />
+            <Button x:Name="_stopLocalVideoButton" Content="Stop Video" HorizontalAlignment="Left" Height="30" VerticalAlignment="Center" Width="70" IsEnabled="False" Click="StopLocalVideo" Margin="4,0,0,0" />
+            <ComboBox x:Name="_localVideoDevices" DisplayMemberPath="Key" SelectedValuePath="Value" HorizontalAlignment="Left" Height="30"  VerticalAlignment="Center"  Margin="4,0,0,0" Width="250" IsEnabled="False" SelectionChanged="VideoDeviceChanged" VerticalContentAlignment="Center"/>
+        </StackPanel>
+
+        <StatusBar VerticalAlignment="Bottom" Margin="0,4,0,0">
+            <Label x:Name="listeningEndPoint" ToolTip="Listening On"></Label>
         </StatusBar>
 
     </StackPanel>
