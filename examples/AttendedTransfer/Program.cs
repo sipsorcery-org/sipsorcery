@@ -17,11 +17,13 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NAudio.Wave;
 using Serilog;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -32,7 +34,11 @@ namespace SIPSorcery
         private static int SIP_LISTEN_PORT = 5060;
         private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
         private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 20;           // This sets the frequency of the RTP packets.
-        private static int TRANSFER_TIMEOUT_SECONDS = 2; //10;                    // Give up on transfer if no response within this period.
+        private static int TRANSFER_TIMEOUT_SECONDS = 2; //10;               // Give up on transfer if no response within this period.
+
+        // If set will mirror SIP packets to a Homer (sipcapture.org) logging and analysis server.
+        private static string HOMER_SERVER_ADDRESS = "192.168.11.49";
+        private static int HOMER_SERVER_PORT = 9060;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -52,7 +58,7 @@ namespace SIPSorcery
             var sipTransport = new SIPTransport();
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
 
-            //EnableTraceLogs(sipTransport);
+            EnableTraceLogs(sipTransport);
 
             // Create two user agents. Each gets configured to answer an incoming call.
             var userAgent1 = new SIPUserAgent(sipTransport, null);
@@ -307,28 +313,59 @@ namespace SIPSorcery
         /// </summary>
         private static void EnableTraceLogs(SIPTransport sipTransport)
         {
+            UdpClient homerSIPClient = null;
+
+            if (HOMER_SERVER_ADDRESS != null)
+            {
+                homerSIPClient = new UdpClient(0, AddressFamily.InterNetwork);
+            }
+
             sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
             {
                 Log.LogDebug($"Request received: {localEP}<-{remoteEP}");
                 Log.LogDebug(req.ToString());
+
+                if (homerSIPClient != null)
+                {
+                    var hepBuffer = HepPacket.GetBytes(remoteEP, localEP, DateTime.Now, 333, "myHep", req.ToString());
+                    homerSIPClient.SendAsync(hepBuffer, hepBuffer.Length, HOMER_SERVER_ADDRESS, HOMER_SERVER_PORT);
+                }
             };
 
             sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
             {
                 Log.LogDebug($"Request sent: {localEP}->{remoteEP}");
                 Log.LogDebug(req.ToString());
+
+                if (homerSIPClient != null)
+                {
+                    var hepBuffer = HepPacket.GetBytes(localEP, remoteEP, DateTime.Now, 333, "myHep", req.ToString());
+                    homerSIPClient.SendAsync(hepBuffer, hepBuffer.Length, HOMER_SERVER_ADDRESS, HOMER_SERVER_PORT);
+                }
             };
 
             sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
             {
                 Log.LogDebug($"Response received: {localEP}<-{remoteEP}");
                 Log.LogDebug(resp.ToString());
+
+                if (homerSIPClient != null)
+                {
+                    var hepBuffer = HepPacket.GetBytes(remoteEP, localEP, DateTime.Now, 333, "myHep", resp.ToString());
+                    homerSIPClient.SendAsync(hepBuffer, hepBuffer.Length, HOMER_SERVER_ADDRESS, HOMER_SERVER_PORT);
+                }
             };
 
             sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
             {
                 Log.LogDebug($"Response sent: {localEP}->{remoteEP}");
                 Log.LogDebug(resp.ToString());
+
+                if (homerSIPClient != null)
+                {
+                    var hepBuffer = HepPacket.GetBytes(localEP, remoteEP, DateTime.Now, 333, "myHep", resp.ToString());
+                    homerSIPClient.SendAsync(hepBuffer, hepBuffer.Length, HOMER_SERVER_ADDRESS, HOMER_SERVER_PORT);
+                }
             };
 
             sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>

@@ -67,7 +67,6 @@ namespace SIPSorcery.UnitTests
             throw new NotImplementedException();
         }
 
-
         public override Task<SocketError> SendSecureAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate, string connectionIDHint)
         {
             throw new NotImplementedException();

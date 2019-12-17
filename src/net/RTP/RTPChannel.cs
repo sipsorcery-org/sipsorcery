@@ -245,7 +245,7 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Creates a new RTP channel. The RTP and optionally RTCP sockets will be bound in the constructor.
-        /// They do not start reciving until the Start method is called.
+        /// They do not start receiving until the Start method is called.
         /// </summary>
         /// <param name="createControlSocket">Set to true if a separate RTCP control socket should be created. If RTP and
         /// RTCP are being multiplexed (as they are for WebRTC) there's no need to a separate control socket.</param>
