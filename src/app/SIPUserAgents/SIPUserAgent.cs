@@ -434,10 +434,10 @@ namespace SIPSorcery.SIP.App
 
                 SIPNonInviteTransaction referTx = new SIPNonInviteTransaction(m_transport, referRequest, null);
 
-                SIPTransactionResponseReceivedDelegate referTxStatusHandler = async (localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse) =>
+                SIPTransactionResponseReceivedDelegate referTxStatusHandler = (localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse) =>
                 {
-                    // This handler has to go on a separate thread or the recevigin SIP channel will be blocked.
-                    await Task.Run(() =>
+                    // This handler has to go on a separate thread or the receiving SIP channel will be blocked.
+                    Task.Run(() =>
                     {
                         if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
                         {
@@ -452,6 +452,7 @@ namespace SIPSorcery.SIP.App
                 };
 
                 referTx.NonInviteTransactionFinalResponseReceived += referTxStatusHandler;
+
                 referTx.SendReliableRequest();
 
                 await Task.WhenAny(new Task[] { transferAccepted.Task, Task.Delay((int)timeout.TotalMilliseconds) });
