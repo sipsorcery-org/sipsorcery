@@ -653,7 +653,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="localSIPEndPoint">The local end point the request was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the request came from.</param>
         /// <param name="sipRequest">The SIP request.</param>
-        private void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             if (Dialogue != null)
             {
@@ -663,8 +663,16 @@ namespace SIPSorcery.SIP.App
                     sipRequest.Header.To.ToTag != null &&
                     sipRequest.Header.CallId == Dialogue.CallId)
                 {
-                    // In dialog request will include BYE's.
-                    _ = DialogRequestReceivedAsync(sipRequest);
+                    try
+                    {
+                        await DialogRequestReceivedAsync(sipRequest);
+                    }
+                    catch (Exception excp)
+                    {
+                        // There no point bubbling this exception up. The next class up is the transport layer and
+                        // it doesn't know what to do if a request can't be dealt with.
+                        logger.LogError($"Exception SIPUserAgent.SIPTransportRequestReceived. {excp.Message}");
+                    }
                 }
             }
         }

@@ -87,6 +87,14 @@ namespace SIPSorcery.UnitTests
         {
             throw new NotImplementedException();
         }
+
+        /// <summary>
+        /// Use to cause a mock message to be passed through to the SIP Transport class monitoring this mock channel.
+        /// </summary>
+        public void FireMessageReceived(SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] sipMsgBuffer)
+        {
+            SIPMessageReceived.Invoke(this, localEndPoint, remoteEndPoint, sipMsgBuffer);
+        }
     }
 
     public class MockSIPDNSManager
