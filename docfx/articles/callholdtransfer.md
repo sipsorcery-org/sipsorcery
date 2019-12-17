@@ -111,7 +111,7 @@ In the `REFER` request the mst important header is the `ReferTo`. It's what dete
 
 **It's important to note that a REFER request "asks" the remote user agent to try placing a new call to the SIP URI specified. There is no guarantee it will or that the call will succeed. It's important to deal with cases where the REFER request is rejected.**
 
-Below is the console output of a successful call transfer using the exmaple code and a local Asterisk\FreePBX server.
+Below is the console output of a successful call transfer using the example code and a local Asterisk\FreePBX server.
 
 ````cmd
 C:\Dev\sipsorcery\sipsorcery-core\examples\CallTransfer>dotnet run

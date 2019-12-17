@@ -8,17 +8,17 @@
 - name: Examples
   href: examples.md
   items:
+    - name: Attended Transfer
+      href: attendedtransfer.md
+    - name: Call Hold and Transfer
+      href: callholdtransfer.md
     - name: How to Place Call
       href: howto-call.md
     - name: How to Register
       href: howto-register.md
-    - name: Web Socket SIP Channel
-      href: websocket-sipchannel.md
-    - name: STUN Server
-      href: stunserver.md
-    - name: Call Hold and Transfer
-      href: callholdtransfer.md
     - name: Send DTMF
       href: senddtmf.md
-    - name: Attended Transfer
-      href: attendedtransfer.md
+    - name: STUN Server
+      href: stunserver.md
+    - name: Web Socket SIP Channel
+      href: websocket-sipchannel.md
