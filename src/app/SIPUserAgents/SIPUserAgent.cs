@@ -653,7 +653,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="localSIPEndPoint">The local end point the request was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the request came from.</param>
         /// <param name="sipRequest">The SIP request.</param>
-        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             if (Dialogue != null)
             {
@@ -664,7 +664,7 @@ namespace SIPSorcery.SIP.App
                     sipRequest.Header.CallId == Dialogue.CallId)
                 {
                     // In dialog request will include BYE's.
-                    await DialogRequestReceivedAsync(sipRequest);
+                    _ = DialogRequestReceivedAsync(sipRequest);
                 }
             }
         }
