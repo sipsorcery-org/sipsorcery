@@ -55,20 +55,23 @@ namespace SIPSorcery.Net.UnitTests
 
         /// <summary>
         /// Test async DNS resolution
-        /// also test IPSocket.Parse
+        /// 1. queue dns lookup for async resolution
+        /// 2. check lookup/resolution cache for result
+        /// (also test IPSocket.Parse)
         /// </summary>
         [Fact]
-        public void LookupAnyRecordAsyncTest()
+        public void LookupAnyRecordAsyncCacheTest()
         {
             logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            DNSManager.ReStart();
-            DNSResponse result = DNSManager.Lookup("dns.google", QType.ANY, 100, null, true, true);
+            //1.queue dns lookup for async resolution
+            DNSResponse result = DNSManager.Lookup("dns.google", QType.ANY, 1, null, false, true);
             Assert.Null(result);
 
-            result = DNSManager.Lookup("dns.google", QType.ANY, 150, null, true, false);
+            System.Threading.Thread.Sleep(500);
 
-            DNSManager.Stop();
+            //2.check lookup / resolution cache for result
+            result = DNSManager.Lookup("dns.google", QType.ANY, 150, null, true, false);
 
             Assert.NotNull(result);
 
