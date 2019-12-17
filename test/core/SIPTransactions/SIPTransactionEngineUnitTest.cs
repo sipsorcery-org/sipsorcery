@@ -43,20 +43,20 @@ namespace SIPSorcery.SIP.UnitTests
             SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
-        [Fact]
-        public void DuplicateTransactionUnitTest()
-        {
-            SIPTransactionEngine clientEngine = new SIPTransactionEngine();
+        //[Fact]
+        //public void DuplicateTransactionUnitTest()
+        //{
+        //    SIPTransactionEngine clientEngine = new SIPTransactionEngine();
 
-            SIPURI dummyURI = SIPURI.ParseSIPURI("sip:dummy@mysipswitch.com");
-            SIPRequest inviteRequest = GetDummyINVITERequest(dummyURI);
+        //    SIPURI dummyURI = SIPURI.ParseSIPURI("sip:dummy@mysipswitch.com");
+        //    SIPRequest inviteRequest = GetDummyINVITERequest(dummyURI);
 
-            SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
-            UACInviteTransaction clientTransaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, null);
-            clientEngine.AddTransaction(clientTransaction);
+        //    SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
+        //    UACInviteTransaction clientTransaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, clientEngine), inviteRequest, null);
+        //    //clientEngine.AddTransaction(clientTransaction);
 
-            Assert.Throws<ApplicationException>(() => clientEngine.AddTransaction(clientTransaction));
-        }
+        //    Assert.Throws<ApplicationException>(() => clientEngine.AddTransaction(clientTransaction));
+        //}
 
         /// <summary>
         /// Tests that the transaction ID is correctly generated and matched for a request and response pair.
@@ -81,8 +81,8 @@ namespace SIPSorcery.SIP.UnitTests
                 m_CRLF +
                 "dummy");
 
-            SIPTransaction transaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, null);
-            transactionEngine.AddTransaction(transaction);
+            SIPTransaction transaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, transactionEngine), inviteRequest, null);
+            //transactionEngine.AddTransaction(transaction);
 
             SIPResponse sipResponse = SIPResponse.ParseSIPResponse("SIP/2.0 603 Nothing listening" + m_CRLF +
                 "Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013" + m_CRLF +
@@ -182,8 +182,8 @@ namespace SIPSorcery.SIP.UnitTests
 
             // Server has received the invite.
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
-            UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, null), inviteRequest, null, true);
-            engine.AddTransaction(serverTransaction);
+            UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, engine), inviteRequest, null, true);
+            //engine.AddTransaction(serverTransaction);
 
             string ackRequestStr =
                 "ACK sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +

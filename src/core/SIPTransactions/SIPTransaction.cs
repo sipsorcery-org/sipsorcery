@@ -229,6 +229,8 @@ namespace SIPSorcery.SIP
                 {
                     PrackSupported = true;
                 }
+
+                m_sipTransport.AddTransaction(this);
             }
             catch (Exception excp)
             {

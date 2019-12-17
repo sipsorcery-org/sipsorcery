@@ -89,6 +89,7 @@ namespace SIPSorcery.SoftPhone
             m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
             m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
             m_userAgent.OnTransferNotify += OnTransferNotify;
+            m_userAgent.OnDtmfEvent += OnDtmfEvent;
         }
 
         /// <summary>
@@ -395,6 +396,15 @@ namespace SIPSorcery.SoftPhone
                     StatusMessage(this, $"Transfer failed {responseStatusCode}");
                 }
             }
+        }
+
+        /// <summary>
+        /// Event handler for DTMF events on the remote call party's RTP stream.
+        /// </summary>
+        /// <param name="dtmfKey">The DTMF key pressed.</param>
+        private void OnDtmfEvent(byte dtmfKey)
+        {
+            StatusMessage(this, $"DTMF event from remote call party {dtmfKey}.");
         }
     }
 }

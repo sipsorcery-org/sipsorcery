@@ -1260,6 +1260,19 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
+        /// Adds a SIP transaction to the transaction engine. Once in the engine the transport 
+        /// layer is aware of it can can do things like match a CANCEL request to a UAS transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction to start tracking.</param>
+        public void AddTransaction(SIPTransaction transaction)
+        {
+            if (!m_transactionEngine.Exists(transaction.TransactionId))
+            {
+                m_transactionEngine.AddTransaction(transaction);
+            }
+        }
+
+        /// <summary>
         /// Attempts to retrieve the transaction matching the supplied ID.
         /// </summary>
         /// <param name="transactionId">The transaction ID to match.</param>
@@ -1605,7 +1618,6 @@ namespace SIPSorcery.SIP
                 new SIPToHeader(null, new SIPURI(uri.User, uri.Host, null, uri.Scheme, SIPProtocolsEnum.udp), null),
                 SIPFromHeader.GetDefaultSIPFromHeader(uri.Scheme));
         }
-
 
         /// <summary>
         /// Helper method to create a SIP response for a SIP request. This method can be thoght of as creating a 

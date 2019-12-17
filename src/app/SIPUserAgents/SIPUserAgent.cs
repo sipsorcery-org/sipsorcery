@@ -46,6 +46,8 @@ namespace SIPSorcery.SIP.App
 
         private static ILogger logger = Log.Logger;
 
+        private ushort m_remoteDtmfDuration;             // If a remote DTMF event is in progress this field tracks the duration.
+
         /// <summary>
         /// Client user agent for placing calls.
         /// </summary>
@@ -208,6 +210,11 @@ namespace SIPSorcery.SIP.App
         public event Action<string> OnTransferNotify;
 
         /// <summary>
+        /// Fires when a DTMF event is detected on the remote party's RTP stream.
+        /// </summary>
+        public event Action<byte> OnDtmfEvent;
+
+        /// <summary>
         /// Creates a new SIP client and server combination user agent.
         /// </summary>
         /// <param name="transport">The transport layer to use for requests and responses.</param>
@@ -228,6 +235,7 @@ namespace SIPSorcery.SIP.App
         public void Call(SIPCallDescriptor sipCallDescriptor)
         {
             RtpSession = new RTPSession((int)m_defaultAudioFormat, null, null, true);
+            RtpSession.OnRtpEvent += OnRemoteRtpEvent;
 
             m_uac = new SIPClientUserAgent(m_transport);
             m_uac.CallTrying += ClientCallTryingHandler;
@@ -322,11 +330,13 @@ namespace SIPSorcery.SIP.App
             }
 
             RtpSession = new RTPSession((int)m_defaultAudioFormat, null, null, true);
+            RtpSession.OnRtpEvent += OnRemoteRtpEvent;
 
             var sipRequest = uas.ClientTransaction.TransactionRequest;
             SDP remoteSDP = SDP.ParseSDPDescription(sipRequest.Body);
             // TODO: Deal with multiple media offers.
             RtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+            RtpSession.SetRemoteSDP(remoteSDP);
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(RtpSession.DestinationEndPoint.Address);
             var sdpAnswer = RtpSession.GetSDP(localIPAddress);
 
@@ -426,7 +436,7 @@ namespace SIPSorcery.SIP.App
 
                 SIPTransactionResponseReceivedDelegate referTxStatusHandler = async (localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse) =>
                 {
-                    // This handler has to go on a separate thread or the recevigin SIP channel will be blocked.
+                    // This handler has to go on a separate thread or the SIPTransport "ProcessInMessage" thread will be blocked.
                     await Task.Run(() =>
                     {
                         if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
@@ -762,6 +772,8 @@ namespace SIPSorcery.SIP.App
                     logger.LogDebug($"Remote RTP socket {RtpSession.DestinationEndPoint}.");
                 }
 
+                RtpSession.SetRemoteSDP(SDP.ParseSDPDescription(sipResponse.Body));
+
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 
                 if (ClientCallAnswered != null)
@@ -861,6 +873,23 @@ namespace SIPSorcery.SIP.App
             m_uas = null;
             RtpSession?.Close();
             RtpSession = null;
+        }
+
+        /// <summary>
+        /// Event handler for RTP events from the remote call party.
+        /// </summary>
+        /// <param name="rtpEvent">The received RTP event.</param>
+        private void OnRemoteRtpEvent(RTPEvent rtpEvent)
+        {
+            if (rtpEvent.EndOfEvent == true)
+            {
+                m_remoteDtmfDuration = 0;
+            }
+            else if (m_remoteDtmfDuration == 0)
+            {
+                m_remoteDtmfDuration = rtpEvent.Duration;
+                OnDtmfEvent?.Invoke(rtpEvent.EventID);
+            }
         }
     }
 }
