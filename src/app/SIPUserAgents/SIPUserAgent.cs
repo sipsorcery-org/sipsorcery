@@ -867,7 +867,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Event handler for RTP events from the remote call party.
         /// </summary>
-        /// <param name="rtpEvent">The received RTP event.</param>
+        /// <param name="dtmf">The received DTMF.</param>
         private void OnRemoteRtpEvent(byte dtmf)
         {
             OnDtmfEvent?.Invoke(dtmf);
