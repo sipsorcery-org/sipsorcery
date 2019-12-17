@@ -72,13 +72,15 @@
 <p>The <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/AttendedTransfer">Attended Transfer</a> program contains an example of how initiate an attended transfer between two established calls.</p>
 <p>The example program works in the following manner:</p>
 <ol>
-<li><p>Establish two calls by using a different SIP device or softphone to &quot;call&quot; the sample. By default the program listens on all local IP addresses and port 5060.</p>
+<li><p>Establish two calls by using a different SIP device or softphone to &quot;call&quot; the example program. By default the program listens on all local IP addresses and port 5060.</p>
 </li>
 <li><p>Once a call is established press the <code>t</code> key to initiate the attended transfer.</p>
 </li>
 <li><p>Once a notification is received that the transfer was accepted and successful the program will hangup the orphaned call leg and exit.</p>
 </li>
 </ol>
+<h3 id="call-flow">Call Flow</h3>
+<p>The diagram below represents a typical call flow when using this program. In this case two different softphones are calling the example program one after the other. When both calls are ready the <code>t</code> key is pressed and the attended transfer succeeds.</p>
 <p><img src="images/attended_callflow.png" alt="image"></p>
 </article>
           </div>

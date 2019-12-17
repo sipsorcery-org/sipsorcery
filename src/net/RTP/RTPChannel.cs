@@ -19,6 +19,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -51,6 +52,12 @@ namespace SIPSorcery.Net
             m_udpSocket = udpSocket;
             m_recvBuffer = new byte[RECEIVE_BUFFER_SIZE];
         }
+
+        //public Task<int> ReceiveAsync(DivideByZeroException[] buffer, int offset, int count, SocketFlags flags)
+        //{
+        //    return Task<int>.Factory.FromAsync(m_udpSocket.BeginReceive, m_udpSocket.EndReceive,
+        //        buffer, offset, count, flags, null, TaskCreationOptions.None);
+        //}
 
         /// <summary>
         /// Starts the receive. This method returns immediately. An event will be fired in the corresponding "End" event to
@@ -94,23 +101,27 @@ namespace SIPSorcery.Net
         {
             try
             {
-                SocketFlags flags = SocketFlags.None;
-                EndPoint remoteEP = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-
-                int bytesRead = m_udpSocket.EndReceiveMessageFrom(ar, ref flags, ref remoteEP, out var packetInfo);
-
-                if (bytesRead > 0)
+                // When socket is closed the object will be disposed of in the middle of a receive.
+                if (!m_isClosed)
                 {
-                    IPEndPoint localEndPoint = new IPEndPoint(packetInfo.Address, (m_udpSocket.LocalEndPoint as IPEndPoint).Port);
-                    byte[] packetBuffer = new byte[bytesRead];
-                    Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
-                    OnPacketReceived?.Invoke(this, localEndPoint, remoteEP as IPEndPoint, packetBuffer);
+                    SocketFlags flags = SocketFlags.None;
+                    EndPoint remoteEP = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+
+                    int bytesRead = m_udpSocket.EndReceiveMessageFrom(ar, ref flags, ref remoteEP, out var packetInfo);
+
+                    if (bytesRead > 0)
+                    {
+                        IPEndPoint localEndPoint = new IPEndPoint(packetInfo.Address, (m_udpSocket.LocalEndPoint as IPEndPoint).Port);
+                        byte[] packetBuffer = new byte[bytesRead];
+                        Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
+                        OnPacketReceived?.Invoke(this, localEndPoint, remoteEP as IPEndPoint, packetBuffer);
+                    }
                 }
             }
             catch (SocketException sockExcp)
             {
                 // Pretty sure the only cause of these exceptions is when an ICMP message comes back indicating there is no listening
-                // socket on the other end. Noe there may be cases where this is valid, for example we start sending before the other end
+                // socket on the other end. Now there may be cases where this is valid, for example we start sending before the other end
                 // starts listening. Bubble it up and let the caller deal with it.
                 logger.LogWarning($"SocketException UdpReceiver.EndReceiveMessageFrom ({sockExcp.ErrorCode}). {sockExcp.Message}");
                 OnReceiveError?.Invoke(sockExcp);

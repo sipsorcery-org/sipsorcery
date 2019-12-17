@@ -154,7 +154,7 @@ private SIPRequest GetReferRequest(SIPURI referToUri)
 <p><img src="images/xfer_callflow.png" alt="image"></p>
 <p>In the <code>REFER</code> request the mst important header is the <code>ReferTo</code>. It's what determines where the remote user agent will is being asked to place a new call to.</p>
 <p><strong>It's important to note that a REFER request &quot;asks&quot; the remote user agent to try placing a new call to the SIP URI specified. There is no guarantee it will or that the call will succeed. It's important to deal with cases where the REFER request is rejected.</strong></p>
-<p>Below is the console output of a successful call transfer using the exmaple code and a local Asterisk\FreePBX server.</p>
+<p>Below is the console output of a successful call transfer using the example code and a local Asterisk\FreePBX server.</p>
 <pre><code class="lang-cmd">C:\Dev\sipsorcery\sipsorcery-core\examples\CallTransfer&gt;dotnet run
 SIPSorcery client user agent example.
 Press ctrl-c to exit.
