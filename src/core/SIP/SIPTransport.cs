@@ -376,9 +376,9 @@ namespace SIPSorcery.SIP
         /// - find the most appropriate local SIP channel in this SIP transport to send the request on.
         /// </summary>
         /// <param name="sipRequest">The SIP request to send.</param>
-        public async void SendRequest(SIPRequest sipRequest)
+        public void SendRequest(SIPRequest sipRequest)
         {
-            await SendRequestAsync(sipRequest);
+            SendRequestAsync(sipRequest).Wait();
         }
 
         /// <summary>
@@ -435,9 +435,9 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dstEndPoint">The destination end point to send the request to.</param>
         /// <param name="sipRequest">The SIP request to send.</param>
-        public async void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
+        public void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
-            await SendRequestAsync(dstEndPoint, sipRequest);
+            SendRequestAsync(dstEndPoint, sipRequest).Wait();
         }
 
         /// <summary>
@@ -560,9 +560,9 @@ namespace SIPSorcery.SIP
         /// Attempts to send a SIP response back to the SIP request origin.
         /// </summary>
         /// <param name="sipResponse">The SIP response to send.</param>
-        public async void SendResponse(SIPResponse sipResponse)
+        public void SendResponse(SIPResponse sipResponse)
         {
-            await SendResponseAsync(sipResponse);
+            SendResponseAsync(sipResponse).Wait();
         }
 
         /// <summary>
@@ -970,7 +970,7 @@ namespace SIPSorcery.SIP
                             string rawErrorMessage = Encoding.UTF8.GetString(buffer, 0, 1024) + "\r\n..truncated";
                             FireSIPBadRequestInTraceEvent(localEndPoint, remoteEndPoint, "SIP message too large, " + buffer.Length + " bytes, maximum allowed is " + SIPConstants.SIP_MAXIMUM_RECEIVE_LENGTH + " bytes.", SIPValidationFieldsEnum.Request, rawErrorMessage);
                             SIPResponse tooLargeResponse = SIPResponse.GetResponse(localEndPoint, remoteEndPoint, SIPResponseStatusCodesEnum.MessageTooLarge, null);
-                            SendResponse(tooLargeResponse);
+                            await SendResponseAsync(tooLargeResponse);
                         }
                         else
                         {
@@ -1063,7 +1063,7 @@ namespace SIPSorcery.SIP
                                                 if (requestTransaction.TransactionFinalResponse != null)
                                                 {
                                                     logger.LogWarning("Resending final response for " + sipRequest.Method + ", " + sipRequest.URI.ToString() + ", cseq=" + sipRequest.Header.CSeq + ".");
-                                                    SendResponse(requestTransaction.TransactionFinalResponse);
+                                                    await SendResponseAsync(requestTransaction.TransactionFinalResponse);
                                                     requestTransaction.OnRetransmitFinalResponse();
                                                 }
                                             }
