@@ -98,18 +98,21 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                SocketFlags flags = SocketFlags.None;
-                EndPoint remoteEP = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-
-                int bytesRead = m_udpSocket.EndReceiveMessageFrom(ar, ref flags, ref remoteEP, out var packetInfo);
-
-                if (bytesRead > 0)
+                if (!Closed)
                 {
-                    SIPEndPoint remoteEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, remoteEP as IPEndPoint, ID, null);
-                    SIPEndPoint localEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(packetInfo.Address, Port), ID, null);
-                    byte[] sipMsgBuffer = new byte[bytesRead];
-                    Buffer.BlockCopy(m_recvBuffer, 0, sipMsgBuffer, 0, bytesRead);
-                    SIPMessageReceived?.Invoke(this, localEndPoint, remoteEndPoint, sipMsgBuffer);
+                    SocketFlags flags = SocketFlags.None;
+                    EndPoint remoteEP = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+
+                    int bytesRead = m_udpSocket.EndReceiveMessageFrom(ar, ref flags, ref remoteEP, out var packetInfo);
+
+                    if (bytesRead > 0)
+                    {
+                        SIPEndPoint remoteEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, remoteEP as IPEndPoint, ID, null);
+                        SIPEndPoint localEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(packetInfo.Address, Port), ID, null);
+                        byte[] sipMsgBuffer = new byte[bytesRead];
+                        Buffer.BlockCopy(m_recvBuffer, 0, sipMsgBuffer, 0, bytesRead);
+                        SIPMessageReceived?.Invoke(this, localEndPoint, remoteEndPoint, sipMsgBuffer);
+                    }
                 }
             }
             catch (SocketException sockExcp)
