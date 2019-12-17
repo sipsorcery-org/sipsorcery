@@ -662,8 +662,16 @@ namespace SIPSorcery.SIP.App
                     sipRequest.Header.To.ToTag != null &&
                     sipRequest.Header.CallId == Dialogue.CallId)
                 {
-                    // In dialog request will include BYE's.
-                    await DialogRequestReceivedAsync(sipRequest);
+                    try
+                    {
+                        await DialogRequestReceivedAsync(sipRequest);
+                    }
+                    catch(Exception excp)
+                    {
+                        // There no point bubbling this exception up. The next class up is the transport layer and
+                        // it doesn't know what to do if a request can't be dealt with.
+                        logger.LogError($"Exception SIPUserAgent.SIPTransportRequestReceived. {excp.Message}");
+                    }
                 }
             }
         }
