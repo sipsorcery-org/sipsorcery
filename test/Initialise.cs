@@ -67,7 +67,6 @@ namespace SIPSorcery.UnitTests
             throw new NotImplementedException();
         }
 
-
         public override Task<SocketError> SendSecureAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate, string connectionIDHint)
         {
             throw new NotImplementedException();
@@ -87,6 +86,14 @@ namespace SIPSorcery.UnitTests
         public override bool HasConnection(IPEndPoint remoteEndPoint)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Use to cause a mock message to be passed through to the SIP Transport class monitoring this mock channel.
+        /// </summary>
+        public void FireMessageReceived(SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] sipMsgBuffer)
+        {
+            SIPMessageReceived.Invoke(this, localEndPoint, remoteEndPoint, sipMsgBuffer);
         }
     }
 
