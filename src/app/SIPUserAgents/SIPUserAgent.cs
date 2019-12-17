@@ -436,7 +436,7 @@ namespace SIPSorcery.SIP.App
 
                 SIPTransactionResponseReceivedDelegate referTxStatusHandler = (localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse) =>
                 {
-                    // This handler has to go on a separate thread or the receiving SIP channel will be blocked.
+                    // This handler has to go on a separate thread or the SIPTransport "ProcessInMessage" thread will be blocked.
                     Task.Run(() =>
                     {
                         if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
