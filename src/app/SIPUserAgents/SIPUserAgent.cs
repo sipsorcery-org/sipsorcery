@@ -452,7 +452,7 @@ namespace SIPSorcery.SIP.App
                         {
                             transferAccepted.SetResult(false);
                         }
-                    });
+                    }, ct);
                 };
 
                 referTx.NonInviteTransactionFinalResponseReceived += referTxStatusHandler;
