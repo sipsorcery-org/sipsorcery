@@ -376,17 +376,17 @@ namespace SIPSorcery.SIP.App
         /// <param name="ct">Cancellation token. Can be set to canel the transfer prior to it being
         /// accepted or timing out.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        public async Task<bool> BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct)
+        public Task<bool> BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct)
         {
             if (Dialogue == null)
             {
                 logger.LogWarning("Blind transfer was called on the SIPUserAgent when no dialogue was available.");
-                return false;
+                return Task.FromResult(false);
             }
             else
             {
                 var referRequest = GetReferRequest(destination);
-                return await Transfer(referRequest, timeout, ct);
+                return Transfer(referRequest, timeout, ct);
             }
         }
 
@@ -399,17 +399,17 @@ namespace SIPSorcery.SIP.App
         /// <param name="ct">Cancellation token. Can be set to canel the transfer prior to it being
         /// accepted or timing out.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        public async Task<bool> AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct)
+        public Task<bool> AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct)
         {
             if (Dialogue == null || transferee == null)
             {
                 logger.LogWarning("Attended transfer was called on the SIPUserAgent when no dialogue was available.");
-                return false;
+                return Task.FromResult(false);
             }
             else
             {
                 var referRequest = GetReferRequest(transferee);
-                return await Transfer(referRequest, timeout, ct);
+                return Transfer(referRequest, timeout, ct);
             }
         }
 
@@ -434,10 +434,10 @@ namespace SIPSorcery.SIP.App
 
                 SIPNonInviteTransaction referTx = new SIPNonInviteTransaction(m_transport, referRequest, null);
 
-                SIPTransactionResponseReceivedDelegate referTxStatusHandler = async (localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse) =>
+                SIPTransactionResponseReceivedDelegate referTxStatusHandler = (localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse) =>
                 {
                     // This handler has to go on a separate thread or the SIPTransport "ProcessInMessage" thread will be blocked.
-                    await Task.Run(() =>
+                    Task.Run(() =>
                     {
                         if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
                         {
@@ -452,6 +452,7 @@ namespace SIPSorcery.SIP.App
                 };
 
                 referTx.NonInviteTransactionFinalResponseReceived += referTxStatusHandler;
+
                 referTx.SendReliableRequest();
 
                 await Task.WhenAny(new Task[] { transferAccepted.Task, Task.Delay((int)timeout.TotalMilliseconds) });
@@ -652,7 +653,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="localSIPEndPoint">The local end point the request was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the request came from.</param>
         /// <param name="sipRequest">The SIP request.</param>
-        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             if (Dialogue != null)
             {
@@ -663,7 +664,7 @@ namespace SIPSorcery.SIP.App
                     sipRequest.Header.CallId == Dialogue.CallId)
                 {
                     // In dialog request will include BYE's.
-                    await DialogRequestReceivedAsync(sipRequest);
+                    _ = DialogRequestReceivedAsync(sipRequest);
                 }
             }
         }
@@ -693,15 +694,15 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="response">The response to send.</param>
         /// <returns>Send result.</returns>
-        private async Task<SocketError> SendResponseAsync(SIPResponse response)
+        private Task<SocketError> SendResponseAsync(SIPResponse response)
         {
             if (m_outboundProxy != null)
             {
-                return await m_transport.SendResponseAsync(m_outboundProxy, response);
+                return m_transport.SendResponseAsync(m_outboundProxy, response);
             }
             else
             {
-                return await m_transport.SendResponseAsync(response);
+                return m_transport.SendResponseAsync(response);
             }
         }
 
