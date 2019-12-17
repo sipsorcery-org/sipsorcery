@@ -376,17 +376,17 @@ namespace SIPSorcery.SIP.App
         /// <param name="ct">Cancellation token. Can be set to canel the transfer prior to it being
         /// accepted or timing out.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        public async Task<bool> BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct)
+        public Task<bool> BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct)
         {
             if (Dialogue == null)
             {
                 logger.LogWarning("Blind transfer was called on the SIPUserAgent when no dialogue was available.");
-                return false;
+                return Task.FromResult(false);
             }
             else
             {
                 var referRequest = GetReferRequest(destination);
-                return await Transfer(referRequest, timeout, ct);
+                return Transfer(referRequest, timeout, ct);
             }
         }
 
@@ -399,17 +399,17 @@ namespace SIPSorcery.SIP.App
         /// <param name="ct">Cancellation token. Can be set to canel the transfer prior to it being
         /// accepted or timing out.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
-        public async Task<bool> AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct)
+        public Task<bool> AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct)
         {
             if (Dialogue == null || transferee == null)
             {
                 logger.LogWarning("Attended transfer was called on the SIPUserAgent when no dialogue was available.");
-                return false;
+                return Task.FromResult(false);
             }
             else
             {
                 var referRequest = GetReferRequest(transferee);
-                return await Transfer(referRequest, timeout, ct);
+                return Transfer(referRequest, timeout, ct);
             }
         }
 
@@ -694,15 +694,15 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="response">The response to send.</param>
         /// <returns>Send result.</returns>
-        private async Task<SocketError> SendResponseAsync(SIPResponse response)
+        private Task<SocketError> SendResponseAsync(SIPResponse response)
         {
             if (m_outboundProxy != null)
             {
-                return await m_transport.SendResponseAsync(m_outboundProxy, response);
+                return m_transport.SendResponseAsync(m_outboundProxy, response);
             }
             else
             {
-                return await m_transport.SendResponseAsync(response);
+                return m_transport.SendResponseAsync(response);
             }
         }
 
