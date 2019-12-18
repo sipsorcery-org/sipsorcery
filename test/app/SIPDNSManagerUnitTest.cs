@@ -68,21 +68,30 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public void ResolveSIPServiceTest()
         {
-            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            try
+            {
+                logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"), false);
+                SIPDNSManager.UseNAPTRLookups = true;
 
-            SIPEndPoint resultEP = result.GetSIPEndPoint();
-            Assert.NotNull(resultEP);
-            logger.LogDebug($"resolved to SIP end point {resultEP}");
-            Assert.NotEmpty(result.SIPNAPTRResults);
-            Assert.NotEmpty(result.SIPSRVResults);
-            Assert.NotEmpty(result.EndPointResults);
+                var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"), false);
 
-            result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sip:tel.t-online.de"), false);
-            Assert.NotNull(resultEP);
-            result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sips:hpbxsec.deutschland-lan.de:5061;transport=tls"), false);
-            Assert.NotNull(resultEP);
+                SIPEndPoint resultEP = result.GetSIPEndPoint();
+                Assert.NotNull(resultEP);
+                logger.LogDebug($"resolved to SIP end point {resultEP}");
+                Assert.NotEmpty(result.SIPNAPTRResults);
+                Assert.NotEmpty(result.SIPSRVResults);
+                Assert.NotEmpty(result.EndPointResults);
+
+                result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sip:tel.t-online.de"), false);
+                Assert.NotNull(resultEP);
+                result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sips:hpbxsec.deutschland-lan.de:5061;transport=tls"), false);
+                Assert.NotNull(resultEP);
+            }
+            finally
+            {
+                SIPDNSManager.UseNAPTRLookups = false;
+            }
         }
 
         [Fact]

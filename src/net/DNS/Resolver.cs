@@ -432,7 +432,7 @@ namespace Heijden.DNS
             }
 
             //if (response.header.RCODE != RCode.NOERROR || response.Error != null)
-            if (response.Error.IsNullOrBlank())
+            if (!response.Error.IsNullOrBlank())
             {
                 // Cache error responses for a short period of time to avoid overloading the server with failing DNS lookups.
                 logger.LogDebug("Caching DNS lookup failure for " + questionKey + " error was " + response.Error + ".");
