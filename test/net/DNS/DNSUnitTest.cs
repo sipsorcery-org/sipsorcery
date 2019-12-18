@@ -36,7 +36,7 @@ namespace SIPSorcery.Net.UnitTests
         /// Test DNS resolution
         /// also test IPSocket.Parse
         /// </summary>
-        [Fact]
+        [Fact(Skip = "DNS Queries for QType.ANY are not supported widely in the wild.")]
         public void LookupAnyRecordTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -64,7 +64,7 @@ namespace SIPSorcery.Net.UnitTests
         /// 2. check lookup/resolution cache for result
         /// (also test IPSocket.Parse)
         /// </summary>
-        [Fact]
+        [Fact(Skip = "DNS Queries for QType.ANY are not supported widely in the wild.")]
         public void LookupAnyRecordAsyncCacheTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
