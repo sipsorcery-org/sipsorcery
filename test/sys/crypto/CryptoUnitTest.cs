@@ -29,6 +29,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void SampleTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             int initRandomNumber = Crypto.GetRandomInt();
             logger.LogDebug("Random int = " + initRandomNumber + ".");
             logger.LogDebug("-----------------------------------------");

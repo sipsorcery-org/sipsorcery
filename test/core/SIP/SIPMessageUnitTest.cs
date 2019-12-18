@@ -164,7 +164,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthParseFromSingleRequestTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 @"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -195,7 +195,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthParseFromSingleRequestExtraSpacingTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 @"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -226,7 +226,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthCompactParseFromSingleRequestTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 @"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -258,7 +258,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthCompactParseFromSingleRequestExtraSpacingTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -287,7 +287,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseReceiveNoContentLengthHeaderRequestTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -314,7 +314,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseReceiveSingleRequestTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 @"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -420,7 +420,7 @@ CRLF +
         [Fact]
         public void ParseMultiRequestAndResponseTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
             @"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -486,7 +486,7 @@ CRLF +
         [Fact]
         public void ParseRequestOneByteMissingTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
             @"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
@@ -516,7 +516,7 @@ includesdp=tru";
         [Fact]
         public void ParseRequestOneByteExtraTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
             @"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -548,7 +548,7 @@ CRLF +
         [Fact]
         public void ParseRequestBytesReadShortTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
             @"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
@@ -578,7 +578,7 @@ include                                               ";
         [Fact]
         public void ParseRequestWithLeadingNATKeepAliveBytesTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
             @"    SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -613,7 +613,7 @@ CRLF +
         [Fact]
         public void TestProcessRecevieWithBytesToSkipTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
 "            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +

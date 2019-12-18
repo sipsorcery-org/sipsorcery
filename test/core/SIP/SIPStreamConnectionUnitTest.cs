@@ -40,7 +40,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void TestSocketReadSingleMessageTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
 @"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -75,7 +75,7 @@ CRLF +
         [Fact]
         public void TestSocketReadWithBytesToSkipTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
 "            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -116,7 +116,7 @@ CRLF + CRLF +
         [Fact]
         public void TestSocketReadWithTwoMessagesAndBytesToSkipTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
 @"            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -171,7 +171,7 @@ CRLF +
         [Fact]
         public void ContentLengthParseWhenUpperCaseTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 @"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -200,7 +200,7 @@ CRLF +
         [Fact]
         public void ContentLengthParseWhenMixedCaseTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 @"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +

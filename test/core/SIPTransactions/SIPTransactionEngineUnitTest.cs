@@ -55,6 +55,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MatchOnRequestAndResponseTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
 
@@ -94,6 +96,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AckRecognitionUnitTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SIPTransport clientTransport = null;
             SIPTransport serverTransport = null;
 
@@ -122,9 +126,12 @@ namespace SIPSorcery.SIP.UnitTests
                     };
                     serverTransaction.TransactionStateChanged += (tx) =>
                     {
-                        if(tx.TransactionState == SIPTransactionStatesEnum.Confirmed)
+                        if (tx.TransactionState == SIPTransactionStatesEnum.Confirmed)
                         {
-                            uasConfirmedTask.SetResult(true);
+                            if (!uasConfirmedTask.TrySetResult(true))
+                            {
+                                logger.LogWarning($"AckRecognitionUnitTest: FAILED to set result on CompletionSource.");
+                            }
                         }
                     };
                     serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
@@ -154,6 +161,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AckRecognitionIIUnitTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SIPTransactionEngine engine = new SIPTransactionEngine();     // Client side of the INVITE.
 
             string inviteRequestStr =

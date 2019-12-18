@@ -29,7 +29,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void HasStringUnitTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] sample = Encoding.ASCII.GetBytes("The quick brown fox jumped over...");
 
@@ -41,7 +41,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void NotBeforeEndUnitTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] sample = Encoding.ASCII.GetBytes("The quick brown fox jumped over...");
 
@@ -53,7 +53,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetStringIndexUnitTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "REGISTER sip:Blue Face SIP/2.0\r\n" +
@@ -78,7 +78,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetStringIndexSIPInviteUnitTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                  "INVITE sip:12345@sip.domain.com:5060;TCID-0 SIP/2.0\r\n" +
@@ -122,7 +122,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetStringIndexNotFoundUnitTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "REGISTER sip:Blue Face SIP/2.0\r\n" +

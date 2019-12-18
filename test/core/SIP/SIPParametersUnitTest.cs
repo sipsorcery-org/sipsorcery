@@ -29,7 +29,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void RouteParamExtractTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string routeParam = ";lr;server=hippo";
             SIPParameters serverParam = new SIPParameters(routeParam, ';');
@@ -44,7 +44,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void QuotedStringParamExtractTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string methodsParam = ";methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER\"";
             SIPParameters serverParam = new SIPParameters(methodsParam, ';');
@@ -59,7 +59,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void UserFieldWithNamesExtractTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string userField = "\"Joe Bloggs\" <sip:joe@bloggs.com>;allow=\"options, invite, cancel\"";
             string[] keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
@@ -73,7 +73,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MultipleUserFieldWithNamesExtractTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string userField = "\"Joe Bloggs\" <sip:joe@bloggs.com>;allow=\"options, invite, cancel\" , \"Jane Doe\" <sip:jabe@doe.com>";
             string[] keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
@@ -88,7 +88,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MultipleUserFieldWithNamesExtraWhitespaceExtractTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string userField = "  \"Joe Bloggs\"   <sip:joe@bloggs.com>;allow=\"options, invite, cancel\" \t,   \"Jane Doe\" <sip:jabe@doe.com>";
             string[] keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
@@ -103,7 +103,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void GetHashCodeDiffOrderEqualityUnittest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testParamStr1 = ";lr;server=hippo;ftag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
@@ -117,7 +117,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void GetHashCodeDiffOrderEqualityReorderedUnittest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testParamStr1 = ";lr;server=hippo;ftag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
@@ -131,7 +131,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CheckEqualWithDiffCaseEqualityUnittest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testParamStr1 = ";LR;Server=hippo;FTag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
@@ -147,7 +147,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void GetHashCodeDiffValueCaseEqualityUnittest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testParamStr1 = ";LR;Server=hippo;FTag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
@@ -163,7 +163,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void EmptyValueParametersUnittest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testParamStr1 = ";emptykey;Server=hippo;FTag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');

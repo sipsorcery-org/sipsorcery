@@ -36,6 +36,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RTSPMessageWithNoContentLengthHeaderAvailable()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             RTSPRequest setupRequest = new RTSPRequest(RTSPMethodsEnum.SETUP, RTSPURL.ParseRTSPURL("rtsp://localhost/sample"));
             byte[] rtspRequestBuffer = Encoding.UTF8.GetBytes(setupRequest.ToString());
 

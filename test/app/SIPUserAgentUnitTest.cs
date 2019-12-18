@@ -42,6 +42,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         public async void BlindTransferUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
 
@@ -95,6 +96,7 @@ a=sendrecv";
         public void BlindTransferCancelUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
 
@@ -150,6 +152,7 @@ a=sendrecv";
         public void HangupUserAgentUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             // NOTE: For this test to work the transport layer must be instantiated with the queue incoming
             // flag set to false. That has the effect of getting the mockChannel.FireMessageReceived to flow
             // all the way through to the SIPUSerAgent on the same thread.

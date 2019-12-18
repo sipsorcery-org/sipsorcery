@@ -28,7 +28,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ParsePortFromSocketTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             int port = IPSocket.ParsePortFromSocket("localhost:5060");
             logger.LogDebug("port=" + port);
@@ -38,7 +38,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ParseHostFromSocketTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string host = IPSocket.ParseHostFromSocket("localhost:5060");
             logger.LogDebug("host=" + host);
@@ -59,7 +59,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ParseTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string host = null;
             int port = 0;
@@ -155,7 +155,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ParseEndpointTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             System.Net.IPEndPoint ep = null;
 

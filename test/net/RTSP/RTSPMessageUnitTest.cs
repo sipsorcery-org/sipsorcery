@@ -36,6 +36,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RTSPRequestWIthStandardHeadersParseTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             int cseq = 23;
             string session = Guid.NewGuid().ToString();
             string body = @"v=0

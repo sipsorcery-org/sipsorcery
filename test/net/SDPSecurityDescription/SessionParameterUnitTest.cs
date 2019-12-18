@@ -19,6 +19,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ConstructorTestEnumParams()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             foreach (var e in Enum.GetValues(typeof(SDPSecurityDescription.SessionParameter.SrtpSessionParams)))
             {
                 SDPSecurityDescription.SessionParameter sessionParameter = SessionParameterFactory.Create((SDPSecurityDescription.SessionParameter.SrtpSessionParams)e);
@@ -30,30 +32,40 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ConstructorTestFecKey()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SDPSecurityDescription.SessionParameter sessionParameter = SessionParameterFactory.Create(SDPSecurityDescription.SessionParameter.SrtpSessionParams.fec_key);
             Assert.StartsWith(SDPSecurityDescription.SessionParameter.FEC_KEY_PREFIX, sessionParameter.ToString());
         }
         [Fact]
         public void ConstructorTestFecOrder()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SDPSecurityDescription.SessionParameter sessionParameter = SessionParameterFactory.Create(SDPSecurityDescription.SessionParameter.SrtpSessionParams.fec_order);
             Assert.StartsWith(SDPSecurityDescription.SessionParameter.FEC_ORDER_PREFIX, sessionParameter.ToString());
         }
         [Fact]
         public void ConstructorTestWsh()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SDPSecurityDescription.SessionParameter sessionParameter = SessionParameterFactory.Create(SDPSecurityDescription.SessionParameter.SrtpSessionParams.wsh);
             Assert.StartsWith(SDPSecurityDescription.SessionParameter.WSH_PREFIX, sessionParameter.ToString());
         }
         [Fact]
         public void ConstructorTestKdr()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SDPSecurityDescription.SessionParameter sessionParameter = SessionParameterFactory.Create(SDPSecurityDescription.SessionParameter.SrtpSessionParams.kdr);
             Assert.StartsWith(SDPSecurityDescription.SessionParameter.KDR_PREFIX, sessionParameter.ToString());
         }
         [Fact]
         public void ConstructorTestUNEnums()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SDPSecurityDescription.SessionParameter sessionParameter = SessionParameterFactory.Create(SDPSecurityDescription.SessionParameter.SrtpSessionParams.UNAUTHENTICATED_SRTP);
             Assert.Equal(SDPSecurityDescription.SessionParameter.SrtpSessionParams.UNAUTHENTICATED_SRTP.ToString(), sessionParameter.ToString());
             sessionParameter = SessionParameterFactory.Create(SDPSecurityDescription.SessionParameter.SrtpSessionParams.UNENCRYPTED_SRTCP);
@@ -65,6 +77,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void WshTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SDPSecurityDescription.SessionParameter sessionParameter = SessionParameterFactory.Create(SDPSecurityDescription.SessionParameter.SrtpSessionParams.wsh);
             try
             {
@@ -99,6 +113,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void KdrTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SDPSecurityDescription.SessionParameter sessionParameter = SessionParameterFactory.Create(SDPSecurityDescription.SessionParameter.SrtpSessionParams.kdr);
             try
             {
@@ -120,6 +136,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SDPSecurityDescription.SessionParameter sessionParameterKdr = SessionParameterFactory.Create(SDPSecurityDescription.SessionParameter.SrtpSessionParams.kdr, 4);
             string sKdr = sessionParameterKdr.ToString();
             Assert.Equal(sKdr, SDPSecurityDescription.SessionParameter.Parse(sKdr).ToString());
