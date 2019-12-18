@@ -652,7 +652,7 @@ namespace SIPSorcery.SIP.App
                     {
                         // There no point bubbling this exception up. The next class up is the transport layer and
                         // it doesn't know what to do if a request can't be dealt with.
-                        logger.LogError($"Exception SIPUserAgent.SIPTransportRequestReceived. {excp.Message}");
+                        logger.LogError(excp, $"Exception SIPUserAgent.SIPTransportRequestReceived. {excp.Message}");
                     }
                 }
             }
