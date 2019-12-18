@@ -423,14 +423,14 @@ namespace SIPSorcery.SIP
             await SendAsync(dstEndPoint, buffer, connectionIDHint);
         }
 
-        public override async void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
-        {
-            await SendSecureAsync(dstEndPoint, buffer, serverCertificateName, connectionIDHint);
-        }
+        //public override async void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
+        //{
+        //    await SendSecureAsync(dstEndPoint, buffer, serverCertificateName, connectionIDHint);
+        //}
 
-        public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
+        public override Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
-            return await SendSecureAsync(dstEndPoint, buffer, null, connectionIDHint);
+            return SendSecureAsync(dstEndPoint, buffer, null, connectionIDHint);
         }
 
         /// <summary>
@@ -607,6 +607,24 @@ namespace SIPSorcery.SIP
         public override bool HasConnection(IPEndPoint remoteEndPoint)
         {
             return m_connections.Any(x => x.Value.RemoteEndPoint.Equals(remoteEndPoint));
+        }
+
+        /// <summary>
+        /// Not implemented for the TCP channel.
+        /// </summary>
+        public override bool HasConnection(Uri serverUri)
+        {
+            throw new NotImplementedException("This HasConnection method is not available in the SIP TCP channel, please use an alternative overload.");
+        }
+
+        /// <summary>
+        /// Checks whether the specified address family is supported.
+        /// </summary>
+        /// <param name="addresFamily">The address family to check.</param>
+        /// <returns>True if supported, false if not.</returns>
+        public override bool IsAddressFamilySupported(AddressFamily addresFamily)
+        {
+            return addresFamily == ListeningIPAddress.AddressFamily;
         }
 
         /// <summary>

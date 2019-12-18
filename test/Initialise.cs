@@ -20,7 +20,6 @@ using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.SIP;
 using SIPSorcery.Sys;
-using Xunit.Abstractions;
 
 namespace SIPSorcery.UnitTests
 {
@@ -60,11 +59,6 @@ namespace SIPSorcery.UnitTests
             throw new NotImplementedException();
         }
 
-        public override void SendSecure(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate, string connectionIDHint)
-        {
-            throw new NotImplementedException();
-        }
-
         public override Task<SocketError> SendSecureAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate, string connectionIDHint)
         {
             throw new NotImplementedException();
@@ -84,6 +78,16 @@ namespace SIPSorcery.UnitTests
         public override bool HasConnection(IPEndPoint remoteEndPoint)
         {
             throw new NotImplementedException();
+        }
+
+        public override bool HasConnection(Uri serverUri)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool IsAddressFamilySupported(AddressFamily addresFamily)
+        {
+            return true;
         }
 
         /// <summary>

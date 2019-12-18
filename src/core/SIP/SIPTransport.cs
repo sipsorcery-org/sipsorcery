@@ -1169,7 +1169,7 @@ namespace SIPSorcery.SIP
             {
                 throw new ApplicationException("The transport layer does not have any SIP channels.");
             }
-            else if (!m_sipChannels.Any(x => x.Value.SIPProtocol == protocol && x.Value.ListeningIPAddress.AddressFamily == dst.Address.AddressFamily))
+            else if (!m_sipChannels.Any(x => x.Value.SIPProtocol == protocol && x.Value.IsAddressFamilySupported(dst.Address.AddressFamily)))
             {
                 throw new ApplicationException($"The transport layer does not have any SIP channels matching {protocol} and {dst.AddressFamily}.");
             }
@@ -1223,7 +1223,7 @@ namespace SIPSorcery.SIP
                 }
 
                 // Hard to see how we could get to here. Maybe some weird IPv6 edge case or a network interface has gone down. Just return the first channel.
-                return m_sipChannels.Where(x => x.Value.SIPProtocol == protocol && dst.Address.AddressFamily == x.Value.AddressFamily)
+                return m_sipChannels.Where(x => x.Value.SIPProtocol == protocol && x.Value.IsAddressFamilySupported(dst.Address.AddressFamily))
                     .Select(x => x.Value).First();
             }
         }

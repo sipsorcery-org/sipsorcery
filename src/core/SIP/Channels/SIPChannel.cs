@@ -65,7 +65,6 @@ namespace SIPSorcery.SIP
             RemoteEndPoint = remoteEndPoint;
             Buffer = buffer;
             ReceivedAt = DateTime.Now;
-
         }
     }
 
@@ -78,7 +77,7 @@ namespace SIPSorcery.SIP
         protected static int CHANNEL_ID_LENGTH = 3;         // Length of the random numeric string to use for channel ID's.
         private static int CREATE_CHANNELID_ATTEMPTS = 10; // Number of attempts to make at creating a random channel ID.
 
-        private static ConcurrentDictionary<int, int> _inUseChannelIDs = new ConcurrentDictionary<int, int>(); // Make sure don't create dulpicate channel ID's.
+        private static ConcurrentDictionary<int, int> _inUseChannelIDs = new ConcurrentDictionary<int, int>(); // Make sure we don't create dulpicate channel ID's.
 
         protected ILogger logger = Log.Logger;
 
@@ -144,14 +143,6 @@ namespace SIPSorcery.SIP
         /// The type of SIP protocol (udp, tcp, tls or web socket) for this channel.
         /// </summary>
         public SIPProtocolsEnum SIPProtocol { get; protected set; }
-
-        /// <summary>
-        /// Whether the channel is IPv4 or IPv6.
-        /// </summary>
-        public AddressFamily AddressFamily
-        {
-            get { return ListeningIPAddress.AddressFamily; }
-        }
 
         /// <summary>
         /// Indicates whether close has been called on the SIP channel. Once closed a SIP channel can no longer be used
@@ -223,7 +214,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Synchronous wrapper for <see cref="SendSecureAsync"/>
         /// </summary>
-        public abstract void SendSecure(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint = null);
+        //public abstract void SendSecure(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint = null);
 
         /// <summary>
         /// Asynchronous SIP message send to a remote end point.
@@ -259,6 +250,18 @@ namespace SIPSorcery.SIP
         /// <param name="remoteEndPoint">The remote end point to check for an existing connection.</param>
         /// <returns>True if a match is found or false if not.</returns>
         public abstract bool HasConnection(IPEndPoint remoteEndPoint);
+
+        /// <summary>
+        /// Checks whether a web socket based SIP channel has an existing connection to a server URI.
+        /// </summary>
+        /// <param name="serverUri">The remote server URI to check for an existing connection.</param>
+        /// <returns>True if a match is found or false if not.</returns>
+        public abstract bool HasConnection(Uri serverUri);
+
+        /// <summary>
+        /// Returns true if the channel supports the requested address family.
+        /// </summary>
+        public abstract bool IsAddressFamilySupported(AddressFamily addresFamily);
 
         /// <summary>
         /// Gets the local IP address this SIP channel will use for communicating with the destination

@@ -199,10 +199,10 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// This method is not implemented for the SIP UDP channel.
         /// </summary>
-        public override void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
-        {
-            throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
-        }
+        //public override void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
+        //{
+        //    throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
+        //}
 
         /// <summary>
         /// This method is not implemented for the SIP UDP channel.
@@ -226,6 +226,24 @@ namespace SIPSorcery.SIP
         public override bool HasConnection(IPEndPoint remoteEndPoint)
         {
             return false;
+        }
+
+        /// <summary>
+        /// The UDP channel does not support connections. Always returns false.
+        /// </summary>
+        public override bool HasConnection(Uri serverUri)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Checks whether the specified address family is supported.
+        /// </summary>
+        /// <param name="addresFamily">The address family to check.</param>
+        /// <returns>True if supported, false if not.</returns>
+        public override bool IsAddressFamilySupported(AddressFamily addresFamily)
+        {
+             return addresFamily == ListeningIPAddress.AddressFamily;
         }
 
         /// <summary>
