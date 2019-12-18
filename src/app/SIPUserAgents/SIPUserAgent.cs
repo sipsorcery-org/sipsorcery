@@ -477,7 +477,7 @@ namespace SIPSorcery.SIP.App
         /// as re-INVITES have specific events so they can be bubbled up to the 
         /// application to deal with.
         /// </summary>
-        /// <param name="request">The in dialog request received.</param>
+        /// <param name="sipRequest">The in dialog request received.</param>
         private async Task DialogRequestReceivedAsync(SIPRequest sipRequest)
         {
             // Make sure the request matches our dialog and is not a stray.
