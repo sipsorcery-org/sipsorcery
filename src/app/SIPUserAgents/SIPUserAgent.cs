@@ -246,7 +246,7 @@ namespace SIPSorcery.SIP.App
                 RtpSession = m_mediaSessionFactory.Create();
                 RtpSession.DtmfCompleted += OnMediaDtmfCompleted;
 
-                var sdp = RtpSession.GetOfferSDP(serverEndPoint.GetIPEndPoint().Address);
+                var sdp = RtpSession.CreateOffer(serverEndPoint.GetIPEndPoint().Address);
                 sipCallDescriptor.Content = sdp.ToString();
 
                 m_uac.Call(sipCallDescriptor);
@@ -329,15 +329,13 @@ namespace SIPSorcery.SIP.App
 
             var sipRequest = uas.ClientTransaction.TransactionRequest;
             SDP remoteSDP = SDP.ParseSDPDescription(sipRequest.Body);
-            var remoteEndpoint = remoteSDP.GetSDPRTPEndPoint();
 
             RtpSession = m_mediaSessionFactory.Create();
             RtpSession.DtmfCompleted += OnMediaDtmfCompleted;
 
             // TODO: Deal with multiple media offers.
 
-            RtpSession.SetRemoteOfferSDP(remoteSDP);
-            var sdpAnswer = RtpSession.GetAnswerSDP(remoteEndpoint.Address);
+            var sdpAnswer = RtpSession.AnswerOffer(remoteSDP);
 
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default);
@@ -756,7 +754,7 @@ namespace SIPSorcery.SIP.App
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                RtpSession.SetRemoteAnswerSDP(SDP.ParseSDPDescription(sipResponse.Body));
+                RtpSession.OfferAnswered(SDP.ParseSDPDescription(sipResponse.Body));
 
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 

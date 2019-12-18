@@ -9,9 +9,8 @@ namespace SIPSorcery.SIP.App.Media
 {
     public class RTPMediaSession : IMediaSession
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = Log.Logger;
         private readonly RTPSession session;
-        private ushort remoteDtmfDuration;
 
         public RTPMediaSession(RTPSession rtpSession)
         {
@@ -27,15 +26,21 @@ namespace SIPSorcery.SIP.App.Media
             session.OnRtpEvent -= OnRemoteRtpEvent;
         }
 
-        public SDP GetAnswerSDP(IPAddress destinationAddress)
-        {
-            return GetOfferSDP(destinationAddress);
-        }
-
-        public SDP GetOfferSDP(IPAddress destinationAddress)
+        public SDP CreateOffer(IPAddress destinationAddress)
         {
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(destinationAddress);
             return session.GetSDP(localIPAddress);
+        }
+
+        public void OfferAnswered(SDP remoteSDP)
+        {
+            SetRemoteSDP(remoteSDP);
+        }
+
+        public SDP AnswerOffer(SDP remoteSDP)
+        {
+            SetRemoteSDP(remoteSDP);
+            return CreateOffer(remoteSDP.GetSDPRTPEndPoint().Address);
         }
 
         public SDP ReInvite(SDP remoteSDP)
@@ -44,7 +49,7 @@ namespace SIPSorcery.SIP.App.Media
 
             bool newEndpoint = session.DestinationEndPoint != dstRtpEndPoint;
 
-            var localSDP = GetAnswerSDP(dstRtpEndPoint.Address);
+            var localSDP = CreateOffer(dstRtpEndPoint.Address);
 
             if (newEndpoint)
             {
@@ -72,18 +77,13 @@ namespace SIPSorcery.SIP.App.Media
 
         private void ProcessRemoteHoldRequest(SDP localSDP, MediaStreamStatusEnum localMediaStreamStatus)
         {
-            localSDP.Media.First(x => x.Media == SDPMediaTypesEnum.audio).MediaStreamStatus = localMediaStreamStatus;
-        }
+            var mediaAnnouncement = localSDP.Media
+                .FirstOrDefault(x => x.Media == SDPMediaTypesEnum.audio);
 
-
-        public void SetRemoteAnswerSDP(SDP remoteSDP)
-        {
-            SetRemoteSDP(remoteSDP);
-        }
-
-        public void SetRemoteOfferSDP(SDP remoteSDP)
-        {
-            SetRemoteSDP(remoteSDP);
+            if (mediaAnnouncement != null)
+            {
+                mediaAnnouncement.MediaStreamStatus = localMediaStreamStatus;
+            }
         }
 
         private void SetRemoteSDP(SDP remoteSDP)
@@ -93,13 +93,16 @@ namespace SIPSorcery.SIP.App.Media
             logger.LogDebug($"Remote RTP socket {session.DestinationEndPoint}.");
         }
 
+
+        private ushort remoteDtmfDuration;
+
         /// <summary>
         /// Event handler for RTP events from the remote call party.
         /// </summary>
         /// <param name="rtpEvent">The received RTP event.</param>
         private void OnRemoteRtpEvent(RTPEvent rtpEvent)
         {
-            if (rtpEvent.EndOfEvent == true)
+            if (rtpEvent.EndOfEvent)
             {
                 remoteDtmfDuration = 0;
             }

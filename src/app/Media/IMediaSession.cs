@@ -6,12 +6,10 @@ namespace SIPSorcery.SIP.App.Media
 {
     public interface IMediaSession
     {
-        SDP GetOfferSDP(IPAddress destinationAddress);
-        SDP GetAnswerSDP(IPAddress destinationAddress);
+        SDP CreateOffer(IPAddress destinationAddress);
+        void OfferAnswered(SDP remoteSDP);
 
-        void SetRemoteOfferSDP(SDP remoteSDP);
-        void SetRemoteAnswerSDP(SDP remoteSDP);
-
+        SDP AnswerOffer(SDP remoteSDP);
         SDP ReInvite(SDP remoteSDP);
 
         void Close();
