@@ -244,7 +244,7 @@ namespace SIPSorcery.SIP.App
             if (serverEndPoint != null)
             {
                 RtpSession = m_mediaSessionFactory.Create();
-                RtpSession.DtmfCompleted += OnRemoteRtpEvent;
+                RtpSession.DtmfCompleted += OnMediaDtmfCompleted;
 
                 var sdp = RtpSession.GetOfferSDP(serverEndPoint.GetIPEndPoint().Address);
                 sipCallDescriptor.Content = sdp.ToString();
@@ -332,7 +332,7 @@ namespace SIPSorcery.SIP.App
             var remoteEndpoint = remoteSDP.GetSDPRTPEndPoint();
 
             RtpSession = m_mediaSessionFactory.Create();
-            RtpSession.DtmfCompleted += OnRemoteRtpEvent;
+            RtpSession.DtmfCompleted += OnMediaDtmfCompleted;
 
             // TODO: Deal with multiple media offers.
 
@@ -858,10 +858,10 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
-        /// Event handler for RTP events from the remote call party.
+        /// Event handler for DTMF completed event from the remote call party.
         /// </summary>
         /// <param name="dtmf">The received DTMF.</param>
-        private void OnRemoteRtpEvent(byte dtmf)
+        private void OnMediaDtmfCompleted(byte dtmf)
         {
             OnDtmfEvent?.Invoke(dtmf);
         }
