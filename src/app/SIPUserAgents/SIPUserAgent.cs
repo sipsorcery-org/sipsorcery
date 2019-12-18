@@ -217,6 +217,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="transport">The transport layer to use for requests and responses.</param>
         /// <param name="outboundProxy">Optional. If set all requests and responses will be forwarded to this
         /// end point irrespective of their headers.</param>
+        /// <param name="mediaSessionFactory">The media session factory</param>
         public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy, IMediaSessionFactory mediaSessionFactory)
         {
             m_transport = transport;
