@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -17,17 +18,24 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPUserFieldUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPUserFieldUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         [Fact]
         public void ParamsInUserPortionURITest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPUserField userField = SIPUserField.ParseSIPUserField("<sip:C=on;t=DLPAN@10.0.0.1:5060;lr>");
 
             Assert.True("C=on;t=DLPAN" == userField.URI.User, "SIP user portion parsed incorrectly.");
             Assert.True("10.0.0.1:5060" == userField.URI.Host, "SIP host portion parsed incorrectly.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
     }
 }

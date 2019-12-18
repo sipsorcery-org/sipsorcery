@@ -34,7 +34,7 @@ namespace SIPSorcery.SIP.UnitTests
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
-        public SIPTransportUnitTest(ITestOutputHelper output)
+        public SIPTransportUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
             SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
@@ -46,6 +46,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6")]
         public void IPv6LoopbackSendReceiveTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
@@ -74,7 +76,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void IPv4LoopbackSendReceiveTest()
         {
-            logger.LogDebug("IPv4LoopbackSendReceiveTest commencing...");
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
@@ -106,6 +108,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6")]
         public void IPv6TcpLoopbackSendReceiveTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
@@ -136,6 +140,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void IPv4TcpLoopbackSendReceiveTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
@@ -171,6 +177,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void IPv4TcpLoopbackConsecutiveSendReceiveTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             // This test fails on WSL and Linux due to closed TCP sockets going into the TIME_WAIT state.
             // See comment in SIPTCPChannel.OnSIPStreamDisconnected for additional info.
             if (Environment.OSVersion.Platform != PlatformID.Unix)
@@ -218,6 +226,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Trait("Category", "IPv6")]
         public void IPv6TlsLoopbackSendReceiveTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
@@ -254,6 +264,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void IPv4TlsLoopbackSendReceiveTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             CancellationTokenSource cancelServer = new CancellationTokenSource();
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
@@ -299,7 +311,9 @@ namespace SIPSorcery.SIP.UnitTests
         /// </summary>
         [Fact]
         public void TcpTrickleReceiveTest()
-        { 
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
 
             // TCP server.
@@ -351,7 +365,10 @@ namespace SIPSorcery.SIP.UnitTests
 
                 if (recvdReqCount == requestCount)
                 {
-                    testComplete.SetResult(true);
+                    if (!testComplete.TrySetResult(true))
+                    {
+                        logger.LogWarning($"TcpTrickleReceiveTest: FAILED to set result on CompletionSource.");
+                    }
                 }
             };
 
@@ -459,7 +476,10 @@ namespace SIPSorcery.SIP.UnitTests
                     if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
                     {
                         // Got the expected response, set the signal.
-                        tcs.SetResult(true);
+                        if (!tcs.TrySetResult(true))
+                        {
+                            logger.LogWarning($"RunClient on test channel {testClientChannel.ListeningSIPEndPoint} FAILED to set result on CompletionSource.");
+                        }
                     }
                 };
 

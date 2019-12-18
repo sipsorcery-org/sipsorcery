@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -18,10 +19,17 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPContactHeaderUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPContactHeaderUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         [Fact]
         public void ParseContactHeaderDomainForUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:sip.domain.com@sip.domain.com>";
 
@@ -34,7 +42,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseBadAastraContactHeaderUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:10001@127.0.0.1:5060\n";
 
@@ -44,13 +52,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseNoAngleQuotesContactHeaderUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "sip:10001@127.0.0.1:5060";
 
             List<SIPContactHeader> sipContactHeaderList = SIPContactHeader.ParseContactHeader(testContactHeader);
 
-            Console.WriteLine("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI);
+            logger.LogDebug("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI);
 
             Assert.True(sipContactHeaderList[0].ContactName == null, "The Contact header name was not parsed correctly.");
             Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:10001@127.0.0.1:5060", "The Contact header URI was not parsed correctly.");
@@ -59,14 +67,14 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseCiscoContactHeaderUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:user@127.0.0.1:5060;user=phone;transport=udp>;+sip.instance=\"<urn:uuid:00000000-0000-0000-0000-0006d74b0e72>\";+u.sip!model.ccm.cisco.com=\"7\"";
 
             List<SIPContactHeader> sipContactHeaderList = SIPContactHeader.ParseContactHeader(testContactHeader);
 
-            Console.WriteLine("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
-            Console.WriteLine("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
+            logger.LogDebug("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
+            logger.LogDebug("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == null, "The Contact header name was not parsed correctly.");
             Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:user@127.0.0.1:5060;user=phone;transport=udp", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
@@ -76,11 +84,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseNoLineBreakContactHeaderUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:10001@127.0.0.1:5060\nAllow: OPTIONS";
 
-            Console.WriteLine("Contact Header = " + testContactHeader + ".");
+            logger.LogDebug("Contact Header = " + testContactHeader + ".");
 
             Assert.Throws<SIPValidationException>(() => SIPContactHeader.ParseContactHeader(testContactHeader));
         }
@@ -88,14 +96,14 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseContactWithParamHeaderUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:user@127.0.0.1:5060;ftag=1233>";
 
             List<SIPContactHeader> sipContactHeaderList = SIPContactHeader.ParseContactHeader(testContactHeader);
 
-            Console.WriteLine("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
-            Console.WriteLine("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
+            logger.LogDebug("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
+            logger.LogDebug("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == null, "The Contact header name was not parsed correctly.");
             Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:user@127.0.0.1:5060;ftag=1233", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
@@ -105,15 +113,15 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseExpiresContactHeaderUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:user@127.0.0.1:5060>; expires=60";
 
             List<SIPContactHeader> sipContactHeaderList = SIPContactHeader.ParseContactHeader(testContactHeader);
 
-            Console.WriteLine("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
-            Console.WriteLine("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
-            Console.WriteLine("Contact = " + sipContactHeaderList[0].ToString());
+            logger.LogDebug("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
+            logger.LogDebug("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
+            logger.LogDebug("Contact = " + sipContactHeaderList[0].ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == null, "The Contact header name was not parsed correctly.");
             Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:user@127.0.0.1:5060", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
@@ -123,15 +131,15 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseZeroExpiresContactHeaderUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:user@127.0.0.1:5060>; expires=0";
 
             List<SIPContactHeader> sipContactHeaderList = SIPContactHeader.ParseContactHeader(testContactHeader);
 
-            Console.WriteLine("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
-            Console.WriteLine("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
-            Console.WriteLine("Contact = " + sipContactHeaderList[0].ToString());
+            logger.LogDebug("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
+            logger.LogDebug("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
+            logger.LogDebug("Contact = " + sipContactHeaderList[0].ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == null, "The Contact header name was not parsed correctly.");
             Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:user@127.0.0.1:5060", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
@@ -141,15 +149,15 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MultipleContactsHeaderUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "\"Mr. Watson\" <sip:watson@worcester.bell-telephone.com>;q=0.7; expires=3600, \"Mr. Watson\" <sip:watson@bell-telephone.com> ;q=0.1";
 
             List<SIPContactHeader> sipContactHeaderList = SIPContactHeader.ParseContactHeader(testContactHeader);
 
-            Console.WriteLine("Contact Header Count=" + sipContactHeaderList.Count + ".");
-            Console.WriteLine("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
-            Console.WriteLine("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
+            logger.LogDebug("Contact Header Count=" + sipContactHeaderList.Count + ".");
+            logger.LogDebug("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
+            logger.LogDebug("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == "Mr. Watson", "The Contact header name was not parsed correctly.");
             Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:watson@worcester.bell-telephone.com", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
@@ -160,15 +168,15 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MultipleContactsWithURIParamsHeaderUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "\"Mr. Watson\" <sip:watson@worcester.bell-telephone.com;ftag=1232>;q=0.7; expires=3600, \"Mr. Watson\" <sip:watson@bell-telephone.com?nonsense=yes> ;q=0.1";
 
             List<SIPContactHeader> sipContactHeaderList = SIPContactHeader.ParseContactHeader(testContactHeader);
 
-            Console.WriteLine("Contact Header Count=" + sipContactHeaderList.Count + ".");
-            Console.WriteLine("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
-            Console.WriteLine("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
+            logger.LogDebug("Contact Header Count=" + sipContactHeaderList.Count + ".");
+            logger.LogDebug("Contact Header ContactURI = " + sipContactHeaderList[0].ContactURI.ToString());
+            logger.LogDebug("Contact Header ContactParams = " + sipContactHeaderList[0].ContactParameters.ToString());
 
             Assert.True(sipContactHeaderList[0].ContactName == "Mr. Watson", "The Contact header name was not parsed correctly.");
             Assert.True(sipContactHeaderList[0].ContactURI.ToString() == "sip:watson@worcester.bell-telephone.com;ftag=1232", "The Contact header URI was not parsed correctly, parsed valued = " + sipContactHeaderList[0].ContactURI.ToString() + ".");
@@ -181,7 +189,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SimpleAreEqualUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPContactHeader contactHeader1 = new SIPContactHeader(null, SIPURI.ParseSIPURI("sip:user@127.0.0.1:5060"));
             SIPContactHeader contactHeader2 = new SIPContactHeader(null, SIPURI.ParseSIPURI("sip:user@127.0.0.1:5060"));
@@ -192,7 +200,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void SimpleNotEqualUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPContactHeader contactHeader1 = new SIPContactHeader(null, SIPURI.ParseSIPURI("sip:user@127.0.0.1:5060"));
             SIPContactHeader contactHeader2 = new SIPContactHeader(null, SIPURI.ParseSIPURI("sip:user@127.0.0.2:5060"));
@@ -203,7 +211,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void WithParametersAreEqualUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPContactHeader contactHeader1 = new SIPContactHeader(SIPUserField.ParseSIPUserField("<sip:user@127.0.0.1:5060>;param1=value1"));
             SIPContactHeader contactHeader2 = new SIPContactHeader(SIPUserField.ParseSIPUserField("<sip:user@127.0.0.1:5060>;param1=value1"));
@@ -214,7 +222,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void WithExpiresParametersAreEqualUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPContactHeader contactHeader1 = new SIPContactHeader(SIPUserField.ParseSIPUserField("<sip:user@127.0.0.1:5060> ;expires=0; param1=value1"));
             SIPContactHeader contactHeader2 = new SIPContactHeader(SIPUserField.ParseSIPUserField("<sip:user@127.0.0.1:5060>;expires=50;param1=value1"));
@@ -225,7 +233,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void WithDifferentNamesAreEqualUserTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPContactHeader contactHeader1 = new SIPContactHeader(SIPUserField.ParseSIPUserField("\"Joe Bloggs\" <sip:user@127.0.0.1:5060> ;expires=0; param1=value1"));
             SIPContactHeader contactHeader2 = new SIPContactHeader(SIPUserField.ParseSIPUserField("\"Jane Doe\" <sip:user@127.0.0.1:5060>;expires=50;param1=value1"));

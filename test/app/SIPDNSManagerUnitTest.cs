@@ -21,7 +21,13 @@ namespace SIPSorcery.SIP.App.UnitTests
     [Trait("Category", "integration")]
     public class SIPDNSManagerUnitTest
     {
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPDNSManagerUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
 
         /// <summary>
         /// Tests that an IP address can be reoslved when the resolution can only be done via a SRV record.

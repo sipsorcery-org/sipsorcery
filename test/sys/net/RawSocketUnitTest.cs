@@ -12,6 +12,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -19,10 +20,17 @@ namespace SIPSorcery.Sys.UnitTests
     [Trait("Category", "unit")]
     public class RawSocketUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public RawSocketUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         [Fact]
         public void IPHeaderConstructionUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             IPv4Header header = new IPv4Header(ProtocolType.Udp, 4567, IPAddress.Parse("194.213.29.54"), IPAddress.Parse("194.213.29.54"));
             byte[] headerData = header.GetBytes();
@@ -30,15 +38,15 @@ namespace SIPSorcery.Sys.UnitTests
             int count = 0;
             foreach (byte headerByte in headerData)
             {
-                Console.Write("0x{0,-2:x} ", headerByte);
+                logger.LogDebug("0x{0,-2:x} ", headerByte);
                 count++;
                 if (count % 4 == 0)
                 {
-                    Console.Write("\n");
+                    logger.LogDebug("\n");
                 }
             }
 
-            Console.WriteLine();
+            logger.LogDebug("\n");
 
             Assert.True(true, "True was false.");
         }
@@ -46,7 +54,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact(Skip = "Will only work on Win10 or where raw socket privileges have been explicitly granted.")]
         public void PreconstructedIPPacketSendUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] ipPacket = new byte[] {
                      // IP Header.
@@ -68,7 +76,7 @@ namespace SIPSorcery.Sys.UnitTests
             }
             catch (SocketException sockExcp)
             {
-                Console.WriteLine("Socket exception error code= " + sockExcp.ErrorCode + ". " + sockExcp.Message);
+                logger.LogDebug("Socket exception error code= " + sockExcp.ErrorCode + ". " + sockExcp.Message);
                 throw sockExcp;
             }
 
@@ -81,7 +89,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact(Skip = "Will only work on Win10 or where raw socket privileges have been explicitly granted.")]
         public void IPEmptyPacketSendUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             UDPPacket udpPacket = new UDPPacket(4001, 4001, new byte[] { 0x1, 0x2, 0x3, 0x4 });
             IPv4Header header = new IPv4Header(ProtocolType.Udp, 7890, IPAddress.Parse("194.213.29.54"), IPAddress.Parse("194.213.29.54"));
@@ -89,10 +97,10 @@ namespace SIPSorcery.Sys.UnitTests
 
             foreach (byte headerByte in headerData)
             {
-                Console.Write("0x{0:x} ", headerByte);
+                logger.LogDebug("0x{0:x} ", headerByte);
             }
 
-            Console.WriteLine();
+            logger.LogDebug("\n");
 
             Socket rawSocket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.IP);
             //rawSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, 1);

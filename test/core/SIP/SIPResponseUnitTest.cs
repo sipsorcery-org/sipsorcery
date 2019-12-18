@@ -11,6 +11,7 @@
 
 using System;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -18,12 +19,19 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPResponseUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPResponseUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         private static string m_CRLF = SIPConstants.CRLF;
 
         [Fact]
         public void ParseAsteriskTRYINGUnitTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 100 Trying" + m_CRLF +
@@ -43,13 +51,13 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.True(tryingResp.Status == SIPResponseStatusCodesEnum.Trying, "The SIP response status was not parsed correctly.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseAsteriskOKUnitTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -87,13 +95,13 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(okResp.Status == SIPResponseStatusCodesEnum.Ok, "The SIP response status was not parsed correctly.");
             Assert.True(okResp.Body.Length == 352, "The SIP response body length was not correct.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseOptionsBodyResponse()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg = "SIP/2.0 200 OK" + m_CRLF +
                 "Via: SIP/2.0/UDP 213.168.225.133:5060;branch=z9hG4bK10a1fab0" + m_CRLF +
@@ -123,13 +131,13 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(okResp.Status == SIPResponseStatusCodesEnum.Ok, "The SIP response status was not parsed correctly.");
             Assert.True(okResp.Body.Length == 217, "The SIP response body length was not correct.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseForbiddenResponse()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg = "SIP/2.0 403 Forbidden" + m_CRLF +
                 "Via: SIP/2.0/UDP 192.168.1.1;branch=z9hG4bKbcb78f72d221beec" + m_CRLF +
@@ -147,13 +155,13 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.True(forbiddenResp.Status == SIPResponseStatusCodesEnum.Forbidden, "The SIP response status was not parsed correctly.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseOptionsResponse()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
             "SIP/2.0 200 OK" + m_CRLF +
@@ -185,13 +193,13 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.True(optionsResp.Status == SIPResponseStatusCodesEnum.Ok, "The SIP response status was not parsed correctly.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseMissingCSeqOptionsResponse()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -207,19 +215,19 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPResponse optionsResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
-            Console.WriteLine("CSeq=" + optionsResp.Header.CSeq + ".");
-            Console.WriteLine("CSeq Method=" + optionsResp.Header.CSeqMethod + ".");
+            logger.LogDebug("CSeq=" + optionsResp.Header.CSeq + ".");
+            logger.LogDebug("CSeq Method=" + optionsResp.Header.CSeqMethod + ".");
 
             Assert.True(optionsResp.Header.CSeq == -1, "Response CSeq was incorrect.");
             Assert.True(optionsResp.Header.CSeqMethod == SIPMethodsEnum.NONE, "Response CSeq method was incorrect.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseMSCOkResponse()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -250,18 +258,18 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
-            Console.WriteLine("To: " + okResp.Header.To.ToString());
+            logger.LogDebug("To: " + okResp.Header.To.ToString());
 
             Assert.True(SIPResponseStatusCodesEnum.Ok == okResp.Status, "Response should have been ok.");
             Assert.True("127.0.0.1" == okResp.Header.To.ToURI.Host, "To URI host was not parsed correctly.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseMultipleContactsResponse()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -277,7 +285,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
-            Console.WriteLine("To: " + okResp.Header.To.ToString());
+            logger.LogDebug("To: " + okResp.Header.To.ToString());
 
             Assert.True(SIPResponseStatusCodesEnum.Ok == okResp.Status, "Response should have been ok.");
             Assert.True(okResp.Header.Contact.Count == 2, "Response should have had two contacts.");
@@ -288,13 +296,13 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(okResp.Header.Contact[1].ContactURI.ToString() == "sip:253989@89.100.104.191:64226;rinstance=5720c5fed8cbcd34", "The contact URI for the first contact header was incorrect.");
             Assert.True(okResp.Header.Contact[1].Expires == 3600, "The expires value for the second contact header was incorrect.");
             Assert.True(okResp.Header.Contact[1].Q == "0.1", "The q value for the second contact header was incorrect.");
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseMultiLineRecordRouteResponse()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -334,13 +342,13 @@ namespace SIPSorcery.SIP.UnitTests
             SIPRoute nextRoute = okResp.Header.RecordRoutes.PopRoute();
             Assert.True(nextRoute.ToString() == "<sip:77.75.25.45:5060;lr=on;ftag=1014391101>", "The second Record-Route header was incorrect, " + nextRoute.ToString() + ".");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseMultiLineViaResponse()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -377,7 +385,7 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(okResp.Header.Vias.Length == 2, "The wrong number of Record-Route headers were present in the parsed response.");
             Assert.True(okResp.Header.Vias.TopViaHeader.ContactAddress == "194.213.29.100:5060", "The top via contact address was not ocrrectly parsed.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
     }
 }

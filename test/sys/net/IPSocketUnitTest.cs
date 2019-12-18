@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -17,41 +18,48 @@ namespace SIPSorcery.Sys.UnitTests
     [Trait("Category", "unit")]
     public class IPSocketUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public IPSocketUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         [Fact]
         public void ParsePortFromSocketTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             int port = IPSocket.ParsePortFromSocket("localhost:5060");
-            Console.WriteLine("port=" + port);
+            logger.LogDebug("port=" + port);
             Assert.True(port == 5060, "The port was not parsed correctly.");
         }
 
         [Fact]
         public void ParseHostFromSocketTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string host = IPSocket.ParseHostFromSocket("localhost:5060");
-            Console.WriteLine("host=" + host);
+            logger.LogDebug("host=" + host);
             Assert.True(host == "localhost", "The host was not parsed correctly.");
         }
 
         [Fact]
         public void Test172IPRangeIsPrivate()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             Assert.False(IPSocket.IsPrivateAddress("172.15.1.1"), "Public IP address was mistakenly identified as private.");
             Assert.True(IPSocket.IsPrivateAddress("172.16.1.1"), "Private IP address was not correctly identified.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string host = null;
             int port = 0;
@@ -147,7 +155,7 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ParseEndpointTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             System.Net.IPEndPoint ep = null;
 

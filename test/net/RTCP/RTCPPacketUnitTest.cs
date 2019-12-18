@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -17,10 +18,17 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class RTCPPacketUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public RTCPPacketUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         [Fact]
         public void GetRTCPPacketTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPPacket rtcpPacket = new RTCPPacket(1, 1, 1, 1, 1);
             byte[] reports = new byte[84];
@@ -29,7 +37,7 @@ namespace SIPSorcery.Net.UnitTests
             int byteNum = 1;
             foreach (byte packetByte in packetBuffer)
             {
-                Console.WriteLine(byteNum + ": " + packetByte.ToString("x"));
+                logger.LogDebug(byteNum + ": " + packetByte.ToString("x"));
                 byteNum++;
             }
         }
@@ -37,21 +45,21 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RTCPHeaderRoundTripTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPPacket src = new RTCPPacket(12, 122, 561, 6756, 56434);
             byte[] reports = new byte[84];
             byte[] packetBuffer = src.GetBytes(reports);
             RTCPPacket dst = new RTCPPacket(packetBuffer);
 
-            Console.WriteLine("SenderSyncSource: " + src.SenderSyncSource + ", " + dst.SenderSyncSource);
-            Console.WriteLine("NTPTimestamp: " + src.NTPTimestamp + ", " + dst.NTPTimestamp);
-            Console.WriteLine("RTPTimestamp: " + src.RTPTimestamp + ", " + dst.RTPTimestamp);
-            Console.WriteLine("SenderPacketCount: " + src.SenderPacketCount + ", " + dst.SenderPacketCount);
-            Console.WriteLine("SenderOctetCount: " + src.SenderOctetCount + ", " + dst.SenderOctetCount);
-            Console.WriteLine("Reports Length: " + src.Reports.Length + ", " + dst.Reports.Length);
+            logger.LogDebug("SenderSyncSource: " + src.SenderSyncSource + ", " + dst.SenderSyncSource);
+            logger.LogDebug("NTPTimestamp: " + src.NTPTimestamp + ", " + dst.NTPTimestamp);
+            logger.LogDebug("RTPTimestamp: " + src.RTPTimestamp + ", " + dst.RTPTimestamp);
+            logger.LogDebug("SenderPacketCount: " + src.SenderPacketCount + ", " + dst.SenderPacketCount);
+            logger.LogDebug("SenderOctetCount: " + src.SenderOctetCount + ", " + dst.SenderOctetCount);
+            logger.LogDebug("Reports Length: " + src.Reports.Length + ", " + dst.Reports.Length);
 
-            //Console.WriteLine("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
+            //logger.LogDebug("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
 
             Assert.True(src.SenderSyncSource == dst.SenderSyncSource, "SenderSyncSource was mismatched.");
             Assert.True(src.NTPTimestamp == dst.NTPTimestamp, "NTPTimestamp was mismatched.");
