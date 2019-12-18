@@ -459,7 +459,7 @@ namespace SIPSorcery.SIP.App
 
                 referTx.SendReliableRequest();
 
-                await Task.WhenAny(new Task[] { transferAccepted.Task, Task.Delay((int)timeout.TotalMilliseconds) });
+                await Task.WhenAny(transferAccepted.Task, Task.Delay((int)timeout.TotalMilliseconds));
 
                 referTx.NonInviteTransactionFinalResponseReceived -= referTxStatusHandler;
 
