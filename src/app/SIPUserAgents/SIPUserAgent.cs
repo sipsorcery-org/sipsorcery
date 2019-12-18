@@ -100,14 +100,8 @@ namespace SIPSorcery.SIP.App
                 {
                     return m_uac.SIPDialogue;
                 }
-                else if (m_uas != null)
-                {
-                    return m_uas.SIPDialogue;
-                }
-                else
-                {
-                    return null;
-                }
+
+                return m_uas?.SIPDialogue;
             }
         }
 
