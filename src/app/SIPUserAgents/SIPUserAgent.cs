@@ -253,7 +253,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                ClientCallFailed?.Invoke(m_uac, $"Could not resolve destionation when placing call to {sipCallDescriptor.Uri}.");
+                ClientCallFailed?.Invoke(m_uac, $"Could not resolve destination when placing call to {sipCallDescriptor.Uri}.");
                 CallEnded();
             }
         }
