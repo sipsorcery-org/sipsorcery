@@ -63,8 +63,16 @@ namespace SIPSorcery.SIP.App
 
         public static SIPMonitorLogDelegate SIPMonitorLogEvent;
 
-        //rj2: default value for preferIPv6 Name Reolution Argument
+        /// <summary>
+        /// Set to true to prefer IPv6 lookups of hostnames. By default IPv4 lookups will be performed.
+        /// </summary>
         public static bool PreferIPv6NameResolution = false;
+
+        /// <summary>
+        /// Do without the NAPTR lookups by default. Very few organisations appear to use them and it can 
+        /// cost up to 2.5s to get a failed resolution.
+        /// </summary>
+        public static bool UseNAPTRLookups = false;
 
         static SIPDNSManager()
         {
@@ -199,19 +207,20 @@ namespace SIPSorcery.SIP.App
                         // Target is a hostname with no explicit port, use the whole NAPTR->SRV->A lookup procedure.
                         SIPDNSLookupResult sipLookupResult = new SIPDNSLookupResult(sipURI);
 
-                        // Do without the NAPTR lookup for the time being. Very few organisations appear to use them and it can cost up to 2.5s to get a failed resolution.
-                        //rj2: uncomment this section for telekom 1TR118 lookup
-                        SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS full lookup requested for " + sipURI.ToString() + ".", null));
-                        DNSNAPTRRecordLookup(host, async, ref sipLookupResult);
-                        if (sipLookupResult.Pending)
+                        if (UseNAPTRLookups == true)
                         {
-                            if (!m_inProgressSIPServiceLookups.Contains(sipURI.ToString()))
+                            SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS full lookup requested for " + sipURI.ToString() + ".", null));
+                            DNSNAPTRRecordLookup(host, async, ref sipLookupResult);
+                            if (sipLookupResult.Pending)
                             {
-                                m_inProgressSIPServiceLookups.Add(sipURI.ToString());
-                                //ThreadPool.QueueUserWorkItem(delegate { ResolveSIPService(sipURI, false); });
-                                System.Threading.ThreadPool.QueueUserWorkItem((obj) => ResolveSIPService(sipURI, false, preferIPv6));
+                                if (!m_inProgressSIPServiceLookups.Contains(sipURI.ToString()))
+                                {
+                                    m_inProgressSIPServiceLookups.Add(sipURI.ToString());
+                                    //ThreadPool.QueueUserWorkItem(delegate { ResolveSIPService(sipURI, false); });
+                                    System.Threading.ThreadPool.QueueUserWorkItem((obj) => ResolveSIPService(sipURI, false, preferIPv6));
+                                }
+                                return sipLookupResult;
                             }
-                            return sipLookupResult;
                         }
 
                         DNSSRVRecordLookup(sipURI.Scheme, sipURI.Protocol, host, async, ref sipLookupResult);
@@ -239,7 +248,12 @@ namespace SIPSorcery.SIP.App
                             //    int lookupPort = (nextSRVRecord != null) ? nextSRVRecord.Port : port;
                             //    return DNSARecordLookup(nextSRVRecord, host, lookupPort, async, sipLookupResult.URI);
                             //}
-                            return DNSNameRecordLookup(host, port, async, sipLookupResult.URI, ref sipLookupResult, preferIPv6);
+
+                            // The SRV record can indicate the SIP server is using a non-standard port.
+                            SIPDNSServiceResult nextSRVRecord = sipLookupResult.GetNextUnusedSRV();
+                            int lookupPort = (nextSRVRecord != null) ? nextSRVRecord.Port : port;
+
+                            return DNSNameRecordLookup(host, lookupPort, async, sipLookupResult.URI, ref sipLookupResult, preferIPv6);
                         }
                     }
                 }
@@ -252,6 +266,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
+        // TODO: Remove this nasty code duplication with ResolveSIPService!
         public static async Task<SIPDNSLookupResult> ResolveAsync(SIPURI sipURI, bool? preferIPv6 = null)
         {
             try
@@ -405,7 +420,12 @@ namespace SIPSorcery.SIP.App
                                 //   int lookupPort = (nextSRVRecord != null) ? nextSRVRecord.Port : port;
                                 //   return DNSARecordLookup(nextSRVRecord, host, lookupPort, false, sipLookupResult.URI);
                                 //}
-                                return DNSNameRecordLookup(host, port, false, sipLookupResult.URI, ref sipLookupResult, preferIPv6);
+
+                                // The SRV record can indicate the SIP server is using a non-standard port.
+                                SIPDNSServiceResult nextSRVRecord = sipLookupResult.GetNextUnusedSRV();
+                                int lookupPort = (nextSRVRecord != null) ? nextSRVRecord.Port : port;
+
+                                return DNSNameRecordLookup(host, lookupPort, false, sipLookupResult.URI, ref sipLookupResult, preferIPv6);
                             }
                         });
                     }
@@ -422,15 +442,15 @@ namespace SIPSorcery.SIP.App
         public static SIPDNSLookupResult DNSARecordLookup(string host, int port, bool async, SIPURI uri, SIPDNSLookupResult lookupResult = null)
         {
             SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS A record lookup requested for " + host + ".", null));
-            SIPDNSLookupResult result = new SIPDNSLookupResult(uri);
+            SIPDNSLookupResult result = lookupResult ?? new SIPDNSLookupResult(uri);
 
             DNSResponse aRecordResponse = DNSManager.Lookup(host, QType.A, DNS_A_RECORD_LOOKUP_TIMEOUT, null, true, async);
-            if (aRecordResponse == null && async)
+            if (aRecordResponse == null)
             {
-                result.Pending = true;
-            }
-            else if (aRecordResponse == null)
-            {
+                if (async)
+                {
+                    result.Pending = true;
+                }
             }
             else if (aRecordResponse.Timedout)
             {
@@ -467,12 +487,12 @@ namespace SIPSorcery.SIP.App
             result.LookupError = null;
 
             DNSResponse aaaaRecordResponse = DNSManager.Lookup(host, QType.AAAA, DNS_A_RECORD_LOOKUP_TIMEOUT, null, true, async);
-            if (aaaaRecordResponse == null && async)
+            if (aaaaRecordResponse == null)
             {
-                result.Pending = true;
-            }
-            else if (aaaaRecordResponse == null)
-            {
+                if (async)
+                {
+                    result.Pending = true;
+                }
             }
             else if (aaaaRecordResponse.Timedout)
             {
@@ -609,7 +629,7 @@ namespace SIPSorcery.SIP.App
                 }
             }
 
-            if (result.LookupError != null)
+            if (result.LookupError != null || result.EndPointResults == null || result.EndPointResults.Count == 0)
             {
                 if (preferIPv6 == true)
                 {
