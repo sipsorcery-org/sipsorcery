@@ -11226,6 +11226,12 @@ references:
   commentId: F:SIPSorcery.SIP.App.SIPDNSManager.SIPMonitorLogEvent
   fullName: SIPSorcery.SIP.App.SIPDNSManager.SIPMonitorLogEvent
   nameWithType: SIPDNSManager.SIPMonitorLogEvent
+- uid: SIPSorcery.SIP.App.SIPDNSManager.UseNAPTRLookups
+  name: UseNAPTRLookups
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_UseNAPTRLookups
+  commentId: F:SIPSorcery.SIP.App.SIPDNSManager.UseNAPTRLookups
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.UseNAPTRLookups
+  nameWithType: SIPDNSManager.UseNAPTRLookups
 - uid: SIPSorcery.SIP.App.SIPMonitorAuthenticationDelegate
   name: SIPMonitorAuthenticationDelegate
   href: api/SIPSorcery.SIP.App.SIPMonitorAuthenticationDelegate.html
