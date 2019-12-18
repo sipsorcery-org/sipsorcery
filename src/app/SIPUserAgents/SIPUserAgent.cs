@@ -785,7 +785,6 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Builds the REFER request to initiate a blind transfer on an established call.
         /// </summary>
-        /// <param name="sipDialogue">A SIP dialogue object representing the established call.</param>
         /// <param name="referToUri">The SIP URI to transfer the call to.</param>
         /// <returns>A SIP REFER request.</returns>
         private SIPRequest GetReferRequest(SIPURI referToUri)
@@ -800,7 +799,6 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Builds the REFER request to initiate an attended transfer on an established call.
         /// </summary>
-        /// <param name="local">A ocal SIP dialogue the call leg being transferred.</param>
         /// <param name="target">A target dialogue representing the Transferee.</param>
         /// <returns>A SIP REFER request.</returns>
         private SIPRequest GetReferRequest(SIPDialogue target)
