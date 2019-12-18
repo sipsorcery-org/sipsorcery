@@ -24,7 +24,12 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "integration")]
     public class DNSUnitTest
     {
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public DNSUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
 
         /// <summary>
         /// Test that a known A record is resolved.

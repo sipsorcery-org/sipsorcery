@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -17,10 +18,17 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class RTPHeaderUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public RTPHeaderUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         [Fact]
         public void GetHeaderTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader rtpHeader = new RTPHeader();
             byte[] headerBuffer = rtpHeader.GetHeader(1, 0, 1);
@@ -28,7 +36,7 @@ namespace SIPSorcery.Net.UnitTests
             int byteNum = 1;
             foreach (byte headerByte in headerBuffer)
             {
-                Console.WriteLine(byteNum + ": " + headerByte.ToString("x"));
+                logger.LogDebug(byteNum + ": " + headerByte.ToString("x"));
                 byteNum++;
             }
         }
@@ -36,23 +44,23 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void HeaderRoundTripTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader src = new RTPHeader();
             byte[] headerBuffer = src.GetHeader(1, 0, 1);
             RTPHeader dst = new RTPHeader(headerBuffer);
 
-            Console.WriteLine("Versions: " + src.Version + ", " + dst.Version);
-            Console.WriteLine("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
-            Console.WriteLine("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
-            Console.WriteLine("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
-            Console.WriteLine("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
-            Console.WriteLine("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
-            Console.WriteLine("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
-            Console.WriteLine("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
-            Console.WriteLine("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
+            logger.LogDebug("Versions: " + src.Version + ", " + dst.Version);
+            logger.LogDebug("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
+            logger.LogDebug("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
+            logger.LogDebug("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
+            logger.LogDebug("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
+            logger.LogDebug("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
+            logger.LogDebug("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
+            logger.LogDebug("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
+            logger.LogDebug("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
 
-            Console.WriteLine("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
+            logger.LogDebug("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
 
             Assert.True(src.Version == dst.Version, "Version was mismatched.");
             Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
@@ -68,7 +76,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CustomisedHeaderRoundTripTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader src = new RTPHeader();
             src.Version = 3;
@@ -82,15 +90,15 @@ namespace SIPSorcery.Net.UnitTests
 
             RTPHeader dst = new RTPHeader(headerBuffer);
 
-            Console.WriteLine("Versions: " + src.Version + ", " + dst.Version);
-            Console.WriteLine("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
-            Console.WriteLine("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
-            Console.WriteLine("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
-            Console.WriteLine("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
-            Console.WriteLine("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
-            Console.WriteLine("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
-            Console.WriteLine("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
-            Console.WriteLine("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
+            logger.LogDebug("Versions: " + src.Version + ", " + dst.Version);
+            logger.LogDebug("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
+            logger.LogDebug("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
+            logger.LogDebug("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
+            logger.LogDebug("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
+            logger.LogDebug("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
+            logger.LogDebug("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
+            logger.LogDebug("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
+            logger.LogDebug("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
 
             string rawHeader = null;
             foreach (byte headerByte in headerBuffer)
@@ -98,7 +106,7 @@ namespace SIPSorcery.Net.UnitTests
                 rawHeader += headerByte.ToString("x");
             }
 
-            Console.WriteLine("Raw Header: " + rawHeader);
+            logger.LogDebug("Raw Header: " + rawHeader);
 
             Assert.True(src.Version == dst.Version, "Version was mismatched.");
             Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
@@ -114,7 +122,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseRawRtpTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rtpBytes = new byte[] {
                 0x80, 0x88, 0xe6, 0xfd, 0x00, 0x00, 0x00, 0xf0, 0xde, 0xe0, 0xee, 0x8f,
@@ -136,7 +144,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseRawRtpWithExtensionTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rtpBytes = new byte[] {
                 0x90, 0x88, 0xe6, 0xfd,

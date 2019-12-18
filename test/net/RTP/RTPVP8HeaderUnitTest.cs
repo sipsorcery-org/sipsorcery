@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -17,13 +18,20 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class RTPVP8HeaderUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public RTPVP8HeaderUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         /// <summary>
         /// Tests getting the VP8 header for an intermediate (non-key) frame.
         /// </summary>
         [Fact]
         public void GeIntermediateFrameHeaderTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPVP8Header rtpVP8Header = new RTPVP8Header()
             {
@@ -33,7 +41,7 @@ namespace SIPSorcery.Net.UnitTests
 
             byte[] headerBuffer = rtpVP8Header.GetBytes();
 
-            Console.WriteLine(BitConverter.ToString(headerBuffer, 0));
+            logger.LogDebug(BitConverter.ToString(headerBuffer, 0));
         }
 
         /// <summary>
@@ -42,7 +50,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseKnownVP8HeaderTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rawHeader = new byte[] { 0x90, 0x80, 0x00, 0x30, 0xd4, 0x00 };
 
@@ -64,7 +72,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ReversePartitionSizeTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPVP8Header rtpVP8Header = new RTPVP8Header()
             {
@@ -85,7 +93,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CheckLengthForTwoBytePicutreIDTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rawHeader = new byte[] { 0x80, 0x80, 0x80, 0x01 };
 
@@ -100,7 +108,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CheckLengthForSingleBytePicutreIDTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rawHeader = new byte[] { 0x80, 0x80, 0x7F };
 

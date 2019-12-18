@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -21,6 +22,13 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class RTSPConnectionUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public RTSPConnectionUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         /// <summary>
         /// Tests that a receive buffer is correctly identified as containing a complete RTSP message when there is no Content-Length
         /// header.

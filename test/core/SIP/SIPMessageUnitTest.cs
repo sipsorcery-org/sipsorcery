@@ -11,6 +11,7 @@
 
 using System;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -18,12 +19,19 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPMessageBufferUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPMessageBufferUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         private static string CRLF = SIPConstants.CRLF;
 
         [Fact]
         public void ParseResponseUnitTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 100 Trying" + CRLF +
@@ -42,13 +50,13 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseResponseWithBodyUnitTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + CRLF +
@@ -84,13 +92,13 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseResponseNoEndDoubleCRLFUnitTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 100 Trying" + CRLF +
@@ -109,13 +117,13 @@ namespace SIPSorcery.SIP.UnitTests
 
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void ParseCiscoOptionsResponseUnitTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + CRLF +
@@ -147,7 +155,7 @@ namespace SIPSorcery.SIP.UnitTests
             Assert.True(sipMessageBuffer != null, "The SIP message not parsed correctly.");
             Assert.True(sipResponse.Header.Vias.Length == 2, "The SIP reponse did not end up with the right number of Via headers.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         /// <summary>
@@ -156,7 +164,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthParseFromSingleRequestTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 @"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -176,7 +184,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
-            Console.WriteLine("Content-Length " + contentLength + ".");
+            logger.LogDebug("Content-Length " + contentLength + ".");
 
             Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
@@ -187,7 +195,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthParseFromSingleRequestExtraSpacingTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 @"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -207,7 +215,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
-            Console.WriteLine("Content-Length " + contentLength + ".");
+            logger.LogDebug("Content-Length " + contentLength + ".");
 
             Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
@@ -218,7 +226,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthCompactParseFromSingleRequestTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 @"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -238,7 +246,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             int contentLength = SIPMessageBuffer.GetContentLength(notifyRequestBytes, 0, notifyRequestBytes.Length);
 
-            Console.WriteLine("Content-Length " + contentLength + ".");
+            logger.LogDebug("Content-Length " + contentLength + ".");
 
             Assert.True(contentLength == 2393, "The content length was parsed incorrectly.");
         }
@@ -250,7 +258,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ContentLengthCompactParseFromSingleRequestExtraSpacingTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -279,7 +287,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseReceiveNoContentLengthHeaderRequestTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 "NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -306,7 +314,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void ParseReceiveSingleRequestTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
 @"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
@@ -412,7 +420,7 @@ CRLF +
         [Fact]
         public void ParseMultiRequestAndResponseTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
             @"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -461,13 +469,13 @@ CRLF +
             byte[] testReceiveBytes = UTF8Encoding.UTF8.GetBytes(testReceive);
 
             byte[] request1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out _);
-            Console.WriteLine("Request1=" + UTF8Encoding.UTF8.GetString(request1Bytes));
+            logger.LogDebug("Request1=" + UTF8Encoding.UTF8.GetString(request1Bytes));
 
             byte[] request2Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, request1Bytes.Length, testReceiveBytes.Length, out _);
-            Console.WriteLine("Request2=" + UTF8Encoding.UTF8.GetString(request2Bytes));
+            logger.LogDebug("Request2=" + UTF8Encoding.UTF8.GetString(request2Bytes));
 
             byte[] response1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, request1Bytes.Length + request2Bytes.Length, testReceiveBytes.Length, out _);
-            Console.WriteLine("Response1=" + UTF8Encoding.UTF8.GetString(response1Bytes));
+            logger.LogDebug("Response1=" + UTF8Encoding.UTF8.GetString(response1Bytes));
 
             Assert.True(request1Bytes.Length + request2Bytes.Length + response1Bytes.Length == testReceiveBytes.Length, "The length of the parsed requests and responses was incorrect.");
         }
@@ -478,7 +486,7 @@ CRLF +
         [Fact]
         public void ParseRequestOneByteMissingTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
             @"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
@@ -508,7 +516,7 @@ includesdp=tru";
         [Fact]
         public void ParseRequestOneByteExtraTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
             @"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -540,7 +548,7 @@ CRLF +
         [Fact]
         public void ParseRequestBytesReadShortTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
             @"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0
@@ -570,7 +578,7 @@ include                                               ";
         [Fact]
         public void ParseRequestWithLeadingNATKeepAliveBytesTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
             @"    SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -593,7 +601,7 @@ CRLF +
             int skippedBytes = 0;
             byte[] request1Bytes = SIPMessageBuffer.ParseSIPMessageFromStream(testReceiveBytes, 0, testReceiveBytes.Length, out skippedBytes);
 
-            Console.WriteLine(Encoding.UTF8.GetString(request1Bytes));
+            logger.LogDebug(Encoding.UTF8.GetString(request1Bytes));
 
             Assert.True(request1Bytes != null, "The parsed bytes should have been populated.");
             Assert.True(skippedBytes == 4, "The number of skipped bytes was incorrect.");
@@ -605,7 +613,7 @@ CRLF +
         [Fact]
         public void TestProcessRecevieWithBytesToSkipTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
 "            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -636,7 +644,7 @@ CRLF +
         [Fact]
         public void IsPingUnitTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] buffer = new byte[] { 0x0d, 0x0a };//"\r\n"
             Assert.True(SIPMessageBuffer.IsPing(buffer), "Buffer \\r\\n is not a Ping message.");
@@ -668,7 +676,7 @@ CRLF +
 
             Assert.False(SIPMessageBuffer.IsPing(Encoding.UTF8.GetBytes(sipMsg)), "The SIP message is a Ping.");
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
     }

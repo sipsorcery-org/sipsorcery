@@ -32,7 +32,12 @@ namespace SIPSorcery.SIP.UnitTests
     public class SIPTortureTests
     {
         private static string CRLF = SIPConstants.CRLF;
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPTortureTests(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
 
         /// <summary>
         /// Torture test 3.1.1.1. with file wsinv.dat.

@@ -18,13 +18,20 @@ namespace SIPSorcery.Sys.UnitTests
     [Trait("Category", "unit")]
     public class LogUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public LogUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         [Fact]
         public void CheckLoggingTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             Log.Logger.LogDebug("LogDebug CheckLoggingTest");
             Log.Logger.LogInformation("LogInfo CheckLoggingTest");
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
     }
 }

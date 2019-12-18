@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -17,46 +18,53 @@ namespace SIPSorcery.Sys.UnitTests
     [Trait("Category", "unit")]
     public class CryptoUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public CryptoUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         [Fact]
         public void SampleTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             int initRandomNumber = Crypto.GetRandomInt();
-            Console.WriteLine("Random int = " + initRandomNumber + ".");
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("Random int = " + initRandomNumber + ".");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void CallRandomNumberWebServiceUnitTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            Console.WriteLine("Random number = " + Crypto.GetRandomInt());
+            logger.LogDebug("Random number = " + Crypto.GetRandomInt());
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void GetRandomNumberTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            Console.WriteLine("Random number = " + Crypto.GetRandomInt());
+            logger.LogDebug("Random number = " + Crypto.GetRandomInt());
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
 
         [Fact]
         public void GetOneHundredRandomNumbersTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             for (int index = 0; index < 100; index++)
             {
-                Console.WriteLine("Random number = " + Crypto.GetRandomInt());
+                logger.LogDebug("Random number = " + Crypto.GetRandomInt());
             }
 
-            Console.WriteLine("-----------------------------------------");
+            logger.LogDebug("-----------------------------------------");
         }
     }
 }

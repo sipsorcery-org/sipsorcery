@@ -34,7 +34,7 @@ namespace SIPSorcery.SIP.UnitTests
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
-        public SIPTransportUnitTest(ITestOutputHelper output)
+        public SIPTransportUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
             SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
@@ -459,7 +459,10 @@ namespace SIPSorcery.SIP.UnitTests
                     if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
                     {
                         // Got the expected response, set the signal.
-                        tcs.SetResult(true);
+                        if (!tcs.TrySetResult(true))
+                        {
+                            logger.LogWarning($"RunClient on test channel {testClientChannel.ListeningSIPEndPoint} FAILED to set result on CompletionSource.");
+                        }
                     }
                 };
 

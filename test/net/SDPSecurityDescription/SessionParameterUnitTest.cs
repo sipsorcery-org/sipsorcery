@@ -9,7 +9,12 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public partial class SessionParameterUnitTest
     {
-        private static ILogger Logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SessionParameterUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
 
         [Fact]
         public void ConstructorTestEnumParams()
