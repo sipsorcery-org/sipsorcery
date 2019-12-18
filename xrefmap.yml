@@ -151,6 +151,19 @@ references:
   commentId: T:SIPSorcery.Net.DNSManager
   fullName: SIPSorcery.Net.DNSManager
   nameWithType: DNSManager
+- uid: SIPSorcery.Net.DNSManager.GetDnsSuffixes
+  name: GetDnsSuffixes()
+  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_GetDnsSuffixes
+  commentId: M:SIPSorcery.Net.DNSManager.GetDnsSuffixes
+  fullName: SIPSorcery.Net.DNSManager.GetDnsSuffixes()
+  nameWithType: DNSManager.GetDnsSuffixes()
+- uid: SIPSorcery.Net.DNSManager.GetDnsSuffixes*
+  name: GetDnsSuffixes
+  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_GetDnsSuffixes_
+  commentId: Overload:SIPSorcery.Net.DNSManager.GetDnsSuffixes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DNSManager.GetDnsSuffixes
+  nameWithType: DNSManager.GetDnsSuffixes
 - uid: SIPSorcery.Net.DNSManager.Lookup(System.String,Heijden.DNS.QType,System.Int32,System.Collections.Generic.List{System.Net.IPEndPoint})
   name: Lookup(String, QType, Int32, List<IPEndPoint>)
   href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_Lookup_System_String_Heijden_DNS_QType_System_Int32_System_Collections_Generic_List_System_Net_IPEndPoint__
@@ -195,6 +208,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DNSManager.LookupAsync
   nameWithType: DNSManager.LookupAsync
+- uid: SIPSorcery.Net.DNSManager.ReStart
+  name: ReStart()
+  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_ReStart
+  commentId: M:SIPSorcery.Net.DNSManager.ReStart
+  fullName: SIPSorcery.Net.DNSManager.ReStart()
+  nameWithType: DNSManager.ReStart()
+- uid: SIPSorcery.Net.DNSManager.ReStart*
+  name: ReStart
+  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_ReStart_
+  commentId: Overload:SIPSorcery.Net.DNSManager.ReStart
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DNSManager.ReStart
+  nameWithType: DNSManager.ReStart
 - uid: SIPSorcery.Net.DNSManager.SetDNSServers(System.Collections.Generic.List{System.Net.IPEndPoint})
   name: SetDNSServers(List<IPEndPoint>)
   href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_SetDNSServers_System_Collections_Generic_List_System_Net_IPEndPoint__
@@ -211,6 +237,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DNSManager.SetDNSServers
   nameWithType: DNSManager.SetDNSServers
+- uid: SIPSorcery.Net.DNSManager.SetDNSSuffixes(System.String[])
+  name: SetDNSSuffixes(String[])
+  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_SetDNSSuffixes_System_String___
+  commentId: M:SIPSorcery.Net.DNSManager.SetDNSSuffixes(System.String[])
+  name.vb: SetDNSSuffixes(String())
+  fullName: SIPSorcery.Net.DNSManager.SetDNSSuffixes(System.String[])
+  fullName.vb: SIPSorcery.Net.DNSManager.SetDNSSuffixes(System.String())
+  nameWithType: DNSManager.SetDNSSuffixes(String[])
+  nameWithType.vb: DNSManager.SetDNSSuffixes(String())
+- uid: SIPSorcery.Net.DNSManager.SetDNSSuffixes*
+  name: SetDNSSuffixes
+  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_SetDNSSuffixes_
+  commentId: Overload:SIPSorcery.Net.DNSManager.SetDNSSuffixes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DNSManager.SetDNSSuffixes
+  nameWithType: DNSManager.SetDNSSuffixes
 - uid: SIPSorcery.Net.DNSManager.Stop
   name: Stop()
   href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_Stop
@@ -224,6 +266,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.DNSManager.Stop
   nameWithType: DNSManager.Stop
+- uid: SIPSorcery.Net.DNSManager.UseDNSSuffixes
+  name: UseDNSSuffixes
+  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_UseDNSSuffixes
+  commentId: P:SIPSorcery.Net.DNSManager.UseDNSSuffixes
+  fullName: SIPSorcery.Net.DNSManager.UseDNSSuffixes
+  nameWithType: DNSManager.UseDNSSuffixes
+- uid: SIPSorcery.Net.DNSManager.UseDNSSuffixes*
+  name: UseDNSSuffixes
+  href: api/SIPSorcery.Net.DNSManager.html#SIPSorcery_Net_DNSManager_UseDNSSuffixes_
+  commentId: Overload:SIPSorcery.Net.DNSManager.UseDNSSuffixes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.DNSManager.UseDNSSuffixes
+  nameWithType: DNSManager.UseDNSSuffixes
 - uid: SIPSorcery.Net.FrameTypesEnum
   name: FrameTypesEnum
   href: api/SIPSorcery.Net.FrameTypesEnum.html
@@ -11017,18 +11072,37 @@ references:
   commentId: T:SIPSorcery.SIP.App.SIPDNSManager
   fullName: SIPSorcery.SIP.App.SIPDNSManager
   nameWithType: SIPDNSManager
+- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI)
+  name: DNSAAAARecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI)
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSAAAARecordLookup_SIPSorcery_SIP_SIPDNSServiceResult_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_
+  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI)
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult, System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI)
+  nameWithType: SIPDNSManager.DNSAAAARecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI)
+- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult)
+  name: DNSAAAARecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult)
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSAAAARecordLookup_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPDNSLookupResult_
+  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult)
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPDNSLookupResult)
+  nameWithType: SIPDNSManager.DNSAAAARecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult)
+- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup*
+  name: DNSAAAARecordLookup
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSAAAARecordLookup_
+  commentId: Overload:SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSAAAARecordLookup
+  nameWithType: SIPDNSManager.DNSAAAARecordLookup
 - uid: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI)
   name: DNSARecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI)
   href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSARecordLookup_SIPSorcery_SIP_SIPDNSServiceResult_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_
   commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI)
   fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(SIPSorcery.SIP.SIPDNSServiceResult, System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI)
   nameWithType: SIPDNSManager.DNSARecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI)
-- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI)
-  name: DNSARecordLookup(String, Int32, Boolean, SIPURI)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSARecordLookup_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPDNSManager.DNSARecordLookup(String, Int32, Boolean, SIPURI)
+- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult)
+  name: DNSARecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult)
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSARecordLookup_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPDNSLookupResult_
+  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult)
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPDNSLookupResult)
+  nameWithType: SIPDNSManager.DNSARecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult)
 - uid: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup*
   name: DNSARecordLookup
   href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSARecordLookup_
@@ -11036,6 +11110,40 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSARecordLookup
   nameWithType: SIPDNSManager.DNSARecordLookup
+- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,System.Nullable{System.Boolean})
+  name: DNSNameRecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI, Nullable<Boolean>)
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSNameRecordLookup_SIPSorcery_SIP_SIPDNSServiceResult_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_System_Nullable_System_Boolean__
+  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(SIPSorcery.SIP.SIPDNSServiceResult,System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,System.Nullable{System.Boolean})
+  name.vb: DNSNameRecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI, Nullable(Of Boolean))
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(SIPSorcery.SIP.SIPDNSServiceResult, System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, System.Nullable<System.Boolean>)
+  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(SIPSorcery.SIP.SIPDNSServiceResult, System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, System.Nullable(Of System.Boolean))
+  nameWithType: SIPDNSManager.DNSNameRecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI, Nullable<Boolean>)
+  nameWithType.vb: SIPDNSManager.DNSNameRecordLookup(SIPDNSServiceResult, String, Int32, Boolean, SIPURI, Nullable(Of Boolean))
+- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult,System.Nullable{System.Boolean},System.Int32)
+  name: DNSNameRecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult, Nullable<Boolean>, Int32)
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSNameRecordLookup_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPDNSLookupResult_System_Nullable_System_Boolean__System_Int32_
+  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult,System.Nullable{System.Boolean},System.Int32)
+  name.vb: DNSNameRecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult, Nullable(Of Boolean), Int32)
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPDNSLookupResult, System.Nullable<System.Boolean>, System.Int32)
+  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPDNSLookupResult, System.Nullable(Of System.Boolean), System.Int32)
+  nameWithType: SIPDNSManager.DNSNameRecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult, Nullable<Boolean>, Int32)
+  nameWithType.vb: SIPDNSManager.DNSNameRecordLookup(String, Int32, Boolean, SIPURI, SIPDNSLookupResult, Nullable(Of Boolean), Int32)
+- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult@,System.Nullable{System.Boolean})
+  name: DNSNameRecordLookup(String, Int32, Boolean, SIPURI, ref SIPDNSLookupResult, Nullable<Boolean>)
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSNameRecordLookup_System_String_System_Int32_System_Boolean_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPDNSLookupResult__System_Nullable_System_Boolean__
+  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String,System.Int32,System.Boolean,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPDNSLookupResult@,System.Nullable{System.Boolean})
+  name.vb: DNSNameRecordLookup(String, Int32, Boolean, SIPURI, ByRef SIPDNSLookupResult, Nullable(Of Boolean))
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, ref SIPSorcery.SIP.SIPDNSLookupResult, System.Nullable<System.Boolean>)
+  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup(System.String, System.Int32, System.Boolean, SIPSorcery.SIP.SIPURI, ByRef SIPSorcery.SIP.SIPDNSLookupResult, System.Nullable(Of System.Boolean))
+  nameWithType: SIPDNSManager.DNSNameRecordLookup(String, Int32, Boolean, SIPURI, ref SIPDNSLookupResult, Nullable<Boolean>)
+  nameWithType.vb: SIPDNSManager.DNSNameRecordLookup(String, Int32, Boolean, SIPURI, ByRef SIPDNSLookupResult, Nullable(Of Boolean))
+- uid: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup*
+  name: DNSNameRecordLookup
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSNameRecordLookup_
+  commentId: Overload:SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSNameRecordLookup
+  nameWithType: SIPDNSManager.DNSNameRecordLookup
 - uid: SIPSorcery.SIP.App.SIPDNSManager.DNSNAPTRRecordLookup(System.String,System.Boolean,SIPSorcery.SIP.SIPDNSLookupResult@)
   name: DNSNAPTRRecordLookup(String, Boolean, ref SIPDNSLookupResult)
   href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_DNSNAPTRRecordLookup_System_String_System_Boolean_SIPSorcery_SIP_SIPDNSLookupResult__
@@ -11068,12 +11176,21 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSSRVRecordLookup
   nameWithType: SIPDNSManager.DNSSRVRecordLookup
-- uid: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync(SIPSorcery.SIP.SIPURI)
-  name: ResolveAsync(SIPURI)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_ResolveAsync_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync(SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync(SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPDNSManager.ResolveAsync(SIPURI)
+- uid: SIPSorcery.SIP.App.SIPDNSManager.PreferIPv6NameResolution
+  name: PreferIPv6NameResolution
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_PreferIPv6NameResolution
+  commentId: F:SIPSorcery.SIP.App.SIPDNSManager.PreferIPv6NameResolution
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.PreferIPv6NameResolution
+  nameWithType: SIPDNSManager.PreferIPv6NameResolution
+- uid: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync(SIPSorcery.SIP.SIPURI,System.Nullable{System.Boolean})
+  name: ResolveAsync(SIPURI, Nullable<Boolean>)
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_ResolveAsync_SIPSorcery_SIP_SIPURI_System_Nullable_System_Boolean__
+  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync(SIPSorcery.SIP.SIPURI,System.Nullable{System.Boolean})
+  name.vb: ResolveAsync(SIPURI, Nullable(Of Boolean))
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync(SIPSorcery.SIP.SIPURI, System.Nullable<System.Boolean>)
+  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync(SIPSorcery.SIP.SIPURI, System.Nullable(Of System.Boolean))
+  nameWithType: SIPDNSManager.ResolveAsync(SIPURI, Nullable<Boolean>)
+  nameWithType.vb: SIPDNSManager.ResolveAsync(SIPURI, Nullable(Of Boolean))
 - uid: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync*
   name: ResolveAsync
   href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_ResolveAsync_
@@ -11081,12 +11198,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPDNSManager.ResolveAsync
   nameWithType: SIPDNSManager.ResolveAsync
-- uid: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(SIPSorcery.SIP.SIPURI,System.Boolean)
-  name: ResolveSIPService(SIPURI, Boolean)
-  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_ResolveSIPService_SIPSorcery_SIP_SIPURI_System_Boolean_
-  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(SIPSorcery.SIP.SIPURI,System.Boolean)
-  fullName: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(SIPSorcery.SIP.SIPURI, System.Boolean)
-  nameWithType: SIPDNSManager.ResolveSIPService(SIPURI, Boolean)
+- uid: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(SIPSorcery.SIP.SIPURI,System.Boolean,System.Nullable{System.Boolean})
+  name: ResolveSIPService(SIPURI, Boolean, Nullable<Boolean>)
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_ResolveSIPService_SIPSorcery_SIP_SIPURI_System_Boolean_System_Nullable_System_Boolean__
+  commentId: M:SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(SIPSorcery.SIP.SIPURI,System.Boolean,System.Nullable{System.Boolean})
+  name.vb: ResolveSIPService(SIPURI, Boolean, Nullable(Of Boolean))
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(SIPSorcery.SIP.SIPURI, System.Boolean, System.Nullable<System.Boolean>)
+  fullName.vb: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(SIPSorcery.SIP.SIPURI, System.Boolean, System.Nullable(Of System.Boolean))
+  nameWithType: SIPDNSManager.ResolveSIPService(SIPURI, Boolean, Nullable<Boolean>)
+  nameWithType.vb: SIPDNSManager.ResolveSIPService(SIPURI, Boolean, Nullable(Of Boolean))
 - uid: SIPSorcery.SIP.App.SIPDNSManager.ResolveSIPService(System.String)
   name: ResolveSIPService(String)
   href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_ResolveSIPService_System_String_

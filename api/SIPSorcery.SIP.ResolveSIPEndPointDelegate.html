@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Delegate ResolveSIPEndPointDelegate
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.48.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -79,7 +79,7 @@
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_ResolveSIPEndPointDelegate_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public delegate SIPDNSLookupResult ResolveSIPEndPointDelegate(SIPURI uri, bool async);</code></pre>
+    <pre><code class="lang-csharp hljs">public delegate SIPDNSLookupResult ResolveSIPEndPointDelegate(SIPURI uri, bool async, bool? preferIPv6);</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -99,6 +99,11 @@
       <tr>
         <td><span class="xref">System.Boolean</span></td>
         <td><span class="parametername">async</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td><span class="parametername">preferIPv6</span></td>
         <td></td>
       </tr>
     </tbody>
