@@ -294,7 +294,7 @@ namespace SIPSorcery.SIP.App
         /// the opposite of the Call method. This is only the first step in answering an incoming
         /// call. It can still be rejected or answered after this point.
         /// </summary>
-        /// <param name="inviteRequest">The invite requestn representing the incoming call.</param>
+        /// <param name="inviteRequest">The invite request representing the incoming call.</param>
         /// <returns>An ID string that needs to be supplied when the call is answered or rejected 
         /// (used to manage multiple pending incoming calls).</returns>
         public SIPServerUserAgent AcceptCall(SIPRequest inviteRequest)
