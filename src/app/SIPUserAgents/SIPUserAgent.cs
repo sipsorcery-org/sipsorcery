@@ -825,28 +825,6 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
-        /// This method updates the dialogue and generates the response when we detect the remote
-        /// party sending us an on or off hold re-INVITE request.
-        /// </summary>
-        /// <param name="sipRequest">The re-INVITE request putting us on or off hold.</param>
-        /// <param name="localMediaStreamStatus">The stream status to set on our local SDP.</param>
-        /// <returns>The re-INVITE response to send back to the remote call party.</returns>
-        private SIPResponse ProcessRemoteHoldRequest(SIPRequest sipRequest, MediaStreamStatusEnum localMediaStreamStatus)
-        {
-            SDP localSDP = SDP.ParseSDPDescription(Dialogue.SDP);
-            localSDP.Media.First(x => x.Media == SDPMediaTypesEnum.audio).MediaStreamStatus = localMediaStreamStatus;
-            Dialogue.SDP = localSDP.ToString();
-            Dialogue.RemoteSDP = sipRequest.Body;
-            Dialogue.RemoteCSeq = sipRequest.Header.CSeq;
-
-            var okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-            okResponse.Header.ContentType = SDP.SDP_MIME_CONTENTTYPE;
-            okResponse.Body = Dialogue.SDP;
-
-            return okResponse;
-        }
-
-        /// <summary>
         /// The current call has ended. Reset the state of the user agent.
         /// </summary>
         private void CallEnded()
