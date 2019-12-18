@@ -90,7 +90,7 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Once either the client or server call is answered this will hold the SIP
-        /// dialouge that was created by the call.
+        /// dialogue that was created by the call.
         /// </summary>
         public SIPDialogue Dialogue
         {
