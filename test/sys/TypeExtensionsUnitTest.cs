@@ -11,6 +11,7 @@
 
 using System;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -18,10 +19,17 @@ namespace SIPSorcery.Sys.UnitTests
     [Trait("Category", "unit")]
     public class TypeExtensionsUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public TypeExtensionsUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         [Fact]
         public void TrimTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             String myString = null;
 
@@ -31,11 +39,11 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void ZeroBytesTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             String myString = Encoding.UTF8.GetString(new byte[] { 0x00, 0x00, 0x00, 0x00 });
 
-            Console.WriteLine("Trimmed length=" + myString.Trim().Length + ".");
+            logger.LogDebug("Trimmed length=" + myString.Trim().Length + ".");
 
             Assert.True(myString.IsNullOrBlank(), "String was not correctly detected as blank.");
         }

@@ -18,6 +18,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using SIPSorcery.UnitTests;
 
@@ -26,6 +27,13 @@ namespace SIPSorcery.SIP.App.UnitTests
     [Trait("Category", "unit")]
     public class SIPUserAgentUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPUserAgentUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         /// <summary>
         /// Tests that the Blind Transfer function doesn't do anything unexpected. The transfer
         /// request should return false since the Accepted response never arrives.
@@ -33,6 +41,8 @@ namespace SIPSorcery.SIP.App.UnitTests
         [Fact]
         public async void BlindTransferUnitTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
 
@@ -85,6 +95,8 @@ a=sendrecv";
         [Fact]
         public void BlindTransferCancelUnitTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
 
@@ -139,6 +151,8 @@ a=sendrecv";
         [Fact]
         public void HangupUserAgentUnitTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             // NOTE: For this test to work the transport layer must be instantiated with the queue incoming
             // flag set to false. That has the effect of getting the mockChannel.FireMessageReceived to flow
             // all the way through to the SIPUSerAgent on the same thread.

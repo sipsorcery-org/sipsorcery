@@ -9,6 +9,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -16,6 +17,13 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPEventPresenceUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPEventPresenceUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         /// <summary>
         /// Used to check the conformance of blocks of XML text to the schema in RFC3863.
         ///// </summary>
@@ -24,11 +32,11 @@ namespace SIPSorcery.SIP.UnitTests
         //[ExpectedException(typeof(XmlSchemaValidationException))]
         //public void InvalidXMLUnitTest()
         //{
-        //    Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    if (m_presenceSchema == null)
         //    {
-        //        Console.WriteLine("Loading XSD schema for dialog event package, takes a while...");
+        //        logger.LogDebug("Loading XSD schema for dialog event package, takes a while...");
 
         //        m_presenceSchema = new XmlSchemaSet();
         //        XmlReader schemaReader = new XmlTextReader(SIPSorcery.SIP.Properties.Resources.PIDFSchema, XmlNodeType.Document, null);
@@ -44,7 +52,7 @@ namespace SIPSorcery.SIP.UnitTests
         //    XDocument presenceDoc = XDocument.Parse(invalidPresenceXMLStr);
         //    presenceDoc.Validate(m_presenceSchema, (o, e) =>
         //    {
-        //        Console.WriteLine("XSD validation " + e.Severity + " event: " + e.Message);
+        //        logger.LogDebug("XSD validation " + e.Severity + " event: " + e.Message);
 
         //        if (e.Severity == XmlSeverityType.Error)
         //        {
@@ -52,7 +60,7 @@ namespace SIPSorcery.SIP.UnitTests
         //        }
         //    });
 
-        //    Console.WriteLine("-----------------------------------------");
+        //    logger.LogDebug("-----------------------------------------");
         //}
 
         ///// <summary>
@@ -62,11 +70,11 @@ namespace SIPSorcery.SIP.UnitTests
         ////[Ignore("Use this method to validate dialog XML packages against the RFC schema. It takes a little bit of time to load the schema.")]
         //public void ValidXMLUnitTest()
         //{
-        //    Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    if (m_presenceSchema == null)
         //    {
-        //        Console.WriteLine("Loading XSD schema for dialog event package, takes a while...");
+        //        logger.LogDebug("Loading XSD schema for dialog event package, takes a while...");
 
         //        m_presenceSchema = new XmlSchemaSet();
         //        XmlReader schemaReader = new XmlTextReader(SIPSorcery.SIP.Properties.Resources.PIDFSchema, XmlNodeType.Document, null);
@@ -87,7 +95,7 @@ namespace SIPSorcery.SIP.UnitTests
         //    XDocument presenceDoc = XDocument.Parse(validPresenceXMLStr);
         //    presenceDoc.Validate(m_presenceSchema, (o, e) =>
         //    {
-        //        Console.WriteLine("XSD validation " + e.Severity + " event: " + e.Message);
+        //        logger.LogDebug("XSD validation " + e.Severity + " event: " + e.Message);
 
         //        if (e.Severity == XmlSeverityType.Error)
         //        {
@@ -95,7 +103,7 @@ namespace SIPSorcery.SIP.UnitTests
         //        }
         //    });
 
-        //    Console.WriteLine("-----------------------------------------");
+        //    logger.LogDebug("-----------------------------------------");
         //}
 
         ///// <summary>
@@ -104,14 +112,14 @@ namespace SIPSorcery.SIP.UnitTests
         //[Fact]
         //public void GetAsXMLStringUnitTest()
         //{
-        //    Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    SIPEventPresence presence = new SIPEventPresence(SIPURI.ParseSIPURI("sip:me@somewhere.com"));
         //    presence.Tuples.Add(new SIPEventPresenceTuple("1234", SIPEventPresenceStateEnum.open, SIPURI.ParseSIPURIRelaxed("test@test.com"), 0.8M));
 
-        //    Console.WriteLine(presence.ToXMLText());
+        //    logger.LogDebug(presence.ToXMLText());
 
-        //    Console.WriteLine("-----------------------------------------");
+        //    logger.LogDebug("-----------------------------------------");
         //}
 
         ///// <summary>
@@ -120,7 +128,7 @@ namespace SIPSorcery.SIP.UnitTests
         //[Fact]
         //public void ParseFromXMLStringUnitTest()
         //{
-        //    Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    string presenceXMLStr = "<?xml version='1.0' encoding='utf-16'?>" +
         //         "<presence entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:pidf'>" +
@@ -141,7 +149,7 @@ namespace SIPSorcery.SIP.UnitTests
         //    Assert.True(presence.Tuples[0].ContactURI.ToString() == "sip:test123@test.com", "The parsed presence event first tuple Contact URI was incorrect.");
         //    Assert.True(presence.Tuples[0].ContactPriority == 1.2M, "The parsed presence event first tuple Contact priority was incorrect.");
 
-        //    Console.WriteLine("-----------------------------------------");
+        //    logger.LogDebug("-----------------------------------------");
         //}
     }
 }

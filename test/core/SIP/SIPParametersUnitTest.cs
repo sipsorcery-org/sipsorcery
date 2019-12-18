@@ -11,6 +11,7 @@
 
 using System;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -18,17 +19,24 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPParametersUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPParametersUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         [Fact]
         public void RouteParamExtractTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string routeParam = ";lr;server=hippo";
             SIPParameters serverParam = new SIPParameters(routeParam, ';');
             string serverParamValue = serverParam.Get("server");
 
-            Console.WriteLine("Parameter string=" + serverParam.ToString() + ".");
-            Console.WriteLine("The server parameter is=" + serverParamValue + ".");
+            logger.LogDebug("Parameter string=" + serverParam.ToString() + ".");
+            logger.LogDebug("The server parameter is=" + serverParamValue + ".");
 
             Assert.True(serverParamValue == "hippo", "The server parameter was not correctly extracted.");
         }
@@ -36,14 +44,14 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void QuotedStringParamExtractTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string methodsParam = ";methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER\"";
             SIPParameters serverParam = new SIPParameters(methodsParam, ';');
             string methodsParamValue = serverParam.Get("methods");
 
-            Console.WriteLine("Parameter string=" + serverParam.ToString() + ".");
-            Console.WriteLine("The methods parameter is=" + methodsParamValue + ".");
+            logger.LogDebug("Parameter string=" + serverParam.ToString() + ".");
+            logger.LogDebug("The methods parameter is=" + methodsParamValue + ".");
 
             Assert.True(methodsParamValue == "\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER\"", "The method parameter was not correctly extracted.");
         }
@@ -51,13 +59,13 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void UserFieldWithNamesExtractTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string userField = "\"Joe Bloggs\" <sip:joe@bloggs.com>;allow=\"options, invite, cancel\"";
             string[] keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
 
-            Console.WriteLine("KeyValuePair count=" + keyValuePairs.Length + ".");
-            Console.WriteLine("First KetValuePair=" + keyValuePairs[0] + ".");
+            logger.LogDebug("KeyValuePair count=" + keyValuePairs.Length + ".");
+            logger.LogDebug("First KetValuePair=" + keyValuePairs[0] + ".");
 
             Assert.True(keyValuePairs.Length == 1, "An incorrect number of key value pairs was extracted");
         }
@@ -65,14 +73,14 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MultipleUserFieldWithNamesExtractTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string userField = "\"Joe Bloggs\" <sip:joe@bloggs.com>;allow=\"options, invite, cancel\" , \"Jane Doe\" <sip:jabe@doe.com>";
             string[] keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
 
-            Console.WriteLine("KeyValuePair count=" + keyValuePairs.Length + ".");
-            Console.WriteLine("First KetValuePair=" + keyValuePairs[0] + ".");
-            Console.WriteLine("Second KetValuePair=" + keyValuePairs[1] + ".");
+            logger.LogDebug("KeyValuePair count=" + keyValuePairs.Length + ".");
+            logger.LogDebug("First KetValuePair=" + keyValuePairs[0] + ".");
+            logger.LogDebug("Second KetValuePair=" + keyValuePairs[1] + ".");
 
             Assert.True(keyValuePairs.Length == 2, "An incorrect number of key value pairs was extracted");
         }
@@ -80,14 +88,14 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MultipleUserFieldWithNamesExtraWhitespaceExtractTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string userField = "  \"Joe Bloggs\"   <sip:joe@bloggs.com>;allow=\"options, invite, cancel\" \t,   \"Jane Doe\" <sip:jabe@doe.com>";
             string[] keyValuePairs = SIPParameters.GetKeyValuePairsFromQuoted(userField, ',');
 
-            Console.WriteLine("KeyValuePair count=" + keyValuePairs.Length + ".");
-            Console.WriteLine("First KetValuePair=" + keyValuePairs[0] + ".");
-            Console.WriteLine("Second KetValuePair=" + keyValuePairs[1] + ".");
+            logger.LogDebug("KeyValuePair count=" + keyValuePairs.Length + ".");
+            logger.LogDebug("First KetValuePair=" + keyValuePairs[0] + ".");
+            logger.LogDebug("Second KetValuePair=" + keyValuePairs[1] + ".");
 
             Assert.True(keyValuePairs.Length == 2, "An incorrect number of key value pairs was extracted");
         }
@@ -95,7 +103,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void GetHashCodeDiffOrderEqualityUnittest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testParamStr1 = ";lr;server=hippo;ftag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
@@ -109,7 +117,7 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void GetHashCodeDiffOrderEqualityReorderedUnittest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testParamStr1 = ";lr;server=hippo;ftag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
@@ -123,15 +131,15 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void CheckEqualWithDiffCaseEqualityUnittest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testParamStr1 = ";LR;Server=hippo;FTag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
-            Console.WriteLine("Parameter 1:" + testParam1.ToString());
+            logger.LogDebug("Parameter 1:" + testParam1.ToString());
 
             string testParamStr2 = "ftag=12345;lr;server=hippo;";
             SIPParameters testParam2 = new SIPParameters(testParamStr2, ';');
-            Console.WriteLine("Parameter 2:" + testParam2.ToString());
+            logger.LogDebug("Parameter 2:" + testParam2.ToString());
 
             Assert.Equal(testParam1, testParam2);
         }
@@ -139,15 +147,15 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void GetHashCodeDiffValueCaseEqualityUnittest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testParamStr1 = ";LR;Server=hippo;FTag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
-            Console.WriteLine("Parameter 1:" + testParam1.ToString());
+            logger.LogDebug("Parameter 1:" + testParam1.ToString());
 
             string testParamStr2 = "ftag=12345;lr;server=HiPPo;";
             SIPParameters testParam2 = new SIPParameters(testParamStr2, ';');
-            Console.WriteLine("Parameter 2:" + testParam2.ToString());
+            logger.LogDebug("Parameter 2:" + testParam2.ToString());
 
             Assert.True(testParam1.GetHashCode() != testParam2.GetHashCode(), "The parameters had different hashcode values.");
         }
@@ -155,11 +163,11 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void EmptyValueParametersUnittest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testParamStr1 = ";emptykey;Server=hippo;FTag=12345";
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
-            Console.WriteLine("Parameter 1:" + testParam1.ToString());
+            logger.LogDebug("Parameter 1:" + testParam1.ToString());
 
             Assert.True(testParam1.Has("emptykey"), "The empty parameter \"emptykey\" was not correctly extracted from the paramter string.");
             Assert.True(Regex.Match(testParam1.ToString(), "emptykey").Success, "The emptykey name was not in the output parameter string.");

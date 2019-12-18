@@ -26,9 +26,8 @@ namespace SIPSorcery.UnitTests
 {
     public class TestLogHelper
     {
-        public static void InitTestLogger(ITestOutputHelper output)
+        public static void InitTestLogger(Xunit.Abstractions.ITestOutputHelper output)
         {
-#if DEBUG
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
             var loggerConfig = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
@@ -38,7 +37,6 @@ namespace SIPSorcery.UnitTests
             loggerFactory.AddSerilog(loggerConfig);
 
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
-#endif
         }
     }
 
@@ -99,10 +97,11 @@ namespace SIPSorcery.UnitTests
 
     public class MockSIPDNSManager
     {
-        public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool synchronous)
+        public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool async, bool? preferIPv6)
         {
             // This assumes the input SIP URI has an IP address as the host!
-            return new SIPDNSLookupResult(sipURI);
+            IPSocket.TryParseIPEndPoint(sipURI.Host, out var ipEndPoint);
+            return new SIPDNSLookupResult(sipURI, new SIPEndPoint(ipEndPoint));
         }
     }
 }
