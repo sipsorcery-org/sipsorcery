@@ -12,6 +12,7 @@
 using System;
 using System.Net;
 using SIPSorcery.Sys;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -19,22 +20,18 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPTransactionUnitTest
     {
-        private class MockSIPDNSManager
-        {
-            public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool async, bool? preferIPv6)
-            {
-                // This assumes the input SIP URI has an IP address as the host!
-                IPSocket.TryParseIPEndPoint(sipURI.Host, out var ipEndPoint);
-                return new SIPDNSLookupResult(sipURI, new SIPEndPoint(ipEndPoint));
-            }
-        }
-
         protected static readonly string m_CRLF = SIPConstants.CRLF;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SIPTransactionUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
 
         [Fact]
         public void CreateTransactionUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipRequestStr =
                 "INVITE sip:023434211@213.200.94.182;switchtag=902888 SIP/2.0" + m_CRLF +
@@ -77,7 +74,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             SIPRequest request = SIPRequest.ParseSIPRequest(sipRequestStr);
             SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
-            SIPTransport sipTransport = new SIPTransport(MockSIPDNSManager.Resolve, transactionEngine);
+            SIPTransport sipTransport = new SIPTransport(SIPSorcery.UnitTests.MockSIPDNSManager.Resolve, transactionEngine);
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
             SIPTransaction transaction = new UACInviteTransaction(sipTransport, request, null);
 

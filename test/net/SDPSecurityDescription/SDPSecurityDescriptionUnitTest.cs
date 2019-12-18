@@ -12,7 +12,12 @@ namespace SIPSorcery.Net.UnitTests
     public partial class SDPSecurityDescriptionUnitTest
     {
         private static string CRLF = "\r\n";
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public SDPSecurityDescriptionUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
 
         [Fact]
         public void ParseTest()

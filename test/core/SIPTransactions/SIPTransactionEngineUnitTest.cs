@@ -26,19 +26,10 @@ namespace SIPSorcery.SIP.UnitTests
     {
         private const int TRANSACTION_EXCHANGE_TIMEOUT_MS = 5000;
 
-        private class MockSIPDNSManager
-        {
-            public static SIPDNSLookupResult Resolve(SIPURI sipURI, bool async, bool? preferIPv6)
-            {
-                // This assumes the input SIP URI has an IP address as the host!
-                return new SIPDNSLookupResult(sipURI, new SIPEndPoint(IPSocket.ParseSocketString(sipURI.Host)));
-            }
-        }
-
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
         protected static readonly string m_CRLF = SIPConstants.CRLF;
 
-        public SIPTransactionEngineUnitTest(ITestOutputHelper output)
+        public SIPTransactionEngineUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
             SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
@@ -64,6 +55,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void MatchOnRequestAndResponseTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
 
@@ -81,7 +74,7 @@ namespace SIPSorcery.SIP.UnitTests
                 m_CRLF +
                 "dummy");
 
-            SIPTransaction transaction = new UACInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, transactionEngine), inviteRequest, null);
+            SIPTransaction transaction = new UACInviteTransaction(new SIPTransport(SIPSorcery.UnitTests.MockSIPDNSManager.Resolve, transactionEngine), inviteRequest, null);
             //transactionEngine.AddTransaction(transaction);
 
             SIPResponse sipResponse = SIPResponse.ParseSIPResponse("SIP/2.0 603 Nothing listening" + m_CRLF +
@@ -103,6 +96,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AckRecognitionUnitTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SIPTransport clientTransport = null;
             SIPTransport serverTransport = null;
 
@@ -111,12 +106,12 @@ namespace SIPSorcery.SIP.UnitTests
                 TaskCompletionSource<bool> uasConfirmedTask = new TaskCompletionSource<bool>();
 
                 SIPTransactionEngine clientEngine = new SIPTransactionEngine();     // Client side of the INVITE.
-                clientTransport = new SIPTransport(MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)), false);
+                clientTransport = new SIPTransport(SIPSorcery.UnitTests.MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)), false);
                 SetTransportTraceEvents(clientTransport);
 
                 SIPTransactionEngine serverEngine = new SIPTransactionEngine();     // Server side of the INVITE.
                 UASInviteTransaction serverTransaction = null;
-                serverTransport = new SIPTransport(MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)), false);
+                serverTransport = new SIPTransport(SIPSorcery.UnitTests.MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)), false);
                 SetTransportTraceEvents(serverTransport);
                 serverTransport.SIPTransportRequestReceived += (localEndPoint, remoteEndPoint, sipRequest) =>
                 {
@@ -131,9 +126,12 @@ namespace SIPSorcery.SIP.UnitTests
                     };
                     serverTransaction.TransactionStateChanged += (tx) =>
                     {
-                        if(tx.TransactionState == SIPTransactionStatesEnum.Confirmed)
+                        if (tx.TransactionState == SIPTransactionStatesEnum.Confirmed)
                         {
-                            uasConfirmedTask.SetResult(true);
+                            if (!uasConfirmedTask.TrySetResult(true))
+                            {
+                                logger.LogWarning($"AckRecognitionUnitTest: FAILED to set result on CompletionSource.");
+                            }
                         }
                     };
                     serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
@@ -163,6 +161,8 @@ namespace SIPSorcery.SIP.UnitTests
         [Fact]
         public void AckRecognitionIIUnitTest()
         {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
             SIPTransactionEngine engine = new SIPTransactionEngine();     // Client side of the INVITE.
 
             string inviteRequestStr =
@@ -182,7 +182,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             // Server has received the invite.
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
-            UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(MockSIPDNSManager.Resolve, engine), inviteRequest, null, true);
+            UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(SIPSorcery.UnitTests.MockSIPDNSManager.Resolve, engine), inviteRequest, null, true);
             //engine.AddTransaction(serverTransaction);
 
             string ackRequestStr =
@@ -246,7 +246,7 @@ namespace SIPSorcery.SIP.UnitTests
 
         void transaction_TransactionTraceMessage(SIPTransaction sipTransaction, string message)
         {
-            //Console.WriteLine(sipTransaction.GetType() + " Trace (" + sipTransaction.TransactionId + "): " + message);
+            //logger.LogDebug(sipTransaction.GetType() + " Trace (" + sipTransaction.TransactionId + "): " + message);
         }
 
         void transaction_TransactionStateChanged(SIPTransaction sipTransaction)

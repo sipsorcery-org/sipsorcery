@@ -25,16 +25,21 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "integration")]
     public class DNSUnitTest
     {
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public DNSUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
 
         /// <summary>
         /// Test DNS resolution
         /// also test IPSocket.Parse
         /// </summary>
-        [Fact]
+        [Fact(Skip = "DNS Queries for QType.ANY are not supported widely in the wild.")]
         public void LookupAnyRecordTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             DNSResponse result = DNSManager.Lookup("dns.google", QType.ANY, 100, null, false, false);
 
@@ -59,10 +64,10 @@ namespace SIPSorcery.Net.UnitTests
         /// 2. check lookup/resolution cache for result
         /// (also test IPSocket.Parse)
         /// </summary>
-        [Fact]
+        [Fact(Skip = "DNS Queries for QType.ANY are not supported widely in the wild.")]
         public void LookupAnyRecordAsyncCacheTest()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             //1.queue dns lookup for async resolution
             DNSResponse result = DNSManager.Lookup("dns.google", QType.ANY, 1, null, false, true);
@@ -94,7 +99,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void LookupARecordMethod()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             DNSResponse result = DNSManager.Lookup("www.sipsorcery.com", QType.A, 10, null, false, false);
 
@@ -114,8 +119,8 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void LookupAAAARecordMethod()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            
             DNSResponse result = DNSManager.Lookup("www.google.com", QType.AAAA, 10, null, false, false);
 
             foreach (var aaaaResult in result.RecordsAAAA)
@@ -130,7 +135,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void LookupSrvRecordMethod()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             DNSResponse result = DNSManager.Lookup(SIPDNSConstants.SRV_SIP_UDP_QUERY_PREFIX + "sipsorcery.com", QType.SRV, 10, null, false, false);
 
@@ -149,7 +154,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void LookupCurrentHostNameMethod()
         {
-            logger.LogDebug(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             logger.LogDebug($"Current host name {System.Net.Dns.GetHostName()}");
 

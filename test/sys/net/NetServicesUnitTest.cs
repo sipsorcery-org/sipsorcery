@@ -15,6 +15,7 @@
 
 using System;
 using System.Net;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests
@@ -22,18 +23,25 @@ namespace SIPSorcery.Sys.UnitTests
     [Trait("Category", "unit")]
     public class NetServicesUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public NetServicesUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         /// <summary>
         /// Tests that a local IPv4 interface is matched against a destination address on the same network.
         /// </summary>
         [Fact]
         public void GetLocalIPAddressUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("192.168.11.48"));
             Assert.NotNull(localAddress);
 
-            Console.WriteLine($"Local address {localAddress}.");
+            logger.LogDebug($"Local address {localAddress}.");
         }
 
         /// <summary>
@@ -42,12 +50,12 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetLocalForLoopbackAddressUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Loopback);
             Assert.Equal(IPAddress.Loopback, localAddress);
 
-            Console.WriteLine($"Local address {localAddress}.");
+            logger.LogDebug($"Local address {localAddress}.");
         }
 
         /// <summary>
@@ -56,12 +64,12 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetLocalForInternetAdressUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("67.222.131.147"));
             Assert.NotNull(localAddress);
 
-            Console.WriteLine($"Local address {localAddress}.");
+            logger.LogDebug($"Local address {localAddress}.");
         }
 
         /// <summary>
@@ -71,12 +79,12 @@ namespace SIPSorcery.Sys.UnitTests
         [Trait("Category", "IPv6")]
         public void GetLocalForIPv6LoopbackAddressUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.IPv6Loopback);
             Assert.Equal(IPAddress.IPv6Loopback, localAddress);
 
-            Console.WriteLine($"Local address {localAddress}.");
+            logger.LogDebug($"Local address {localAddress}.");
         }
 
         /// <summary>
@@ -86,13 +94,13 @@ namespace SIPSorcery.Sys.UnitTests
         [Trait("Category", "IPv6")]
         public void GetLocalIPv6AddressUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("fe80::54a9:d238:b2ee:abc"));
 
             Assert.NotNull(localAddress);
 
-            Console.WriteLine($"Local address {localAddress}.");
+            logger.LogDebug($"Local address {localAddress}.");
         }
 
         /// <summary>
@@ -103,12 +111,12 @@ namespace SIPSorcery.Sys.UnitTests
         //[Ignore] // Only works if machine running the test has a public IPv6 address assigned.
         public void GetLocalForInternetIPv6AdressUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("2606:db00:0:62b::2"));
             Assert.NotNull(localAddress);
 
-            Console.WriteLine($"Local address {localAddress}.");
+            logger.LogDebug($"Local address {localAddress}.");
         }
 
         /// <summary>
@@ -117,14 +125,14 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetAllLocalIPAddressesUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddresses = NetServices.GetAllLocalIPAddresses();
             Assert.NotNull(localAddresses);
 
             foreach (var localAddress in localAddresses)
             {
-                Console.WriteLine($"Local address {localAddress}.");
+                logger.LogDebug($"Local address {localAddress}.");
             }
         }
 
@@ -134,12 +142,12 @@ namespace SIPSorcery.Sys.UnitTests
         [Fact]
         public void GetInternetAddressUnitTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localInternetAddresses = NetServices.GetLocalAddressForInternet();
             Assert.NotNull(localInternetAddresses);
 
-            Console.WriteLine($"Local Internet address {localInternetAddresses}.");
+            logger.LogDebug($"Local Internet address {localInternetAddresses}.");
         }
     }
 }

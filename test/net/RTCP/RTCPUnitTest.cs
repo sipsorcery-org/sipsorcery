@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -21,11 +22,18 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class RTCPReportUnitTest
     {
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public RTCPReportUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        {
+            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+        }
+
         /*			
         [Test]
         public void InitialSampleTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ushort syncSource = 1234;
             IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, 5060);
@@ -35,7 +43,7 @@ namespace SIPSorcery.Net.UnitTests
 
             report.AddSample(startSeqNum++, DateTime.Now, 100);
 
-            Console.WriteLine("Sample count = " + report.m_samples.Count + ".");
+            logger.LogDebug("Sample count = " + report.m_samples.Count + ".");
 
             Assert.True(report.TotalPackets == 1, "Incorrect number of packets in report.");
         }
@@ -44,7 +52,7 @@ namespace SIPSorcery.Net.UnitTests
         [Test]
         public void EmpytySampleTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ushort syncSource = 1234;
             IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, 5060);
@@ -59,26 +67,26 @@ namespace SIPSorcery.Net.UnitTests
 
             report.AddSample(startSeqNum++, DateTime.Now, 100);
 
-            Console.WriteLine("Sample count = " + report.m_samples.Count + ".");
+            logger.LogDebug("Sample count = " + report.m_samples.Count + ".");
 
             Thread.Sleep(300);
 
             report.AddSample(startSeqNum++, DateTime.Now, 100);
 
-            Console.WriteLine("Sample count = " + report.m_samples.Count + ".");
+            logger.LogDebug("Sample count = " + report.m_samples.Count + ".");
 
             Assert.True(report.m_samples.Count == 2, "Incorrect number of reports in the queue.");
 
             RTCPReport sample1 = report.GetNextSample();
             RTCPReport sample2 = report.GetNextSample();
 
-            Console.WriteLine("Sample1: " + sample1.SampleStartTime.ToString("mm:ss:fff") + " to " + sample1.SampleEndTime.ToString("mm:ss:fff"));
-            Console.WriteLine("Sample2: " + sample2.SampleStartTime.ToString("mm:ss:fff") + " to " + sample2.SampleEndTime.ToString("mm:ss:fff"));
+            logger.LogDebug("Sample1: " + sample1.SampleStartTime.ToString("mm:ss:fff") + " to " + sample1.SampleEndTime.ToString("mm:ss:fff"));
+            logger.LogDebug("Sample2: " + sample2.SampleStartTime.ToString("mm:ss:fff") + " to " + sample2.SampleEndTime.ToString("mm:ss:fff"));
 
             Assert.True(sample1.TotalPackets == 2, "Incorrect number of packets in sample1.");
             Assert.True(report.m_previousSample == null, "Previous sample should have been null after an empty sample.");
 
-            //Console.WriteLine("Sample count = " + report.m_samples.Count + ".");
+            //logger.LogDebug("Sample count = " + report.m_samples.Count + ".");
 
             report.AddSample(startSeqNum++, DateTime.Now, 100);
             report.AddSample(startSeqNum++, DateTime.Now, 100);
@@ -86,30 +94,30 @@ namespace SIPSorcery.Net.UnitTests
 
             Thread.Sleep(120);
 
-            Console.WriteLine("new sample");
+            logger.LogDebug("new sample");
 
             report.AddSample(startSeqNum++, DateTime.Now, 100);
             report.AddSample(startSeqNum++, DateTime.Now, 100);
 
             Thread.Sleep(120);
 
-            Console.WriteLine("new sample");
+            logger.LogDebug("new sample");
 
             report.AddSample(startSeqNum++, DateTime.Now, 100);
 
-            Console.WriteLine("Sample count = " + report.m_samples.Count + ".");
+            logger.LogDebug("Sample count = " + report.m_samples.Count + ".");
 
             sample1 = report.GetNextSample();
 
-            Console.WriteLine("Sample1: " + sample1.SampleStartTime.ToString("mm:ss:fff") + " to " + sample1.SampleEndTime.ToString("mm:ss:fff"));
-            Console.WriteLine(sample1.StartSequenceNumber + " to " + sample1.EndSequenceNumber);
+            logger.LogDebug("Sample1: " + sample1.SampleStartTime.ToString("mm:ss:fff") + " to " + sample1.SampleEndTime.ToString("mm:ss:fff"));
+            logger.LogDebug(sample1.StartSequenceNumber + " to " + sample1.EndSequenceNumber);
         }
 
 
         [Test]
         public void DropTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ushort syncSource = 1234;
             IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, 5060);
@@ -124,7 +132,7 @@ namespace SIPSorcery.Net.UnitTests
 
             report.AddSample(seqNum, DateTime.Now, 100);
 
-            Console.WriteLine("total packets = " + report.TotalPackets + ", outoforder = " + report.OutOfOrderPackets + ", drop " + report.PacketsLost + "."); 
+            logger.LogDebug("total packets = " + report.TotalPackets + ", outoforder = " + report.OutOfOrderPackets + ", drop " + report.PacketsLost + "."); 
 
             Assert.True(report.TotalPackets == 2, "Incorrect packet count in sample.");
             Assert.True(report.PacketsLost == 1, "Incorrect dropped packet count.");	
@@ -140,7 +148,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(report.m_samples.Count == 1, "Queue size was incorrect.");
 
             RTCPReport sample1 = report.GetNextSample();
-            Console.WriteLine("Packets lost = " + sample1.PacketsLost);
+            logger.LogDebug("Packets lost = " + sample1.PacketsLost);
 
             Assert.True(sample1.PacketsLost == 1, "Packets lost count was incorrect.");
         }
@@ -148,7 +156,7 @@ namespace SIPSorcery.Net.UnitTests
         [Test]
         public void OutOfOrderTest()
         {
-            Console.WriteLine("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ushort syncSource = 1234;
             IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, 5060);
@@ -164,7 +172,7 @@ namespace SIPSorcery.Net.UnitTests
             report.AddSample(seqNum, DateTime.Now, 100);
             report.AddSample(Convert.ToUInt16(seqNum-1), DateTime.Now, 100);
 
-            Console.WriteLine("total packets = " + report.TotalPackets + ", outoforder = " + report.OutOfOrderPackets + "."); 
+            logger.LogDebug("total packets = " + report.TotalPackets + ", outoforder = " + report.OutOfOrderPackets + "."); 
 
             Assert.True(report.TotalPackets == 3, "Incorrect packet count in sample.");
             Assert.True(report.OutOfOrderPackets == 2, "Incorrect outoforder packet count.");	
@@ -174,7 +182,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GetRTCPHeaderTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPHeader rtcpHeader = new RTCPHeader();
             byte[] headerBuffer = rtcpHeader.GetHeader(0, 0);
@@ -182,7 +190,7 @@ namespace SIPSorcery.Net.UnitTests
             int byteNum = 1;
             foreach (byte headerByte in headerBuffer)
             {
-                Console.WriteLine(byteNum + ": " + headerByte.ToString("x"));
+                logger.LogDebug(byteNum + ": " + headerByte.ToString("x"));
                 byteNum++;
             }
         }
@@ -190,19 +198,19 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void RTCPHeaderRoundTripTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPHeader src = new RTCPHeader();
             byte[] headerBuffer = src.GetHeader(17, 54443);
             RTCPHeader dst = new RTCPHeader(headerBuffer);
 
-            Console.WriteLine("Version: " + src.Version + ", " + dst.Version);
-            Console.WriteLine("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
-            Console.WriteLine("ReceptionReportCount: " + src.ReceptionReportCount + ", " + dst.ReceptionReportCount);
-            Console.WriteLine("PacketType: " + src.PacketType + ", " + dst.PacketType);
-            Console.WriteLine("Length: " + src.Length + ", " + dst.Length);
+            logger.LogDebug("Version: " + src.Version + ", " + dst.Version);
+            logger.LogDebug("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
+            logger.LogDebug("ReceptionReportCount: " + src.ReceptionReportCount + ", " + dst.ReceptionReportCount);
+            logger.LogDebug("PacketType: " + src.PacketType + ", " + dst.PacketType);
+            logger.LogDebug("Length: " + src.Length + ", " + dst.Length);
 
-            //Console.WriteLine("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
+            //logger.LogDebug("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
 
             Assert.True(src.Version == dst.Version, "Version was mismatched.");
             Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
@@ -215,7 +223,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void GetHeaderTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader rtpHeader = new RTPHeader();
             byte[] headerBuffer = rtpHeader.GetHeader(1, 0, 1);
@@ -223,7 +231,7 @@ namespace SIPSorcery.Net.UnitTests
             int byteNum = 1;
             foreach (byte headerByte in headerBuffer)
             {
-                Console.WriteLine(byteNum + ": " + headerByte.ToString("x"));
+                logger.LogDebug(byteNum + ": " + headerByte.ToString("x"));
                 byteNum++;
             }
         }
@@ -231,23 +239,23 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void HeaderRoundTripTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader src = new RTPHeader();
             byte[] headerBuffer = src.GetHeader(1, 0, 1);
             RTPHeader dst = new RTPHeader(headerBuffer);
 
-            Console.WriteLine("Versions: " + src.Version + ", " + dst.Version);
-            Console.WriteLine("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
-            Console.WriteLine("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
-            Console.WriteLine("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
-            Console.WriteLine("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
-            Console.WriteLine("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
-            Console.WriteLine("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
-            Console.WriteLine("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
-            Console.WriteLine("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
+            logger.LogDebug("Versions: " + src.Version + ", " + dst.Version);
+            logger.LogDebug("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
+            logger.LogDebug("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
+            logger.LogDebug("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
+            logger.LogDebug("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
+            logger.LogDebug("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
+            logger.LogDebug("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
+            logger.LogDebug("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
+            logger.LogDebug("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
 
-            Console.WriteLine("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
+            logger.LogDebug("Raw Header: " + System.Text.Encoding.ASCII.GetString(headerBuffer, 0, headerBuffer.Length));
 
             Assert.True(src.Version == dst.Version, "Version was mismatched.");
             Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
@@ -263,7 +271,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void CustomisedHeaderRoundTripTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader src = new RTPHeader();
             src.Version = 3;
@@ -277,15 +285,15 @@ namespace SIPSorcery.Net.UnitTests
 
             RTPHeader dst = new RTPHeader(headerBuffer);
 
-            Console.WriteLine("Versions: " + src.Version + ", " + dst.Version);
-            Console.WriteLine("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
-            Console.WriteLine("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
-            Console.WriteLine("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
-            Console.WriteLine("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
-            Console.WriteLine("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
-            Console.WriteLine("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
-            Console.WriteLine("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
-            Console.WriteLine("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
+            logger.LogDebug("Versions: " + src.Version + ", " + dst.Version);
+            logger.LogDebug("PaddingFlag: " + src.PaddingFlag + ", " + dst.PaddingFlag);
+            logger.LogDebug("HeaderExtensionFlag: " + src.HeaderExtensionFlag + ", " + dst.HeaderExtensionFlag);
+            logger.LogDebug("CSRCCount: " + src.CSRCCount + ", " + dst.CSRCCount);
+            logger.LogDebug("MarkerBit: " + src.MarkerBit + ", " + dst.MarkerBit);
+            logger.LogDebug("PayloadType: " + src.PayloadType + ", " + dst.PayloadType);
+            logger.LogDebug("SequenceNumber: " + src.SequenceNumber + ", " + dst.SequenceNumber);
+            logger.LogDebug("Timestamp: " + src.Timestamp + ", " + dst.Timestamp);
+            logger.LogDebug("SyncSource: " + src.SyncSource + ", " + dst.SyncSource);
 
             string rawHeader = null;
             foreach (byte headerByte in headerBuffer)
@@ -293,7 +301,7 @@ namespace SIPSorcery.Net.UnitTests
                 rawHeader += headerByte.ToString("x");
             }
 
-            Console.WriteLine("Raw Header: " + rawHeader);
+            logger.LogDebug("Raw Header: " + rawHeader);
 
             Assert.True(src.Version == dst.Version, "Version was mismatched.");
             Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");
@@ -309,7 +317,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseRawRtpTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rtpBytes = new byte[] {
                 0x80, 0x88, 0xe6, 0xfd, 0x00, 0x00, 0x00, 0xf0, 0xde, 0xe0, 0xee, 0x8f,
@@ -331,7 +339,7 @@ namespace SIPSorcery.Net.UnitTests
         [Fact]
         public void ParseRawRtpWithExtensionTest()
         {
-            Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rtpBytes = new byte[] {
                 0x90, 0x88, 0xe6, 0xfd,
