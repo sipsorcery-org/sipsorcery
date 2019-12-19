@@ -62,7 +62,7 @@ namespace SIPSorcery.SoftPhone
         {
             InitializeComponent();
 
-            // Do some UI initialisation.
+            // Do some UI initialization.
             ResetToCallStartState(null);
 
             _sipTransportManager = new SIPTransportManager();
@@ -135,7 +135,7 @@ namespace SIPSorcery.SoftPhone
             Task.Run(() =>
             {
                 _mediaManager = new MediaManager(this);
-                logger.Debug("Media Manager Initialised.");
+                logger.Debug("Media Manager Initialized.");
                 _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
                 _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
                 _mediaManager.OnLocalVideoError += LocalVideoError;
@@ -197,7 +197,7 @@ namespace SIPSorcery.SoftPhone
             });
         }
 
-        private void VideoDeviceChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void VideoDeviceChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems != null && e.AddedItems.Count > 0)
             {
@@ -213,9 +213,9 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void ResetToCallStartState(SIPClient sipClient)
         {
-            if (sipClient != null && sipClient.RtpSession != null)
+            if (sipClient?.MediaSession != null)
             {
-                sipClient.RtpSession.OnReceivedSampleReady -= RemoteAudioSampleReceived;
+                sipClient.MediaSession.OnReceivedSampleReady -= RemoteAudioSampleReceived;
             }
 
             if (sipClient == null || sipClient == _sipClients[0])
@@ -303,13 +303,13 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
-        /// Set up the UI to present options for an establisehd SIP call, i.e. hide the cancel 
+        /// Set up the UI to present options for an established SIP call, i.e. hide the cancel 
         /// button and display they hangup button.
         /// </summary>
         private void SIPCallAnswered(SIPClient client)
         {
             _mediaManager.StartAudio();
-            client.RtpSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
+            client.MediaSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
 
             if (client == _sipClients[0])
             {
@@ -424,7 +424,6 @@ namespace SIPSorcery.SoftPhone
         private void ByeButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             var client = (sender == m_byeButton) ? _sipClients[0] : _sipClients[1];
-            client.RtpSession.OnReceivedSampleReady -= RemoteAudioSampleReceived;
             client.Hangup();
 
             ResetToCallStartState(client);
@@ -438,7 +437,7 @@ namespace SIPSorcery.SoftPhone
             var client = (sender == m_answerButton) ? _sipClients[0] : _sipClients[1];
 
             client.Answer();
-            client.RtpSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
+            client.MediaSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
             _mediaManager.StartAudio();
 
             if (client == _sipClients[0])
@@ -785,7 +784,7 @@ namespace SIPSorcery.SoftPhone
         {
             foreach (SIPClient client in _sipClients.Where(x => x.IsCallActive))
             {
-                client.RtpSession?.SendAudioFrame(client.AudioTimestamp, sample);
+                client.MediaSession?.SendAudioFrame(client.AudioTimestamp, sample);
                 client.AudioTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
             }
         }

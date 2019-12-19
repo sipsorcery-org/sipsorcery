@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.SIP.App.Media;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone
@@ -55,9 +56,17 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// The RTP session associated with this client.
         /// </summary>
-        public RTPSession RtpSession
+        public IMediaSession MediaSession
         {
-            get { return m_userAgent.RtpSession; }
+            get { return m_userAgent.MediaSession; }
+        }
+
+        /// <summary>
+        /// The RTP session associated with this client.
+        /// </summary>
+        public RTPMediaSession RtpSession
+        {
+            get { return (RTPMediaSession)MediaSession; }
         }
 
         /// <summary>
@@ -79,7 +88,7 @@ namespace SIPSorcery.SoftPhone
         public SIPClient(SIPTransport sipTransport)
         {
             m_sipTransport = sipTransport;
-            m_userAgent = new SIPUserAgent(m_sipTransport, null);
+            m_userAgent = new SIPUserAgent(m_sipTransport, null, new SoftPhoneMediaSessionFactory());
             m_userAgent.ClientCallTrying += CallTrying;
             m_userAgent.ClientCallRinging += CallRinging;
             m_userAgent.ClientCallAnswered += CallAnswered;
@@ -212,16 +221,16 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         /// <param name="destination">The SIP URI of the blind transfer destination.</param>
         /// <returns>True if the transfer was accepted or false if not.</returns>
-        public async Task<bool> BlindTransfer(string destination)
+        public Task<bool> BlindTransfer(string destination)
         {
             if (SIPURI.TryParse(destination, out var uri))
             {
-                return await m_userAgent.BlindTransfer(uri, TimeSpan.FromSeconds(TRANSFER_RESPONSE_TIMEOUT_SECONDS), _cts.Token);
+                return m_userAgent.BlindTransfer(uri, TimeSpan.FromSeconds(TRANSFER_RESPONSE_TIMEOUT_SECONDS), _cts.Token);
             }
             else
             {
                 StatusMessage(this, $"The transfer destination was not a valid SIP URI.");
-                return false;
+                return Task.FromResult(false);
             }
         }
 
@@ -230,9 +239,9 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         /// <param name="transferee">The dialog that will be replaced on the initial call party.</param>
         /// <returns>True if the transfer was accepted or false if not.</returns>
-        public async Task<bool> AttendedTransfer(SIPDialogue transferee)
+        public Task<bool> AttendedTransfer(SIPDialogue transferee)
         {
-            return await m_userAgent.AttendedTransfer(transferee, TimeSpan.FromSeconds(TRANSFER_RESPONSE_TIMEOUT_SECONDS), _cts.Token);
+            return m_userAgent.AttendedTransfer(transferee, TimeSpan.FromSeconds(TRANSFER_RESPONSE_TIMEOUT_SECONDS), _cts.Token);
         }
 
         /// <summary>
@@ -261,14 +270,14 @@ namespace SIPSorcery.SoftPhone
         /// Sends a DTMF event to the remote call party.
         /// </summary>
         /// <param name="key">The key for the event to send. Can only be 0 to 9, * and #.</param>
-        public async Task SendDTMF(byte key)
+        public Task SendDTMF(byte key)
         {
             if (m_userAgent.IsCallActive)
             {
-                CancellationTokenSource cts = new CancellationTokenSource();
-                var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
-                await m_userAgent.RtpSession.SendDtmfEvent(dtmfEvent, cts);
+                return m_userAgent.MediaSession.SendDtmf(key, _cts.Token);
             }
+
+            return Task.FromResult(true);
         }
 
         /// <summary>
@@ -336,7 +345,7 @@ namespace SIPSorcery.SoftPhone
                 if (sipResponse.Header.ContentType != _sdpMimeContentType)
                 {
                     // Payload not SDP, I don't understand :(.
-                    StatusMessage(this, "Call was hungup as the answer response content type was not recognised: " + sipResponse.Header.ContentType + ". :(");
+                    StatusMessage(this, "Call was hungup as the answer response content type was not recognized: " + sipResponse.Header.ContentType + ". :(");
                     Hangup();
                 }
                 else if (sipResponse.Body.IsNullOrBlank())
@@ -347,7 +356,7 @@ namespace SIPSorcery.SoftPhone
                 }
                 else
                 {
-                    CallAnswer(this);
+                    CallAnswer?.Invoke(this);
                 }
             }
             else
@@ -389,7 +398,7 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 Match statusCodeMatch = Regex.Match(sipFrag, @"^SIP/2\.0 (?<statusCode>\d{3})");
-                if(statusCodeMatch.Success)
+                if (statusCodeMatch.Success)
                 {
                     int statusCode = Int32.Parse(statusCodeMatch.Result("${statusCode}"));
                     SIPResponseStatusCodesEnum responseStatusCode = (SIPResponseStatusCodesEnum)statusCode;
