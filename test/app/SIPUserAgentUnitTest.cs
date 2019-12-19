@@ -27,12 +27,14 @@ namespace SIPSorcery.SIP.App.UnitTests
     [Trait("Category", "unit")]
     public class SIPUserAgentUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public SIPUserAgentUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
+
+        private string m_CRLF = SIPConstants.CRLF;
 
         /// <summary>
         /// Tests that the Blind Transfer function doesn't do anything unexpected. The transfer
@@ -42,38 +44,39 @@ namespace SIPSorcery.SIP.App.UnitTests
         public async void BlindTransferUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
 
             SIPUserAgent userAgent = new SIPUserAgent(transport, null);
 
-            string inviteReqStr = @"INVITE sip:192.168.11.50:5060 SIP/2.0
-Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3691
-To: <sip:2@192.168.11.50>;tag=ZUJSXRRGXQ
-From: <sip:aaron@192.168.11.50>;tag=4a60ce364b774258873ff199e5e39938
-Call-ID: 17324d6df8744d978008c8997bfd208d
-CSeq: 3532 INVITE
-Contact: <sip:aaron@192.168.11.50:60163;ob>
-Max-Forwards: 70
-User-Agent: MicroSIP/3.19.22
-Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, INFO, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
-Supported: replaces, 100rel, timer, norefersub
-Content-Length: 343
-Content-Type: application/sdp
-Session-Expires: 1800
-Min-SE: 90
-
-v=0
-o=- 3785527268 3785527269 IN IP4 192.168.11.50
-s=pjmedia
-t=0 0
-m=audio 4032 RTP/AVP 0 101
-c=IN IP4 192.168.11.50
-a=rtpmap:0 PCMU/8000
-a=rtpmap:101 telephone-event/8000
-a=fmtp:101 0-16
-a=sendrecv";
+            string inviteReqStr = "INVITE sip:192.168.11.50:5060 SIP/2.0" + m_CRLF +
+"Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3691" + m_CRLF +
+"To: <sip:2@192.168.11.50>;tag=ZUJSXRRGXQ" + m_CRLF +
+"From: <sip:aaron@192.168.11.50>;tag=4a60ce364b774258873ff199e5e39938" + m_CRLF +
+"Call-ID: 17324d6df8744d978008c8997bfd208d" + m_CRLF +
+"CSeq: 3532 INVITE" + m_CRLF +
+"Contact: <sip:aaron@192.168.11.50:60163;ob>" + m_CRLF +
+"Max-Forwards: 70" + m_CRLF +
+"User-Agent: MicroSIP/3.19.22" + m_CRLF +
+"Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, INFO, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS" + m_CRLF +
+"Supported: replaces, 100rel, timer, norefersub" + m_CRLF +
+"Content-Length: 343" + m_CRLF +
+"Content-Type: application/sdp" + m_CRLF +
+"Session-Expires: 1800" + m_CRLF +
+"Min-SE: 90" + m_CRLF +
+"" + m_CRLF +
+"v=0" + m_CRLF +
+"o=- 3785527268 3785527269 IN IP4 192.168.11.50" + m_CRLF +
+"s=pjmedia" + m_CRLF +
+"t=0 0" + m_CRLF +
+"m=audio 4032 RTP/AVP 0 101" + m_CRLF +
+"c=IN IP4 192.168.11.50" + m_CRLF +
+"a=rtpmap:0 PCMU/8000" + m_CRLF +
+"a=rtpmap:101 telephone-event/8000" + m_CRLF +
+"a=fmtp:101 0-16" + m_CRLF +
+"a=sendrecv";
 
             SIPEndPoint dummySipEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummySipEndPoint, dummySipEndPoint);
@@ -96,38 +99,39 @@ a=sendrecv";
         public void BlindTransferCancelUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
 
             SIPUserAgent userAgent = new SIPUserAgent(transport, null);
 
-            string inviteReqStr = @"INVITE sip:192.168.11.50:5060 SIP/2.0
-Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3691
-To: <sip:2@192.168.11.50>;tag=ZUJSXRRGXQ
-From: <sip:aaron@192.168.11.50>;tag=4a60ce364b774258873ff199e5e39938
-Call-ID: 17324d6df8744d978008c8997bfd208d
-CSeq: 3532 INVITE
-Contact: <sip:aaron@192.168.11.50:60163;ob>
-Max-Forwards: 70
-User-Agent: MicroSIP/3.19.22
-Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, INFO, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
-Supported: replaces, 100rel, timer, norefersub
-Content-Length: 343
-Content-Type: application/sdp
-Session-Expires: 1800
-Min-SE: 90
-
-v=0
-o=- 3785527268 3785527269 IN IP4 192.168.11.50
-s=pjmedia
-t=0 0
-m=audio 4032 RTP/AVP 0 101
-c=IN IP4 192.168.11.50
-a=rtpmap:0 PCMU/8000
-a=rtpmap:101 telephone-event/8000
-a=fmtp:101 0-16
-a=sendrecv";
+            string inviteReqStr = "INVITE sip:192.168.11.50:5060 SIP/2.0" + m_CRLF +
+"Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3691" + m_CRLF +
+"To: <sip:2@192.168.11.50>;tag=ZUJSXRRGXQ" + m_CRLF +
+"From: <sip:aaron@192.168.11.50>;tag=4a60ce364b774258873ff199e5e39938" + m_CRLF +
+"Call-ID: 17324d6df8744d978008c8997bfd208d" + m_CRLF +
+"CSeq: 3532 INVITE" + m_CRLF +
+"Contact: <sip:aaron@192.168.11.50:60163;ob>" + m_CRLF +
+"Max-Forwards: 70" + m_CRLF +
+"User-Agent: MicroSIP/3.19.22" + m_CRLF +
+"Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, INFO, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS" + m_CRLF +
+"Supported: replaces, 100rel, timer, norefersub" + m_CRLF +
+"Content-Length: 343" + m_CRLF +
+"Content-Type: application/sdp" + m_CRLF +
+"Session-Expires: 1800" + m_CRLF +
+"Min-SE: 90" + m_CRLF +
+"" + m_CRLF +
+"v=0" + m_CRLF +
+"o=- 3785527268 3785527269 IN IP4 192.168.11.50" + m_CRLF +
+"s=pjmedia" + m_CRLF +
+"t=0 0" + m_CRLF +
+"m=audio 4032 RTP/AVP 0 101" + m_CRLF +
+"c=IN IP4 192.168.11.50" + m_CRLF +
+"a=rtpmap:0 PCMU/8000" + m_CRLF +
+"a=rtpmap:101 telephone-event/8000" + m_CRLF +
+"a=fmtp:101 0-16" + m_CRLF +
+"a=sendrecv";
 
             SIPEndPoint dummySipEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummySipEndPoint, dummySipEndPoint);
@@ -152,6 +156,7 @@ a=sendrecv";
         public void HangupUserAgentUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             // NOTE: For this test to work the transport layer must be instantiated with the queue incoming
             // flag set to false. That has the effect of getting the mockChannel.FireMessageReceived to flow
@@ -162,32 +167,32 @@ a=sendrecv";
 
             SIPUserAgent userAgent = new SIPUserAgent(transport, null);
 
-            string inviteReqStr = @"INVITE sip:192.168.11.50:5060 SIP/2.0
-Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3691
-To: <sip:2@192.168.11.50>;tag=ZUJSXRRGXQ
-From: <sip:aaron@192.168.11.50>;tag=4a60ce364b774258873ff199e5e39938
-Call-ID: 17324d6df8744d978008c8997bfd208d
-CSeq: 3532 INVITE
-Contact: <sip:aaron@192.168.11.50:60163;ob>
-Max-Forwards: 70
-User-Agent: MicroSIP/3.19.22
-Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, INFO, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
-Supported: replaces, 100rel, timer, norefersub
-Content-Length: 343
-Content-Type: application/sdp
-Session-Expires: 1800
-Min-SE: 90
-
-v=0
-o=- 3785527268 3785527269 IN IP4 192.168.11.50
-s=pjmedia
-t=0 0
-m=audio 4032 RTP/AVP 0 101
-c=IN IP4 192.168.11.50
-a=rtpmap:0 PCMU/8000
-a=rtpmap:101 telephone-event/8000
-a=fmtp:101 0-16
-a=sendrecv";
+            string inviteReqStr = "INVITE sip:192.168.11.50:5060 SIP/2.0" + m_CRLF +
+"Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3691" + m_CRLF +
+"To: <sip:2@192.168.11.50>;tag=ZUJSXRRGXQ" + m_CRLF +
+"From: <sip:aaron@192.168.11.50>;tag=4a60ce364b774258873ff199e5e39938" + m_CRLF +
+"Call-ID: 17324d6df8744d978008c8997bfd208d" + m_CRLF +
+"CSeq: 3532 INVITE" + m_CRLF +
+"Contact: <sip:aaron@192.168.11.50:60163;ob>" + m_CRLF +
+"Max-Forwards: 70" + m_CRLF +
+"User-Agent: MicroSIP/3.19.22" + m_CRLF +
+"Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, INFO, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS" + m_CRLF +
+"Supported: replaces, 100rel, timer, norefersub" + m_CRLF +
+"Content-Length: 343" + m_CRLF +
+"Content-Type: application/sdp" + m_CRLF +
+"Session-Expires: 1800" + m_CRLF +
+"Min-SE: 90" + m_CRLF +
+"" + m_CRLF +
+"v=0" + m_CRLF +
+"o=- 3785527268 3785527269 IN IP4 192.168.11.50" + m_CRLF +
+"s=pjmedia" + m_CRLF +
+"t=0 0" + m_CRLF +
+"m=audio 4032 RTP/AVP 0 101" + m_CRLF +
+"c=IN IP4 192.168.11.50" + m_CRLF +
+"a=rtpmap:0 PCMU/8000" + m_CRLF +
+"a=rtpmap:101 telephone-event/8000" + m_CRLF +
+"a=fmtp:101 0-16" + m_CRLF +
+"a=sendrecv";
 
             SIPEndPoint dummySipEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 0));
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummySipEndPoint, dummySipEndPoint);
@@ -198,18 +203,18 @@ a=sendrecv";
             userAgent.Answer(mockUas);
 
             // Incremented Cseq and modified Via header from original request. Means the request is the same dialog but different tx.
-            string inviteReqStr2 = @"BYE sip:192.168.11.50:5060 SIP/2.0
-Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3700
-To: <sip:2@192.168.11.50>;tag=ZUJSXRRGXQ
-From: <sip:aaron@192.168.11.50>;tag=4a60ce364b774258873ff199e5e39938
-Call-ID: 17324d6df8744d978008c8997bfd208d
-CSeq: 3533 BYE
-Contact: <sip:aaron@192.168.11.50:60163;ob>
-Max-Forwards: 70
-User-Agent: MicroSIP/3.19.22
-Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, INFO, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
-Supported: replaces, 100rel, timer, norefersub
-";
+            string inviteReqStr2 = "BYE sip:192.168.11.50:5060 SIP/2.0" + m_CRLF +
+"Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3700" + m_CRLF +
+"To: <sip:2@192.168.11.50>;tag=ZUJSXRRGXQ" + m_CRLF +
+"From: <sip:aaron@192.168.11.50>;tag=4a60ce364b774258873ff199e5e39938" + m_CRLF +
+"Call-ID: 17324d6df8744d978008c8997bfd208d" + m_CRLF +
+"CSeq: 3533 BYE" + m_CRLF +
+"Contact: <sip:aaron@192.168.11.50:60163;ob>" + m_CRLF +
+"Max-Forwards: 70" + m_CRLF +
+"User-Agent: MicroSIP/3.19.22" + m_CRLF +
+"Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, INFO, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS" + m_CRLF +
+"Supported: replaces, 100rel, timer, norefersub" + m_CRLF +
+"";
 
             mockChannel.FireMessageReceived(dummySipEndPoint, dummySipEndPoint, Encoding.UTF8.GetBytes(inviteReqStr2));
         }

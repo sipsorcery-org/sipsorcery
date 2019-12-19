@@ -25,17 +25,21 @@ namespace SIPSorcery.UnitTests
 {
     public class TestLogHelper
     {
-        public static void InitTestLogger(Xunit.Abstractions.ITestOutputHelper output)
+        public static Microsoft.Extensions.Logging.ILogger InitTestLogger(Xunit.Abstractions.ITestOutputHelper output)
         {
+            string template = "{Timestamp:yyyy-MM-dd HH:mm:ss.ffff} [{Level}] {Scope} {Message}{NewLine}{Exception}";
+            //string template = "{Timestamp:yyyy-MM-dd HH:mm:ss.ffff} [{Level}] ({ThreadId:000}){Scope} {Message}{NewLine}{Exception}";
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
             var loggerConfig = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
-                .WriteTo.TestOutput(output, Serilog.Events.LogEventLevel.Verbose)
-                .WriteTo.Console(Serilog.Events.LogEventLevel.Verbose)
+                .Enrich.WithProperty("ThreadId",System.Threading.Thread.CurrentThread.ManagedThreadId)
+                .WriteTo.TestOutput(output, outputTemplate: template)
+                .WriteTo.Console(outputTemplate: template)
                 .CreateLogger();
             loggerFactory.AddSerilog(loggerConfig);
 
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            return SIPSorcery.Sys.Log.Logger;
         }
     }
 

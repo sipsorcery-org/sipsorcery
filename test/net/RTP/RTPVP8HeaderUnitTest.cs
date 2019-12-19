@@ -18,11 +18,11 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class RTPVP8HeaderUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public RTPVP8HeaderUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         /// <summary>
@@ -32,6 +32,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GeIntermediateFrameHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPVP8Header rtpVP8Header = new RTPVP8Header()
             {
@@ -51,6 +52,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseKnownVP8HeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rawHeader = new byte[] { 0x90, 0x80, 0x00, 0x30, 0xd4, 0x00 };
 
@@ -73,6 +75,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ReversePartitionSizeTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPVP8Header rtpVP8Header = new RTPVP8Header()
             {
@@ -94,6 +97,7 @@ namespace SIPSorcery.Net.UnitTests
         public void CheckLengthForTwoBytePicutreIDTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rawHeader = new byte[] { 0x80, 0x80, 0x80, 0x01 };
 
@@ -109,6 +113,7 @@ namespace SIPSorcery.Net.UnitTests
         public void CheckLengthForSingleBytePicutreIDTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rawHeader = new byte[] { 0x80, 0x80, 0x7F };
 

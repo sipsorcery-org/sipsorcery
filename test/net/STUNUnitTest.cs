@@ -19,17 +19,18 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class STUNUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public STUNUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         [Fact]
         public void ParseAsteriskSTUNRequestTestMethod()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] stunReq = new byte[]{ 0x00, 0x01, 0x00, 0x24, 0x0d, 0x69, 0x62, 0x59, 0xac, 0xdb, 0xf4, 0x1d, 0x6d, 0x46, 0xdd, 0x5b,
                                          0xf3, 0x04, 0x6a, 0x30, 0x00, 0x06, 0x00, 0x20, 0x69, 0x59, 0x6d, 0x71, 0x52, 0x33, 0x51, 0x46,
@@ -49,6 +50,7 @@ namespace SIPSorcery.Net.UnitTests
         public void STUNWithUsernameToBytesUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             STUNMessage initMessage = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
             initMessage.AddUsernameAttribute("someusername");
@@ -61,6 +63,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseSTUNResponseTestMethod()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] stunResp = new byte[]{ 0x01, 0x01, 0x00, 0x30, 0x73, 0x63, 0x78, 0x30, 0x46, 0x4f, 0x41, 0x64, 0x69, 0x30,
                 0x79, 0x52, 0x5a, 0x51, 0x42, 0x50, 0x00, 0x06, 0x00, 0x20, 0x37, 0x39, 0x30, 0x32, 0x30, 0x33, 0x65, 0x37, 0x34,

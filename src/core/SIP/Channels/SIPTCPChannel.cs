@@ -143,12 +143,12 @@ namespace SIPSorcery.SIP
                     Port = (m_tcpServerListener.Server.LocalEndPoint as IPEndPoint).Port;
                 }
 
-                m_localTCPSockets.Add(listenEndPoint.ToString());
+                m_localTCPSockets.Add(ListeningEndPoint.ToString());
 
                 Task.Run((Action)AcceptConnections);
                 Task.Run((Action)PruneConnections);
 
-                logger.LogInformation($"SIP {ProtDescr} Channel created for {listenEndPoint}.");
+                logger.LogInformation($"SIP {ProtDescr} Channel created for {ListeningEndPoint}.");
             }
             catch (Exception excp)
             {
