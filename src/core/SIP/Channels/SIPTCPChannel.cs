@@ -432,16 +432,18 @@ namespace SIPSorcery.SIP
         /// Attempts to send data to the remote end point over a reliable connection. If an existing
         /// connection exists it will be used otherwise an attempt will be made to establish a new connection.
         /// </summary>
-        /// <param name="dstEndPoint">The remote end point to send the reliable data to.</param>
+        /// <param name="dstSIPEndPoint">The remote SIP end point to send the reliable data to.</param>
         /// <param name="buffer">The data to send.</param>
         /// <param name="serverCertificateName">Optional. Only relevant for SSL streams. The common name
         /// that is expected for the remote SSL server.</param>
         /// <param name="connectionIDHint">Optional. The ID of the specific TCP connection to try and the send the message on.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
+        public override Task<SocketError> SendSecureAsync(SIPEndPoint dstSIPEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             try
             {
+                IPEndPoint dstEndPoint = dstSIPEndPoint?.GetIPEndPoint();
+
                 if (dstEndPoint == null)
                 {
                     throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in SIPTCPChannel.");
@@ -465,7 +467,7 @@ namespace SIPSorcery.SIP
                         m_connections.TryGetValue(connectionIDHint, out sipStreamConn);
                     }
 
-                    if (sipStreamConn == null && HasConnection(dstEndPoint))
+                    if (sipStreamConn == null && HasConnection(dstSIPEndPoint))
                     {
                         sipStreamConn = m_connections.Where(x => x.Value.RemoteEndPoint.Equals(dstEndPoint)).First().Value;
                     }
@@ -477,7 +479,7 @@ namespace SIPSorcery.SIP
                     }
                     else
                     {
-                        return ConnectClientAsync(dstEndPoint.GetIPEndPoint(), buffer, serverCertificateName);
+                        return ConnectClientAsync(dstEndPoint, buffer, serverCertificateName);
                     }
                 }
             }
@@ -491,7 +493,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception (" + excp.GetType().ToString() + ") SIPTCPChannel Send (sendto=>" + dstEndPoint + "). " + excp.Message);
+                logger.LogError($"Exception SIPTCPChannel Send (sendto=> {dstSIPEndPoint}. {excp.Message}");
                 throw;
             }
         }

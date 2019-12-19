@@ -65,8 +65,8 @@ namespace SIPSorcery
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)));
-            sipTransport.AddSIPChannel(new SIPClientWebSocketChannel(true));
+            //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)));
+            //sipTransport.AddSIPChannel(new SIPClientWebSocketChannel());
 
             EnableTraceLogs(sipTransport);
 

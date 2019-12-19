@@ -150,10 +150,10 @@ namespace SIPSorcery
                             sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
                             break;
                         case SIPProtocolsEnum.ws:
-                            sipChannel = new SIPClientWebSocketChannel(false);
+                            sipChannel = new SIPClientWebSocketChannel();
                             break;
                         case SIPProtocolsEnum.wss:
-                            sipChannel = new SIPClientWebSocketChannel(true);
+                            sipChannel = new SIPClientWebSocketChannel();
                             break;
                         default:
                             throw new ApplicationException($"Don't know how to create SIP channel for transport {dstEp.Protocol}.");

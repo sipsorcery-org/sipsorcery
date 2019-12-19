@@ -43,8 +43,6 @@ namespace SIPSorcery.SIP
 
         private static SIPProtocolsEnum m_defaultSIPTransport = SIPProtocolsEnum.udp;
         private static SIPSchemesEnum m_defaultSIPScheme = SIPSchemesEnum.sip;
-        private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
-        private static int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
         private static string m_sipRegisterRemoveAll = SIPConstants.SIP_REGISTER_REMOVEALL;
         private static string m_uriParamTransportKey = SIPHeaderAncillary.SIP_HEADERANC_TRANSPORT;
 
@@ -126,7 +124,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    canonicalAddress += Host + ":" + m_defaultSIPPort;
+                    canonicalAddress += Host + ":" + SIPConstants.GetDefaultPort(Protocol);
                 }
 
                 return canonicalAddress;
@@ -505,16 +503,8 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    if (Protocol == SIPProtocolsEnum.tls)
-                    {
-                        ipEndPoint.Port = m_defaultSIPTLSPort;
-                        return new SIPEndPoint(Protocol, ipEndPoint);
-                    }
-                    else
-                    {
-                        ipEndPoint.Port = m_defaultSIPPort;
-                        return new SIPEndPoint(Protocol, ipEndPoint);
-                    }
+                    ipEndPoint.Port = SIPConstants.GetDefaultPort(Protocol);
+                    return new SIPEndPoint(Protocol, ipEndPoint);
                 }
             }
             else

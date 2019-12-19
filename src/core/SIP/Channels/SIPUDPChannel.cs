@@ -177,8 +177,6 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                IPEndPoint dstEndPoint = (IPEndPoint)ar.AsyncState;
-
                 int bytesSent = m_udpSocket.EndSendTo(ar);
             }
             catch (SocketException sockExcp)

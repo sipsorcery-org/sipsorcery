@@ -274,7 +274,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dst">The destination IP address.</param>
         /// <returns>The local IP address this channel selects to use for connecting to the destination.</returns>
-        private IPAddress GetLocalIPAddressForDestination(IPAddress dst)
+        protected IPAddress GetLocalIPAddressForDestination(IPAddress dst)
         {
             IPAddress localAddress = ListeningIPAddress;
 
@@ -288,13 +288,14 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Get the local SIPEndPoint this channel will use for communicating with the destination IP address,
+        /// Get the local SIPEndPoint this channel will use for communicating with the destination SIP end point.
         /// </summary>
-        /// <param name="dst">The destination IP address.</param>
+        /// <param name="dstEndPoint">The destination SIP end point.</param>
         /// <returns>The local SIP end points this channel selects to use for connecting to the destination.</returns>
-        internal SIPEndPoint GetLocalSIPEndPointForDestination(IPAddress dst)
+        internal virtual SIPEndPoint GetLocalSIPEndPointForDestination(SIPEndPoint dstEndPoint)
         {
-            IPAddress localAddress = GetLocalIPAddressForDestination(dst);
+            IPAddress dstAddress = dstEndPoint.GetIPEndPoint().Address;
+            IPAddress localAddress = GetLocalIPAddressForDestination(dstAddress);
             return new SIPEndPoint(SIPProtocol, localAddress, Port, ID, null);
         }
 
@@ -305,11 +306,11 @@ namespace SIPSorcery.SIP
         /// send to a desintation address on the internet will result in a different URI.
         /// </summary>
         /// <param name="scheme">The SIP scheme to use for the Contact URI.</param>
-        /// <param name="dst">The destination address the Contact URI is for. For a SIPChannel using
+        /// <param name="dstEndPoint">The destination SIP end point the Contact URI is for. For a SIPChannel using
         /// IPAddress.Any the desintation needs to be known so it can select the correct local address.</param>
-        public SIPURI GetContactURI(SIPSchemesEnum scheme, IPAddress dst)
+        public SIPURI GetContactURI(SIPSchemesEnum scheme, SIPEndPoint dstEndPoint)
         {
-            return new SIPURI(scheme, GetLocalSIPEndPointForDestination(dst));
+            return new SIPURI(scheme, GetLocalSIPEndPointForDestination(dstEndPoint));
         }
 
         /// <summary>

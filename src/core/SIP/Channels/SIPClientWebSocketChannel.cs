@@ -287,6 +287,20 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
+        /// Get the local SIPEndPoint this channel will use for communicating with the destination SIP end point.
+        /// </summary>
+        /// <param name="dstEndPoint">The destination SIP end point.</param>
+        /// <returns>The local SIP end points this channel selects to use for connecting to the destination.</returns>
+        internal override SIPEndPoint GetLocalSIPEndPointForDestination(SIPEndPoint dstEndPoint)
+        {
+            IPAddress dstAddress = dstEndPoint.GetIPEndPoint().Address;
+            IPAddress localAddress = GetLocalIPAddressForDestination(dstAddress);
+
+            // Need to return ws or wss to match the destination.
+            return new SIPEndPoint(dstEndPoint.Protocol, localAddress, Port, ID, null);
+        }
+
+        /// <summary>
         /// Closes all web socket connections.
         /// </summary>
         public override void Close()
