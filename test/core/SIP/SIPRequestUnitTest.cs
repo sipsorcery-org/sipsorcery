@@ -25,17 +25,18 @@ namespace SIPSorcery.SIP.UnitTests
     {
         private static string m_CRLF = SIPConstants.CRLF;
 
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public SIPRequestUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         [Fact]
         public void ParseXtenINVITEUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -86,6 +87,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void MalformedContactHeaderUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
             "REGISTER sip:sip.sipsorcery.com SIP/2.0" + m_CRLF +
@@ -109,6 +111,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseAsteriskACKUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "ACK sip:303@213.168.225.133 SIP/2.0" + m_CRLF +
@@ -138,6 +141,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseCiscoACKUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "ACK sip:303@213.168.225.133:5061 SIP/2.0" + m_CRLF +
@@ -170,6 +174,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseXtenByeUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "BYE sip:303@213.168.225.133 SIP/2.0" + m_CRLF +
@@ -199,6 +204,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseAsteriskBYEUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "BYE sip:bluesipd@192.168.1.2:5065 SIP/2.0" + m_CRLF +
@@ -228,6 +234,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void TopRouteUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "BYE sip:bluesipd@192.168.1.2:5065 SIP/2.0" + m_CRLF +
@@ -254,6 +261,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void SubscribeRequestUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SUBSCRIBE sip:0123456@127.0.0.1 SIP/2.0" + m_CRLF +
@@ -284,6 +292,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void SpaceInNamesRequestUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "REGISTER sip:Blue Face SIP/2.0" + m_CRLF +
@@ -313,6 +322,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void DodgyAastraRequestUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "REGISTER sip:sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -336,6 +346,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void NetgearInviteRequestUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:12345@sip.domain.com:5060;TCID-0 SIP/2.0" + m_CRLF +
@@ -381,6 +392,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void RTCRegisterRequestUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "REGISTER sip:sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -406,6 +418,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void CiscoRegisterRequest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "REGISTER sip:194.213.29.11 SIP/2.0" + m_CRLF +
@@ -428,6 +441,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AuthenticatedRegisterRequestUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "REGISTER sip:blueface.ie SIP/2.0" + m_CRLF +
@@ -462,6 +476,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void MicrosoftMessengerRegisterRequestUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "REGISTER sip:aaronmsn SIP/2.0" + m_CRLF +
@@ -487,6 +502,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void CreateBranchIdUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -520,6 +536,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void LoopDetectUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
                
             string sipMsg = 
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -552,6 +569,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void LooseRouteForProxyUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -584,6 +602,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void LooseRouteForProxyMultipleContactsUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -617,6 +636,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void LooseRouteNotForProxyUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -648,6 +668,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void StrictRoutePriorToProxyUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:82.195.148.216:5062;lr SIP/2.0" + m_CRLF +
@@ -684,6 +705,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void StrictRouteAfterProxyUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -721,6 +743,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void LooseRouteForProxyHostnameUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -753,6 +776,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void SpuriousStartCharsInResponseUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             // This is an example of a malformed response recieved in the wild. It matches the bnf format for a request,
             // if the format of the SIP URI is not taken into account.
@@ -779,6 +803,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void RegisterZeroExpiryUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "REGISTER sip:213.200.94.181 SIP/2.0" + m_CRLF +
@@ -804,6 +829,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AvayaInviteUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:194.213.29.100:5060 SIP/2.0" + m_CRLF +
@@ -864,6 +890,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void LocalphoneInviteUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:shebeen@sip.mysipswitch.com;switchtag=134308 SIP/2.0" + m_CRLF +
@@ -904,6 +931,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void MultipleRouteHeadersUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "BYE sip:bluesipd@192.168.1.2:5065 SIP/2.0" + m_CRLF +
@@ -945,6 +973,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void SinologicInvalidInviteUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "INVITE sip:0447507533@69.59.142.213 SIP/2.0" + m_CRLF +
@@ -972,6 +1001,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseACKWithDomainNameInViaTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "ACK sip:67.222.131.147 SIP/2.0" + m_CRLF +
@@ -1000,26 +1030,27 @@ namespace SIPSorcery.SIP.UnitTests
         public void ToStringSerialisationTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
             SIPRequest registerRequest = SIPRequest.GetRequest(SIPMethodsEnum.REGISTER, uri);
             registerRequest.Header.Vias.TopViaHeader.Branch = "z9hG4bKb4313133e5fe42da87034c2b22ac2aab";
             registerRequest.Header.From.FromTag = "OLBDXPNBTJ";
             registerRequest.Header.CallId = "2b79ac74010c494aa1eaaacb9819d77d";
-            
+
             logger.LogDebug(registerRequest.ToString());
 
-            string expectedSerialisation = @"REGISTER sip:dummy@dummy SIP/2.0
-Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport
-To: <sip:dummy@dummy>
-From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ
-Call-ID: 2b79ac74010c494aa1eaaacb9819d77d
-CSeq: 1 REGISTER
-Max-Forwards: 70
-Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE
-Content-Length: 0
-
-";
+            string expectedSerialisation = "REGISTER sip:dummy@dummy SIP/2.0" + m_CRLF +
+"Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport" + m_CRLF +
+"To: <sip:dummy@dummy>" + m_CRLF +
+"From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ" + m_CRLF +
+"Call-ID: 2b79ac74010c494aa1eaaacb9819d77d" + m_CRLF +
+"CSeq: 1 REGISTER" + m_CRLF +
+"Max-Forwards: 70" + m_CRLF +
+"Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE" + m_CRLF +
+"Content-Length: 0" + m_CRLF +
+"" + m_CRLF +
+"";
             Assert.Equal(expectedSerialisation, registerRequest.ToString());
         }
 
@@ -1030,6 +1061,7 @@ Content-Length: 0
         public void CopyToStringSerialisationTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI uri = new SIPURI("dummy", "dummy", null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
             SIPRequest registerRequest = SIPRequest.GetRequest(SIPMethodsEnum.REGISTER, uri);
@@ -1041,17 +1073,17 @@ Content-Length: 0
 
             logger.LogDebug(copy.ToString());
 
-            string expectedSerialisation = @"REGISTER sip:dummy@dummy SIP/2.0
-Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport
-To: <sip:dummy@dummy>
-From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ
-Call-ID: 2b79ac74010c494aa1eaaacb9819d77d
-CSeq: 1 REGISTER
-Max-Forwards: 70
-Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE
-Content-Length: 0
-
-";
+            string expectedSerialisation = "REGISTER sip:dummy@dummy SIP/2.0" + m_CRLF +
+"Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport" + m_CRLF +
+"To: <sip:dummy@dummy>" + m_CRLF +
+"From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ" + m_CRLF +
+"Call-ID: 2b79ac74010c494aa1eaaacb9819d77d" + m_CRLF +
+"CSeq: 1 REGISTER" + m_CRLF +
+"Max-Forwards: 70" + m_CRLF +
+"Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE" + m_CRLF +
+"Content-Length: 0" + m_CRLF +
+"" + m_CRLF +
+"";
             Assert.Equal(expectedSerialisation, copy.ToString());
         }
 
@@ -1062,33 +1094,34 @@ Content-Length: 0
         public void ParsedToStringSerialisationTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            string sipRequestStr = @"REGISTER sip:dummy@dummy SIP/2.0
-Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport
-To: <sip:dummy@dummy>
-From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ
-Call-ID: 2b79ac74010c494aa1eaaacb9819d77d
-CSeq: 1 REGISTER
-Max-Forwards: 70
-Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE
-Content-Length: 0
-
-";
+            string sipRequestStr = "REGISTER sip:dummy@dummy SIP/2.0" + m_CRLF +
+"Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport" + m_CRLF +
+"To: <sip:dummy@dummy>" + m_CRLF +
+"From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ" + m_CRLF +
+"Call-ID: 2b79ac74010c494aa1eaaacb9819d77d" + m_CRLF +
+"CSeq: 1 REGISTER" + m_CRLF +
+"Max-Forwards: 70" + m_CRLF +
+"Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE" + m_CRLF +
+"Content-Length: 0" + m_CRLF +
+"" + m_CRLF +
+"";
             SIPRequest registerRequest = SIPRequest.ParseSIPRequest(sipRequestStr);
 
             logger.LogDebug(registerRequest.ToString());
 
-            string expectedSerialisation = @"REGISTER sip:dummy@dummy SIP/2.0
-Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport
-To: <sip:dummy@dummy>
-From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ
-Call-ID: 2b79ac74010c494aa1eaaacb9819d77d
-CSeq: 1 REGISTER
-Max-Forwards: 70
-Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE
-Content-Length: 0
-
-";
+            string expectedSerialisation = "REGISTER sip:dummy@dummy SIP/2.0" + m_CRLF +
+"Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bKb4313133e5fe42da87034c2b22ac2aab;rport" + m_CRLF +
+"To: <sip:dummy@dummy>" + m_CRLF +
+"From: <sip:0.0.0.0:0>;tag=OLBDXPNBTJ" + m_CRLF +
+"Call-ID: 2b79ac74010c494aa1eaaacb9819d77d" + m_CRLF +
+"CSeq: 1 REGISTER" + m_CRLF +
+"Max-Forwards: 70" + m_CRLF +
+"Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE" + m_CRLF +
+"Content-Length: 0" + m_CRLF +
+"" + m_CRLF +
+"";
             Assert.Equal(expectedSerialisation, registerRequest.ToString());
         }
     }

@@ -20,17 +20,18 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPURIUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public SIPURIUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         [Fact]
         public void SampleTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             Assert.True(true, "True was false.");
         }
 
@@ -38,6 +39,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseHostOnlyURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:sip.domain.com");
 
@@ -51,6 +53,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseHostAndUserURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:user@sip.domain.com");
 
@@ -64,6 +67,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseWithParamURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:user@sip.domain.com;param=1234");
 
@@ -79,6 +83,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseWithParamAndPortURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:1234@sip.domain.com:5060;TCID-0");
 
@@ -96,6 +101,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseWithHeaderURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:user@sip.domain.com?header=1234");
 
@@ -110,6 +116,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void SpaceInHostNameURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:Blue Face");
 
@@ -123,6 +130,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ContactAsteriskURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("*");
 
@@ -136,6 +144,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AreEqualNoParamsURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = SIPURI.ParseSIPURI("sip:abcd@adcb.com");
             SIPURI sipURI2 = SIPURI.ParseSIPURI("sip:abcd@adcb.com");
@@ -149,6 +158,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AreEqualIPAddressNoParamsURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = SIPURI.ParseSIPURI("sip:abcd@192.168.1.101");
             SIPURI sipURI2 = SIPURI.ParseSIPURI("sip:abcd@192.168.1.101");
@@ -162,6 +172,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AreEqualWithParamsURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key1=value1;key2=value2");
             SIPURI sipURI2 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key2=value2;key1=value1");
@@ -175,6 +186,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void NotEqualWithParamsURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key1=value1;key2=value2");
             SIPURI sipURI2 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key2=value2;key1=value2");
@@ -188,6 +200,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AreEqualWithHeadersURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key1=value1;key2=value2?header1=value1&header2=value2");
             SIPURI sipURI2 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key2=value2;key1=value1?header2=value2&header1=value1");
@@ -201,6 +214,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void NotEqualWithHeadersURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key1=value1;key2=value2?header1=value2&header2=value2");
             SIPURI sipURI2 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key2=value2;key1=value1?header2=value2&header1=value1");
@@ -217,6 +231,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void UriWithParameterEqualityURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key1=value1");
             SIPURI sipURI2 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key1=value1");
@@ -230,6 +245,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void UriWithDifferentParamsEqualURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key1=value1");
             SIPURI sipURI2 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key1=value2");
@@ -243,6 +259,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void UriWithSameParamsInDifferentOrderURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key2=value2;key1=value1");
             SIPURI sipURI2 = SIPURI.ParseSIPURI("sip:abcd@adcb.com;key1=value1;key2=value2");
@@ -256,6 +273,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AreEqualNullURIsUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = null;
             SIPURI sipURI2 = null;
@@ -269,6 +287,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void NotEqualOneNullURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = SIPURI.ParseSIPURI("sip:abcd@adcb.com");
             SIPURI sipURI2 = null;
@@ -282,6 +301,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AreEqualNullEqualsOverloadUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = null;
 
@@ -294,6 +314,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AreEqualNullNotEqualsOverloadUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI1 = null;
 
@@ -306,6 +327,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void UnknownSchemeUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("tel:1234565"));
 
@@ -316,6 +338,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParamsInUserPortionURITest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:C=on;t=DLPAN@10.0.0.1:5060;lr");
 
@@ -329,6 +352,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void SwitchTagParameterUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:joebloggs@sip.mysipswitch.com;switchtag=119651");
 
@@ -343,6 +367,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void LongUserUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:EhZgKgLM9CwGqYDAECqDpL5MNrM_sKN5NurN5q_pssAk4oxhjKEMT4@10.0.0.1:5060");
 
@@ -356,6 +381,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParsePartialURINoSchemeUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURIRelaxed("sip.domain.com");
 
@@ -371,6 +397,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParsePartialURISIPSSchemeUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURIRelaxed("sips:sip.domain.com:1234");
 
@@ -385,6 +412,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParsePartialURIWithUserUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURIRelaxed("sip:joe.bloggs@sip.domain.com:1234;transport=tcp");
 
@@ -403,6 +431,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseHoHostUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURI("sip:;transport=UDP"));
 
@@ -413,6 +442,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void UDPProtocolToStringTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = new SIPURI(SIPSchemesEnum.sip, SIPEndPoint.ParseSIPEndPoint("127.0.0.1"));
             logger.LogDebug(sipURI.ToString());
@@ -424,6 +454,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseUDPProtocolToStringTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURIRelaxed("127.0.0.1");
             logger.LogDebug(sipURI.ToString());
@@ -435,6 +466,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseBigURIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURIRelaxed("TRUNKa1d2ce524d44cd54f39ac78bcdba85c7@65.98.14.50:5069");
             logger.LogDebug(sipURI.ToString());
@@ -446,6 +478,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseMalformedContactUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             Assert.Throws<SIPValidationException>(() => SIPURI.ParseSIPURIRelaxed("sip:twolmsted@24.183.120.253, sip:5060"));
 
@@ -456,6 +489,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void NoPortIPv4CanonicalAddressToStringTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:127.0.0.1");
             logger.LogDebug($"SIP URI {sipURI.ToString()}");
@@ -474,6 +508,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseIPv6UnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:[::1]");
 
@@ -500,6 +535,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseIPv6WithExplicitPortUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURI = SIPURI.ParseSIPURI("sip:[::1]:6060");
 
@@ -519,6 +555,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void IPv6UriPortToNoPortCanonicalAddressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI sipURINoPort = SIPURI.ParseSIPURI("sip:[::1]");
             SIPURI sipURIWIthPort = SIPURI.ParseSIPURI("sip:[::1]:5060");
@@ -562,6 +599,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void UriConstructorWithIPv6AddressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
 
@@ -577,6 +615,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void InvalidIPv6UriThrowUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
 
@@ -593,6 +632,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseIPv4MappedAddressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPURI ipv6Uri = new SIPURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback, 6060);
 

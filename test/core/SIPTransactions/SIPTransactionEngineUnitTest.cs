@@ -24,14 +24,14 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPTransactionEngineUnitTest
     {
-        private const int TRANSACTION_EXCHANGE_TIMEOUT_MS = 5000;
+        private const int TRANSACTION_EXCHANGE_TIMEOUT_MS = 15000;
 
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
         protected static readonly string m_CRLF = SIPConstants.CRLF;
 
         public SIPTransactionEngineUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         //[Fact]
@@ -56,6 +56,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void MatchOnRequestAndResponseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
@@ -97,6 +98,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AckRecognitionUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport clientTransport = null;
             SIPTransport serverTransport = null;
@@ -146,7 +148,10 @@ namespace SIPSorcery.SIP.UnitTests
                 clientEngine.AddTransaction(clientTransaction);
                 clientTransaction.SendInviteRequest(inviteRequest);
 
-                uasConfirmedTask.Task.Wait(TRANSACTION_EXCHANGE_TIMEOUT_MS);
+                if(!uasConfirmedTask.Task.Wait(TRANSACTION_EXCHANGE_TIMEOUT_MS))
+                {
+                    logger.LogWarning($"Tasks timed out");
+                }
 
                 Assert.True(clientTransaction.TransactionState == SIPTransactionStatesEnum.Completed, "Client transaction in incorrect state.");
                 Assert.True(serverTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed, "Server transaction in incorrect state.");
@@ -162,6 +167,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AckRecognitionIIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransactionEngine engine = new SIPTransactionEngine();     // Client side of the INVITE.
 
@@ -246,7 +252,7 @@ namespace SIPSorcery.SIP.UnitTests
 
         void transaction_TransactionTraceMessage(SIPTransaction sipTransaction, string message)
         {
-            //logger.LogDebug(sipTransaction.GetType() + " Trace (" + sipTransaction.TransactionId + "): " + message);
+            logger.LogDebug(sipTransaction.GetType() + " Trace (" + sipTransaction.TransactionId + "): " + message);
         }
 
         void transaction_TransactionStateChanged(SIPTransaction sipTransaction)
