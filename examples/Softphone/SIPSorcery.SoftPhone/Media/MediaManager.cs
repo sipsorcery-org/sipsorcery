@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Threading;
 using log4net;
 using SIPSorcery.Sys;
@@ -37,11 +36,11 @@ namespace SIPSorcery.SoftPhone
 
         private Task _localVideoSamplingTask;
         private CancellationTokenSource _localVideoSamplingCancelTokenSource;
-        private bool _stop = false;
+        private bool _stop;
         private int _encodingSample = 1;
-        private bool _useVideo = false;
+        private bool _useVideo;
         private Dispatcher _dispatcher;
-        private bool _isAudioStarted = false;
+        private bool _isAudioStarted;
 
         /// <summary>
         /// Fires when an audio sample is available from the local input device (microphone).
@@ -86,7 +85,7 @@ namespace SIPSorcery.SoftPhone
             _dispatcher = dispatcher;
             _useVideo = useVideo;
 
-            if (_useVideo == true)
+            if (_useVideo)
             {
                 _vpxDecoder = new VPXEncoder();
                 _vpxDecoder.InitDecoder();
@@ -115,7 +114,7 @@ namespace SIPSorcery.SoftPhone
                 if (_audioChannel != null)
                 {
                     _audioChannel.StartRecording();
-                    _audioChannel.SampleReady += (sample) => OnLocalAudioSampleReady?.Invoke(sample);
+                    _audioChannel.SampleReady += sample => OnLocalAudioSampleReady?.Invoke(sample);
                 }
             }
         }

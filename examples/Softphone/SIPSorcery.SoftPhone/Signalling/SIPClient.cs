@@ -48,12 +48,6 @@ namespace SIPSorcery.SoftPhone
         public event Action<SIPClient, string> StatusMessage;      // Fires when the SIP client has a status message it wants to inform the UI about.
 
         /// <summary>
-        /// The RTP timestamp to set on audio packets sent for the RTP session
-        /// associated with this client.
-        /// </summary>
-        public uint AudioTimestamp;
-
-        /// <summary>
         /// The RTP session associated with this client.
         /// </summary>
         public IMediaSession MediaSession
@@ -85,10 +79,10 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.IsCallActive; }
         }
 
-        public SIPClient(SIPTransport sipTransport)
+        public SIPClient(SIPTransport sipTransport, IMediaSessionFactory mediaSessionFactory)
         {
             m_sipTransport = sipTransport;
-            m_userAgent = new SIPUserAgent(m_sipTransport, null, new SoftPhoneMediaSessionFactory());
+            m_userAgent = new SIPUserAgent(m_sipTransport, null, mediaSessionFactory);
             m_userAgent.ClientCallTrying += CallTrying;
             m_userAgent.ClientCallRinging += CallRinging;
             m_userAgent.ClientCallAnswered += CallAnswered;

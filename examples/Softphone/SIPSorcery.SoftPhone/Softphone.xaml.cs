@@ -81,17 +81,33 @@ namespace SIPSorcery.SoftPhone
                 };
                 _stunClient.Run();
             }
-
-            Initialise();
         }
 
-        private async void Initialise()
+        private async void OnWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            _mediaManager = new MediaManager(Dispatcher);
+            logger.Debug("Media Manager Initialized.");
+            _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
+            _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
+            _mediaManager.OnLocalVideoError += LocalVideoError;
+
+            await Initialize();
+
+            if (_localVideoDevices.Items.Count == 0)
+            {
+                await Task.Run(LoadVideoDevices);
+            }
+        }
+
+        private async Task Initialize()
         {
             await _sipTransportManager.InitialiseSIP();
 
+            var mediaSessionFactory = new SoftPhoneMediaSessionFactory(_mediaManager);
+
             for (int i = 0; i < SIP_CLIENT_COUNT; i++)
             {
-                var sipClient = new SIPClient(_sipTransportManager.SIPTransport);
+                var sipClient = new SIPClient(_sipTransportManager.SIPTransport, mediaSessionFactory);
                 sipClient.CallAnswer += SIPCallAnswered;
                 sipClient.CallEnded += ResetToCallStartState;
                 sipClient.RemotePutOnHold += RemotePutOnHold;
@@ -101,6 +117,7 @@ namespace SIPSorcery.SoftPhone
             }
 
             string listeningEndPoints = null;
+
             foreach (var sipChannel in _sipTransportManager.SIPTransport.GetSIPChannels())
             {
                 SIPEndPoint sipChannelEP = sipChannel.ListeningSIPEndPoint.CopyOf();
@@ -108,44 +125,24 @@ namespace SIPSorcery.SoftPhone
                 listeningEndPoints += (listeningEndPoints == null) ? sipChannelEP.ToString() : $", {sipChannelEP}";
             }
 
-            Dispatcher.DoOnUIThread(() =>
-            {
-                listeningEndPoint.Content = $"Listening on: {listeningEndPoints}";
-            });
+            listeningEndPoint.Content = $"Listening on: {listeningEndPoints}";
 
             _sipRegistrationClient = new SIPRegistrationUserAgent(
-                _sipTransportManager.SIPTransport,
-                null,
-                null,
-                new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
-                m_sipUsername,
-                m_sipPassword,
-                null,
-                m_sipServer,
-                new SIPURI(m_sipUsername, IPAddress.Any.ToString(), null),
-                180,
-                null,
-                null,
-                (message) => { logger.Debug(message); });
+            _sipTransportManager.SIPTransport,
+            null,
+            null,
+            new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
+            m_sipUsername,
+            m_sipPassword,
+            null,
+            m_sipServer,
+            new SIPURI(m_sipUsername, IPAddress.Any.ToString(), null),
+            180,
+            null,
+            null,
+            (message) => { logger.Debug(message); });
+
             _sipRegistrationClient.Start();
-        }
-
-        private void OnWindowLoaded(object sender, System.Windows.RoutedEventArgs e)
-        {
-            Task.Run(() =>
-            {
-                _mediaManager = new MediaManager(Dispatcher);
-                logger.Debug("Media Manager Initialized.");
-                _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
-                _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
-                _mediaManager.OnLocalVideoError += LocalVideoError;
-                _mediaManager.OnLocalAudioSampleReady += LocalAudioSampleReady;
-
-                if (_localVideoDevices.Items.Count == 0)
-                {
-                    LoadVideoDevices();
-                }
-            });
         }
 
         /// <summary>
@@ -213,11 +210,6 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void ResetToCallStartState(SIPClient sipClient)
         {
-            if (sipClient?.MediaSession != null)
-            {
-                sipClient.MediaSession.OnReceivedSampleReady -= RemoteAudioSampleReceived;
-            }
-
             if (sipClient == null || sipClient == _sipClients[0])
             {
                 Dispatcher.DoOnUIThread(() =>
@@ -309,7 +301,6 @@ namespace SIPSorcery.SoftPhone
         private void SIPCallAnswered(SIPClient client)
         {
             _mediaManager.StartAudio();
-            client.MediaSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
 
             if (client == _sipClients[0])
             {
@@ -437,7 +428,6 @@ namespace SIPSorcery.SoftPhone
             var client = (sender == m_answerButton) ? _sipClients[0] : _sipClients[1];
 
             client.Answer();
-            client.MediaSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
             _mediaManager.StartAudio();
 
             if (client == _sipClients[0])
@@ -767,27 +757,6 @@ namespace SIPSorcery.SoftPhone
             else if (keyPressed == '#')
             {
                 await client.SendDTMF((byte)11);
-            }
-        }
-
-        private void RemoteAudioSampleReceived(byte[] sample)
-        {
-            _mediaManager.EncodedAudioSampleReceived(sample);
-        }
-
-        /// <summary>
-        /// Forwards samples from the local audio input device to each of the active RTP sessions.
-        /// We leave it up to the RTP session to decide if it wants to transmit the sample or not.
-        /// For example an RTP session will know whether it's on hold and whether it needs to send
-        /// audio to the remote call party or not.
-        /// </summary>
-        /// <param name="sample">The sample from the audio input device.</param>
-        private void LocalAudioSampleReady(byte[] sample)
-        {
-            foreach (SIPClient client in _sipClients.Where(x => x.IsCallActive))
-            {
-                client.MediaSession?.SendAudioFrame(client.AudioTimestamp, sample);
-                client.AudioTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
             }
         }
     }

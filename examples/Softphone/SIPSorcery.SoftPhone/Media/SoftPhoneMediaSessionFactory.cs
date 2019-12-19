@@ -5,18 +5,20 @@ namespace SIPSorcery.SoftPhone
 {
     public class SoftPhoneMediaSessionFactory : IMediaSessionFactory
     {
+        private readonly MediaManager _mediaManager;
+
         public SDPMediaFormatsEnum DefaultAudioFormat { get; set; } = SDPMediaFormatsEnum.PCMU;
 
-        public SoftPhoneMediaSessionFactory()
+        public SoftPhoneMediaSessionFactory(MediaManager mediaManager)
         {
-
+            _mediaManager = mediaManager;
         }
 
         public IMediaSession Create()
         {
             var rtpSession = new RTPSession((int)DefaultAudioFormat, null, null, true);
 
-            return new RTPMediaSession(rtpSession);
+            return new SoftPhoneMediaSession(rtpSession, _mediaManager);
         }
     }
 }
