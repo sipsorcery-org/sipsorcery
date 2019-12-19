@@ -65,7 +65,6 @@ namespace SIPSorcery.SIP
             RemoteEndPoint = remoteEndPoint;
             Buffer = buffer;
             ReceivedAt = DateTime.Now;
-
         }
     }
 
@@ -78,7 +77,7 @@ namespace SIPSorcery.SIP
         protected static int CHANNEL_ID_LENGTH = 3;         // Length of the random numeric string to use for channel ID's.
         private static int CREATE_CHANNELID_ATTEMPTS = 10; // Number of attempts to make at creating a random channel ID.
 
-        private static ConcurrentDictionary<int, int> _inUseChannelIDs = new ConcurrentDictionary<int, int>(); // Make sure don't create dulpicate channel ID's.
+        private static ConcurrentDictionary<int, int> _inUseChannelIDs = new ConcurrentDictionary<int, int>(); // Make sure we don't create dulpicate channel ID's.
 
         protected ILogger logger = Log.Logger;
 
@@ -146,14 +145,6 @@ namespace SIPSorcery.SIP
         public SIPProtocolsEnum SIPProtocol { get; protected set; }
 
         /// <summary>
-        /// Whether the channel is IPv4 or IPv6.
-        /// </summary>
-        public AddressFamily AddressFamily
-        {
-            get { return ListeningIPAddress.AddressFamily; }
-        }
-
-        /// <summary>
         /// Indicates whether close has been called on the SIP channel. Once closed a SIP channel can no longer be used
         /// to send or receive messages. It should generally only be called at the same time the SIP tranpsort class using it
         /// is shutdown.
@@ -218,31 +209,31 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Synchronous wrapper for <see cref="SendAsync"/>
         /// </summary>
-        public abstract void Send(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint = null);
+        public abstract void Send(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint = null);
 
         /// <summary>
         /// Synchronous wrapper for <see cref="SendSecureAsync"/>
         /// </summary>
-        public abstract void SendSecure(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint = null);
+        //public abstract void SendSecure(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint = null);
 
         /// <summary>
         /// Asynchronous SIP message send to a remote end point.
         /// </summary>
-        /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
+        /// <param name="dstEndPoint">The remote end point to send the message to.</param>
         /// <param name="buffer">The data to send.</param>
         /// <param name="connectionID">Optional ID of the specific client connection that the message should be sent on. It's only
         /// a hint so if the connection has been closed a new one will be attempted.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public abstract Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint = null);
+        public abstract Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint = null);
 
         /// <summary>
         /// Asynchronous SIP message send over a secure TLS connetion to a remote end point.
         /// </summary>
-        /// <param name="destinationEndPoint">The remote end point to send the message to.</param>
+        /// <param name="dstEndPoint">The remote end point to send the message to.</param>
         /// <param name="buffer">The data to send.</param>
         /// <param name="serverCertificateName">If the send is over SSL the required common name of the server's X509 certificate.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public abstract Task<SocketError> SendSecureAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint = null);
+        public abstract Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint = null);
 
         /// <summary>
         /// Checks whether the SIP channel has a connection matching a unique connection ID.
@@ -258,7 +249,24 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="remoteEndPoint">The remote end point to check for an existing connection.</param>
         /// <returns>True if a match is found or false if not.</returns>
-        public abstract bool HasConnection(IPEndPoint remoteEndPoint);
+        public abstract bool HasConnection(SIPEndPoint remoteEndPoint);
+
+        /// <summary>
+        /// Checks whether a web socket based SIP channel has an existing connection to a server URI.
+        /// </summary>
+        /// <param name="serverUri">The remote server URI to check for an existing connection.</param>
+        /// <returns>True if a match is found or false if not.</returns>
+        public abstract bool HasConnection(Uri serverUri);
+
+        /// <summary>
+        /// Returns true if the channel supports the requested address family.
+        /// </summary>
+        public abstract bool IsAddressFamilySupported(AddressFamily addresFamily);
+
+        /// <summary>
+        /// Returns true if the channel supports the requested transport layer protocol.
+        /// </summary>
+        public abstract bool IsProtocolSupported(SIPProtocolsEnum protocol);
 
         /// <summary>
         /// Gets the local IP address this SIP channel will use for communicating with the destination
@@ -266,7 +274,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dst">The destination IP address.</param>
         /// <returns>The local IP address this channel selects to use for connecting to the destination.</returns>
-        private IPAddress GetLocalIPAddressForDestination(IPAddress dst)
+        protected IPAddress GetLocalIPAddressForDestination(IPAddress dst)
         {
             IPAddress localAddress = ListeningIPAddress;
 
@@ -280,13 +288,14 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Get the local SIPEndPoint this channel will use for communicating with the destination IP address,
+        /// Get the local SIPEndPoint this channel will use for communicating with the destination SIP end point.
         /// </summary>
-        /// <param name="dst">The destination IP address.</param>
+        /// <param name="dstEndPoint">The destination SIP end point.</param>
         /// <returns>The local SIP end points this channel selects to use for connecting to the destination.</returns>
-        internal SIPEndPoint GetLocalSIPEndPointForDestination(IPAddress dst)
+        internal virtual SIPEndPoint GetLocalSIPEndPointForDestination(SIPEndPoint dstEndPoint)
         {
-            IPAddress localAddress = GetLocalIPAddressForDestination(dst);
+            IPAddress dstAddress = dstEndPoint.GetIPEndPoint().Address;
+            IPAddress localAddress = GetLocalIPAddressForDestination(dstAddress);
             return new SIPEndPoint(SIPProtocol, localAddress, Port, ID, null);
         }
 
@@ -297,11 +306,11 @@ namespace SIPSorcery.SIP
         /// send to a desintation address on the internet will result in a different URI.
         /// </summary>
         /// <param name="scheme">The SIP scheme to use for the Contact URI.</param>
-        /// <param name="dst">The destination address the Contact URI is for. For a SIPChannel using
+        /// <param name="dstEndPoint">The destination SIP end point the Contact URI is for. For a SIPChannel using
         /// IPAddress.Any the desintation needs to be known so it can select the correct local address.</param>
-        public SIPURI GetContactURI(SIPSchemesEnum scheme, IPAddress dst)
+        public SIPURI GetContactURI(SIPSchemesEnum scheme, SIPEndPoint dstEndPoint)
         {
-            return new SIPURI(scheme, GetLocalSIPEndPointForDestination(dst));
+            return new SIPURI(scheme, GetLocalSIPEndPointForDestination(dstEndPoint));
         }
 
         /// <summary>

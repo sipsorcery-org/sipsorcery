@@ -4,10 +4,10 @@
 // Description: Unit tests for the SIPTransport class.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 15 Oct 2019	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland (www.sipsorcery.com).
+// 15 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -23,7 +23,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace SIPSorcery.SIP.UnitTests
 {
@@ -57,7 +56,12 @@ namespace SIPSorcery.SIP.UnitTests
             var clientChannel = new SIPUDPChannel(IPAddress.IPv6Loopback, 0);
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback), testComplete, cancelServer, serverReadyEvent); });
+            var clientTask = Task.Run(async () => { await RunClient(
+                clientChannel, 
+                serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.IPv6Loopback, 0))), 
+                testComplete, 
+                cancelServer, 
+                serverReadyEvent); });
 
             serverReadyEvent.Wait(); 
             if (!Task.WhenAny(new Task[] { serverTask, clientTask}).Wait(TRANSPORT_TEST_TIMEOUT))
@@ -93,7 +97,12 @@ namespace SIPSorcery.SIP.UnitTests
             var clientChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback), testComplete, cancelServer, serverReadyEvent); });
+            var clientTask = Task.Run(async () => { await RunClient(
+                clientChannel, 
+                serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0))), 
+                testComplete, 
+                cancelServer, 
+                serverReadyEvent); });
 
             serverReadyEvent.Wait(); 
             if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
@@ -133,7 +142,12 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.IPv6Loopback), testComplete, cancelServer, serverReadyEvent); });
+            var clientTask = Task.Run(async () => { await RunClient(
+                clientChannel, 
+                serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.IPv6Loopback, 0))), 
+                testComplete, 
+                cancelServer, 
+                serverReadyEvent); });
 
             serverReadyEvent.Wait(); 
             if (!Task.WhenAny(new Task[] { serverTask, clientTask}).Wait(TRANSPORT_TEST_TIMEOUT))
@@ -171,7 +185,12 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback), testComplete, cancelServer, serverReadyEvent); });
+            var clientTask = Task.Run(async () => { await RunClient(
+                clientChannel, 
+                serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Loopback, 0))), 
+                testComplete, 
+                cancelServer, 
+                serverReadyEvent); });
 
             serverReadyEvent.Wait(); 
             if (!Task.WhenAny(new Task[] { clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
@@ -221,7 +240,7 @@ namespace SIPSorcery.SIP.UnitTests
 
                     var clientChannel = new SIPTCPChannel(IPAddress.Loopback, 0);
                     clientChannel.DisableLocalTCPSocketsCheck = true;
-                    SIPURI serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, IPAddress.Loopback);
+                    SIPURI serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Loopback, 0)));
 
                     logger.LogDebug($"Server URI {serverUri.ToString()}.");
 
@@ -276,7 +295,12 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sips, IPAddress.IPv6Loopback), testComplete, cancelServer, serverReadyEvent); });
+            var clientTask = Task.Run(async () => { await RunClient(
+                clientChannel, 
+                serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.IPv6Loopback, 0))), 
+                testComplete, 
+                cancelServer, 
+                serverReadyEvent); });
 
             serverReadyEvent.Wait(); 
             if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
@@ -320,7 +344,12 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverChannel.GetContactURI(SIPSchemesEnum.sips, IPAddress.Loopback), testComplete, cancelServer, serverReadyEvent); });
+            var clientTask = Task.Run(async () => { await RunClient(
+                clientChannel, 
+                serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.Loopback, 0))), 
+                testComplete, 
+                cancelServer, 
+                serverReadyEvent); });
 
             serverReadyEvent.Wait();
             if(!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))

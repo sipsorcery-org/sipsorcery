@@ -54,6 +54,30 @@ namespace SIPSorcery.SIP
         public const string NAT_SENDKEEPALIVES_VALUE = "y";
 
         public const string ALLOWED_SIP_METHODS = "ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE";
+
+        /// <summary>
+        /// Gets the default SIP port for the protocol. 
+        /// </summary>
+        /// <param name="protocol">The transport layer protocol to get the port for.</param>
+        /// <returns>The default port to use.</returns>
+        public static int GetDefaultPort(SIPProtocolsEnum protocol)
+        {
+            switch (protocol)
+            {
+                case SIPProtocolsEnum.udp:
+                    return SIPConstants.DEFAULT_SIP_PORT;
+                case SIPProtocolsEnum.tcp:
+                    return SIPConstants.DEFAULT_SIP_PORT;
+                case SIPProtocolsEnum.tls:
+                    return SIPConstants.DEFAULT_SIP_TLS_PORT;
+                case SIPProtocolsEnum.ws:
+                    return SIPConstants.DEFAULT_SIP_WEBSOCKET_PORT;
+                case SIPProtocolsEnum.wss:
+                    return SIPConstants.DEFAULT_SIPS_WEBSOCKET_PORT;
+                default:
+                    throw new ApplicationException($"Protocol {protocol} was not recognised in GetDefaultPort.");
+            }
+        }
     }
 
     public enum SIPMessageTypesEnum
@@ -421,6 +445,7 @@ namespace SIPSorcery.SIP
         public const string MWI_TEXT_TYPE = "text/text";
         public const string PRESENCE_NOTIFY_CONTENT_TYPE = "application/pidf+xml";      // RFC3856 presence event package.
     }
+
     /// <summary>
     /// For SIP URI user portion the reserved characters below need to be escaped.
     /// 
