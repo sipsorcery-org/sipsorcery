@@ -21602,6 +21602,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
   fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum)
   nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint, SIPProtocolsEnum)
+- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.Sockets.AddressFamily,SIPSorcery.SIP.SIPProtocolsEnum)
+  name: SIPTCPChannel(AddressFamily, SIPProtocolsEnum)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_Sockets_AddressFamily_SIPSorcery_SIP_SIPProtocolsEnum_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.Sockets.AddressFamily,SIPSorcery.SIP.SIPProtocolsEnum)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.Sockets.AddressFamily, SIPSorcery.SIP.SIPProtocolsEnum)
+  nameWithType: SIPTCPChannel.SIPTCPChannel(AddressFamily, SIPProtocolsEnum)
 - uid: SIPSorcery.SIP.SIPTCPChannel.#ctor*
   name: SIPTCPChannel
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_
@@ -21695,6 +21701,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.IsAddressFamilySupported
   nameWithType: SIPTCPChannel.IsAddressFamilySupported
+- uid: SIPSorcery.SIP.SIPTCPChannel.IsOutboundOnly
+  name: IsOutboundOnly
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_IsOutboundOnly
+  commentId: P:SIPSorcery.SIP.SIPTCPChannel.IsOutboundOnly
+  fullName: SIPSorcery.SIP.SIPTCPChannel.IsOutboundOnly
+  nameWithType: SIPTCPChannel.IsOutboundOnly
+- uid: SIPSorcery.SIP.SIPTCPChannel.IsOutboundOnly*
+  name: IsOutboundOnly
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_IsOutboundOnly_
+  commentId: Overload:SIPSorcery.SIP.SIPTCPChannel.IsOutboundOnly
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTCPChannel.IsOutboundOnly
+  nameWithType: SIPTCPChannel.IsOutboundOnly
 - uid: SIPSorcery.SIP.SIPTCPChannel.IsProtocolSupported(SIPSorcery.SIP.SIPProtocolsEnum)
   name: IsProtocolSupported(SIPProtocolsEnum)
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_IsProtocolSupported_SIPSorcery_SIP_SIPProtocolsEnum_
@@ -21888,6 +21907,12 @@ references:
   commentId: T:SIPSorcery.SIP.SIPTLSChannel
   fullName: SIPSorcery.SIP.SIPTLSChannel
   nameWithType: SIPTLSChannel
+- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.Sockets.AddressFamily)
+  name: SIPTLSChannel(AddressFamily)
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Net_Sockets_AddressFamily_
+  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.Sockets.AddressFamily)
+  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Net.Sockets.AddressFamily)
+  nameWithType: SIPTLSChannel.SIPTLSChannel(AddressFamily)
 - uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPAddress,System.Int32)
   name: SIPTLSChannel(X509Certificate2, IPAddress, Int32)
   href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPAddress_System_Int32_
