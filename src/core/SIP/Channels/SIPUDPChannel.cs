@@ -253,7 +253,7 @@ namespace SIPSorcery.SIP
         /// <returns>True if supported, false if not.</returns>
         public override bool IsProtocolSupported(SIPProtocolsEnum protocol)
         {
-            return protocol == SIPProtocolsEnum.tcp;
+            return protocol == SIPProtocolsEnum.udp;
         }
 
         /// <summary>

@@ -30,7 +30,9 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*61@192.168.11.48";
+        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:127.0.0.1;transport=ws";
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:127.0.0.1";
+        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@67.222.131.147";  // Talking Clock.
         //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@sipsorcery.com";  // Talking Clock.
         //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:echo@sipsorcery.com"; // Echo Test.
 
@@ -39,7 +41,7 @@ namespace SIPSorcery
         private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
         private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 20;           // This sets the frequency of the RTP packets.
 
-        static void Main()
+        static void Main(string[] args)
         {
             Console.WriteLine("SIPSorcery client user agent example.");
             Console.WriteLine("Press ctrl-c to exit.");
@@ -52,11 +54,19 @@ namespace SIPSorcery
             AddConsoleLogger();
 
             SIPURI callUri = SIPURI.ParseSIPURI(DEFAULT_DESTINATION_SIP_URI);
+            if (args != null && args.Length > 0)
+            {
+                if (!SIPURI.TryParse(args[0], out callUri))
+                {
+                    Log.LogWarning($"Command line argument could not be parsed as a SIP URI {args[0]}");
+                }
+            }
             Log.LogInformation($"Call destination {callUri}.");
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)));
+            sipTransport.AddSIPChannel(new SIPClientWebSocketChannel(true));
 
             EnableTraceLogs(sipTransport);
 
@@ -95,6 +105,8 @@ namespace SIPSorcery
                         rtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(resp.Body);
                         Log.LogDebug($"Remote RTP socket {rtpSession.DestinationEndPoint}.");
                     }
+
+                    rtpSession.SetRemoteSDP(SDP.ParseSDPDescription(resp.Body));
                 }
                 else
                 {

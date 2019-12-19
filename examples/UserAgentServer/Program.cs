@@ -73,10 +73,11 @@ namespace SIPSorcery
         private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
         private static int SIP_LISTEN_PORT = 5060;
         private static int SIPS_LISTEN_PORT = 5061;
-        //private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
-        //private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
-        private static int RTP_PORT_START = 49000;
-        private static int RTP_PORT_END = 49100;
+        private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
+        private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
+
+        private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
+        private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 60;           // This sets the frequency of the RTP packets.
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -118,15 +119,15 @@ namespace SIPSorcery
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(listenAddress, SIPS_LISTEN_PORT)));
-            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_WEBSOCKET_LISTEN_PORT));
-            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
+            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_WEBSOCKET_LISTEN_PORT));
+            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
 
             // IPv6 channels.
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(listenIPv6Address, SIPS_LISTEN_PORT)));
-            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_WEBSOCKET_LISTEN_PORT));
-            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
+            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_WEBSOCKET_LISTEN_PORT));
+            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
 
             EnableTraceLogs(sipTransport);
 
@@ -134,8 +135,7 @@ namespace SIPSorcery
             // acts as a singleton
             SIPServerUserAgent uas = null;
             CancellationTokenSource rtpCts = null; // Cancellation token to stop the RTP stream.
-            Socket rtpSocket = null;
-            Socket controlSocket = null;
+            RTPSession rtpSession = null;
 
             // Because this is a server user agent the SIP transport must start listening for client user agents.
             sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -149,7 +149,6 @@ namespace SIPSorcery
                         // Check there's a codec we support in the INVITE offer.
                         var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
                         IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
-                        RTPSession rtpSession = null;
                         string audioFile = null;
 
                         if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.G722)))
@@ -188,23 +187,29 @@ namespace SIPSorcery
                             uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
                             uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
-                            // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-                            NetServices.CreateRtpSocket(dstRtpEndPoint.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, RTP_PORT_START, RTP_PORT_END, false, out rtpSocket, out controlSocket);
-
                             // The RTP socket is listening on IPAddress.Any but the IP address placed into the SDP needs to be one the caller can reach.
                             IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
-                            IPEndPoint rtpEndPoint = new IPEndPoint(rtpAddress, (rtpSocket.LocalEndPoint as IPEndPoint).Port);
 
-                            var rtpTask = Task.Run(() => SendRecvRtp(rtpSocket, rtpSession, dstRtpEndPoint, audioFile, rtpCts))
+                            // Only set the remote RTP end point if there hasn't already been a packet received on it.
+                            if (rtpSession.DestinationEndPoint == null)
+                            {
+                                rtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+                                Log.LogDebug($"Remote RTP socket {rtpSession.DestinationEndPoint}.");
+                            }
+
+                            rtpSession.SetRemoteSDP(SDP.ParseSDPDescription(sipRequest.Body));
+
+                            var rtpTask = Task.Run(() => SendRtp(rtpSession, dstRtpEndPoint, audioFile, rtpCts))
                                 .ContinueWith(_ => 
                                 {
                                     if (uas?.IsHungup == false)
                                     {
                                         uas?.Hangup(false);
+                                        rtpSession?.Close();
                                     }
                                 });
 
-                            uas.Answer(SDP.SDP_MIME_CONTENTTYPE, GetSDP(rtpEndPoint).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
+                            uas.Answer(SDP.SDP_MIME_CONTENTTYPE, rtpSession.GetSDP(rtpAddress).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
                         }
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)
@@ -214,9 +219,8 @@ namespace SIPSorcery
                         SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         byeTransaction.SendFinalResponse(byeResponse);
                         uas?.Hangup(true);
+                        rtpSession?.Close();
                         rtpCts?.Cancel();
-                        rtpSocket?.Close();
-                        controlSocket?.Close();
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
                     {
@@ -245,9 +249,8 @@ namespace SIPSorcery
 
                 Hangup(uas).Wait();
 
+                rtpSession?.Close();
                 rtpCts?.Cancel();
-                rtpSocket?.Close();
-                controlSocket?.Close();
 
                 if (sipTransport != null)
                 {
@@ -258,6 +261,7 @@ namespace SIPSorcery
                 exitMre.Set();
             };
 
+            // Task to handle user key presses.
             Task.Run(() =>
             {
                 try
@@ -272,9 +276,8 @@ namespace SIPSorcery
 
                             Hangup(uas).Wait();
 
+                            rtpSession?.Close();
                             rtpCts?.Cancel();
-                            rtpSocket?.Close();
-                            controlSocket?.Close();
                         }
 
                         if (keyProps.KeyChar == 'q')
@@ -300,45 +303,10 @@ namespace SIPSorcery
             exitMre.WaitOne();
         }
 
-        private static async Task SendRecvRtp(Socket rtpSocket, RTPSession rtpSession, IPEndPoint dstRtpEndPoint, string audioFileName, CancellationTokenSource cts)
+        private static async Task SendRtp(RTPSession rtpSession, IPEndPoint dstRtpEndPoint, string audioFileName, CancellationTokenSource cts)
         {
             try
             {
-                SIPSorcery.Sys.Log.Logger.LogDebug($"Sending from RTP socket {rtpSocket.LocalEndPoint} to {dstRtpEndPoint}.");
-
-                // Nothing is being done with the data being received from the client. But the remote rtp socket will
-                // be switched if it differs from the one in the SDP. This helps cope with NAT.
-                var rtpRecvTask = Task.Run(async () =>
-                {
-                    DateTime lastRecvReportAt = DateTime.Now;
-                    uint packetReceivedCount = 0;
-                    uint bytesReceivedCount = 0;
-                    byte[] buffer = new byte[512];
-                    EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
-
-                    SIPSorcery.Sys.Log.Logger.LogDebug($"Listening on RTP socket {rtpSocket.LocalEndPoint}.");
-
-                    var recvResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, remoteEP);
-
-                    while (recvResult.ReceivedBytes > 0 && !cts.IsCancellationRequested)
-                    {
-                        RTPPacket rtpPacket = new RTPPacket(buffer.Take(recvResult.ReceivedBytes).ToArray());
-
-                        packetReceivedCount++;
-                        bytesReceivedCount += (uint)rtpPacket.Payload.Length;
-
-                        recvResult = await rtpSocket.ReceiveFromAsync(buffer, SocketFlags.None, remoteEP);
-
-                        if (DateTime.Now.Subtract(lastRecvReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
-                        {
-                            lastRecvReportAt = DateTime.Now;
-                            dstRtpEndPoint = recvResult.RemoteEndPoint as IPEndPoint;
-
-                            SIPSorcery.Sys.Log.Logger.LogDebug($"RTP recv {rtpSocket.LocalEndPoint}<-{dstRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
-                        }
-                    }
-                });
-
                 string audioFileExt = Path.GetExtension(audioFileName).ToLower();
 
                 switch (audioFileExt)
@@ -370,7 +338,7 @@ namespace SIPSorcery
                                     if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
                                     {
                                         lastSendReportAt = DateTime.Now;
-                                        SIPSorcery.Sys.Log.Logger.LogDebug($"RTP send {rtpSocket.LocalEndPoint}->{dstRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
+                                        SIPSorcery.Sys.Log.Logger.LogDebug($"RTP send {rtpSession.RtpChannel.RTPLocalEndPoint}->{dstRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
                                     }
 
                                     await Task.Delay(40, cts.Token);
@@ -415,7 +383,7 @@ namespace SIPSorcery
                                         if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
                                         {
                                             lastSendReportAt = DateTime.Now;
-                                            SIPSorcery.Sys.Log.Logger.LogDebug($"RTP send {rtpSocket.LocalEndPoint}->{dstRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
+                                            SIPSorcery.Sys.Log.Logger.LogDebug($"RTP send {rtpSession.RtpChannel.RTPLocalEndPoint}->{dstRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
                                         }
 
                                         await Task.Delay(40, cts.Token);
@@ -459,6 +427,29 @@ namespace SIPSorcery
             sdp.Media.Add(audioAnnouncement);
 
             return sdp;
+        }
+
+        /// <summary>
+        /// Get the audio input device, e.g. microphone. The input device that will provide 
+        /// audio samples that can be encoded, packaged into RTP and sent to the remote call party.
+        /// </summary>
+        private static WaveInEvent GetAudioInputDevice()
+        {
+            if (WaveInEvent.DeviceCount == 0)
+            {
+                throw new ApplicationException("No audio input devices available. No audio will be sent.");
+            }
+            else
+            {
+                WaveInEvent waveInEvent = new WaveInEvent();
+                WaveFormat waveFormat = _waveFormat;
+                waveInEvent.BufferMilliseconds = INPUT_SAMPLE_PERIOD_MILLISECONDS;
+                waveInEvent.NumberOfBuffers = 1;
+                waveInEvent.DeviceNumber = 0;
+                waveInEvent.WaveFormat = waveFormat;
+
+                return waveInEvent;
+            }
         }
 
         /// <summary>

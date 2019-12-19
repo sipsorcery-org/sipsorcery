@@ -612,7 +612,7 @@ namespace SIPSorcery.Net
 
             var rtpPacket = new RTPPacket(buffer);
 
-            if (rtpPacket.Header.PayloadType == m_remoteRtpEventPayloadID)
+            if (m_remoteRtpEventPayloadID != 0 && rtpPacket.Header.PayloadType == m_remoteRtpEventPayloadID)
             {
                 RTPEvent rtpEvent = new RTPEvent(rtpPacket.Payload);
                 OnRtpEvent?.Invoke(rtpEvent);

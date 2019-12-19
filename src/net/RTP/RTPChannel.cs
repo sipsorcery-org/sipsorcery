@@ -109,11 +109,17 @@ namespace SIPSorcery.Net
             }
             catch (SocketException sockExcp)
             {
-                // Pretty sure the only cause of these exceptions is when an ICMP message comes back indicating there is no listening
-                // socket on the other end. Now there may be cases where this is valid, for example we start sending before the other end
-                // starts listening. Bubble it up and let the caller deal with it.
-                logger.LogWarning($"SocketException UdpReceiver.EndReceiveMessageFrom ({sockExcp.ErrorCode}). {sockExcp.Message}");
-                OnReceiveError?.Invoke(sockExcp);
+                if (sockExcp.SocketErrorCode == SocketError.ConnectionReset)
+                {
+                    logger.LogWarning("RTP connection closed by remote host.");
+                    OnReceiveError?.Invoke(sockExcp);
+                    Close();
+                }
+                else
+                {
+                    logger.LogWarning($"SocketException UdpReceiver.EndReceiveMessageFrom ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                    OnReceiveError?.Invoke(sockExcp);
+                }
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
@@ -176,56 +182,22 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The local port we are listening for RTP (and whatever else is multiplexed) packets on.
         /// </summary>
-        public int RTPPort
-        {
-            get
-            {
-                if (_rtpSocket != null)
-                {
-                    return (_rtpSocket.LocalEndPoint as IPEndPoint).Port;
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-        }
+        public int RTPPort { get; private set; }
 
         /// <summary>
         /// The local end point the RTP socket is listening on.
         /// </summary>
-        public IPEndPoint RTPLocalEndPoint
-        {
-            get
-            {
-                if (_rtpSocket != null)
-                {
-                    return (_rtpSocket.LocalEndPoint as IPEndPoint);
-                }
-                else
-                {
-                    return null;
-                }
-            }
-        }
+        public IPEndPoint RTPLocalEndPoint { get; private set; }
 
         /// <summary>
         /// The local port we are listening for RTCP packets on.
         /// </summary>
-        public int ControlPort
-        {
-            get
-            {
-                if (_controlSocket != null)
-                {
-                    return (_controlSocket.LocalEndPoint as IPEndPoint).Port;
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-        }
+        public int ControlPort { get; private set; }
+
+        /// <summary>
+        /// The local end point the control socket is listening on.
+        /// </summary>
+        public IPEndPoint ControlLocalEndPoint { get; private set; }
 
         public DateTime CreatedAt { get; private set; }
         public DateTime StartedAt { get; private set; }
@@ -274,6 +246,11 @@ namespace SIPSorcery.Net
         {
             CreatedAt = DateTime.Now;
             NetServices.CreateRtpSocket(localAddress, mediaStartPort, mediaEndPort, createControlSocket, out _rtpSocket, out _controlSocket);
+
+            RTPLocalEndPoint = _rtpSocket.LocalEndPoint as IPEndPoint;
+            RTPPort = RTPLocalEndPoint.Port;
+            ControlLocalEndPoint = _controlSocket.LocalEndPoint as IPEndPoint;
+            ControlPort = ControlLocalEndPoint.Port;
 
             RemoteRTPEndPoint = rtpRemoteEndPoint;
             RemoteControlEndPoint = controlEndPoint;

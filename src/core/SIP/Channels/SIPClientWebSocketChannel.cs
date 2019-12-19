@@ -44,7 +44,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Holds the state for a current web socket client connection.
         /// </summary>
-        private struct ClientWebSocketConnection
+        private class ClientWebSocketConnection
         {
             public SIPEndPoint LocalEndPoint;
             public Uri ServerUri;
@@ -88,7 +88,7 @@ namespace SIPSorcery.SIP
             // TODO: These values need to be adjusted. The problem is the source end point isn't available from
             // the client web socket connection.
             ListeningIPAddress = IPAddress.Any;
-            Port = SIPConstants.GetDefaultPort(SIPProtocol);
+            Port = 99;// SIPConstants.GetDefaultPort(SIPProtocol);
         }
 
         /// <summary>
@@ -170,15 +170,12 @@ namespace SIPSorcery.SIP
                 string connectionID = GetConnectionID(serverUri);
                 serverEndPoint.ConnectionID = connectionID;
 
-                // There's currently no way to get the socket IP end point used by the client web socket to estasblish
-                // the connection. Instead provide a dummy local end point that has as much of the information as we can.
-                IPEndPoint localEndPoint = new IPEndPoint((serverEndPoint.Address.AddressFamily == AddressFamily.InterNetwork) ? IPAddress.Any : IPAddress.IPv6Any, 0);
-                SIPEndPoint localSIPEndPoint = new SIPEndPoint(serverEndPoint.Protocol, localEndPoint, this.ID, connectionID);
-
-                if (m_egressConnections.TryGetValue(connectionID, out var connection))
+                if (m_egressConnections.TryGetValue(connectionID, out var conn))
                 {
+                    logger.LogDebug($"Sending {buffer.Length} bytes on client web socket connection to {conn.ServerUri}.");
+
                     ArraySegment<byte> segmentBuffer = new ArraySegment<byte>(buffer);
-                    await connection.Client.SendAsync(segmentBuffer, WebSocketMessageType.Text, true, m_cts.Token);
+                    await conn.Client.SendAsync(segmentBuffer, WebSocketMessageType.Text, true, m_cts.Token);
 
                     return SocketError.Success;
                 }
@@ -196,7 +193,12 @@ namespace SIPSorcery.SIP
                     var recvBuffer = new ArraySegment<byte>(new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize]);
                     Task<WebSocketReceiveResult> receiveTask = clientWebSocket.ReceiveAsync(recvBuffer, m_cts.Token);
 
-                    ClientWebSocketConnection conn = new ClientWebSocketConnection
+                    // There's currently no way to get the socket IP end point used by the client web socket to estasblish
+                    // the connection. Instead provide a dummy local end point that has as much of the information as we can.
+                    IPEndPoint localEndPoint = new IPEndPoint((serverEndPoint.Address.AddressFamily == AddressFamily.InterNetwork) ? IPAddress.Any : IPAddress.IPv6Any, 0);
+                    SIPEndPoint localSIPEndPoint = new SIPEndPoint(serverEndPoint.Protocol, localEndPoint, this.ID, connectionID);
+
+                    ClientWebSocketConnection newConn = new ClientWebSocketConnection
                     {
                         LocalEndPoint = localSIPEndPoint,
                         ServerUri = serverUri,
@@ -207,7 +209,7 @@ namespace SIPSorcery.SIP
                         Client = clientWebSocket
                     };
 
-                    if (!m_egressConnections.TryAdd(connectionID, conn))
+                    if (!m_egressConnections.TryAdd(connectionID, newConn))
                     {
                         logger.LogError($"Could not added web socket client connected to {serverUri} to channel collection, closing.");
 
@@ -357,7 +359,6 @@ namespace SIPSorcery.SIP
                             logger.LogDebug($"Client web socket connection to {conn.ServerUri} received {receiveTask.Result.Count} bytes.");
                             SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray());
                             conn.ReceiveTask = conn.Client.ReceiveAsync(conn.ReceiveBuffer, m_cts.Token);
-                            break;
                         }
                         else
                         {
