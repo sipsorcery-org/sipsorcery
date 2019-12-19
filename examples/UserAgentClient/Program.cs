@@ -31,9 +31,8 @@ namespace SIPSorcery
     class Program
     {
         //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:127.0.0.1;transport=ws";
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:127.0.0.1";
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@67.222.131.147";  // Talking Clock.
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@sipsorcery.com";  // Talking Clock.
+        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:127.0.0.1";
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@sipsorcery.com";  // Talking Clock.
         //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:echo@sipsorcery.com"; // Echo Test.
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
@@ -65,9 +64,6 @@ namespace SIPSorcery
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            //sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0)));
-            //sipTransport.AddSIPChannel(new SIPClientWebSocketChannel());
-
             EnableTraceLogs(sipTransport);
 
             // Get the IP address the RTP will be sent from. While we can listen on IPAddress.Any
@@ -81,12 +77,12 @@ namespace SIPSorcery
             var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, true);
             var offerSDP = rtpSession.GetSDP(localIPAddress);
 
+            // Get the audio input device.
+            WaveInEvent waveInEvent = GetAudioInputDevice();
+
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var uac = new SIPClientUserAgent(sipTransport);
-            uac.CallTrying += (uac, resp) =>
-            {
-                Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
-            };
+            uac.CallTrying += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
             uac.CallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
             uac.CallFailed += (uac, err) =>
             {
@@ -107,6 +103,7 @@ namespace SIPSorcery
                     }
 
                     rtpSession.SetRemoteSDP(SDP.ParseSDPDescription(resp.Body));
+                    waveInEvent.StartRecording();
                 }
                 else
                 {
@@ -131,7 +128,7 @@ namespace SIPSorcery
                 }
             };
 
-            // Wire up the RTP receive session to the audio input device.
+            // Wire up the RTP receive session to the audio output device.
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
             rtpSession.OnReceivedSampleReady += (sample) =>
             {
@@ -143,8 +140,7 @@ namespace SIPSorcery
                 }
             };
 
-            // Wire up the RTP send session to the audio output device.
-            WaveInEvent waveInEvent = GetAudioInputDevice();
+            // Wire up the RTP send session to the audio input device.
             uint rtpSendTimestamp = 0;
             waveInEvent.DataAvailable += (object sender, WaveInEventArgs args) =>
             {
@@ -162,8 +158,6 @@ namespace SIPSorcery
                     rtpSession.SendAudioFrame(rtpSendTimestamp, sample);
                     rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
                 }
-
-                waveInEvent.StartRecording();
             };
 
             // Start the thread that places the call.
