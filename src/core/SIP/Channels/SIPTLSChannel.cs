@@ -176,6 +176,16 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
+        /// Checks whether the specified protocol is supported.
+        /// </summary>
+        /// <param name="protocol">The protocol to check.</param>
+        /// <returns>True if supported, false if not.</returns>
+        public override bool IsProtocolSupported(SIPProtocolsEnum protocol)
+        {
+            return protocol == SIPProtocolsEnum.tls;
+        }
+
+        /// <summary>
         /// Attempt to retrieve a certificate from the Windows local machine certificate store.
         /// </summary>
         /// <param name="subjName">The subject name of the certificate to retrieve.</param>
