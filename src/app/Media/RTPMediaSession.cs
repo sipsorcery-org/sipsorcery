@@ -12,7 +12,7 @@ namespace SIPSorcery.SIP.App.Media
     public class RTPMediaSession : IMediaSession
     {
         private static readonly ILogger logger = Log.Logger;
-        private readonly RTPSession session;
+        protected readonly RTPSession session;
 
         public RTPMediaSession(RTPSession rtpSession)
         {
@@ -28,7 +28,7 @@ namespace SIPSorcery.SIP.App.Media
 
         public event Action<byte> DtmfCompleted;
 
-        public void Close()
+        public virtual void Close()
         {
             session.Close();
             session.OnRtpEvent -= OnRemoteRtpEvent;
