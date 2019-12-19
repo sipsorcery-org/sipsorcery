@@ -628,6 +628,16 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
+        /// Checks whether the specified protocol is supported.
+        /// </summary>
+        /// <param name="protocol">The protocol to check.</param>
+        /// <returns>True if supported, false if not.</returns>
+        public override bool IsProtocolSupported(SIPProtocolsEnum protocol)
+        {
+            return protocol == SIPProtocolsEnum.tcp;
+        }
+
+        /// <summary>
         /// Closes the channel and any open sockets.
         /// </summary>
         public override void Close()

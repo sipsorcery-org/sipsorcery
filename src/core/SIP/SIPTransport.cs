@@ -1169,11 +1169,11 @@ namespace SIPSorcery.SIP
             {
                 throw new ApplicationException("The transport layer does not have any SIP channels.");
             }
-            else if (!m_sipChannels.Any(x => x.Value.SIPProtocol == protocol && x.Value.IsAddressFamilySupported(dst.Address.AddressFamily)))
+            else if (!m_sipChannels.Any(x => x.Value.IsProtocolSupported(protocol) && x.Value.IsAddressFamilySupported(dst.Address.AddressFamily)))
             {
                 throw new ApplicationException($"The transport layer does not have any SIP channels matching {protocol} and {dst.AddressFamily}.");
             }
-            else if (!String.IsNullOrEmpty(channelIDHint) && m_sipChannels.Any(x => x.Value.SIPProtocol == protocol && x.Key == channelIDHint))
+            else if (!String.IsNullOrEmpty(channelIDHint) && m_sipChannels.Any(x => x.Value.IsProtocolSupported(protocol) && x.Key == channelIDHint))
             {
                 return m_sipChannels[channelIDHint];
             }
@@ -1223,7 +1223,7 @@ namespace SIPSorcery.SIP
                 }
 
                 // Hard to see how we could get to here. Maybe some weird IPv6 edge case or a network interface has gone down. Just return the first channel.
-                return m_sipChannels.Where(x => x.Value.SIPProtocol == protocol && x.Value.IsAddressFamilySupported(dst.Address.AddressFamily))
+                return m_sipChannels.Where(x => x.Value.IsProtocolSupported(protocol) && x.Value.IsAddressFamilySupported(dst.Address.AddressFamily))
                     .Select(x => x.Value).First();
             }
         }
@@ -1237,10 +1237,10 @@ namespace SIPSorcery.SIP
         /// <returns>A SIP channel if a match is found or null if not.</returns>
         private SIPChannel GetSIPChannel(SIPProtocolsEnum protocol, IPAddress listeningAddress)
         {
-            if (m_sipChannels.Any(x => x.Value.SIPProtocol == protocol && listeningAddress.Equals(x.Value.ListeningIPAddress)))
+            if (m_sipChannels.Any(x => x.Value.IsProtocolSupported(protocol) && listeningAddress.Equals(x.Value.ListeningIPAddress)))
             {
                 return m_sipChannels.Where(x =>
-                             x.Value.SIPProtocol == protocol && listeningAddress.Equals(x.Value.ListeningIPAddress))
+                             x.Value.IsProtocolSupported(protocol) && listeningAddress.Equals(x.Value.ListeningIPAddress))
                            .Select(x => x.Value)
                            .First();
             }

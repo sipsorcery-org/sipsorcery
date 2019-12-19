@@ -9,6 +9,10 @@
 // classes and a Web Socket Client. There was no Web Socket Server. For the latter it
 // is likely the decision was to rely on support in Kestrel and IIS.
 //
+// Note 2: ClientWebSocket.CreateFromStream would seem to allow server web socket 
+// connections to be created from an underlying HTTP connection. But it's only
+// available for netcoreapp3.0.
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
@@ -313,6 +317,23 @@ namespace SIPSorcery.SIP
         public override bool IsAddressFamilySupported(AddressFamily addresFamily)
         {
             return addresFamily == ListeningIPAddress.AddressFamily;
+        }
+
+        /// <summary>
+        /// Checks whether the specified protocol is supported.
+        /// </summary>
+        /// <param name="protocol">The protocol to check.</param>
+        /// <returns>True if supported, false if not.</returns>
+        public override bool IsProtocolSupported(SIPProtocolsEnum protocol)
+        {
+            if(IsSecure)
+            {
+                return protocol == SIPProtocolsEnum.wss;
+            }
+            else
+            {
+                return protocol == SIPProtocolsEnum.ws;
+            }
         }
 
         /// <summary>

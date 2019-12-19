@@ -264,6 +264,11 @@ namespace SIPSorcery.SIP
         public abstract bool IsAddressFamilySupported(AddressFamily addresFamily);
 
         /// <summary>
+        /// Returns true if the channel supports the requested transport layer protocol.
+        /// </summary>
+        public abstract bool IsProtocolSupported(SIPProtocolsEnum protocol);
+
+        /// <summary>
         /// Gets the local IP address this SIP channel will use for communicating with the destination
         /// IP address.
         /// </summary>

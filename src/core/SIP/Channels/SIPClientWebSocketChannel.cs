@@ -46,7 +46,9 @@ namespace SIPSorcery.SIP
         /// </summary>
         private struct ClientWebSocketConnection
         {
+            public SIPEndPoint LocalEndPoint;
             public Uri ServerUri;
+            public SIPEndPoint RemoteEndPoint;
             public string ConnectionID;
             public ArraySegment<byte> ReceiveBuffer;
             public Task<WebSocketReceiveResult> ReceiveTask;
@@ -76,15 +78,17 @@ namespace SIPSorcery.SIP
         /// Creates a SIP channel to establish outbound connections and send SIP messages 
         /// over a web socket communications layer.
         /// </summary>
-        public SIPClientWebSocketChannel() : base()
+        /// <param name="isSecure">True if this channel is for WSS URIs, false if for WS URI's.</param>
+        public SIPClientWebSocketChannel(bool isSecure) : base()
         {
             IsReliable = true;
-            SIPProtocol = SIPProtocolsEnum.ws;
+            IsSecure = isSecure;
+            SIPProtocol = (isSecure) ? SIPProtocolsEnum.wss : SIPProtocolsEnum.ws;
 
             // TODO: These values need to be adjusted. The problem is the source end point isn't available from
             // the client web socket connection.
             ListeningIPAddress = IPAddress.Any;
-            Port = 80;
+            Port = SIPConstants.GetDefaultPort(SIPProtocol);
         }
 
         /// <summary>
@@ -114,13 +118,13 @@ namespace SIPSorcery.SIP
         /// a good reason not to we can check if there is an existing client connection with the
         /// requested remote end point and use it.
         /// </summary>
-        /// <param name="destinationEndPoint">The remote destination end point to send the data to.</param>
+        /// <param name="dstEndPoint">The remote destination end point to send the data to.</param>
         /// <param name="buffer">The data to send.</param>
         /// <param name="connectionIDHint">The ID of the specific web socket connection to try and send the message on.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
+        public override Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
-            if (destinationEndPoint == null)
+            if (dstEndPoint == null)
             {
                 throw new ApplicationException("An empty destination was specified to Send in SIPClientWebSocketChannel.");
             }
@@ -129,8 +133,7 @@ namespace SIPSorcery.SIP
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPClientWebSocketChannel.");
             }
 
-            var serverUri = new Uri($"{WEB_SOCKET_URI_PREFIX}{destinationEndPoint}");
-            return SendAsync(serverUri, buffer);
+            return SendAsync(new SIPEndPoint(SIPProtocolsEnum.ws, dstEndPoint, this.ID, null), buffer);
         }
 
         /// <summary>
@@ -147,22 +150,30 @@ namespace SIPSorcery.SIP
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for SendSecure in SIPClientWebSocketChannel.");
             }
 
-            var serverUri = new Uri($"{WEB_SOCKET_SECURE_URI_PREFIX}{dstEndPoint}");
-            return SendAsync(serverUri, buffer);
+            return SendAsync(new SIPEndPoint(SIPProtocolsEnum.wss, dstEndPoint, this.ID, null), buffer);
         }
 
         /// <summary>
         /// Attempts a send to a remote web socket server. If there is an existing connection it will be used
         /// otherwise an attempt will made to establish a new one.
         /// </summary>
-        /// <param name="serverUri">The remote web socket server URI to send to.</param>
+        /// <param name="serverEndPoint">The remote web socket server URI to send to.</param>
         /// <param name="buffer">The data buffer to send.</param>
         /// <returns>A success value or an error for failure.</returns>
-        private async Task<SocketError> SendAsync(Uri serverUri, byte[] buffer)
+        private async Task<SocketError> SendAsync(SIPEndPoint serverEndPoint, byte[] buffer)
         {
             try
             {
+                string uriPrefix = (serverEndPoint.Protocol == SIPProtocolsEnum.wss) ? WEB_SOCKET_SECURE_URI_PREFIX : WEB_SOCKET_URI_PREFIX;
+                var serverUri = new Uri($"{uriPrefix}{serverEndPoint.GetIPEndPoint()}");
+
                 string connectionID = GetConnectionID(serverUri);
+                serverEndPoint.ConnectionID = connectionID;
+
+                // There's currently no way to get the socket IP end point used by the client web socket to estasblish
+                // the connection. Instead provide a dummy local end point that has as much of the information as we can.
+                IPEndPoint localEndPoint = new IPEndPoint((serverEndPoint.Address.AddressFamily == AddressFamily.InterNetwork) ? IPAddress.Any : IPAddress.IPv6Any, 0);
+                SIPEndPoint localSIPEndPoint = new SIPEndPoint(serverEndPoint.Protocol, localEndPoint, this.ID, connectionID);
 
                 if (m_egressConnections.TryGetValue(connectionID, out var connection))
                 {
@@ -187,7 +198,9 @@ namespace SIPSorcery.SIP
 
                     ClientWebSocketConnection conn = new ClientWebSocketConnection
                     {
+                        LocalEndPoint = localSIPEndPoint,
                         ServerUri = serverUri,
+                        RemoteEndPoint = serverEndPoint,
                         ConnectionID = connectionID,
                         ReceiveBuffer = recvBuffer,
                         ReceiveTask = receiveTask,
@@ -253,7 +266,19 @@ namespace SIPSorcery.SIP
         /// <returns>True if supported, false if not.</returns>
         public override bool IsAddressFamilySupported(AddressFamily addresFamily)
         {
+            // We can establish client web sockets with both IPv4 and IPv6.
             return true;
+        }
+
+        /// <summary>
+        /// Checks whether the specified protocol is supported.
+        /// </summary>
+        /// <param name="protocol">The protocol to check.</param>
+        /// <returns>True if supported, false if not.</returns>
+        public override bool IsProtocolSupported(SIPProtocolsEnum protocol)
+        {
+            // We can establish client web sockets to both ws and wss servers.
+            return protocol == SIPProtocolsEnum.ws || protocol == SIPProtocolsEnum.wss;
         }
 
         /// <summary>
@@ -330,7 +355,7 @@ namespace SIPSorcery.SIP
                         if (receiveTask.IsCompleted)
                         {
                             logger.LogDebug($"Client web socket connection to {conn.ServerUri} received {receiveTask.Result.Count} bytes.");
-                            SIPMessageReceived(this, null, null, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray());
+                            SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray());
                             conn.ReceiveTask = conn.Client.ReceiveAsync(conn.ReceiveBuffer, m_cts.Token);
                             break;
                         }
