@@ -2,7 +2,7 @@
   "profiles": {
     "UserAgentClient": {
       "commandName": "Project",
-      "commandLineArgs": "127.0.0.1;transport=tcp"
+      "commandLineArgs": "sips:127.0.0.1"
     }
   }
 }

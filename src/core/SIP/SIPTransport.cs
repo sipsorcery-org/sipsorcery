@@ -1300,13 +1300,11 @@ namespace SIPSorcery.SIP
             switch (protocol)
             {
                 case SIPProtocolsEnum.tcp:
-                    sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, 0));
+                    sipChannel = new SIPTCPChannel(addressFamily, SIPProtocolsEnum.tcp);
                     break;
-                // TODO: Generate a random client certificate for outgoing TLS connections.
-                //case SIPProtocolsEnum.tls:
-                //    var certificate = new X509Certificate2(@"localhost.pfx", "");
-                //    sipChannel = new SIPTLSChannel(certificate, new IPEndPoint(localAddress, 0));
-                //    break;
+                case SIPProtocolsEnum.tls:
+                    sipChannel = new SIPTLSChannel(addressFamily);
+                    break;
                 case SIPProtocolsEnum.udp:
                     sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, 0));
                     break;
