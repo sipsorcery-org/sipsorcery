@@ -94,6 +94,11 @@ namespace SIPSorcery.UnitTests
             return true;
         }
 
+        public override bool IsProtocolSupported(SIPProtocolsEnum protocol)
+        {
+            return true;
+        }
+
         /// <summary>
         /// Use to cause a mock message to be passed through to the SIP Transport class monitoring this mock channel.
         /// </summary>
