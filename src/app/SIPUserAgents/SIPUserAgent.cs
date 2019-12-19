@@ -393,7 +393,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="transferee">The dialog that will be replaced on the initial call party.</param>
         /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
-        /// <param name="ct">Cancellation token. Can be set to canel the transfer prior to it being
+        /// <param name="ct">Cancellation token. Can be set to cancel the transfer prior to it being
         /// accepted or timing out.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
         public Task<bool> AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct)
@@ -415,7 +415,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="referRequest">The REFER request for the transfer.</param>
         /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
-        /// <param name="ct">Cancellation token. Can be set to canel the transfer prior to it being
+        /// <param name="ct">Cancellation token. Can be set to cancel the transfer prior to it being
         /// accepted or timing out.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
         private async Task<bool> Transfer(SIPRequest referRequest, TimeSpan timeout, CancellationToken ct)
