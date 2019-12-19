@@ -19,6 +19,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.SIP.App.Media;
 using Xunit;
 using SIPSorcery.UnitTests;
 
@@ -49,7 +50,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
 
-            SIPUserAgent userAgent = new SIPUserAgent(transport, null);
+            SIPUserAgent userAgent = new SIPUserAgent(transport, null, CreateMediaSessionFactory());
 
             string inviteReqStr = "INVITE sip:192.168.11.50:5060 SIP/2.0" + m_CRLF +
 "Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3691" + m_CRLF +
@@ -104,7 +105,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             SIPTransport transport = new SIPTransport();
             transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
 
-            SIPUserAgent userAgent = new SIPUserAgent(transport, null);
+            SIPUserAgent userAgent = new SIPUserAgent(transport, null, CreateMediaSessionFactory());
 
             string inviteReqStr = "INVITE sip:192.168.11.50:5060 SIP/2.0" + m_CRLF +
 "Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3691" + m_CRLF +
@@ -165,7 +166,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             MockSIPChannel mockChannel = new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0));
             transport.AddSIPChannel(mockChannel);
 
-            SIPUserAgent userAgent = new SIPUserAgent(transport, null);
+            SIPUserAgent userAgent = new SIPUserAgent(transport, null, CreateMediaSessionFactory());
 
             string inviteReqStr = "INVITE sip:192.168.11.50:5060 SIP/2.0" + m_CRLF +
 "Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3691" + m_CRLF +
@@ -217,6 +218,11 @@ namespace SIPSorcery.SIP.App.UnitTests
 "";
 
             mockChannel.FireMessageReceived(dummySipEndPoint, dummySipEndPoint, Encoding.UTF8.GetBytes(inviteReqStr2));
+        }
+
+        private RTPMediaSessionFactory CreateMediaSessionFactory()
+        {
+            return new RTPMediaSessionFactory();
         }
     }
 }
