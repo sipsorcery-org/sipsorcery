@@ -33,7 +33,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         {
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
-        
+
         private string m_CRLF = SIPConstants.CRLF;
 
         /// <summary>

@@ -148,7 +148,10 @@ namespace SIPSorcery.SIP.UnitTests
                 clientEngine.AddTransaction(clientTransaction);
                 clientTransaction.SendInviteRequest(inviteRequest);
 
-                uasConfirmedTask.Task.Wait(TRANSACTION_EXCHANGE_TIMEOUT_MS);
+                if(!uasConfirmedTask.Task.Wait(TRANSACTION_EXCHANGE_TIMEOUT_MS))
+                {
+                    logger.LogWarning($"Tasks timed out");
+                }
 
                 Assert.True(clientTransaction.TransactionState == SIPTransactionStatesEnum.Completed, "Client transaction in incorrect state.");
                 Assert.True(serverTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed, "Server transaction in incorrect state.");

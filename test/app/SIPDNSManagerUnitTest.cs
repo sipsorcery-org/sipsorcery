@@ -73,7 +73,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             try
             {
                 logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+                logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
                 SIPDNSManager.UseNAPTRLookups = true;
 
