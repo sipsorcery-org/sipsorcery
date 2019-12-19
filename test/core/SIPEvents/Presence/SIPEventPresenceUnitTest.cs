@@ -33,6 +33,7 @@ namespace SIPSorcery.SIP.UnitTests
         //public void InvalidXMLUnitTest()
         //{
         //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    if (m_presenceSchema == null)
         //    {
@@ -71,6 +72,7 @@ namespace SIPSorcery.SIP.UnitTests
         //public void ValidXMLUnitTest()
         //{
         //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    if (m_presenceSchema == null)
         //    {
@@ -113,6 +115,7 @@ namespace SIPSorcery.SIP.UnitTests
         //public void GetAsXMLStringUnitTest()
         //{
         //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    SIPEventPresence presence = new SIPEventPresence(SIPURI.ParseSIPURI("sip:me@somewhere.com"));
         //    presence.Tuples.Add(new SIPEventPresenceTuple("1234", SIPEventPresenceStateEnum.open, SIPURI.ParseSIPURIRelaxed("test@test.com"), 0.8M));
@@ -129,6 +132,7 @@ namespace SIPSorcery.SIP.UnitTests
         //public void ParseFromXMLStringUnitTest()
         //{
         //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    string presenceXMLStr = "<?xml version='1.0' encoding='utf-16'?>" +
         //         "<presence entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:pidf'>" +

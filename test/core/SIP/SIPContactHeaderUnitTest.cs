@@ -30,6 +30,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseContactHeaderDomainForUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:sip.domain.com@sip.domain.com>";
 
@@ -43,6 +44,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseBadAastraContactHeaderUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:10001@127.0.0.1:5060\n";
 
@@ -53,6 +55,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseNoAngleQuotesContactHeaderUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "sip:10001@127.0.0.1:5060";
 
@@ -68,6 +71,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseCiscoContactHeaderUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:user@127.0.0.1:5060;user=phone;transport=udp>;+sip.instance=\"<urn:uuid:00000000-0000-0000-0000-0006d74b0e72>\";+u.sip!model.ccm.cisco.com=\"7\"";
 
@@ -85,6 +89,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseNoLineBreakContactHeaderUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:10001@127.0.0.1:5060\nAllow: OPTIONS";
 
@@ -97,6 +102,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseContactWithParamHeaderUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:user@127.0.0.1:5060;ftag=1233>";
 
@@ -114,6 +120,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseExpiresContactHeaderUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:user@127.0.0.1:5060>; expires=60";
 
@@ -132,6 +139,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseZeroExpiresContactHeaderUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "<sip:user@127.0.0.1:5060>; expires=0";
 
@@ -150,6 +158,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void MultipleContactsHeaderUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "\"Mr. Watson\" <sip:watson@worcester.bell-telephone.com>;q=0.7; expires=3600, \"Mr. Watson\" <sip:watson@bell-telephone.com> ;q=0.1";
 
@@ -169,6 +178,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void MultipleContactsWithURIParamsHeaderUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testContactHeader = "\"Mr. Watson\" <sip:watson@worcester.bell-telephone.com;ftag=1232>;q=0.7; expires=3600, \"Mr. Watson\" <sip:watson@bell-telephone.com?nonsense=yes> ;q=0.1";
 
@@ -190,6 +200,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void SimpleAreEqualUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPContactHeader contactHeader1 = new SIPContactHeader(null, SIPURI.ParseSIPURI("sip:user@127.0.0.1:5060"));
             SIPContactHeader contactHeader2 = new SIPContactHeader(null, SIPURI.ParseSIPURI("sip:user@127.0.0.1:5060"));
@@ -201,6 +212,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void SimpleNotEqualUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPContactHeader contactHeader1 = new SIPContactHeader(null, SIPURI.ParseSIPURI("sip:user@127.0.0.1:5060"));
             SIPContactHeader contactHeader2 = new SIPContactHeader(null, SIPURI.ParseSIPURI("sip:user@127.0.0.2:5060"));
@@ -212,6 +224,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void WithParametersAreEqualUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPContactHeader contactHeader1 = new SIPContactHeader(SIPUserField.ParseSIPUserField("<sip:user@127.0.0.1:5060>;param1=value1"));
             SIPContactHeader contactHeader2 = new SIPContactHeader(SIPUserField.ParseSIPUserField("<sip:user@127.0.0.1:5060>;param1=value1"));
@@ -223,6 +236,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void WithExpiresParametersAreEqualUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPContactHeader contactHeader1 = new SIPContactHeader(SIPUserField.ParseSIPUserField("<sip:user@127.0.0.1:5060> ;expires=0; param1=value1"));
             SIPContactHeader contactHeader2 = new SIPContactHeader(SIPUserField.ParseSIPUserField("<sip:user@127.0.0.1:5060>;expires=50;param1=value1"));
@@ -234,6 +248,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void WithDifferentNamesAreEqualUserTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPContactHeader contactHeader1 = new SIPContactHeader(SIPUserField.ParseSIPUserField("\"Joe Bloggs\" <sip:user@127.0.0.1:5060> ;expires=0; param1=value1"));
             SIPContactHeader contactHeader2 = new SIPContactHeader(SIPUserField.ParseSIPUserField("\"Jane Doe\" <sip:user@127.0.0.1:5060>;expires=50;param1=value1"));

@@ -29,6 +29,8 @@ namespace SIPSorcery.Net.UnitTests
         {
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
+        
+        private string m_CRLF = SIP.SIPConstants.CRLF;
 
         /// <summary>
         /// Tests that an RTSP request with headers and a body is correctly serialised and parsed.
@@ -37,15 +39,16 @@ namespace SIPSorcery.Net.UnitTests
         public void RTSPRequestWIthStandardHeadersParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             int cseq = 23;
             string session = Guid.NewGuid().ToString();
-            string body = @"v=0
-o=- 2890844526 2890842807 IN IP4 192.16.24.202
-s=RTSP Session
-m=audio 3456 RTP/AVP 0
-a=control:rtsp://live.example.com/concert/audio
-c=IN IP4 224.2.0.1/16";
+            string body = "v=0" + m_CRLF +
+"o=- 2890844526 2890842807 IN IP4 192.16.24.202" + m_CRLF +
+"s=RTSP Session" + m_CRLF +
+"m=audio 3456 RTP/AVP 0" + m_CRLF +
+"a=control:rtsp://live.example.com/concert/audio" + m_CRLF +
+"c=IN IP4 224.2.0.1/16";
 
             RTSPResponse describeResponse = new RTSPResponse(RTSPResponseStatusCodesEnum.OK, null);
             describeResponse.Header = new RTSPHeader(cseq, session);

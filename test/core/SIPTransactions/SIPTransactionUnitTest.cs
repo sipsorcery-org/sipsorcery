@@ -32,6 +32,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void CreateTransactionUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipRequestStr =
                 "INVITE sip:023434211@213.200.94.182;switchtag=902888 SIP/2.0" + m_CRLF +

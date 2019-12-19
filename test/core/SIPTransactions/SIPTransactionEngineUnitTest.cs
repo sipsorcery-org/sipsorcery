@@ -56,6 +56,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void MatchOnRequestAndResponseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
@@ -97,6 +98,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AckRecognitionUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransport clientTransport = null;
             SIPTransport serverTransport = null;
@@ -162,6 +164,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AckRecognitionIIUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPTransactionEngine engine = new SIPTransactionEngine();     // Client side of the INVITE.
 

@@ -41,6 +41,7 @@ namespace SIPSorcery.SIP.UnitTests
         //public void InvalidXMLUnitTest()
         //{
         //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    if (m_eventDialogSchema == null)
         //    {
@@ -83,6 +84,7 @@ namespace SIPSorcery.SIP.UnitTests
         //public void ValidXMLUnitTest()
         //{
         //    logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+        //    logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
         //    if (m_eventDialogSchema == null)
         //    {
@@ -134,6 +136,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void GetAsXMLStringUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEventDialogInfo dialogInfo = new SIPEventDialogInfo(0, SIPEventDialogInfoStateEnum.full, SIPURI.ParseSIPURI("sip:test@test.com"));
             dialogInfo.DialogItems.Add(new SIPEventDialog("abcde", "terminated", 487, SIPEventDialogStateEvent.Cancelled, 2));
@@ -150,6 +153,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseFromXMLStringUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string eventDialogInfoStr = "<?xml version='1.0' encoding='utf-16'?>" +
                  "<dialog-info version='1' state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'>" +
@@ -185,6 +189,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseFromXMLStringMultiDialogsUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string eventDialogInfoStr = "<?xml version='1.0' encoding='utf-16'?>" +
                  "<dialog-info version='1' state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'>" +
@@ -218,6 +223,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseFromXMLStringDialogWithParticipantsUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string eventDialogInfoStr = "<?xml version='1.0' encoding='utf-16'?>" +
                  "<dialog-info version='1' state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'>" +
@@ -259,6 +265,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseSDPFromXMLStringDialogUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string CRLF = "\r\n";
             string sdp =

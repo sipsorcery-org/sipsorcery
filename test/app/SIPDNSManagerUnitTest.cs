@@ -36,6 +36,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         public void ResolveHostFromServiceTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var result = SIPDNSManager.ResolveSIPService(SIPURI.ParseSIPURIRelaxed("sipsorcery.com"), false);
 
@@ -53,6 +54,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         public void LookupLocalHostnameTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string hostname = System.Net.Dns.GetHostName();
 
@@ -71,6 +73,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             try
             {
                 logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
                 SIPDNSManager.UseNAPTRLookups = true;
 
@@ -98,6 +101,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         public async void ResolveSIPServiceAsyncTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var result = await SIPDNSManager.ResolveAsync(SIPURI.ParseSIPURIRelaxed("sip:reg.sip-trunk.telekom.de;transport=tcp"));
 

@@ -29,6 +29,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void SampleTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             int initRandomNumber = Crypto.GetRandomInt();
             logger.LogDebug("Random int = " + initRandomNumber + ".");
@@ -39,6 +40,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void CallRandomNumberWebServiceUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             logger.LogDebug("Random number = " + Crypto.GetRandomInt());
 
@@ -49,6 +51,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void GetRandomNumberTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             logger.LogDebug("Random number = " + Crypto.GetRandomInt());
 
@@ -59,6 +62,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void GetOneHundredRandomNumbersTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             for (int index = 0; index < 100; index++)
             {

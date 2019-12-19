@@ -29,6 +29,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GetRTCPPacketTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPPacket rtcpPacket = new RTCPPacket(1, 1, 1, 1, 1);
             byte[] reports = new byte[84];
@@ -46,6 +47,7 @@ namespace SIPSorcery.Net.UnitTests
         public void RTCPHeaderRoundTripTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPPacket src = new RTCPPacket(12, 122, 561, 6756, 56434);
             byte[] reports = new byte[84];

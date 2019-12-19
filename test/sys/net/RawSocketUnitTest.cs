@@ -31,6 +31,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void IPHeaderConstructionUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             IPv4Header header = new IPv4Header(ProtocolType.Udp, 4567, IPAddress.Parse("194.213.29.54"), IPAddress.Parse("194.213.29.54"));
             byte[] headerData = header.GetBytes();
@@ -55,6 +56,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void PreconstructedIPPacketSendUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] ipPacket = new byte[] {
                      // IP Header.
@@ -90,6 +92,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void IPEmptyPacketSendUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             UDPPacket udpPacket = new UDPPacket(4001, 4001, new byte[] { 0x1, 0x2, 0x3, 0x4 });
             IPv4Header header = new IPv4Header(ProtocolType.Udp, 7890, IPAddress.Parse("194.213.29.54"), IPAddress.Parse("194.213.29.54"));

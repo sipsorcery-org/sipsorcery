@@ -34,6 +34,7 @@ namespace SIPSorcery.Net.UnitTests
         public void InitialSampleTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ushort syncSource = 1234;
             IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, 5060);
@@ -53,6 +54,7 @@ namespace SIPSorcery.Net.UnitTests
         public void EmpytySampleTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ushort syncSource = 1234;
             IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, 5060);
@@ -118,6 +120,7 @@ namespace SIPSorcery.Net.UnitTests
         public void DropTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ushort syncSource = 1234;
             IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, 5060);
@@ -157,6 +160,7 @@ namespace SIPSorcery.Net.UnitTests
         public void OutOfOrderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ushort syncSource = 1234;
             IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, 5060);
@@ -183,6 +187,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GetRTCPHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPHeader rtcpHeader = new RTCPHeader();
             byte[] headerBuffer = rtcpHeader.GetHeader(0, 0);
@@ -199,6 +204,7 @@ namespace SIPSorcery.Net.UnitTests
         public void RTCPHeaderRoundTripTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPHeader src = new RTCPHeader();
             byte[] headerBuffer = src.GetHeader(17, 54443);
@@ -224,6 +230,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GetHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader rtpHeader = new RTPHeader();
             byte[] headerBuffer = rtpHeader.GetHeader(1, 0, 1);
@@ -240,6 +247,7 @@ namespace SIPSorcery.Net.UnitTests
         public void HeaderRoundTripTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader src = new RTPHeader();
             byte[] headerBuffer = src.GetHeader(1, 0, 1);
@@ -272,6 +280,7 @@ namespace SIPSorcery.Net.UnitTests
         public void CustomisedHeaderRoundTripTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader src = new RTPHeader();
             src.Version = 3;
@@ -318,6 +327,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseRawRtpTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rtpBytes = new byte[] {
                 0x80, 0x88, 0xe6, 0xfd, 0x00, 0x00, 0x00, 0xf0, 0xde, 0xe0, 0xee, 0x8f,
@@ -340,6 +350,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseRawRtpWithExtensionTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rtpBytes = new byte[] {
                 0x90, 0x88, 0xe6, 0xfd,

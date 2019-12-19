@@ -29,6 +29,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         public void SerializeMeassageOnlyProxyEventHeadersTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPMonitorEvent monitorEvent = new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.FullSIPTrace, "Test",
                 null, null, null, null, SIPCallDirection.None);

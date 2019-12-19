@@ -36,6 +36,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseSDPUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr =
                 "v=0" + m_CRLF +
@@ -68,6 +69,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseBriaSDPUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             string sdpStr = "v=0\r\no=- 5 2 IN IP4 10.1.1.2\r\ns=CounterPath Bria\r\nc=IN IP4 144.137.16.240\r\nt=0 0\r\nm=audio 34640 RTP/AVP 0 8 101\r\na=sendrecv\r\na=rtpmap:101 telephone-event/8000\r\na=fmtp:101 0-15\r\na=alt:1 1 : STu/ZtOu 7hiLQmUp 10.1.1.2 34640\r\n";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
@@ -83,6 +85,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseBadFormatSDPUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr =
                 " v=0" + m_CRLF +
@@ -112,6 +115,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseBadFormatBriaSDPUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
             string sdpStr = " v=0\r\no=- 5 2 IN IP4 10.1.1.2\r\n s=CounterPath Bria\r\nc=IN IP4 144.137.16.240\r\nt=0 0\r\n m=audio 34640 RTP/AVP 0 8 101\r\na=sendrecv\r\na=rtpmap:101 telephone-event/8000\r\na=fmtp:101 0-15\r\na=alt:1 1 : STu/ZtOu 7hiLQmUp 10.1.1.2 34640\r\n";
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
@@ -126,6 +130,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseICESessionAttributesUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr =
               "v=0" + m_CRLF +
@@ -158,6 +163,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseMultipleMediaAnnouncementsUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr = "v=0" + m_CRLF +
                 "o=- 13064410510996677 3 IN IP4 10.1.1.2" + m_CRLF +
@@ -189,6 +195,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseAudioAndVideoConnectionsUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr = "v=0" + m_CRLF +
                 "o=Cisco-SIPUA 6396 0 IN IP4 101.180.234.134" + m_CRLF +
@@ -216,6 +223,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseMediaTypeImageUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr = "v=0" + m_CRLF +
                 "o=OfficeMasterDirectSIP 806542878 806542879 IN IP4 10.2.0.110" + m_CRLF +
@@ -244,6 +252,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseEdgeBrowserSdpUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr = "v=0" + m_CRLF +
                 "o=- 8028343537520473029 0 IN IP4 127.0.0.1" + m_CRLF +
@@ -290,6 +299,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseIPv6SDPUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr = "v=0" + m_CRLF +
                 "o=nasa1 971731711378798081 0 IN IP6 2201:056D::112E:144A:1E24" + m_CRLF +
@@ -317,6 +327,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GetFirstMediaOfferRTPSocketUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr =
                 "v=0" + m_CRLF +
@@ -345,6 +356,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GetFirstMediaOfferIPv6RTPSocketUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr = "v=0" + m_CRLF +
                 "o=nasa1 971731711378798081 0 IN IP6 2201:056D::112E:144A:1E24" + m_CRLF +
@@ -370,6 +382,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GetFirstMediaSteamStatusUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr =
                 "v=0" + m_CRLF +
@@ -398,6 +411,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GetFirstMediaSteamStatusNonDefaultUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr =
                 "v=0" + m_CRLF +
@@ -425,6 +439,7 @@ namespace SIPSorcery.Net.UnitTests
         public void GetSessionMediaSteamStatusUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr =
                 "v=0" + m_CRLF +
@@ -452,6 +467,7 @@ namespace SIPSorcery.Net.UnitTests
         public void AnnouncementMediaSteamStatuRoundtripUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr =
                 "v=0" + m_CRLF +
@@ -483,6 +499,7 @@ namespace SIPSorcery.Net.UnitTests
         public void SessionMediaSteamStatusRoundTripUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sdpStr =
                 "v=0" + m_CRLF +

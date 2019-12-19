@@ -46,6 +46,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ShortTorturousInvite()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             Assert.True(File.Exists("wsinv.dat"), "The wsinv.dat torture test input file was missing.");
 
@@ -76,6 +77,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void RFC5118_4_1()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "REGISTER sip:[2001:db8::10] SIP/2.0" + CRLF +
@@ -119,6 +121,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void RFC5118_4_2()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "REGISTER sip:2001:db8::10 SIP/2.0" + CRLF +
@@ -156,6 +159,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void RFC5118_4_3()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "REGISTER sip:[2001:db8::10:5070] SIP/2.0" + CRLF +
@@ -201,6 +205,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void RFC5118_4_4()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "REGISTER sip:[2001:db8::10]:5070 SIP/2.0" + CRLF +
@@ -246,6 +251,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void RFC5118_4_5_1()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "BYE sip:[2001:db8::10] SIP/2.0" + CRLF +
@@ -284,6 +290,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void RFC5118_4_5_2()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "OPTIONS sip:[2001:db8::10] SIP/2.0" + CRLF +
@@ -326,6 +333,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void RFC5118_4_6()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "INVITE sip:user@[2001:db8::10] SIP/2.0" + CRLF +
@@ -385,6 +393,7 @@ CRLF +
         public void RFC5118_4_7()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "BYE sip:user@host.example.net SIP/2.0" + CRLF +
@@ -435,6 +444,7 @@ CRLF +
         public void RFC5118_4_8()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "INVITE sip:user@[2001:db8::10] SIP/2.0" + CRLF +
@@ -502,6 +512,7 @@ CRLF +
         public void RFC5118_4_9()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "INVITE sip:user@example.com SIP/2.0" + CRLF +
@@ -568,6 +579,7 @@ CRLF +
         public void RFC5118_4_10_1()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "OPTIONS sip:user@[2001:db8:::192.0.2.1] SIP/2.0" + CRLF +
@@ -604,6 +616,7 @@ CRLF +
         public void RFC5118_4_10_2()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
 "OPTIONS sip:user@[2001:db8::192.0.2.1] SIP/2.0" + CRLF +

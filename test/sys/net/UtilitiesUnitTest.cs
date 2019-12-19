@@ -29,6 +29,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void ReverseUInt16SampleTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ushort testNum = 45677;
             byte[] testNumBytes = BitConverter.GetBytes(testNum);
@@ -63,6 +64,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void ReverseUInt32SampleTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             uint testNum = 123124;
             byte[] testNumBytes = BitConverter.GetBytes(testNum);
@@ -97,6 +99,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void ReverseUInt64SampleTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             ulong testNum = 1231265499856464;
             byte[] testNumBytes = BitConverter.GetBytes(testNum);

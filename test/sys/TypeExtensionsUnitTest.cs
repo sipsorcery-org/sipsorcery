@@ -30,6 +30,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void TrimTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             String myString = null;
 
@@ -40,6 +41,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void ZeroBytesTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             String myString = Encoding.UTF8.GetString(new byte[] { 0x00, 0x00, 0x00, 0x00 });
 

@@ -30,6 +30,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void AllFieldsParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "sips:10.0.0.100:5060;lr;transport=tcp;";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -47,6 +48,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void HostOnlyParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "10.0.0.100";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -62,6 +64,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void HostAndSchemeParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "sip:10.0.0.100";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -79,6 +82,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void HostAndPortParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "10.0.0.100:5065";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -94,6 +98,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void HostAndTransportParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "10.0.0.100;transport=tcp";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -111,6 +116,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void SchemeHostPortParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "sips:10.0.0.100:5063";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -126,6 +132,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void SchemeHostTransportParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "sip:10.0.0.100:5063;lr;tag=123;transport=tcp;tag2=abcd";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -141,6 +148,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void EqualityTestNoPostHostTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint sipEP1 = SIPEndPoint.ParseSIPEndPoint("10.0.0.100");
             SIPEndPoint sipEP2 = SIPEndPoint.ParseSIPEndPoint("10.0.0.100:5060");
@@ -152,6 +160,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void EqualityTestTLSHostTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint sipEP1 = SIPEndPoint.ParseSIPEndPoint("sips:10.0.0.100");
             SIPEndPoint sipEP2 = SIPEndPoint.ParseSIPEndPoint("10.0.0.100:5061;transport=tls");
@@ -163,6 +172,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void EqualityTestRouteTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint sipEP1 = SIPEndPoint.ParseSIPEndPoint("sip:10.0.0.100;lr");
             SIPEndPoint sipEP2 = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Parse("10.0.0.100"), 5060));
@@ -176,6 +186,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void IPv6LoopbackToStringTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPEndPoint sipEndPoint = new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.IPv6Loopback, 0));
 
@@ -191,6 +202,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void IPv6LoopbackAndSchemeParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "udp:[::1]";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -209,6 +221,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void IPv6LoopbackAndPortParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "tcp:[::1]:6060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -228,6 +241,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void IPv6LoopbackWithScehemeParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "sip:[::1]:6060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -247,6 +261,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void WebSocketLoopbackAndPortParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "ws:[::1]:6060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -266,6 +281,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void SecureWebSocketLoopbackAndPortParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "wss:[fe80::54a9:d238:b2ee:ceb]:7060";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -285,6 +301,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void IPv6WithConnectionIDParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "udp:[::1];xid=1234567";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
@@ -304,6 +321,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void IPv6WithConnectionAndChannelIDParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipEndPointStr = "udp:[::1];cid=123;xid=1234567";
             SIPEndPoint sipEndPoint = SIPEndPoint.ParseSIPEndPoint(sipEndPointStr);
