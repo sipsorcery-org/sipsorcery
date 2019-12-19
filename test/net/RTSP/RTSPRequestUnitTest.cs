@@ -23,11 +23,11 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class RTSPRequestUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public RTSPRequestUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         /// <summary>
@@ -37,6 +37,7 @@ namespace SIPSorcery.Net.UnitTests
         public void RTSPRequestWIthStandardHeadersParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             int cseq = 23;
             string session = Guid.NewGuid().ToString();

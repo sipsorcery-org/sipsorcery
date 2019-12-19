@@ -23,11 +23,11 @@ namespace SIPSorcery.Sys.UnitTests
     [Trait("Category", "unit")]
     public class NetServicesUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public NetServicesUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         /// <summary>
@@ -37,6 +37,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void GetLocalIPAddressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("192.168.11.48"));
             Assert.NotNull(localAddress);
@@ -51,6 +52,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void GetLocalForLoopbackAddressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Loopback);
             Assert.Equal(IPAddress.Loopback, localAddress);
@@ -65,6 +67,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void GetLocalForInternetAdressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("67.222.131.147"));
             Assert.NotNull(localAddress);
@@ -80,6 +83,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void GetLocalForIPv6LoopbackAddressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.IPv6Loopback);
             Assert.Equal(IPAddress.IPv6Loopback, localAddress);
@@ -95,6 +99,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void GetLocalIPv6AddressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("fe80::54a9:d238:b2ee:abc"));
 
@@ -112,6 +117,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void GetLocalForInternetIPv6AdressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("2606:db00:0:62b::2"));
             Assert.NotNull(localAddress);
@@ -126,6 +132,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void GetAllLocalIPAddressesUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddresses = NetServices.GetAllLocalIPAddresses();
             Assert.NotNull(localAddresses);
@@ -143,6 +150,7 @@ namespace SIPSorcery.Sys.UnitTests
         public void GetInternetAddressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localInternetAddresses = NetServices.GetLocalAddressForInternet();
             Assert.NotNull(localInternetAddresses);

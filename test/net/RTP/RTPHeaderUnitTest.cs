@@ -18,17 +18,18 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class RTPHeaderUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public RTPHeaderUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         [Fact]
         public void GetHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader rtpHeader = new RTPHeader();
             byte[] headerBuffer = rtpHeader.GetHeader(1, 0, 1);
@@ -45,6 +46,7 @@ namespace SIPSorcery.Net.UnitTests
         public void HeaderRoundTripTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader src = new RTPHeader();
             byte[] headerBuffer = src.GetHeader(1, 0, 1);
@@ -77,6 +79,7 @@ namespace SIPSorcery.Net.UnitTests
         public void CustomisedHeaderRoundTripTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPHeader src = new RTPHeader();
             src.Version = 3;
@@ -123,6 +126,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseRawRtpTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rtpBytes = new byte[] {
                 0x80, 0x88, 0xe6, 0xfd, 0x00, 0x00, 0x00, 0xf0, 0xde, 0xe0, 0xee, 0x8f,
@@ -145,6 +149,7 @@ namespace SIPSorcery.Net.UnitTests
         public void ParseRawRtpWithExtensionTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             byte[] rtpBytes = new byte[] {
                 0x90, 0x88, 0xe6, 0xfd,

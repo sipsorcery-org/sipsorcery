@@ -19,11 +19,11 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPResponseUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public SIPResponseUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         private static string m_CRLF = SIPConstants.CRLF;
@@ -32,6 +32,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseAsteriskTRYINGUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 100 Trying" + m_CRLF +
@@ -58,6 +59,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseAsteriskOKUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -102,6 +104,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseOptionsBodyResponse()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg = "SIP/2.0 200 OK" + m_CRLF +
                 "Via: SIP/2.0/UDP 213.168.225.133:5060;branch=z9hG4bK10a1fab0" + m_CRLF +
@@ -138,6 +141,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseForbiddenResponse()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg = "SIP/2.0 403 Forbidden" + m_CRLF +
                 "Via: SIP/2.0/UDP 192.168.1.1;branch=z9hG4bKbcb78f72d221beec" + m_CRLF +
@@ -162,6 +166,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseOptionsResponse()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
             "SIP/2.0 200 OK" + m_CRLF +
@@ -200,6 +205,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseMissingCSeqOptionsResponse()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -228,6 +234,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseMSCOkResponse()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -270,6 +277,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseMultipleContactsResponse()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -303,6 +311,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseMultiLineRecordRouteResponse()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
@@ -349,6 +358,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseMultiLineViaResponse()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +

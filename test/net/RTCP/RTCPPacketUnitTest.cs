@@ -18,17 +18,18 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class RTCPPacketUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public RTCPPacketUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         [Fact]
         public void GetRTCPPacketTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPPacket rtcpPacket = new RTCPPacket(1, 1, 1, 1, 1);
             byte[] reports = new byte[84];
@@ -46,6 +47,7 @@ namespace SIPSorcery.Net.UnitTests
         public void RTCPHeaderRoundTripTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPPacket src = new RTCPPacket(12, 122, 561, 6756, 56434);
             byte[] reports = new byte[84];

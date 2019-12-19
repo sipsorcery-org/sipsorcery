@@ -19,17 +19,18 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPViaHeaderUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public SIPViaHeaderUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         [Fact]
         public void ParseXTenViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string xtenViaHeader = "SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001";
 
@@ -59,6 +60,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseReceivedFromIPViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string xtenViaHeader = "SIP/2.0/UDP 192.168.1.2:5065;received=88.99.88.99;rport=10060;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001";
 
@@ -88,6 +90,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseNoPortViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string noPortViaHeader = "SIP/2.0/UDP 192.168.1.1;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001";
 
@@ -106,6 +109,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseNoSemiColonViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string noSemiColonViaHeader = "SIP/2.0/UDP 192.168.1.1:1234";
 
@@ -121,6 +125,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseNoContactViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string noContactViaHeader = "SIP/2.0/UDP";
 
@@ -133,6 +138,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseNoSemiButHasBranchColonViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string noSemiColonViaHeader = "SIP/2.0/UDP 192.168.1.1:1234branch=z9hG4bKFBB7EAC06934405182D13950BD51F001";
 
@@ -149,6 +155,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseNoBranchViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string noSemiColonViaHeader = "SIP/2.0/UDP 192.168.1.1:1234;rport";
 
@@ -165,6 +172,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseBadAastraViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string noSemiColonViaHeader = "SIP/2.0/UDP 192.168.1.1:1234port;branch=213123";
 
@@ -177,6 +185,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void MaintainUnknownHeaderViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string xtenViaHeader = "SIP/2.0/UDP 192.168.1.2:5065;received=88.99.88.99;unknown=12234;unknown2;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001;rport";
 
@@ -197,6 +206,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void GetIPEndPointViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string xtenViaHeader = "SIP/2.0/UDP 192.168.1.2:5065;rport;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001";
 
@@ -211,6 +221,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void CreateNewViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             SIPViaHeader viaHeader = new SIPViaHeader("192.168.1.2", 5063, "abcdefgh");
 
@@ -225,6 +236,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseMultiViaHeaderTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string noPortViaHeader = "SIP/2.0/UDP 192.168.1.1:5060;branch=z9hG4bKFBB7EAC06934405182D13950BD51F001, SIP/2.0/UDP 192.168.0.1:5061;branch=z9hG4bKFBB7EAC06";
 
@@ -242,6 +254,7 @@ namespace SIPSorcery.SIP.UnitTests
         public void ParseMultiViaHeaderTest2()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string noPortViaHeader = "SIP/2.0/UDP 194.213.29.100:5060;branch=z9hG4bK5feb18267ce40fb05969b4ba843681dbfc9ffcff, SIP/2.0/UDP 194.213.29.54:5061;branch=z9hG4bK52b6a8b7";
 

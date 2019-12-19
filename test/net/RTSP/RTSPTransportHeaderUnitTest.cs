@@ -20,11 +20,11 @@ namespace SIPSorcery.Net.UnitTests
     [Trait("Category", "unit")]
     public class RTSPTransportHeaderUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public RTSPTransportHeaderUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         /// <summary>
@@ -34,6 +34,7 @@ namespace SIPSorcery.Net.UnitTests
         public void RTSPTransportHeaderParseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string header = "RTP/AVP;unicast;destination=192.168.33.170;source=192.168.33.103;client_port=61132-61133;server_port=6970-6971";
 
@@ -54,6 +55,7 @@ namespace SIPSorcery.Net.UnitTests
         public void RTSPTransportHeaderToStringTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var transportHeader = new RTSPTransportHeader() { Destination = "192.168.33.170", Source = "192.168.33.103", ClientRTPPortRange = "61132-61133", ServerRTPPortRange = "6970-6971" };
 

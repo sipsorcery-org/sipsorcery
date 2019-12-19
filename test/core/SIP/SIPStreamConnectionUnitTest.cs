@@ -25,13 +25,13 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPStreamConnectionUnitTest
     {
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public SIPStreamConnectionUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
-        
+
         private string CRLF = SIPConstants.CRLF;
 
         /// <summary>
@@ -41,9 +41,10 @@ namespace SIPSorcery.SIP.UnitTests
         public void TestSocketReadSingleMessageTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
-@"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
+"SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
 "Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport" + CRLF +
 "To: <sip:aaron@10.1.1.5>" + CRLF +
 "From: <sip:switchboard@10.1.1.5>;tag=1902440575" + CRLF +
@@ -76,6 +77,7 @@ CRLF +
         public void TestSocketReadWithBytesToSkipTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
 "            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
@@ -117,9 +119,10 @@ CRLF + CRLF +
         public void TestSocketReadWithTwoMessagesAndBytesToSkipTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string testReceive =
-@"            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
+"            SUBSCRIBE sip:aaron@10.1.1.5 SIP/2.0" + CRLF +
 "Via: SIP/2.0/TCP 10.1.1.5:62647;branch=z9hG4bKa58b912c426f415daa887289efda50cd;rport" + CRLF +
 "To: <sip:aaron@10.1.1.5>" + CRLF +
 "From: <sip:switchboard@10.1.1.5>;tag=1902440575" + CRLF +
@@ -172,9 +175,10 @@ CRLF +
         public void ContentLengthParseWhenUpperCaseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
-@"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
+"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
 "Via: SIP/2.0/TCP 10.1.1.5:4506;branch=z9hG4bKa4d17f991015b1d8b788f2ac54d66ec66811226a;rport" + CRLF +
 "Via: SIP/2.0/UDP 127.0.0.1:5060;branch=z9hG4bKc2224b79f5af4c4a9b1cd649890c6497;rport" + CRLF +
 "Via: SIP/2.0/UDP 127.0.0.1:5003;branch=z9hG4bK0495dc29b7eb40008779a75c3734c4c5;rport=5003;received=127.0.0.1" + CRLF +
@@ -201,9 +205,10 @@ CRLF +
         public void ContentLengthParseWhenMixedCaseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             string notifyRequest =
-@"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
+"NOTIFY sip:10.1.1.5:62647;transport=tcp SIP/2.0" + CRLF +
 "Via: SIP/2.0/TCP 10.1.1.5:4506;branch=z9hG4bKa4d17f991015b1d8b788f2ac54d66ec66811226a;rport" + CRLF +
 "Via: SIP/2.0/UDP 127.0.0.1:5060;branch=z9hG4bKc2224b79f5af4c4a9b1cd649890c6497;rport" + CRLF +
 "Via: SIP/2.0/UDP 127.0.0.1:5003;branch=z9hG4bK0495dc29b7eb40008779a75c3734c4c5;rport=5003;received=127.0.0.1" + CRLF +
