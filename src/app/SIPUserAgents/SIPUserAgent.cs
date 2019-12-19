@@ -370,7 +370,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="destination">The URI to transfer the call to.</param>
         /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
-        /// <param name="ct">Cancellation token. Can be set to canel the transfer prior to it being
+        /// <param name="ct">Cancellation token. Can be set to cancel the transfer prior to it being
         /// accepted or timing out.</param>
         /// <returns>True if the transfer was accepted by the Transferee or false if not.</returns>
         public Task<bool> BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct)
