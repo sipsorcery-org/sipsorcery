@@ -138,7 +138,7 @@ namespace SIPSorcery
             RTPSession rtpSession = null;
 
             // Because this is a server user agent the SIP transport must start listening for client user agents.
-            sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+            sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
             {
                 try
                 {
@@ -168,7 +168,7 @@ namespace SIPSorcery
                         {
                             // Didn't get a match on the codecs we support.
                             SIPResponse noMatchingCodecResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptableHere, null);
-                            sipTransport.SendResponse(noMatchingCodecResponse);
+                            await sipTransport.SendResponseAsync(noMatchingCodecResponse);
                         }
                         else
                         {
@@ -217,7 +217,7 @@ namespace SIPSorcery
                         SIPSorcery.Sys.Log.Logger.LogInformation("Call hungup.");
                         SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(sipTransport, sipRequest, null);
                         SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        byeTransaction.SendFinalResponse(byeResponse);
+                        await byeTransaction.SendFinalResponse(byeResponse);
                         uas?.Hangup(true);
                         rtpSession?.Close();
                         rtpCts?.Cancel();
@@ -225,12 +225,12 @@ namespace SIPSorcery
                     else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
                     {
                         SIPResponse notAllowededResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                        sipTransport.SendResponse(notAllowededResponse);
+                        await sipTransport.SendResponseAsync(notAllowededResponse);
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.OPTIONS || sipRequest.Method == SIPMethodsEnum.REGISTER)
                     {
                         SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        sipTransport.SendResponse(optionsResponse);
+                        await sipTransport.SendResponseAsync(optionsResponse);
                     }
                 }
                 catch (Exception reqExcp)

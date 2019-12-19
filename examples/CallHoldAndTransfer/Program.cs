@@ -132,7 +132,7 @@ namespace SIPSorcery
                 {
                     Log.LogDebug($"SIP {sipRequest.Method} request received but no processing has been set up for it, rejecting.");
                     SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    sipTransport.SendResponse(notAllowedResponse);
+                    _ = sipTransport.SendResponseAsync(notAllowedResponse);
                 }
             };
 

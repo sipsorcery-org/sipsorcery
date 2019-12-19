@@ -42,14 +42,14 @@ namespace demo
             var sipChannel = new SIPUDPChannel(IPAddress.Loopback, 5060);
             sipTransport.AddSIPChannel(sipChannel);
 
-            sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+            sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
             {
                 Console.WriteLine($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
 
                 if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                 {
                     SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    sipTransport.SendResponse(optionsResponse);
+                    await sipTransport.SendResponseAsync(optionsResponse);
                 }
             };
 

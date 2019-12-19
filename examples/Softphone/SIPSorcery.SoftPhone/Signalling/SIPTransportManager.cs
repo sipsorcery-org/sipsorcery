@@ -140,7 +140,7 @@ namespace SIPSorcery.SoftPhone
         /// <param name="localSIPEndPoint">The end point the request was received on.</param>
         /// <param name="remoteEndPoint">The end point the request came from.</param>
         /// <param name="sipRequest">The SIP request received.</param>
-        private void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             if (sipRequest.Header.From != null &&
                 sipRequest.Header.From.FromTag != null &&
@@ -158,14 +158,14 @@ namespace SIPSorcery.SoftPhone
                     // All user agents were already on a call return a busy response.
                     UASInviteTransaction uasTransaction = new UASInviteTransaction(SIPTransport, sipRequest, null);
                     SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
-                    uasTransaction.SendFinalResponse(busyResponse);
+                    await uasTransaction.SendFinalResponse(busyResponse);
                 }
             }
             else
             {
                 logger.Debug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
                 SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                SIPTransport.SendResponse(notAllowedResponse);
+                await SIPTransport.SendResponseAsync(notAllowedResponse);
             }
         }
 
