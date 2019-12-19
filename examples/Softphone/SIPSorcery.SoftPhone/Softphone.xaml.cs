@@ -108,7 +108,7 @@ namespace SIPSorcery.SoftPhone
                 listeningEndPoints += (listeningEndPoints == null) ? sipChannelEP.ToString() : $", {sipChannelEP}";
             }
 
-            UIHelper.DoOnUIThread(this, delegate
+            Dispatcher.DoOnUIThread(() =>
             {
                 listeningEndPoint.Content = $"Listening on: {listeningEndPoints}";
             });
@@ -134,7 +134,7 @@ namespace SIPSorcery.SoftPhone
         {
             Task.Run(() =>
             {
-                _mediaManager = new MediaManager(this);
+                _mediaManager = new MediaManager(Dispatcher);
                 logger.Debug("Media Manager Initialized.");
                 _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
                 _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
@@ -190,7 +190,7 @@ namespace SIPSorcery.SoftPhone
                 }
             }
 
-            UIHelper.DoOnUIThread(this, delegate
+            Dispatcher.DoOnUIThread(delegate
             {
                 _localVideoDevices.ItemsSource = videoDeviceKeys;
                 _localVideoDevices.IsEnabled = true;
@@ -220,7 +220,7 @@ namespace SIPSorcery.SoftPhone
 
             if (sipClient == null || sipClient == _sipClients[0])
             {
-                UIHelper.DoOnUIThread(this, delegate
+                Dispatcher.DoOnUIThread(() =>
                 {
                     m_callButton.Visibility = Visibility.Visible;
                     m_cancelButton.Visibility = Visibility.Collapsed;
@@ -237,7 +237,7 @@ namespace SIPSorcery.SoftPhone
 
             if (sipClient == null || sipClient == _sipClients[1])
             {
-                UIHelper.DoOnUIThread(this, delegate
+                Dispatcher.DoOnUIThread(() =>
                 {
                     m_call2Button.Visibility = Visibility.Visible;
                     m_cancel2Button.Visibility = Visibility.Collapsed;
@@ -266,7 +266,7 @@ namespace SIPSorcery.SoftPhone
             {
                 _sipClients[0].Accept(sipRequest);
 
-                UIHelper.DoOnUIThread(this, delegate
+                Dispatcher.DoOnUIThread(() =>
                 {
                     m_callButton.Visibility = Visibility.Collapsed;
                     m_cancelButton.Visibility = Visibility.Collapsed;
@@ -283,7 +283,7 @@ namespace SIPSorcery.SoftPhone
             {
                 _sipClients[1].Accept(sipRequest);
 
-                UIHelper.DoOnUIThread(this, delegate
+                Dispatcher.DoOnUIThread(() =>
                 {
                     m_call2Button.Visibility = Visibility.Collapsed;
                     m_cancel2Button.Visibility = Visibility.Collapsed;
@@ -313,7 +313,7 @@ namespace SIPSorcery.SoftPhone
 
             if (client == _sipClients[0])
             {
-                UIHelper.DoOnUIThread(this, delegate
+                Dispatcher.DoOnUIThread(() =>
                 {
                     m_callButton.Visibility = Visibility.Collapsed;
                     m_cancelButton.Visibility = Visibility.Collapsed;
@@ -326,7 +326,7 @@ namespace SIPSorcery.SoftPhone
             }
             else if (client == _sipClients[1])
             {
-                UIHelper.DoOnUIThread(this, delegate
+                Dispatcher.DoOnUIThread(() =>
                 {
                     m_call2Button.Visibility = Visibility.Collapsed;
                     m_cancel2Button.Visibility = Visibility.Collapsed;
@@ -510,6 +510,8 @@ namespace SIPSorcery.SoftPhone
 
             if (wasAccepted)
             {
+                //TODO: We need to the end the call
+
                 ResetToCallStartState(client);
             }
             else
@@ -541,14 +543,14 @@ namespace SIPSorcery.SoftPhone
 
             if (sipClient == _sipClients[0])
             {
-                UIHelper.DoOnUIThread(this, delegate
+                Dispatcher.DoOnUIThread(() =>
                 {
                     m_holdButton.Visibility = Visibility.Collapsed;
                 });
             }
             else if (sipClient == _sipClients[1])
             {
-                UIHelper.DoOnUIThread(this, delegate
+                Dispatcher.DoOnUIThread(() =>
                 {
                     m_hold2Button.Visibility = Visibility.Collapsed;
                 });
@@ -564,14 +566,14 @@ namespace SIPSorcery.SoftPhone
 
             if (sipClient == _sipClients[0])
             {
-                UIHelper.DoOnUIThread(this, delegate
+                Dispatcher.DoOnUIThread(() =>
                 {
                     m_holdButton.Visibility = Visibility.Visible;
                 });
             }
             else if (sipClient == _sipClients[1])
             {
-                UIHelper.DoOnUIThread(this, delegate
+                Dispatcher.DoOnUIThread(() =>
                 {
                     m_hold2Button.Visibility = Visibility.Visible;
                 });
@@ -627,7 +629,7 @@ namespace SIPSorcery.SoftPhone
         private void SetStatusText(TextBlock textBlock, string text)
         {
             logger.Debug(text);
-            UIHelper.DoOnUIThread(this, delegate
+            Dispatcher.DoOnUIThread(() =>
             {
                 textBlock.Text = text;
             });
@@ -704,7 +706,7 @@ namespace SIPSorcery.SoftPhone
 
         private void LocalVideoError(string error)
         {
-            UIHelper.DoOnUIThread(this, delegate
+            Dispatcher.DoOnUIThread(() =>
             {
                 if (error.NotNullOrBlank())
                 {
