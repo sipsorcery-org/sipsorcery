@@ -30,7 +30,7 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "Integration")]
     public class SIPTransportUnitTest
     {
-        private const int TRANSPORT_TEST_TIMEOUT = 5000;
+        private const int TRANSPORT_TEST_TIMEOUT = 15000;
 
         private Microsoft.Extensions.Logging.ILogger logger = null;
 

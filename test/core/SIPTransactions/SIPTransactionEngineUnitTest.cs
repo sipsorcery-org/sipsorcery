@@ -24,7 +24,7 @@ namespace SIPSorcery.SIP.UnitTests
     [Trait("Category", "unit")]
     public class SIPTransactionEngineUnitTest
     {
-        private const int TRANSACTION_EXCHANGE_TIMEOUT_MS = 5000;
+        private const int TRANSACTION_EXCHANGE_TIMEOUT_MS = 15000;
 
         private Microsoft.Extensions.Logging.ILogger logger = null;
         protected static readonly string m_CRLF = SIPConstants.CRLF;
