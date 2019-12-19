@@ -332,7 +332,7 @@ namespace SIPSorcery.SIP
         /// <param name="dstEndPoint">The remote TCP end point to attempt to connect to.</param>
         /// <param name="buffer">An optional buffer that if set can contain data to transmit immediately after connecting.</param>
         /// <returns>If successful a connected client socket or null if not.</returns>
-        public async Task<SocketError> ConnectClientAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        internal async Task<SocketError> ConnectClientAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
         {
             try
             {
@@ -434,16 +434,6 @@ namespace SIPSorcery.SIP
 
             // Task.IsCompleted not availabe for net452.
             return Task.FromResult(0);
-        }
-
-        /// <summary>
-        /// Attempts to send data to the remote end point over a reliable TCP connection.
-        /// </summary>
-        /// <param name="dstEndPoint">The remote end point to send to.</param>
-        /// <param name="buffer">The data to send.</param>
-        public override async void Send(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
-        {
-            await SendAsync(dstEndPoint, buffer, connectionIDHint);
         }
 
         public override Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)

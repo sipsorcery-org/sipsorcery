@@ -500,7 +500,7 @@ namespace SIPSorcery.SIP.UnitTests
                     {
                         SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         logger.LogDebug(optionsResponse.ToString());
-                        serverSIPTransport.SendResponse(optionsResponse);
+                        _ = serverSIPTransport.SendResponseAsync(optionsResponse);
                     }
                 };
 
@@ -581,7 +581,7 @@ namespace SIPSorcery.SIP.UnitTests
                 logger.LogDebug($"RunClient waiting for server to get ready on {serverUri.CanonicalAddress}.");
                 serverReadyEvent.Wait(cts.Token);
 
-                clientSIPTransport.SendRequest(optionsRequest);
+                await clientSIPTransport.SendRequestAsync(optionsRequest);
 
                 await tcs.Task;
             }

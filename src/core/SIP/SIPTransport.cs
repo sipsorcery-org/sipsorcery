@@ -358,7 +358,7 @@ namespace SIPSorcery.SIP
         /// the SIP transports channels.</param>
         /// <param name="dstEndPoint">The destination end point to send the buffer to.</param>
         /// <param name="buffer">The data buffer to send.</param>
-        public void SendRaw(SIPEndPoint localSIPEndPoint, SIPEndPoint dstEndPoint, byte[] buffer)
+        public Task<SocketError> SendRawAsync(SIPEndPoint localSIPEndPoint, SIPEndPoint dstEndPoint, byte[] buffer)
         {
             if (localSIPEndPoint == null)
             {
@@ -371,22 +371,11 @@ namespace SIPSorcery.SIP
             if (dstEndPoint.Address.Equals(BlackholeAddress))
             {
                 // Ignore packet, it's destined for the blackhole.
-                return;
+                return Task.FromResult(SocketError.Success);
             }
 
-            SIPChannel sendSIPChannel = m_sipChannels[localSIPEndPoint.ChannelID];
-            sendSIPChannel.Send(dstEndPoint, buffer, null);
-        }
-
-        /// <summary>
-        /// Attempts to send a SIP request to a destination end point. This method will attempt to:
-        /// - determine the IP address and port to send the request to by using SIP routing and DNS rules.
-        /// - find the most appropriate local SIP channel in this SIP transport to send the request on.
-        /// </summary>
-        /// <param name="sipRequest">The SIP request to send.</param>
-        public void SendRequest(SIPRequest sipRequest)
-        {
-            SendRequestAsync(sipRequest).Wait();
+            SIPChannel sipChannel = m_sipChannels[localSIPEndPoint.ChannelID];
+            return sipChannel.SendAsync(dstEndPoint, buffer, localSIPEndPoint.ConnectionID);
         }
 
         /// <summary>
@@ -394,7 +383,7 @@ namespace SIPSorcery.SIP
         /// local SIP channel to send the request on.
         /// </summary>
         /// <param name="sipRequest">The SIP request to send.</param>
-        public async Task<SocketError> SendRequestAsync(SIPRequest sipRequest)
+        public Task<SocketError> SendRequestAsync(SIPRequest sipRequest)
         {
             if (sipRequest == null)
             {
@@ -405,12 +394,13 @@ namespace SIPSorcery.SIP
 
             if (dnsResult.LookupError != null)
             {
-                return SocketError.HostNotFound;
+                return Task.FromResult(SocketError.HostNotFound);
             }
             else if (dnsResult.Pending)
             {
-                // The DNS lookup is still in progress, ignore this request and rely on the fact that the transaction retransmit mechanism will send another request.
-                return SocketError.InProgress;
+                // The DNS lookup is still in progress, ignore this request and rely on the fact that the transaction 
+                // retransmit mechanism will send another request.
+                return Task.FromResult(SocketError.InProgress);
             }
             else
             {
@@ -419,29 +409,18 @@ namespace SIPSorcery.SIP
                 if (requestEndPoint != null && requestEndPoint.Address.Equals(BlackholeAddress))
                 {
                     // Ignore packet, it's destined for the blackhole.
-                    return SocketError.Success;
+                    return Task.FromResult(SocketError.Success);
                 }
                 else if (requestEndPoint != null)
                 {
-                    return await SendRequestAsync(requestEndPoint, sipRequest);
+                    return SendRequestAsync(requestEndPoint, sipRequest);
                 }
                 else
                 {
                     logger.LogWarning($"SIP Transport could not send request as end point could not be determined:  {sipRequest.StatusLine}.");
-                    return SocketError.HostNotFound;
+                    return Task.FromResult(SocketError.HostNotFound);
                 }
             }
-        }
-
-        /// <summary>
-        /// Attempts to send a SIP request to a destination end point. This method will attempt to find the most appropriate
-        /// local SIP channel in this SIP transport to send the request on.
-        /// </summary>
-        /// <param name="dstEndPoint">The destination end point to send the request to.</param>
-        /// <param name="sipRequest">The SIP request to send.</param>
-        public void SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
-        {
-            SendRequestAsync(dstEndPoint, sipRequest).Wait();
         }
 
         /// <summary>
@@ -450,7 +429,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dstEndPoint">The destination end point to send the request to.</param>
         /// <param name="sipRequest">The SIP request to send.</param>
-        public async Task<SocketError> SendRequestAsync(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
+        public Task<SocketError> SendRequestAsync(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
             if (dstEndPoint == null)
             {
@@ -463,7 +442,7 @@ namespace SIPSorcery.SIP
             else if (dstEndPoint.Address.Equals(BlackholeAddress))
             {
                 // Ignore packet, it's destined for the blackhole.
-                return SocketError.Success;
+                return Task.FromResult(SocketError.Success);
             }
 
             SIPChannel sipChannel = GetSIPChannelForDestination(dstEndPoint.Protocol, dstEndPoint.GetIPEndPoint(), sipRequest.SendFromHintChannelID);
@@ -472,7 +451,7 @@ namespace SIPSorcery.SIP
             // Once the channel has been determined check some specific header fields and replace the placeholder end point.
             AdjustHeadersForEndPoint(sendFromSIPEndPoint, ref sipRequest.Header);
 
-            return await SendRequestAsync(sipChannel, sendFromSIPEndPoint, dstEndPoint, sipRequest);
+            return SendRequestAsync(sipChannel, sendFromSIPEndPoint, dstEndPoint, sipRequest);
         }
 
         /// <summary>
@@ -549,15 +528,6 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Attempts to send a SIP response back to the SIP request origin.
-        /// </summary>
-        /// <param name="sipResponse">The SIP response to send.</param>
-        public void SendResponse(SIPResponse sipResponse)
-        {
-            SendResponseAsync(sipResponse).Wait();
-        }
-
-        /// <summary>
         /// Asynchronously forwards a SIP response. There are two main cases for a SIP response to be forwarded:
         /// - First case is when we have processed a request and are returning a response. In this case the response
         ///   should be sent back on exactly the same socket the request came on.
@@ -573,7 +543,7 @@ namespace SIPSorcery.SIP
         /// - The information in the Top Via header will be used to find the best channel to forward the response on.
         /// </summary>
         /// <param name="sipResponse">The SIP response to send.</param>
-        public async Task<SocketError> SendResponseAsync(SIPResponse sipResponse)
+        public Task<SocketError> SendResponseAsync(SIPResponse sipResponse)
         {
             if (sipResponse == null)
             {
@@ -591,10 +561,10 @@ namespace SIPSorcery.SIP
             {
                 // The destination couldn't be resolved, return the error message.
                 // Note this could be a temporary failure it we're still waiting for a DNS resolution.
-                return result.status;
+                return Task.FromResult(result.status);
             }
 
-            return await SendResponseAsync(dstEndPoint, sipResponse);
+            return SendResponseAsync(dstEndPoint, sipResponse);
         }
 
         /// <summary>

@@ -94,28 +94,6 @@ namespace SIPSorcery.SIP
         /// a good reason not to we can check if there is an existing client connection with the
         /// requested remote end point and use it.
         /// </summary>
-        /// <param name="destinationEndPoint">The remote destination end point to send the data to.</param>
-        /// <param name="buffer">The data to send.</param>
-        /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override async void Send(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
-        {
-            if (destinationEndPoint == null)
-            {
-                throw new ApplicationException("An empty destination was specified to Send in SIPClientWebSocketChannel.");
-            }
-            else if (buffer == null || buffer.Length == 0)
-            {
-                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPClientWebSocketChannel.");
-            }
-
-            await SendAsync(destinationEndPoint, buffer, connectionIDHint);
-        }
-
-        /// <summary>
-        /// Ideally sends on the web socket channel should specify the connection ID. But if there's
-        /// a good reason not to we can check if there is an existing client connection with the
-        /// requested remote end point and use it.
-        /// </summary>
         /// <param name="dstEndPoint">The remote destination end point to send the data to.</param>
         /// <param name="buffer">The data to send.</param>
         /// <param name="connectionIDHint">The ID of the specific web socket connection to try and send the message on.</param>

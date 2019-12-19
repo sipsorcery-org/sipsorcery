@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -307,7 +308,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public virtual void SendFinalResponse(SIPResponse finalResponse)
+        public virtual Task<SocketError> SendFinalResponse(SIPResponse finalResponse)
         {
             m_transactionFinalResponse = finalResponse;
             UpdateTransactionState(SIPTransactionStatesEnum.Completed);
@@ -322,23 +323,28 @@ namespace SIPSorcery.SIP
             if (TransactionType == SIPTransactionTypesEnum.InviteServer)
             {
                 FireTransactionTraceMessage($"Transaction send final response reliable {finalResponse.ShortDescription}");
+                
+                // Special thread on the transport layer for reliable transmissions.
+                // Returns without network IO.
                 m_sipTransport.SendReliable(this);
+
+                return Task.FromResult(SocketError.Success);
             }
             else
             {
                 FireTransactionTraceMessage($"Transaction send final response {finalResponse.ShortDescription}");
-                m_sipTransport.SendResponse(finalResponse);
+                return m_sipTransport.SendResponseAsync(finalResponse);
             }
         }
 
-        public virtual void SendProvisionalResponse(SIPResponse sipResponse)
+        public virtual Task<SocketError> SendProvisionalResponse(SIPResponse sipResponse)
         {
             FireTransactionTraceMessage($"Transaction send info response (is reliable {PrackSupported}) {sipResponse.ShortDescription}");
 
             if (sipResponse.StatusCode == 100)
             {
                 UpdateTransactionState(SIPTransactionStatesEnum.Trying);
-                m_sipTransport.SendResponse(sipResponse);
+                return m_sipTransport.SendResponseAsync(sipResponse);
             }
             else if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
             {
@@ -365,16 +371,25 @@ namespace SIPSorcery.SIP
                     }
 
                     ReliableProvisionalResponse = sipResponse;
+
+                    // Special thread on the transport layer for reliable transmissions.
+                    // Returns without network IO.
                     m_sipTransport.SendReliable(this);
+
+                    return Task.FromResult(SocketError.Success);
                 }
                 else
                 {
-                    m_sipTransport.SendResponse(sipResponse);
+                    return m_sipTransport.SendResponseAsync(sipResponse);
                 }
+            }
+            else
+            {
+                throw new ApplicationException("SIPTransaction.SendProvisionalResponse was passed a non-provisional response type.");
             }
         }
 
-        protected async Task SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
+        protected Task<SocketError> SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
             FireTransactionTraceMessage($"Transaction send request {sipRequest.StatusLine}");
 
@@ -389,16 +404,16 @@ namespace SIPSorcery.SIP
                 m_prackRequestIPEndPoint = dstEndPoint;
             }
 
-            await m_sipTransport.SendRequestAsync(dstEndPoint, sipRequest);
+           return m_sipTransport.SendRequestAsync(dstEndPoint, sipRequest);
         }
 
-        public async void SendRequest(SIPRequest sipRequest)
+        public Task<SocketError> SendRequest(SIPRequest sipRequest)
         {
             var lookupResult = m_sipTransport.GetRequestEndPoint(sipRequest, OutboundProxy, true);
 
             if (lookupResult != null && lookupResult.LookupError == null)
             {
-                await SendRequest(lookupResult.GetSIPEndPoint(), sipRequest);
+                return SendRequest(lookupResult.GetSIPEndPoint(), sipRequest);
             }
             else
             {
@@ -477,7 +492,7 @@ namespace SIPSorcery.SIP
             // We don't keep track of previous provisional response ACK's so always return OK if the request matched the 
             // transaction and got this far.
             var prackResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-            m_sipTransport.SendResponse(prackResponse);
+            _ = m_sipTransport.SendResponseAsync(prackResponse);
         }
 
         private void ResendAckRequest()

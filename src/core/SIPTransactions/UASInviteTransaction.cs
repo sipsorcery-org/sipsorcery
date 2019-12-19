@@ -16,6 +16,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net.Sockets;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
@@ -132,12 +134,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override void SendProvisionalResponse(SIPResponse sipResponse)
+        public override Task<SocketError> SendProvisionalResponse(SIPResponse sipResponse)
         {
             try
             {
-                base.SendProvisionalResponse(sipResponse);
                 CDR?.Progress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
+                return base.SendProvisionalResponse(sipResponse);
             }
             catch (Exception excp)
             {
@@ -146,12 +148,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override void SendFinalResponse(SIPResponse sipResponse)
+        public override Task<SocketError> SendFinalResponse(SIPResponse sipResponse)
         {
             try
             {
-                base.SendFinalResponse(sipResponse);
                 CDR?.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase, null, null);
+                return base.SendFinalResponse(sipResponse);
             }
             catch (Exception excp)
             {

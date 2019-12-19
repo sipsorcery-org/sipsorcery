@@ -207,16 +207,6 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Synchronous wrapper for <see cref="SendAsync"/>
-        /// </summary>
-        public abstract void Send(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint = null);
-
-        /// <summary>
-        /// Synchronous wrapper for <see cref="SendSecureAsync"/>
-        /// </summary>
-        //public abstract void SendSecure(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint = null);
-
-        /// <summary>
         /// Asynchronous SIP message send to a remote end point.
         /// </summary>
         /// <param name="dstEndPoint">The remote end point to send the message to.</param>

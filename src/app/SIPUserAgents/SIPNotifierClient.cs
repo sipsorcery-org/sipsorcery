@@ -126,14 +126,14 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public void GotNotificationRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        public async void GotNotificationRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             try
             {
                 logger.LogDebug("SIPNotifierClient GotNotificationRequest for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " " + sipRequest.Header.CSeq + ".");
 
                 SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                m_sipTransport.SendResponse(okResponse);
+                await m_sipTransport.SendResponseAsync(okResponse);
 
                 //logger.LogDebug(sipRequest.ToString());
 
