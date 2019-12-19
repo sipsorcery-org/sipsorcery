@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
@@ -16,6 +18,12 @@ namespace SIPSorcery.SIP.App.Media
         {
             session = rtpSession;
             session.OnRtpEvent += OnRemoteRtpEvent;
+        }
+
+        public Task SendDtmf(byte key, CancellationToken cancellationToken = default)
+        {
+            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            return session.SendDtmfEvent(dtmfEvent, cancellationToken);
         }
 
         public event Action<byte> DtmfCompleted;

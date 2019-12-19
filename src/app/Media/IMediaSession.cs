@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using SIPSorcery.Net;
 
 namespace SIPSorcery.SIP.App.Media
@@ -13,6 +15,8 @@ namespace SIPSorcery.SIP.App.Media
         SDP ReInvite(SDP remoteSDP);
 
         void Close();
+
+        Task SendDtmf(byte key, CancellationToken cancellationToken = default);
 
         event Action<byte> DtmfCompleted;
     }

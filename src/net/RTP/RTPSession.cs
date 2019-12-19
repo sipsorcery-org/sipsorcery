@@ -470,10 +470,10 @@ namespace SIPSorcery.Net
         /// can be cancelled using the cancellation token.
         /// </summary>
         /// <param name="rtpEvent">The RTP event to send.</param>
-        ///  <param name="cts">Token source to allow the operation to be cancelled prematurely.</param>
+        ///  <param name="cancellationToken">CancellationToken to allow the operation to be cancelled prematurely.</param>
         public async Task SendDtmfEvent(
             RTPEvent rtpEvent,
-            CancellationTokenSource cts)
+            CancellationToken cancellationToken)
         {
             if (m_rtpEventInProgress == true || DestinationEndPoint == null)
             {
@@ -509,7 +509,7 @@ namespace SIPSorcery.Net
                 rtpEvent.Duration = rtpTimestampStep;
 
                 // Send the start of event packets.
-                for (int i = 0; i < RTPEvent.DUPLICATE_COUNT && !cts.IsCancellationRequested; i++)
+                for (int i = 0; i < RTPEvent.DUPLICATE_COUNT && !cancellationToken.IsCancellationRequested; i++)
                 {
                     byte[] buffer = rtpEvent.GetEventPayload();
 
@@ -520,12 +520,12 @@ namespace SIPSorcery.Net
                     PacketsSent++;
                 }
 
-                await Task.Delay(samplePeriod, cts.Token);
+                await Task.Delay(samplePeriod, cancellationToken);
 
                 if (!rtpEvent.EndOfEvent)
                 {
                     // Send the progressive event packets 
-                    while ((rtpEvent.Duration + rtpTimestampStep) < rtpEvent.TotalDuration && !cts.IsCancellationRequested)
+                    while ((rtpEvent.Duration + rtpTimestampStep) < rtpEvent.TotalDuration && !cancellationToken.IsCancellationRequested)
                     {
                         rtpEvent.Duration += rtpTimestampStep;
                         byte[] buffer = rtpEvent.GetEventPayload();
@@ -535,11 +535,11 @@ namespace SIPSorcery.Net
                         PacketsSent++;
                         SeqNum++;
 
-                        await Task.Delay(samplePeriod, cts.Token);
+                        await Task.Delay(samplePeriod, cancellationToken);
                     }
 
                     // Send the end of event packets.
-                    for (int j = 0; j < RTPEvent.DUPLICATE_COUNT && !cts.IsCancellationRequested; j++)
+                    for (int j = 0; j < RTPEvent.DUPLICATE_COUNT && !cancellationToken.IsCancellationRequested; j++)
                     {
                         rtpEvent.EndOfEvent = true;
                         rtpEvent.Duration = rtpEvent.TotalDuration;
