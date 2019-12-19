@@ -12,11 +12,11 @@ namespace SIPSorcery.Net.UnitTests
     public partial class SDPSecurityDescriptionUnitTest
     {
         private static string CRLF = "\r\n";
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public SDPSecurityDescriptionUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         [Fact]

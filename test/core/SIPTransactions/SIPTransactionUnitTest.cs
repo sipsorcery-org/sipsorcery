@@ -21,11 +21,11 @@ namespace SIPSorcery.SIP.UnitTests
     public class SIPTransactionUnitTest
     {
         protected static readonly string m_CRLF = SIPConstants.CRLF;
-        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public SIPTransactionUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
-            SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
+            logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         [Fact]

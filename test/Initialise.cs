@@ -26,7 +26,7 @@ namespace SIPSorcery.UnitTests
 {
     public class TestLogHelper
     {
-        public static void InitTestLogger(Xunit.Abstractions.ITestOutputHelper output)
+        public static Microsoft.Extensions.Logging.ILogger InitTestLogger(Xunit.Abstractions.ITestOutputHelper output)
         {
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
             var loggerConfig = new LoggerConfiguration()
@@ -37,6 +37,7 @@ namespace SIPSorcery.UnitTests
             loggerFactory.AddSerilog(loggerConfig);
 
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            return SIPSorcery.Sys.Log.Logger;
         }
     }
 
