@@ -74,6 +74,13 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public static bool UseNAPTRLookups = false;
 
+        /// <summary>
+        /// Don't use IN_ANY queries by default. These are useful if a DNS server supports them as they can
+        /// return IPv4 and IPv6 results in a single query. For DNS servers that don't support them it means
+        /// an extra delay.
+        /// </summary>
+        public static bool UseANYLookups = false;
+
         static SIPDNSManager()
         {
             SIPMonitorLogEvent = (e) => { };
@@ -552,79 +559,82 @@ namespace SIPSorcery.SIP.App
             SIPDNSLookupResult result = lookupResult ?? new SIPDNSLookupResult(uri);
             result.LookupError = null;
 
-            DNSResponse aRecordResponse = DNSManager.Lookup(host, QType.ANY, DNS_A_RECORD_LOOKUP_TIMEOUT, null, true, async);
-            if (aRecordResponse == null && async)
+            if (UseANYLookups)
             {
-                result.Pending = true;
-            }
-            else if (aRecordResponse == null)
-            {
-            }
-            else if (aRecordResponse.Timedout)
-            {
-                result.ATimedoutAt = DateTime.Now;
-            }
-            else if (!string.IsNullOrWhiteSpace(aRecordResponse.Error))
-            {
-                result.LookupError = aRecordResponse.Error;
-            }
-            else if ((aRecordResponse.RecordsAAAA == null || aRecordResponse.RecordsAAAA.Length == 0) && (aRecordResponse.RecordsA == null || aRecordResponse.RecordsA.Length == 0) && (aRecordResponse.RecordsCNAME == null || aRecordResponse.RecordsCNAME.Length == 0))
-            {
-                SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS no CNAME, A or AAAA records found for " + host + ".", null));
-                result.LookupError = "No CNAME, A or AAAA records found for " + host + ".";
-            }
-            else
-            {
-                if (preferIPv6 == null)
+                DNSResponse aRecordResponse = DNSManager.Lookup(host, QType.ANY, DNS_A_RECORD_LOOKUP_TIMEOUT, null, true, async);
+                if (aRecordResponse == null && async)
                 {
-                    preferIPv6 = SIPDNSManager.PreferIPv6NameResolution;
+                    result.Pending = true;
                 }
-
-                foreach (RecordCNAME aRecord in aRecordResponse.RecordsCNAME)
+                else if (aRecordResponse == null)
                 {
-                    //CNAME could be another CNAME or A/AAAA Record -> max 3 levels recursive name resolution
-                    if (recursionLevel < 3)
-                    {
-                        SIPDNSLookupResult resultCName = DNSNameRecordLookup(aRecord.CNAME, port, async, uri, lookupResult, preferIPv6, recursionLevel + 1);
-                        if (resultCName != null)
-                        {
-                            foreach (SIPDNSLookupEndPoint ep in resultCName.EndPointResults)
-                            {
-                                result.AddLookupResult(ep);
-                            }
-                        }
-                    }
                 }
-                if (preferIPv6 == true)
+                else if (aRecordResponse.Timedout)
                 {
-                    SIPURI sipURI = result.URI;
-                    foreach (RecordAAAA aRecord in aRecordResponse.RecordsAAAA)
-                    {
-                        SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, new IPEndPoint(aRecord.Address, port)), aRecord.RR.TTL);
-                        result.AddLookupResult(sipLookupEndPoint);
-                        SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS AAAA record found for " + host + ", result " + sipLookupEndPoint.LookupEndPoint.ToString() + ".", null));
-                    }
-                    foreach (RecordA aRecord in aRecordResponse.RecordsA)
-                    {
-                        SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, new IPEndPoint(aRecord.Address, port)), aRecord.RR.TTL);
-                        result.AddLookupResult(sipLookupEndPoint);
-                        SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS A record found for " + host + ", result " + sipLookupEndPoint.LookupEndPoint.ToString() + ".", null));
-                    }
+                    result.ATimedoutAt = DateTime.Now;
+                }
+                else if (!string.IsNullOrWhiteSpace(aRecordResponse.Error))
+                {
+                    result.LookupError = aRecordResponse.Error;
+                }
+                else if ((aRecordResponse.RecordsAAAA == null || aRecordResponse.RecordsAAAA.Length == 0) && (aRecordResponse.RecordsA == null || aRecordResponse.RecordsA.Length == 0) && (aRecordResponse.RecordsCNAME == null || aRecordResponse.RecordsCNAME.Length == 0))
+                {
+                    SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS no CNAME, A or AAAA records found for " + host + ".", null));
+                    result.LookupError = "No CNAME, A or AAAA records found for " + host + ".";
                 }
                 else
                 {
-                    SIPURI sipURI = result.URI;
-                    foreach (RecordA aRecord in aRecordResponse.RecordsA)
+                    if (preferIPv6 == null)
                     {
-                        SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, new IPEndPoint(aRecord.Address, port)), aRecord.RR.TTL);
-                        result.AddLookupResult(sipLookupEndPoint);
-                        SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS A record found for " + host + ", result " + sipLookupEndPoint.LookupEndPoint.ToString() + ".", null));
+                        preferIPv6 = SIPDNSManager.PreferIPv6NameResolution;
                     }
-                    foreach (RecordAAAA aRecord in aRecordResponse.RecordsAAAA)
+
+                    foreach (RecordCNAME aRecord in aRecordResponse.RecordsCNAME)
                     {
-                        SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, new IPEndPoint(aRecord.Address, port)), aRecord.RR.TTL);
-                        result.AddLookupResult(sipLookupEndPoint);
-                        SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS AAAA record found for " + host + ", result " + sipLookupEndPoint.LookupEndPoint.ToString() + ".", null));
+                        //CNAME could be another CNAME or A/AAAA Record -> max 3 levels recursive name resolution
+                        if (recursionLevel < 3)
+                        {
+                            SIPDNSLookupResult resultCName = DNSNameRecordLookup(aRecord.CNAME, port, async, uri, lookupResult, preferIPv6, recursionLevel + 1);
+                            if (resultCName != null)
+                            {
+                                foreach (SIPDNSLookupEndPoint ep in resultCName.EndPointResults)
+                                {
+                                    result.AddLookupResult(ep);
+                                }
+                            }
+                        }
+                    }
+                    if (preferIPv6 == true)
+                    {
+                        SIPURI sipURI = result.URI;
+                        foreach (RecordAAAA aRecord in aRecordResponse.RecordsAAAA)
+                        {
+                            SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, new IPEndPoint(aRecord.Address, port)), aRecord.RR.TTL);
+                            result.AddLookupResult(sipLookupEndPoint);
+                            SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS AAAA record found for " + host + ", result " + sipLookupEndPoint.LookupEndPoint.ToString() + ".", null));
+                        }
+                        foreach (RecordA aRecord in aRecordResponse.RecordsA)
+                        {
+                            SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, new IPEndPoint(aRecord.Address, port)), aRecord.RR.TTL);
+                            result.AddLookupResult(sipLookupEndPoint);
+                            SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS A record found for " + host + ", result " + sipLookupEndPoint.LookupEndPoint.ToString() + ".", null));
+                        }
+                    }
+                    else
+                    {
+                        SIPURI sipURI = result.URI;
+                        foreach (RecordA aRecord in aRecordResponse.RecordsA)
+                        {
+                            SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, new IPEndPoint(aRecord.Address, port)), aRecord.RR.TTL);
+                            result.AddLookupResult(sipLookupEndPoint);
+                            SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS A record found for " + host + ", result " + sipLookupEndPoint.LookupEndPoint.ToString() + ".", null));
+                        }
+                        foreach (RecordAAAA aRecord in aRecordResponse.RecordsAAAA)
+                        {
+                            SIPDNSLookupEndPoint sipLookupEndPoint = new SIPDNSLookupEndPoint(new SIPEndPoint(sipURI.Protocol, new IPEndPoint(aRecord.Address, port)), aRecord.RR.TTL);
+                            result.AddLookupResult(sipLookupEndPoint);
+                            SIPMonitorLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Unknown, SIPMonitorEventTypesEnum.DNS, "SIP DNS AAAA record found for " + host + ", result " + sipLookupEndPoint.LookupEndPoint.ToString() + ".", null));
+                        }
                     }
                 }
             }
