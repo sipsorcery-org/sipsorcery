@@ -95,7 +95,7 @@ namespace SIPSorcery.SIP
             logger.LogWarning("UASInviteTransaction received unexpected response, " + sipResponse.ReasonPhrase + " from " + remoteEndPoint.ToString() + ", ignoring.");
         }
 
-        private void UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
+        private async void UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
         {
             try
             {
@@ -112,7 +112,7 @@ namespace SIPSorcery.SIP
                     if (TransactionState != SIPTransactionStatesEnum.Trying)
                     {
                         SIPResponse tryingResponse = GetInfoResponse(m_transactionRequest, SIPResponseStatusCodesEnum.Trying);
-                        SendProvisionalResponse(tryingResponse);
+                        await SendProvisionalResponseAsync(tryingResponse);
                     }
 
                     // Notify new call subscribers.
@@ -124,7 +124,7 @@ namespace SIPSorcery.SIP
                     {
                         // Nobody wants to answer this call so return an error response.
                         SIPResponse declinedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, "Nothing listening");
-                        SendFinalResponse(declinedResponse);
+                        await SendFinalResponseAsync(declinedResponse);
                     }
                 }
             }
@@ -134,12 +134,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override Task<SocketError> SendProvisionalResponse(SIPResponse sipResponse)
+        public override Task<SocketError> SendProvisionalResponseAsync(SIPResponse sipResponse)
         {
             try
             {
                 CDR?.Progress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
-                return base.SendProvisionalResponse(sipResponse);
+                return base.SendProvisionalResponseAsync(sipResponse);
             }
             catch (Exception excp)
             {
@@ -148,12 +148,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override Task<SocketError> SendFinalResponse(SIPResponse sipResponse)
+        public override Task<SocketError> SendFinalResponseAsync(SIPResponse sipResponse)
         {
             try
             {
                 CDR?.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase, null, null);
-                return base.SendFinalResponse(sipResponse);
+                return base.SendFinalResponseAsync(sipResponse);
             }
             catch (Exception excp)
             {
@@ -162,7 +162,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public void CancelCall()
+        public Task<SocketError> CancelCall()
         {
             try
             {
@@ -171,13 +171,16 @@ namespace SIPSorcery.SIP
                     base.Cancel();
 
                     SIPResponse cancelResponse = SIPResponse.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
-                    SendFinalResponse(cancelResponse);
+                    var task = SendFinalResponseAsync(cancelResponse);
 
                     UASInviteTransactionCancelled?.Invoke(this);
+
+                    return task;
                 }
                 else
                 {
                     logger.LogWarning("A request was made to cancel transaction " + TransactionId + " that was not in the calling, trying or proceeding states, state=" + TransactionState + ".");
+                    return Task.FromResult(SocketError.Success);
                 }
             }
             catch (Exception excp)

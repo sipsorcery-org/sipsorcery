@@ -68,7 +68,7 @@ namespace SIPSorcery.SIP
                     cancelResponse = GetCancelResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist);
                 }
 
-                SendFinalResponse(cancelResponse);
+                _ = SendFinalResponseAsync(cancelResponse);
             }
             catch (Exception excp)
             {

@@ -188,7 +188,7 @@ namespace SIPSorcery.SIP
 
         public event SIPTransactionRemovedDelegate TransactionRemoved;       // This is called just before the SIPTransaction is expired and is to let consumer classes know to remove their event handlers to prevent memory leaks.
 
-        private SIPTransport m_sipTransport;
+        protected SIPTransport m_sipTransport;
 
         /// <summary>
         /// Creates a new SIP transaction and adds it to the list of in progress transactions.
@@ -308,7 +308,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public virtual Task<SocketError> SendFinalResponse(SIPResponse finalResponse)
+        public virtual Task<SocketError> SendFinalResponseAsync(SIPResponse finalResponse)
         {
             m_transactionFinalResponse = finalResponse;
             UpdateTransactionState(SIPTransactionStatesEnum.Completed);
@@ -337,7 +337,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public virtual Task<SocketError> SendProvisionalResponse(SIPResponse sipResponse)
+        public virtual Task<SocketError> SendProvisionalResponseAsync(SIPResponse sipResponse)
         {
             FireTransactionTraceMessage($"Transaction send info response (is reliable {PrackSupported}) {sipResponse.ShortDescription}");
 
@@ -386,38 +386,6 @@ namespace SIPSorcery.SIP
             else
             {
                 throw new ApplicationException("SIPTransaction.SendProvisionalResponse was passed a non-provisional response type.");
-            }
-        }
-
-        protected Task<SocketError> SendRequest(SIPEndPoint dstEndPoint, SIPRequest sipRequest)
-        {
-            FireTransactionTraceMessage($"Transaction send request {sipRequest.StatusLine}");
-
-            if (sipRequest.Method == SIPMethodsEnum.ACK)
-            {
-                m_ackRequest = sipRequest;
-                m_ackRequestIPEndPoint = dstEndPoint;
-            }
-            else if (sipRequest.Method == SIPMethodsEnum.PRACK)
-            {
-                m_prackRequest = sipRequest;
-                m_prackRequestIPEndPoint = dstEndPoint;
-            }
-
-           return m_sipTransport.SendRequestAsync(dstEndPoint, sipRequest);
-        }
-
-        public Task<SocketError> SendRequest(SIPRequest sipRequest)
-        {
-            var lookupResult = m_sipTransport.GetRequestEndPoint(sipRequest, OutboundProxy, true);
-
-            if (lookupResult != null && lookupResult.LookupError == null)
-            {
-                return SendRequest(lookupResult.GetSIPEndPoint(), sipRequest);
-            }
-            else
-            {
-                throw new ApplicationException("Could not send Transaction Request as request end point could not be determined.\r\n" + sipRequest.ToString());
             }
         }
 
@@ -501,7 +469,7 @@ namespace SIPSorcery.SIP
             {
                 if (m_ackRequest != null)
                 {
-                    SendRequest(m_ackRequest);
+                    _ = m_sipTransport.SendRequestAsync(m_ackRequest);
                     AckRetransmits += 1;
                     LastTransmit = DateTime.Now;
                 }
@@ -522,7 +490,7 @@ namespace SIPSorcery.SIP
             {
                 if (m_prackRequest != null)
                 {
-                    SendRequest(m_prackRequest);
+                    _ = m_sipTransport.SendRequestAsync(m_prackRequest);
                     PrackRetransmits += 1;
                     LastTransmit = DateTime.Now;
                 }

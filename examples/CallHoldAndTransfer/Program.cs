@@ -97,7 +97,7 @@ namespace SIPSorcery
             userAgent.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
             userAgent.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
 
-            sipTransport.SIPTransportRequestReceived += (locelEndPoint, remoteEndPoint, sipRequest) =>
+            sipTransport.SIPTransportRequestReceived += async (locelEndPoint, remoteEndPoint, sipRequest) =>
             {
                 if (sipRequest.Header.From != null &&
                     sipRequest.Header.From.FromTag != null &&
@@ -114,7 +114,7 @@ namespace SIPSorcery
                         // If we are already on a call return a busy response.
                         UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
                         SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
-                        uasTransaction.SendFinalResponse(busyResponse);
+                        await uasTransaction.SendFinalResponseAsync(busyResponse);
                     }
                     else
                     {
@@ -132,7 +132,7 @@ namespace SIPSorcery
                 {
                     Log.LogDebug($"SIP {sipRequest.Method} request received but no processing has been set up for it, rejecting.");
                     SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    _ = sipTransport.SendResponseAsync(notAllowedResponse);
+                    await sipTransport.SendResponseAsync(notAllowedResponse);
                 }
             };
 

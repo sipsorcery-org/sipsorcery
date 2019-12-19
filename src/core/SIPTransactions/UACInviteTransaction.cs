@@ -119,7 +119,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private async void UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
@@ -135,7 +135,7 @@ namespace SIPSorcery.SIP
                 {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
                     var ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI);
-                    base.SendRequest(ackRequest);
+                    await m_sipTransport.SendRequestAsync(ackRequest);
                 }
 
                 UACInviteTransactionFinalResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
@@ -158,7 +158,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="content">The optional content body for the ACK request.</param>
         /// <param name="contentType">The optional content type.</param>
-        public void Send2xxAckRequest(string content, string contentType)
+        public async void Send2xxAckRequest(string content, string contentType)
         {
             try
             {
@@ -193,7 +193,7 @@ namespace SIPSorcery.SIP
                     ackRequest.Header.ContentType = contentType;
                 }
 
-                base.SendRequest(ackRequest);
+                await m_sipTransport.SendRequestAsync(ackRequest);
             }
             catch (Exception excp)
             {
@@ -310,7 +310,7 @@ namespace SIPSorcery.SIP
         /// Sends a PRACK request to acknowledge a provisional response as per RFC3262.
         /// </summary>
         /// <param name="progressResponse">The provisional response being acknowledged.</param>
-        public void SendPRackRequest(SIPResponse progressResponse)
+        public async void SendPRackRequest(SIPResponse progressResponse)
         {
             // PRACK requests create a new transaction and get routed based on SIP request fields.
             var prackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.PRACK, progressResponse, m_transactionRequest.URI);
@@ -319,7 +319,7 @@ namespace SIPSorcery.SIP
             prackRequest.Header.RAckCSeq = progressResponse.Header.CSeq;
             prackRequest.Header.RAckCSeqMethod = progressResponse.Header.CSeqMethod;
 
-            base.SendRequest(prackRequest);
+            await m_sipTransport.SendRequestAsync(prackRequest);
         }
     }
 }

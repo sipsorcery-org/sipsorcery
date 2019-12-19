@@ -529,7 +529,7 @@ namespace SIPSorcery.SIP.App
                     {
                         // We've been put on hold.
                         var onHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.RecvOnly);
-                        await reInviteTransaction.SendFinalResponse(onHoldResponse);
+                        await reInviteTransaction.SendFinalResponseAsync(onHoldResponse);
 
                         RemotePutOnHold?.Invoke();
                     }
@@ -537,7 +537,7 @@ namespace SIPSorcery.SIP.App
                     {
                         // We've been taken off hold.
                         var offHoldResponse = ProcessRemoteHoldRequest(sipRequest, MediaStreamStatusEnum.SendRecv);
-                        await reInviteTransaction.SendFinalResponse(offHoldResponse);
+                        await reInviteTransaction.SendFinalResponseAsync(offHoldResponse);
 
                         RemoteTookOffHold?.Invoke();
                     }
@@ -547,21 +547,21 @@ namespace SIPSorcery.SIP.App
                         {
                             // The destination RTP end point was changed.
                             var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, Dialogue.SDP);
-                            await reInviteTransaction.SendFinalResponse(okResponse);
+                            await reInviteTransaction.SendFinalResponseAsync(okResponse);
                         }
                         else
                         {
                             // The application isn't prepared to accept re-INVITE requests and we can't work out what it was for. 
                             // We'll reject as gently as we can to try and not lose the call.
                             SIPResponse notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, null);
-                            await reInviteTransaction.SendFinalResponse(notAcceptableResponse);
+                            await reInviteTransaction.SendFinalResponseAsync(notAcceptableResponse);
                         }
                     }
                     else
                     {
                         // The application is going to handle the re-INVITE request. We'll send a Trying response as a precursor.
                         SIPResponse tryingResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
-                        await reInviteTransaction.SendProvisionalResponse(tryingResponse);
+                        await reInviteTransaction.SendProvisionalResponseAsync(tryingResponse);
                         OnReinviteRequest(reInviteTransaction);
                     }
                 }

@@ -96,7 +96,7 @@ namespace SIPSorcery
                 }
             };
 
-            sipTransport.SIPTransportRequestReceived += (locelEndPoint, remoteEndPoint, sipRequest) =>
+            sipTransport.SIPTransportRequestReceived += async (locelEndPoint, remoteEndPoint, sipRequest) =>
             {
                 if (sipRequest.Header.From != null &&
                     sipRequest.Header.From.FromTag != null &&
@@ -138,7 +138,7 @@ namespace SIPSorcery
                         Log.LogWarning($"Busy response returned for incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
                         SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
-                        uasTransaction.SendFinalResponse(busyResponse);
+                        await uasTransaction.SendFinalResponseAsync(busyResponse);
                     }
                 }
                 else

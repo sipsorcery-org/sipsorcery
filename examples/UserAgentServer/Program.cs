@@ -217,7 +217,7 @@ namespace SIPSorcery
                         SIPSorcery.Sys.Log.Logger.LogInformation("Call hungup.");
                         SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(sipTransport, sipRequest, null);
                         SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                        await byeTransaction.SendFinalResponse(byeResponse);
+                        await byeTransaction.SendFinalResponseAsync(byeResponse);
                         uas?.Hangup(true);
                         rtpSession?.Close();
                         rtpCts?.Cancel();

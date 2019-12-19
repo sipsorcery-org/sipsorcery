@@ -18,6 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
@@ -466,7 +468,7 @@ namespace SIPSorcery.SIP.App
                     if (m_cancelTransaction.TransactionState != SIPTransactionStatesEnum.Completed)
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Call " + m_serverTransaction.TransactionRequest.URI.ToString() + " has already been cancelled once, trying again.", Owner));
-                        m_cancelTransaction.SendRequest(m_cancelTransaction.TransactionRequest);
+                        m_cancelTransaction.SendReliableRequest();
                     }
                     else
                     {

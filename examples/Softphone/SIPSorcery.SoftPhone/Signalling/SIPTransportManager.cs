@@ -158,7 +158,7 @@ namespace SIPSorcery.SoftPhone
                     // All user agents were already on a call return a busy response.
                     UASInviteTransaction uasTransaction = new UASInviteTransaction(SIPTransport, sipRequest, null);
                     SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
-                    await uasTransaction.SendFinalResponse(busyResponse);
+                    await uasTransaction.SendFinalResponseAsync(busyResponse);
                 }
             }
             else

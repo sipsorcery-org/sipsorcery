@@ -280,7 +280,7 @@ namespace SIPSorcery.SIP.App
                             SIPResponse authReqdResponse = SIPResponse.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
                             authReqdResponse.Header.AuthenticationHeader = authenticationResult.AuthenticationRequiredHeader;
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call not authenticated for " + m_sipUsername + "@" + m_sipDomain + ", responding with " + authenticationResult.ErrorResponse + ".", null));
-                            m_uasTransaction.SendFinalResponse(authReqdResponse);
+                            _ = m_uasTransaction.SendFinalResponseAsync(authReqdResponse);
                         }
                     }
                 }
@@ -340,7 +340,7 @@ namespace SIPSorcery.SIP.App
                                 }
                             }
 
-                            m_uasTransaction.SendProvisionalResponse(progressResponse);
+                            _ = m_uasTransaction.SendProvisionalResponseAsync(progressResponse);
                         }
                     }
                 }
@@ -387,7 +387,7 @@ namespace SIPSorcery.SIP.App
                         okResponse.Body = body;
                     }
 
-                    m_uasTransaction.SendFinalResponse(okResponse);
+                    _ = m_uasTransaction.SendFinalResponseAsync(okResponse);
 
                     SIPDialogue = new SIPDialogue(m_uasTransaction, m_owner, m_adminMemberId);
                     SIPDialogue.TransferMode = transferMode;
@@ -434,7 +434,7 @@ namespace SIPSorcery.SIP.App
                             }
                         }
 
-                        m_uasTransaction.SendFinalResponse(failureResponse);
+                        _ = m_uasTransaction.SendFinalResponseAsync(failureResponse);
                     }
                 }
                 else
@@ -456,7 +456,7 @@ namespace SIPSorcery.SIP.App
                 {
                     SIPResponse redirectResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, redirectCode, null);
                     redirectResponse.Header.Contact = SIPContactHeader.CreateSIPContactList(redirectURI);
-                    m_uasTransaction.SendFinalResponse(redirectResponse);
+                    _ = m_uasTransaction.SendFinalResponseAsync(redirectResponse);
                 }
             }
             catch (Exception excp)
