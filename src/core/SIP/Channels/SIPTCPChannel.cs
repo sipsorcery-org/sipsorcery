@@ -418,17 +418,12 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dstEndPoint">The remote end point to send to.</param>
         /// <param name="buffer">The data to send.</param>
-        public override async void Send(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
+        public override async void Send(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
             await SendAsync(dstEndPoint, buffer, connectionIDHint);
         }
 
-        //public override async void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
-        //{
-        //    await SendSecureAsync(dstEndPoint, buffer, serverCertificateName, connectionIDHint);
-        //}
-
-        public override Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
+        public override Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
             return SendSecureAsync(dstEndPoint, buffer, null, connectionIDHint);
         }
@@ -443,7 +438,7 @@ namespace SIPSorcery.SIP
         /// that is expected for the remote SSL server.</param>
         /// <param name="connectionIDHint">Optional. The ID of the specific TCP connection to try and the send the message on.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override async Task<SocketError> SendSecureAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
+        public override Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             try
             {
@@ -478,17 +473,17 @@ namespace SIPSorcery.SIP
                     if (sipStreamConn != null)
                     {
                         SendOnConnected(sipStreamConn, buffer);
-                        return SocketError.Success;
+                        return Task.FromResult(SocketError.Success);
                     }
                     else
                     {
-                        return await ConnectClientAsync(dstEndPoint, buffer, serverCertificateName);
+                        return ConnectClientAsync(dstEndPoint.GetIPEndPoint(), buffer, serverCertificateName);
                     }
                 }
             }
             catch (SocketException sockExcp)
             {
-                return sockExcp.SocketErrorCode;
+                return Task.FromResult(sockExcp.SocketErrorCode);
             }
             catch (ApplicationException)
             {
@@ -604,9 +599,9 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="remoteEndPoint">The remote end point to check for an existing connection.</param>
         /// <returns>True if there is a connection or false if not.</returns>
-        public override bool HasConnection(IPEndPoint remoteEndPoint)
+        public override bool HasConnection(SIPEndPoint remoteEndPoint)
         {
-            return m_connections.Any(x => x.Value.RemoteEndPoint.Equals(remoteEndPoint));
+            return m_connections.Any(x => x.Value.RemoteEndPoint.Equals(remoteEndPoint.GetIPEndPoint()));
         }
 
         /// <summary>

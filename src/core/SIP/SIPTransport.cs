@@ -367,7 +367,7 @@ namespace SIPSorcery.SIP
             }
 
             SIPChannel sendSIPChannel = m_sipChannels[localSIPEndPoint.ChannelID];
-            sendSIPChannel.Send(dstEndPoint.GetIPEndPoint(), buffer, null);
+            sendSIPChannel.Send(dstEndPoint, buffer, null);
         }
 
         /// <summary>
@@ -481,7 +481,7 @@ namespace SIPSorcery.SIP
         /// <param name="sipChannel">The SIP channel to use to send the SIP request.</param>
         /// <param name="dstEndPoint">The destination to send the SIP request to.</param>
         /// <param name="sipRequest">The SIP request to send.</param>
-        private async Task<SocketError> SendRequestAsync(SIPChannel sipChannel, SIPEndPoint sendFromSIPEndPoint, SIPEndPoint dstEndPoint, SIPRequest sipRequest)
+        private Task<SocketError> SendRequestAsync(SIPChannel sipChannel, SIPEndPoint sendFromSIPEndPoint, SIPEndPoint dstEndPoint, SIPRequest sipRequest)
         {
             if (sipChannel == null)
             {
@@ -498,25 +498,21 @@ namespace SIPSorcery.SIP
             else if (dstEndPoint.Address.Equals(BlackholeAddress))
             {
                 // Ignore packet, it's destined for the blackhole.
-                return SocketError.Success;
+                return Task.FromResult(SocketError.Success);
             }
 
             sipRequest.Header.ContentLength = (sipRequest.Body.NotNullOrBlank()) ? Encoding.UTF8.GetByteCount(sipRequest.Body) : 0;
 
             FireSIPRequestOutTraceEvent(sendFromSIPEndPoint, dstEndPoint, sipRequest);
 
-            SocketError sendResult = SocketError.Success;
-
             if (sipChannel.IsSecure)
             {
-                sendResult = await sipChannel.SendSecureAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host, sipRequest.SendFromHintConnectionID);
+                return sipChannel.SendSecureAsync(dstEndPoint, Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.URI.Host, sipRequest.SendFromHintConnectionID);
             }
             else
             {
-                sendResult = await sipChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.SendFromHintConnectionID);
+                return sipChannel.SendAsync(dstEndPoint, Encoding.UTF8.GetBytes(sipRequest.ToString()), sipRequest.SendFromHintConnectionID);
             }
-
-            return sendResult;
         }
 
         /// <summary>
@@ -614,7 +610,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dstEndPoint">The destination end point to send the response to.</param>
         /// <param name="sipResponse">The SIP response to send.</param>
-        public async Task<SocketError> SendResponseAsync(SIPEndPoint dstEndPoint, SIPResponse sipResponse)
+        public Task<SocketError> SendResponseAsync(SIPEndPoint dstEndPoint, SIPResponse sipResponse)
         {
             if (dstEndPoint == null)
             {
@@ -632,7 +628,7 @@ namespace SIPSorcery.SIP
             if (dstEndPoint != null && dstEndPoint.Address.Equals(BlackholeAddress))
             {
                 // Ignore packet, it's destined for the blackhole.
-                return SocketError.Success;
+                return Task.FromResult(SocketError.Success);
             }
             else
             {
@@ -648,7 +644,7 @@ namespace SIPSorcery.SIP
                 FireSIPResponseOutTraceEvent(sendFromSIPEndPoint, dstEndPoint, sipResponse);
 
                 // Now have a destination and sending channel, go ahead and forward.
-                return await sendFromChannel.SendAsync(dstEndPoint.GetIPEndPoint(), Encoding.UTF8.GetBytes(sipResponse.ToString()), sipResponse.SendFromHintConnectionID);
+                return sendFromChannel.SendAsync(dstEndPoint, Encoding.UTF8.GetBytes(sipResponse.ToString()), sipResponse.SendFromHintConnectionID);
             }
         }
 

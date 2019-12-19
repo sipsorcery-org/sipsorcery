@@ -218,7 +218,7 @@ namespace SIPSorcery.SIP
         /// <param name="destinationEndPoint">The remote destination end point to send the data to.</param>
         /// <param name="buffer">The data to send.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public async override void Send(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
+        public async override void Send(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
         {
             if (destinationEndPoint == null)
             {
@@ -241,7 +241,7 @@ namespace SIPSorcery.SIP
         /// <param name="buffer">The data to send.</param>
         /// <param name="connectionIDHint">The ID of the specific web socket connection to try and send the message on.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override async Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
+        public override async Task<SocketError> SendAsync(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
         {
             if (destinationEndPoint == null)
             {
@@ -254,7 +254,7 @@ namespace SIPSorcery.SIP
 
             try
             {
-                var ingressClient = GetIngressConnection(destinationEndPoint, connectionIDHint);
+                var ingressClient = GetIngressConnection(destinationEndPoint.GetIPEndPoint(), connectionIDHint);
                 
                 // And lastly if we now have a valid web socket then send.
                 if (ingressClient != null)
@@ -276,7 +276,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Not implemented for the WebSocket channel.
         /// </summary>
-        public override Task<SocketError> SendSecureAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
+        public override Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             throw new NotImplementedException("This Send method is not available in the SIP Web Socket channel, please use an alternative overload.");
         }
@@ -296,9 +296,9 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="remoteEndPoint">The remote end point to check for an existing connection.</param>
         /// <returns>True if there is a connection or false if not.</returns>
-        public override bool HasConnection(IPEndPoint remoteEndPoint)
+        public override bool HasConnection(SIPEndPoint remoteEndPoint)
         {
-            return m_ingressConnections.Any(x => x.Value.Context.UserEndPoint.Equals(remoteEndPoint));
+            return m_ingressConnections.Any(x => x.Value.Context.UserEndPoint.Equals(remoteEndPoint.GetIPEndPoint()));
         }
 
         /// <summary>

@@ -78,17 +78,15 @@ namespace SIPSorcery.SIP
         /// Creates a SIP channel to establish outbound connections and send SIP messages 
         /// over a web socket communications layer.
         /// </summary>
-        /// <param name="isSecure">True if this channel is for WSS URIs, false if for WS URI's.</param>
-        public SIPClientWebSocketChannel(bool isSecure) : base()
+        public SIPClientWebSocketChannel() : base()
         {
             IsReliable = true;
-            IsSecure = isSecure;
-            SIPProtocol = (isSecure) ? SIPProtocolsEnum.wss : SIPProtocolsEnum.ws;
+            SIPProtocol = SIPProtocolsEnum.ws;
 
             // TODO: These values need to be adjusted. The problem is the source end point isn't available from
             // the client web socket connection.
             ListeningIPAddress = IPAddress.Any;
-            Port = 99;// SIPConstants.GetDefaultPort(SIPProtocol);
+            Port = SIPConstants.GetDefaultPort(SIPProtocol);
         }
 
         /// <summary>
@@ -99,7 +97,7 @@ namespace SIPSorcery.SIP
         /// <param name="destinationEndPoint">The remote destination end point to send the data to.</param>
         /// <param name="buffer">The data to send.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public async override void Send(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
+        public override async void Send(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
         {
             if (destinationEndPoint == null)
             {
@@ -122,7 +120,7 @@ namespace SIPSorcery.SIP
         /// <param name="buffer">The data to send.</param>
         /// <param name="connectionIDHint">The ID of the specific web socket connection to try and send the message on.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
+        public override Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
             if (dstEndPoint == null)
             {
@@ -133,13 +131,13 @@ namespace SIPSorcery.SIP
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in SIPClientWebSocketChannel.");
             }
 
-            return SendAsync(new SIPEndPoint(SIPProtocolsEnum.ws, dstEndPoint, this.ID, null), buffer);
+            return SendAsync(dstEndPoint, buffer);
         }
 
         /// <summary>
         /// Send to a secure web socket server.
         /// </summary>
-        public override Task<SocketError> SendSecureAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
+        public override Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             if (dstEndPoint == null)
             {
@@ -150,7 +148,7 @@ namespace SIPSorcery.SIP
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for SendSecure in SIPClientWebSocketChannel.");
             }
 
-            return SendAsync(new SIPEndPoint(SIPProtocolsEnum.wss, dstEndPoint, this.ID, null), buffer);
+            return SendAsync(dstEndPoint, buffer);
         }
 
         /// <summary>
@@ -168,6 +166,7 @@ namespace SIPSorcery.SIP
                 var serverUri = new Uri($"{uriPrefix}{serverEndPoint.GetIPEndPoint()}");
 
                 string connectionID = GetConnectionID(serverUri);
+                serverEndPoint.ChannelID = this.ID;
                 serverEndPoint.ConnectionID = connectionID;
 
                 if (m_egressConnections.TryGetValue(connectionID, out var conn))
@@ -244,11 +243,15 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Not implemented for the WebSocket channel.
+        /// Checks whether the client web socket SIP channel has a connection to the requested server end point.
         /// </summary>
-        public override bool HasConnection(IPEndPoint serverEndPoint)
+        public override bool HasConnection(SIPEndPoint serverEndPoint)
         {
-            throw new NotImplementedException("This HasConnection method is not available in the SIP Client Web Socket channel, please use an alternative overload.");
+            string uriPrefix = (serverEndPoint.Protocol == SIPProtocolsEnum.wss) ? WEB_SOCKET_SECURE_URI_PREFIX : WEB_SOCKET_URI_PREFIX;
+            var serverUri = new Uri($"{uriPrefix}{serverEndPoint.GetIPEndPoint()}");
+            string connectionID = GetConnectionID(serverUri);
+
+            return m_egressConnections.ContainsKey(connectionID);
         }
 
         /// <summary>

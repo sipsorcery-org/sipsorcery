@@ -53,17 +53,17 @@ namespace SIPSorcery.UnitTests
             ID = Crypto.GetRandomInt(5).ToString();
         }
 
-        public override void Send(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
+        public override void Send(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
         {
             throw new NotImplementedException();
         }
 
-        public override Task<SocketError> SendAsync(IPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
+        public override Task<SocketError> SendAsync(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
         {
             throw new NotImplementedException();
         }
 
-        public override Task<SocketError> SendSecureAsync(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate, string connectionIDHint)
+        public override Task<SocketError> SendSecureAsync(SIPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate, string connectionIDHint)
         {
             throw new NotImplementedException();
         }
@@ -79,7 +79,7 @@ namespace SIPSorcery.UnitTests
             throw new NotImplementedException();
         }
 
-        public override bool HasConnection(IPEndPoint remoteEndPoint)
+        public override bool HasConnection(SIPEndPoint remoteEndPoint)
         {
             throw new NotImplementedException();
         }
