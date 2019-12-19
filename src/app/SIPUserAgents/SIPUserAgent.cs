@@ -73,9 +73,9 @@ namespace SIPSorcery.SIP.App
         IMediaSessionFactory m_mediaSessionFactory;
 
         /// <summary>
-        /// The RTP session in use for the current call.
+        /// The media (RTP) session in use for the current call.
         /// </summary>
-        public IMediaSession RtpSession { get; private set; }
+        public IMediaSession MediaSession { get; private set; }
 
         /// <summary>
         /// Indicates whether there is an active call or not
@@ -243,10 +243,10 @@ namespace SIPSorcery.SIP.App
 
             if (serverEndPoint != null)
             {
-                RtpSession = m_mediaSessionFactory.Create();
-                RtpSession.DtmfCompleted += OnMediaDtmfCompleted;
+                MediaSession = m_mediaSessionFactory.Create();
+                MediaSession.DtmfCompleted += OnMediaDtmfCompleted;
 
-                var sdp = RtpSession.CreateOffer(serverEndPoint.GetIPEndPoint().Address);
+                var sdp = MediaSession.CreateOffer(serverEndPoint.GetIPEndPoint().Address);
                 sipCallDescriptor.Content = sdp.ToString();
 
                 m_uac.Call(sipCallDescriptor);
@@ -263,7 +263,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void Cancel()
         {
-            RtpSession?.Close();
+            MediaSession?.Close();
 
             if (m_uac != null)
             {
@@ -283,7 +283,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void Hangup()
         {
-            RtpSession?.Close();
+            MediaSession?.Close();
             Dialogue?.Hangup(m_transport, m_outboundProxy);
             CallEnded();
         }
@@ -330,12 +330,12 @@ namespace SIPSorcery.SIP.App
             var sipRequest = uas.ClientTransaction.TransactionRequest;
             SDP remoteSDP = SDP.ParseSDPDescription(sipRequest.Body);
 
-            RtpSession = m_mediaSessionFactory.Create();
-            RtpSession.DtmfCompleted += OnMediaDtmfCompleted;
+            MediaSession = m_mediaSessionFactory.Create();
+            MediaSession.DtmfCompleted += OnMediaDtmfCompleted;
 
             // TODO: Deal with multiple media offers.
 
-            var sdpAnswer = RtpSession.AnswerOffer(remoteSDP);
+            var sdpAnswer = MediaSession.AnswerOffer(remoteSDP);
 
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default);
@@ -517,7 +517,7 @@ namespace SIPSorcery.SIP.App
 
                     try
                     {
-                        SDP answerSdp = RtpSession.ReInvite(newSDPOffer);
+                        SDP answerSdp = MediaSession.ReInvite(newSDPOffer);
 
                         Dialogue.RemoteSDP = sipRequest.Body;
                         Dialogue.SDP = answerSdp.ToString();
@@ -754,7 +754,7 @@ namespace SIPSorcery.SIP.App
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                RtpSession.OfferAnswered(SDP.ParseSDPDescription(sipResponse.Body));
+                MediaSession.OfferAnswered(SDP.ParseSDPDescription(sipResponse.Body));
 
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 
@@ -829,8 +829,8 @@ namespace SIPSorcery.SIP.App
         {
             m_uac = null;
             m_uas = null;
-            RtpSession?.Close();
-            RtpSession = null;
+            MediaSession?.Close();
+            MediaSession = null;
         }
 
         /// <summary>
