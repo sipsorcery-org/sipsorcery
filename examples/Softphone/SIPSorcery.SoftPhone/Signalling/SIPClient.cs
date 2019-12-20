@@ -43,8 +43,6 @@ namespace SIPSorcery.SoftPhone
 
         public event Action<SIPClient> CallAnswer;                 // Fires when an outgoing SIP call is answered.
         public event Action<SIPClient> CallEnded;                  // Fires when an incoming or outgoing call is over.
-        public event Action<SIPClient> RemotePutOnHold;            // Fires when the remote call party puts us on hold.
-        public event Action<SIPClient> RemoteTookOffHold;          // Fires when the remote call party takes us off hold.
         public event Action<SIPClient, string> StatusMessage;      // Fires when the SIP client has a status message it wants to inform the UI about.
 
         /// <summary>
@@ -81,8 +79,6 @@ namespace SIPSorcery.SoftPhone
             m_userAgent.ClientCallFailed += CallFailed;
             m_userAgent.OnCallHungup += CallFinished;
             m_userAgent.ServerCallCancelled += IncomingCallCancelled;
-            m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
-            m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
             m_userAgent.OnTransferNotify += OnTransferNotify;
             m_userAgent.OnDtmfEvent += OnDtmfEvent;
         }
@@ -238,7 +234,7 @@ namespace SIPSorcery.SoftPhone
             m_userAgent.PutOnHold();
             // At this point we could stop listening to the remote party's RTP and play something 
             // else and also stop sending our microphone output and play some music.
-            StatusMessage(this, "Remote party put on hold");
+            StatusMessage(this, "Local party put on hold");
         }
 
         /// <summary>
@@ -249,7 +245,7 @@ namespace SIPSorcery.SoftPhone
             m_userAgent.TakeOffHold();
             // At ths point we should reverse whatever changes we made to the media stream when we
             // put the remote call part on hold.
-            StatusMessage(this, "Remote taken off on hold");
+            StatusMessage(this, "Local party taken off on hold");
         }
 
         /// <summary>
@@ -274,23 +270,7 @@ namespace SIPSorcery.SoftPhone
             Hangup();
         }
 
-        /// <summary>
-        /// Event handler that notifies us the remote party has put us on hold.
-        /// </summary>
-        private void OnRemotePutOnHold()
-        {
-            //_mediaManager.StopSending();
-            RemotePutOnHold?.Invoke(this);
-        }
 
-        /// <summary>
-        /// Event handler that notifies us the remote party has taken us off hold.
-        /// </summary>
-        private void OnRemoteTookOffHold()
-        {
-            //_mediaManager.RestartSending();
-            RemoteTookOffHold?.Invoke(this);
-        }
 
         /// <summary>
         /// A trying response has been received from the remote SIP UAS on an outgoing call.

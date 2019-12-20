@@ -150,16 +150,6 @@ namespace SIPSorcery.SIP.App
         public event SIPUASDelegate ServerCallCancelled;
 
         /// <summary>
-        /// The remote call party has put us on hold.
-        /// </summary>
-        public event Action RemotePutOnHold;
-
-        /// <summary>
-        /// The remote call party has taken us off hold.
-        /// </summary>
-        public event Action RemoteTookOffHold;
-
-        /// <summary>
         /// The remote call party has sent us a new re-INVITE request that this
         /// class didn't know how to or couldn't handle. Things we can
         /// handle are on and off hold. Common examples of what we can't handle
