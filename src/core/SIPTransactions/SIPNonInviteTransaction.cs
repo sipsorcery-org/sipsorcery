@@ -4,10 +4,10 @@
 // Description: SIP Transaction for all non-INVITE transactions where no dialog is required.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 18 May 2008	Aaron Clauson	Created (aaron@sipsorcery.com), SIPSorcery Ltd, Hobart, Australia (www.sipsorcery.com)
+// 18 May 2008	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -67,6 +67,11 @@ namespace SIPSorcery.SIP
         private void SIPNonInviteTransaction_TransactionRequestRetransmit(SIPTransaction sipTransaction, SIPRequest sipRequest, int retransmitNumber)
         {
             NonInviteTransactionRequestRetransmit?.Invoke(sipTransaction, sipRequest, retransmitNumber);
+        }
+
+        public void SendRequest()
+        {
+            base.SendReliableRequest();
         }
     }
 }

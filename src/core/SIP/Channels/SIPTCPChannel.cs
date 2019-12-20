@@ -402,7 +402,7 @@ namespace SIPSorcery.SIP
 
                     await OnClientConnect(sipStmConn, serverCertificateName);
 
-                    SendOnConnected(sipStmConn, buffer);
+                    await SendOnConnected(sipStmConn, buffer);
                 }
 
                 return connectResult;
@@ -517,7 +517,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="sipStreamConn">The connected SIP stream wrapping the TCP connection.</param>
         /// <param name="buffer">The data to send.</param>
-        protected virtual void SendOnConnected(SIPStreamConnection sipStreamConn, byte[] buffer)
+        protected virtual Task SendOnConnected(SIPStreamConnection sipStreamConn, byte[] buffer)
         {
             IPEndPoint dstEndPoint = sipStreamConn.RemoteEndPoint;
 
@@ -535,6 +535,8 @@ namespace SIPSorcery.SIP
                         ProcessSend(args);
                     }
                 }
+
+                return Task.FromResult(0);
             }
             catch (SocketException sockExcp)
             {

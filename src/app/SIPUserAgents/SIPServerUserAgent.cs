@@ -280,7 +280,7 @@ namespace SIPSorcery.SIP.App
                             SIPResponse authReqdResponse = SIPResponse.GetResponse(sipRequest, authenticationResult.ErrorResponse, null);
                             authReqdResponse.Header.AuthenticationHeader = authenticationResult.AuthenticationRequiredHeader;
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Call not authenticated for " + m_sipUsername + "@" + m_sipDomain + ", responding with " + authenticationResult.ErrorResponse + ".", null));
-                            _ = m_uasTransaction.SendFinalResponseAsync(authReqdResponse);
+                            m_uasTransaction.SendFinalResponse(authReqdResponse);
                         }
                     }
                 }
@@ -340,7 +340,7 @@ namespace SIPSorcery.SIP.App
                                 }
                             }
 
-                            _ = m_uasTransaction.SendProvisionalResponseAsync(progressResponse);
+                            m_uasTransaction.SendProvisionalResponse(progressResponse);
                         }
                     }
                 }
@@ -387,7 +387,7 @@ namespace SIPSorcery.SIP.App
                         okResponse.Body = body;
                     }
 
-                    _ = m_uasTransaction.SendFinalResponseAsync(okResponse);
+                    m_uasTransaction.SendFinalResponse(okResponse);
 
                     SIPDialogue = new SIPDialogue(m_uasTransaction, m_owner, m_adminMemberId);
                     SIPDialogue.TransferMode = transferMode;
@@ -434,7 +434,7 @@ namespace SIPSorcery.SIP.App
                             }
                         }
 
-                        _ = m_uasTransaction.SendFinalResponseAsync(failureResponse);
+                        m_uasTransaction.SendFinalResponse(failureResponse);
                     }
                 }
                 else
@@ -456,7 +456,7 @@ namespace SIPSorcery.SIP.App
                 {
                     SIPResponse redirectResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, redirectCode, null);
                     redirectResponse.Header.Contact = SIPContactHeader.CreateSIPContactList(redirectURI);
-                    _ = m_uasTransaction.SendFinalResponseAsync(redirectResponse);
+                    m_uasTransaction.SendFinalResponse(redirectResponse);
                 }
             }
             catch (Exception excp)
@@ -500,7 +500,7 @@ namespace SIPSorcery.SIP.App
                         SIPRequest byeRequest = GetByeRequest();
                         SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
                         byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
-                        byeTransaction.SendReliableRequest();
+                        byeTransaction.SendRequest();
                     }
                 }
                 catch (Exception excp)
@@ -534,8 +534,8 @@ namespace SIPSorcery.SIP.App
                     authByeRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                     authByeRequest.Header.CSeq = authByeRequest.Header.CSeq + 1;
 
-                    SIPNonInviteTransaction bTransaction = new SIPNonInviteTransaction(m_sipTransport, authByeRequest, null);
-                    bTransaction.SendReliableRequest();
+                    SIPNonInviteTransaction authByeTransaction = new SIPNonInviteTransaction(m_sipTransport, authByeRequest, null);
+                    authByeTransaction.SendRequest();
                 }
             }
             catch (Exception excp)

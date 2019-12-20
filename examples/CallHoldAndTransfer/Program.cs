@@ -114,7 +114,7 @@ namespace SIPSorcery
                         // If we are already on a call return a busy response.
                         UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
                         SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
-                        await uasTransaction.SendFinalResponseAsync(busyResponse);
+                        uasTransaction.SendFinalResponse(busyResponse);
                     }
                     else
                     {

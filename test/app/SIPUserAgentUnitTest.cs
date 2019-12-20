@@ -158,10 +158,7 @@ namespace SIPSorcery.SIP.App.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            // NOTE: For this test to work the transport layer must be instantiated with the queue incoming
-            // flag set to false. That has the effect of getting the mockChannel.FireMessageReceived to flow
-            // all the way through to the SIPUSerAgent on the same thread.
-            SIPTransport transport = new SIPTransport(MockSIPDNSManager.Resolve, new SIPTransactionEngine(), false);
+            SIPTransport transport = new SIPTransport(false, MockSIPDNSManager.Resolve);
             MockSIPChannel mockChannel = new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0));
             transport.AddSIPChannel(mockChannel);
 

@@ -39,7 +39,8 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Default constructor for user agent client INVITE transaction.
         /// </summary>
-        /// <param name="sendOkAckManually">If set an ACK request for the 2xx response will NOT be sent and it will be up to the application to explicitly call the SendACK request.</param>
+        /// <param name="sendOkAckManually">If set an ACK request for the 2xx response will NOT be sent and it will be up to 
+        /// the application to explicitly call the SendACK request.</param>
         /// <param name="disablePrackSupport">If set to true then PRACK support will not be set in the initial INVITE reqeust.</param>
         internal UACInviteTransaction(SIPTransport sipTransport,
             SIPRequest sipRequest,
@@ -70,7 +71,7 @@ namespace SIPSorcery.SIP
             CDR = null;
         }
 
-        public void SendInviteRequest(SIPRequest inviteRequest)
+        public void SendInviteRequest()
         {
             base.SendReliableRequest();
         }
@@ -100,10 +101,13 @@ namespace SIPSorcery.SIP
             {
                 UACInviteTransactionInformationResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
 
-                if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199 && sipResponse.Header.RSeq > 0)
+                if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
                 {
-                    // Send a PRACK for this provisional response.
-                    SendPRackRequest(sipResponse);
+                    if (sipResponse.Header.RSeq > 0)
+                    {
+                        // Send a PRACK for this provisional response.
+                        SendPRackRequest(sipResponse);
+                    }
                 }
 
                 if (CDR != null)
@@ -292,11 +296,16 @@ namespace SIPSorcery.SIP
             return ackRequest;
         }
 
+        /// <summary>
+        /// Cancels this transaction. This does NOT generate a CANCEL request. A separate
+        /// reliable transaction needs to be created for that.
+        /// </summary>
+        /// <param name="cancelReason">The reason for cancelling the transaction.</param>
         public void CancelCall(string cancelReason = null)
         {
             try
             {
-                base.Cancel();
+                UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
                 CDR?.Cancelled(cancelReason);
             }
             catch (Exception excp)
