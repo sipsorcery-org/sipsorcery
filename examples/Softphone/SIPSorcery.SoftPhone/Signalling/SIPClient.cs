@@ -56,14 +56,6 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
-        /// The RTP session associated with this client.
-        /// </summary>
-        public RTPMediaSession RtpSession
-        {
-            get { return (RTPMediaSession)MediaSession; }
-        }
-
-        /// <summary>
         /// Once a call is established this holds the properties of the established SIP dialogue.
         /// </summary>
         public SIPDialogue Dialogue
