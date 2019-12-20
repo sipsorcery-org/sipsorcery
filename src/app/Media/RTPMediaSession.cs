@@ -31,8 +31,9 @@ namespace SIPSorcery.SIP.App.Media
 
         public virtual void Close()
         {
-            Session.Close();
             Session.OnRtpEvent -= OnRemoteRtpEvent;
+            Session.Close();
+            Closed?.Invoke();
         }
 
         public SDP CreateOffer(IPAddress destinationAddress)
