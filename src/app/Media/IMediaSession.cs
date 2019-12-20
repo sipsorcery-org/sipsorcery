@@ -12,7 +12,7 @@ namespace SIPSorcery.SIP.App.Media
         void OfferAnswered(SDP remoteSDP);
 
         SDP AnswerOffer(SDP remoteSDP);
-        SDP ReInvite(SDP remoteSDP);
+        SDP RemoteReInvite(SDP remoteSDP);
 
         void Close();
 

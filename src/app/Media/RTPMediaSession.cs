@@ -53,7 +53,7 @@ namespace SIPSorcery.SIP.App.Media
             return CreateOffer(remoteSDP.GetSDPRTPEndPoint().Address);
         }
 
-        public SDP ReInvite(SDP remoteSDP)
+        public SDP RemoteReInvite(SDP remoteSDP)
         {
             IPEndPoint dstRtpEndPoint = remoteSDP.GetSDPRTPEndPoint();
 

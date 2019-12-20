@@ -517,7 +517,7 @@ namespace SIPSorcery.SIP.App
 
                     try
                     {
-                        SDP answerSdp = MediaSession.ReInvite(newSDPOffer);
+                        SDP answerSdp = MediaSession.RemoteReInvite(newSDPOffer);
 
                         Dialogue.RemoteSDP = sipRequest.Body;
                         Dialogue.SDP = answerSdp.ToString();
