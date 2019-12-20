@@ -26,6 +26,7 @@ using Serilog;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.SIP.App.Media;
 
 namespace SIPSorcery
 {
@@ -60,13 +61,27 @@ namespace SIPSorcery
 
             EnableTraceLogs(sipTransport);
 
+            RTPSession RtpSession1 = null;
+            var mediaSessionFactory1 = new RTPMediaSessionFactory();
+
+            mediaSessionFactory1.SessionStart += session => { RtpSession1 = session.Session; };
+            mediaSessionFactory1.SessionEnd += session => { RtpSession1 = null; };
+
+            RTPSession RtpSession2 = null;
+            var mediaSessionFactory2 = new RTPMediaSessionFactory();
+
+            mediaSessionFactory2.SessionStart += session => { RtpSession2 = session.Session; };
+            mediaSessionFactory2.SessionEnd += session => { RtpSession2 = null; };
+
+
             // Create two user agents. Each gets configured to answer an incoming call.
-            var userAgent1 = new SIPUserAgent(sipTransport, null);
-            var userAgent2 = new SIPUserAgent(sipTransport, null);
+            var userAgent1 = new SIPUserAgent(sipTransport, null, mediaSessionFactory1);
+            var userAgent2 = new SIPUserAgent(sipTransport, null, mediaSessionFactory2);
 
             // Only one of the user agents can use the microphone and speaker. The one designated
             // as the active agent gets the devices.
             SIPUserAgent activeUserAgent = null;
+            RTPSession activeRtpSession = null;
 
             // Get the default speaker.
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
@@ -75,13 +90,22 @@ namespace SIPSorcery
 
             userAgent1.OnCallHungup += () => Log.LogInformation($"UA1: Call hungup by remote party.");
             userAgent1.ServerCallCancelled += (uas) => Log.LogInformation("UA1: Incoming call cancelled by caller.");
-            userAgent1.RemotePutOnHold += () => Log.LogInformation("UA1: Remote call party has placed us on hold.");
-            userAgent1.RemoteTookOffHold += () => Log.LogInformation("UA1: Remote call party took us off hold.");
+            userAgent1.MediaSession.MediaState.RemoteOnHoldChanged += onHold =>
+            {
+                Log.LogInformation(onHold
+                    ? "UA1: Remote call party has placed us on hold."
+                    : "UA1: Remote call party took us off hold.");
+            };
 
             userAgent2.OnCallHungup += () => Log.LogInformation($"UA2: Call hungup by remote party.");
             userAgent2.ServerCallCancelled += (uas) => Log.LogInformation("UA2: Incoming call cancelled by caller.");
-            userAgent2.RemotePutOnHold += () => Log.LogInformation("UA2: Remote call party has placed us on hold.");
-            userAgent2.RemoteTookOffHold += () => Log.LogInformation("UA2: Remote call party took us off hold.");
+            userAgent2.MediaSession.MediaState.RemoteOnHoldChanged += onHold =>
+            {
+                Log.LogInformation(onHold
+                    ? "UA1: Remote call party has placed us on hold."
+                    : "UA1: Remote call party took us off hold.");
+            };
+
             userAgent2.OnTransferNotify += (sipFrag) =>
             {
                 if (!string.IsNullOrEmpty(sipFrag))
@@ -103,8 +127,8 @@ namespace SIPSorcery
                     sipRequest.Header.To != null &&
                     sipRequest.Header.To.ToTag != null)
                 {
-                        // This is an in-dialog request that will be handled directly by a user agent instance.
-                    }
+                    // This is an in-dialog request that will be handled directly by a user agent instance.
+                }
                 else if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
                     if (!userAgent1.IsCallActive)
@@ -114,7 +138,8 @@ namespace SIPSorcery
                         userAgent1.Answer(incomingCall);
 
                         activeUserAgent = userAgent1;
-                        userAgent1.RtpSession.OnReceivedSampleReady += PlaySample;
+                        activeRtpSession = RtpSession1;
+                        RtpSession1.OnReceivedSampleReady += PlaySample;
                         waveInEvent.StartRecording();
 
                         Log.LogInformation($"UA1: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
@@ -126,16 +151,17 @@ namespace SIPSorcery
                         userAgent2.Answer(incomingCall);
 
                         activeUserAgent = userAgent2;
+                        activeRtpSession = RtpSession2;
                         userAgent1.PutOnHold();
-                        userAgent1.RtpSession.OnReceivedSampleReady -= PlaySample;
-                        userAgent2.RtpSession.OnReceivedSampleReady += PlaySample;
+                        RtpSession1.OnReceivedSampleReady -= PlaySample;
+                        RtpSession2.OnReceivedSampleReady += PlaySample;
 
                         Log.LogInformation($"UA2: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
                     else
                     {
-                            // If both user agents are already on a call return a busy response.
-                            Log.LogWarning($"Busy response returned for incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
+                        // If both user agents are already on a call return a busy response.
+                        Log.LogWarning($"Busy response returned for incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
                         SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
                         uasTransaction.SendFinalResponse(busyResponse);
@@ -162,9 +188,9 @@ namespace SIPSorcery
                     sample[sampleIndex++] = ulawByte;
                 }
 
-                if (activeUserAgent?.RtpSession?.DestinationEndPoint != null)
+                if (activeRtpSession?.DestinationEndPoint != null)
                 {
-                    activeUserAgent.RtpSession.SendAudioFrame(rtpSendTimestamp, sample);
+                    activeRtpSession.SendAudioFrame(rtpSendTimestamp, sample);
                     rtpSendTimestamp += (uint)sample.Length;
                 }
             };
@@ -195,8 +221,8 @@ namespace SIPSorcery
                         }
                         else if (keyProps.KeyChar == 'q')
                         {
-                                // Quit application.
-                                exitCts.Cancel();
+                            // Quit application.
+                            exitCts.Cancel();
                         }
                     }
                 }
