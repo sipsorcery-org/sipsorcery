@@ -14,10 +14,13 @@ namespace SIPSorcery.SIP.App.Media
         private static readonly ILogger logger = Log.Logger;
         public RTPSession Session { get; }
 
+        public MediaState MediaState { get; set; }
+
         public RTPMediaSession(RTPSession rtpSession)
         {
             Session = rtpSession;
             Session.OnRtpEvent += OnRemoteRtpEvent;
+            MediaState = new MediaState();
         }
 
         public Task SendDtmf(byte key, CancellationToken cancellationToken = default)
@@ -27,6 +30,12 @@ namespace SIPSorcery.SIP.App.Media
         }
 
         public event Action<byte> DtmfCompleted;
+
+        public void SetOnHold(bool value)
+        {
+            MediaState.LocalOnHold = value;
+        }
+
         public event Action Closed;
 
         public virtual void Close()
@@ -36,10 +45,69 @@ namespace SIPSorcery.SIP.App.Media
             Closed?.Invoke();
         }
 
-        public SDP CreateOffer(IPAddress destinationAddress)
+        public SDP CreateOffer(IPAddress destinationAddress = null)
         {
-            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(destinationAddress);
-            return Session.GetSDP(localIPAddress);
+            var destinationAddressToUse = FindDestinationAddressToUse(destinationAddress);
+
+            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(destinationAddressToUse);
+
+            var localSDP = Session.GetSDP(localIPAddress);
+
+            AdjustSdpForMediaState(localSDP);
+
+            return localSDP;
+        }
+
+        private IPAddress FindDestinationAddressToUse(IPAddress destinationAddress)
+        {
+            IPAddress destinationAddressToUse = destinationAddress;
+
+            if (destinationAddressToUse == null)
+            {
+                if (Session.RemoteSDP != null)
+                {
+                    //Check for endpoint from the SDP
+                    IPEndPoint dstRtpEndPoint = Session.RemoteSDP.GetSDPRTPEndPoint();
+                    destinationAddressToUse = dstRtpEndPoint.Address;
+
+                    bool newEndpoint = Session.DestinationEndPoint != dstRtpEndPoint;
+
+                    if (newEndpoint)
+                    {
+                        logger.LogDebug(
+                            $"Remote call party RTP end point changed from {Session.DestinationEndPoint} to {dstRtpEndPoint}.");
+                    }
+                }
+                else
+                {
+                    destinationAddressToUse = IPAddress.Any;
+                }
+            }
+
+            return destinationAddressToUse;
+        }
+
+        private void AdjustSdpForMediaState(SDP localSDP)
+        {
+            var mediaAnnouncement = localSDP.Media.FirstOrDefault(x => x.Media == SDPMediaTypesEnum.audio);
+            if (mediaAnnouncement != null)
+            {
+                if (MediaState.LocalOnHold && MediaState.RemoteOnHold)
+                {
+                    mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.None;
+                }
+                else if (!MediaState.LocalOnHold && !MediaState.RemoteOnHold)
+                {
+                    mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
+                }
+                else
+                {
+                    mediaAnnouncement.MediaStreamStatus =
+                        MediaState.LocalOnHold
+                            ? MediaStreamStatusEnum.SendOnly
+                            : MediaStreamStatusEnum.RecvOnly;
+                }
+            }
         }
 
         public void OfferAnswered(SDP remoteSDP)
@@ -55,54 +123,33 @@ namespace SIPSorcery.SIP.App.Media
 
         public SDP RemoteReInvite(SDP remoteSDP)
         {
-            IPEndPoint dstRtpEndPoint = remoteSDP.GetSDPRTPEndPoint();
-
-            bool newEndpoint = Session.DestinationEndPoint != dstRtpEndPoint;
-
-            var localSDP = CreateOffer(dstRtpEndPoint.Address);
-
-            if (newEndpoint)
-            {
-                logger.LogDebug($"Remote call party RTP end point changed from {Session.DestinationEndPoint} to {dstRtpEndPoint}.");
-            }
-
-            // Check for remote party putting us on and off hold.
-            var mediaStreamStatus = remoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
-            var oldMediaStreamStatus = Session.RemoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
-
             SetRemoteSDP(remoteSDP);
-
-            if (mediaStreamStatus == MediaStreamStatusEnum.SendOnly)
-            {
-                ProcessRemoteHoldRequest(localSDP, MediaStreamStatusEnum.SendRecv);
-            }
-            else if (mediaStreamStatus == MediaStreamStatusEnum.SendRecv
-                  && oldMediaStreamStatus == MediaStreamStatusEnum.SendOnly)
-            {
-                ProcessRemoteHoldRequest(localSDP, MediaStreamStatusEnum.SendRecv);
-            }
-
-            return localSDP;
-        }
-
-        private void ProcessRemoteHoldRequest(SDP localSDP, MediaStreamStatusEnum localMediaStreamStatus)
-        {
-            var mediaAnnouncement = localSDP.Media
-                .FirstOrDefault(x => x.Media == SDPMediaTypesEnum.audio);
-
-            if (mediaAnnouncement != null)
-            {
-                mediaAnnouncement.MediaStreamStatus = localMediaStreamStatus;
-            }
+            return CreateOffer();
         }
 
         private void SetRemoteSDP(SDP remoteSDP)
         {
             Session.SetRemoteSDP(remoteSDP);
             Session.DestinationEndPoint = SDP.GetSDPRTPEndPoint(remoteSDP.ToString());
+
+            CheckRemotePartyHoldCondition(remoteSDP);
+
             logger.LogDebug($"Remote RTP socket {Session.DestinationEndPoint}.");
         }
 
+        private void CheckRemotePartyHoldCondition(SDP remoteSDP)
+        {
+            var mediaStreamStatus = remoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
+
+            if (mediaStreamStatus == MediaStreamStatusEnum.SendOnly)
+            {
+                MediaState.RemoteOnHold = true;
+            }
+            else if (mediaStreamStatus == MediaStreamStatusEnum.SendRecv && MediaState.RemoteOnHold)
+            {
+                MediaState.RemoteOnHold = false;
+            }
+        }
 
         private ushort remoteDtmfDuration;
 

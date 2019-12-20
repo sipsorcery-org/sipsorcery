@@ -8,7 +8,7 @@ namespace SIPSorcery.SIP.App.Media
 {
     public interface IMediaSession
     {
-        SDP CreateOffer(IPAddress destinationAddress);
+        SDP CreateOffer(IPAddress destinationAddress = null);
         void OfferAnswered(SDP remoteSDP);
 
         SDP AnswerOffer(SDP remoteSDP);
@@ -19,5 +19,8 @@ namespace SIPSorcery.SIP.App.Media
         Task SendDtmf(byte key, CancellationToken cancellationToken = default);
 
         event Action<byte> DtmfCompleted;
+
+        void SetOnHold(bool value);
+        MediaState MediaState { get; }
     }
 }
