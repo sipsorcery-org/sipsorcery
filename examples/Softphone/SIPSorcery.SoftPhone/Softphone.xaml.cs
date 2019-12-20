@@ -24,8 +24,10 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using log4net;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.SIP.App.Media;
 using SIPSorcery.Sys;
 using SIPSorceryMedia;
 
@@ -103,7 +105,12 @@ namespace SIPSorcery.SoftPhone
         {
             await _sipTransportManager.InitialiseSIP();
 
-            var mediaSessionFactory = new SoftPhoneMediaSessionFactory(_mediaManager);
+            var mediaSessionFactory = new RTPMediaSessionFactory();
+
+            mediaSessionFactory.SessionStart += session =>
+            {
+                new MediaManagerToRTPSessionConnector(_mediaManager, session);
+            };
 
             for (int i = 0; i < SIP_CLIENT_COUNT; i++)
             {

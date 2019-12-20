@@ -21,4 +21,15 @@ namespace SIPSorcery.SoftPhone
             return new SoftPhoneMediaSession(rtpSession, _mediaManager);
         }
     }
+
+    public class SoftPhoneRTPMediaSessionFactory : RTPMediaSessionFactory
+    {
+        public SoftPhoneRTPMediaSessionFactory(MediaManager mediaManager)
+        {
+            SessionStart += session =>
+            {
+                new MediaManagerToRTPSessionConnector(mediaManager, session);
+            };
+        }
+    }
 }
