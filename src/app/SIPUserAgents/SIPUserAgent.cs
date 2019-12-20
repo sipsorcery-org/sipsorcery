@@ -302,14 +302,13 @@ namespace SIPSorcery.SIP.App
             }
 
             var sipRequest = uas.ClientTransaction.TransactionRequest;
-            SDP remoteSDP = SDP.ParseSDPDescription(sipRequest.Body);
 
             MediaSession = m_mediaSessionFactory.Create();
             MediaSession.DtmfCompleted += OnMediaDtmfCompleted;
 
             // TODO: Deal with multiple media offers.
 
-            var sdpAnswer = MediaSession.AnswerOffer(remoteSDP);
+            var sdpAnswer = MediaSession.AnswerOffer(sipRequest.Body);
 
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default);
@@ -480,31 +479,16 @@ namespace SIPSorcery.SIP.App
 
                     UASInviteTransaction reInviteTransaction = new UASInviteTransaction(m_transport, sipRequest, m_outboundProxy);
 
-                    SDP newSDPOffer = SDP.ParseSDPDescription(sipRequest.Body);
-
-                    var mediaStreamStatus = newSDPOffer.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
-                    var oldMediaStreamStatus = SDP.ParseSDPDescription(Dialogue.RemoteSDP).GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
-
                     try
                     {
-                        SDP answerSdp = MediaSession.RemoteReInvite(newSDPOffer);
+                        var answerSdp = MediaSession.RemoteReInvite(sipRequest.Body);
 
                         Dialogue.RemoteSDP = sipRequest.Body;
-                        Dialogue.SDP = answerSdp.ToString();
+                        Dialogue.SDP = answerSdp;
                         Dialogue.RemoteCSeq = sipRequest.Header.CSeq;
 
                         var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, Dialogue.SDP);
                         reInviteTransaction.SendFinalResponse(okResponse);
-
-                        if (mediaStreamStatus == MediaStreamStatusEnum.SendOnly)
-                        {
-                            RemotePutOnHold?.Invoke();
-                        }
-                        else if (mediaStreamStatus == MediaStreamStatusEnum.SendRecv
-                              && oldMediaStreamStatus == MediaStreamStatusEnum.SendOnly)
-                        {
-                            RemoteTookOffHold?.Invoke();
-                        }
                     }
                     catch (Exception ex)
                     {
@@ -567,13 +551,13 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                SDP sdp = MediaSession.CreateOffer();
-                Dialogue.SDP = sdp.ToString();
+                var sdp = MediaSession.CreateOffer();
+                Dialogue.SDP = sdp;
 
                 var reinviteRequest = Dialogue.GetInDialogRequest(SIPMethodsEnum.INVITE);
                 reinviteRequest.Header.UserAgent = m_userAgent;
                 reinviteRequest.Header.ContentType = m_sdpContentType;
-                reinviteRequest.Body = sdp.ToString();
+                reinviteRequest.Body = sdp;
                 reinviteRequest.Header.Supported = SIPExtensionHeaders.PRACK;
 
                 if (m_uac != null)
@@ -641,7 +625,7 @@ namespace SIPSorcery.SIP.App
             {
                 // Update the remote party's SDP.
                 Dialogue.RemoteSDP = sipResponse.Body;
-                MediaSession.OfferAnswered(SDP.ParseSDPDescription(sipResponse.Body));
+                MediaSession.OfferAnswered(sipResponse.Body);
             }
             else
             {
@@ -727,7 +711,7 @@ namespace SIPSorcery.SIP.App
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                MediaSession.OfferAnswered(SDP.ParseSDPDescription(sipResponse.Body));
+                MediaSession.OfferAnswered(sipResponse.Body);
 
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 

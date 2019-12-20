@@ -30,7 +30,7 @@ namespace SIPSorcery.SIP.App.Media
         }
 
         public event Action<byte> DtmfCompleted;
-        
+
         public event Action Closed;
 
         public virtual void Close()
@@ -40,7 +40,7 @@ namespace SIPSorcery.SIP.App.Media
             Closed?.Invoke();
         }
 
-        public SDP CreateOffer(IPAddress destinationAddress = null)
+        public string CreateOffer(IPAddress destinationAddress = null)
         {
             var destinationAddressToUse = FindDestinationAddressToUse(destinationAddress);
 
@@ -50,7 +50,7 @@ namespace SIPSorcery.SIP.App.Media
 
             AdjustSdpForMediaState(localSDP);
 
-            return localSDP;
+            return localSDP.ToString();
         }
 
         private IPAddress FindDestinationAddressToUse(IPAddress destinationAddress)
@@ -108,29 +108,30 @@ namespace SIPSorcery.SIP.App.Media
             }
         }
 
-        public void OfferAnswered(SDP remoteSDP)
+        public void OfferAnswered(string remoteSDP)
         {
             SetRemoteSDP(remoteSDP);
         }
 
-        public SDP AnswerOffer(SDP remoteSDP)
-        {
-            SetRemoteSDP(remoteSDP);
-            return CreateOffer(remoteSDP.GetSDPRTPEndPoint().Address);
-        }
-
-        public SDP RemoteReInvite(SDP remoteSDP)
+        public string AnswerOffer(string remoteSDP)
         {
             SetRemoteSDP(remoteSDP);
             return CreateOffer();
         }
 
-        private void SetRemoteSDP(SDP remoteSDP)
+        public string RemoteReInvite(string remoteSDP)
         {
-            Session.SetRemoteSDP(remoteSDP);
-            Session.DestinationEndPoint = SDP.GetSDPRTPEndPoint(remoteSDP.ToString());
+            SetRemoteSDP(remoteSDP);
+            return CreateOffer();
+        }
 
-            CheckRemotePartyHoldCondition(remoteSDP);
+        private void SetRemoteSDP(string remoteSDP)
+        {
+            var sdp = SDP.ParseSDPDescription(remoteSDP);
+            Session.SetRemoteSDP(sdp);
+            Session.DestinationEndPoint = sdp.GetSDPRTPEndPoint();
+
+            CheckRemotePartyHoldCondition(sdp);
 
             logger.LogDebug($"Remote RTP socket {Session.DestinationEndPoint}.");
         }

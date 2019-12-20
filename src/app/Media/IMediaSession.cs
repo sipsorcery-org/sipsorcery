@@ -2,17 +2,16 @@
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using SIPSorcery.Net;
 
 namespace SIPSorcery.SIP.App.Media
 {
     public interface IMediaSession
     {
-        SDP CreateOffer(IPAddress destinationAddress = null);
-        void OfferAnswered(SDP remoteSDP);
+        string CreateOffer(IPAddress destinationAddress = null);
+        void OfferAnswered(string remoteSDP);
 
-        SDP AnswerOffer(SDP remoteSDP);
-        SDP RemoteReInvite(SDP remoteSDP);
+        string AnswerOffer(string remoteSDP);
+        string RemoteReInvite(string remoteSDP);
 
         void Close();
 
