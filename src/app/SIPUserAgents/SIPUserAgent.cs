@@ -669,6 +669,7 @@ namespace SIPSorcery.SIP.App
             {
                 // Update the remote party's SDP.
                 Dialogue.RemoteSDP = sipResponse.Body;
+                MediaSession.OfferAnswered(SDP.ParseSDPDescription(sipResponse.Body));
             }
             else
             {
