@@ -321,7 +321,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void PutOnHold()
         {
-            MediaSession.SetOnHold(true);
+            MediaSession.MediaState.LocalOnHold = true;
             SendReInviteRequest();
         }
 
@@ -330,7 +330,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void TakeOffHold()
         {
-            MediaSession.SetOnHold(false);
+            MediaSession.MediaState.LocalOnHold = false;
             SendReInviteRequest();
         }
 

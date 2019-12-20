@@ -20,7 +20,6 @@ namespace SIPSorcery.SIP.App.Media
 
         event Action<byte> DtmfCompleted;
 
-        void SetOnHold(bool value);
         MediaState MediaState { get; }
     }
 }

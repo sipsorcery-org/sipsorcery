@@ -30,12 +30,7 @@ namespace SIPSorcery.SIP.App.Media
         }
 
         public event Action<byte> DtmfCompleted;
-
-        public void SetOnHold(bool value)
-        {
-            MediaState.LocalOnHold = value;
-        }
-
+        
         public event Action Closed;
 
         public virtual void Close()
