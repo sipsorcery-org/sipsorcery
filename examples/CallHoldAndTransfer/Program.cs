@@ -24,6 +24,7 @@ using Serilog;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.SIP.App.Media;
 
 namespace SIPSorcery
 {
@@ -63,8 +64,14 @@ namespace SIPSorcery
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
             WaveInEvent waveInEvent = GetAudioInputDevice();
 
+            RTPSession RtpSession = null;
+            var mediaSessionFactory = new RTPMediaSessionFactory();
+
+            mediaSessionFactory.SessionStart += session => { RtpSession = session.Session; };
+            mediaSessionFactory.SessionEnd += session => { RtpSession = null; };
+
             // Create a client/server user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
-            var userAgent = new SIPUserAgent(sipTransport, null);
+            var userAgent = new SIPUserAgent(sipTransport, null, mediaSessionFactory);
 
             userAgent.ClientCallTrying += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
             userAgent.ClientCallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
@@ -79,7 +86,7 @@ namespace SIPSorcery
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                    PlayRemoteMedia(userAgent.RtpSession, audioOutProvider);
+                    PlayRemoteMedia(RtpSession, audioOutProvider);
                 }
                 else
                 {
@@ -94,8 +101,12 @@ namespace SIPSorcery
                 exitCts.Cancel();
             };
             userAgent.ServerCallCancelled += (uas) => Log.LogInformation("Incoming call cancelled by caller.");
-            userAgent.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
-            userAgent.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
+            userAgent.MediaSession.MediaState.RemoteOnHoldChanged += onHold =>
+            {
+                Log.LogInformation(onHold
+                    ? "Remote call party has placed us on hold."
+                    : "Remote call party took us off hold.");
+            };
 
             sipTransport.SIPTransportRequestReceived += (locelEndPoint, remoteEndPoint, sipRequest) =>
             {
@@ -122,7 +133,7 @@ namespace SIPSorcery
                         var incomingCall = userAgent.AcceptCall(sipRequest);
                         userAgent.Answer(incomingCall);
 
-                        PlayRemoteMedia(userAgent.RtpSession, audioOutProvider);
+                        PlayRemoteMedia(RtpSession, audioOutProvider);
                         waveInEvent.StartRecording();
 
                         Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
@@ -149,9 +160,9 @@ namespace SIPSorcery
                     sample[sampleIndex++] = ulawByte;
                 }
 
-                if (userAgent?.RtpSession?.DestinationEndPoint != null)
+                if (RtpSession?.DestinationEndPoint != null)
                 {
-                    userAgent.RtpSession.SendAudioFrame(rtpSendTimestamp, sample);
+                    RtpSession.SendAudioFrame(rtpSendTimestamp, sample);
                     rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
                 }
             };
@@ -165,7 +176,7 @@ namespace SIPSorcery
                     {
                         var keyProps = Console.ReadKey();
 
-                        if(keyProps.KeyChar == 'c')
+                        if (keyProps.KeyChar == 'c')
                         {
                             if (!userAgent.IsCallActive)
                             {
@@ -198,7 +209,7 @@ namespace SIPSorcery
                                 Log.LogWarning("There is no active call to put on hold.");
                             }
                         }
-                        else if(keyProps.KeyChar == 't')
+                        else if (keyProps.KeyChar == 't')
                         {
                             if (userAgent.IsCallActive)
                             {
@@ -248,7 +259,7 @@ namespace SIPSorcery
 
             Log.LogInformation("Exiting...");
 
-            userAgent?.RtpSession?.Close();
+            RtpSession?.Close();
             waveInEvent?.StopRecording();
             audioOutEvent?.Stop();
 
