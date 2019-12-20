@@ -1,4 +1,5 @@
-﻿using SIPSorcery.Net;
+﻿using System;
+using SIPSorcery.Net;
 
 namespace SIPSorcery.SIP.App.Media
 {
@@ -6,9 +7,19 @@ namespace SIPSorcery.SIP.App.Media
     {
         public SDPMediaFormatsEnum DefaultAudioFormat { get; set; } = SDPMediaFormatsEnum.PCMU;
 
-        public IMediaSession Create()
+        public virtual IMediaSession Create()
         {
-            return new RTPMediaSession(new RTPSession((int)DefaultAudioFormat, null, null, true));
+            var rtpSession = new RTPSession((int)DefaultAudioFormat, null, null, true);
+
+            var rtpMediaSession = new RTPMediaSession(rtpSession);
+            
+            rtpMediaSession.Closed += () => SessionEnd?.Invoke(rtpMediaSession);
+            SessionStart?.Invoke(rtpMediaSession);
+
+            return rtpMediaSession;
         }
+
+        public event Action<RTPMediaSession> SessionStart;
+        public event Action<RTPMediaSession> SessionEnd;
     }
 }
