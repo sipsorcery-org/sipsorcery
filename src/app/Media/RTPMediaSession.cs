@@ -12,32 +12,33 @@ namespace SIPSorcery.SIP.App.Media
     public class RTPMediaSession : IMediaSession
     {
         private static readonly ILogger logger = Log.Logger;
-        protected readonly RTPSession session;
+        public RTPSession Session { get; }
 
         public RTPMediaSession(RTPSession rtpSession)
         {
-            session = rtpSession;
-            session.OnRtpEvent += OnRemoteRtpEvent;
+            Session = rtpSession;
+            Session.OnRtpEvent += OnRemoteRtpEvent;
         }
 
         public Task SendDtmf(byte key, CancellationToken cancellationToken = default)
         {
             var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
-            return session.SendDtmfEvent(dtmfEvent, cancellationToken);
+            return Session.SendDtmfEvent(dtmfEvent, cancellationToken);
         }
 
         public event Action<byte> DtmfCompleted;
+        public event Action Closed;
 
         public virtual void Close()
         {
-            session.Close();
-            session.OnRtpEvent -= OnRemoteRtpEvent;
+            Session.Close();
+            Session.OnRtpEvent -= OnRemoteRtpEvent;
         }
 
         public SDP CreateOffer(IPAddress destinationAddress)
         {
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(destinationAddress);
-            return session.GetSDP(localIPAddress);
+            return Session.GetSDP(localIPAddress);
         }
 
         public void OfferAnswered(SDP remoteSDP)
@@ -55,18 +56,18 @@ namespace SIPSorcery.SIP.App.Media
         {
             IPEndPoint dstRtpEndPoint = remoteSDP.GetSDPRTPEndPoint();
 
-            bool newEndpoint = session.DestinationEndPoint != dstRtpEndPoint;
+            bool newEndpoint = Session.DestinationEndPoint != dstRtpEndPoint;
 
             var localSDP = CreateOffer(dstRtpEndPoint.Address);
 
             if (newEndpoint)
             {
-                logger.LogDebug($"Remote call party RTP end point changed from {session.DestinationEndPoint} to {dstRtpEndPoint}.");
+                logger.LogDebug($"Remote call party RTP end point changed from {Session.DestinationEndPoint} to {dstRtpEndPoint}.");
             }
 
             // Check for remote party putting us on and off hold.
             var mediaStreamStatus = remoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
-            var oldMediaStreamStatus = session.RemoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
+            var oldMediaStreamStatus = Session.RemoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
 
             SetRemoteSDP(remoteSDP);
 
@@ -96,9 +97,9 @@ namespace SIPSorcery.SIP.App.Media
 
         private void SetRemoteSDP(SDP remoteSDP)
         {
-            session.SetRemoteSDP(remoteSDP);
-            session.DestinationEndPoint = SDP.GetSDPRTPEndPoint(remoteSDP.ToString());
-            logger.LogDebug($"Remote RTP socket {session.DestinationEndPoint}.");
+            Session.SetRemoteSDP(remoteSDP);
+            Session.DestinationEndPoint = SDP.GetSDPRTPEndPoint(remoteSDP.ToString());
+            logger.LogDebug($"Remote RTP socket {Session.DestinationEndPoint}.");
         }
 
 
