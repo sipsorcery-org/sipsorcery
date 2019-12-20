@@ -127,10 +127,10 @@ namespace SIPSorcery.SIP
         protected string m_callId;
         protected string m_localTag;
         protected string m_remoteTag;
-        protected SIPRequest m_ackRequest;                  // ACK request for INVITE transactions.
-        protected SIPEndPoint m_ackRequestIPEndPoint;       // Socket the ACK request was sent to.
-        protected SIPRequest m_prackRequest;                // PRACK request for provisional INVITE transaction responses.
-        protected SIPEndPoint m_prackRequestIPEndPoint;     // Socket the PRACK request was sent to.
+        public SIPRequest AckRequest { get; protected set; }        // ACK request for INVITE transactions.
+        internal SIPEndPoint m_ackRequestIPEndPoint;                // Socket the ACK request was sent to.
+        public SIPRequest PRackRequest { get; protected set; }      // PRACK request for provisional INVITE transaction responses.
+        internal SIPEndPoint m_prackRequestIPEndPoint;              // Socket the PRACK request was sent to.
 
         public SIPURI TransactionRequestURI
         {
@@ -480,9 +480,9 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (m_ackRequest != null)
+                if (AckRequest != null)
                 {
-                    await m_sipTransport.SendRequestAsync(m_ackRequest);
+                    await m_sipTransport.SendRequestAsync(AckRequest);
                     AckRetransmits += 1;
                     LastTransmit = DateTime.Now;
                 }
@@ -501,9 +501,9 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                if (m_prackRequest != null)
+                if (PRackRequest != null)
                 {
-                    await m_sipTransport.SendRequestAsync(m_prackRequest);
+                    await m_sipTransport.SendRequestAsync(PRackRequest);
                     PrackRetransmits += 1;
                     LastTransmit = DateTime.Now;
                 }

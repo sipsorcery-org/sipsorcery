@@ -106,7 +106,7 @@ namespace SIPSorcery.SIP
                     if (sipResponse.Header.RSeq > 0)
                     {
                         // Send a PRACK for this provisional response.
-                        SendPRackRequest(sipResponse);
+                        PRackRequest = GetPRackRequest(sipResponse);
                     }
                 }
 
@@ -123,7 +123,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private async void UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private void UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
@@ -132,14 +132,13 @@ namespace SIPSorcery.SIP
                 {
                     if (_sendOkAckManually == false)
                     {
-                        Send2xxAckRequest(null, null);
+                        AckRequest = Get2xxAckRequest(null, null);
                     }
                 }
                 else
                 {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
-                    var ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI);
-                    await m_sipTransport.SendRequestAsync(ackRequest);
+                    AckRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI);
                 }
 
                 UACInviteTransactionFinalResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
@@ -162,7 +161,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="content">The optional content body for the ACK request.</param>
         /// <param name="contentType">The optional content type.</param>
-        public async void Send2xxAckRequest(string content, string contentType)
+        private SIPRequest Get2xxAckRequest(string content, string contentType)
         {
             try
             {
@@ -197,11 +196,12 @@ namespace SIPSorcery.SIP
                     ackRequest.Header.ContentType = contentType;
                 }
 
-                await m_sipTransport.SendRequestAsync(ackRequest);
+               return ackRequest;
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception Send2xxAckRequest. {excp.Message}");
+                logger.LogError($"Exception Get2xxAckRequest. {excp.Message}");
+                throw excp;
             }
         }
 
@@ -319,7 +319,7 @@ namespace SIPSorcery.SIP
         /// Sends a PRACK request to acknowledge a provisional response as per RFC3262.
         /// </summary>
         /// <param name="progressResponse">The provisional response being acknowledged.</param>
-        public async void SendPRackRequest(SIPResponse progressResponse)
+        public SIPRequest GetPRackRequest(SIPResponse progressResponse)
         {
             // PRACK requests create a new transaction and get routed based on SIP request fields.
             var prackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.PRACK, progressResponse, m_transactionRequest.URI);
@@ -328,7 +328,7 @@ namespace SIPSorcery.SIP
             prackRequest.Header.RAckCSeq = progressResponse.Header.CSeq;
             prackRequest.Header.RAckCSeqMethod = progressResponse.Header.CSeqMethod;
 
-            await m_sipTransport.SendRequestAsync(prackRequest);
+           return prackRequest;
         }
     }
 }

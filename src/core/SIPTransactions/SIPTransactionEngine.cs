@@ -394,10 +394,17 @@ namespace SIPSorcery.SIP
                                                     break;
 
                                                 case SIPTransactionStatesEnum.Proceeding:
-                                                    // Send PRACK.
+                                                    if (transaction.PRackRequest != null)
+                                                    {
+                                                        sendResult = await m_sipTransport.SendRequestAsync(transaction.PRackRequest);
+                                                    }
                                                     break;
 
                                                 case SIPTransactionStatesEnum.Completed:
+                                                    if(transaction.AckRequest != null)
+                                                    {
+                                                        sendResult = await m_sipTransport.SendRequestAsync(transaction.AckRequest);
+                                                    }
                                                     transaction.DeliveryPending = false;
                                                     // Send ACK.
                                                     break;
