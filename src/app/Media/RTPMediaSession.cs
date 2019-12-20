@@ -90,23 +90,26 @@ namespace SIPSorcery.SIP.App.Media
         private void AdjustSdpForMediaState(SDP localSDP)
         {
             var mediaAnnouncement = localSDP.Media.FirstOrDefault(x => x.Media == SDPMediaTypesEnum.audio);
-            if (mediaAnnouncement != null)
+
+            if (mediaAnnouncement == null)
             {
-                if (MediaState.LocalOnHold && MediaState.RemoteOnHold)
-                {
-                    mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.None;
-                }
-                else if (!MediaState.LocalOnHold && !MediaState.RemoteOnHold)
-                {
-                    mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
-                }
-                else
-                {
-                    mediaAnnouncement.MediaStreamStatus =
-                        MediaState.LocalOnHold
-                            ? MediaStreamStatusEnum.SendOnly
-                            : MediaStreamStatusEnum.RecvOnly;
-                }
+                return;
+            }
+
+            if (MediaState.LocalOnHold && MediaState.RemoteOnHold)
+            {
+                mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.None;
+            }
+            else if (!MediaState.LocalOnHold && !MediaState.RemoteOnHold)
+            {
+                mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
+            }
+            else
+            {
+                mediaAnnouncement.MediaStreamStatus =
+                    MediaState.LocalOnHold
+                        ? MediaStreamStatusEnum.SendOnly
+                        : MediaStreamStatusEnum.RecvOnly;
             }
         }
 
