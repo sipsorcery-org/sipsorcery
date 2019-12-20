@@ -61,17 +61,17 @@ namespace SIPSorcery
 
             EnableTraceLogs(sipTransport);
 
-            RTPSession RtpSession1 = null;
+            RTPSession rtpSession1 = null;
             var mediaSessionFactory1 = new RTPMediaSessionFactory();
 
-            mediaSessionFactory1.SessionStart += session => { RtpSession1 = session.Session; };
-            mediaSessionFactory1.SessionEnd += session => { RtpSession1 = null; };
+            mediaSessionFactory1.SessionStart += session => { rtpSession1 = session.Session; };
+            mediaSessionFactory1.SessionEnd += session => { rtpSession1 = null; };
 
-            RTPSession RtpSession2 = null;
+            RTPSession rtpSession2 = null;
             var mediaSessionFactory2 = new RTPMediaSessionFactory();
 
-            mediaSessionFactory2.SessionStart += session => { RtpSession2 = session.Session; };
-            mediaSessionFactory2.SessionEnd += session => { RtpSession2 = null; };
+            mediaSessionFactory2.SessionStart += session => { rtpSession2 = session.Session; };
+            mediaSessionFactory2.SessionEnd += session => { rtpSession2 = null; };
 
 
             // Create two user agents. Each gets configured to answer an incoming call.
@@ -138,8 +138,8 @@ namespace SIPSorcery
                         userAgent1.Answer(incomingCall);
 
                         activeUserAgent = userAgent1;
-                        activeRtpSession = RtpSession1;
-                        RtpSession1.OnReceivedSampleReady += PlaySample;
+                        activeRtpSession = rtpSession1;
+                        rtpSession1.OnReceivedSampleReady += PlaySample;
                         waveInEvent.StartRecording();
 
                         Log.LogInformation($"UA1: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
@@ -151,10 +151,10 @@ namespace SIPSorcery
                         userAgent2.Answer(incomingCall);
 
                         activeUserAgent = userAgent2;
-                        activeRtpSession = RtpSession2;
+                        activeRtpSession = rtpSession2;
                         userAgent1.PutOnHold();
-                        RtpSession1.OnReceivedSampleReady -= PlaySample;
-                        RtpSession2.OnReceivedSampleReady += PlaySample;
+                        rtpSession1.OnReceivedSampleReady -= PlaySample;
+                        rtpSession2.OnReceivedSampleReady += PlaySample;
 
                         Log.LogInformation($"UA2: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
