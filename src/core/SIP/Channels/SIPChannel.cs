@@ -154,7 +154,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// The function delegate that will be called whenever a new SIP message is received on the SIP channel.
         /// </summary>
-        public SIPMessageReceivedDelegate SIPMessageReceived;
+        public SIPMessageReceivedAsyncDelegate SIPMessageReceived;
 
         static SIPChannel()
         {

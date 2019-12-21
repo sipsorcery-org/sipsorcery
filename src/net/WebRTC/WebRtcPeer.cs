@@ -161,6 +161,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                     logger.LogDebug("WebRTC peer waiting for all ICE candidate RTP listener tasks to complete.");
 
+                    // TODO: Convert to await Task.WhenAll but somehow with the timeout.
                     Task.WaitAll(LocalIceCandidates.Where(x => x.RtpListenerTask != null).Select(x => x.RtpListenerTask).ToArray(), CLOSE_SOCKETS_TIMEOUT_WAIT_MILLISECONDS);
 
                     logger.LogDebug("WebRTC peer RTP listener tasks now complete.");

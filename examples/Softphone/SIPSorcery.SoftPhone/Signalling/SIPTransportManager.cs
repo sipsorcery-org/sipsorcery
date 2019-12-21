@@ -140,7 +140,7 @@ namespace SIPSorcery.SoftPhone
         /// <param name="localSIPEndPoint">The end point the request was received on.</param>
         /// <param name="remoteEndPoint">The end point the request came from.</param>
         /// <param name="sipRequest">The SIP request received.</param>
-        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private Task SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             if (sipRequest.Header.From != null &&
                 sipRequest.Header.From.FromTag != null &&
@@ -165,8 +165,10 @@ namespace SIPSorcery.SoftPhone
             {
                 logger.Debug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
                 SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                await SIPTransport.SendResponseAsync(notAllowedResponse);
+                return SIPTransport.SendResponseAsync(notAllowedResponse);
             }
+
+            return Task.FromResult(0);
         }
 
         private void SIPRequestInTraceEvent(SIPEndPoint localEP, SIPEndPoint remoteEP, SIPRequest sipRequest)

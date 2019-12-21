@@ -145,8 +145,10 @@ namespace SIPSorcery
                 {
                     Log.LogDebug($"SIP {sipRequest.Method} request received but no processing has been set up for it, rejecting.");
                     SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    _ = sipTransport.SendResponseAsync(notAllowedResponse);
+                    return sipTransport.SendResponseAsync(notAllowedResponse);
                 }
+
+                return Task.FromResult(0);
             };
 
             // Wire up the RTP send session to the audio input device.

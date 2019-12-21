@@ -168,8 +168,8 @@ namespace SIPSorcery.SIP
 
                 m_localTCPSockets.Add(ListeningEndPoint.ToString());
 
-                Task.Run((Action)AcceptConnections);
-                Task.Run((Action)PruneConnections);
+                Task.Run(AcceptConnections);
+                Task.Run(PruneConnections);
 
                 logger.LogInformation($"SIP {ProtDescr} Channel created for {ListeningEndPoint}.");
             }
@@ -183,7 +183,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Processes the socket accepts from the channel's socket listener.
         /// </summary>
-        private async void AcceptConnections()
+        private async Task AcceptConnections()
         {
             logger.LogDebug($"SIP {ProtDescr} Channel socket on {m_tcpServerListener.Server.LocalEndPoint} accept connections thread started.");
 
@@ -594,9 +594,9 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Gets fired when a suspected SIP message is extracted from the TCP data stream.
         /// </summary>
-        protected void SIPTCPMessageReceived(SIPChannel channel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
+        protected Task SIPTCPMessageReceived(SIPChannel channel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
         {
-            SIPMessageReceived?.Invoke(channel, localEndPoint, remoteEndPoint, buffer);
+            return SIPMessageReceived?.Invoke(channel, localEndPoint, remoteEndPoint, buffer);
         }
 
         /// <summary>
@@ -706,7 +706,7 @@ namespace SIPSorcery.SIP
         /// period or where the number of connections allowed per IP address has been exceeded. Only relevant for connection
         /// oriented channels such as TCP and TLS.
         /// </summary>
-        private async void PruneConnections()
+        private async Task PruneConnections()
         {
             try
             {

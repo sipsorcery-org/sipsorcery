@@ -652,7 +652,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="localSIPEndPoint">The local end point the request was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the request came from.</param>
         /// <param name="sipRequest">The SIP request.</param>
-        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private async Task SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             if (Dialogue != null)
             {

@@ -275,11 +275,11 @@ namespace SIPSorcery.SIP
                 {
                     if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
                     {
-                        ResendPrackRequest();
+                        _ = ResendPrackRequest();
                     }
                     else
                     {
-                        ResendAckRequest();
+                        _ = ResendAckRequest();
                     }
                 }
 
@@ -476,7 +476,7 @@ namespace SIPSorcery.SIP
             _ = m_sipTransport.SendResponseAsync(prackResponse);
         }
 
-        private async void ResendAckRequest()
+        private async Task ResendAckRequest()
         {
             try
             {
@@ -497,7 +497,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private async void ResendPrackRequest()
+        private async Task ResendPrackRequest()
         {
             try
             {

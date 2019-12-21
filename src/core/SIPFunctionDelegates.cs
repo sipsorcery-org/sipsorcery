@@ -15,19 +15,24 @@
 // ============================================================================
 
 using System.Net;
+using System.Threading.Tasks;
 
 namespace SIPSorcery.SIP
 {
     // SIP Channel delegates.
-    public delegate void SIPMessageSentDelegate(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer);
-    public delegate void SIPMessageReceivedDelegate(SIPChannel sipChannel, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer);
+    public delegate Task SIPMessageSentAsyncDelegate(SIPChannel sipChannel, SIPEndPoint remoteEndPoint, byte[] buffer);
+    public delegate Task SIPMessageReceivedAsyncDelegate(SIPChannel sipChannel, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer);
 
     // SIP Transport delegates.
-    public delegate void SIPTransportRequestDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest);
-    public delegate void SIPTransportResponseDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse);
+    public delegate Task SIPTransportRequestAsyncDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest);
+    public delegate Task SIPTransportResponseAsyncDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse);
     public delegate void SIPTransportSIPBadMessageDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remotePoint, string message, SIPValidationFieldsEnum errorField, string rawMessage);
     public delegate void STUNRequestReceivedDelegate(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] buffer, int bufferLength);
     public delegate SIPDNSLookupResult ResolveSIPEndPointDelegate(SIPURI uri, bool async, bool? preferIPv6);
+
+    // SIP Transport Tracing (logging and diagnostics) delegates.
+    public delegate void SIPTransportRequestTraceDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest);
+    public delegate void SIPTransportResponseTraceDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse);
 
     // SIP Transaction delegates.
     public delegate void SIPTransactionStateChangeDelegate(SIPTransaction sipTransaction);

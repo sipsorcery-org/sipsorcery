@@ -188,16 +188,15 @@ namespace SIPSorcery.SIP
 
                     if (!m_egressConnections.TryAdd(connectionID, newConn))
                     {
-                        logger.LogError($"Could not added web socket client connected to {serverUri} to channel collection, closing.");
-
-                        _ = Close(connectionID, clientWebSocket);
+                        logger.LogError($"Could not add web socket client connected to {serverUri} to channel collection, closing.");
+                        await Close(connectionID, clientWebSocket);
                     }
                     else
                     {
                         if (!m_isReceiveTaskRunning)
                         {
                             m_isReceiveTaskRunning = true;
-                            _ = Task.Run((Action)MonitorReceiveTasks);
+                            _ = Task.Run(MonitorReceiveTasks);
                         }
                     }
 
@@ -338,7 +337,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Monitors the client web socket tasks for new receives.
         /// </summary>
-        private async void MonitorReceiveTasks()
+        private async Task MonitorReceiveTasks()
         {
             try
             {
@@ -352,7 +351,7 @@ namespace SIPSorcery.SIP
                         if (receiveTask.IsCompleted)
                         {
                             logger.LogDebug($"Client web socket connection to {conn.ServerUri} received {receiveTask.Result.Count} bytes.");
-                            SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray());
+                            await SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray());
                             conn.ReceiveTask = conn.Client.ReceiveAsync(conn.ReceiveBuffer, m_cts.Token);
                         }
                         else

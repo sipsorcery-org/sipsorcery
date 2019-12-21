@@ -60,7 +60,7 @@ namespace SIPSorcery.SIP
         {
             m_sipTransport = sipTransport;
 
-            Task.Run((Action)ProcessPendingTransactions);
+            Task.Run(ProcessPendingTransactions);
         }
 
         public void AddTransaction(SIPTransaction sipTransaction)
@@ -296,7 +296,7 @@ namespace SIPSorcery.SIP
         /// A long running method that monitors and processes a list of transactions that need to send a reliable
         /// request or response.
         /// </summary>
-        private async void ProcessPendingTransactions()
+        private async Task ProcessPendingTransactions()
         {
             try
             {

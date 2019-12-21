@@ -74,14 +74,14 @@ namespace SIPSorcery.SIP
         internal SIPTransactionEngine m_transactionEngine;
         private ResolveSIPEndPointDelegate ResolveSIPEndPoint_External;
 
-        public event SIPTransportRequestDelegate SIPTransportRequestReceived;
-        public event SIPTransportResponseDelegate SIPTransportResponseReceived;
+        public event SIPTransportRequestAsyncDelegate SIPTransportRequestReceived;
+        public event SIPTransportResponseAsyncDelegate SIPTransportResponseReceived;
         public event STUNRequestReceivedDelegate STUNRequestReceived;
 
-        public event SIPTransportRequestDelegate SIPRequestInTraceEvent;
-        public event SIPTransportRequestDelegate SIPRequestOutTraceEvent;
-        public event SIPTransportResponseDelegate SIPResponseInTraceEvent;
-        public event SIPTransportResponseDelegate SIPResponseOutTraceEvent;
+        public event SIPTransportRequestTraceDelegate SIPRequestInTraceEvent;
+        public event SIPTransportRequestTraceDelegate SIPRequestOutTraceEvent;
+        public event SIPTransportResponseTraceDelegate SIPResponseInTraceEvent;
+        public event SIPTransportResponseTraceDelegate SIPResponseOutTraceEvent;
         public event SIPTransportSIPBadMessageDelegate SIPBadRequestInTraceEvent;
         public event SIPTransportSIPBadMessageDelegate SIPBadResponseInTraceEvent;
         public event SIPTransactionRequestRetransmitDelegate SIPRequestRetransmitTraceEvent;
@@ -200,7 +200,7 @@ namespace SIPSorcery.SIP
             if (!m_transportThreadStarted)
             {
                 m_transportThreadStarted = true;
-                Task.Run((Action)ProcessReceiveQueue);
+                Task.Run(ProcessReceiveQueue);
             }
         }
 
@@ -218,13 +218,13 @@ namespace SIPSorcery.SIP
         /// <param name="localEndPoint">The local end point the message was receeived on.</param>
         /// <param name="remoteEndPoint">The remote end point the message came from.</param>
         /// <param name="buffer">A buffer containing the received message.</param>
-        public async void ReceiveMessage(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
+        public Task ReceiveMessage(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
         {
             try
             {
                 if (!m_queueIncoming)
                 {
-                    await SIPMessageReceived(sipChannel, localEndPoint, remoteEndPoint, buffer);
+                    return SIPMessageReceived(sipChannel, localEndPoint, remoteEndPoint, buffer);
                 }
                 else
                 {
@@ -241,6 +241,8 @@ namespace SIPSorcery.SIP
                     }
 
                     m_inMessageArrived.Set();
+
+                    return Task.FromResult(0);
                 }
             }
             catch (Exception excp)
@@ -680,7 +682,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Dedicated loop to process queued received messages.
         /// </summary>
-        private async void ProcessReceiveQueue()
+        private async Task ProcessReceiveQueue()
         {
             try
             {
@@ -705,6 +707,10 @@ namespace SIPSorcery.SIP
             catch (Exception excp)
             {
                 logger.LogError("Exception SIPTransport ProcessReceiveQueue. " + excp.Message);
+            }
+            finally
+            {
+                m_transportThreadStarted = false;
             }
         }
 

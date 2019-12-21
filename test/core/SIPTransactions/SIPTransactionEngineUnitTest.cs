@@ -141,6 +141,8 @@ namespace SIPSorcery.SIP.UnitTests
                         }
                     };
                     serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
+
+                    return Task.FromResult(0);
                 };
 
                 SIPURI dummyURI = new SIPURI("dummy", serverTransport.GetSIPChannels().First().ListeningEndPoint.ToString(), null, SIPSchemesEnum.sip);
@@ -152,7 +154,7 @@ namespace SIPSorcery.SIP.UnitTests
                 clientEngine.AddTransaction(clientTransaction);
                 clientTransaction.SendInviteRequest();
 
-                if(!uasConfirmedTask.Task.Wait(TRANSACTION_EXCHANGE_TIMEOUT_MS))
+                if (!uasConfirmedTask.Task.Wait(TRANSACTION_EXCHANGE_TIMEOUT_MS))
                 {
                     logger.LogWarning($"Tasks timed out");
                 }

@@ -41,7 +41,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         /// request should return false since the Accepted response never arrives.
         /// </summary>
         [Fact]
-        public async void BlindTransferUnitTest()
+        public async Task BlindTransferUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);

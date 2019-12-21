@@ -4,10 +4,10 @@
 // Description: Implementation of RTP Control Protocol.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 24 May 2005	Aaron Clauson	Created (aaron@sipsorcery.com), Montreux, Switzerland (www.sipsorcery.com).
+// 24 May 2005	Aaron Clauson	Created, Dublin, Ireland.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
 //
 // License: 
@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -295,8 +296,7 @@ namespace SIPSorcery.Net
 
         public void StartSampling()
         {
-            Thread samplingThread = new Thread(new ThreadStart(CheckForSamples));
-            samplingThread.Start();
+            Task.Run(CheckForSamples);
         }
 
         /// <summary>
@@ -639,11 +639,11 @@ namespace SIPSorcery.Net
             }
         }
 
-        private void CheckForSamples()
+        private async Task CheckForSamples()
         {
             try
             {
-                Thread.Sleep(CHECK_FORSAMPLE_PERIOD);   // Wait until the first sample is likely to be ready.
+                await Task.Delay(CHECK_FORSAMPLE_PERIOD);   // Wait until the first sample is likely to be ready.
 
                 while (m_checkForSamples)
                 {
