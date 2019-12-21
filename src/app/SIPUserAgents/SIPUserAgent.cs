@@ -330,15 +330,16 @@ namespace SIPSorcery.SIP.App
                 Hangup();
             }
 
-            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(RtpSession.DestinationEndPoint.Address);
+            var sipRequest = uas.ClientTransaction.TransactionRequest;
+            SDP remoteSDP = SDP.ParseSDPDescription(sipRequest.Body);
+            // TODO: Deal with multiple media offers.
+            var dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
 
             RtpSession = new RTPSession((int)m_defaultAudioFormat, null, null, true, localIPAddress.AddressFamily);
             RtpSession.OnRtpEvent += OnRemoteRtpEvent;
 
-            var sipRequest = uas.ClientTransaction.TransactionRequest;
-            SDP remoteSDP = SDP.ParseSDPDescription(sipRequest.Body);
-            // TODO: Deal with multiple media offers.
-            RtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+            RtpSession.DestinationEndPoint = dstRtpEndPoint;
             RtpSession.SetRemoteSDP(remoteSDP);
 
             var sdpAnswer = RtpSession.GetSDP(localIPAddress);
