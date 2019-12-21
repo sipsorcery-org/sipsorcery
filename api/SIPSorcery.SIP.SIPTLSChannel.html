@@ -101,12 +101,6 @@
       <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_IsOutboundOnly">SIPTCPChannel.IsOutboundOnly</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_ConnectClientAsync_System_Net_IPEndPoint_System_Byte___System_String_">SIPTCPChannel.ConnectClientAsync(IPEndPoint, Byte[], String)</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_Send_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_">SIPTCPChannel.Send(SIPEndPoint, Byte[], String)</a>
-    </div>
-    <div>
       <a class="xref" href="SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_">SIPTCPChannel.SendAsync(SIPEndPoint, Byte[], String)</a>
     </div>
     <div>
@@ -547,7 +541,7 @@ where all communications are expected to be initiated from our end.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">protected override void SendOnConnected(SIPStreamConnection sipStreamConn, byte[] buffer)</code></pre>
+    <pre><code class="lang-csharp hljs">protected override Task SendOnConnected(SIPStreamConnection sipStreamConn, byte[] buffer)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -570,6 +564,21 @@ where all communications are expected to be initiated from our end.</p>
         <td><span class="parametername">buffer</span></td>
         <td><p>The data to send.</p>
 </td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
       </tr>
     </tbody>
   </table>

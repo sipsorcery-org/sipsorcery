@@ -9921,465 +9921,6 @@ references:
   commentId: T:SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate
   fullName: SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate
   nameWithType: SIPAuthenticateRequestDelegate
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent
-  name: SIPB2BUserAgent
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html
-  commentId: T:SIPSorcery.SIP.App.SIPB2BUserAgent
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent
-  nameWithType: SIPB2BUserAgent
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.#ctor(SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.App.QueueNewCallDelegate,SIPSorcery.SIP.SIPTransport,System.String,System.String)
-  name: SIPB2BUserAgent(SIPMonitorLogDelegate, QueueNewCallDelegate, SIPTransport, String, String)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent__ctor_SIPSorcery_SIP_App_SIPMonitorLogDelegate_SIPSorcery_SIP_App_QueueNewCallDelegate_SIPSorcery_SIP_SIPTransport_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.#ctor(SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.App.QueueNewCallDelegate,SIPSorcery.SIP.SIPTransport,System.String,System.String)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPB2BUserAgent(SIPSorcery.SIP.App.SIPMonitorLogDelegate, SIPSorcery.SIP.App.QueueNewCallDelegate, SIPSorcery.SIP.SIPTransport, System.String, System.String)
-  nameWithType: SIPB2BUserAgent.SIPB2BUserAgent(SIPMonitorLogDelegate, QueueNewCallDelegate, SIPTransport, String, String)
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.#ctor*
-  name: SIPB2BUserAgent
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent__ctor_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPB2BUserAgent
-  nameWithType: SIPB2BUserAgent.SIPB2BUserAgent
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.AdminMemberId
-  name: AdminMemberId
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_AdminMemberId
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.AdminMemberId
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.AdminMemberId
-  nameWithType: SIPB2BUserAgent.AdminMemberId
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.AdminMemberId*
-  name: AdminMemberId
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_AdminMemberId_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.AdminMemberId
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.AdminMemberId
-  nameWithType: SIPB2BUserAgent.AdminMemberId
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  name: Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Answer_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  nameWithType: SIPB2BUserAgent.Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  name: Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  nameWithType: SIPB2BUserAgent.Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Answer*
-  name: Answer
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Answer_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.Answer
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Answer
-  nameWithType: SIPB2BUserAgent.Answer
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name: AnswerNonInvite(SIPResponseStatusCodesEnum, String, String[], String, String)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_AnswerNonInvite_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name.vb: AnswerNonInvite(SIPResponseStatusCodesEnum, String, String(), String, String)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[], System.String, System.String)
-  fullName.vb: SIPSorcery.SIP.App.SIPB2BUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String(), System.String, System.String)
-  nameWithType: SIPB2BUserAgent.AnswerNonInvite(SIPResponseStatusCodesEnum, String, String[], String, String)
-  nameWithType.vb: SIPB2BUserAgent.AnswerNonInvite(SIPResponseStatusCodesEnum, String, String(), String, String)
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.AnswerNonInvite*
-  name: AnswerNonInvite
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_AnswerNonInvite_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.AnswerNonInvite
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.AnswerNonInvite
-  nameWithType: SIPB2BUserAgent.AnswerNonInvite
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.AuthenticateCall
-  name: AuthenticateCall()
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_AuthenticateCall
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.AuthenticateCall
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.AuthenticateCall()
-  nameWithType: SIPB2BUserAgent.AuthenticateCall()
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.AuthenticateCall*
-  name: AuthenticateCall
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_AuthenticateCall_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.AuthenticateCall
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.AuthenticateCall
-  nameWithType: SIPB2BUserAgent.AuthenticateCall
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
-  name: Call(SIPCallDescriptor)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Call_SIPSorcery_SIP_App_SIPCallDescriptor_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor)
-  nameWithType: SIPB2BUserAgent.Call(SIPCallDescriptor)
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Call*
-  name: Call
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Call_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.Call
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Call
-  nameWithType: SIPB2BUserAgent.Call
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallAnswered
-  name: CallAnswered
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallAnswered
-  commentId: E:SIPSorcery.SIP.App.SIPB2BUserAgent.CallAnswered
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallAnswered
-  nameWithType: SIPB2BUserAgent.CallAnswered
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallCancelled
-  name: CallCancelled
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallCancelled
-  commentId: E:SIPSorcery.SIP.App.SIPB2BUserAgent.CallCancelled
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallCancelled
-  nameWithType: SIPB2BUserAgent.CallCancelled
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDescriptor
-  name: CallDescriptor
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallDescriptor
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.CallDescriptor
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDescriptor
-  nameWithType: SIPB2BUserAgent.CallDescriptor
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDescriptor*
-  name: CallDescriptor
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallDescriptor_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.CallDescriptor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDescriptor
-  nameWithType: SIPB2BUserAgent.CallDescriptor
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDestination
-  name: CallDestination
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallDestination
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.CallDestination
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDestination
-  nameWithType: SIPB2BUserAgent.CallDestination
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDestination*
-  name: CallDestination
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallDestination_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.CallDestination
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDestination
-  nameWithType: SIPB2BUserAgent.CallDestination
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDirection
-  name: CallDirection
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallDirection
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.CallDirection
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDirection
-  nameWithType: SIPB2BUserAgent.CallDirection
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDirection*
-  name: CallDirection
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallDirection_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.CallDirection
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallDirection
-  nameWithType: SIPB2BUserAgent.CallDirection
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallFailed
-  name: CallFailed
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallFailed
-  commentId: E:SIPSorcery.SIP.App.SIPB2BUserAgent.CallFailed
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallFailed
-  nameWithType: SIPB2BUserAgent.CallFailed
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallRequest
-  name: CallRequest
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallRequest
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.CallRequest
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallRequest
-  nameWithType: SIPB2BUserAgent.CallRequest
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallRequest*
-  name: CallRequest
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallRequest_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.CallRequest
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallRequest
-  nameWithType: SIPB2BUserAgent.CallRequest
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallRinging
-  name: CallRinging
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallRinging
-  commentId: E:SIPSorcery.SIP.App.SIPB2BUserAgent.CallRinging
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallRinging
-  nameWithType: SIPB2BUserAgent.CallRinging
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.CallTrying
-  name: CallTrying
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_CallTrying
-  commentId: E:SIPSorcery.SIP.App.SIPB2BUserAgent.CallTrying
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.CallTrying
-  nameWithType: SIPB2BUserAgent.CallTrying
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Cancel
-  name: Cancel()
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Cancel
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.Cancel
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Cancel()
-  nameWithType: SIPB2BUserAgent.Cancel()
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Cancel*
-  name: Cancel
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Cancel_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.Cancel
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Cancel
-  nameWithType: SIPB2BUserAgent.Cancel
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.IsAuthenticated
-  name: IsAuthenticated
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_IsAuthenticated
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.IsAuthenticated
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.IsAuthenticated
-  nameWithType: SIPB2BUserAgent.IsAuthenticated
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.IsAuthenticated*
-  name: IsAuthenticated
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_IsAuthenticated_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.IsAuthenticated
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.IsAuthenticated
-  nameWithType: SIPB2BUserAgent.IsAuthenticated
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.IsB2B
-  name: IsB2B
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_IsB2B
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.IsB2B
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.IsB2B
-  nameWithType: SIPB2BUserAgent.IsB2B
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.IsB2B*
-  name: IsB2B
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_IsB2B_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.IsB2B
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.IsB2B
-  nameWithType: SIPB2BUserAgent.IsB2B
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.IsInvite
-  name: IsInvite
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_IsInvite
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.IsInvite
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.IsInvite
-  nameWithType: SIPB2BUserAgent.IsInvite
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.IsInvite*
-  name: IsInvite
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_IsInvite_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.IsInvite
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.IsInvite
-  nameWithType: SIPB2BUserAgent.IsInvite
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.IsUACAnswered
-  name: IsUACAnswered
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_IsUACAnswered
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.IsUACAnswered
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.IsUACAnswered
-  nameWithType: SIPB2BUserAgent.IsUACAnswered
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.IsUACAnswered*
-  name: IsUACAnswered
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_IsUACAnswered_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.IsUACAnswered
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.IsUACAnswered
-  nameWithType: SIPB2BUserAgent.IsUACAnswered
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.IsUASAnswered
-  name: IsUASAnswered
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_IsUASAnswered
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.IsUASAnswered
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.IsUASAnswered
-  nameWithType: SIPB2BUserAgent.IsUASAnswered
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.IsUASAnswered*
-  name: IsUASAnswered
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_IsUASAnswered_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.IsUASAnswered
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.IsUASAnswered
-  nameWithType: SIPB2BUserAgent.IsUASAnswered
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.LoadSIPAccountForIncomingCall
-  name: LoadSIPAccountForIncomingCall()
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_LoadSIPAccountForIncomingCall
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.LoadSIPAccountForIncomingCall
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.LoadSIPAccountForIncomingCall()
-  nameWithType: SIPB2BUserAgent.LoadSIPAccountForIncomingCall()
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.LoadSIPAccountForIncomingCall*
-  name: LoadSIPAccountForIncomingCall
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_LoadSIPAccountForIncomingCall_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.LoadSIPAccountForIncomingCall
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.LoadSIPAccountForIncomingCall
-  nameWithType: SIPB2BUserAgent.LoadSIPAccountForIncomingCall
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.NoCDR
-  name: NoCDR()
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_NoCDR
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.NoCDR
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.NoCDR()
-  nameWithType: SIPB2BUserAgent.NoCDR()
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.NoCDR*
-  name: NoCDR
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_NoCDR_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.NoCDR
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.NoCDR
-  nameWithType: SIPB2BUserAgent.NoCDR
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.NoRingTimeout
-  name: NoRingTimeout
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_NoRingTimeout
-  commentId: E:SIPSorcery.SIP.App.SIPB2BUserAgent.NoRingTimeout
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.NoRingTimeout
-  nameWithType: SIPB2BUserAgent.NoRingTimeout
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Owner
-  name: Owner
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Owner
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.Owner
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Owner
-  nameWithType: SIPB2BUserAgent.Owner
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Owner*
-  name: Owner
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Owner_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.Owner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Owner
-  nameWithType: SIPB2BUserAgent.Owner
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name: Progress(SIPResponseStatusCodesEnum, String, String[], String, String)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Progress_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name.vb: Progress(SIPResponseStatusCodesEnum, String, String(), String, String)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[], System.String, System.String)
-  fullName.vb: SIPSorcery.SIP.App.SIPB2BUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String(), System.String, System.String)
-  nameWithType: SIPB2BUserAgent.Progress(SIPResponseStatusCodesEnum, String, String[], String, String)
-  nameWithType.vb: SIPB2BUserAgent.Progress(SIPResponseStatusCodesEnum, String, String(), String, String)
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Progress*
-  name: Progress
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Progress_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.Progress
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Progress
-  nameWithType: SIPB2BUserAgent.Progress
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI)
-  name: Redirect(SIPResponseStatusCodesEnum, SIPURI)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Redirect_SIPSorcery_SIP_SIPResponseStatusCodesEnum_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPB2BUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI)
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Redirect*
-  name: Redirect
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Redirect_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.Redirect
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Redirect
-  nameWithType: SIPB2BUserAgent.Redirect
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[])
-  name: Reject(SIPResponseStatusCodesEnum, String, String[])
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[])
-  name.vb: Reject(SIPResponseStatusCodesEnum, String, String())
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[])
-  fullName.vb: SIPSorcery.SIP.App.SIPB2BUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String())
-  nameWithType: SIPB2BUserAgent.Reject(SIPResponseStatusCodesEnum, String, String[])
-  nameWithType.vb: SIPB2BUserAgent.Reject(SIPResponseStatusCodesEnum, String, String())
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Reject*
-  name: Reject
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Reject_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.Reject
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Reject
-  nameWithType: SIPB2BUserAgent.Reject
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.ServerTransaction
-  name: ServerTransaction
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_ServerTransaction
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.ServerTransaction
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.ServerTransaction
-  nameWithType: SIPB2BUserAgent.ServerTransaction
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.ServerTransaction*
-  name: ServerTransaction
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_ServerTransaction_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.ServerTransaction
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.ServerTransaction
-  nameWithType: SIPB2BUserAgent.ServerTransaction
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID(System.Guid)
-  name: SetDialPlanContextID(Guid)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SetDialPlanContextID_System_Guid_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID(System.Guid)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID(System.Guid)
-  nameWithType: SIPB2BUserAgent.SetDialPlanContextID(Guid)
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID*
-  name: SetDialPlanContextID
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SetDialPlanContextID_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SetDialPlanContextID
-  nameWithType: SIPB2BUserAgent.SetDialPlanContextID
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SetOwner(System.String,System.String)
-  name: SetOwner(String, String)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SetOwner_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.SetOwner(System.String,System.String)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SetOwner(System.String, System.String)
-  nameWithType: SIPB2BUserAgent.SetOwner(String, String)
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SetOwner*
-  name: SetOwner
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SetOwner_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.SetOwner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SetOwner
-  nameWithType: SIPB2BUserAgent.SetOwner
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  name: SetTraceDelegate(SIPTransactionTraceMessageDelegate)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SetTraceDelegate_SIPSorcery_SIP_SIPTransactionTraceMessageDelegate_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  nameWithType: SIPB2BUserAgent.SetTraceDelegate(SIPTransactionTraceMessageDelegate)
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SetTraceDelegate*
-  name: SetTraceDelegate
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SetTraceDelegate_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.SetTraceDelegate
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SetTraceDelegate
-  nameWithType: SIPB2BUserAgent.SetTraceDelegate
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPAccount
-  name: SIPAccount
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SIPAccount
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.SIPAccount
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPAccount
-  nameWithType: SIPB2BUserAgent.SIPAccount
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPAccount*
-  name: SIPAccount
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SIPAccount_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.SIPAccount
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPAccount
-  nameWithType: SIPB2BUserAgent.SIPAccount
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPDialogue
-  name: SIPDialogue
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SIPDialogue
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.SIPDialogue
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPDialogue
-  nameWithType: SIPB2BUserAgent.SIPDialogue
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPDialogue*
-  name: SIPDialogue
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SIPDialogue_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.SIPDialogue
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPDialogue
-  nameWithType: SIPB2BUserAgent.SIPDialogue
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPTransaction
-  name: SIPTransaction
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SIPTransaction
-  commentId: P:SIPSorcery.SIP.App.SIPB2BUserAgent.SIPTransaction
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPTransaction
-  nameWithType: SIPB2BUserAgent.SIPTransaction
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPTransaction*
-  name: SIPTransaction
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_SIPTransaction_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.SIPTransaction
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.SIPTransaction
-  nameWithType: SIPB2BUserAgent.SIPTransaction
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.TransactionComplete
-  name: TransactionComplete
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_TransactionComplete
-  commentId: E:SIPSorcery.SIP.App.SIPB2BUserAgent.TransactionComplete
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.TransactionComplete
-  nameWithType: SIPB2BUserAgent.TransactionComplete
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.UASStateChanged
-  name: UASStateChanged
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_UASStateChanged
-  commentId: E:SIPSorcery.SIP.App.SIPB2BUserAgent.UASStateChanged
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.UASStateChanged
-  nameWithType: SIPB2BUserAgent.UASStateChanged
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Update(SIPSorcery.SIP.App.CRMHeaders)
-  name: Update(CRMHeaders)
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Update_SIPSorcery_SIP_App_CRMHeaders_
-  commentId: M:SIPSorcery.SIP.App.SIPB2BUserAgent.Update(SIPSorcery.SIP.App.CRMHeaders)
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Update(SIPSorcery.SIP.App.CRMHeaders)
-  nameWithType: SIPB2BUserAgent.Update(CRMHeaders)
-- uid: SIPSorcery.SIP.App.SIPB2BUserAgent.Update*
-  name: Update
-  href: api/SIPSorcery.SIP.App.SIPB2BUserAgent.html#SIPSorcery_SIP_App_SIPB2BUserAgent_Update_
-  commentId: Overload:SIPSorcery.SIP.App.SIPB2BUserAgent.Update
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPB2BUserAgent.Update
-  nameWithType: SIPB2BUserAgent.Update
 - uid: SIPSorcery.SIP.App.SIPCallDescriptor
   name: SIPCallDescriptor
   href: api/SIPSorcery.SIP.App.SIPCallDescriptor.html
@@ -12212,375 +11753,6 @@ references:
   commentId: F:SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.UserAgentServer
   fullName: SIPSorcery.SIP.App.SIPMonitorServerTypesEnum.UserAgentServer
   nameWithType: SIPMonitorServerTypesEnum.UserAgentServer
-- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent
-  name: SIPNonInviteClientUserAgent
-  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html
-  commentId: T:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent
-  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent
-  nameWithType: SIPNonInviteClientUserAgent
-- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.App.SIPCallDescriptor,System.String,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  name: SIPNonInviteClientUserAgent(SIPTransport, SIPEndPoint, SIPCallDescriptor, String, String, SIPMonitorLogDelegate)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteClientUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_App_SIPCallDescriptor_System_String_System_String_SIPSorcery_SIP_App_SIPMonitorLogDelegate_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.App.SIPCallDescriptor,System.String,System.String,SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SIPNonInviteClientUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.App.SIPCallDescriptor, System.String, System.String, SIPSorcery.SIP.App.SIPMonitorLogDelegate)
-  nameWithType: SIPNonInviteClientUserAgent.SIPNonInviteClientUserAgent(SIPTransport, SIPEndPoint, SIPCallDescriptor, String, String, SIPMonitorLogDelegate)
-- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.#ctor*
-  name: SIPNonInviteClientUserAgent
-  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteClientUserAgent__ctor_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SIPNonInviteClientUserAgent
-  nameWithType: SIPNonInviteClientUserAgent.SIPNonInviteClientUserAgent
-- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.ResponseReceived
-  name: ResponseReceived
-  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteClientUserAgent_ResponseReceived
-  commentId: E:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.ResponseReceived
-  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.ResponseReceived
-  nameWithType: SIPNonInviteClientUserAgent.ResponseReceived
-- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest(SIPSorcery.SIP.SIPMethodsEnum)
-  name: SendRequest(SIPMethodsEnum)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteClientUserAgent_SendRequest_SIPSorcery_SIP_SIPMethodsEnum_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest(SIPSorcery.SIP.SIPMethodsEnum)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest(SIPSorcery.SIP.SIPMethodsEnum)
-  nameWithType: SIPNonInviteClientUserAgent.SendRequest(SIPMethodsEnum)
-- uid: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest*
-  name: SendRequest
-  href: api/SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteClientUserAgent_SendRequest_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteClientUserAgent.SendRequest
-  nameWithType: SIPNonInviteClientUserAgent.SendRequest
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent
-  name: SIPNonInviteServerUserAgent
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html
-  commentId: T:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent
-  nameWithType: SIPNonInviteServerUserAgent
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.SIPCallDirection,SIPSorcery.SIP.App.GetSIPAccountDelegate,SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate,SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.SIPNonInviteTransaction)
-  name: SIPNonInviteServerUserAgent(SIPTransport, SIPEndPoint, String, String, SIPCallDirection, GetSIPAccountDelegate, SIPAuthenticateRequestDelegate, SIPMonitorLogDelegate, SIPNonInviteTransaction)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_System_String_System_String_SIPSorcery_SIP_SIPCallDirection_SIPSorcery_SIP_App_GetSIPAccountDelegate_SIPSorcery_SIP_App_SIPAuthenticateRequestDelegate_SIPSorcery_SIP_App_SIPMonitorLogDelegate_SIPSorcery_SIP_SIPNonInviteTransaction_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,System.String,System.String,SIPSorcery.SIP.SIPCallDirection,SIPSorcery.SIP.App.GetSIPAccountDelegate,SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate,SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.SIPNonInviteTransaction)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPNonInviteServerUserAgent(SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, System.String, System.String, SIPSorcery.SIP.SIPCallDirection, SIPSorcery.SIP.App.GetSIPAccountDelegate, SIPSorcery.SIP.App.SIPAuthenticateRequestDelegate, SIPSorcery.SIP.App.SIPMonitorLogDelegate, SIPSorcery.SIP.SIPNonInviteTransaction)
-  nameWithType: SIPNonInviteServerUserAgent.SIPNonInviteServerUserAgent(SIPTransport, SIPEndPoint, String, String, SIPCallDirection, GetSIPAccountDelegate, SIPAuthenticateRequestDelegate, SIPMonitorLogDelegate, SIPNonInviteTransaction)
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.#ctor*
-  name: SIPNonInviteServerUserAgent
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent__ctor_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPNonInviteServerUserAgent
-  nameWithType: SIPNonInviteServerUserAgent.SIPNonInviteServerUserAgent
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  name: Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Answer_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  nameWithType: SIPNonInviteServerUserAgent.Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  name: Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  nameWithType: SIPNonInviteServerUserAgent.Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer*
-  name: Answer
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Answer_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Answer
-  nameWithType: SIPNonInviteServerUserAgent.Answer
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name: AnswerNonInvite(SIPResponseStatusCodesEnum, String, String[], String, String)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_AnswerNonInvite_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name.vb: AnswerNonInvite(SIPResponseStatusCodesEnum, String, String(), String, String)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[], System.String, System.String)
-  fullName.vb: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String(), System.String, System.String)
-  nameWithType: SIPNonInviteServerUserAgent.AnswerNonInvite(SIPResponseStatusCodesEnum, String, String[], String, String)
-  nameWithType.vb: SIPNonInviteServerUserAgent.AnswerNonInvite(SIPResponseStatusCodesEnum, String, String(), String, String)
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite*
-  name: AnswerNonInvite
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_AnswerNonInvite_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AnswerNonInvite
-  nameWithType: SIPNonInviteServerUserAgent.AnswerNonInvite
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall
-  name: AuthenticateCall()
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_AuthenticateCall
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall()
-  nameWithType: SIPNonInviteServerUserAgent.AuthenticateCall()
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall*
-  name: AuthenticateCall
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_AuthenticateCall_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.AuthenticateCall
-  nameWithType: SIPNonInviteServerUserAgent.AuthenticateCall
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallCancelled
-  name: CallCancelled
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallCancelled
-  commentId: E:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallCancelled
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallCancelled
-  nameWithType: SIPNonInviteServerUserAgent.CallCancelled
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination
-  name: CallDestination
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallDestination
-  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination
-  nameWithType: SIPNonInviteServerUserAgent.CallDestination
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination*
-  name: CallDestination
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallDestination_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDestination
-  nameWithType: SIPNonInviteServerUserAgent.CallDestination
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection
-  name: CallDirection
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallDirection
-  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection
-  nameWithType: SIPNonInviteServerUserAgent.CallDirection
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection*
-  name: CallDirection
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallDirection_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallDirection
-  nameWithType: SIPNonInviteServerUserAgent.CallDirection
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest
-  name: CallRequest
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallRequest
-  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest
-  nameWithType: SIPNonInviteServerUserAgent.CallRequest
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest*
-  name: CallRequest
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_CallRequest_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.CallRequest
-  nameWithType: SIPNonInviteServerUserAgent.CallRequest
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated
-  name: IsAuthenticated
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsAuthenticated
-  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated
-  nameWithType: SIPNonInviteServerUserAgent.IsAuthenticated
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated*
-  name: IsAuthenticated
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsAuthenticated_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsAuthenticated
-  nameWithType: SIPNonInviteServerUserAgent.IsAuthenticated
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B
-  name: IsB2B
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsB2B
-  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B
-  nameWithType: SIPNonInviteServerUserAgent.IsB2B
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B*
-  name: IsB2B
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsB2B_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsB2B
-  nameWithType: SIPNonInviteServerUserAgent.IsB2B
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite
-  name: IsInvite
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsInvite
-  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite
-  nameWithType: SIPNonInviteServerUserAgent.IsInvite
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite*
-  name: IsInvite
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsInvite_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsInvite
-  nameWithType: SIPNonInviteServerUserAgent.IsInvite
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered
-  name: IsUASAnswered
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsUASAnswered
-  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered
-  nameWithType: SIPNonInviteServerUserAgent.IsUASAnswered
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered*
-  name: IsUASAnswered
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_IsUASAnswered_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.IsUASAnswered
-  nameWithType: SIPNonInviteServerUserAgent.IsUASAnswered
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.LoadSIPAccountForIncomingCall
-  name: LoadSIPAccountForIncomingCall()
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_LoadSIPAccountForIncomingCall
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.LoadSIPAccountForIncomingCall
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.LoadSIPAccountForIncomingCall()
-  nameWithType: SIPNonInviteServerUserAgent.LoadSIPAccountForIncomingCall()
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.LoadSIPAccountForIncomingCall*
-  name: LoadSIPAccountForIncomingCall
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_LoadSIPAccountForIncomingCall_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.LoadSIPAccountForIncomingCall
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.LoadSIPAccountForIncomingCall
-  nameWithType: SIPNonInviteServerUserAgent.LoadSIPAccountForIncomingCall
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR
-  name: NoCDR()
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_NoCDR
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR()
-  nameWithType: SIPNonInviteServerUserAgent.NoCDR()
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR*
-  name: NoCDR
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_NoCDR_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoCDR
-  nameWithType: SIPNonInviteServerUserAgent.NoCDR
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoRingTimeout
-  name: NoRingTimeout
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_NoRingTimeout
-  commentId: E:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoRingTimeout
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.NoRingTimeout
-  nameWithType: SIPNonInviteServerUserAgent.NoRingTimeout
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Owner
-  name: Owner
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Owner
-  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Owner
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Owner
-  nameWithType: SIPNonInviteServerUserAgent.Owner
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Owner*
-  name: Owner
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Owner_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Owner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Owner
-  nameWithType: SIPNonInviteServerUserAgent.Owner
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name: Progress(SIPResponseStatusCodesEnum, String, String[], String, String)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Progress_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name.vb: Progress(SIPResponseStatusCodesEnum, String, String(), String, String)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[], System.String, System.String)
-  fullName.vb: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String(), System.String, System.String)
-  nameWithType: SIPNonInviteServerUserAgent.Progress(SIPResponseStatusCodesEnum, String, String[], String, String)
-  nameWithType.vb: SIPNonInviteServerUserAgent.Progress(SIPResponseStatusCodesEnum, String, String(), String, String)
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress*
-  name: Progress
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Progress_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Progress
-  nameWithType: SIPNonInviteServerUserAgent.Progress
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI)
-  name: Redirect(SIPResponseStatusCodesEnum, SIPURI)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Redirect_SIPSorcery_SIP_SIPResponseStatusCodesEnum_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPNonInviteServerUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI)
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect*
-  name: Redirect
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Redirect_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Redirect
-  nameWithType: SIPNonInviteServerUserAgent.Redirect
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[])
-  name: Reject(SIPResponseStatusCodesEnum, String, String[])
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[])
-  name.vb: Reject(SIPResponseStatusCodesEnum, String, String())
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[])
-  fullName.vb: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String())
-  nameWithType: SIPNonInviteServerUserAgent.Reject(SIPResponseStatusCodesEnum, String, String[])
-  nameWithType.vb: SIPNonInviteServerUserAgent.Reject(SIPResponseStatusCodesEnum, String, String())
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject*
-  name: Reject
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_Reject_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.Reject
-  nameWithType: SIPNonInviteServerUserAgent.Reject
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID(System.Guid)
-  name: SetDialPlanContextID(Guid)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SetDialPlanContextID_System_Guid_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID(System.Guid)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID(System.Guid)
-  nameWithType: SIPNonInviteServerUserAgent.SetDialPlanContextID(Guid)
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID*
-  name: SetDialPlanContextID
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SetDialPlanContextID_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetDialPlanContextID
-  nameWithType: SIPNonInviteServerUserAgent.SetDialPlanContextID
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetOwner(System.String,System.String)
-  name: SetOwner(String, String)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SetOwner_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetOwner(System.String,System.String)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetOwner(System.String, System.String)
-  nameWithType: SIPNonInviteServerUserAgent.SetOwner(String, String)
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetOwner*
-  name: SetOwner
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SetOwner_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetOwner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetOwner
-  nameWithType: SIPNonInviteServerUserAgent.SetOwner
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  name: SetTraceDelegate(SIPTransactionTraceMessageDelegate)
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SetTraceDelegate_SIPSorcery_SIP_SIPTransactionTraceMessageDelegate_
-  commentId: M:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  nameWithType: SIPNonInviteServerUserAgent.SetTraceDelegate(SIPTransactionTraceMessageDelegate)
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetTraceDelegate*
-  name: SetTraceDelegate
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SetTraceDelegate_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetTraceDelegate
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SetTraceDelegate
-  nameWithType: SIPNonInviteServerUserAgent.SetTraceDelegate
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount
-  name: SIPAccount
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SIPAccount
-  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount
-  nameWithType: SIPNonInviteServerUserAgent.SIPAccount
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount*
-  name: SIPAccount
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SIPAccount_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPAccount
-  nameWithType: SIPNonInviteServerUserAgent.SIPAccount
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue
-  name: SIPDialogue
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SIPDialogue
-  commentId: P:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue
-  nameWithType: SIPNonInviteServerUserAgent.SIPDialogue
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue*
-  name: SIPDialogue
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_SIPDialogue_
-  commentId: Overload:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.SIPDialogue
-  nameWithType: SIPNonInviteServerUserAgent.SIPDialogue
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.TransactionComplete
-  name: TransactionComplete
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_TransactionComplete
-  commentId: E:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.TransactionComplete
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.TransactionComplete
-  nameWithType: SIPNonInviteServerUserAgent.TransactionComplete
-- uid: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.UASStateChanged
-  name: UASStateChanged
-  href: api/SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.html#SIPSorcery_SIP_App_SIPNonInviteServerUserAgent_UASStateChanged
-  commentId: E:SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.UASStateChanged
-  fullName: SIPSorcery.SIP.App.SIPNonInviteServerUserAgent.UASStateChanged
-  nameWithType: SIPNonInviteServerUserAgent.UASStateChanged
 - uid: SIPSorcery.SIP.App.SIPNotifierClient`1
   name: SIPNotifierClient<T>
   href: api/SIPSorcery.SIP.App.SIPNotifierClient-1.html
@@ -13345,350 +12517,6 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPServerUserAgent.UASStateChanged
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.UASStateChanged
   nameWithType: SIPServerUserAgent.UASStateChanged
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent
-  name: SIPTransferServerUserAgent
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html
-  commentId: T:SIPSorcery.SIP.App.SIPTransferServerUserAgent
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent
-  nameWithType: SIPTransferServerUserAgent
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.#ctor(SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.App.BlindTransferDelegate,SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogue,System.String,System.String,System.String)
-  name: SIPTransferServerUserAgent(SIPMonitorLogDelegate, BlindTransferDelegate, SIPTransport, SIPEndPoint, SIPDialogue, SIPDialogue, String, String, String)
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent__ctor_SIPSorcery_SIP_App_SIPMonitorLogDelegate_SIPSorcery_SIP_App_BlindTransferDelegate_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogue_System_String_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.#ctor(SIPSorcery.SIP.App.SIPMonitorLogDelegate,SIPSorcery.SIP.App.BlindTransferDelegate,SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogue,System.String,System.String,System.String)
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPTransferServerUserAgent(SIPSorcery.SIP.App.SIPMonitorLogDelegate, SIPSorcery.SIP.App.BlindTransferDelegate, SIPSorcery.SIP.SIPTransport, SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogue, System.String, System.String, System.String)
-  nameWithType: SIPTransferServerUserAgent.SIPTransferServerUserAgent(SIPMonitorLogDelegate, BlindTransferDelegate, SIPTransport, SIPEndPoint, SIPDialogue, SIPDialogue, String, String, String)
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.#ctor*
-  name: SIPTransferServerUserAgent
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent__ctor_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPTransferServerUserAgent
-  nameWithType: SIPTransferServerUserAgent.SIPTransferServerUserAgent
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  name: Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_Answer_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  nameWithType: SIPTransferServerUserAgent.Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  name: Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
-  nameWithType: SIPTransferServerUserAgent.Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum)
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Answer*
-  name: Answer
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_Answer_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.Answer
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Answer
-  nameWithType: SIPTransferServerUserAgent.Answer
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name: AnswerNonInvite(SIPResponseStatusCodesEnum, String, String[], String, String)
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_AnswerNonInvite_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name.vb: AnswerNonInvite(SIPResponseStatusCodesEnum, String, String(), String, String)
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[], System.String, System.String)
-  fullName.vb: SIPSorcery.SIP.App.SIPTransferServerUserAgent.AnswerNonInvite(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String(), System.String, System.String)
-  nameWithType: SIPTransferServerUserAgent.AnswerNonInvite(SIPResponseStatusCodesEnum, String, String[], String, String)
-  nameWithType.vb: SIPTransferServerUserAgent.AnswerNonInvite(SIPResponseStatusCodesEnum, String, String(), String, String)
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.AnswerNonInvite*
-  name: AnswerNonInvite
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_AnswerNonInvite_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.AnswerNonInvite
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.AnswerNonInvite
-  nameWithType: SIPTransferServerUserAgent.AnswerNonInvite
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.AuthenticateCall
-  name: AuthenticateCall()
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_AuthenticateCall
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.AuthenticateCall
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.AuthenticateCall()
-  nameWithType: SIPTransferServerUserAgent.AuthenticateCall()
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.AuthenticateCall*
-  name: AuthenticateCall
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_AuthenticateCall_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.AuthenticateCall
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.AuthenticateCall
-  nameWithType: SIPTransferServerUserAgent.AuthenticateCall
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallCancelled
-  name: CallCancelled
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_CallCancelled
-  commentId: E:SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallCancelled
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallCancelled
-  nameWithType: SIPTransferServerUserAgent.CallCancelled
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDestination
-  name: CallDestination
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_CallDestination
-  commentId: P:SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDestination
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDestination
-  nameWithType: SIPTransferServerUserAgent.CallDestination
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDestination*
-  name: CallDestination
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_CallDestination_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDestination
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDestination
-  nameWithType: SIPTransferServerUserAgent.CallDestination
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDirection
-  name: CallDirection
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_CallDirection
-  commentId: P:SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDirection
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDirection
-  nameWithType: SIPTransferServerUserAgent.CallDirection
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDirection*
-  name: CallDirection
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_CallDirection_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDirection
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallDirection
-  nameWithType: SIPTransferServerUserAgent.CallDirection
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallRequest
-  name: CallRequest
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_CallRequest
-  commentId: P:SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallRequest
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallRequest
-  nameWithType: SIPTransferServerUserAgent.CallRequest
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallRequest*
-  name: CallRequest
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_CallRequest_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallRequest
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.CallRequest
-  nameWithType: SIPTransferServerUserAgent.CallRequest
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsAuthenticated
-  name: IsAuthenticated
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_IsAuthenticated
-  commentId: P:SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsAuthenticated
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsAuthenticated
-  nameWithType: SIPTransferServerUserAgent.IsAuthenticated
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsAuthenticated*
-  name: IsAuthenticated
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_IsAuthenticated_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsAuthenticated
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsAuthenticated
-  nameWithType: SIPTransferServerUserAgent.IsAuthenticated
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsB2B
-  name: IsB2B
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_IsB2B
-  commentId: P:SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsB2B
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsB2B
-  nameWithType: SIPTransferServerUserAgent.IsB2B
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsB2B*
-  name: IsB2B
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_IsB2B_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsB2B
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsB2B
-  nameWithType: SIPTransferServerUserAgent.IsB2B
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsInvite
-  name: IsInvite
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_IsInvite
-  commentId: P:SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsInvite
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsInvite
-  nameWithType: SIPTransferServerUserAgent.IsInvite
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsInvite*
-  name: IsInvite
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_IsInvite_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsInvite
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsInvite
-  nameWithType: SIPTransferServerUserAgent.IsInvite
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsUASAnswered
-  name: IsUASAnswered
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_IsUASAnswered
-  commentId: P:SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsUASAnswered
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsUASAnswered
-  nameWithType: SIPTransferServerUserAgent.IsUASAnswered
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsUASAnswered*
-  name: IsUASAnswered
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_IsUASAnswered_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsUASAnswered
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.IsUASAnswered
-  nameWithType: SIPTransferServerUserAgent.IsUASAnswered
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.LoadSIPAccountForIncomingCall
-  name: LoadSIPAccountForIncomingCall()
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_LoadSIPAccountForIncomingCall
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.LoadSIPAccountForIncomingCall
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.LoadSIPAccountForIncomingCall()
-  nameWithType: SIPTransferServerUserAgent.LoadSIPAccountForIncomingCall()
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.LoadSIPAccountForIncomingCall*
-  name: LoadSIPAccountForIncomingCall
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_LoadSIPAccountForIncomingCall_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.LoadSIPAccountForIncomingCall
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.LoadSIPAccountForIncomingCall
-  nameWithType: SIPTransferServerUserAgent.LoadSIPAccountForIncomingCall
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.NoCDR
-  name: NoCDR()
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_NoCDR
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.NoCDR
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.NoCDR()
-  nameWithType: SIPTransferServerUserAgent.NoCDR()
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.NoCDR*
-  name: NoCDR
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_NoCDR_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.NoCDR
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.NoCDR
-  nameWithType: SIPTransferServerUserAgent.NoCDR
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.NoRingTimeout
-  name: NoRingTimeout
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_NoRingTimeout
-  commentId: E:SIPSorcery.SIP.App.SIPTransferServerUserAgent.NoRingTimeout
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.NoRingTimeout
-  nameWithType: SIPTransferServerUserAgent.NoRingTimeout
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Owner
-  name: Owner
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_Owner
-  commentId: P:SIPSorcery.SIP.App.SIPTransferServerUserAgent.Owner
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Owner
-  nameWithType: SIPTransferServerUserAgent.Owner
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Owner*
-  name: Owner
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_Owner_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.Owner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Owner
-  nameWithType: SIPTransferServerUserAgent.Owner
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.PendingLegHungup
-  name: PendingLegHungup()
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_PendingLegHungup
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.PendingLegHungup
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.PendingLegHungup()
-  nameWithType: SIPTransferServerUserAgent.PendingLegHungup()
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.PendingLegHungup*
-  name: PendingLegHungup
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_PendingLegHungup_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.PendingLegHungup
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.PendingLegHungup
-  nameWithType: SIPTransferServerUserAgent.PendingLegHungup
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name: Progress(SIPResponseStatusCodesEnum, String, String[], String, String)
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_Progress_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[],System.String,System.String)
-  name.vb: Progress(SIPResponseStatusCodesEnum, String, String(), String, String)
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[], System.String, System.String)
-  fullName.vb: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Progress(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String(), System.String, System.String)
-  nameWithType: SIPTransferServerUserAgent.Progress(SIPResponseStatusCodesEnum, String, String[], String, String)
-  nameWithType.vb: SIPTransferServerUserAgent.Progress(SIPResponseStatusCodesEnum, String, String(), String, String)
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Progress*
-  name: Progress
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_Progress_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.Progress
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Progress
-  nameWithType: SIPTransferServerUserAgent.Progress
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI)
-  name: Redirect(SIPResponseStatusCodesEnum, SIPURI)
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_Redirect_SIPSorcery_SIP_SIPResponseStatusCodesEnum_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPTransferServerUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI)
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Redirect*
-  name: Redirect
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_Redirect_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.Redirect
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Redirect
-  nameWithType: SIPTransferServerUserAgent.Redirect
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[])
-  name: Reject(SIPResponseStatusCodesEnum, String, String[])
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[])
-  name.vb: Reject(SIPResponseStatusCodesEnum, String, String())
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String[])
-  fullName.vb: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String, System.String())
-  nameWithType: SIPTransferServerUserAgent.Reject(SIPResponseStatusCodesEnum, String, String[])
-  nameWithType.vb: SIPTransferServerUserAgent.Reject(SIPResponseStatusCodesEnum, String, String())
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Reject*
-  name: Reject
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_Reject_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.Reject
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.Reject
-  nameWithType: SIPTransferServerUserAgent.Reject
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID(System.Guid)
-  name: SetDialPlanContextID(Guid)
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SetDialPlanContextID_System_Guid_
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID(System.Guid)
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID(System.Guid)
-  nameWithType: SIPTransferServerUserAgent.SetDialPlanContextID(Guid)
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID*
-  name: SetDialPlanContextID
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SetDialPlanContextID_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetDialPlanContextID
-  nameWithType: SIPTransferServerUserAgent.SetDialPlanContextID
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetOwner(System.String,System.String)
-  name: SetOwner(String, String)
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SetOwner_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetOwner(System.String,System.String)
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetOwner(System.String, System.String)
-  nameWithType: SIPTransferServerUserAgent.SetOwner(String, String)
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetOwner*
-  name: SetOwner
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SetOwner_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetOwner
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetOwner
-  nameWithType: SIPTransferServerUserAgent.SetOwner
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  name: SetTraceDelegate(SIPTransactionTraceMessageDelegate)
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SetTraceDelegate_SIPSorcery_SIP_SIPTransactionTraceMessageDelegate_
-  commentId: M:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetTraceDelegate(SIPSorcery.SIP.SIPTransactionTraceMessageDelegate)
-  nameWithType: SIPTransferServerUserAgent.SetTraceDelegate(SIPTransactionTraceMessageDelegate)
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetTraceDelegate*
-  name: SetTraceDelegate
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SetTraceDelegate_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetTraceDelegate
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SetTraceDelegate
-  nameWithType: SIPTransferServerUserAgent.SetTraceDelegate
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPAccount
-  name: SIPAccount
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SIPAccount
-  commentId: P:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPAccount
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPAccount
-  nameWithType: SIPTransferServerUserAgent.SIPAccount
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPAccount*
-  name: SIPAccount
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SIPAccount_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPAccount
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPAccount
-  nameWithType: SIPTransferServerUserAgent.SIPAccount
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPDialogue
-  name: SIPDialogue
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SIPDialogue
-  commentId: P:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPDialogue
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPDialogue
-  nameWithType: SIPTransferServerUserAgent.SIPDialogue
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPDialogue*
-  name: SIPDialogue
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_SIPDialogue_
-  commentId: Overload:SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPDialogue
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.SIPDialogue
-  nameWithType: SIPTransferServerUserAgent.SIPDialogue
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.TransactionComplete
-  name: TransactionComplete
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_TransactionComplete
-  commentId: E:SIPSorcery.SIP.App.SIPTransferServerUserAgent.TransactionComplete
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.TransactionComplete
-  nameWithType: SIPTransferServerUserAgent.TransactionComplete
-- uid: SIPSorcery.SIP.App.SIPTransferServerUserAgent.UASStateChanged
-  name: UASStateChanged
-  href: api/SIPSorcery.SIP.App.SIPTransferServerUserAgent.html#SIPSorcery_SIP_App_SIPTransferServerUserAgent_UASStateChanged
-  commentId: E:SIPSorcery.SIP.App.SIPTransferServerUserAgent.UASStateChanged
-  fullName: SIPSorcery.SIP.App.SIPTransferServerUserAgent.UASStateChanged
-  nameWithType: SIPTransferServerUserAgent.UASStateChanged
 - uid: SIPSorcery.SIP.App.SIPUASDelegate
   name: SIPUASDelegate
   href: api/SIPSorcery.SIP.App.SIPUASDelegate.html
@@ -14503,18 +13331,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPCallDirection.Redirect
   fullName: SIPSorcery.SIP.SIPCallDirection.Redirect
   nameWithType: SIPCallDirection.Redirect
-- uid: SIPSorcery.SIP.SIPCancelTransaction
-  name: SIPCancelTransaction
-  href: api/SIPSorcery.SIP.SIPCancelTransaction.html
-  commentId: T:SIPSorcery.SIP.SIPCancelTransaction
-  fullName: SIPSorcery.SIP.SIPCancelTransaction
-  nameWithType: SIPCancelTransaction
-- uid: SIPSorcery.SIP.SIPCancelTransaction.CancelTransactionFinalResponseReceived
-  name: CancelTransactionFinalResponseReceived
-  href: api/SIPSorcery.SIP.SIPCancelTransaction.html#SIPSorcery_SIP_SIPCancelTransaction_CancelTransactionFinalResponseReceived
-  commentId: E:SIPSorcery.SIP.SIPCancelTransaction.CancelTransactionFinalResponseReceived
-  fullName: SIPSorcery.SIP.SIPCancelTransaction.CancelTransactionFinalResponseReceived
-  nameWithType: SIPCancelTransaction.CancelTransactionFinalResponseReceived
 - uid: SIPSorcery.SIP.SIPCDR
   name: SIPCDR
   href: api/SIPSorcery.SIP.SIPCDR.html
@@ -15256,22 +14072,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPChannel.Port
   nameWithType: SIPChannel.Port
-- uid: SIPSorcery.SIP.SIPChannel.Send(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name: Send(SIPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_Send_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPChannel.Send(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name.vb: Send(SIPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPChannel.Send(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPChannel.Send(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String)
-  nameWithType: SIPChannel.Send(SIPEndPoint, Byte[], String)
-  nameWithType.vb: SIPChannel.Send(SIPEndPoint, Byte(), String)
-- uid: SIPSorcery.SIP.SIPChannel.Send*
-  name: Send
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_Send_
-  commentId: Overload:SIPSorcery.SIP.SIPChannel.Send
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPChannel.Send
-  nameWithType: SIPChannel.Send
 - uid: SIPSorcery.SIP.SIPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
   name: SendAsync(SIPEndPoint, Byte[], String)
   href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
@@ -15432,22 +14232,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPClientWebSocketChannel.IsProtocolSupported
   nameWithType: SIPClientWebSocketChannel.IsProtocolSupported
-- uid: SIPSorcery.SIP.SIPClientWebSocketChannel.Send(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name: Send(SIPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPClientWebSocketChannel.html#SIPSorcery_SIP_SIPClientWebSocketChannel_Send_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPClientWebSocketChannel.Send(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name.vb: Send(SIPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPClientWebSocketChannel.Send(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPClientWebSocketChannel.Send(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String)
-  nameWithType: SIPClientWebSocketChannel.Send(SIPEndPoint, Byte[], String)
-  nameWithType.vb: SIPClientWebSocketChannel.Send(SIPEndPoint, Byte(), String)
-- uid: SIPSorcery.SIP.SIPClientWebSocketChannel.Send*
-  name: Send
-  href: api/SIPSorcery.SIP.SIPClientWebSocketChannel.html#SIPSorcery_SIP_SIPClientWebSocketChannel_Send_
-  commentId: Overload:SIPSorcery.SIP.SIPClientWebSocketChannel.Send
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPClientWebSocketChannel.Send
-  nameWithType: SIPClientWebSocketChannel.Send
 - uid: SIPSorcery.SIP.SIPClientWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
   name: SendAsync(SIPEndPoint, Byte[], String)
   href: api/SIPSorcery.SIP.SIPClientWebSocketChannel.html#SIPSorcery_SIP_SIPClientWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
@@ -19418,18 +18202,18 @@ references:
   commentId: F:SIPSorcery.SIP.SIPMessageBuffer.SIPMessageType
   fullName: SIPSorcery.SIP.SIPMessageBuffer.SIPMessageType
   nameWithType: SIPMessageBuffer.SIPMessageType
-- uid: SIPSorcery.SIP.SIPMessageReceivedDelegate
-  name: SIPMessageReceivedDelegate
-  href: api/SIPSorcery.SIP.SIPMessageReceivedDelegate.html
-  commentId: T:SIPSorcery.SIP.SIPMessageReceivedDelegate
-  fullName: SIPSorcery.SIP.SIPMessageReceivedDelegate
-  nameWithType: SIPMessageReceivedDelegate
-- uid: SIPSorcery.SIP.SIPMessageSentDelegate
-  name: SIPMessageSentDelegate
-  href: api/SIPSorcery.SIP.SIPMessageSentDelegate.html
-  commentId: T:SIPSorcery.SIP.SIPMessageSentDelegate
-  fullName: SIPSorcery.SIP.SIPMessageSentDelegate
-  nameWithType: SIPMessageSentDelegate
+- uid: SIPSorcery.SIP.SIPMessageReceivedAsyncDelegate
+  name: SIPMessageReceivedAsyncDelegate
+  href: api/SIPSorcery.SIP.SIPMessageReceivedAsyncDelegate.html
+  commentId: T:SIPSorcery.SIP.SIPMessageReceivedAsyncDelegate
+  fullName: SIPSorcery.SIP.SIPMessageReceivedAsyncDelegate
+  nameWithType: SIPMessageReceivedAsyncDelegate
+- uid: SIPSorcery.SIP.SIPMessageSentAsyncDelegate
+  name: SIPMessageSentAsyncDelegate
+  href: api/SIPSorcery.SIP.SIPMessageSentAsyncDelegate.html
+  commentId: T:SIPSorcery.SIP.SIPMessageSentAsyncDelegate
+  fullName: SIPSorcery.SIP.SIPMessageSentAsyncDelegate
+  nameWithType: SIPMessageSentAsyncDelegate
 - uid: SIPSorcery.SIP.SIPMessageTypesEnum
   name: SIPMessageTypesEnum
   href: api/SIPSorcery.SIP.SIPMessageTypesEnum.html
@@ -19666,6 +18450,19 @@ references:
   commentId: E:SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionTimedOut
   fullName: SIPSorcery.SIP.SIPNonInviteTransaction.NonInviteTransactionTimedOut
   nameWithType: SIPNonInviteTransaction.NonInviteTransactionTimedOut
+- uid: SIPSorcery.SIP.SIPNonInviteTransaction.SendRequest
+  name: SendRequest()
+  href: api/SIPSorcery.SIP.SIPNonInviteTransaction.html#SIPSorcery_SIP_SIPNonInviteTransaction_SendRequest
+  commentId: M:SIPSorcery.SIP.SIPNonInviteTransaction.SendRequest
+  fullName: SIPSorcery.SIP.SIPNonInviteTransaction.SendRequest()
+  nameWithType: SIPNonInviteTransaction.SendRequest()
+- uid: SIPSorcery.SIP.SIPNonInviteTransaction.SendRequest*
+  name: SendRequest
+  href: api/SIPSorcery.SIP.SIPNonInviteTransaction.html#SIPSorcery_SIP_SIPNonInviteTransaction_SendRequest_
+  commentId: Overload:SIPSorcery.SIP.SIPNonInviteTransaction.SendRequest
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPNonInviteTransaction.SendRequest
+  nameWithType: SIPNonInviteTransaction.SendRequest
 - uid: SIPSorcery.SIP.SIPParameterlessURI
   name: SIPParameterlessURI
   href: api/SIPSorcery.SIP.SIPParameterlessURI.html
@@ -21628,22 +20425,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.Close
   nameWithType: SIPTCPChannel.Close
-- uid: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(System.Net.IPEndPoint,System.Byte[],System.String)
-  name: ConnectClientAsync(IPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_ConnectClientAsync_System_Net_IPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(System.Net.IPEndPoint,System.Byte[],System.String)
-  name.vb: ConnectClientAsync(IPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(System.Net.IPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync(System.Net.IPEndPoint, System.Byte(), System.String)
-  nameWithType: SIPTCPChannel.ConnectClientAsync(IPEndPoint, Byte[], String)
-  nameWithType.vb: SIPTCPChannel.ConnectClientAsync(IPEndPoint, Byte(), String)
-- uid: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync*
-  name: ConnectClientAsync
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_ConnectClientAsync_
-  commentId: Overload:SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTCPChannel.ConnectClientAsync
-  nameWithType: SIPTCPChannel.ConnectClientAsync
 - uid: SIPSorcery.SIP.SIPTCPChannel.DisableLocalTCPSocketsCheck
   name: DisableLocalTCPSocketsCheck
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_DisableLocalTCPSocketsCheck
@@ -21791,22 +20572,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTCPChannel.ProtDescr
   nameWithType: SIPTCPChannel.ProtDescr
-- uid: SIPSorcery.SIP.SIPTCPChannel.Send(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name: Send(SIPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_Send_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.Send(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name.vb: Send(SIPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.Send(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPTCPChannel.Send(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String)
-  nameWithType: SIPTCPChannel.Send(SIPEndPoint, Byte[], String)
-  nameWithType.vb: SIPTCPChannel.Send(SIPEndPoint, Byte(), String)
-- uid: SIPSorcery.SIP.SIPTCPChannel.Send*
-  name: Send
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_Send_
-  commentId: Overload:SIPSorcery.SIP.SIPTCPChannel.Send
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTCPChannel.Send
-  nameWithType: SIPTCPChannel.Send
 - uid: SIPSorcery.SIP.SIPTCPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
   name: SendAsync(SIPEndPoint, Byte[], String)
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
@@ -22148,6 +20913,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransaction.ACKReceived
   nameWithType: SIPTransaction.ACKReceived
+- uid: SIPSorcery.SIP.SIPTransaction.AckRequest
+  name: AckRequest
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_AckRequest
+  commentId: P:SIPSorcery.SIP.SIPTransaction.AckRequest
+  fullName: SIPSorcery.SIP.SIPTransaction.AckRequest
+  nameWithType: SIPTransaction.AckRequest
+- uid: SIPSorcery.SIP.SIPTransaction.AckRequest*
+  name: AckRequest
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_AckRequest_
+  commentId: Overload:SIPSorcery.SIP.SIPTransaction.AckRequest
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransaction.AckRequest
+  nameWithType: SIPTransaction.AckRequest
 - uid: SIPSorcery.SIP.SIPTransaction.AckRetransmits
   name: AckRetransmits
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_AckRetransmits
@@ -22167,19 +20945,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransaction.BranchId
   nameWithType: SIPTransaction.BranchId
-- uid: SIPSorcery.SIP.SIPTransaction.Cancel
-  name: Cancel()
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_Cancel
-  commentId: M:SIPSorcery.SIP.SIPTransaction.Cancel
-  fullName: SIPSorcery.SIP.SIPTransaction.Cancel()
-  nameWithType: SIPTransaction.Cancel()
-- uid: SIPSorcery.SIP.SIPTransaction.Cancel*
-  name: Cancel
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_Cancel_
-  commentId: Overload:SIPSorcery.SIP.SIPTransaction.Cancel
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransaction.Cancel
-  nameWithType: SIPTransaction.Cancel
 - uid: SIPSorcery.SIP.SIPTransaction.CDR
   name: CDR
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_CDR
@@ -22319,18 +21084,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransaction.logger
   fullName: SIPSorcery.SIP.SIPTransaction.logger
   nameWithType: SIPTransaction.logger
-- uid: SIPSorcery.SIP.SIPTransaction.m_ackRequest
-  name: m_ackRequest
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_ackRequest
-  commentId: F:SIPSorcery.SIP.SIPTransaction.m_ackRequest
-  fullName: SIPSorcery.SIP.SIPTransaction.m_ackRequest
-  nameWithType: SIPTransaction.m_ackRequest
-- uid: SIPSorcery.SIP.SIPTransaction.m_ackRequestIPEndPoint
-  name: m_ackRequestIPEndPoint
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_ackRequestIPEndPoint
-  commentId: F:SIPSorcery.SIP.SIPTransaction.m_ackRequestIPEndPoint
-  fullName: SIPSorcery.SIP.SIPTransaction.m_ackRequestIPEndPoint
-  nameWithType: SIPTransaction.m_ackRequestIPEndPoint
 - uid: SIPSorcery.SIP.SIPTransaction.m_branchId
   name: m_branchId
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_branchId
@@ -22355,36 +21108,18 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransaction.m_maxRingTime
   fullName: SIPSorcery.SIP.SIPTransaction.m_maxRingTime
   nameWithType: SIPTransaction.m_maxRingTime
-- uid: SIPSorcery.SIP.SIPTransaction.m_prackRequest
-  name: m_prackRequest
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_prackRequest
-  commentId: F:SIPSorcery.SIP.SIPTransaction.m_prackRequest
-  fullName: SIPSorcery.SIP.SIPTransaction.m_prackRequest
-  nameWithType: SIPTransaction.m_prackRequest
-- uid: SIPSorcery.SIP.SIPTransaction.m_prackRequestIPEndPoint
-  name: m_prackRequestIPEndPoint
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_prackRequestIPEndPoint
-  commentId: F:SIPSorcery.SIP.SIPTransaction.m_prackRequestIPEndPoint
-  fullName: SIPSorcery.SIP.SIPTransaction.m_prackRequestIPEndPoint
-  nameWithType: SIPTransaction.m_prackRequestIPEndPoint
 - uid: SIPSorcery.SIP.SIPTransaction.m_remoteTag
   name: m_remoteTag
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_remoteTag
   commentId: F:SIPSorcery.SIP.SIPTransaction.m_remoteTag
   fullName: SIPSorcery.SIP.SIPTransaction.m_remoteTag
   nameWithType: SIPTransaction.m_remoteTag
-- uid: SIPSorcery.SIP.SIPTransaction.m_t1
-  name: m_t1
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_t1
-  commentId: F:SIPSorcery.SIP.SIPTransaction.m_t1
-  fullName: SIPSorcery.SIP.SIPTransaction.m_t1
-  nameWithType: SIPTransaction.m_t1
-- uid: SIPSorcery.SIP.SIPTransaction.m_t6
-  name: m_t6
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_t6
-  commentId: F:SIPSorcery.SIP.SIPTransaction.m_t6
-  fullName: SIPSorcery.SIP.SIPTransaction.m_t6
-  nameWithType: SIPTransaction.m_t6
+- uid: SIPSorcery.SIP.SIPTransaction.m_sipTransport
+  name: m_sipTransport
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_sipTransport
+  commentId: F:SIPSorcery.SIP.SIPTransaction.m_sipTransport
+  fullName: SIPSorcery.SIP.SIPTransaction.m_sipTransport
+  nameWithType: SIPTransaction.m_sipTransport
 - uid: SIPSorcery.SIP.SIPTransaction.m_transactionFinalResponse
   name: m_transactionFinalResponse
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_m_transactionFinalResponse
@@ -22455,6 +21190,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransaction.PRACKReceived
   nameWithType: SIPTransaction.PRACKReceived
+- uid: SIPSorcery.SIP.SIPTransaction.PRackRequest
+  name: PRackRequest
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_PRackRequest
+  commentId: P:SIPSorcery.SIP.SIPTransaction.PRackRequest
+  fullName: SIPSorcery.SIP.SIPTransaction.PRackRequest
+  nameWithType: SIPTransaction.PRackRequest
+- uid: SIPSorcery.SIP.SIPTransaction.PRackRequest*
+  name: PRackRequest
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_PRackRequest_
+  commentId: Overload:SIPSorcery.SIP.SIPTransaction.PRackRequest
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransaction.PRackRequest
+  nameWithType: SIPTransaction.PRackRequest
 - uid: SIPSorcery.SIP.SIPTransaction.PrackRetransmits
   name: PrackRetransmits
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_PrackRetransmits
@@ -22467,6 +21215,19 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransaction.PrackSupported
   fullName: SIPSorcery.SIP.SIPTransaction.PrackSupported
   nameWithType: SIPTransaction.PrackSupported
+- uid: SIPSorcery.SIP.SIPTransaction.ProvisionalResponse
+  name: ProvisionalResponse
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_ProvisionalResponse
+  commentId: P:SIPSorcery.SIP.SIPTransaction.ProvisionalResponse
+  fullName: SIPSorcery.SIP.SIPTransaction.ProvisionalResponse
+  nameWithType: SIPTransaction.ProvisionalResponse
+- uid: SIPSorcery.SIP.SIPTransaction.ProvisionalResponse*
+  name: ProvisionalResponse
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_ProvisionalResponse_
+  commentId: Overload:SIPSorcery.SIP.SIPTransaction.ProvisionalResponse
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransaction.ProvisionalResponse
+  nameWithType: SIPTransaction.ProvisionalResponse
 - uid: SIPSorcery.SIP.SIPTransaction.ReliableProvisionalResponse
   name: ReliableProvisionalResponse
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_ReliableProvisionalResponse
@@ -22480,19 +21241,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransaction.ReliableProvisionalResponse
   nameWithType: SIPTransaction.ReliableProvisionalResponse
-- uid: SIPSorcery.SIP.SIPTransaction.RequestRetransmit
-  name: RequestRetransmit()
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_RequestRetransmit
-  commentId: M:SIPSorcery.SIP.SIPTransaction.RequestRetransmit
-  fullName: SIPSorcery.SIP.SIPTransaction.RequestRetransmit()
-  nameWithType: SIPTransaction.RequestRetransmit()
-- uid: SIPSorcery.SIP.SIPTransaction.RequestRetransmit*
-  name: RequestRetransmit
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_RequestRetransmit_
-  commentId: Overload:SIPSorcery.SIP.SIPTransaction.RequestRetransmit
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransaction.RequestRetransmit
-  nameWithType: SIPTransaction.RequestRetransmit
 - uid: SIPSorcery.SIP.SIPTransaction.Retransmits
   name: Retransmits
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_Retransmits
@@ -22551,25 +21299,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransaction.SendReliableRequest
   nameWithType: SIPTransaction.SendReliableRequest
-- uid: SIPSorcery.SIP.SIPTransaction.SendRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
-  name: SendRequest(SIPEndPoint, SIPRequest)
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_
-  commentId: M:SIPSorcery.SIP.SIPTransaction.SendRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
-  fullName: SIPSorcery.SIP.SIPTransaction.SendRequest(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPRequest)
-  nameWithType: SIPTransaction.SendRequest(SIPEndPoint, SIPRequest)
-- uid: SIPSorcery.SIP.SIPTransaction.SendRequest(SIPSorcery.SIP.SIPRequest)
-  name: SendRequest(SIPRequest)
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendRequest_SIPSorcery_SIP_SIPRequest_
-  commentId: M:SIPSorcery.SIP.SIPTransaction.SendRequest(SIPSorcery.SIP.SIPRequest)
-  fullName: SIPSorcery.SIP.SIPTransaction.SendRequest(SIPSorcery.SIP.SIPRequest)
-  nameWithType: SIPTransaction.SendRequest(SIPRequest)
-- uid: SIPSorcery.SIP.SIPTransaction.SendRequest*
-  name: SendRequest
-  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendRequest_
-  commentId: Overload:SIPSorcery.SIP.SIPTransaction.SendRequest
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransaction.SendRequest
-  nameWithType: SIPTransaction.SendRequest
 - uid: SIPSorcery.SIP.SIPTransaction.TimedOutAt
   name: TimedOutAt
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TimedOutAt
@@ -22714,6 +21443,19 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransaction.TransactionType
   fullName: SIPSorcery.SIP.SIPTransaction.TransactionType
   nameWithType: SIPTransaction.TransactionType
+- uid: SIPSorcery.SIP.SIPTransaction.UpdateTransactionState(SIPSorcery.SIP.SIPTransactionStatesEnum)
+  name: UpdateTransactionState(SIPTransactionStatesEnum)
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_UpdateTransactionState_SIPSorcery_SIP_SIPTransactionStatesEnum_
+  commentId: M:SIPSorcery.SIP.SIPTransaction.UpdateTransactionState(SIPSorcery.SIP.SIPTransactionStatesEnum)
+  fullName: SIPSorcery.SIP.SIPTransaction.UpdateTransactionState(SIPSorcery.SIP.SIPTransactionStatesEnum)
+  nameWithType: SIPTransaction.UpdateTransactionState(SIPTransactionStatesEnum)
+- uid: SIPSorcery.SIP.SIPTransaction.UpdateTransactionState*
+  name: UpdateTransactionState
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_UpdateTransactionState_
+  commentId: Overload:SIPSorcery.SIP.SIPTransaction.UpdateTransactionState
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransaction.UpdateTransactionState
+  nameWithType: SIPTransaction.UpdateTransactionState
 - uid: SIPSorcery.SIP.SIPTransactionCancelledDelegate
   name: SIPTransactionCancelledDelegate
   href: api/SIPSorcery.SIP.SIPTransactionCancelledDelegate.html
@@ -22852,6 +21594,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPTransport.#ctor
   fullName: SIPSorcery.SIP.SIPTransport.SIPTransport()
   nameWithType: SIPTransport.SIPTransport()
+- uid: SIPSorcery.SIP.SIPTransport.#ctor(System.Boolean,SIPSorcery.SIP.ResolveSIPEndPointDelegate)
+  name: SIPTransport(Boolean, ResolveSIPEndPointDelegate)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport__ctor_System_Boolean_SIPSorcery_SIP_ResolveSIPEndPointDelegate_
+  commentId: M:SIPSorcery.SIP.SIPTransport.#ctor(System.Boolean,SIPSorcery.SIP.ResolveSIPEndPointDelegate)
+  fullName: SIPSorcery.SIP.SIPTransport.SIPTransport(System.Boolean, SIPSorcery.SIP.ResolveSIPEndPointDelegate)
+  nameWithType: SIPTransport.SIPTransport(Boolean, ResolveSIPEndPointDelegate)
 - uid: SIPSorcery.SIP.SIPTransport.#ctor*
   name: SIPTransport
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport__ctor_
@@ -22881,19 +21629,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.AddSIPChannel
   nameWithType: SIPTransport.AddSIPChannel
-- uid: SIPSorcery.SIP.SIPTransport.AddTransaction(SIPSorcery.SIP.SIPTransaction)
-  name: AddTransaction(SIPTransaction)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_AddTransaction_SIPSorcery_SIP_SIPTransaction_
-  commentId: M:SIPSorcery.SIP.SIPTransport.AddTransaction(SIPSorcery.SIP.SIPTransaction)
-  fullName: SIPSorcery.SIP.SIPTransport.AddTransaction(SIPSorcery.SIP.SIPTransaction)
-  nameWithType: SIPTransport.AddTransaction(SIPTransaction)
-- uid: SIPSorcery.SIP.SIPTransport.AddTransaction*
-  name: AddTransaction
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_AddTransaction_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.AddTransaction
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.AddTransaction
-  nameWithType: SIPTransport.AddTransaction
 - uid: SIPSorcery.SIP.SIPTransport.BlackholeAddress
   name: BlackholeAddress
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_BlackholeAddress
@@ -22919,103 +21654,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransport.ContactHost
   fullName: SIPSorcery.SIP.SIPTransport.ContactHost
   nameWithType: SIPTransport.ContactHost
-- uid: SIPSorcery.SIP.SIPTransport.CreateCancelTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.UASInviteTransaction)
-  name: CreateCancelTransaction(SIPRequest, UASInviteTransaction)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateCancelTransaction_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_UASInviteTransaction_
-  commentId: M:SIPSorcery.SIP.SIPTransport.CreateCancelTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.UASInviteTransaction)
-  fullName: SIPSorcery.SIP.SIPTransport.CreateCancelTransaction(SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.UASInviteTransaction)
-  nameWithType: SIPTransport.CreateCancelTransaction(SIPRequest, UASInviteTransaction)
-- uid: SIPSorcery.SIP.SIPTransport.CreateCancelTransaction*
-  name: CreateCancelTransaction
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateCancelTransaction_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.CreateCancelTransaction
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.CreateCancelTransaction
-  nameWithType: SIPTransport.CreateCancelTransaction
-- uid: SIPSorcery.SIP.SIPTransport.CreateNonInviteTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint)
-  name: CreateNonInviteTransaction(SIPRequest, SIPEndPoint)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateNonInviteTransaction_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPTransport.CreateNonInviteTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint)
-  fullName: SIPSorcery.SIP.SIPTransport.CreateNonInviteTransaction(SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPTransport.CreateNonInviteTransaction(SIPRequest, SIPEndPoint)
-- uid: SIPSorcery.SIP.SIPTransport.CreateNonInviteTransaction*
-  name: CreateNonInviteTransaction
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateNonInviteTransaction_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.CreateNonInviteTransaction
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.CreateNonInviteTransaction
-  nameWithType: SIPTransport.CreateNonInviteTransaction
-- uid: SIPSorcery.SIP.SIPTransport.CreateUACTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean,System.Boolean)
-  name: CreateUACTransaction(SIPRequest, SIPEndPoint, Boolean, Boolean)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateUACTransaction_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPEndPoint_System_Boolean_System_Boolean_
-  commentId: M:SIPSorcery.SIP.SIPTransport.CreateUACTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean,System.Boolean)
-  fullName: SIPSorcery.SIP.SIPTransport.CreateUACTransaction(SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPEndPoint, System.Boolean, System.Boolean)
-  nameWithType: SIPTransport.CreateUACTransaction(SIPRequest, SIPEndPoint, Boolean, Boolean)
-- uid: SIPSorcery.SIP.SIPTransport.CreateUACTransaction*
-  name: CreateUACTransaction
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateUACTransaction_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.CreateUACTransaction
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.CreateUACTransaction
-  nameWithType: SIPTransport.CreateUACTransaction
-- uid: SIPSorcery.SIP.SIPTransport.CreateUASTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean)
-  name: CreateUASTransaction(SIPRequest, SIPEndPoint, Boolean)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateUASTransaction_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPEndPoint_System_Boolean_
-  commentId: M:SIPSorcery.SIP.SIPTransport.CreateUASTransaction(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean)
-  fullName: SIPSorcery.SIP.SIPTransport.CreateUASTransaction(SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPEndPoint, System.Boolean)
-  nameWithType: SIPTransport.CreateUASTransaction(SIPRequest, SIPEndPoint, Boolean)
-- uid: SIPSorcery.SIP.SIPTransport.CreateUASTransaction*
-  name: CreateUASTransaction
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_CreateUASTransaction_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.CreateUASTransaction
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.CreateUASTransaction
-  nameWithType: SIPTransport.CreateUASTransaction
-- uid: SIPSorcery.SIP.SIPTransport.FindSIPChannel(SIPSorcery.SIP.SIPEndPoint)
-  name: FindSIPChannel(SIPEndPoint)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_FindSIPChannel_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPTransport.FindSIPChannel(SIPSorcery.SIP.SIPEndPoint)
-  fullName: SIPSorcery.SIP.SIPTransport.FindSIPChannel(SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPTransport.FindSIPChannel(SIPEndPoint)
-- uid: SIPSorcery.SIP.SIPTransport.FindSIPChannel*
-  name: FindSIPChannel
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_FindSIPChannel_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.FindSIPChannel
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.FindSIPChannel
-  nameWithType: SIPTransport.FindSIPChannel
-- uid: SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint(SIPSorcery.SIP.SIPEndPoint)
-  name: GetDefaultSIPEndPoint(SIPEndPoint)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetDefaultSIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint(SIPSorcery.SIP.SIPEndPoint)
-  fullName: SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint(SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPTransport.GetDefaultSIPEndPoint(SIPEndPoint)
-- uid: SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint(SIPSorcery.SIP.SIPProtocolsEnum)
-  name: GetDefaultSIPEndPoint(SIPProtocolsEnum)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetDefaultSIPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint(SIPSorcery.SIP.SIPProtocolsEnum)
-  fullName: SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint(SIPSorcery.SIP.SIPProtocolsEnum)
-  nameWithType: SIPTransport.GetDefaultSIPEndPoint(SIPProtocolsEnum)
-- uid: SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint*
-  name: GetDefaultSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetDefaultSIPEndPoint_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.GetDefaultSIPEndPoint
-  nameWithType: SIPTransport.GetDefaultSIPEndPoint
-- uid: SIPSorcery.SIP.SIPTransport.GetDefaultTransportContact(SIPSorcery.SIP.SIPProtocolsEnum)
-  name: GetDefaultTransportContact(SIPProtocolsEnum)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetDefaultTransportContact_SIPSorcery_SIP_SIPProtocolsEnum_
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetDefaultTransportContact(SIPSorcery.SIP.SIPProtocolsEnum)
-  fullName: SIPSorcery.SIP.SIPTransport.GetDefaultTransportContact(SIPSorcery.SIP.SIPProtocolsEnum)
-  nameWithType: SIPTransport.GetDefaultTransportContact(SIPProtocolsEnum)
-- uid: SIPSorcery.SIP.SIPTransport.GetDefaultTransportContact*
-  name: GetDefaultTransportContact
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetDefaultTransportContact_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.GetDefaultTransportContact
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.GetDefaultTransportContact
-  nameWithType: SIPTransport.GetDefaultTransportContact
 - uid: SIPSorcery.SIP.SIPTransport.GetHostEndPoint(System.String,System.Boolean)
   name: GetHostEndPoint(String, Boolean)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetHostEndPoint_System_String_System_Boolean_
@@ -23029,38 +21667,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.GetHostEndPoint
   nameWithType: SIPTransport.GetHostEndPoint
-- uid: SIPSorcery.SIP.SIPTransport.GetListeningSIPEndPoints
-  name: GetListeningSIPEndPoints()
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetListeningSIPEndPoints
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetListeningSIPEndPoints
-  fullName: SIPSorcery.SIP.SIPTransport.GetListeningSIPEndPoints()
-  nameWithType: SIPTransport.GetListeningSIPEndPoints()
-- uid: SIPSorcery.SIP.SIPTransport.GetListeningSIPEndPoints*
-  name: GetListeningSIPEndPoints
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetListeningSIPEndPoints_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.GetListeningSIPEndPoints
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.GetListeningSIPEndPoints
-  nameWithType: SIPTransport.GetListeningSIPEndPoints
-- uid: SIPSorcery.SIP.SIPTransport.GetRequest(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI)
-  name: GetRequest(SIPMethodsEnum, SIPURI)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetRequest_SIPSorcery_SIP_SIPMethodsEnum_SIPSorcery_SIP_SIPURI_
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetRequest(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI)
-  fullName: SIPSorcery.SIP.SIPTransport.GetRequest(SIPSorcery.SIP.SIPMethodsEnum, SIPSorcery.SIP.SIPURI)
-  nameWithType: SIPTransport.GetRequest(SIPMethodsEnum, SIPURI)
-- uid: SIPSorcery.SIP.SIPTransport.GetRequest(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPToHeader,SIPSorcery.SIP.SIPFromHeader)
-  name: GetRequest(SIPMethodsEnum, SIPURI, SIPToHeader, SIPFromHeader)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetRequest_SIPSorcery_SIP_SIPMethodsEnum_SIPSorcery_SIP_SIPURI_SIPSorcery_SIP_SIPToHeader_SIPSorcery_SIP_SIPFromHeader_
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetRequest(SIPSorcery.SIP.SIPMethodsEnum,SIPSorcery.SIP.SIPURI,SIPSorcery.SIP.SIPToHeader,SIPSorcery.SIP.SIPFromHeader)
-  fullName: SIPSorcery.SIP.SIPTransport.GetRequest(SIPSorcery.SIP.SIPMethodsEnum, SIPSorcery.SIP.SIPURI, SIPSorcery.SIP.SIPToHeader, SIPSorcery.SIP.SIPFromHeader)
-  nameWithType: SIPTransport.GetRequest(SIPMethodsEnum, SIPURI, SIPToHeader, SIPFromHeader)
-- uid: SIPSorcery.SIP.SIPTransport.GetRequest*
-  name: GetRequest
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetRequest_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.GetRequest
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.GetRequest
-  nameWithType: SIPTransport.GetRequest
 - uid: SIPSorcery.SIP.SIPTransport.GetRequestEndPoint(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPEndPoint,System.Boolean)
   name: GetRequestEndPoint(SIPRequest, SIPEndPoint, Boolean)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetRequestEndPoint_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPEndPoint_System_Boolean_
@@ -23074,19 +21680,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.GetRequestEndPoint
   nameWithType: SIPTransport.GetRequestEndPoint
-- uid: SIPSorcery.SIP.SIPTransport.GetResponse(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)
-  name: GetResponse(SIPRequest, SIPResponseStatusCodesEnum, String)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetResponse_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_
-  commentId: M:SIPSorcery.SIP.SIPTransport.GetResponse(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)
-  fullName: SIPSorcery.SIP.SIPTransport.GetResponse(SIPSorcery.SIP.SIPRequest, SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String)
-  nameWithType: SIPTransport.GetResponse(SIPRequest, SIPResponseStatusCodesEnum, String)
-- uid: SIPSorcery.SIP.SIPTransport.GetResponse*
-  name: GetResponse
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetResponse_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.GetResponse
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.GetResponse
-  nameWithType: SIPTransport.GetResponse
 - uid: SIPSorcery.SIP.SIPTransport.GetSIPChannels
   name: GetSIPChannels()
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_GetSIPChannels
@@ -23113,19 +21706,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.GetURIEndPoint
   nameWithType: SIPTransport.GetURIEndPoint
-- uid: SIPSorcery.SIP.SIPTransport.IsLocalSIPEndPoint(SIPSorcery.SIP.SIPEndPoint)
-  name: IsLocalSIPEndPoint(SIPEndPoint)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_IsLocalSIPEndPoint_SIPSorcery_SIP_SIPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPTransport.IsLocalSIPEndPoint(SIPSorcery.SIP.SIPEndPoint)
-  fullName: SIPSorcery.SIP.SIPTransport.IsLocalSIPEndPoint(SIPSorcery.SIP.SIPEndPoint)
-  nameWithType: SIPTransport.IsLocalSIPEndPoint(SIPEndPoint)
-- uid: SIPSorcery.SIP.SIPTransport.IsLocalSIPEndPoint*
-  name: IsLocalSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_IsLocalSIPEndPoint_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.IsLocalSIPEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.IsLocalSIPEndPoint
-  nameWithType: SIPTransport.IsLocalSIPEndPoint
 - uid: SIPSorcery.SIP.SIPTransport.m_allowedSIPMethods
   name: m_allowedSIPMethods
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_m_allowedSIPMethods
@@ -23174,54 +21754,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.RemoveSIPChannel
   nameWithType: SIPTransport.RemoveSIPChannel
-- uid: SIPSorcery.SIP.SIPTransport.SendRaw(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Byte[])
-  name: SendRaw(SIPEndPoint, SIPEndPoint, Byte[])
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRaw_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Byte___
-  commentId: M:SIPSorcery.SIP.SIPTransport.SendRaw(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Byte[])
-  name.vb: SendRaw(SIPEndPoint, SIPEndPoint, Byte())
-  fullName: SIPSorcery.SIP.SIPTransport.SendRaw(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, System.Byte[])
-  fullName.vb: SIPSorcery.SIP.SIPTransport.SendRaw(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, System.Byte())
-  nameWithType: SIPTransport.SendRaw(SIPEndPoint, SIPEndPoint, Byte[])
-  nameWithType.vb: SIPTransport.SendRaw(SIPEndPoint, SIPEndPoint, Byte())
-- uid: SIPSorcery.SIP.SIPTransport.SendRaw*
-  name: SendRaw
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRaw_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.SendRaw
+- uid: SIPSorcery.SIP.SIPTransport.SendRawAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Byte[])
+  name: SendRawAsync(SIPEndPoint, SIPEndPoint, Byte[])
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRawAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.SIP.SIPTransport.SendRawAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Byte[])
+  name.vb: SendRawAsync(SIPEndPoint, SIPEndPoint, Byte())
+  fullName: SIPSorcery.SIP.SIPTransport.SendRawAsync(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.SIP.SIPTransport.SendRawAsync(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPEndPoint, System.Byte())
+  nameWithType: SIPTransport.SendRawAsync(SIPEndPoint, SIPEndPoint, Byte[])
+  nameWithType.vb: SIPTransport.SendRawAsync(SIPEndPoint, SIPEndPoint, Byte())
+- uid: SIPSorcery.SIP.SIPTransport.SendRawAsync*
+  name: SendRawAsync
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRawAsync_
+  commentId: Overload:SIPSorcery.SIP.SIPTransport.SendRawAsync
   isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.SendRaw
-  nameWithType: SIPTransport.SendRaw
-- uid: SIPSorcery.SIP.SIPTransport.SendReliable(SIPSorcery.SIP.SIPTransaction)
-  name: SendReliable(SIPTransaction)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendReliable_SIPSorcery_SIP_SIPTransaction_
-  commentId: M:SIPSorcery.SIP.SIPTransport.SendReliable(SIPSorcery.SIP.SIPTransaction)
-  fullName: SIPSorcery.SIP.SIPTransport.SendReliable(SIPSorcery.SIP.SIPTransaction)
-  nameWithType: SIPTransport.SendReliable(SIPTransaction)
-- uid: SIPSorcery.SIP.SIPTransport.SendReliable*
-  name: SendReliable
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendReliable_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.SendReliable
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.SendReliable
-  nameWithType: SIPTransport.SendReliable
-- uid: SIPSorcery.SIP.SIPTransport.SendRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
-  name: SendRequest(SIPEndPoint, SIPRequest)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRequest_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_
-  commentId: M:SIPSorcery.SIP.SIPTransport.SendRequest(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
-  fullName: SIPSorcery.SIP.SIPTransport.SendRequest(SIPSorcery.SIP.SIPEndPoint, SIPSorcery.SIP.SIPRequest)
-  nameWithType: SIPTransport.SendRequest(SIPEndPoint, SIPRequest)
-- uid: SIPSorcery.SIP.SIPTransport.SendRequest(SIPSorcery.SIP.SIPRequest)
-  name: SendRequest(SIPRequest)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRequest_SIPSorcery_SIP_SIPRequest_
-  commentId: M:SIPSorcery.SIP.SIPTransport.SendRequest(SIPSorcery.SIP.SIPRequest)
-  fullName: SIPSorcery.SIP.SIPTransport.SendRequest(SIPSorcery.SIP.SIPRequest)
-  nameWithType: SIPTransport.SendRequest(SIPRequest)
-- uid: SIPSorcery.SIP.SIPTransport.SendRequest*
-  name: SendRequest
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRequest_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.SendRequest
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.SendRequest
-  nameWithType: SIPTransport.SendRequest
+  fullName: SIPSorcery.SIP.SIPTransport.SendRawAsync
+  nameWithType: SIPTransport.SendRawAsync
 - uid: SIPSorcery.SIP.SIPTransport.SendRequestAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPRequest)
   name: SendRequestAsync(SIPEndPoint, SIPRequest)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendRequestAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPRequest_
@@ -23241,19 +21789,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.SendRequestAsync
   nameWithType: SIPTransport.SendRequestAsync
-- uid: SIPSorcery.SIP.SIPTransport.SendResponse(SIPSorcery.SIP.SIPResponse)
-  name: SendResponse(SIPResponse)
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendResponse_SIPSorcery_SIP_SIPResponse_
-  commentId: M:SIPSorcery.SIP.SIPTransport.SendResponse(SIPSorcery.SIP.SIPResponse)
-  fullName: SIPSorcery.SIP.SIPTransport.SendResponse(SIPSorcery.SIP.SIPResponse)
-  nameWithType: SIPTransport.SendResponse(SIPResponse)
-- uid: SIPSorcery.SIP.SIPTransport.SendResponse*
-  name: SendResponse
-  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendResponse_
-  commentId: Overload:SIPSorcery.SIP.SIPTransport.SendResponse
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPTransport.SendResponse
-  nameWithType: SIPTransport.SendResponse
 - uid: SIPSorcery.SIP.SIPTransport.SendResponseAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPResponse)
   name: SendResponseAsync(SIPEndPoint, SIPResponse)
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendResponseAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPResponse_
@@ -23273,6 +21808,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransport.SendResponseAsync
   nameWithType: SIPTransport.SendResponseAsync
+- uid: SIPSorcery.SIP.SIPTransport.SendTransaction(SIPSorcery.SIP.SIPTransaction)
+  name: SendTransaction(SIPTransaction)
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendTransaction_SIPSorcery_SIP_SIPTransaction_
+  commentId: M:SIPSorcery.SIP.SIPTransport.SendTransaction(SIPSorcery.SIP.SIPTransaction)
+  fullName: SIPSorcery.SIP.SIPTransport.SendTransaction(SIPSorcery.SIP.SIPTransaction)
+  nameWithType: SIPTransport.SendTransaction(SIPTransaction)
+- uid: SIPSorcery.SIP.SIPTransport.SendTransaction*
+  name: SendTransaction
+  href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_SendTransaction_
+  commentId: Overload:SIPSorcery.SIP.SIPTransport.SendTransaction
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransport.SendTransaction
+  nameWithType: SIPTransport.SendTransaction
 - uid: SIPSorcery.SIP.SIPTransport.Shutdown
   name: Shutdown()
   href: api/SIPSorcery.SIP.SIPTransport.html#SIPSorcery_SIP_SIPTransport_Shutdown
@@ -23371,18 +21919,30 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransportConfig.ParseSIPChannelsNode
   nameWithType: SIPTransportConfig.ParseSIPChannelsNode
-- uid: SIPSorcery.SIP.SIPTransportRequestDelegate
-  name: SIPTransportRequestDelegate
-  href: api/SIPSorcery.SIP.SIPTransportRequestDelegate.html
-  commentId: T:SIPSorcery.SIP.SIPTransportRequestDelegate
-  fullName: SIPSorcery.SIP.SIPTransportRequestDelegate
-  nameWithType: SIPTransportRequestDelegate
-- uid: SIPSorcery.SIP.SIPTransportResponseDelegate
-  name: SIPTransportResponseDelegate
-  href: api/SIPSorcery.SIP.SIPTransportResponseDelegate.html
-  commentId: T:SIPSorcery.SIP.SIPTransportResponseDelegate
-  fullName: SIPSorcery.SIP.SIPTransportResponseDelegate
-  nameWithType: SIPTransportResponseDelegate
+- uid: SIPSorcery.SIP.SIPTransportRequestAsyncDelegate
+  name: SIPTransportRequestAsyncDelegate
+  href: api/SIPSorcery.SIP.SIPTransportRequestAsyncDelegate.html
+  commentId: T:SIPSorcery.SIP.SIPTransportRequestAsyncDelegate
+  fullName: SIPSorcery.SIP.SIPTransportRequestAsyncDelegate
+  nameWithType: SIPTransportRequestAsyncDelegate
+- uid: SIPSorcery.SIP.SIPTransportRequestTraceDelegate
+  name: SIPTransportRequestTraceDelegate
+  href: api/SIPSorcery.SIP.SIPTransportRequestTraceDelegate.html
+  commentId: T:SIPSorcery.SIP.SIPTransportRequestTraceDelegate
+  fullName: SIPSorcery.SIP.SIPTransportRequestTraceDelegate
+  nameWithType: SIPTransportRequestTraceDelegate
+- uid: SIPSorcery.SIP.SIPTransportResponseAsyncDelegate
+  name: SIPTransportResponseAsyncDelegate
+  href: api/SIPSorcery.SIP.SIPTransportResponseAsyncDelegate.html
+  commentId: T:SIPSorcery.SIP.SIPTransportResponseAsyncDelegate
+  fullName: SIPSorcery.SIP.SIPTransportResponseAsyncDelegate
+  nameWithType: SIPTransportResponseAsyncDelegate
+- uid: SIPSorcery.SIP.SIPTransportResponseTraceDelegate
+  name: SIPTransportResponseTraceDelegate
+  href: api/SIPSorcery.SIP.SIPTransportResponseTraceDelegate.html
+  commentId: T:SIPSorcery.SIP.SIPTransportResponseTraceDelegate
+  fullName: SIPSorcery.SIP.SIPTransportResponseTraceDelegate
+  nameWithType: SIPTransportResponseTraceDelegate
 - uid: SIPSorcery.SIP.SIPTransportSIPBadMessageDelegate
   name: SIPTransportSIPBadMessageDelegate
   href: api/SIPSorcery.SIP.SIPTransportSIPBadMessageDelegate.html
@@ -23491,22 +22051,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPUDPChannel.IsProtocolSupported
   nameWithType: SIPUDPChannel.IsProtocolSupported
-- uid: SIPSorcery.SIP.SIPUDPChannel.Send(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name: Send(SIPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_Send_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.Send(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name.vb: Send(SIPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPUDPChannel.Send(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPUDPChannel.Send(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String)
-  nameWithType: SIPUDPChannel.Send(SIPEndPoint, Byte[], String)
-  nameWithType.vb: SIPUDPChannel.Send(SIPEndPoint, Byte(), String)
-- uid: SIPSorcery.SIP.SIPUDPChannel.Send*
-  name: Send
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_Send_
-  commentId: Overload:SIPSorcery.SIP.SIPUDPChannel.Send
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPUDPChannel.Send
-  nameWithType: SIPUDPChannel.Send
 - uid: SIPSorcery.SIP.SIPUDPChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
   name: SendAsync(SIPEndPoint, Byte[], String)
   href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
@@ -24609,22 +23153,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPWebSocketChannel.IsProtocolSupported
   nameWithType: SIPWebSocketChannel.IsProtocolSupported
-- uid: SIPSorcery.SIP.SIPWebSocketChannel.Send(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name: Send(SIPEndPoint, Byte[], String)
-  href: api/SIPSorcery.SIP.SIPWebSocketChannel.html#SIPSorcery_SIP_SIPWebSocketChannel_Send_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
-  commentId: M:SIPSorcery.SIP.SIPWebSocketChannel.Send(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
-  name.vb: Send(SIPEndPoint, Byte(), String)
-  fullName: SIPSorcery.SIP.SIPWebSocketChannel.Send(SIPSorcery.SIP.SIPEndPoint, System.Byte[], System.String)
-  fullName.vb: SIPSorcery.SIP.SIPWebSocketChannel.Send(SIPSorcery.SIP.SIPEndPoint, System.Byte(), System.String)
-  nameWithType: SIPWebSocketChannel.Send(SIPEndPoint, Byte[], String)
-  nameWithType.vb: SIPWebSocketChannel.Send(SIPEndPoint, Byte(), String)
-- uid: SIPSorcery.SIP.SIPWebSocketChannel.Send*
-  name: Send
-  href: api/SIPSorcery.SIP.SIPWebSocketChannel.html#SIPSorcery_SIP_SIPWebSocketChannel_Send_
-  commentId: Overload:SIPSorcery.SIP.SIPWebSocketChannel.Send
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPWebSocketChannel.Send
-  nameWithType: SIPWebSocketChannel.Send
 - uid: SIPSorcery.SIP.SIPWebSocketChannel.SendAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String)
   name: SendAsync(SIPEndPoint, Byte[], String)
   href: api/SIPSorcery.SIP.SIPWebSocketChannel.html#SIPSorcery_SIP_SIPWebSocketChannel_SendAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_
@@ -24688,25 +23216,25 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.UACInviteTransaction.CancelCall
   nameWithType: UACInviteTransaction.CancelCall
-- uid: SIPSorcery.SIP.UACInviteTransaction.Send2xxAckRequest(System.String,System.String)
-  name: Send2xxAckRequest(String, String)
-  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_Send2xxAckRequest_System_String_System_String_
-  commentId: M:SIPSorcery.SIP.UACInviteTransaction.Send2xxAckRequest(System.String,System.String)
-  fullName: SIPSorcery.SIP.UACInviteTransaction.Send2xxAckRequest(System.String, System.String)
-  nameWithType: UACInviteTransaction.Send2xxAckRequest(String, String)
-- uid: SIPSorcery.SIP.UACInviteTransaction.Send2xxAckRequest*
-  name: Send2xxAckRequest
-  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_Send2xxAckRequest_
-  commentId: Overload:SIPSorcery.SIP.UACInviteTransaction.Send2xxAckRequest
+- uid: SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest(SIPSorcery.SIP.SIPResponse)
+  name: GetPRackRequest(SIPResponse)
+  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_GetPRackRequest_SIPSorcery_SIP_SIPResponse_
+  commentId: M:SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest(SIPSorcery.SIP.SIPResponse)
+  fullName: SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest(SIPSorcery.SIP.SIPResponse)
+  nameWithType: UACInviteTransaction.GetPRackRequest(SIPResponse)
+- uid: SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest*
+  name: GetPRackRequest
+  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_GetPRackRequest_
+  commentId: Overload:SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest
   isSpec: "True"
-  fullName: SIPSorcery.SIP.UACInviteTransaction.Send2xxAckRequest
-  nameWithType: UACInviteTransaction.Send2xxAckRequest
-- uid: SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest(SIPSorcery.SIP.SIPRequest)
-  name: SendInviteRequest(SIPRequest)
-  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_SendInviteRequest_SIPSorcery_SIP_SIPRequest_
-  commentId: M:SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest(SIPSorcery.SIP.SIPRequest)
-  fullName: SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest(SIPSorcery.SIP.SIPRequest)
-  nameWithType: UACInviteTransaction.SendInviteRequest(SIPRequest)
+  fullName: SIPSorcery.SIP.UACInviteTransaction.GetPRackRequest
+  nameWithType: UACInviteTransaction.GetPRackRequest
+- uid: SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest
+  name: SendInviteRequest()
+  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_SendInviteRequest
+  commentId: M:SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest
+  fullName: SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest()
+  nameWithType: UACInviteTransaction.SendInviteRequest()
 - uid: SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest*
   name: SendInviteRequest
   href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_SendInviteRequest_
@@ -24714,19 +23242,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.UACInviteTransaction.SendInviteRequest
   nameWithType: UACInviteTransaction.SendInviteRequest
-- uid: SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest(SIPSorcery.SIP.SIPResponse)
-  name: SendPRackRequest(SIPResponse)
-  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_SendPRackRequest_SIPSorcery_SIP_SIPResponse_
-  commentId: M:SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest(SIPSorcery.SIP.SIPResponse)
-  fullName: SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest(SIPSorcery.SIP.SIPResponse)
-  nameWithType: UACInviteTransaction.SendPRackRequest(SIPResponse)
-- uid: SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest*
-  name: SendPRackRequest
-  href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_SendPRackRequest_
-  commentId: Overload:SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.UACInviteTransaction.SendPRackRequest
-  nameWithType: UACInviteTransaction.SendPRackRequest
 - uid: SIPSorcery.SIP.UACInviteTransaction.UACInviteTransactionFinalResponseReceived
   name: UACInviteTransactionFinalResponseReceived
   href: api/SIPSorcery.SIP.UACInviteTransaction.html#SIPSorcery_SIP_UACInviteTransaction_UACInviteTransactionFinalResponseReceived
