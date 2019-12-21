@@ -13,6 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -125,7 +126,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         }
 
         [Fact]
-        public async void ResolveSIPServiceAsyncTest()
+        public async Task ResolveSIPServiceAsyncTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);

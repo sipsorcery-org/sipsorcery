@@ -132,12 +132,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override void SendProvisionalResponse(SIPResponse sipResponse)
+        public new void SendProvisionalResponse(SIPResponse sipResponse)
         {
             try
             {
-                base.SendProvisionalResponse(sipResponse);
                 CDR?.Progress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
+                base.SendProvisionalResponse(sipResponse);
             }
             catch (Exception excp)
             {
@@ -146,12 +146,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override void SendFinalResponse(SIPResponse sipResponse)
+        public new void SendFinalResponse(SIPResponse sipResponse)
         {
             try
             {
-                base.SendFinalResponse(sipResponse);
                 CDR?.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase, null, null);
+                base.SendFinalResponse(sipResponse);
             }
             catch (Exception excp)
             {
@@ -160,18 +160,22 @@ namespace SIPSorcery.SIP
             }
         }
 
+        /// <summary>
+        /// Cancels this transaction stopping any further processing or transmission of a preivously
+        /// generated final response.
+        /// </summary>
+        /// <returns>A socket error with the result of the cancel.</returns>
         public void CancelCall()
         {
             try
             {
                 if (TransactionState == SIPTransactionStatesEnum.Calling || TransactionState == SIPTransactionStatesEnum.Trying || TransactionState == SIPTransactionStatesEnum.Proceeding)
                 {
-                    base.Cancel();
+                    base.UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
+                    UASInviteTransactionCancelled?.Invoke(this);
 
                     SIPResponse cancelResponse = SIPResponse.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
-                    SendFinalResponse(cancelResponse);
-
-                    UASInviteTransactionCancelled?.Invoke(this);
+                    base.SendFinalResponse(cancelResponse);
                 }
                 else
                 {

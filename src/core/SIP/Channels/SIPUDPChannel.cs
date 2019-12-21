@@ -137,11 +137,6 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override async void Send(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
-        {
-            await SendAsync(dstEndPoint, buffer, connectionIDHint);
-        }
-
         public override Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
             if (dstEndPoint == null)
@@ -193,14 +188,6 @@ namespace SIPSorcery.SIP
                 logger.LogError($"Exception SIPUDPChannel EndSendTo. {excp.Message}");
             }
         }
-
-        /// <summary>
-        /// This method is not implemented for the SIP UDP channel.
-        /// </summary>
-        //public override void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
-        //{
-        //    throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
-        //}
 
         /// <summary>
         /// This method is not implemented for the SIP UDP channel.

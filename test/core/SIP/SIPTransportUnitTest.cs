@@ -443,12 +443,16 @@ namespace SIPSorcery.SIP.UnitTests
                         logger.LogWarning($"TcpTrickleReceiveTest: FAILED to set result on CompletionSource.");
                     }
                 }
+
+                return Task.FromResult(0);
             };
 
             transport.SIPTransportResponseReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse) =>
             {
                 logger.LogDebug($"Response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
                 logger.LogDebug(sipResponse.ToString());
+
+                return Task.FromResult(0);
             };
 
             if(!tcpChannel.ConnectClientAsync(actualEP, null, null).Wait(TimeSpan.FromMilliseconds(TRANSPORT_TEST_TIMEOUT)))
@@ -500,8 +504,10 @@ namespace SIPSorcery.SIP.UnitTests
                     {
                         SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         logger.LogDebug(optionsResponse.ToString());
-                        serverSIPTransport.SendResponse(optionsResponse);
+                        return serverSIPTransport.SendResponseAsync(optionsResponse);
                     }
+
+                    return Task.FromResult(0);
                 };
 
                 serverSIPTransport.SIPRequestInTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -562,6 +568,8 @@ namespace SIPSorcery.SIP.UnitTests
                             logger.LogWarning($"RunClient on test channel {testClientChannel.ListeningSIPEndPoint} FAILED to set result on CompletionSource.");
                         }
                     }
+
+                    return Task.FromResult(0);
                 };
 
                 clientSIPTransport.SIPRequestOutTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -581,7 +589,7 @@ namespace SIPSorcery.SIP.UnitTests
                 logger.LogDebug($"RunClient waiting for server to get ready on {serverUri.CanonicalAddress}.");
                 serverReadyEvent.Wait(cts.Token);
 
-                clientSIPTransport.SendRequest(optionsRequest);
+                await clientSIPTransport.SendRequestAsync(optionsRequest);
 
                 await tcs.Task;
             }
