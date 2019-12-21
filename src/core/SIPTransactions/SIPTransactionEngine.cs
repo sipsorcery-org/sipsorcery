@@ -353,6 +353,9 @@ namespace SIPSorcery.SIP
 
                                             switch (transaction.TransactionState)
                                             {
+                                                case SIPTransactionStatesEnum.Calling:
+                                                    break;
+
                                                 case SIPTransactionStatesEnum.Trying:
                                                     break;
 
@@ -376,9 +379,9 @@ namespace SIPSorcery.SIP
                                                     break;
 
                                                 default:
-                                                    //if (transaction.HasDeliveryExpired(m_t6)) { transaction.Expire(); }
-                                                    throw new ApplicationException("InviteServer Transaction entered an unexpected state.");
-                                                    //break;
+                                                    logger.LogWarning($"InviteServer Transaction entered an unexpected transaction state {transaction.TransactionState}.");
+                                                    transaction.DeliveryFailed = true;
+                                                    break;
                                             }
                                             break;
 
@@ -418,9 +421,9 @@ namespace SIPSorcery.SIP
                                                     break;
 
                                                 default:
-                                                    //if (transaction.HasDeliveryExpired(m_t6)) { transaction.Expire(); }
-                                                    throw new ApplicationException("InviteClient Transaction entered an unexpected state.");
-                                                    //break;
+                                                    logger.LogWarning($"InviteClient Transaction entered an unexpected transaction state {transaction.TransactionState}.");
+                                                    transaction.DeliveryFailed = true;
+                                                    break;
                                             }
 
                                             break;
@@ -454,9 +457,9 @@ namespace SIPSorcery.SIP
                                                     break;
 
                                                 default:
-                                                    //if (transaction.HasDeliveryExpired(m_t6)) { transaction.Expire(); }
-                                                    throw new ApplicationException("NonInvite Transaction entered an unexpected state.");
-                                                    //break;
+                                                    logger.LogWarning($"NonInvite Transaction entered an unexpected transaction state {transaction.TransactionState}.");
+                                                    transaction.DeliveryFailed = true;
+                                                    break;
                                             }
                                             break;
 
