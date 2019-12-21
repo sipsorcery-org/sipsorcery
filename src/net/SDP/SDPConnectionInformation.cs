@@ -13,22 +13,40 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Net;
+using System.Net.Sockets;
+
 namespace SIPSorcery.Net
 {
     public class SDPConnectionInformation
     {
+        public const string CONNECTION_ADDRESS_TYPE_IPV4 = "IP4";
+        public const string CONNECTION_ADDRESS_TYPE_IPV6 = "IP6";
+
         public const string m_CRLF = "\r\n";
 
-        public string ConnectionNetworkType = "IN";     // Type of network, IN = Internet.
-        public string ConnectionAddressType = "IP4";    // Address type, typically IP4 or IP6.
-        public string ConnectionAddress;                // IP or mulitcast address for the media connection.
+        /// <summary>
+        /// Type of network, IN = Internet.
+        /// </summary>
+        public string ConnectionNetworkType = "IN";
+        
+        /// <summary>
+        /// Sesssion level address family.
+        /// </summary>
+        public string ConnectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
+
+        /// <summary>
+        /// IP or mulicast address for the media connection.
+        /// </summary>
+        public string ConnectionAddress;
 
         private SDPConnectionInformation()
         { }
 
-        public SDPConnectionInformation(string connectionAddress)
+        public SDPConnectionInformation(IPAddress connectionAddress)
         {
-            ConnectionAddress = connectionAddress;
+            ConnectionAddress = connectionAddress.ToString();
+            ConnectionAddressType = (connectionAddress.AddressFamily == AddressFamily.InterNetworkV6) ? CONNECTION_ADDRESS_TYPE_IPV6 : CONNECTION_ADDRESS_TYPE_IPV4;
         }
 
         public static SDPConnectionInformation ParseConnectionInformation(string connectionLine)
