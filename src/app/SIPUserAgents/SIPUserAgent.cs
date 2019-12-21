@@ -452,8 +452,7 @@ namespace SIPSorcery.SIP.App
                 };
 
                 referTx.NonInviteTransactionFinalResponseReceived += referTxStatusHandler;
-
-                referTx.SendReliableRequest();
+                referTx.SendRequest();
 
                 await Task.WhenAny(new Task[] { transferAccepted.Task, Task.Delay((int)timeout.TotalMilliseconds) });
 
@@ -641,7 +640,7 @@ namespace SIPSorcery.SIP.App
                 }
 
                 UACInviteTransaction reinviteTransaction = new UACInviteTransaction(m_transport, reinviteRequest, m_outboundProxy);
-                reinviteTransaction.SendReliableRequest();
+                reinviteTransaction.SendInviteRequest();
                 
                 reinviteTransaction.UACInviteTransactionFinalResponseReceived += ReinviteRequestFinalResponseReceived;
             }
@@ -653,7 +652,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="localSIPEndPoint">The local end point the request was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the request came from.</param>
         /// <param name="sipRequest">The SIP request.</param>
-        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private async Task SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             if (Dialogue != null)
             {

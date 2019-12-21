@@ -58,8 +58,8 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
-            SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
+            SIPTransport sipTransport = new SIPTransport();
+            SIPTransactionEngine transactionEngine = sipTransport.m_transactionEngine;
 
             SIPRequest inviteRequest = SIPRequest.ParseSIPRequest("INVITE sip:dummy@127.0.0.1:12014 SIP/2.0" + m_CRLF +
                 "Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27" + m_CRLF +
@@ -75,8 +75,8 @@ namespace SIPSorcery.SIP.UnitTests
                 m_CRLF +
                 "dummy");
 
-            SIPTransaction transaction = new UACInviteTransaction(new SIPTransport(SIPSorcery.UnitTests.MockSIPDNSManager.Resolve, transactionEngine), inviteRequest, null);
-            //transactionEngine.AddTransaction(transaction);
+            SIPTransaction tx = new UACInviteTransaction(sipTransport, inviteRequest, null);
+            transactionEngine.AddTransaction(tx);
 
             SIPResponse sipResponse = SIPResponse.ParseSIPResponse("SIP/2.0 603 Nothing listening" + m_CRLF +
                 "Via: SIP/2.0/UDP 127.0.0.1:1234;branch=z9hG4bK5f37455955ca433a902f8fea0ce2dc27;rport=12013" + m_CRLF +
@@ -107,13 +107,17 @@ namespace SIPSorcery.SIP.UnitTests
             {
                 TaskCompletionSource<bool> uasConfirmedTask = new TaskCompletionSource<bool>();
 
-                SIPTransactionEngine clientEngine = new SIPTransactionEngine();     // Client side of the INVITE.
-                clientTransport = new SIPTransport(SIPSorcery.UnitTests.MockSIPDNSManager.Resolve, clientEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)), false);
+                // Client side of the call.
+                clientTransport = new SIPTransport(false, SIPSorcery.UnitTests.MockSIPDNSManager.Resolve);
+                clientTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)));
+                var clientEngine = clientTransport.m_transactionEngine;
                 SetTransportTraceEvents(clientTransport);
 
-                SIPTransactionEngine serverEngine = new SIPTransactionEngine();     // Server side of the INVITE.
+                // Server side of the call.
                 UASInviteTransaction serverTransaction = null;
-                serverTransport = new SIPTransport(SIPSorcery.UnitTests.MockSIPDNSManager.Resolve, serverEngine, new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)), false);
+                serverTransport = new SIPTransport(false, SIPSorcery.UnitTests.MockSIPDNSManager.Resolve);
+                serverTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)));
+                SIPTransactionEngine serverEngine = serverTransport.m_transactionEngine;     
                 SetTransportTraceEvents(serverTransport);
                 serverTransport.SIPTransportRequestReceived += (localEndPoint, remoteEndPoint, sipRequest) =>
                 {
@@ -124,7 +128,7 @@ namespace SIPSorcery.SIP.UnitTests
                     {
                         logger.LogDebug("Server new call received.");
                         var busyResponse = SIPResponse.GetResponse(newCallRequest, SIPResponseStatusCodesEnum.BusyHere, null);
-                        sipTransaction.SendFinalResponse(busyResponse);
+                        (sipTransaction as UASInviteTransaction).SendFinalResponse(busyResponse);
                     };
                     serverTransaction.TransactionStateChanged += (tx) =>
                     {
@@ -137,6 +141,8 @@ namespace SIPSorcery.SIP.UnitTests
                         }
                     };
                     serverTransaction.GotRequest(localEndPoint, remoteEndPoint, sipRequest);
+
+                    return Task.FromResult(0);
                 };
 
                 SIPURI dummyURI = new SIPURI("dummy", serverTransport.GetSIPChannels().First().ListeningEndPoint.ToString(), null, SIPSchemesEnum.sip);
@@ -146,9 +152,9 @@ namespace SIPSorcery.SIP.UnitTests
                 UACInviteTransaction clientTransaction = new UACInviteTransaction(clientTransport, inviteRequest, null);
                 SetTransactionTraceEvents(clientTransaction);
                 clientEngine.AddTransaction(clientTransaction);
-                clientTransaction.SendInviteRequest(inviteRequest);
+                clientTransaction.SendInviteRequest();
 
-                if(!uasConfirmedTask.Task.Wait(TRANSACTION_EXCHANGE_TIMEOUT_MS))
+                if (!uasConfirmedTask.Task.Wait(TRANSACTION_EXCHANGE_TIMEOUT_MS))
                 {
                     logger.LogWarning($"Tasks timed out");
                 }
@@ -169,7 +175,8 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            SIPTransactionEngine engine = new SIPTransactionEngine();     // Client side of the INVITE.
+            SIPTransport sipTransport = new SIPTransport(false, SIPSorcery.UnitTests.MockSIPDNSManager.Resolve);
+            SIPTransactionEngine engine = sipTransport.m_transactionEngine;     // Client side of the INVITE.
 
             string inviteRequestStr =
                 "INVITE sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +
@@ -188,8 +195,8 @@ namespace SIPSorcery.SIP.UnitTests
 
             // Server has received the invite.
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
-            UASInviteTransaction serverTransaction = new UASInviteTransaction(new SIPTransport(SIPSorcery.UnitTests.MockSIPDNSManager.Resolve, engine), inviteRequest, null, true);
-            //engine.AddTransaction(serverTransaction);
+            UASInviteTransaction serverTransaction = new UASInviteTransaction(sipTransport, inviteRequest, null, true);
+            engine.AddTransaction(serverTransaction);
 
             string ackRequestStr =
                 "ACK sip:303@sip.blueface.ie SIP/2.0" + m_CRLF +

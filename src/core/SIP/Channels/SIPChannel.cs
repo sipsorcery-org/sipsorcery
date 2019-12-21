@@ -154,7 +154,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// The function delegate that will be called whenever a new SIP message is received on the SIP channel.
         /// </summary>
-        public SIPMessageReceivedDelegate SIPMessageReceived;
+        public SIPMessageReceivedAsyncDelegate SIPMessageReceived;
 
         static SIPChannel()
         {
@@ -205,16 +205,6 @@ namespace SIPSorcery.SIP
 
             return false;
         }
-
-        /// <summary>
-        /// Synchronous wrapper for <see cref="SendAsync"/>
-        /// </summary>
-        public abstract void Send(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint = null);
-
-        /// <summary>
-        /// Synchronous wrapper for <see cref="SendSecureAsync"/>
-        /// </summary>
-        //public abstract void SendSecure(IPEndPoint destinationEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint = null);
 
         /// <summary>
         /// Asynchronous SIP message send to a remote end point.
