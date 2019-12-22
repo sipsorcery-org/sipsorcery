@@ -207,10 +207,10 @@ namespace SIPSorcery.SIP.App
 
             if (serverEndPoint != null)
             {
-                MediaSession = m_mediaSessionFactory.Create();
+                MediaSession = m_mediaSessionFactory.Create(serverEndPoint.Address);
                 MediaSession.DtmfCompleted += OnMediaDtmfCompleted;
 
-                var sdp = MediaSession.CreateOffer(serverEndPoint.GetIPEndPoint().Address);
+                var sdp = MediaSession.CreateOffer(serverEndPoint.Address);
                 sipCallDescriptor.Content = sdp;
 
                 m_uac.Call(sipCallDescriptor);
@@ -293,13 +293,13 @@ namespace SIPSorcery.SIP.App
 
             var sipRequest = uas.ClientTransaction.TransactionRequest;
 
-            MediaSession = m_mediaSessionFactory.Create();
+            MediaSession = m_mediaSessionFactory.Create(sipRequest.Body);
             MediaSession.DtmfCompleted += OnMediaDtmfCompleted;
 
             // TODO: Deal with multiple media offers.
 
             var sdpAnswer = MediaSession.AnswerOffer(sipRequest.Body);
-          
+
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default);
             Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
@@ -410,7 +410,7 @@ namespace SIPSorcery.SIP.App
                 referTx.NonInviteTransactionFinalResponseReceived += referTxStatusHandler;
                 referTx.SendRequest();
 
-                await Task.WhenAny(transferAccepted.Task, Task.Delay((int)timeout.TotalMilliseconds, ct));
+                await Task.WhenAny(transferAccepted.Task, Task.Delay((int)timeout.TotalMilliseconds, ct)).ConfigureAwait(false);
 
                 referTx.NonInviteTransactionFinalResponseReceived -= referTxStatusHandler;
 
