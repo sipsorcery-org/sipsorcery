@@ -13,6 +13,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using SIPSorcery.UnitTests;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -101,7 +102,7 @@ CRLF + CRLF +
             dummySocket.Bind(new IPEndPoint(IPAddress.Any, 0));
             SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
-            testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; };
+            testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; return Task.FromResult(0); };
 
             MockSIPChannel mockChannel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));
             testConnection.ExtractSIPMessages(mockChannel, testReceiveBytes, testReceiveBytes.Length);
@@ -152,7 +153,7 @@ CRLF +
             dummySocket.Bind(new IPEndPoint(IPAddress.Any, 0));
             SIPStreamConnection testConnection = new SIPStreamConnection(dummySocket, new IPEndPoint(IPAddress.Loopback, 0), SIPProtocolsEnum.tcp);
             int sipMessages = 0;
-            testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; };
+            testConnection.SIPMessageReceived += (chan, localEp, ep, buffer) => { sipMessages++; return Task.FromResult(0); };
             Array.Copy(testReceiveBytes, 0, testConnection.RecvSocketArgs.Buffer, 0, testReceiveBytes.Length);
 
             MockSIPChannel mockChannel = new MockSIPChannel(new IPEndPoint(IPAddress.Any, 0));

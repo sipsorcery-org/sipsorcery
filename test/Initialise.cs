@@ -53,11 +53,6 @@ namespace SIPSorcery.UnitTests
             ID = Crypto.GetRandomInt(5).ToString();
         }
 
-        public override void Send(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
-        {
-            throw new NotImplementedException();
-        }
-
         public override Task<SocketError> SendAsync(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
         {
             throw new NotImplementedException();

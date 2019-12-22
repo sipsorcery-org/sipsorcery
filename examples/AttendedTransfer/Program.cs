@@ -2,7 +2,7 @@
 // Filename: Program.cs
 //
 // Description: An example program of how to use the SIPSorcery core library to 
-// place or receive two calls and then brdige them together to accomplish an
+// place or receive two calls and then bridge them together to accomplish an
 // attended transfer.
 //
 // Author(s):
@@ -171,8 +171,10 @@ namespace SIPSorcery
                 {
                     Log.LogDebug($"SIP {sipRequest.Method} request received but no processing has been set up for it, rejecting.");
                     SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    sipTransport.SendResponse(notAllowedResponse);
+                    return sipTransport.SendResponseAsync(notAllowedResponse);
                 }
+
+                return Task.FromResult(0);
             };
 
             // Wire up the RTP send session to the audio input device.

@@ -9,9 +9,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Net;
-using SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -74,8 +72,8 @@ namespace SIPSorcery.SIP.UnitTests
                 "a=rtpmap:101 telepho";
 
             SIPRequest request = SIPRequest.ParseSIPRequest(sipRequestStr);
-            SIPTransactionEngine transactionEngine = new SIPTransactionEngine();
-            SIPTransport sipTransport = new SIPTransport(SIPSorcery.UnitTests.MockSIPDNSManager.Resolve, transactionEngine);
+            SIPTransport sipTransport = new SIPTransport(false, SIPSorcery.UnitTests.MockSIPDNSManager.Resolve);
+            SIPTransactionEngine transactionEngine = sipTransport.m_transactionEngine;
             SIPEndPoint dummySIPEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 1234));
             SIPTransaction transaction = new UACInviteTransaction(sipTransport, request, null);
 

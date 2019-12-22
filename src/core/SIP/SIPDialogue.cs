@@ -329,7 +329,7 @@ namespace SIPSorcery.SIP
 
                 SIPRequest byeRequest = GetInDialogRequest(SIPMethodsEnum.BYE);
                 SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(sipTransport, byeRequest, byeOutboundProxy);
-                byeTransaction.SendReliableRequest();
+                byeTransaction.SendRequest();
             }
             catch (Exception excp)
             {

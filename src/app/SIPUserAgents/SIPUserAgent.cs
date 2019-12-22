@@ -211,7 +211,7 @@ namespace SIPSorcery.SIP.App
                 MediaSession.DtmfCompleted += OnMediaDtmfCompleted;
 
                 var sdp = MediaSession.CreateOffer(serverEndPoint.GetIPEndPoint().Address);
-                sipCallDescriptor.Content = sdp.ToString();
+                sipCallDescriptor.Content = sdp;
 
                 m_uac.Call(sipCallDescriptor);
             }
@@ -299,7 +299,7 @@ namespace SIPSorcery.SIP.App
             // TODO: Deal with multiple media offers.
 
             var sdpAnswer = MediaSession.AnswerOffer(sipRequest.Body);
-
+          
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default);
             Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
@@ -408,8 +408,7 @@ namespace SIPSorcery.SIP.App
                 };
 
                 referTx.NonInviteTransactionFinalResponseReceived += referTxStatusHandler;
-
-                referTx.SendReliableRequest();
+                referTx.SendRequest();
 
                 await Task.WhenAny(transferAccepted.Task, Task.Delay((int)timeout.TotalMilliseconds, ct));
 
@@ -566,8 +565,7 @@ namespace SIPSorcery.SIP.App
                 }
 
                 UACInviteTransaction reinviteTransaction = new UACInviteTransaction(m_transport, reinviteRequest, m_outboundProxy);
-                reinviteTransaction.SendReliableRequest();
-
+                reinviteTransaction.SendInviteRequest();
                 reinviteTransaction.UACInviteTransactionFinalResponseReceived += ReinviteRequestFinalResponseReceived;
             }
         }
@@ -578,7 +576,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="localSIPEndPoint">The local end point the request was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the request came from.</param>
         /// <param name="sipRequest">The SIP request.</param>
-        private async void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private async Task SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             if (Dialogue != null)
             {

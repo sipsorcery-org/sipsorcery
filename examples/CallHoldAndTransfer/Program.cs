@@ -108,7 +108,7 @@ namespace SIPSorcery
                     : "Remote call party took us off hold.");
             };
 
-            sipTransport.SIPTransportRequestReceived += (locelEndPoint, remoteEndPoint, sipRequest) =>
+            sipTransport.SIPTransportRequestReceived += async (locelEndPoint, remoteEndPoint, sipRequest) =>
             {
                 if (sipRequest.Header.From != null &&
                     sipRequest.Header.From.FromTag != null &&
@@ -143,7 +143,7 @@ namespace SIPSorcery
                 {
                     Log.LogDebug($"SIP {sipRequest.Method} request received but no processing has been set up for it, rejecting.");
                     SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    sipTransport.SendResponse(notAllowedResponse);
+                    await sipTransport.SendResponseAsync(notAllowedResponse);
                 }
             };
 
