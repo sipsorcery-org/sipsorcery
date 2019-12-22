@@ -1,6 +1,8 @@
 //-----------------------------------------------------------------------------
 // Filename: RTCPSenderReport.cs
 //
+// Description:
+//
 //        RTCP Snder Report Payload
 //        0                   1                   2                   3
 //        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -19,10 +21,10 @@
 //        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 12 Aug 2019  Aaron Clauson   Created (aaron@sipsorcery.com), Montreux, Switzerland (www.sipsorcery.com).
+// 12 Aug 2019  Aaron Clauson   Created, Montreux, Switzerland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

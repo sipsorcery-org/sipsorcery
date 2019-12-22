@@ -710,29 +710,5 @@ namespace SIPSorcery.Net
 
             return rtpJpegHeader;
         }
-
-        #region Obsolete methods.
-
-        /// <summary>
-        /// Processes received RTP packets.
-        /// </summary>
-        /// <param name="buffer">The raw data received on the RTP socket.</param>
-        /// <param name="offset">Offset in the buffer that the received data starts from.</param>
-        /// <param name="count">The number of bytes received.</param>
-        /// <param name="remoteEndPoint">The remote end point the receive was from.</param>
-        /// <returns>An RTP packet.</returns>
-        [Obsolete("Use alternative receive method", true)]
-        public RTPPacket RtpReceive(byte[] buffer, int offset, int count, IPEndPoint remoteEndPoint)
-        {
-            if (m_lastReceiveFromEndPoint == null || !m_lastReceiveFromEndPoint.Equals(remoteEndPoint))
-            {
-                OnReceiveFromEndPointChanged?.Invoke(m_lastReceiveFromEndPoint, remoteEndPoint);
-                m_lastReceiveFromEndPoint = remoteEndPoint;
-            }
-
-            return new RTPPacket(buffer.Skip(offset).Take(count).ToArray());
-        }
-
-        #endregion
     }
 }

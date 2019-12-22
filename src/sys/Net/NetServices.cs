@@ -81,7 +81,6 @@ namespace SIPSorcery.Sys
                 {
                     controlPort = rtpPort + 1;
                 }
-                //}
 
                 if (rtpPort != 0)
                 {
