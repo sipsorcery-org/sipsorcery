@@ -66,15 +66,15 @@ namespace SIPSorcery
             var sipTransport = new SIPTransport();
             EnableTraceLogs(sipTransport);
 
-            // Get the IP address the RTP will be sent from. While we can listen on IPAddress.Any
-            // we can't put 0.0.0.0 in the SDP or the callee will ignore us.
+            // Get the IP address the RTP will be sent from. While we can listen on IPAddress.Any | IPv6Any
+            // we can't put 0.0.0.0 or [::0] in the SDP or the callee will ignore us.
             var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
             Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
             var dstAddress = lookupResult.GetSIPEndPoint().Address;
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(dstAddress);
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, true);
+            var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, true, localIPAddress.AddressFamily);
             var offerSDP = rtpSession.GetSDP(localIPAddress);
 
             // Get the audio input device.

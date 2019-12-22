@@ -154,13 +154,13 @@ namespace SIPSorcery
                         if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.G722)))
                         {
                             Log.LogDebug($"Using G722 RTP media type and audio file {AUDIO_FILE_G722}.");
-                            rtpSession = new RTPSession((int)SDPMediaFormatsEnum.G722, null, null, false);
+                            rtpSession = new RTPSession((int)SDPMediaFormatsEnum.G722, null, null, false, dstRtpEndPoint.AddressFamily);
                             audioFile = AUDIO_FILE_G722;
                         }
                         else if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
                         {
                             Log.LogDebug($"Using PCMU RTP media type and audio file {AUDIO_FILE_PCMU}.");
-                            rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false);
+                            rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false, dstRtpEndPoint.AddressFamily);
                             audioFile = AUDIO_FILE_PCMU;
                         }
 
@@ -406,13 +406,12 @@ namespace SIPSorcery
 
         private static SDP GetSDP(IPEndPoint rtpSocket)
         {
-            var sdp = new SDP()
+            var sdp = new SDP(rtpSocket.Address)
             {
                 SessionId = Crypto.GetRandomInt(5).ToString(),
-                Address = rtpSocket.Address.ToString(),
                 SessionName = "sipsorcery",
                 Timing = "0 0",
-                Connection = new SDPConnectionInformation(rtpSocket.Address.ToString()),
+                Connection = new SDPConnectionInformation(rtpSocket.Address),
             };
 
             var audioAnnouncement = new SDPMediaAnnouncement()
