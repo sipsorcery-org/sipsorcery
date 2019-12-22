@@ -301,7 +301,7 @@ namespace SIPSorcery.SIP.App
             var sdpAnswer = MediaSession.AnswerOffer(sipRequest.Body);
 
             m_uas = uas;
-            m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default);
+            m_uas.Answer(m_sdpContentType, sdpAnswer, null, SIPDialogueTransferModesEnum.Default);
             Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
         }
 
