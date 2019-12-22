@@ -106,29 +106,14 @@ namespace SIPSorcery.SoftPhone
 
             for (int i = 0; i < SIP_CLIENT_COUNT; i++)
             {
-                var mediaSessionFactory = new RTPMediaSessionFactory();
+                var mediaSessionFactory = new RTPMediaSessionFactory(_mediaManager);
                 var sipClient = new SIPClient(_sipTransportManager.SIPTransport, mediaSessionFactory);
 
                 sipClient.CallAnswer += SIPCallAnswered;
                 sipClient.CallEnded += ResetToCallStartState;
                 sipClient.StatusMessage += (client, message) => { SetStatusText(m_signallingStatus, message); };
-
-                mediaSessionFactory.SessionStart += session =>
-                {
-                    new MediaManagerToRTPSessionConnector(_mediaManager, session);
-
-                    session.MediaState.RemoteOnHoldChanged += onHold =>
-                    {
-                        if (onHold)
-                        {
-                            RemotePutOnHold(sipClient);
-                        }
-                        else
-                        {
-                            RemoteTookOffHold(sipClient);
-                        }
-                    };
-                };
+                sipClient.RemotePutOnHold += RemotePutOnHold;
+                sipClient.RemoteTookOffHold += RemoteTookOffHold;
 
                 _sipClients.Add(sipClient);
             }
