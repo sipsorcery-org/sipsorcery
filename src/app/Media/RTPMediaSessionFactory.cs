@@ -20,7 +20,7 @@ namespace SIPSorcery.SIP.App
             return rtpMediaSession;
         }
 
-        public IMediaSession Create(string offerSdp)
+        public virtual IMediaSession Create(string offerSdp)
         {
             var remoteSDP = SDP.ParseSDPDescription(offerSdp);
             var dstRtpEndPoint = remoteSDP.GetSDPRTPEndPoint();
