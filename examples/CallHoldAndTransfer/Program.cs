@@ -63,10 +63,10 @@ namespace SIPSorcery
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
             WaveInEvent waveInEvent = GetAudioInputDevice();
 
-            RTPSession RtpSession = null;
+            RTPMediaSession RtpSession = null;
             var mediaSessionFactory = new RTPMediaSessionFactory();
 
-            mediaSessionFactory.SessionStart += session => { RtpSession = session.Session; };
+            mediaSessionFactory.SessionStart += session => { RtpSession = session; };
             mediaSessionFactory.SessionEnd += session => { RtpSession = null; };
 
             // Create a client/server user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
@@ -159,7 +159,7 @@ namespace SIPSorcery
                     sample[sampleIndex++] = ulawByte;
                 }
 
-                if (RtpSession?.DestinationEndPoint != null)
+                if (RtpSession != null)
                 {
                     RtpSession.SendAudioFrame(rtpSendTimestamp, sample);
                     rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
@@ -320,7 +320,7 @@ namespace SIPSorcery
         /// </summary>
         /// <param name="rtpSession">The active RTP session receiving the remote party's RTP packets.</param>
         /// <param name="audioOutProvider">The audio buffer for the default system audio output device.</param>
-        private static void PlayRemoteMedia(RTPSession rtpSession, BufferedWaveProvider audioOutProvider)
+        private static void PlayRemoteMedia(RTPMediaSession rtpSession, BufferedWaveProvider audioOutProvider)
         {
             rtpSession.OnReceivedSampleReady += (sample) =>
             {

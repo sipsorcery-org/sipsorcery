@@ -28,6 +28,7 @@ namespace SIPSorcery.SIP.App
         {
             Session = rtpSession;
             Session.OnRtpEvent += OnRemoteRtpEvent;
+            Session.OnReceivedSampleReady += OnReceivedSampleReady;
             MediaState = new MediaState();
         }
 
@@ -37,13 +38,22 @@ namespace SIPSorcery.SIP.App
             return Session.SendDtmfEvent(dtmfEvent, cancellationToken);
         }
 
+        /// <summary>
+        /// Gets fired when an RTP DTMF event is completed on the remote call party's RTP stream.
+        /// </summary>
         public event Action<byte> DtmfCompleted;
+
+        /// <summary>
+        /// Gets fired when an RTP packet is received, has been identified and is ready for processing.
+        /// </summary>
+        public event Action<byte[]> OnReceivedSampleReady;
 
         public event Action Closed;
 
         public virtual void Close()
         {
             Session.OnRtpEvent -= OnRemoteRtpEvent;
+            Session.OnReceivedSampleReady -= OnReceivedSampleReady;
             Session.Close();
             Closed?.Invoke();
         }
@@ -157,6 +167,9 @@ namespace SIPSorcery.SIP.App
                 MediaState.RemoteOnHold = false;
             }
         }
+
+        public void SendAudioFrame(uint timestamp, byte[] buffer) =>
+            Session.SendAudioFrame(timestamp, buffer);
 
         private ushort remoteDtmfDuration;
 

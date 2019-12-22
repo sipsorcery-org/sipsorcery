@@ -13,12 +13,12 @@ namespace SIPSorcery.SoftPhone
             _mediaSession = mediaSession;
 
             _mediaManager.OnLocalAudioSampleReady += LocalAudioSampleReady;
-            _mediaSession.Session.OnReceivedSampleReady += RemoteAudioSampleReceived;
+            _mediaSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
 
             mediaSession.Closed += () =>
             {
                 _mediaManager.OnLocalAudioSampleReady -= LocalAudioSampleReady;
-                _mediaSession.Session.OnReceivedSampleReady -= RemoteAudioSampleReceived;
+                _mediaSession.OnReceivedSampleReady -= RemoteAudioSampleReceived;
             };
         }
 
@@ -41,7 +41,7 @@ namespace SIPSorcery.SoftPhone
         /// <param name="sample">The sample from the audio input device.</param>
         private void LocalAudioSampleReady(byte[] sample)
         {
-            _mediaSession.Session.SendAudioFrame(_audioTimestamp, sample);
+            _mediaSession.SendAudioFrame(_audioTimestamp, sample);
             _audioTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
         }
     }

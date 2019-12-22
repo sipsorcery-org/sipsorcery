@@ -60,16 +60,16 @@ namespace SIPSorcery
 
             EnableTraceLogs(sipTransport);
 
-            RTPSession rtpSession1 = null;
+            RTPMediaSession rtpSession1 = null;
             var mediaSessionFactory1 = new RTPMediaSessionFactory();
 
-            mediaSessionFactory1.SessionStart += session => { rtpSession1 = session.Session; };
+            mediaSessionFactory1.SessionStart += session => { rtpSession1 = session; };
             mediaSessionFactory1.SessionEnd += session => { rtpSession1 = null; };
 
-            RTPSession rtpSession2 = null;
+            RTPMediaSession rtpSession2 = null;
             var mediaSessionFactory2 = new RTPMediaSessionFactory();
 
-            mediaSessionFactory2.SessionStart += session => { rtpSession2 = session.Session; };
+            mediaSessionFactory2.SessionStart += session => { rtpSession2 = session; };
             mediaSessionFactory2.SessionEnd += session => { rtpSession2 = null; };
 
 
@@ -80,7 +80,7 @@ namespace SIPSorcery
             // Only one of the user agents can use the microphone and speaker. The one designated
             // as the active agent gets the devices.
             SIPUserAgent activeUserAgent = null;
-            RTPSession activeRtpSession = null;
+            RTPMediaSession activeRtpSession = null;
 
             // Get the default speaker.
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
@@ -189,7 +189,7 @@ namespace SIPSorcery
                     sample[sampleIndex++] = ulawByte;
                 }
 
-                if (activeRtpSession?.DestinationEndPoint != null)
+                if (activeRtpSession != null)
                 {
                     activeRtpSession.SendAudioFrame(rtpSendTimestamp, sample);
                     rtpSendTimestamp += (uint)sample.Length;
