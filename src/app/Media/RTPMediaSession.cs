@@ -21,15 +21,14 @@ namespace SIPSorcery.SIP.App
         private static readonly ILogger logger = Log.Logger;
 
         public RTPSession Session { get; }
-
-        public MediaState MediaState { get; set; }
+        public bool LocalOnHold { get; set; }
+        public bool RemoteOnHold { get; set; }
 
         public RTPMediaSession(RTPSession rtpSession)
         {
             Session = rtpSession;
             Session.OnRtpEvent += OnRemoteRtpEvent;
             Session.OnReceivedSampleReady += OnReceivedSampleReady;
-            MediaState = new MediaState();
         }
 
         /// <summary>
@@ -74,7 +73,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void PutOnHold()
         {
-            MediaState.LocalOnHold = true;
+            LocalOnHold = true;
             SessionMediaChanged?.Invoke(CreateOffer());
         }
 
@@ -83,7 +82,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void TakeOffHold()
         {
-            MediaState.LocalOnHold = false;
+            LocalOnHold = false;
             SessionMediaChanged?.Invoke(CreateOffer());
         }
 
@@ -146,18 +145,18 @@ namespace SIPSorcery.SIP.App
                 return;
             }
 
-            if (MediaState.LocalOnHold && MediaState.RemoteOnHold)
+            if (LocalOnHold && RemoteOnHold)
             {
                 mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.None;
             }
-            else if (!MediaState.LocalOnHold && !MediaState.RemoteOnHold)
+            else if (!LocalOnHold && !RemoteOnHold)
             {
                 mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
             }
             else
             {
                 mediaAnnouncement.MediaStreamStatus =
-                    MediaState.LocalOnHold
+                    LocalOnHold
                         ? MediaStreamStatusEnum.SendOnly
                         : MediaStreamStatusEnum.RecvOnly;
             }
@@ -197,11 +196,19 @@ namespace SIPSorcery.SIP.App
 
             if (mediaStreamStatus == MediaStreamStatusEnum.SendOnly)
             {
-                MediaState.RemoteOnHold = true;
+                if (!RemoteOnHold)
+                {
+                    RemoteOnHold = true;
+                    RemotePutOnHold?.Invoke();
+                }
             }
-            else if (mediaStreamStatus == MediaStreamStatusEnum.SendRecv && MediaState.RemoteOnHold)
+            else if (mediaStreamStatus == MediaStreamStatusEnum.SendRecv && RemoteOnHold)
             {
-                MediaState.RemoteOnHold = false;
+                if (RemoteOnHold)
+                {
+                    RemoteOnHold = false;
+                    RemoteTookOffHold?.Invoke();
+                }
             }
         }
 
