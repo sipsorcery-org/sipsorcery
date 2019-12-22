@@ -9,6 +9,13 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {
+    /// <summary>
+    /// The SipSorcery concrete implementation of IMediaSession.
+    /// Relies on RTPSession and RTPChannel for RTP and network functions.
+    ///
+    /// This implementation sets up the RTP stream but doesn't process the actual audio or video
+    /// and will need another component to do the processing of the media and send/receive it to/from the RTP session.
+    /// </summary>
     public class RTPMediaSession : IMediaSession
     {
         private static readonly ILogger logger = Log.Logger;
