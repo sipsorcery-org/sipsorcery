@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SIPSorcery.SIP.App
 {
