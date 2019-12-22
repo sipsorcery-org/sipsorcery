@@ -2,7 +2,7 @@
 using System.Net;
 using SIPSorcery.Net;
 
-namespace SIPSorcery.SIP.App.Media
+namespace SIPSorcery.SIP.App
 {
     public class RTPMediaSessionFactory : IMediaSessionFactory
     {

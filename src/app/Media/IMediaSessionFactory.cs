@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace SIPSorcery.SIP.App.Media
+namespace SIPSorcery.SIP.App
 {
     public interface IMediaSessionFactory
     {

@@ -21,7 +21,6 @@ using System.Threading.Tasks;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.SIP.App.Media;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone

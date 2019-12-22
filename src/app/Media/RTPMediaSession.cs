@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
-namespace SIPSorcery.SIP.App.Media
+namespace SIPSorcery.SIP.App
 {
     public class RTPMediaSession : IMediaSession
     {

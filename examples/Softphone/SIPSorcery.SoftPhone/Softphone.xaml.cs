@@ -27,7 +27,6 @@ using log4net;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.SIP.App.Media;
 using SIPSorcery.Sys;
 using SIPSorceryMedia;
 

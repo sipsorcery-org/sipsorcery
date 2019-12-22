@@ -23,7 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorcery.SIP.App.Media;
+using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App

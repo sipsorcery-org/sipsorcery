@@ -1,4 +1,4 @@
-﻿using SIPSorcery.SIP.App.Media;
+﻿using SIPSorcery.SIP.App;
 
 namespace SIPSorcery.SoftPhone
 {

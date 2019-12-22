@@ -3,7 +3,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SIPSorcery.SIP.App.Media
+namespace SIPSorcery.SIP.App
 {
     public interface IMediaSession
     {

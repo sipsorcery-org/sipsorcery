@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SIPSorcery.SIP.App.Media
+namespace SIPSorcery.SIP.App
 {
     public class MediaState
     {
