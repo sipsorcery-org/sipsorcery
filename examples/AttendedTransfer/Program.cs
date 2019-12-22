@@ -123,8 +123,7 @@ namespace SIPSorcery
                     else if (!userAgent2.IsCallActive)
                     {
                         Log.LogInformation($"UA2: Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
-
-
+                        
                         var incomingCall = userAgent2.AcceptCall(sipRequest);
                         var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false, AddressFamily.InterNetwork);
                         var rtpMediaSession = new RTPMediaSession(rtpSession);
