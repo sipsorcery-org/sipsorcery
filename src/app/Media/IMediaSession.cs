@@ -23,10 +23,6 @@ namespace SIPSorcery.SIP.App
 
         void Close();
 
-        Task SendDtmf(byte key, CancellationToken cancellationToken = default);
-
-        event Action<byte> DtmfCompleted;
-
-        MediaState MediaState { get; }
+        event Action<string> SessionMediaChanged;
     }
 }

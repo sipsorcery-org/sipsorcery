@@ -412,7 +412,7 @@ namespace SIPSorcery.SoftPhone
                 }
 
                 // Start SIP call.
-                Task.Run(() => { client.Call(callDestination); });
+                Task.Run(() => client.Call(callDestination));
             }
         }
 
@@ -592,7 +592,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void HoldButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            SIPClient client = (sender == m_holdButton) ? _sipClients[0] : _sipClients[1];
+            IVoIPClient client = (sender == m_holdButton) ? _sipClients[0] : _sipClients[1];
 
             if (client == _sipClients[0])
             {
@@ -613,7 +613,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void OffHoldButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            SIPClient client = (sender == m_offHoldButton) ? _sipClients[0] : _sipClients[1];
+            IVoIPClient client = (sender == m_offHoldButton) ? _sipClients[0] : _sipClients[1];
 
             if (client == _sipClients[0])
             {

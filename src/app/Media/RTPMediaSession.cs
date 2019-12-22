@@ -32,11 +32,26 @@ namespace SIPSorcery.SIP.App
             MediaState = new MediaState();
         }
 
-        public Task SendDtmf(byte key, CancellationToken cancellationToken = default)
-        {
-            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
-            return Session.SendDtmfEvent(dtmfEvent, cancellationToken);
-        }
+        /// <summary>
+        /// This event is invoked when the session media has changed
+        /// and a new SDP is available.
+        /// </summary>
+        public event Action<string> SessionMediaChanged;
+
+        /// <summary>	
+        /// The remote call party has put us on hold.	
+        /// </summary>	
+        public event Action RemotePutOnHold;
+
+        /// <summary>	
+        /// The remote call party has taken us off hold.	
+        /// </summary>	
+        public event Action RemoteTookOffHold;
+
+        /// <summary>
+        /// Media Session closed.
+        /// </summary>
+        public event Action Closed;
 
         /// <summary>
         /// Gets fired when an RTP DTMF event is completed on the remote call party's RTP stream.
@@ -48,7 +63,29 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public event Action<byte[]> OnReceivedSampleReady;
 
-        public event Action Closed;
+        public Task SendDtmf(byte key, CancellationToken cancellationToken = default)
+        {
+            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            return Session.SendDtmfEvent(dtmfEvent, cancellationToken);
+        }
+
+        /// <summary>
+        /// Send a re-INVITE request to put the remote call party on hold.
+        /// </summary>
+        public void PutOnHold()
+        {
+            MediaState.LocalOnHold = true;
+            SessionMediaChanged?.Invoke(CreateOffer());
+        }
+
+        /// <summary>
+        /// Send a re-INVITE request to take the remote call party on hold.
+        /// </summary>
+        public void TakeOffHold()
+        {
+            MediaState.LocalOnHold = false;
+            SessionMediaChanged?.Invoke(CreateOffer());
+        }
 
         public virtual void Close()
         {

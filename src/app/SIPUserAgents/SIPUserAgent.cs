@@ -17,13 +17,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
@@ -67,12 +65,6 @@ namespace SIPSorcery.SIP.App
         private SIPEndPoint m_outboundProxy;
 
         /// <summary>
-        /// The media session factory.
-        /// Used to create new media sessions that will handle the media for the session.
-        /// </summary>
-        IMediaSessionFactory m_mediaSessionFactory;
-
-        /// <summary>
         /// The media (RTP) session in use for the current call.
         /// </summary>
         public IMediaSession MediaSession { get; private set; }
@@ -112,16 +104,6 @@ namespace SIPSorcery.SIP.App
         {
             get { return m_uac?.CallDescriptor; }
         }
-
-        /// <summary>
-        /// Returns true if the remote call party currently has us on hold.
-        /// </summary>
-        public bool OnHoldFromRemote => MediaSession.MediaState.RemoteOnHold;
-
-        /// <summary>
-        /// Returns true if we have put the remote call party on hold.
-        /// </summary>
-        public bool OnHoldFromLocal => MediaSession.MediaState.LocalOnHold;
 
         /// <summary>
         /// The remote party has received our call request and is working on it.
@@ -171,22 +153,15 @@ namespace SIPSorcery.SIP.App
         public event Action<string> OnTransferNotify;
 
         /// <summary>
-        /// Fires when a DTMF event is detected on the remote party's RTP stream.
-        /// </summary>
-        public event Action<byte> OnDtmfEvent;
-
-        /// <summary>
         /// Creates a new SIP client and server combination user agent.
         /// </summary>
         /// <param name="transport">The transport layer to use for requests and responses.</param>
         /// <param name="outboundProxy">Optional. If set all requests and responses will be forwarded to this
         /// end point irrespective of their headers.</param>
-        /// <param name="mediaSessionFactory">The media session factory</param>
-        public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy, IMediaSessionFactory mediaSessionFactory)
+        public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy)
         {
             m_transport = transport;
             m_outboundProxy = outboundProxy;
-            m_mediaSessionFactory = mediaSessionFactory;
 
             m_transport.SIPTransportRequestReceived += SIPTransportRequestReceived;
         }
@@ -195,7 +170,7 @@ namespace SIPSorcery.SIP.App
         /// Attempts to place a new outgoing call.
         /// </summary>
         /// <param name="sipCallDescriptor">A call descriptor containing the information about how and where to place the call.</param>
-        public void Call(SIPCallDescriptor sipCallDescriptor)
+        public void Call(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession)
         {
             m_uac = new SIPClientUserAgent(m_transport);
             m_uac.CallTrying += ClientCallTryingHandler;
@@ -207,8 +182,8 @@ namespace SIPSorcery.SIP.App
 
             if (serverEndPoint != null)
             {
-                MediaSession = m_mediaSessionFactory.Create(serverEndPoint.Address);
-                MediaSession.DtmfCompleted += OnMediaDtmfCompleted;
+                MediaSession = mediaSession;
+                MediaSession.SessionMediaChanged += MediaSessionOnMediaChanged;
 
                 var sdp = MediaSession.CreateOffer(serverEndPoint.Address);
                 sipCallDescriptor.Content = sdp;
@@ -220,6 +195,11 @@ namespace SIPSorcery.SIP.App
                 ClientCallFailed?.Invoke(m_uac, $"Could not resolve destination when placing call to {sipCallDescriptor.Uri}.");
                 CallEnded();
             }
+        }
+
+        private void MediaSessionOnMediaChanged(string sdpMessage)
+        {
+            SendReInviteRequest(sdpMessage);
         }
 
         /// <summary>
@@ -283,7 +263,7 @@ namespace SIPSorcery.SIP.App
         /// Any existing call will be hungup.
         /// </summary>
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
-        public void Answer(SIPServerUserAgent uas)
+        public void Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
         {
             // This call is now taking over any existing call.
             if (IsCallActive)
@@ -293,34 +273,13 @@ namespace SIPSorcery.SIP.App
 
             var sipRequest = uas.ClientTransaction.TransactionRequest;
 
-            MediaSession = m_mediaSessionFactory.Create(sipRequest.Body);
-            MediaSession.DtmfCompleted += OnMediaDtmfCompleted;
-
-            // TODO: Deal with multiple media offers.
+            MediaSession = mediaSession;
 
             var sdpAnswer = MediaSession.AnswerOffer(sipRequest.Body);
 
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer, null, SIPDialogueTransferModesEnum.Default);
             Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
-        }
-
-        /// <summary>
-        /// Send a re-INVITE request to put the remote call party on hold.
-        /// </summary>
-        public void PutOnHold()
-        {
-            MediaSession.MediaState.LocalOnHold = true;
-            SendReInviteRequest();
-        }
-
-        /// <summary>
-        /// Send a re-INVITE request to take the remote call party on hold.
-        /// </summary>
-        public void TakeOffHold()
-        {
-            MediaSession.MediaState.LocalOnHold = false;
-            SendReInviteRequest();
         }
 
         /// <summary>
@@ -544,7 +503,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Sends a re-INVITE request to the remote call party with the supplied SDP.
         /// </summary>
-        private void SendReInviteRequest()
+        private void SendReInviteRequest(string sdp)
         {
             if (Dialogue == null)
             {
@@ -552,7 +511,6 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                var sdp = MediaSession.CreateOffer();
                 Dialogue.SDP = sdp;
 
                 var reinviteRequest = Dialogue.GetInDialogRequest(SIPMethodsEnum.INVITE);
@@ -788,15 +746,6 @@ namespace SIPSorcery.SIP.App
             m_uas = null;
             MediaSession?.Close();
             MediaSession = null;
-        }
-
-        /// <summary>
-        /// Event handler for DTMF completed event from the remote call party.
-        /// </summary>
-        /// <param name="dtmf">The received DTMF.</param>
-        private void OnMediaDtmfCompleted(byte dtmf)
-        {
-            OnDtmfEvent?.Invoke(dtmf);
         }
     }
 }

@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Net;
 using SIPSorcery.Net;
+using SIPSorcery.SIP.App;
 
-namespace SIPSorcery.SIP.App
+namespace SIPSorcery.SoftPhone
 {
-    public class RTPMediaSessionFactory : IMediaSessionFactory
+    public class RTPMediaSessionFactory
     {
         public SDPMediaFormatsEnum DefaultAudioFormat { get; set; } = SDPMediaFormatsEnum.PCMU;
 
-        public virtual IMediaSession Create(IPAddress address)
+        public virtual RTPMediaSession Create(IPAddress address)
         {
             var rtpSession = new RTPSession((int)DefaultAudioFormat, null, null, true, address.AddressFamily);
 
@@ -20,7 +21,7 @@ namespace SIPSorcery.SIP.App
             return rtpMediaSession;
         }
 
-        public virtual IMediaSession Create(string offerSdp)
+        public virtual RTPMediaSession Create(string offerSdp)
         {
             var remoteSDP = SDP.ParseSDPDescription(offerSdp);
             var dstRtpEndPoint = remoteSDP.GetSDPRTPEndPoint();
