@@ -2563,12 +2563,12 @@ references:
   commentId: T:SIPSorcery.Net.RTPSession
   fullName: SIPSorcery.Net.RTPSession
   nameWithType: RTPSession
-- uid: SIPSorcery.Net.RTPSession.#ctor(System.Int32,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,System.Boolean)
-  name: RTPSession(Int32, ProtectRtpPacket, ProtectRtpPacket, Boolean)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Int32_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_System_Boolean_
-  commentId: M:SIPSorcery.Net.RTPSession.#ctor(System.Int32,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,System.Boolean)
-  fullName: SIPSorcery.Net.RTPSession.RTPSession(System.Int32, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, System.Boolean)
-  nameWithType: RTPSession.RTPSession(Int32, ProtectRtpPacket, ProtectRtpPacket, Boolean)
+- uid: SIPSorcery.Net.RTPSession.#ctor(System.Int32,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,System.Boolean,System.Net.Sockets.AddressFamily)
+  name: RTPSession(Int32, ProtectRtpPacket, ProtectRtpPacket, Boolean, AddressFamily)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Int32_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_System_Boolean_System_Net_Sockets_AddressFamily_
+  commentId: M:SIPSorcery.Net.RTPSession.#ctor(System.Int32,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,System.Boolean,System.Net.Sockets.AddressFamily)
+  fullName: SIPSorcery.Net.RTPSession.RTPSession(System.Int32, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, System.Boolean, System.Net.Sockets.AddressFamily)
+  nameWithType: RTPSession.RTPSession(Int32, ProtectRtpPacket, ProtectRtpPacket, Boolean, AddressFamily)
 - uid: SIPSorcery.Net.RTPSession.#ctor*
   name: RTPSession
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_
@@ -5217,12 +5217,12 @@ references:
   commentId: M:SIPSorcery.Net.SDP.#ctor
   fullName: SIPSorcery.Net.SDP.SDP()
   nameWithType: SDP.SDP()
-- uid: SIPSorcery.Net.SDP.#ctor(System.String)
-  name: SDP(String)
-  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP__ctor_System_String_
-  commentId: M:SIPSorcery.Net.SDP.#ctor(System.String)
-  fullName: SIPSorcery.Net.SDP.SDP(System.String)
-  nameWithType: SDP.SDP(String)
+- uid: SIPSorcery.Net.SDP.#ctor(System.Net.IPAddress)
+  name: SDP(IPAddress)
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP__ctor_System_Net_IPAddress_
+  commentId: M:SIPSorcery.Net.SDP.#ctor(System.Net.IPAddress)
+  fullName: SIPSorcery.Net.SDP.SDP(System.Net.IPAddress)
+  nameWithType: SDP.SDP(IPAddress)
 - uid: SIPSorcery.Net.SDP.#ctor*
   name: SDP
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP__ctor_
@@ -5243,12 +5243,24 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDP.AddExtra
   nameWithType: SDP.AddExtra
-- uid: SIPSorcery.Net.SDP.Address
-  name: Address
-  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_Address
-  commentId: F:SIPSorcery.Net.SDP.Address
-  fullName: SIPSorcery.Net.SDP.Address
-  nameWithType: SDP.Address
+- uid: SIPSorcery.Net.SDP.ADDRESS_TYPE_IPV4
+  name: ADDRESS_TYPE_IPV4
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_ADDRESS_TYPE_IPV4
+  commentId: F:SIPSorcery.Net.SDP.ADDRESS_TYPE_IPV4
+  fullName: SIPSorcery.Net.SDP.ADDRESS_TYPE_IPV4
+  nameWithType: SDP.ADDRESS_TYPE_IPV4
+- uid: SIPSorcery.Net.SDP.ADDRESS_TYPE_IPV6
+  name: ADDRESS_TYPE_IPV6
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_ADDRESS_TYPE_IPV6
+  commentId: F:SIPSorcery.Net.SDP.ADDRESS_TYPE_IPV6
+  fullName: SIPSorcery.Net.SDP.ADDRESS_TYPE_IPV6
+  nameWithType: SDP.ADDRESS_TYPE_IPV6
+- uid: SIPSorcery.Net.SDP.AddressOrHost
+  name: AddressOrHost
+  href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_AddressOrHost
+  commentId: F:SIPSorcery.Net.SDP.AddressOrHost
+  fullName: SIPSorcery.Net.SDP.AddressOrHost
+  nameWithType: SDP.AddressOrHost
 - uid: SIPSorcery.Net.SDP.AddressType
   name: AddressType
   href: api/SIPSorcery.Net.SDP.html#SIPSorcery_Net_SDP_AddressType
@@ -5496,12 +5508,12 @@ references:
   commentId: T:SIPSorcery.Net.SDPConnectionInformation
   fullName: SIPSorcery.Net.SDPConnectionInformation
   nameWithType: SDPConnectionInformation
-- uid: SIPSorcery.Net.SDPConnectionInformation.#ctor(System.String)
-  name: SDPConnectionInformation(String)
-  href: api/SIPSorcery.Net.SDPConnectionInformation.html#SIPSorcery_Net_SDPConnectionInformation__ctor_System_String_
-  commentId: M:SIPSorcery.Net.SDPConnectionInformation.#ctor(System.String)
-  fullName: SIPSorcery.Net.SDPConnectionInformation.SDPConnectionInformation(System.String)
-  nameWithType: SDPConnectionInformation.SDPConnectionInformation(String)
+- uid: SIPSorcery.Net.SDPConnectionInformation.#ctor(System.Net.IPAddress)
+  name: SDPConnectionInformation(IPAddress)
+  href: api/SIPSorcery.Net.SDPConnectionInformation.html#SIPSorcery_Net_SDPConnectionInformation__ctor_System_Net_IPAddress_
+  commentId: M:SIPSorcery.Net.SDPConnectionInformation.#ctor(System.Net.IPAddress)
+  fullName: SIPSorcery.Net.SDPConnectionInformation.SDPConnectionInformation(System.Net.IPAddress)
+  nameWithType: SDPConnectionInformation.SDPConnectionInformation(IPAddress)
 - uid: SIPSorcery.Net.SDPConnectionInformation.#ctor*
   name: SDPConnectionInformation
   href: api/SIPSorcery.Net.SDPConnectionInformation.html#SIPSorcery_Net_SDPConnectionInformation__ctor_
@@ -5509,6 +5521,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPConnectionInformation.SDPConnectionInformation
   nameWithType: SDPConnectionInformation.SDPConnectionInformation
+- uid: SIPSorcery.Net.SDPConnectionInformation.CONNECTION_ADDRESS_TYPE_IPV4
+  name: CONNECTION_ADDRESS_TYPE_IPV4
+  href: api/SIPSorcery.Net.SDPConnectionInformation.html#SIPSorcery_Net_SDPConnectionInformation_CONNECTION_ADDRESS_TYPE_IPV4
+  commentId: F:SIPSorcery.Net.SDPConnectionInformation.CONNECTION_ADDRESS_TYPE_IPV4
+  fullName: SIPSorcery.Net.SDPConnectionInformation.CONNECTION_ADDRESS_TYPE_IPV4
+  nameWithType: SDPConnectionInformation.CONNECTION_ADDRESS_TYPE_IPV4
+- uid: SIPSorcery.Net.SDPConnectionInformation.CONNECTION_ADDRESS_TYPE_IPV6
+  name: CONNECTION_ADDRESS_TYPE_IPV6
+  href: api/SIPSorcery.Net.SDPConnectionInformation.html#SIPSorcery_Net_SDPConnectionInformation_CONNECTION_ADDRESS_TYPE_IPV6
+  commentId: F:SIPSorcery.Net.SDPConnectionInformation.CONNECTION_ADDRESS_TYPE_IPV6
+  fullName: SIPSorcery.Net.SDPConnectionInformation.CONNECTION_ADDRESS_TYPE_IPV6
+  nameWithType: SDPConnectionInformation.CONNECTION_ADDRESS_TYPE_IPV6
 - uid: SIPSorcery.Net.SDPConnectionInformation.ConnectionAddress
   name: ConnectionAddress
   href: api/SIPSorcery.Net.SDPConnectionInformation.html#SIPSorcery_Net_SDPConnectionInformation_ConnectionAddress
