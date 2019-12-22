@@ -481,10 +481,22 @@ namespace SIPSorcery.SIP.App
                     }
                     catch (Exception ex)
                     {
-                        // The application isn't prepared to accept re-INVITE requests and we can't work out what it was for. 
-                        // We'll reject as gently as we can to try and not lose the call.
-                        SIPResponse notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, null);
-                        reInviteTransaction.SendFinalResponse(notAcceptableResponse);
+                        logger.LogError(ex, "MediaSession can't process the re-INVITE request.");
+
+                        if (OnReinviteRequest == null)
+                        {
+                            // The application isn't prepared to accept re-INVITE requests and we can't work out what it was for. 
+                            // We'll reject as gently as we can to try and not lose the call.
+                            SIPResponse notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, null);
+                            reInviteTransaction.SendFinalResponse(notAcceptableResponse);
+                        }
+                        else
+                        {
+                            // The application is going to handle the re-INVITE request. We'll send a Trying response as a precursor.
+                            SIPResponse tryingResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
+                            reInviteTransaction.SendProvisionalResponse(tryingResponse);
+                            OnReinviteRequest.Invoke(reInviteTransaction);
+                        }
                     }
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
