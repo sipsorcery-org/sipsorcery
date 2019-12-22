@@ -21,7 +21,7 @@ namespace SIPSorcery.SoftPhone
 {
     public interface IVoIPClient
     {
-        void Call(string destination);
+        Task Call(string destination);
         void Cancel();
         void Answer();
         void Reject();
