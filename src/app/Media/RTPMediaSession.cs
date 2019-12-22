@@ -12,6 +12,7 @@ namespace SIPSorcery.SIP.App
     public class RTPMediaSession : IMediaSession
     {
         private static readonly ILogger logger = Log.Logger;
+
         public RTPSession Session { get; }
 
         public MediaState MediaState { get; set; }
