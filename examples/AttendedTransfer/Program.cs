@@ -60,22 +60,9 @@ namespace SIPSorcery
 
             EnableTraceLogs(sipTransport);
 
-            RTPMediaSession rtpSession1 = null;
-            var mediaSessionFactory1 = new RTPMediaSessionFactory();
-
-            mediaSessionFactory1.SessionStart += session => { rtpSession1 = session; };
-            mediaSessionFactory1.SessionEnd += session => { rtpSession1 = null; };
-
-            RTPMediaSession rtpSession2 = null;
-            var mediaSessionFactory2 = new RTPMediaSessionFactory();
-
-            mediaSessionFactory2.SessionStart += session => { rtpSession2 = session; };
-            mediaSessionFactory2.SessionEnd += session => { rtpSession2 = null; };
-
-
             // Create two user agents. Each gets configured to answer an incoming call.
-            var userAgent1 = new SIPUserAgent(sipTransport, null, mediaSessionFactory1);
-            var userAgent2 = new SIPUserAgent(sipTransport, null, mediaSessionFactory2);
+            var userAgent1 = new SIPUserAgent(sipTransport, null);
+            var userAgent2 = new SIPUserAgent(sipTransport, null);
 
             // Only one of the user agents can use the microphone and speaker. The one designated
             // as the active agent gets the devices.
@@ -89,21 +76,9 @@ namespace SIPSorcery
 
             userAgent1.OnCallHungup += () => Log.LogInformation($"UA1: Call hungup by remote party.");
             userAgent1.ServerCallCancelled += (uas) => Log.LogInformation("UA1: Incoming call cancelled by caller.");
-            userAgent1.MediaSession.MediaState.RemoteOnHoldChanged += onHold =>
-            {
-                Log.LogInformation(onHold
-                    ? "UA1: Remote call party has placed us on hold."
-                    : "UA1: Remote call party took us off hold.");
-            };
 
             userAgent2.OnCallHungup += () => Log.LogInformation($"UA2: Call hungup by remote party.");
             userAgent2.ServerCallCancelled += (uas) => Log.LogInformation("UA2: Incoming call cancelled by caller.");
-            userAgent2.MediaSession.MediaState.RemoteOnHoldChanged += onHold =>
-            {
-                Log.LogInformation(onHold
-                    ? "UA1: Remote call party has placed us on hold."
-                    : "UA1: Remote call party took us off hold.");
-            };
 
             userAgent2.OnTransferNotify += (sipFrag) =>
             {
@@ -134,11 +109,13 @@ namespace SIPSorcery
                     {
                         Log.LogInformation($"UA1: Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent1.AcceptCall(sipRequest);
-                        userAgent1.Answer(incomingCall);
+
+                        var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false, AddressFamily.InterNetwork);
+                        activeRtpSession = new RTPMediaSession(rtpSession);
+                        userAgent1.Answer(incomingCall, activeRtpSession);
 
                         activeUserAgent = userAgent1;
-                        activeRtpSession = rtpSession1;
-                        rtpSession1.OnReceivedSampleReady += PlaySample;
+                        activeRtpSession.OnReceivedSampleReady += PlaySample;
                         waveInEvent.StartRecording();
 
                         Log.LogInformation($"UA1: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
@@ -146,14 +123,20 @@ namespace SIPSorcery
                     else if (!userAgent2.IsCallActive)
                     {
                         Log.LogInformation($"UA2: Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
+
+
                         var incomingCall = userAgent2.AcceptCall(sipRequest);
-                        userAgent2.Answer(incomingCall);
+                        var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false, AddressFamily.InterNetwork);
+                        var rtpMediaSession = new RTPMediaSession(rtpSession);
+
+                        userAgent2.Answer(incomingCall, rtpMediaSession);
+
+                        activeRtpSession.OnReceivedSampleReady -= PlaySample;
 
                         activeUserAgent = userAgent2;
-                        activeRtpSession = rtpSession2;
-                        userAgent1.PutOnHold();
-                        rtpSession1.OnReceivedSampleReady -= PlaySample;
-                        rtpSession2.OnReceivedSampleReady += PlaySample;
+                        activeRtpSession = rtpMediaSession;
+                        activeRtpSession.PutOnHold();
+                        activeRtpSession.OnReceivedSampleReady += PlaySample;
 
                         Log.LogInformation($"UA2: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
