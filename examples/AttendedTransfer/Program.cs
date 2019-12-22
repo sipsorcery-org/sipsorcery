@@ -111,10 +111,14 @@ namespace SIPSorcery
                         var incomingCall = userAgent1.AcceptCall(sipRequest);
 
                         var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false, AddressFamily.InterNetwork);
-                        activeRtpSession = new RTPMediaSession(rtpSession);
-                        userAgent1.Answer(incomingCall, activeRtpSession);
+                        var rtpMediaSession = new RTPMediaSession(rtpSession);
+                        rtpMediaSession.RemotePutOnHold += () => Log.LogInformation("UA1: Remote call party has placed us on hold.");
+                        rtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("UA1: Remote call party took us off hold.");
+
+                        userAgent1.Answer(incomingCall, rtpMediaSession);
 
                         activeUserAgent = userAgent1;
+                        activeRtpSession = rtpMediaSession;
                         activeRtpSession.OnReceivedSampleReady += PlaySample;
                         waveInEvent.StartRecording();
 
@@ -127,6 +131,8 @@ namespace SIPSorcery
                         var incomingCall = userAgent2.AcceptCall(sipRequest);
                         var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false, AddressFamily.InterNetwork);
                         var rtpMediaSession = new RTPMediaSession(rtpSession);
+                        rtpMediaSession.RemotePutOnHold += () => Log.LogInformation("UA2: Remote call party has placed us on hold.");
+                        rtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("UA2: Remote call party took us off hold.");
 
                         userAgent2.Answer(incomingCall, rtpMediaSession);
 
