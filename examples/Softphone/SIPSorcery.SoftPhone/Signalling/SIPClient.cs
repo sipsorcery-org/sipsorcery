@@ -81,9 +81,6 @@ namespace SIPSorcery.SoftPhone
             m_userAgent.OnCallHungup += CallFinished;
             m_userAgent.ServerCallCancelled += IncomingCallCancelled;
             m_userAgent.OnTransferNotify += OnTransferNotify;
-
-            MediaSession.RemotePutOnHold += OnRemotePutOnHold;
-            MediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
         }
 
         /// <summary>
@@ -134,6 +131,8 @@ namespace SIPSorcery.SoftPhone
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
                 MediaSession = m_rtpMediaSessionFactory.Create(dstEndpoint.Address);
+                MediaSession.RemotePutOnHold += OnRemotePutOnHold;
+                MediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 
                 m_userAgent.Call(callDescriptor, MediaSession);
             }
@@ -171,6 +170,8 @@ namespace SIPSorcery.SoftPhone
             {
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
                 MediaSession = m_rtpMediaSessionFactory.Create(sipRequest.RemoteSIPEndPoint.Address);
+                MediaSession.RemotePutOnHold += OnRemotePutOnHold;
+                MediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 
                 m_userAgent.Answer(m_pendingIncomingCall, MediaSession);
                 m_pendingIncomingCall = null;
