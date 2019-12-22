@@ -5,11 +5,11 @@ using SIPSorcery.SIP.App;
 
 namespace SIPSorcery.SoftPhone
 {
-    public class RTPMediaSessionFactory
+    public class RTPMediaSessionManager
     {
         private readonly MediaManager _mediaManager;
 
-        public RTPMediaSessionFactory(MediaManager mediaManager)
+        public RTPMediaSessionManager(MediaManager mediaManager)
         {
             _mediaManager = mediaManager;
         }

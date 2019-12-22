@@ -36,7 +36,7 @@ namespace SIPSorcery.SoftPhone
         private string m_sipFromName = SIPSoftPhoneState.SIPFromName;
 
         private SIPTransport m_sipTransport;
-        private RTPMediaSessionFactory m_rtpMediaSessionFactory;
+        private RTPMediaSessionManager m_RTPMediaSessionManager;
         private SIPUserAgent m_userAgent;
         private SIPServerUserAgent m_pendingIncomingCall;
         private CancellationTokenSource _cts = new CancellationTokenSource();
@@ -69,10 +69,10 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.IsCallActive; }
         }
 
-        public SIPClient(SIPTransport sipTransport, RTPMediaSessionFactory rtpMediaSessionFactory)
+        public SIPClient(SIPTransport sipTransport, RTPMediaSessionManager rtpMediaSessionManager)
         {
             m_sipTransport = sipTransport;
-            m_rtpMediaSessionFactory = rtpMediaSessionFactory;
+            m_RTPMediaSessionManager = rtpMediaSessionManager;
             m_userAgent = new SIPUserAgent(m_sipTransport, null);
             m_userAgent.ClientCallTrying += CallTrying;
             m_userAgent.ClientCallRinging += CallRinging;
@@ -130,7 +130,7 @@ namespace SIPSorcery.SoftPhone
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
-                MediaSession = m_rtpMediaSessionFactory.Create(dstEndpoint.Address);
+                MediaSession = m_RTPMediaSessionManager.Create(dstEndpoint.Address);
                 MediaSession.RemotePutOnHold += OnRemotePutOnHold;
                 MediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 
@@ -169,7 +169,7 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
-                MediaSession = m_rtpMediaSessionFactory.Create(sipRequest.RemoteSIPEndPoint.Address);
+                MediaSession = m_RTPMediaSessionManager.Create(sipRequest.RemoteSIPEndPoint.Address);
                 MediaSession.RemotePutOnHold += OnRemotePutOnHold;
                 MediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 

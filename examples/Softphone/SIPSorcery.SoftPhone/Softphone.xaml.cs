@@ -106,7 +106,7 @@ namespace SIPSorcery.SoftPhone
 
             for (int i = 0; i < SIP_CLIENT_COUNT; i++)
             {
-                var mediaSessionFactory = new RTPMediaSessionFactory(_mediaManager);
+                var mediaSessionFactory = new RTPMediaSessionManager(_mediaManager);
                 var sipClient = new SIPClient(_sipTransportManager.SIPTransport, mediaSessionFactory);
 
                 sipClient.CallAnswer += SIPCallAnswered;
