@@ -83,6 +83,12 @@
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.App.RtccRate.html">RtccRate</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a></h4>
+      <section><p>The SipSorcery concrete implementation of IMediaSession.
+Relies on RTPSession and RTPChannel for RTP and network functions.</p>
+<p>This implementation sets up the RTP stream but doesn't process the actual audio or video
+and will need another component to do the processing of the media and send/receive it to/from the RTP session.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.App.SIPAccount.html">SIPAccount</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.SIP.App.SIPCallDescriptor.html">SIPCallDescriptor</a></h4>
@@ -138,6 +144,13 @@ changes and sending DTMF events.</p>
 </section>
     <h3 id="interfaces">Interfaces
   </h3>
+      <h4><a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a></h4>
+      <section><p>Offering and Answering SDP messages so that it can be
+signaled to the other party using the SIPUserAgent.</p>
+<p>The implementing class is responsible for ensuring that the client
+can send media to the other party including creating and managing
+the RTP streams and processing the audio and video.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.SIP.App.ISIPClientUserAgent.html">ISIPClientUserAgent</a></h4>
       <section><p>Interface for classes implementing SIP client user agent functionality. The
 main function of a SIP client user agent is the ability to initiate calls.</p>
