@@ -171,7 +171,8 @@ namespace SIPSorcery.SIP
             Id = Guid.NewGuid();
 
             CallId = uasInviteTransaction.TransactionRequest.Header.CallId;
-            RouteSet = (uasInviteTransaction.TransactionFinalResponse != null && uasInviteTransaction.TransactionFinalResponse.Header.RecordRoutes != null) ? uasInviteTransaction.TransactionFinalResponse.Header.RecordRoutes.Reversed() : null;
+            //RouteSet = (uasInviteTransaction.TransactionFinalResponse != null && uasInviteTransaction.TransactionFinalResponse.Header.RecordRoutes != null) ? uasInviteTransaction.TransactionFinalResponse.Header.RecordRoutes.Reversed() : null;
+            RouteSet = (uasInviteTransaction.TransactionFinalResponse != null && uasInviteTransaction.TransactionFinalResponse.Header.RecordRoutes != null) ? uasInviteTransaction.TransactionFinalResponse.Header.RecordRoutes : null;
             LocalUserField = uasInviteTransaction.TransactionFinalResponse.Header.To.ToUserField;
             LocalTag = uasInviteTransaction.TransactionFinalResponse.Header.To.ToTag;
             RemoteUserField = uasInviteTransaction.TransactionFinalResponse.Header.From.FromUserField;
@@ -185,8 +186,6 @@ namespace SIPSorcery.SIP
             RemoteSDP = uasInviteTransaction.TransactionRequest.Body;
             Inserted = DateTimeOffset.UtcNow;
             Direction = SIPCallDirection.In;
-
-            //DialogueId = GetDialogueId(CallId, LocalTag, RemoteTag);
 
             RemoteTarget = new SIPURI(uasInviteTransaction.TransactionRequest.URI.Scheme, uasInviteTransaction.TransactionRequest.RemoteSIPEndPoint.CopyOf());
             ProxySendFrom = uasInviteTransaction.TransactionRequest.Header.ProxyReceivedOn;
