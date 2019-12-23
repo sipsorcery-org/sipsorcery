@@ -1,4 +1,18 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: RTPMediaSessionManager.cs
+//
+// Description: Create, connects, and manages the RTP media session and the media manager for the call
+//
+// Author(s):
+// Yizchok G.
+//
+// History:
+// 12/23/2019	Yitzchok	  Created.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
 using System.Net;
 using SIPSorcery.Net;
 using SIPSorcery.SIP.App;
