@@ -1,4 +1,19 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: RTPMediaSession.cs
+//
+// Description: An implementation of IMediaSession based on RTPSession
+//
+// Author(s):
+// Yizchok G.
+//
+// History:
+// 12/23/2019	Yitzchok	  Created.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading;

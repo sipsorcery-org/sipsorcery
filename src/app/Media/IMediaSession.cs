@@ -1,4 +1,19 @@
-﻿using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: IMediaSession.cs
+//
+// Description: An interface for managing the Media in a SIP session
+//
+// Author(s):
+// Yizchok G.
+//
+// History:
+// 12/23/2019	Yitzchok	  Created.
+//
+// License: 
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
+
+using System;
 using System.Net;
 using System.Threading.Tasks;
 
