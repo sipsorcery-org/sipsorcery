@@ -29,6 +29,8 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public interface IMediaSession
     {
+        //NOTE: Methods return a Task for usage with third-party implementations 
+
         Task<string> CreateOffer(IPAddress destinationAddress = null);
         Task OfferAnswered(string remoteSDP);
 
