@@ -16,6 +16,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net.Sockets;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.SIP
@@ -88,12 +90,13 @@ namespace SIPSorcery.SIP
             CDR?.TimedOut();
         }
 
-        private void UASInviteTransaction_TransactionResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private Task<SocketError> UASInviteTransaction_TransactionResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             logger.LogWarning("UASInviteTransaction received unexpected response, " + sipResponse.ReasonPhrase + " from " + remoteEndPoint.ToString() + ", ignoring.");
+            return Task.FromResult(SocketError.Fault);
         }
 
-        private void UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
+        private Task<SocketError> UASInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
         {
             try
             {
@@ -125,19 +128,22 @@ namespace SIPSorcery.SIP
                         SendFinalResponse(declinedResponse);
                     }
                 }
+
+                return Task.FromResult(SocketError.Success);
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception UASInviteTransaction GotRequest. " + excp.Message);
+                return Task.FromResult(SocketError.Fault);
             }
         }
 
-        public new void SendProvisionalResponse(SIPResponse sipResponse)
+        public new Task<SocketError> SendProvisionalResponse(SIPResponse sipResponse)
         {
             try
             {
                 CDR?.Progress(sipResponse.Status, sipResponse.ReasonPhrase, null, null);
-                base.SendProvisionalResponse(sipResponse);
+                return base.SendProvisionalResponse(sipResponse);
             }
             catch (Exception excp)
             {

@@ -162,7 +162,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// The most recent non reliable provisonal response that was requested to be sent.
         /// </summary>
-        public SIPResponse ProvisionalResponse { get; internal set; }
+        //public SIPResponse ProvisionalResponse { get; internal set; }
 
         /// <summary>
         /// The most recent provisonal response that was requested to be sent. If reliable provisional responses
@@ -265,25 +265,28 @@ namespace SIPSorcery.SIP
             TransactionRequestReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipRequest);
         }
 
-        public void GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
+        public Task<SocketError> GotResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
             if (TransactionState == SIPTransactionStatesEnum.Completed || TransactionState == SIPTransactionStatesEnum.Confirmed)
             {
                 FireTransactionTraceMessage($"Transaction received duplicate response {localSIPEndPoint.ToString()}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
+                TransactionDuplicateResponse?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipResponse);
 
                 if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.INVITE)
                 {
                     if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
                     {
-                        _ = ResendPrackRequest();
+                        return ResendPrackRequest();
                     }
                     else
                     {
-                        _ = ResendAckRequest();
+                        return ResendAckRequest();
                     }
                 }
-
-                TransactionDuplicateResponse?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipResponse);
+                else
+                {
+                    return Task.FromResult(SocketError.Success);
+                }
             }
             else
             {
@@ -292,12 +295,11 @@ namespace SIPSorcery.SIP
                 if (sipResponse.StatusCode >= 100 && sipResponse.StatusCode <= 199)
                 {
                     UpdateTransactionState(SIPTransactionStatesEnum.Proceeding);
-                    TransactionInformationResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
+                    return TransactionInformationResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
                 }
                 else
                 {
                     m_transactionFinalResponse = sipResponse;
-                    TransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
 
                     if (TransactionType == SIPTransactionTypesEnum.NonInvite)
                     {
@@ -308,6 +310,8 @@ namespace SIPSorcery.SIP
                     {
                         UpdateTransactionState(SIPTransactionStatesEnum.Completed);
                     }
+
+                    return TransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, this, sipResponse);
                 }
             }
         }
@@ -352,16 +356,17 @@ namespace SIPSorcery.SIP
             m_sipTransport.SendTransaction(this);
         }
 
-        protected virtual void SendProvisionalResponse(SIPResponse sipResponse)
+        protected virtual Task<SocketError> SendProvisionalResponse(SIPResponse sipResponse)
         {
             FireTransactionTraceMessage($"Transaction send info response (is reliable {PrackSupported}) {sipResponse.ShortDescription}");
 
             if (sipResponse.StatusCode == 100)
             {
                 UpdateTransactionState(SIPTransactionStatesEnum.Trying);
-                ProvisionalResponse = sipResponse;
+                //ProvisionalResponse = sipResponse;
 
-                m_sipTransport.SendTransaction(this);
+                //m_sipTransport.SendTransaction(this);
+                return m_sipTransport.SendResponseAsync(sipResponse);
             }
             else if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
             {
@@ -388,13 +393,13 @@ namespace SIPSorcery.SIP
                     }
 
                     ReliableProvisionalResponse = sipResponse;
+                    m_sipTransport.SendTransaction(this);
+                    return Task.FromResult(SocketError.Success);
                 }
                 else
                 {
-                    ProvisionalResponse = sipResponse;
+                    return m_sipTransport.SendResponseAsync(sipResponse);
                 }
-
-                m_sipTransport.SendTransaction(this);
             }
             else
             {
@@ -476,45 +481,49 @@ namespace SIPSorcery.SIP
             _ = m_sipTransport.SendResponseAsync(prackResponse);
         }
 
-        private async Task ResendAckRequest()
+        private Task<SocketError> ResendAckRequest()
         {
             try
             {
                 if (AckRequest != null)
                 {
-                    await m_sipTransport.SendRequestAsync(AckRequest);
                     AckRetransmits += 1;
                     LastTransmit = DateTime.Now;
+                    return m_sipTransport.SendRequestAsync(AckRequest);
                 }
                 else
                 {
                     logger.LogWarning("An ACK retransmit was required but there was no stored ACK request to send.");
+                    return Task.FromResult(SocketError.InvalidArgument);
                 }
             }
             catch (Exception excp)
             {
                 logger.LogError($"Exception ResendAckRequest. {excp.Message}");
+                return Task.FromResult(SocketError.Fault);
             }
         }
 
-        private async Task ResendPrackRequest()
+        private Task<SocketError> ResendPrackRequest()
         {
             try
             {
                 if (PRackRequest != null)
                 {
-                    await m_sipTransport.SendRequestAsync(PRackRequest);
                     PrackRetransmits += 1;
                     LastTransmit = DateTime.Now;
+                    return m_sipTransport.SendRequestAsync(PRackRequest);
                 }
                 else
                 {
                     logger.LogWarning("A PRACK retransmit was required but there was no stored PRACK request to send.");
+                    return Task.FromResult(SocketError.InvalidArgument);
                 }
             }
             catch (Exception excp)
             {
                 logger.LogError($"Exception ResendPrackRequest. {excp.Message}");
+                return Task.FromResult(SocketError.Fault);
             }
         }
 

@@ -70,7 +70,6 @@ namespace SIPSorcery
         //private static readonly string AUDIO_FILE_MP3 = @"media\Macroform_-_Simplicity.mp3";
         private static readonly string AUDIO_FILE_G722 = @"media\Macroform_-_Simplicity.g722";
 
-        private static readonly int RTP_REPORTING_PERIOD_SECONDS = 5;       // Period at which to write RTP stats.
         private static int SIP_LISTEN_PORT = 5060;
         private static int SIPS_LISTEN_PORT = 5061;
         private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
@@ -316,29 +315,17 @@ namespace SIPSorcery
                             uint timestamp = 0;
                             using (StreamReader sr = new StreamReader(audioFileName))
                             {
-                                DateTime lastSendReportAt = DateTime.Now;
-                                uint packetReceivedCount = 0;
-                                uint bytesReceivedCount = 0;
                                 byte[] buffer = new byte[320];
                                 int bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
 
                                 while (bytesRead > 0 && !cts.IsCancellationRequested)
                                 {
-                                    packetReceivedCount++;
-                                    bytesReceivedCount += (uint)bytesRead;
-
                                     if (!dstRtpEndPoint.Address.Equals(IPAddress.Any))
                                     {
                                         rtpSession.SendAudioFrame(timestamp, buffer);
                                     }
 
                                     timestamp += (uint)buffer.Length;
-
-                                    if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
-                                    {
-                                        lastSendReportAt = DateTime.Now;
-                                        SIPSorcery.Sys.Log.Logger.LogDebug($"RTP send {rtpSession.RtpChannel.RTPLocalEndPoint}->{dstRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
-                                    }
 
                                     await Task.Delay(40, cts.Token);
                                     bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
@@ -349,9 +336,6 @@ namespace SIPSorcery
 
                     case ".mp3":
                         {
-                            DateTime lastSendReportAt = DateTime.Now;
-                            uint packetReceivedCount = 0;
-                            uint bytesReceivedCount = 0;
                             var pcmFormat = new WaveFormat(8000, 16, 1);
                             var ulawFormat = WaveFormat.CreateMuLawFormat(8000, 1);
 
@@ -366,9 +350,6 @@ namespace SIPSorcery
 
                                     while (bytesRead > 0 && !cts.IsCancellationRequested)
                                     {
-                                        packetReceivedCount++;
-                                        bytesReceivedCount += (uint)bytesRead;
-
                                         byte[] sample = new byte[bytesRead];
                                         Array.Copy(buffer, sample, bytesRead);
 
@@ -378,12 +359,6 @@ namespace SIPSorcery
                                         }
 
                                         timestamp += (uint)buffer.Length;
-
-                                        if (DateTime.Now.Subtract(lastSendReportAt).TotalSeconds > RTP_REPORTING_PERIOD_SECONDS)
-                                        {
-                                            lastSendReportAt = DateTime.Now;
-                                            SIPSorcery.Sys.Log.Logger.LogDebug($"RTP send {rtpSession.RtpChannel.RTPLocalEndPoint}->{dstRtpEndPoint} pkts {packetReceivedCount} bytes {bytesReceivedCount}");
-                                        }
 
                                         await Task.Delay(40, cts.Token);
                                         bytesRead = ulawStm.Read(buffer, 0, buffer.Length);

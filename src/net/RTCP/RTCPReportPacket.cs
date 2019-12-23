@@ -1,6 +1,8 @@
 //-----------------------------------------------------------------------------
 // Filename: RTCPReportPacket.cs
 //
+// Description:
+//
 //      Custom RTCP Report Packet
 //        0                   1                   2                   3
 //        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -11,10 +13,10 @@
 //       +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //  
 // History:
-// 23 Feb 2007	Aaron Clauson	Created  (aaron@sipsorcery.com), Montreux, Switzerland (www.sipsorcery.com)
+// 23 Feb 2007	Aaron Clauson	Created, Hobart, Australia.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
 //
 // License: 
