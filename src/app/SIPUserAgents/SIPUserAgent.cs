@@ -183,7 +183,7 @@ namespace SIPSorcery.SIP.App
             if (serverEndPoint != null)
             {
                 MediaSession = mediaSession;
-                MediaSession.SessionMediaChanged += MediaSessionOnMediaChanged;
+                MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
 
                 var sdp = MediaSession.CreateOffer(serverEndPoint.Address);
                 sipCallDescriptor.Content = sdp;
@@ -197,7 +197,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private void MediaSessionOnMediaChanged(string sdpMessage)
+        private void MediaSessionOnSessionMediaChanged(string sdpMessage)
         {
             SendReInviteRequest(sdpMessage);
         }
@@ -207,6 +207,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void Cancel()
         {
+            MediaSession.SessionMediaChanged -= MediaSessionOnSessionMediaChanged;
             MediaSession?.Close();
 
             if (m_uac != null)
@@ -274,6 +275,7 @@ namespace SIPSorcery.SIP.App
             var sipRequest = uas.ClientTransaction.TransactionRequest;
 
             MediaSession = mediaSession;
+            MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
 
             var sdpAnswer = MediaSession.AnswerOffer(sipRequest.Body);
 
@@ -744,6 +746,7 @@ namespace SIPSorcery.SIP.App
         {
             m_uac = null;
             m_uas = null;
+            MediaSession.SessionMediaChanged -= MediaSessionOnSessionMediaChanged;
             MediaSession?.Close();
             MediaSession = null;
         }
