@@ -179,15 +179,15 @@ namespace SIPSorcery
 
             // Send some DTMF key presses via RTP events.
             var dtmf5 = new RTPEvent(0x05, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
-            rtpSession.SendDtmfEvent(dtmf5, rtpCts).Wait();
+            rtpSession.SendDtmfEvent(dtmf5, rtpCts.Token).Wait();
             Task.Delay(2000, rtpCts.Token).Wait();
 
             var dtmf9 = new RTPEvent(0x09, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
-            rtpSession.SendDtmfEvent(dtmf9, rtpCts).Wait();
+            rtpSession.SendDtmfEvent(dtmf9, rtpCts.Token).Wait();
             Task.Delay(2000, rtpCts.Token).Wait();
 
             var dtmf2 = new RTPEvent(0x02, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
-            rtpSession.SendDtmfEvent(dtmf2, rtpCts).Wait();
+            rtpSession.SendDtmfEvent(dtmf2, rtpCts.Token).Wait();
             Task.Delay(2000, rtpCts.Token).ContinueWith((task) => { }).Wait(); // Don't care about the exception if the cancellation token is set.
 
             Log.LogInformation("Exiting...");

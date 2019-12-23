@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
+using System.Windows.Threading;
 using log4net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia;
@@ -36,11 +36,11 @@ namespace SIPSorcery.SoftPhone
 
         private Task _localVideoSamplingTask;
         private CancellationTokenSource _localVideoSamplingCancelTokenSource;
-        private bool _stop = false;
+        private bool _stop;
         private int _encodingSample = 1;
-        private bool _useVideo = false;
-        private UIElement m_uiElement;
-        private bool _isAudioStarted = false;
+        private bool _useVideo;
+        private Dispatcher _dispatcher;
+        private bool _isAudioStarted;
 
         /// <summary>
         /// Fires when an audio sample is available from the local input device (microphone).
@@ -76,16 +76,16 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// This class manages different media renderers that can be included in a call, e.g. audio and video.
         /// </summary>
-        /// <param name="uiElement">Need a UI element so tasks can be marshalled back to the UI thread. For exmaple this object
+        /// <param name="dispatcher">Need a UI dispatcher so tasks can be executed on the UI thread. For example this object
         /// gets created when a button is clicked on and is therefore owned by the UI thread. When a call transfer completes the
         /// resources need to be closed without any UI interaction. In that case need to marshal cak to the UI thread.</param>
         /// <param name="useVideo">Set to true if the current call is going to be using video.</param>
-        public MediaManager(UIElement uiElement, bool useVideo = false)
+        public MediaManager(Dispatcher dispatcher, bool useVideo = false)
         {
-            m_uiElement = uiElement;
+            _dispatcher = dispatcher;
             _useVideo = useVideo;
 
-            if (_useVideo == true)
+            if (_useVideo)
             {
                 _vpxDecoder = new VPXEncoder();
                 _vpxDecoder.InitDecoder();
@@ -114,7 +114,7 @@ namespace SIPSorcery.SoftPhone
                 if (_audioChannel != null)
                 {
                     _audioChannel.StartRecording();
-                    _audioChannel.SampleReady += (sample) => OnLocalAudioSampleReady?.Invoke(sample);
+                    _audioChannel.SampleReady += sample => OnLocalAudioSampleReady?.Invoke(sample);
                 }
             }
         }
@@ -123,7 +123,7 @@ namespace SIPSorcery.SoftPhone
         {
             if (_audioChannel != null)
             {
-                UIHelper.DoOnUIThread(m_uiElement, () =>
+                _dispatcher.DoOnUIThread(() =>
                 {
                     _audioChannel.Close();
                     _audioChannel = null;

@@ -15,10 +15,12 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Net;
 using Xunit;
 using SIPSorcery.UnitTests;
 
@@ -84,7 +86,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             UASInviteTransaction uasTx = new UASInviteTransaction(transport, inviteReq, null);
             SIPServerUserAgent mockUas = new SIPServerUserAgent(transport, null, null, null, SIPCallDirection.In, null, null, null, uasTx);
-            userAgent.Answer(mockUas);
+            await userAgent.Answer(mockUas, CreateMediaSession());
 
             CancellationTokenSource cts = new CancellationTokenSource();
             bool result = await userAgent.BlindTransfer(SIPURI.ParseSIPURIRelaxed("127.0.0.1"), TimeSpan.FromSeconds(2), cts.Token);
@@ -96,7 +98,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         /// Tests that the Blind Transfer function can be cancelled properly.
         /// </summary>
         [Fact]
-        public void BlindTransferCancelUnitTest()
+        public async Task BlindTransferCancelUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -139,7 +141,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             UASInviteTransaction uasTx = new UASInviteTransaction(transport, inviteReq, null);
             SIPServerUserAgent mockUas = new SIPServerUserAgent(transport, null, null, null, SIPCallDirection.In, null, null, null, uasTx);
-            userAgent.Answer(mockUas);
+            await userAgent.Answer(mockUas, CreateMediaSession());
 
             CancellationTokenSource cts = new CancellationTokenSource();
             var blindTransferTask = userAgent.BlindTransfer(SIPURI.ParseSIPURIRelaxed("127.0.0.1"), TimeSpan.FromSeconds(2), cts.Token);
@@ -153,7 +155,7 @@ namespace SIPSorcery.SIP.App.UnitTests
         /// Tests that the answering and hanging up a mock call work as expected.
         /// </summary>
         [Fact]
-        public void HangupUserAgentUnitTest()
+        public async Task HangupUserAgentUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -197,7 +199,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             UASInviteTransaction uasTx = new UASInviteTransaction(transport, inviteReq, null);
             SIPServerUserAgent mockUas = new SIPServerUserAgent(transport, null, null, null, SIPCallDirection.In, null, null, null, uasTx);
-            userAgent.Answer(mockUas);
+            await userAgent.Answer(mockUas, CreateMediaSession());
 
             // Incremented Cseq and modified Via header from original request. Means the request is the same dialog but different tx.
             string inviteReqStr2 = "BYE sip:192.168.11.50:5060 SIP/2.0" + m_CRLF +
@@ -214,6 +216,11 @@ namespace SIPSorcery.SIP.App.UnitTests
 "";
 
             mockChannel.FireMessageReceived(dummySipEndPoint, dummySipEndPoint, Encoding.UTF8.GetBytes(inviteReqStr2));
+        }
+
+        private IMediaSession CreateMediaSession()
+        {
+            return new RTPMediaSession(new RTPSession(0, null, null, false, AddressFamily.InterNetwork));
         }
     }
 }
