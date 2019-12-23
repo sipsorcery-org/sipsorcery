@@ -237,14 +237,19 @@ namespace SIPSorcery.SoftPhone
 
         /// <summary>
         /// Sends a DTMF event to the remote call party.
+        /// See RFC 4733, 3.2. DTMF Events
         /// </summary>
-        /// <param name="key">The key for the event to send. Can only be 0 to 9, * and #.</param>
+        /// <param name="key">The key for the event to send. Can only be 0 to 9, *, # and A to D.</param>
         public async Task SendDTMF(byte key)
         {
             if (m_userAgent.IsCallActive)
             {
-                CancellationTokenSource cts = new CancellationTokenSource();
-                var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+                const string validEventKeys = "0123456789*#ABCD";
+                var eventId = validEventKeys.IndexOf((char)key);
+                if (eventId == -1) throw new ArgumentException("key");
+                var cts = new CancellationTokenSource();
+                var dtmfEvent = new RTPEvent((byte)eventId, false, RTPEvent.DEFAULT_VOLUME, 1200,
+                    RTPSession.DTMF_EVENT_PAYLOAD_ID);
                 await m_userAgent.RtpSession.SendDtmfEvent(dtmfEvent, cts);
             }
         }
