@@ -16,7 +16,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -76,9 +78,10 @@ namespace SIPSorcery.SIP
             base.SendReliableRequest();
         }
 
-        private void UACInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
+        private Task<SocketError> UACInviteTransaction_TransactionRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
         {
             logger.LogWarning("UACInviteTransaction received unexpected request, " + sipRequest.Method + " from " + remoteEndPoint.ToString() + ", ignoring.");
+            return Task.FromResult(SocketError.Fault);
         }
 
         private void UACInviteTransaction_TransactionTimedOut(SIPTransaction sipTransaction)
@@ -95,7 +98,7 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void UACInviteTransaction_TransactionInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private Task<SocketError> UACInviteTransaction_TransactionInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
@@ -116,32 +119,37 @@ namespace SIPSorcery.SIP
                     SIPEndPoint remoteEP = SIPEndPoint.TryParse(sipResponse.Header.ProxyReceivedFrom) ?? remoteEndPoint;
                     CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase, localEP, remoteEP);
                 }
+
+                return Task.FromResult(SocketError.Success);
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception UACInviteTransaction_TransactionInformationResponseReceived. " + excp.Message);
+                return Task.FromResult(SocketError.Fault);
             }
         }
 
-        private void UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private async Task<SocketError> UACInviteTransaction_TransactionFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
+                DeliveryPending = false;
+
                 // BranchId for 2xx responses needs to be a new one, non-2xx final responses use same one as original request.
                 if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode < 299)
                 {
                     if (_sendOkAckManually == false)
                     {
                         AckRequest = Get2xxAckRequest(null, null);
+                        await m_sipTransport.SendRequestAsync(AckRequest);
                     }
                 }
                 else
                 {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
                     AckRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI);
+                    await m_sipTransport.SendRequestAsync(AckRequest);
                 }
-
-                UACInviteTransactionFinalResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
 
                 if (CDR != null)
                 {
@@ -149,10 +157,13 @@ namespace SIPSorcery.SIP
                     SIPEndPoint remoteEP = SIPEndPoint.TryParse(sipResponse.Header.ProxyReceivedFrom) ?? remoteEndPoint;
                     CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase, localEP, remoteEP);
                 }
+
+                return await UACInviteTransactionFinalResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
             }
             catch (Exception excp)
             {
                 logger.LogError($"Exception UACInviteTransaction_TransactionFinalResponseReceived. {excp.Message}");
+                return SocketError.Fault;
             }
         }
 

@@ -549,7 +549,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private void ServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private Task<SocketError> ServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
@@ -745,14 +745,17 @@ namespace SIPSorcery.SIP.App
 
                     CallAnswered?.Invoke(this, sipResponse);
                 }
+
+                return Task.FromResult(SocketError.Success);
             }
             catch (Exception excp)
             {
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.Error, "Exception ServerFinalResponseReceived. " + excp.Message, Owner));
+                return Task.FromResult(SocketError.Fault);
             }
         }
 
-        private void ServerInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private Task<SocketError> ServerInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Information response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + m_serverTransaction.TransactionRequest.URI.ToString() + ".", Owner));
 
@@ -772,6 +775,8 @@ namespace SIPSorcery.SIP.App
                     CallTrying?.Invoke(this, sipResponse);
                 }
             }
+
+            return Task.FromResult(SocketError.Success);
         }
 
         private void ServerTimedOut(SIPTransaction sipTransaction)
@@ -782,7 +787,7 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private void ByeServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private Task<SocketError> ByeServerFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
@@ -807,11 +812,13 @@ namespace SIPSorcery.SIP.App
                     authByeTransaction.NonInviteTransactionTimedOut += (tx) => logger.LogDebug($"Authenticated Bye request for {m_sipCallDescriptor.Uri} timed out.");
                     authByeTransaction.SendRequest();
                 }
+
+                return Task.FromResult(SocketError.Success);
             }
-            catch (Exception exception)
+            catch (Exception excp)
             {
-                Exception excp = exception;
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.Error, string.Concat("Exception ByServerFinalResponseReceived. ", excp.Message), this.Owner));
+                return Task.FromResult(SocketError.Fault);
             }
         }
 

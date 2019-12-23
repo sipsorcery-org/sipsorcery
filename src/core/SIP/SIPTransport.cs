@@ -781,6 +781,7 @@ namespace SIPSorcery.SIP
                                         }
                                         else
                                         {
+                                            // TODO: Where does this exception end up?
                                             SIPTransportResponseReceived?.Invoke(localEndPoint, remoteEndPoint, sipResponse);
                                         }
                                     }
@@ -1069,11 +1070,12 @@ namespace SIPSorcery.SIP
             switch (protocol)
             {
                 case SIPProtocolsEnum.tcp:
-                    sipChannel = new SIPTCPChannel(addressFamily, SIPProtocolsEnum.tcp);
+                    sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, 0));
                     break;
-                case SIPProtocolsEnum.tls:
-                    sipChannel = new SIPTLSChannel(addressFamily);
-                    break;
+                //case SIPProtocolsEnum.tls:
+                    // TODO: Workout how to generate a random certificate.
+                    //sipChannel = new SIPTLSChannel(randomCertificate, new IPEndPoint(localAddress, 0));
+                //    break;
                 case SIPProtocolsEnum.udp:
                     sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, 0));
                     break;

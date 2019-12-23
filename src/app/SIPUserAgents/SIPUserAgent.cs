@@ -368,6 +368,8 @@ namespace SIPSorcery.SIP.App
                             transferAccepted.SetResult(false);
                         }
                     }, ct);
+
+                    return Task.FromResult(SocketError.Success);
                 };
 
                 referTx.NonInviteTransactionFinalResponseReceived += referTxStatusHandler;
@@ -457,7 +459,7 @@ namespace SIPSorcery.SIP.App
                         {
                             // The application is going to handle the re-INVITE request. We'll send a Trying response as a precursor.
                             SIPResponse tryingResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
-                            reInviteTransaction.SendProvisionalResponse(tryingResponse);
+                            await reInviteTransaction.SendProvisionalResponse(tryingResponse);
                             OnReinviteRequest.Invoke(reInviteTransaction);
                         }
                     }
@@ -581,7 +583,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="remoteEndPoint">The remote end point the response came from.</param>
         /// <param name="sipTransaction">The UAS transaction the response is part of.</param>
         /// <param name="sipResponse">The SIP response.</param>
-        private void ReinviteRequestFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private Task<SocketError> ReinviteRequestFinalResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
             {
@@ -593,6 +595,8 @@ namespace SIPSorcery.SIP.App
             {
                 logger.LogWarning($"Re-INVITE request failed with response {sipResponse.ShortDescription}.");
             }
+
+            return Task.FromResult(SocketError.Success);
         }
 
         /// <summary>

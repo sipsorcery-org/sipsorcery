@@ -174,6 +174,7 @@ namespace SIPSorcery
                 null);
 
             uac.Call(callDescriptor);
+            uac.ServerTransaction.TransactionTraceMessage += (tx, msg) => Log.LogInformation($"UAC tx trace message. {msg}");
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
