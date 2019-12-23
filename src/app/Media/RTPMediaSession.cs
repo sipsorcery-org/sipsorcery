@@ -74,7 +74,7 @@ namespace SIPSorcery.SIP.App
         public void PutOnHold()
         {
             LocalOnHold = true;
-            SessionMediaChanged?.Invoke(CreateOffer());
+            SessionMediaChanged?.Invoke(CreateOfferInternal());
         }
 
         /// <summary>
@@ -83,7 +83,7 @@ namespace SIPSorcery.SIP.App
         public void TakeOffHold()
         {
             LocalOnHold = false;
-            SessionMediaChanged?.Invoke(CreateOffer());
+            SessionMediaChanged?.Invoke(CreateOfferInternal());
         }
 
         public virtual void Close()
@@ -94,7 +94,10 @@ namespace SIPSorcery.SIP.App
             Closed?.Invoke();
         }
 
-        public string CreateOffer(IPAddress destinationAddress = null)
+        public Task<string> CreateOffer(IPAddress destinationAddress = null) =>
+            Task.FromResult(CreateOfferInternal(destinationAddress));
+
+        private string CreateOfferInternal(IPAddress destinationAddress = null)
         {
             var destinationAddressToUse = FindDestinationAddressToUse(destinationAddress);
 
@@ -162,18 +165,19 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public void OfferAnswered(string remoteSDP)
+        public Task OfferAnswered(string remoteSDP)
         {
             SetRemoteSDP(remoteSDP);
+            return Task.FromResult(true);
         }
 
-        public string AnswerOffer(string remoteSDP)
+        public Task<string> AnswerOffer(string remoteSDP)
         {
             SetRemoteSDP(remoteSDP);
             return CreateOffer();
         }
 
-        public string RemoteReInvite(string remoteSDP)
+        public Task<string> RemoteReInvite(string remoteSDP)
         {
             SetRemoteSDP(remoteSDP);
             return CreateOffer();

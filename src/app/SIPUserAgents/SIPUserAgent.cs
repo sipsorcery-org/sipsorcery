@@ -170,7 +170,8 @@ namespace SIPSorcery.SIP.App
         /// Attempts to place a new outgoing call.
         /// </summary>
         /// <param name="sipCallDescriptor">A call descriptor containing the information about how and where to place the call.</param>
-        public void Call(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession)
+        /// <param name="mediaSession">The media session used for this call</param>
+        public async Task Call(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession)
         {
             m_uac = new SIPClientUserAgent(m_transport);
             m_uac.CallTrying += ClientCallTryingHandler;
@@ -185,7 +186,7 @@ namespace SIPSorcery.SIP.App
                 MediaSession = mediaSession;
                 MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
 
-                var sdp = MediaSession.CreateOffer(serverEndPoint.Address);
+                var sdp = await MediaSession.CreateOffer(serverEndPoint.Address).ConfigureAwait(false);
                 sipCallDescriptor.Content = sdp;
 
                 m_uac.Call(sipCallDescriptor);
@@ -264,7 +265,8 @@ namespace SIPSorcery.SIP.App
         /// Any existing call will be hungup.
         /// </summary>
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
-        public void Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
+        /// <param name="mediaSession">The media session used for this call</param>
+        public async Task Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
         {
             // This call is now taking over any existing call.
             if (IsCallActive)
@@ -277,7 +279,7 @@ namespace SIPSorcery.SIP.App
             MediaSession = mediaSession;
             MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
 
-            var sdpAnswer = MediaSession.AnswerOffer(sipRequest.Body);
+            var sdpAnswer = await MediaSession.AnswerOffer(sipRequest.Body).ConfigureAwait(false);
 
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer, null, SIPDialogueTransferModesEnum.Default);
@@ -417,7 +419,7 @@ namespace SIPSorcery.SIP.App
                     Dialogue.DialogueState = SIPDialogueStateEnum.Terminated;
 
                     SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await SendResponseAsync(okResponse);
+                    await SendResponseAsync(okResponse).ConfigureAwait(false);
 
                     CallEnded();
 
@@ -431,7 +433,7 @@ namespace SIPSorcery.SIP.App
 
                     try
                     {
-                        var answerSdp = MediaSession.RemoteReInvite(sipRequest.Body);
+                        var answerSdp = await MediaSession.RemoteReInvite(sipRequest.Body).ConfigureAwait(false);
 
                         Dialogue.RemoteSDP = sipRequest.Body;
                         Dialogue.SDP = answerSdp;
@@ -585,7 +587,7 @@ namespace SIPSorcery.SIP.App
             {
                 // Update the remote party's SDP.
                 Dialogue.RemoteSDP = sipResponse.Body;
-                MediaSession.OfferAnswered(sipResponse.Body);
+                _ = MediaSession.OfferAnswered(sipResponse.Body);
             }
             else
             {
@@ -666,12 +668,20 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="uac">The client user agent used to initiate the call.</param>
         /// <param name="sipResponse">The INVITE success response.</param>
-        private void ClientCallAnsweredHandler(ISIPClientUserAgent uac, SIPResponse sipResponse)
+        private void ClientCallAnsweredHandler(ISIPClientUserAgent uac, SIPResponse sipResponse) =>
+            _ = ClientCallAnsweredHandlerAsync(uac, sipResponse);
+
+        /// <summary>
+        /// Event handler for a client call (one initiated by us) being answered.
+        /// </summary>
+        /// <param name="uac">The client user agent used to initiate the call.</param>
+        /// <param name="sipResponse">The INVITE success response.</param>
+        private async Task ClientCallAnsweredHandlerAsync(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                MediaSession.OfferAnswered(sipResponse.Body);
+                await MediaSession.OfferAnswered(sipResponse.Body).ConfigureAwait(false);
 
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 

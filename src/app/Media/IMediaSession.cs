@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace SIPSorcery.SIP.App
 {
@@ -13,11 +14,11 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public interface IMediaSession
     {
-        string CreateOffer(IPAddress destinationAddress = null);
-        void OfferAnswered(string remoteSDP);
+        Task<string> CreateOffer(IPAddress destinationAddress = null);
+        Task OfferAnswered(string remoteSDP);
 
-        string AnswerOffer(string remoteSDP);
-        string RemoteReInvite(string remoteSDP);
+        Task<string> AnswerOffer(string remoteSDP);
+        Task<string> RemoteReInvite(string remoteSDP);
 
         void Close();
 

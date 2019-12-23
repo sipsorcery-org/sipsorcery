@@ -126,7 +126,7 @@ namespace SIPSorcery
                         RtpMediaSession = new RTPMediaSession(rtpSession);
                         RtpMediaSession.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
                         RtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
-                        userAgent.Answer(incomingCall, RtpMediaSession);
+                        await userAgent.Answer(incomingCall, RtpMediaSession);
 
                         PlayRemoteMedia(RtpMediaSession, audioOutProvider);
                         waveInEvent.StartRecording();
@@ -181,7 +181,7 @@ namespace SIPSorcery
                                 RtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
 
                                 var callDescriptor = GetCallDescriptor(DEFAULT_DESTINATION_SIP_URI);
-                                userAgent.Call(callDescriptor, RtpMediaSession);
+                                await userAgent.Call(callDescriptor, RtpMediaSession);
                             }
                             else
                             {

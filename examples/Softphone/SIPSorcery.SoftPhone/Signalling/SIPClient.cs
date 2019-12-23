@@ -134,7 +134,7 @@ namespace SIPSorcery.SoftPhone
                 MediaSession.RemotePutOnHold += OnRemotePutOnHold;
                 MediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                m_userAgent.Call(callDescriptor, MediaSession);
+                await m_userAgent.Call(callDescriptor, MediaSession);
             }
         }
 
@@ -160,7 +160,7 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Answers an incoming SIP call.
         /// </summary>
-        public void Answer()
+        public async Task Answer()
         {
             if (m_pendingIncomingCall == null)
             {
@@ -173,7 +173,7 @@ namespace SIPSorcery.SoftPhone
                 MediaSession.RemotePutOnHold += OnRemotePutOnHold;
                 MediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                m_userAgent.Answer(m_pendingIncomingCall, MediaSession);
+                await m_userAgent.Answer(m_pendingIncomingCall, MediaSession);
                 m_pendingIncomingCall = null;
             }
         }

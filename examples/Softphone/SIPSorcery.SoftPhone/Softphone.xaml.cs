@@ -425,11 +425,22 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// The button to answer an incoming call.
         /// </summary>
-        private void AnswerButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        private async void AnswerButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             var client = (sender == m_answerButton) ? _sipClients[0] : _sipClients[1];
 
-            client.Answer();
+            await AnswerCallAsync(client);
+        }
+
+        /// <summary>
+        /// Answer an incoming call on the SipClient
+        /// </summary>
+        /// <param name="client"></param>
+        /// <returns></returns>
+        private async Task AnswerCallAsync(SIPClient client)
+        {
+            await client.Answer();
+
             _mediaManager.StartAudio();
 
             if (client == _sipClients[0])
