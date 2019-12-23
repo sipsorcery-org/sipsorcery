@@ -62,16 +62,6 @@ namespace SIPSorcery.SIP
         { }
 
         /// <summary>
-        /// Creates a client only channel, no incoming connections accepted. This is useful for certain SIP client scenarios
-        /// where all communications are expected to be initiated from our end.
-        /// </summary>
-        /// <param name="addressFamily">Whether to connect to IPv4 or IPv6 servers.</param>
-        public SIPTLSChannel(AddressFamily addressFamily) : base(addressFamily, SIPProtocolsEnum.tls)
-        {
-            IsSecure = true;
-        }
-
-        /// <summary>
         /// For the TLS channel the SSL stream must be created and any authentication actions undertaken.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly accepted client socket.</param>
