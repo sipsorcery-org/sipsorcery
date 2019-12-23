@@ -21,10 +21,11 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace SIPSorcery.SoftPhone
 {
-    public class UIHelper
+    public static class UIHelper
     {
         private const int MOUSE_INPUT = 0;
         private const int MOUSEEVENTF_MOVE = 0x0001;
@@ -57,9 +58,9 @@ namespace SIPSorcery.SoftPhone
             public IntPtr dwExtraInfo;
         }
 
-        public static void DoOnUIThread(UIElement element, Action action)
+        public static void DoOnUIThread(this Dispatcher dispatcher, Action action)
         {
-            element.Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Render, (SendOrPostCallback)delegate { action(); }, null);
+            dispatcher.Invoke(DispatcherPriority.Render, (SendOrPostCallback)delegate { action(); }, null);
         }
 
         /// <summary>

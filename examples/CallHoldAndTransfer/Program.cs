@@ -16,6 +16,7 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -63,6 +64,8 @@ namespace SIPSorcery
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
             WaveInEvent waveInEvent = GetAudioInputDevice();
 
+            RTPMediaSession RtpMediaSession = null;
+
             // Create a client/server user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var userAgent = new SIPUserAgent(sipTransport, null);
 
@@ -79,7 +82,7 @@ namespace SIPSorcery
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                    PlayRemoteMedia(userAgent.RtpSession, audioOutProvider);
+                    PlayRemoteMedia(RtpMediaSession, audioOutProvider);
                 }
                 else
                 {
@@ -94,10 +97,8 @@ namespace SIPSorcery
                 exitCts.Cancel();
             };
             userAgent.ServerCallCancelled += (uas) => Log.LogInformation("Incoming call cancelled by caller.");
-            userAgent.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
-            userAgent.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
 
-            sipTransport.SIPTransportRequestReceived += async (locelEndPoint, remoteEndPoint, sipRequest) =>
+            sipTransport.SIPTransportRequestReceived += async (localEndPoint, remoteEndPoint, sipRequest) =>
             {
                 if (sipRequest.Header.From != null &&
                     sipRequest.Header.From.FromTag != null &&
@@ -120,9 +121,14 @@ namespace SIPSorcery
                     {
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
-                        userAgent.Answer(incomingCall);
 
-                        PlayRemoteMedia(userAgent.RtpSession, audioOutProvider);
+                        var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false, AddressFamily.InterNetwork);
+                        RtpMediaSession = new RTPMediaSession(rtpSession);
+                        RtpMediaSession.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
+                        RtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
+                        await userAgent.Answer(incomingCall, RtpMediaSession);
+
+                        PlayRemoteMedia(RtpMediaSession, audioOutProvider);
                         waveInEvent.StartRecording();
 
                         Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
@@ -149,9 +155,9 @@ namespace SIPSorcery
                     sample[sampleIndex++] = ulawByte;
                 }
 
-                if (userAgent?.RtpSession?.DestinationEndPoint != null)
+                if (RtpMediaSession != null)
                 {
-                    userAgent.RtpSession.SendAudioFrame(rtpSendTimestamp, sample);
+                    RtpMediaSession.SendAudioFrame(rtpSendTimestamp, sample);
                     rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
                 }
             };
@@ -165,12 +171,17 @@ namespace SIPSorcery
                     {
                         var keyProps = Console.ReadKey();
 
-                        if(keyProps.KeyChar == 'c')
+                        if (keyProps.KeyChar == 'c')
                         {
                             if (!userAgent.IsCallActive)
                             {
+                                var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false, AddressFamily.InterNetwork);
+                                RtpMediaSession = new RTPMediaSession(rtpSession);
+                                RtpMediaSession.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
+                                RtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
+
                                 var callDescriptor = GetCallDescriptor(DEFAULT_DESTINATION_SIP_URI);
-                                userAgent.Call(callDescriptor);
+                                await userAgent.Call(callDescriptor, RtpMediaSession);
                             }
                             else
                             {
@@ -182,15 +193,15 @@ namespace SIPSorcery
                             // Place call on/off hold.
                             if (userAgent.IsCallActive)
                             {
-                                if (userAgent.OnHoldFromLocal)
+                                if (RtpMediaSession.LocalOnHold)
                                 {
                                     Log.LogInformation("Taking the remote call party off hold.");
-                                    userAgent.TakeOffHold();
+                                    RtpMediaSession.TakeOffHold();
                                 }
                                 else
                                 {
                                     Log.LogInformation("Placing the remote call party on hold.");
-                                    userAgent.PutOnHold();
+                                    RtpMediaSession.PutOnHold();
                                 }
                             }
                             else
@@ -198,7 +209,7 @@ namespace SIPSorcery
                                 Log.LogWarning("There is no active call to put on hold.");
                             }
                         }
-                        else if(keyProps.KeyChar == 't')
+                        else if (keyProps.KeyChar == 't')
                         {
                             if (userAgent.IsCallActive)
                             {
@@ -248,7 +259,7 @@ namespace SIPSorcery
 
             Log.LogInformation("Exiting...");
 
-            userAgent?.RtpSession?.Close();
+            RtpMediaSession?.Close();
             waveInEvent?.StopRecording();
             audioOutEvent?.Stop();
 
@@ -310,8 +321,13 @@ namespace SIPSorcery
         /// </summary>
         /// <param name="rtpSession">The active RTP session receiving the remote party's RTP packets.</param>
         /// <param name="audioOutProvider">The audio buffer for the default system audio output device.</param>
-        private static void PlayRemoteMedia(RTPSession rtpSession, BufferedWaveProvider audioOutProvider)
+        private static void PlayRemoteMedia(RTPMediaSession rtpSession, BufferedWaveProvider audioOutProvider)
         {
+            if (rtpSession == null)
+            {
+                return;
+            }
+
             rtpSession.OnReceivedSampleReady += (sample) =>
             {
                 for (int index = 0; index < sample.Length; index++)
