@@ -128,6 +128,11 @@ namespace SIPSorcery.Net
         public event Action<RTPEvent> OnRtpEvent;
 
         /// <summary>
+        /// Gets fired if a network error indicates the remote RTP socket is no longer accepting packets.
+        /// </summary>
+        public event Action OnRtpDisconnect;
+
+        /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
         /// pseudo random values.
         /// </summary>
@@ -176,6 +181,7 @@ namespace SIPSorcery.Net
 
             MediaAnnouncement.Port = RtpChannel.RTPPort;
             RtpChannel.OnRTPDataReceived += RtpPacketReceived;
+            RtpChannel.OnRTPSocketDisconnected += OnRTPSocketDisconnected;
 
             // Start the RTP and Control socket receivers.
             RtpChannel.Start();
@@ -244,7 +250,14 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
+                        var sendResult = RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
+                        
+                        if(sendResult != SocketError.Success)
+                        {
+                            logger.LogWarning($"RTPChannel SendAudioFrame failed with {sendResult}.");
+                            OnRtpDisconnect?.Invoke();
+                            break;
+                        }
                     }
 
                     PacketsSent++;
@@ -709,6 +722,15 @@ namespace SIPSorcery.Net
             rtpJpegHeader[7] = (byte)(height / 8);
 
             return rtpJpegHeader;
+        }
+
+        /// <summary>
+        /// Event handler for network errors indicating the remote RTP socket is no longer accepting packets.
+        /// </summary>
+        private void OnRTPSocketDisconnected()
+        {
+            DestinationEndPoint = null;
+            OnRtpDisconnect?.Invoke();
         }
     }
 }
