@@ -26,7 +26,7 @@ namespace SIPSorcery.SoftPhone
 {
     public class AudioChannel
     {
-        public const int AUDIO_INPUT_BUFFER_MILLISECONDS = 80;
+        public const int AUDIO_INPUT_BUFFER_MILLISECONDS = 40;
 
         private ILog logger = AppState.logger;
 
@@ -60,7 +60,7 @@ namespace SIPSorcery.SoftPhone
             {
                 m_waveInEvent = new WaveInEvent();
                 m_waveInEvent.BufferMilliseconds = AUDIO_INPUT_BUFFER_MILLISECONDS;
-                m_waveInEvent.NumberOfBuffers = 1;
+                m_waveInEvent.NumberOfBuffers = 2;
                 m_waveInEvent.DeviceNumber = 0;
                 m_waveInEvent.DataAvailable += AudioSampleAvailable;
                 m_waveInEvent.WaveFormat = _waveFormat;
