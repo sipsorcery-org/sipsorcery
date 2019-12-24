@@ -313,24 +313,5 @@ namespace SIPSorcery.SIP
         /// Calls close on the SIP channel when the object is disposed.
         /// </summary>
         public abstract void Dispose();
-
-        #region Obsolete methods.
-
-        [Obsolete("Please use alternative GetLocalSIPEndPointForDestination, it takes into account the dst which is important for IPAddress.Any listeners.", true)]
-        public SIPEndPoint LocalSIPEndPoint;
-
-        [Obsolete("Please use alternative GetContactURI, it takes into account the dst which is important for IPAddress.Any listeners.", true)]
-        public string SIPChannelContactURI
-        {
-            get { return LocalSIPEndPoint.ToString(); }
-        }
-
-        [Obsolete("Please use alternative GetLocalSIPEndPointForDestination, it takes into account the dst which is important for IPAddress.Any listeners.", true)]
-        public SIPEndPoint DefaultSIPChannelEndPoint
-        {
-            get { return new SIPEndPoint(SIPProtocol, ListeningIPAddress, Port, ID, null); }
-        }
-
-        #endregion.
     }
 }

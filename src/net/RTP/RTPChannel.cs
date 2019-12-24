@@ -81,9 +81,10 @@ namespace SIPSorcery.Net
             {
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
                 // the BeginReceiveMessageFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
-                // case the sopcket can be considered to be unusable and there's no point trying another receive.
+                // case the socket can be considered to be unusable and there's no point trying another receive.
                 logger.LogError($"Exception UdpReceiver.Receive. {excp.Message}");
                 OnReceiveError?.Invoke(excp);
+                Close();
             }
         }
 
@@ -118,13 +119,14 @@ namespace SIPSorcery.Net
                 {
                     logger.LogWarning("RTP connection closed by remote host.");
                     OnReceiveError?.Invoke(sockExcp);
-                    Close();
                 }
                 else
                 {
                     logger.LogWarning($"SocketException UdpReceiver.EndReceiveMessageFrom ({sockExcp.ErrorCode}). {sockExcp.Message}");
                     OnReceiveError?.Invoke(sockExcp);
                 }
+
+                Close();
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
@@ -132,6 +134,7 @@ namespace SIPSorcery.Net
             {
                 logger.LogError($"Exception UdpReceiver.EndReceiveMessageFrom. {excp.Message}");
                 OnReceiveError?.Invoke(excp);
+                Close();
             }
             finally
             {

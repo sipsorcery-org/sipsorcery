@@ -453,6 +453,16 @@ namespace SIPSorcery.SIP
                                             logger.LogWarning($"Unrecognised transaction type {transaction.TransactionType}.");
                                             break;
                                     }
+
+                                    if (sendResult != SocketError.Success)
+                                    {
+                                        // Example of failures here are requiring a specific TCP or TLS connection that no longer exists
+                                        // or attemptign to send to a UDP socket that has previously returned an ICMP error.
+                                        transaction.DeliveryPending = false;
+                                        transaction.DeliveryFailed = true;
+                                        transaction.TimedOutAt = DateTime.Now;
+                                        transaction.FireTransactionTimedOut();
+                                    }
                                 }
                             }
                         }
