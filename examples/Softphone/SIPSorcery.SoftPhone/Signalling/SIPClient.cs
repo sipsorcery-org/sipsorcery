@@ -36,7 +36,7 @@ namespace SIPSorcery.SoftPhone
         private string m_sipFromName = SIPSoftPhoneState.SIPFromName;
 
         private SIPTransport m_sipTransport;
-        private RTPMediaSessionManager m_RTPMediaSessionManager;
+        private RTPMediaSessionManager m_rtpMediaSessionManager;
         private SIPUserAgent m_userAgent;
         private SIPServerUserAgent m_pendingIncomingCall;
         private CancellationTokenSource _cts = new CancellationTokenSource();
@@ -47,11 +47,6 @@ namespace SIPSorcery.SoftPhone
 
         public event Action<SIPClient> RemotePutOnHold;            // Fires when the remote call party puts us on hold.	
         public event Action<SIPClient> RemoteTookOffHold;          // Fires when the remote call party takes us off hold.
-
-        /// <summary>
-        /// The RTP session associated with this client.
-        /// </summary>
-        public RTPMediaSession MediaSession { get; private set; }
 
         /// <summary>
         /// Once a call is established this holds the properties of the established SIP dialogue.
@@ -72,7 +67,7 @@ namespace SIPSorcery.SoftPhone
         public SIPClient(SIPTransport sipTransport, RTPMediaSessionManager rtpMediaSessionManager)
         {
             m_sipTransport = sipTransport;
-            m_RTPMediaSessionManager = rtpMediaSessionManager;
+            m_rtpMediaSessionManager = rtpMediaSessionManager;
             m_userAgent = new SIPUserAgent(m_sipTransport, null);
             m_userAgent.ClientCallTrying += CallTrying;
             m_userAgent.ClientCallRinging += CallRinging;
@@ -130,11 +125,11 @@ namespace SIPSorcery.SoftPhone
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
-                MediaSession = m_RTPMediaSessionManager.Create(dstEndpoint.Address);
-                MediaSession.RemotePutOnHold += OnRemotePutOnHold;
-                MediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
+                m_rtpMediaSessionManager.Create(dstEndpoint.Address.AddressFamily);
+                m_rtpMediaSessionManager.RTPMediaSession.RemotePutOnHold += OnRemotePutOnHold;
+                m_rtpMediaSessionManager.RTPMediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.Call(callDescriptor, MediaSession);
+                await m_userAgent.Call(callDescriptor, m_rtpMediaSessionManager.RTPMediaSession);
             }
         }
 
@@ -169,11 +164,11 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
-                MediaSession = m_RTPMediaSessionManager.Create(sipRequest.RemoteSIPEndPoint.Address);
-                MediaSession.RemotePutOnHold += OnRemotePutOnHold;
-                MediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
+                m_rtpMediaSessionManager.Create(sipRequest.RemoteSIPEndPoint.Address.AddressFamily);
+                m_rtpMediaSessionManager.RTPMediaSession.RemotePutOnHold += OnRemotePutOnHold;
+                m_rtpMediaSessionManager.RTPMediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.Answer(m_pendingIncomingCall, MediaSession);
+                await m_userAgent.Answer(m_pendingIncomingCall, m_rtpMediaSessionManager.RTPMediaSession);
                 m_pendingIncomingCall = null;
             }
         }
@@ -191,7 +186,8 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void PutOnHold()
         {
-            MediaSession.PutOnHold();
+            m_rtpMediaSessionManager.UseMusicOnHold(true);
+            m_rtpMediaSessionManager.RTPMediaSession.PutOnHold();
             // At this point we could stop listening to the remote party's RTP and play something 
             // else and also stop sending our microphone output and play some music.
             StatusMessage(this, "Local party put on hold");
@@ -202,7 +198,8 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void TakeOffHold()
         {
-            MediaSession.TakeOffHold();
+            m_rtpMediaSessionManager.UseMusicOnHold(false);
+            m_rtpMediaSessionManager.RTPMediaSession.TakeOffHold();
             // At ths point we should reverse whatever changes we made to the media stream when we
             // put the remote call part on hold.
             StatusMessage(this, "Local party taken off on hold");
@@ -395,7 +392,7 @@ namespace SIPSorcery.SoftPhone
 
         public Task SendDTMF(byte b)
         {
-            return MediaSession.SendDtmf(b, _cts.Token);
+            return m_rtpMediaSessionManager.RTPMediaSession.SendDtmf(b, _cts.Token);
         }
     }
 }

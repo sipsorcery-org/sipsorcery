@@ -101,6 +101,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="AppState.cs" />
+    <Compile Include="Media\MusicOnHold.cs" />
     <Compile Include="Media\RTPMediaSessionManager.cs" />
     <Compile Include="Media\VideoSubTypes.cs" />
     <Compile Include="Signalling\IVoIPClient.cs" />
@@ -146,6 +147,9 @@
     </EmbeddedResource>
     <None Include="App.config">
       <SubType>Designer</SubType>
+    </None>
+    <None Include="content\Macroform_-_Simplicity.ulaw">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
