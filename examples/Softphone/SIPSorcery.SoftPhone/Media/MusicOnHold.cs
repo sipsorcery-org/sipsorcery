@@ -22,6 +22,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using log4net;
+using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone
@@ -34,7 +35,7 @@ namespace SIPSorcery.SoftPhone
         private ILog logger = AppState.logger;
 
         private bool _stop = false;
-        private bool _isMusicRunning = false;
+        private Task _samplesTask;
 
         /// <summary>
         /// Fires when a music on hold audio sample is available.
@@ -46,39 +47,47 @@ namespace SIPSorcery.SoftPhone
         /// Creates a default music on hold class.
         /// </summary>
         public MusicOnHold()
-        { }
+        {  }
 
-        public async void Start()
+        public void Start()
         {
-            if (!_isMusicRunning)
+            _stop = false;
+
+            if (_samplesTask == null || _samplesTask.Status != TaskStatus.Running)
             {
-                _isMusicRunning = true;
+                logger.Debug("Music on hold samples task starting.");
 
-                using (StreamReader sr = new StreamReader(AUDIO_FILE_PCMU))
+                _samplesTask = Task.Run(async () =>
                 {
-                    int sampleSize = 8000 / (1000 / AUDIO_SAMPLE_PERIOD_MILLISECONDS);
-                    byte[] sample = new byte[sampleSize];
-                    int bytesRead = sr.BaseStream.Read(sample, 0, sample.Length);
-
-                    while (bytesRead > 0 && !_stop)
+                    // Read the same file in an endless loop while samples are still requried.
+                    while (!_stop)
                     {
-                        if (OnAudioSampleReady == null)
+                        using (StreamReader sr = new StreamReader(AUDIO_FILE_PCMU))
                         {
-                            // Nobody needs music on hold so exit.
-                            break;
-                        }
-                        else
-                        {
-                            OnAudioSampleReady(sample);
-                        }
+                            int sampleSize = (SDPMediaFormatInfo.GetClockRate(SDPMediaFormatsEnum.PCMU) / 1000) * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+                            byte[] sample = new byte[sampleSize];
+                            int bytesRead = sr.BaseStream.Read(sample, 0, sample.Length);
 
-                        await Task.Delay(AUDIO_SAMPLE_PERIOD_MILLISECONDS);
-                        bytesRead = sr.BaseStream.Read(sample, 0, sample.Length);
+                            while (bytesRead > 0 && !_stop)
+                            {
+                                if (OnAudioSampleReady == null)
+                                {
+                                    // Nobody needs music on hold so exit.
+                                    logger.Debug("Music on hold has no subscribers, stopping.");
+                                    return;
+                                }
+                                else
+                                {
+                                    OnAudioSampleReady(sample);
+                                }
+
+                                await Task.Delay(AUDIO_SAMPLE_PERIOD_MILLISECONDS);
+                                bytesRead = sr.BaseStream.Read(sample, 0, sample.Length);
+                            }
+                        }
                     }
-                }
+                });
             }
-
-            _isMusicRunning = false;
         }
 
         /// <summary>
