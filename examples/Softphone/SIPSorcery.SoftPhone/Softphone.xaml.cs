@@ -52,6 +52,7 @@ namespace SIPSorcery.SoftPhone
         private SIPRegistrationUserAgent _sipRegistrationClient;    // Can be used to register with an external SIP provider if incoming calls are required.
 
         private MediaManager _mediaManager;                         // The media (audio and video) manager.
+        private MusicOnHold _musicOnHold;                           // Music on hold source. Used for supplying audio to on hold calls.
         private WriteableBitmap _localWriteableBitmap;
         private Int32Rect _localBitmapFullRectangle;
         private WriteableBitmap _remoteWriteableBitmap;
@@ -92,6 +93,8 @@ namespace SIPSorcery.SoftPhone
             _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
             _mediaManager.OnLocalVideoError += LocalVideoError;
 
+            _musicOnHold = new MusicOnHold();
+
             await Initialize();
 
             if (_localVideoDevices.Items.Count == 0)
@@ -106,7 +109,7 @@ namespace SIPSorcery.SoftPhone
 
             for (int i = 0; i < SIP_CLIENT_COUNT; i++)
             {
-                var mediaSessionFactory = new RTPMediaSessionManager(_mediaManager);
+                var mediaSessionFactory = new RTPMediaSessionManager(_mediaManager, _musicOnHold);
                 var sipClient = new SIPClient(_sipTransportManager.SIPTransport, mediaSessionFactory);
 
                 sipClient.CallAnswer += SIPCallAnswered;
