@@ -394,6 +394,11 @@ namespace Heijden.DNS
             //logger.LogDebug("Seconds lived=" + secondsLived + ".");
             foreach (RR rr in response.RecordsRR)
             {
+                if (rr.Type == DnsType.OPT)
+                {
+                    continue;
+                }
+
                 rr.TimeLived = TimeLived;
                 // The TTL property calculates its actual time to live
                 if (secondsLived > MIN_CACHE_SECONDS && secondsLived >= rr.TTL)
