@@ -2764,6 +2764,12 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
   fullName: SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
   nameWithType: RTPSession.OnReceiveFromEndPointChanged
+- uid: SIPSorcery.Net.RTPSession.OnRtpDisconnect
+  name: OnRtpDisconnect
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpDisconnect
+  commentId: E:SIPSorcery.Net.RTPSession.OnRtpDisconnect
+  fullName: SIPSorcery.Net.RTPSession.OnRtpDisconnect
+  nameWithType: RTPSession.OnRtpDisconnect
 - uid: SIPSorcery.Net.RTPSession.OnRtpEvent
   name: OnRtpEvent
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpEvent
@@ -9173,6 +9179,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.IMediaSession.OfferAnswered
   nameWithType: IMediaSession.OfferAnswered
+- uid: SIPSorcery.SIP.App.IMediaSession.OnRtpDisconnected
+  name: OnRtpDisconnected
+  href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_OnRtpDisconnected
+  commentId: E:SIPSorcery.SIP.App.IMediaSession.OnRtpDisconnected
+  fullName: SIPSorcery.SIP.App.IMediaSession.OnRtpDisconnected
+  nameWithType: IMediaSession.OnRtpDisconnected
 - uid: SIPSorcery.SIP.App.IMediaSession.RemoteReInvite(System.String)
   name: RemoteReInvite(String)
   href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_RemoteReInvite_System_String_
@@ -9849,6 +9861,12 @@ references:
   commentId: E:SIPSorcery.SIP.App.RTPMediaSession.OnReceivedSampleReady
   fullName: SIPSorcery.SIP.App.RTPMediaSession.OnReceivedSampleReady
   nameWithType: RTPMediaSession.OnReceivedSampleReady
+- uid: SIPSorcery.SIP.App.RTPMediaSession.OnRtpDisconnected
+  name: OnRtpDisconnected
+  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_OnRtpDisconnected
+  commentId: E:SIPSorcery.SIP.App.RTPMediaSession.OnRtpDisconnected
+  fullName: SIPSorcery.SIP.App.RTPMediaSession.OnRtpDisconnected
+  nameWithType: RTPMediaSession.OnRtpDisconnected
 - uid: SIPSorcery.SIP.App.RTPMediaSession.PutOnHold
   name: PutOnHold()
   href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_PutOnHold
@@ -14155,19 +14173,6 @@ references:
   commentId: F:SIPSorcery.SIP.SIPChannel.Closed
   fullName: SIPSorcery.SIP.SIPChannel.Closed
   nameWithType: SIPChannel.Closed
-- uid: SIPSorcery.SIP.SIPChannel.DefaultSIPChannelEndPoint
-  name: DefaultSIPChannelEndPoint
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_DefaultSIPChannelEndPoint
-  commentId: P:SIPSorcery.SIP.SIPChannel.DefaultSIPChannelEndPoint
-  fullName: SIPSorcery.SIP.SIPChannel.DefaultSIPChannelEndPoint
-  nameWithType: SIPChannel.DefaultSIPChannelEndPoint
-- uid: SIPSorcery.SIP.SIPChannel.DefaultSIPChannelEndPoint*
-  name: DefaultSIPChannelEndPoint
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_DefaultSIPChannelEndPoint_
-  commentId: Overload:SIPSorcery.SIP.SIPChannel.DefaultSIPChannelEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPChannel.DefaultSIPChannelEndPoint
-  nameWithType: SIPChannel.DefaultSIPChannelEndPoint
 - uid: SIPSorcery.SIP.SIPChannel.Dispose
   name: Dispose()
   href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_Dispose
@@ -14362,12 +14367,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPChannel.LocalIPAddresses
   nameWithType: SIPChannel.LocalIPAddresses
-- uid: SIPSorcery.SIP.SIPChannel.LocalSIPEndPoint
-  name: LocalSIPEndPoint
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_LocalSIPEndPoint
-  commentId: F:SIPSorcery.SIP.SIPChannel.LocalSIPEndPoint
-  fullName: SIPSorcery.SIP.SIPChannel.LocalSIPEndPoint
-  nameWithType: SIPChannel.LocalSIPEndPoint
 - uid: SIPSorcery.SIP.SIPChannel.logger
   name: logger
   href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_logger
@@ -14419,19 +14418,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPChannel.SendSecureAsync
   nameWithType: SIPChannel.SendSecureAsync
-- uid: SIPSorcery.SIP.SIPChannel.SIPChannelContactURI
-  name: SIPChannelContactURI
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPChannelContactURI
-  commentId: P:SIPSorcery.SIP.SIPChannel.SIPChannelContactURI
-  fullName: SIPSorcery.SIP.SIPChannel.SIPChannelContactURI
-  nameWithType: SIPChannel.SIPChannelContactURI
-- uid: SIPSorcery.SIP.SIPChannel.SIPChannelContactURI*
-  name: SIPChannelContactURI
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPChannelContactURI_
-  commentId: Overload:SIPSorcery.SIP.SIPChannel.SIPChannelContactURI
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.SIPChannel.SIPChannelContactURI
-  nameWithType: SIPChannel.SIPChannelContactURI
 - uid: SIPSorcery.SIP.SIPChannel.SIPMessageReceived
   name: SIPMessageReceived
   href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPMessageReceived
