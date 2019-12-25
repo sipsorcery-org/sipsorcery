@@ -178,11 +178,15 @@ namespace SIPSorcery
                                 uas?.Hangup(false);
                             }
                             rtpCts?.Cancel();
+                            rtpCts = new CancellationTokenSource();
 
                             UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
                             uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
-                            rtpCts = new CancellationTokenSource();
-
+                            uas.CallCancelled += (uasAgent) => 
+                            {
+                                rtpCts?.Cancel();
+                                rtpSession.Close();
+                            };
                             uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
                             uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 

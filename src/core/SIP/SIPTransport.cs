@@ -829,7 +829,8 @@ namespace SIPSorcery.SIP
                                             }
                                             else if (sipRequest.Method == SIPMethodsEnum.ACK)
                                             {
-                                                if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed)
+                                                if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed ||
+                                                    requestTransaction.TransactionState == SIPTransactionStatesEnum.Cancelled)
                                                 {
                                                     sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
                                                     requestTransaction.ACKReceived(localEndPoint, remoteEndPoint, sipRequest);
