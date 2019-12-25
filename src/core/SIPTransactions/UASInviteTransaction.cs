@@ -73,6 +73,8 @@ namespace SIPSorcery.SIP
             TransactionFinalResponseReceived += UASInviteTransaction_TransactionResponseReceived;
             TransactionTimedOut += UASInviteTransaction_TransactionTimedOut;
             TransactionRemoved += UASInviteTransaction_TransactionRemoved;
+
+            sipTransport.AddTransaction(this);
         }
 
         private void UASInviteTransaction_TransactionRemoved(SIPTransaction transaction)

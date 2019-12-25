@@ -208,7 +208,7 @@ namespace SIPSorcery
                                     }
                                 });
 
-                            uas.Answer(SDP.SDP_MIME_CONTENTTYPE, rtpSession.GetSDP(rtpAddress).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
+                            //uas.Answer(SDP.SDP_MIME_CONTENTTYPE, rtpSession.GetSDP(rtpAddress).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
                         }
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)

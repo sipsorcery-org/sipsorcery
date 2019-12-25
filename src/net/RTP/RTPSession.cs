@@ -254,7 +254,7 @@ namespace SIPSorcery.Net
                         
                         if(sendResult != SocketError.Success)
                         {
-                            logger.LogWarning($"RTPChannel SendAudioFrame failed with {sendResult}.");
+                            //logger.LogWarning($"RTPChannel SendAudioFrame failed with {sendResult}.");
                             OnRtpDisconnect?.Invoke();
                             break;
                         }
