@@ -19,6 +19,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -305,7 +306,7 @@ namespace SIPSorcery.SIP
                     if (m_pendingTransactions.Count == 0)
                     {
                         // No request retransmissions wait until next one required.
-                        await Task.Delay(MAX_QUEUEWAIT_PERIOD);
+                        Thread.Sleep(MAX_QUEUEWAIT_PERIOD);
                     }
 
                     foreach (SIPTransaction transaction in m_pendingTransactions.Values.Where(x => x.DeliveryPending))
@@ -475,7 +476,7 @@ namespace SIPSorcery.SIP
                     RemoveExpiredTransactions();
                 }
 
-                await Task.Delay(PENDINGREQUESTS_CHECK_PERIOD);
+                Thread.Sleep(PENDINGREQUESTS_CHECK_PERIOD);
 
             }
             catch (Exception excp)
