@@ -59,9 +59,7 @@ namespace SIPSorcery.SoftPhone
         /// <returns>A new RTP media session object.</returns>
         public virtual RTPMediaSession Create(AddressFamily addressFamily)
         {
-            var rtpSession = new RTPSession((int)DefaultAudioFormat, null, null, true, addressFamily);
-
-            RTPMediaSession = new RTPMediaSession(rtpSession);
+            RTPMediaSession = new RTPMediaSession((int)DefaultAudioFormat, addressFamily);
 
             RTPMediaSession.Closed += () =>
             {
@@ -70,7 +68,7 @@ namespace SIPSorcery.SoftPhone
             };
 
             _mediaManager.OnLocalAudioSampleReady += LocalAudioSampleReadyForSession;
-            rtpSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
+            RTPMediaSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
 
             return RTPMediaSession;
         }

@@ -122,8 +122,7 @@ namespace SIPSorcery
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
 
-                        var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false, AddressFamily.InterNetwork);
-                        RtpMediaSession = new RTPMediaSession(rtpSession);
+                        RtpMediaSession = new RTPMediaSession((int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork);
                         RtpMediaSession.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
                         RtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
                         await userAgent.Answer(incomingCall, RtpMediaSession);
@@ -175,8 +174,7 @@ namespace SIPSorcery
                         {
                             if (!userAgent.IsCallActive)
                             {
-                                var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false, AddressFamily.InterNetwork);
-                                RtpMediaSession = new RTPMediaSession(rtpSession);
+                                RtpMediaSession = new RTPMediaSession((int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork);
                                 RtpMediaSession.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
                                 RtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
 
