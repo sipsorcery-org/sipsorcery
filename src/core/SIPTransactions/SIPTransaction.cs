@@ -363,9 +363,6 @@ namespace SIPSorcery.SIP
             if (sipResponse.StatusCode == 100)
             {
                 UpdateTransactionState(SIPTransactionStatesEnum.Trying);
-                //ProvisionalResponse = sipResponse;
-
-                //m_sipTransport.SendTransaction(this);
                 return m_sipTransport.SendResponseAsync(sipResponse);
             }
             else if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)

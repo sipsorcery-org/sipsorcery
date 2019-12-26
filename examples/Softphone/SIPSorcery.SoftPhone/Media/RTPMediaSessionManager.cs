@@ -61,7 +61,7 @@ namespace SIPSorcery.SoftPhone
         {
             RTPMediaSession = new RTPMediaSession((int)DefaultAudioFormat, addressFamily);
 
-            RTPMediaSession.Closed += () =>
+            RTPMediaSession.OnRtpClosed += (reason) =>
             {
                 _mediaManager.OnLocalAudioSampleReady -= LocalAudioSampleReadyForSession;
                 _musicOnHold.OnAudioSampleReady -= LocalAudioSampleReadyForSession;

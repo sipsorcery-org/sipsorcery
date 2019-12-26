@@ -190,7 +190,7 @@ namespace SIPSorcery
 
             waveInEvent?.StopRecording();
             audioOutEvent?.Stop();
-            rtpSession.CloseSession();
+            rtpSession.CloseSession(null);
 
             if (!isCallHungup && uac != null)
             {

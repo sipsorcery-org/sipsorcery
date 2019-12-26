@@ -62,11 +62,6 @@ namespace SIPSorcery.SIP.App
         public event Action RemoteTookOffHold;
 
         /// <summary>
-        /// Media Session closed.
-        /// </summary>
-        public event Action Closed;
-
-        /// <summary>
         /// Gets fired when an RTP DTMF event is completed on the remote call party's RTP stream.
         /// </summary>
         public event Action<byte> DtmfCompleted;
@@ -97,8 +92,7 @@ namespace SIPSorcery.SIP.App
 
         public virtual void Close()
         {
-            CloseSession();
-            Closed?.Invoke();
+            CloseSession(null);
         }
 
         public Task<string> CreateOffer(IPAddress destinationAddress = null) =>
