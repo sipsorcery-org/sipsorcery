@@ -794,7 +794,6 @@ namespace SIPSorcery.SIP
                                         }
                                         else
                                         {
-                                            // TODO: Where does this exception end up?
                                             SIPTransportResponseReceived?.Invoke(localEndPoint, remoteEndPoint, sipResponse);
                                         }
                                     }

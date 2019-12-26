@@ -743,6 +743,7 @@ namespace SIPSorcery.SIP
 
                 logger.LogDebug($"SIP {ProtDescr} Channel socket on {ListeningEndPoint} pruning connections halted.");
             }
+            catch (OperationCanceledException) { }
             catch (Exception excp)
             {
                 logger.LogError($"Exception SIP {ProtDescr} Channel PruneConnections. " + excp.Message);

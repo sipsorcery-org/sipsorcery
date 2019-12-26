@@ -389,10 +389,7 @@ namespace SIPSorcery.SIP
                                                     break;
 
                                                 case SIPTransactionStatesEnum.Proceeding:
-                                                    if (transaction.PRackRequest != null)
-                                                    {
-                                                        sendResult = await m_sipTransport.SendRequestAsync(transaction.PRackRequest);
-                                                    }
+                                                    transaction.DeliveryPending = false;
                                                     break;
 
                                                 case SIPTransactionStatesEnum.Completed:
@@ -493,6 +490,14 @@ namespace SIPSorcery.SIP
         /// <returns>The result of the send attempt.</returns>
         private Task<SocketError> SendTransactionProvisionalResponse(SIPTransaction transaction)
         {
+            if (transaction.InitialTransmit == DateTime.MinValue)
+            {
+                transaction.InitialTransmit = DateTime.Now;
+            }
+
+            transaction.Retransmits = transaction.Retransmits + 1;
+            transaction.LastTransmit = DateTime.Now;
+
             // Provisional response reliable for INVITE-UAS.
             if (transaction.Retransmits > 1)
             {
@@ -550,13 +555,16 @@ namespace SIPSorcery.SIP
                 transaction.RequestRetransmit();
             }
 
+            // If there is no tx request then it must be a PRack request we're being asked to send reliably.
+            SIPRequest req = transaction.TransactionRequest ?? transaction.PRackRequest;
+
             if (transaction.OutboundProxy != null)
             {
-                result = m_sipTransport.SendRequestAsync(transaction.OutboundProxy, transaction.TransactionRequest);
+                result = m_sipTransport.SendRequestAsync(transaction.OutboundProxy, req);
             }
             else
             {
-                result = m_sipTransport.SendRequestAsync(transaction.TransactionRequest);
+                result = m_sipTransport.SendRequestAsync(req);
             }
 
             return result;
