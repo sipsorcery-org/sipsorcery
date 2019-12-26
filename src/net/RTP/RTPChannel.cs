@@ -462,7 +462,7 @@ namespace SIPSorcery.Net
                 RTPLastActivityAt = DateTime.Now;
 
                 PacketsReceivedCount++;
-                OctetsReceivedCount += packet.Length; // TODO: Think this needs to adjusted to be only the data and not include RTP headers.
+                OctetsReceivedCount += packet.Length;
 
                 OnRTPDataReceived?.Invoke(remoteEndPoint, packet);
             }
