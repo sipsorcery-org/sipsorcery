@@ -177,7 +177,7 @@ namespace SIPSorcery.SIP
 
                 if (m_queueIncoming && !m_transportThreadStarted)
                 {
-                    StartTransportThread();
+                    Start();
                 }
             }
             catch (Exception excp)
@@ -187,6 +187,10 @@ namespace SIPSorcery.SIP
             }
         }
 
+        /// <summary>
+        /// Removes a single SIP channel from the transport layer.
+        /// </summary>
+        /// <param name="sipChannel">The SIP ch</param>
         public void RemoveSIPChannel(SIPChannel sipChannel)
         {
             if (m_sipChannels.ContainsKey(sipChannel.ID))
@@ -196,12 +200,39 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private void StartTransportThread()
+        /// <summary>
+        /// Starts long running tasks required by the SIP transport layer.
+        /// </summary>
+        private void Start()
         {
             if (!m_transportThreadStarted)
             {
                 m_transportThreadStarted = true;
                 Task.Run(ProcessReceiveQueue);
+            }
+        }
+
+        /// <summary>
+        /// Shutsdown the SIP transport layer by closing all SIP channels and stopping long running tasks.
+        /// </summary>
+        public void Shutdown()
+        {
+            try
+            {
+                m_closed = true;
+
+                m_transactionEngine?.Shutdown();
+
+                m_inMessageArrived.Set();
+
+                foreach (SIPChannel channel in m_sipChannels.Values)
+                {
+                    channel.Close();
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception SIPTransport Shutdown. " + excp.Message);
             }
         }
 
@@ -250,27 +281,6 @@ namespace SIPSorcery.SIP
             {
                 logger.LogError("Exception SIPTransport ReceiveMessage. " + excp.Message);
                 throw excp;
-            }
-        }
-
-        public void Shutdown()
-        {
-            try
-            {
-                m_closed = true;
-
-                m_transactionEngine?.Shutdown();
-
-                m_inMessageArrived.Set();
-
-                foreach (SIPChannel channel in m_sipChannels.Values)
-                {
-                    channel.Close();
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception SIPTransport Shutdown. " + excp.Message);
             }
         }
 
