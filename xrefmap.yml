@@ -1773,12 +1773,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.RTPChannel
   nameWithType: RTPChannel.RTPChannel
-- uid: SIPSorcery.Net.RTPChannel.Close
-  name: Close()
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Close
-  commentId: M:SIPSorcery.Net.RTPChannel.Close
-  fullName: SIPSorcery.Net.RTPChannel.Close()
-  nameWithType: RTPChannel.Close()
+- uid: SIPSorcery.Net.RTPChannel.Close(System.String)
+  name: Close(String)
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Close_System_String_
+  commentId: M:SIPSorcery.Net.RTPChannel.Close(System.String)
+  fullName: SIPSorcery.Net.RTPChannel.Close(System.String)
+  nameWithType: RTPChannel.Close(String)
 - uid: SIPSorcery.Net.RTPChannel.Close*
   name: Close
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Close_
@@ -1838,6 +1838,25 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.CreatedAt
   nameWithType: RTPChannel.CreatedAt
+- uid: SIPSorcery.Net.RTPChannel.Dispose
+  name: Dispose()
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Dispose
+  commentId: M:SIPSorcery.Net.RTPChannel.Dispose
+  fullName: SIPSorcery.Net.RTPChannel.Dispose()
+  nameWithType: RTPChannel.Dispose()
+- uid: SIPSorcery.Net.RTPChannel.Dispose(System.Boolean)
+  name: Dispose(Boolean)
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Dispose_System_Boolean_
+  commentId: M:SIPSorcery.Net.RTPChannel.Dispose(System.Boolean)
+  fullName: SIPSorcery.Net.RTPChannel.Dispose(System.Boolean)
+  nameWithType: RTPChannel.Dispose(Boolean)
+- uid: SIPSorcery.Net.RTPChannel.Dispose*
+  name: Dispose
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Dispose_
+  commentId: Overload:SIPSorcery.Net.RTPChannel.Dispose
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPChannel.Dispose
+  nameWithType: RTPChannel.Dispose
 - uid: SIPSorcery.Net.RTPChannel.IsClosed
   name: IsClosed
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_IsClosed
@@ -1877,30 +1896,24 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.OctetsSentCount
   nameWithType: RTPChannel.OctetsSentCount
+- uid: SIPSorcery.Net.RTPChannel.OnClosed
+  name: OnClosed
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnClosed
+  commentId: E:SIPSorcery.Net.RTPChannel.OnClosed
+  fullName: SIPSorcery.Net.RTPChannel.OnClosed
+  nameWithType: RTPChannel.OnClosed
 - uid: SIPSorcery.Net.RTPChannel.OnControlDataReceived
   name: OnControlDataReceived
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnControlDataReceived
   commentId: E:SIPSorcery.Net.RTPChannel.OnControlDataReceived
   fullName: SIPSorcery.Net.RTPChannel.OnControlDataReceived
   nameWithType: RTPChannel.OnControlDataReceived
-- uid: SIPSorcery.Net.RTPChannel.OnControlSocketDisconnected
-  name: OnControlSocketDisconnected
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnControlSocketDisconnected
-  commentId: E:SIPSorcery.Net.RTPChannel.OnControlSocketDisconnected
-  fullName: SIPSorcery.Net.RTPChannel.OnControlSocketDisconnected
-  nameWithType: RTPChannel.OnControlSocketDisconnected
 - uid: SIPSorcery.Net.RTPChannel.OnRTPDataReceived
   name: OnRTPDataReceived
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnRTPDataReceived
   commentId: E:SIPSorcery.Net.RTPChannel.OnRTPDataReceived
   fullName: SIPSorcery.Net.RTPChannel.OnRTPDataReceived
   nameWithType: RTPChannel.OnRTPDataReceived
-- uid: SIPSorcery.Net.RTPChannel.OnRTPSocketDisconnected
-  name: OnRTPSocketDisconnected
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnRTPSocketDisconnected
-  commentId: E:SIPSorcery.Net.RTPChannel.OnRTPSocketDisconnected
-  fullName: SIPSorcery.Net.RTPChannel.OnRTPSocketDisconnected
-  nameWithType: RTPChannel.OnRTPSocketDisconnected
 - uid: SIPSorcery.Net.RTPChannel.PacketsReceivedCount
   name: PacketsReceivedCount
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_PacketsReceivedCount
@@ -1927,32 +1940,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.PacketsSentCount
   nameWithType: RTPChannel.PacketsSentCount
-- uid: SIPSorcery.Net.RTPChannel.RemoteControlEndPoint
-  name: RemoteControlEndPoint
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RemoteControlEndPoint
-  commentId: P:SIPSorcery.Net.RTPChannel.RemoteControlEndPoint
-  fullName: SIPSorcery.Net.RTPChannel.RemoteControlEndPoint
-  nameWithType: RTPChannel.RemoteControlEndPoint
-- uid: SIPSorcery.Net.RTPChannel.RemoteControlEndPoint*
-  name: RemoteControlEndPoint
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RemoteControlEndPoint_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.RemoteControlEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.RemoteControlEndPoint
-  nameWithType: RTPChannel.RemoteControlEndPoint
-- uid: SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint
-  name: RemoteRTPEndPoint
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RemoteRTPEndPoint
-  commentId: P:SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint
-  fullName: SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint
-  nameWithType: RTPChannel.RemoteRTPEndPoint
-- uid: SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint*
-  name: RemoteRTPEndPoint
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RemoteRTPEndPoint_
-  commentId: Overload:SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPChannel.RemoteRTPEndPoint
-  nameWithType: RTPChannel.RemoteRTPEndPoint
 - uid: SIPSorcery.Net.RTPChannel.RTPLastActivityAt
   name: RTPLastActivityAt
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RTPLastActivityAt
@@ -2656,19 +2643,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.RTPSession
   nameWithType: RTPSession.RTPSession
-- uid: SIPSorcery.Net.RTPSession.Close
-  name: Close()
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Close
-  commentId: M:SIPSorcery.Net.RTPSession.Close
-  fullName: SIPSorcery.Net.RTPSession.Close()
-  nameWithType: RTPSession.Close()
-- uid: SIPSorcery.Net.RTPSession.Close*
-  name: Close
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Close_
-  commentId: Overload:SIPSorcery.Net.RTPSession.Close
+- uid: SIPSorcery.Net.RTPSession.CloseSession(System.String)
+  name: CloseSession(String)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CloseSession_System_String_
+  commentId: M:SIPSorcery.Net.RTPSession.CloseSession(System.String)
+  fullName: SIPSorcery.Net.RTPSession.CloseSession(System.String)
+  nameWithType: RTPSession.CloseSession(String)
+- uid: SIPSorcery.Net.RTPSession.CloseSession*
+  name: CloseSession
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CloseSession_
+  commentId: Overload:SIPSorcery.Net.RTPSession.CloseSession
   isSpec: "True"
-  fullName: SIPSorcery.Net.RTPSession.Close
-  nameWithType: RTPSession.Close
+  fullName: SIPSorcery.Net.RTPSession.CloseSession
+  nameWithType: RTPSession.CloseSession
 - uid: SIPSorcery.Net.RTPSession.DestinationEndPoint
   name: DestinationEndPoint
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_DestinationEndPoint
@@ -2764,12 +2751,12 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
   fullName: SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
   nameWithType: RTPSession.OnReceiveFromEndPointChanged
-- uid: SIPSorcery.Net.RTPSession.OnRtpDisconnect
-  name: OnRtpDisconnect
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpDisconnect
-  commentId: E:SIPSorcery.Net.RTPSession.OnRtpDisconnect
-  fullName: SIPSorcery.Net.RTPSession.OnRtpDisconnect
-  nameWithType: RTPSession.OnRtpDisconnect
+- uid: SIPSorcery.Net.RTPSession.OnRtpClosed
+  name: OnRtpClosed
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpClosed
+  commentId: E:SIPSorcery.Net.RTPSession.OnRtpClosed
+  fullName: SIPSorcery.Net.RTPSession.OnRtpClosed
+  nameWithType: RTPSession.OnRtpClosed
 - uid: SIPSorcery.Net.RTPSession.OnRtpEvent
   name: OnRtpEvent
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpEvent
@@ -9179,12 +9166,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.IMediaSession.OfferAnswered
   nameWithType: IMediaSession.OfferAnswered
-- uid: SIPSorcery.SIP.App.IMediaSession.OnRtpDisconnected
-  name: OnRtpDisconnected
-  href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_OnRtpDisconnected
-  commentId: E:SIPSorcery.SIP.App.IMediaSession.OnRtpDisconnected
-  fullName: SIPSorcery.SIP.App.IMediaSession.OnRtpDisconnected
-  nameWithType: IMediaSession.OnRtpDisconnected
+- uid: SIPSorcery.SIP.App.IMediaSession.OnRtpClosed
+  name: OnRtpClosed
+  href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_OnRtpClosed
+  commentId: E:SIPSorcery.SIP.App.IMediaSession.OnRtpClosed
+  fullName: SIPSorcery.SIP.App.IMediaSession.OnRtpClosed
+  nameWithType: IMediaSession.OnRtpClosed
 - uid: SIPSorcery.SIP.App.IMediaSession.RemoteReInvite(System.String)
   name: RemoteReInvite(String)
   href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_RemoteReInvite_System_String_
@@ -9765,12 +9752,12 @@ references:
   commentId: T:SIPSorcery.SIP.App.RTPMediaSession
   fullName: SIPSorcery.SIP.App.RTPMediaSession
   nameWithType: RTPMediaSession
-- uid: SIPSorcery.SIP.App.RTPMediaSession.#ctor(SIPSorcery.Net.RTPSession)
-  name: RTPMediaSession(RTPSession)
-  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession__ctor_SIPSorcery_Net_RTPSession_
-  commentId: M:SIPSorcery.SIP.App.RTPMediaSession.#ctor(SIPSorcery.Net.RTPSession)
-  fullName: SIPSorcery.SIP.App.RTPMediaSession.RTPMediaSession(SIPSorcery.Net.RTPSession)
-  nameWithType: RTPMediaSession.RTPMediaSession(RTPSession)
+- uid: SIPSorcery.SIP.App.RTPMediaSession.#ctor(System.Int32,System.Net.Sockets.AddressFamily)
+  name: RTPMediaSession(Int32, AddressFamily)
+  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession__ctor_System_Int32_System_Net_Sockets_AddressFamily_
+  commentId: M:SIPSorcery.SIP.App.RTPMediaSession.#ctor(System.Int32,System.Net.Sockets.AddressFamily)
+  fullName: SIPSorcery.SIP.App.RTPMediaSession.RTPMediaSession(System.Int32, System.Net.Sockets.AddressFamily)
+  nameWithType: RTPMediaSession.RTPMediaSession(Int32, AddressFamily)
 - uid: SIPSorcery.SIP.App.RTPMediaSession.#ctor*
   name: RTPMediaSession
   href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession__ctor_
@@ -9804,12 +9791,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.RTPMediaSession.Close
   nameWithType: RTPMediaSession.Close
-- uid: SIPSorcery.SIP.App.RTPMediaSession.Closed
-  name: Closed
-  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_Closed
-  commentId: E:SIPSorcery.SIP.App.RTPMediaSession.Closed
-  fullName: SIPSorcery.SIP.App.RTPMediaSession.Closed
-  nameWithType: RTPMediaSession.Closed
 - uid: SIPSorcery.SIP.App.RTPMediaSession.CreateOffer(System.Net.IPAddress)
   name: CreateOffer(IPAddress)
   href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_CreateOffer_System_Net_IPAddress_
@@ -9855,18 +9836,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.RTPMediaSession.OfferAnswered
   nameWithType: RTPMediaSession.OfferAnswered
-- uid: SIPSorcery.SIP.App.RTPMediaSession.OnReceivedSampleReady
-  name: OnReceivedSampleReady
-  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_OnReceivedSampleReady
-  commentId: E:SIPSorcery.SIP.App.RTPMediaSession.OnReceivedSampleReady
-  fullName: SIPSorcery.SIP.App.RTPMediaSession.OnReceivedSampleReady
-  nameWithType: RTPMediaSession.OnReceivedSampleReady
-- uid: SIPSorcery.SIP.App.RTPMediaSession.OnRtpDisconnected
-  name: OnRtpDisconnected
-  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_OnRtpDisconnected
-  commentId: E:SIPSorcery.SIP.App.RTPMediaSession.OnRtpDisconnected
-  fullName: SIPSorcery.SIP.App.RTPMediaSession.OnRtpDisconnected
-  nameWithType: RTPMediaSession.OnRtpDisconnected
 - uid: SIPSorcery.SIP.App.RTPMediaSession.PutOnHold
   name: PutOnHold()
   href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_PutOnHold
@@ -9918,22 +9887,6 @@ references:
   commentId: E:SIPSorcery.SIP.App.RTPMediaSession.RemoteTookOffHold
   fullName: SIPSorcery.SIP.App.RTPMediaSession.RemoteTookOffHold
   nameWithType: RTPMediaSession.RemoteTookOffHold
-- uid: SIPSorcery.SIP.App.RTPMediaSession.SendAudioFrame(System.UInt32,System.Byte[])
-  name: SendAudioFrame(UInt32, Byte[])
-  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_SendAudioFrame_System_UInt32_System_Byte___
-  commentId: M:SIPSorcery.SIP.App.RTPMediaSession.SendAudioFrame(System.UInt32,System.Byte[])
-  name.vb: SendAudioFrame(UInt32, Byte())
-  fullName: SIPSorcery.SIP.App.RTPMediaSession.SendAudioFrame(System.UInt32, System.Byte[])
-  fullName.vb: SIPSorcery.SIP.App.RTPMediaSession.SendAudioFrame(System.UInt32, System.Byte())
-  nameWithType: RTPMediaSession.SendAudioFrame(UInt32, Byte[])
-  nameWithType.vb: RTPMediaSession.SendAudioFrame(UInt32, Byte())
-- uid: SIPSorcery.SIP.App.RTPMediaSession.SendAudioFrame*
-  name: SendAudioFrame
-  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_SendAudioFrame_
-  commentId: Overload:SIPSorcery.SIP.App.RTPMediaSession.SendAudioFrame
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.RTPMediaSession.SendAudioFrame
-  nameWithType: RTPMediaSession.SendAudioFrame
 - uid: SIPSorcery.SIP.App.RTPMediaSession.SendDtmf(System.Byte,System.Threading.CancellationToken)
   name: SendDtmf(Byte, CancellationToken)
   href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_SendDtmf_System_Byte_System_Threading_CancellationToken_
@@ -9947,19 +9900,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.RTPMediaSession.SendDtmf
   nameWithType: RTPMediaSession.SendDtmf
-- uid: SIPSorcery.SIP.App.RTPMediaSession.Session
-  name: Session
-  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_Session
-  commentId: P:SIPSorcery.SIP.App.RTPMediaSession.Session
-  fullName: SIPSorcery.SIP.App.RTPMediaSession.Session
-  nameWithType: RTPMediaSession.Session
-- uid: SIPSorcery.SIP.App.RTPMediaSession.Session*
-  name: Session
-  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_Session_
-  commentId: Overload:SIPSorcery.SIP.App.RTPMediaSession.Session
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.RTPMediaSession.Session
-  nameWithType: RTPMediaSession.Session
 - uid: SIPSorcery.SIP.App.RTPMediaSession.SessionMediaChanged
   name: SessionMediaChanged
   href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_SessionMediaChanged
@@ -21562,6 +21502,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPTransaction.SendReliableRequest
   nameWithType: SIPTransaction.SendReliableRequest
+- uid: SIPSorcery.SIP.SIPTransaction.SendRequestAsync(SIPSorcery.SIP.SIPRequest)
+  name: SendRequestAsync(SIPRequest)
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendRequestAsync_SIPSorcery_SIP_SIPRequest_
+  commentId: M:SIPSorcery.SIP.SIPTransaction.SendRequestAsync(SIPSorcery.SIP.SIPRequest)
+  fullName: SIPSorcery.SIP.SIPTransaction.SendRequestAsync(SIPSorcery.SIP.SIPRequest)
+  nameWithType: SIPTransaction.SendRequestAsync(SIPRequest)
+- uid: SIPSorcery.SIP.SIPTransaction.SendRequestAsync*
+  name: SendRequestAsync
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_SendRequestAsync_
+  commentId: Overload:SIPSorcery.SIP.SIPTransaction.SendRequestAsync
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransaction.SendRequestAsync
+  nameWithType: SIPTransaction.SendRequestAsync
 - uid: SIPSorcery.SIP.SIPTransaction.TimedOutAt
   name: TimedOutAt
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_TimedOutAt
