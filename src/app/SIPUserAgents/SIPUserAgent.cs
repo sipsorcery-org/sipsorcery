@@ -759,9 +759,13 @@ namespace SIPSorcery.SIP.App
         {
             m_uac = null;
             m_uas = null;
-            MediaSession.SessionMediaChanged -= MediaSessionOnSessionMediaChanged;
-            MediaSession?.Close();
-            MediaSession = null;
+
+            if (MediaSession != null)
+            {
+                MediaSession.SessionMediaChanged -= MediaSessionOnSessionMediaChanged;
+                MediaSession.Close();
+                MediaSession = null;
+            }
 
             OnCallHungup?.Invoke();
         }

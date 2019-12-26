@@ -829,7 +829,8 @@ namespace SIPSorcery.SIP
                                             }
                                             else if (sipRequest.Method == SIPMethodsEnum.ACK)
                                             {
-                                                if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed)
+                                                if (requestTransaction.TransactionState == SIPTransactionStatesEnum.Completed ||
+                                                    requestTransaction.TransactionState == SIPTransactionStatesEnum.Cancelled)
                                                 {
                                                     sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
                                                     requestTransaction.ACKReceived(localEndPoint, remoteEndPoint, sipRequest);
@@ -856,7 +857,7 @@ namespace SIPSorcery.SIP
                                             if (inviteTransaction != null)
                                             {
                                                 inviteTransaction.CancelCall();
-                                                SIPResponse okResponse = SIPResponse.GetResponse(localEndPoint, remoteEndPoint, SIPResponseStatusCodesEnum.Ok, null);
+                                                SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                                                 return SendResponseAsync(okResponse);
                                             }
                                             else
@@ -1047,6 +1048,15 @@ namespace SIPSorcery.SIP
         public List<SIPChannel> GetSIPChannels()
         {
             return m_sipChannels.Select(x => x.Value).ToList();
+        }
+
+        /// <summary>
+        /// Add a SIP transaction to the transaction engine for reliable request and response delivery.
+        /// </summary>
+        /// <param name="transaction">The transaction to add.</param>
+        public void AddTransaction(SIPTransaction transaction)
+        {
+            m_transactionEngine.AddTransaction(transaction);
         }
 
         /// <summary>
