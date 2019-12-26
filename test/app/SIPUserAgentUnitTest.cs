@@ -148,7 +148,9 @@ namespace SIPSorcery.SIP.App.UnitTests
 
             cts.Cancel();
 
-            Assert.ThrowsAnyAsync<TaskCanceledException>(async () => { bool result = await blindTransferTask; });
+            Assert.False(await blindTransferTask);
+
+            //await Assert.ThrowsAnyAsync<TaskCanceledException>(async () => { bool result = ; });
         }
 
         /// <summary>

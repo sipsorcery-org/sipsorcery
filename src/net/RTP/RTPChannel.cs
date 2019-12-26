@@ -180,6 +180,18 @@ namespace SIPSorcery.Net
         private bool m_isClosed;
 
         /// <summary>
+        /// The last remote end point an RTP packet was sent to or received from. Used for 
+        /// reporting purposes only.
+        /// </summary>
+        private IPEndPoint m_remoteRTPEndPoint { get; set; }
+
+        /// <summary>
+        /// The last remote end point an RTCP packet was sent to or received from. Used for
+        /// reporting purposes only.
+        /// </summary>
+        private IPEndPoint m_remoteRtcpEndPoint { get; set; }
+
+        /// <summary>
         /// Number of RTP packets sent to the remote party.
         /// </summary>
         public int PacketsSentCount { get; private set; }
@@ -198,16 +210,6 @@ namespace SIPSorcery.Net
         /// Number of RTP bytes received from the remote party.
         /// </summary>
         public int OctetsReceivedCount { get; private set; }
-
-        /// <summary>
-        /// The remote end point RTP packets are being sent.
-        /// </summary>
-        public IPEndPoint RemoteRTPEndPoint { get; set; }
-
-        /// <summary>
-        /// The remote end point RTCP packets are being sent.
-        /// </summary>
-        public IPEndPoint RemoteControlEndPoint { get; set; }
 
         /// <summary>
         /// The local port we are listening for RTP (and whatever else is multiplexed) packets on.
@@ -292,8 +294,8 @@ namespace SIPSorcery.Net
             ControlLocalEndPoint = m_controlSocket.LocalEndPoint as IPEndPoint;
             ControlPort = ControlLocalEndPoint.Port;
 
-            RemoteRTPEndPoint = rtpRemoteEndPoint;
-            RemoteControlEndPoint = controlEndPoint;
+            m_remoteRTPEndPoint = rtpRemoteEndPoint;
+            m_remoteRtcpEndPoint = controlEndPoint;
 
             m_rtcpSenderReportTimer = new Timer(SendRtcpSenderReport, null, Crypto.GetRandomInt(1000, RTCP_SENDER_REPORT_PERIOD_MILLISECONDS), RTCP_SENDER_REPORT_PERIOD_MILLISECONDS);
             m_rtcpReceiverReportTimer = new Timer(SendRtcpReceiverReport, null, Crypto.GetRandomInt(1000, RTCP_RECEIVER_REPORT_PERIOD_MILLISECONDS), RTCP_SENDER_REPORT_PERIOD_MILLISECONDS);
@@ -360,6 +362,7 @@ namespace SIPSorcery.Net
                 Socket sendSocket = m_rtpSocket;
                 if (sendOn == RTPChannelSocketsEnum.Control)
                 {
+                    m_remoteRtcpEndPoint = dstEndPoint;
                     if (m_controlSocket == null)
                     {
                         throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
@@ -371,6 +374,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
+                    m_remoteRTPEndPoint = dstEndPoint;
                     PacketsSentCount++;
                     OctetsSentCount += buffer.Length; // TODO: Think this needs to adjusted to be only the data and not include RTP headers.
                 }
@@ -450,6 +454,7 @@ namespace SIPSorcery.Net
         {
             if (packet?.Length > 0)
             {
+                m_remoteRTPEndPoint = remoteEndPoint;
                 RTPLastActivityAt = DateTime.Now;
 
                 PacketsReceivedCount++;
@@ -503,6 +508,7 @@ namespace SIPSorcery.Net
         private void OnControlPacketRecived(UdpReceiver receiver, IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] packet)
         {
             ControlLastActivityAt = DateTime.Now;
+            m_remoteRtcpEndPoint = remoteEndPoint;
 
             OnControlDataReceived?.Invoke(remoteEndPoint, packet);
         }
@@ -513,7 +519,7 @@ namespace SIPSorcery.Net
             {
                 if (m_rtpSocket != null)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogDebug($"SendRtcpSenderReport {m_rtpSocket.LocalEndPoint}->{RemoteRTPEndPoint} pkts {PacketsSentCount} bytes {OctetsSentCount}");
+                    SIPSorcery.Sys.Log.Logger.LogDebug($"SendRtcpSenderReport {m_rtpSocket.LocalEndPoint}->{m_remoteRTPEndPoint} pkts {PacketsSentCount} bytes {OctetsSentCount}");
                 }
             }
             catch (ObjectDisposedException)  // The RTP socket can disappear between the null check and the report send.
@@ -534,7 +540,7 @@ namespace SIPSorcery.Net
             {
                 if (m_rtpSocket != null)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogDebug($"SendRtcpReceiverReport {m_rtpSocket.LocalEndPoint}->{RemoteRTPEndPoint} pkts {PacketsReceivedCount} bytes {OctetsReceivedCount}");
+                    SIPSorcery.Sys.Log.Logger.LogDebug($"SendRtcpReceiverReport {m_rtpSocket.LocalEndPoint}->{m_remoteRTPEndPoint} pkts {PacketsReceivedCount} bytes {OctetsReceivedCount}");
                 }
             }
             catch (ObjectDisposedException) // The RTP socket can disappear between the null check and the report send.
