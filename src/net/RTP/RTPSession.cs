@@ -130,7 +130,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Gets fired if a network error indicates the remote RTP socket is no longer accepting packets.
         /// </summary>
-        public event Action OnRtpDisconnect;
+        public event Action OnRtpDisconnected;
 
         /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
@@ -189,7 +189,7 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Sets the remote SDP offer for this RTP session. It contains required information about payload ID's
-        /// for media formats and RTP evetns.
+        /// for media formats and RTP events.
         /// </summary>
         /// <param name="sdp">The SDP from the remote call party.</param>
         public void SetRemoteSDP(SDP sdp)
@@ -255,7 +255,7 @@ namespace SIPSorcery.Net
                         if(sendResult != SocketError.Success)
                         {
                             //logger.LogWarning($"RTPChannel SendAudioFrame failed with {sendResult}.");
-                            OnRtpDisconnect?.Invoke();
+                            OnRtpDisconnected?.Invoke();
                             break;
                         }
                     }
@@ -605,9 +605,14 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Close the session and RTP channel.
         /// </summary>
-        public void Close()
+        public void CloseSession()
         {
-            RtpChannel?.Close();
+            if (RtpChannel != null)
+            {
+                RtpChannel.OnRTPDataReceived -= RtpPacketReceived;
+                RtpChannel.OnRTPSocketDisconnected -= OnRTPSocketDisconnected;
+                RtpChannel.Close();
+            }
         }
 
         /// <summary>
@@ -730,7 +735,7 @@ namespace SIPSorcery.Net
         private void OnRTPSocketDisconnected()
         {
             DestinationEndPoint = null;
-            OnRtpDisconnect?.Invoke();
+            OnRtpDisconnected?.Invoke();
         }
     }
 }

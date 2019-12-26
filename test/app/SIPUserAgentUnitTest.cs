@@ -222,7 +222,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
         private IMediaSession CreateMediaSession()
         {
-            return new RTPMediaSession(new RTPSession(0, null, null, false, AddressFamily.InterNetwork));
+            return new RTPMediaSession(0, AddressFamily.InterNetwork);
         }
     }
 }
