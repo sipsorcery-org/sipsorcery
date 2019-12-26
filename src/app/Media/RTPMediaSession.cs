@@ -7,7 +7,9 @@
 // Yizchok G.
 //
 // History:
-// 12/23/2019	Yitzchok	  Created.
+// 12/23/2019	Yitzchok	    Created.
+// 26 Dec 2019  Aaron Clauson   Modified to inherit from RTPSession instead of
+//                              using an instance and wrapping same methods.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -16,6 +18,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -31,21 +34,16 @@ namespace SIPSorcery.SIP.App
     /// This implementation sets up the RTP stream but doesn't process the actual audio or video
     /// and will need another component to do the processing of the media and send/receive it to/from the RTP session.
     /// </summary>
-    public class RTPMediaSession : IMediaSession
+    public class RTPMediaSession : RTPSession, IMediaSession
     {
         private static readonly ILogger logger = Log.Logger;
 
-        public RTPSession Session { get; }
         public bool LocalOnHold { get; set; }
         public bool RemoteOnHold { get; set; }
 
-        public RTPMediaSession(RTPSession rtpSession)
-        {
-            Session = rtpSession;
-            Session.OnRtpEvent += OnRemoteRtpEvent;
-            Session.OnReceivedSampleReady += OnReceivedSampleReady;
-            Session.OnRtpDisconnect += () => OnRtpDisconnected?.Invoke();
-        }
+        public RTPMediaSession(int formatTypeID, AddressFamily addrFamily)
+             : base(formatTypeID, null, null, true, addrFamily)
+        { }
 
         /// <summary>
         /// This event is invoked when the session media has changed
@@ -64,30 +62,14 @@ namespace SIPSorcery.SIP.App
         public event Action RemoteTookOffHold;
 
         /// <summary>
-        /// Media Session closed.
-        /// </summary>
-        public event Action Closed;
-
-        /// <summary>
         /// Gets fired when an RTP DTMF event is completed on the remote call party's RTP stream.
         /// </summary>
         public event Action<byte> DtmfCompleted;
 
-        /// <summary>
-        /// Gets fired when an RTP packet is received, has been identified and is ready for processing.
-        /// </summary>
-        public event Action<byte[]> OnReceivedSampleReady;
-
-        /// <summary>
-        /// Fired when a network error occurs indicating the remote party is no longer accepting 
-        /// RTP packets.
-        /// </summary>
-        public event Action OnRtpDisconnected;
-
         public Task SendDtmf(byte key, CancellationToken cancellationToken = default)
         {
             var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
-            return Session.SendDtmfEvent(dtmfEvent, cancellationToken);
+            return SendDtmfEvent(dtmfEvent, cancellationToken);
         }
 
         /// <summary>
@@ -110,10 +92,7 @@ namespace SIPSorcery.SIP.App
 
         public virtual void Close()
         {
-            Session.OnRtpEvent -= OnRemoteRtpEvent;
-            Session.OnReceivedSampleReady -= OnReceivedSampleReady;
-            Session.Close();
-            Closed?.Invoke();
+            CloseSession(null);
         }
 
         public Task<string> CreateOffer(IPAddress destinationAddress = null) =>
@@ -125,7 +104,7 @@ namespace SIPSorcery.SIP.App
 
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(destinationAddressToUse);
 
-            var localSDP = Session.GetSDP(localIPAddress);
+            var localSDP = GetSDP(localIPAddress);
 
             AdjustSdpForMediaState(localSDP);
 
@@ -138,18 +117,18 @@ namespace SIPSorcery.SIP.App
 
             if (destinationAddressToUse == null)
             {
-                if (Session.RemoteSDP != null)
+                if (RemoteSDP != null)
                 {
                     //Check for endpoint from the SDP
-                    IPEndPoint dstRtpEndPoint = Session.RemoteSDP.GetSDPRTPEndPoint();
+                    IPEndPoint dstRtpEndPoint = RemoteSDP.GetSDPRTPEndPoint();
                     destinationAddressToUse = dstRtpEndPoint.Address;
 
-                    bool newEndpoint = Session.DestinationEndPoint != dstRtpEndPoint;
+                    bool newEndpoint = DestinationEndPoint != dstRtpEndPoint;
 
                     if (newEndpoint)
                     {
                         logger.LogDebug(
-                            $"Remote call party RTP end point changed from {Session.DestinationEndPoint} to {dstRtpEndPoint}.");
+                            $"Remote call party RTP end point changed from {DestinationEndPoint} to {dstRtpEndPoint}.");
                     }
                 }
                 else
@@ -208,12 +187,12 @@ namespace SIPSorcery.SIP.App
         private void SetRemoteSDP(string remoteSDP)
         {
             var sdp = SDP.ParseSDPDescription(remoteSDP);
-            Session.SetRemoteSDP(sdp);
-            Session.DestinationEndPoint = sdp.GetSDPRTPEndPoint();
+            SetRemoteSDP(sdp);
+            DestinationEndPoint = sdp.GetSDPRTPEndPoint();
 
             CheckRemotePartyHoldCondition(sdp);
 
-            logger.LogDebug($"Remote RTP socket {Session.DestinationEndPoint}.");
+            logger.LogDebug($"Remote RTP socket {DestinationEndPoint}.");
         }
 
         private void CheckRemotePartyHoldCondition(SDP remoteSDP)
@@ -237,9 +216,6 @@ namespace SIPSorcery.SIP.App
                 }
             }
         }
-
-        public void SendAudioFrame(uint timestamp, byte[] buffer) =>
-            Session.SendAudioFrame(timestamp, buffer);
 
         private ushort remoteDtmfDuration;
 

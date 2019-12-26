@@ -306,7 +306,8 @@ namespace SIPSorcery.SIP
                     await Task.Delay(EXPIRED_FAILED_PERIOD_SECONDS * 1000, m_cts.Token);
                 }
             }
-            catch(Exception excp)
+            catch (OperationCanceledException) { }
+            catch (Exception excp)
             {
                 logger.LogError($"Exception SIPUDPChannel.ExpireFailedSends. {excp.Message}");
             }

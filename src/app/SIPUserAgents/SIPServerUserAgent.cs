@@ -479,36 +479,39 @@ namespace SIPSorcery.SIP.App
         /// needs to originate from this agent.</param>
         public void Hangup(bool clientHungup)
         {
-            m_isHungup = true;
-
-            if (SIPDialogue == null)
+            if (!m_isHungup)
             {
-                return;
-            }
+                m_isHungup = true;
 
-            // Only need to send a BYE request if the client didn't already do so.
-            if (clientHungup == false)
-            {
-                try
+                if (SIPDialogue == null)
                 {
-                    // Cases found where the Contact in the INVITE was to a different protocol than the oringinal request.
-                    var inviteContact = m_uasTransaction.TransactionRequest.Header.Contact.FirstOrDefault();
-                    if (inviteContact == null)
-                    {
-                        logger.LogWarning("The Contact header on the INVITE request was missing, BYE request cannot be generated.");
-                    }
-                    else
-                    {
-                        SIPRequest byeRequest = GetByeRequest();
-                        SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
-                        byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
-                        byeTransaction.SendRequest();
-                    }
+                    return;
                 }
-                catch (Exception excp)
+
+                // Only need to send a BYE request if the client didn't already do so.
+                if (clientHungup == false)
                 {
-                    logger.LogError("Exception SIPServerUserAgent Hangup. " + excp.Message);
-                    throw;
+                    try
+                    {
+                        // Cases found where the Contact in the INVITE was to a different protocol than the oringinal request.
+                        var inviteContact = m_uasTransaction.TransactionRequest.Header.Contact.FirstOrDefault();
+                        if (inviteContact == null)
+                        {
+                            logger.LogWarning("The Contact header on the INVITE request was missing, BYE request cannot be generated.");
+                        }
+                        else
+                        {
+                            SIPRequest byeRequest = GetByeRequest();
+                            SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
+                            byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
+                            byeTransaction.SendRequest();
+                        }
+                    }
+                    catch (Exception excp)
+                    {
+                        logger.LogError("Exception SIPServerUserAgent Hangup. " + excp.Message);
+                        throw;
+                    }
                 }
             }
         }

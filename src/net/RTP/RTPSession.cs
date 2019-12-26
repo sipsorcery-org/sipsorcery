@@ -50,6 +50,7 @@ namespace SIPSorcery.Net
         private uint m_lastRtpTimestamp;                 // The last timestamp used in an RTP packet.    
         private bool m_rtpEventSupport;                  // True if this session is supporting RTP events.
         private int m_remoteRtpEventPayloadID;           // If the remote party supports RTP events this is the RTP header payload ID they are using.
+        private bool m_isClosed;
 
         public uint Ssrc { get; private set; }
         public ushort SeqNum { get; private set; }
@@ -127,10 +128,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<RTPEvent> OnRtpEvent;
 
-        /// <summary>
-        /// Gets fired if a network error indicates the remote RTP socket is no longer accepting packets.
-        /// </summary>
-        public event Action OnRtpDisconnect;
+        public event Action<string> OnRtpClosed;
 
         /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
@@ -181,7 +179,7 @@ namespace SIPSorcery.Net
 
             MediaAnnouncement.Port = RtpChannel.RTPPort;
             RtpChannel.OnRTPDataReceived += RtpPacketReceived;
-            RtpChannel.OnRTPSocketDisconnected += OnRTPSocketDisconnected;
+            RtpChannel.OnClosed += OnRTPChannelClosed;
 
             // Start the RTP and Control socket receivers.
             RtpChannel.Start();
@@ -189,7 +187,7 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Sets the remote SDP offer for this RTP session. It contains required information about payload ID's
-        /// for media formats and RTP evetns.
+        /// for media formats and RTP events.
         /// </summary>
         /// <param name="sdp">The SDP from the remote call party.</param>
         public void SetRemoteSDP(SDP sdp)
@@ -250,14 +248,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        var sendResult = RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
-                        
-                        if(sendResult != SocketError.Success)
-                        {
-                            //logger.LogWarning($"RTPChannel SendAudioFrame failed with {sendResult}.");
-                            OnRtpDisconnect?.Invoke();
-                            break;
-                        }
+                        RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
                     }
 
                     PacketsSent++;
@@ -605,9 +596,21 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Close the session and RTP channel.
         /// </summary>
-        public void Close()
+        public void CloseSession(string reason)
         {
-            RtpChannel?.Close();
+            if (!m_isClosed)
+            {
+                m_isClosed = true;
+
+                if (RtpChannel != null)
+                {
+                    RtpChannel.OnRTPDataReceived -= RtpPacketReceived;
+                    RtpChannel.OnClosed -= OnRTPChannelClosed;
+                    RtpChannel.Close(reason);
+                }
+
+                OnRtpClosed?.Invoke(reason);
+            }
         }
 
         /// <summary>
@@ -725,12 +728,11 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Event handler for network errors indicating the remote RTP socket is no longer accepting packets.
+        /// Event handler for the RTP channel closure.
         /// </summary>
-        private void OnRTPSocketDisconnected()
+        private void OnRTPChannelClosed(string reason)
         {
-            DestinationEndPoint = null;
-            OnRtpDisconnect?.Invoke();
+            CloseSession(reason);
         }
     }
 }

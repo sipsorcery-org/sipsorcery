@@ -363,9 +363,6 @@ namespace SIPSorcery.SIP
             if (sipResponse.StatusCode == 100)
             {
                 UpdateTransactionState(SIPTransactionStatesEnum.Trying);
-                //ProvisionalResponse = sipResponse;
-
-                //m_sipTransport.SendTransaction(this);
                 return m_sipTransport.SendResponseAsync(sipResponse);
             }
             else if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
@@ -540,8 +537,8 @@ namespace SIPSorcery.SIP
         /// <returns>True if it has expired, false if not.</returns>
         internal bool HasDeliveryExpired(int maxLifetimeMilliseconds)
         {
-            return DeliveryPending && 
-                InitialTransmit != DateTime.MinValue && 
+            return DeliveryPending &&
+                InitialTransmit != DateTime.MinValue &&
                 DateTime.Now.Subtract(InitialTransmit).TotalMilliseconds >= maxLifetimeMilliseconds;
         }
 
@@ -573,6 +570,24 @@ namespace SIPSorcery.SIP
             return InitialTransmit == DateTime.MinValue || DateTime.Now.Subtract(LastTransmit).TotalMilliseconds >= nextTransmitMilliseconds;
         }
 
+        /// <summary>
+        /// Sends a SIP request in a non-reliable fashion. The request will be sent once and no automatic retransmits occur.
+        /// This is suitable for requests like ACK which do not get a response.
+        /// </summary>
+        /// <param name="sipRequest">The SIP request to send.</param>
+        /// <returns>Success if no errors occurred sending the request or an error indication if there were.</returns>
+        protected Task<SocketError> SendRequestAsync(SIPRequest sipRequest)
+        {
+            if (OutboundProxy == null)
+            {
+                return m_sipTransport.SendRequestAsync(sipRequest);
+            }
+            else
+            {
+                return m_sipTransport.SendRequestAsync(OutboundProxy, sipRequest);
+            }
+        }
+
         #region Tracing and logging.
 
         public void OnRetransmitFinalResponse()
@@ -587,7 +602,7 @@ namespace SIPSorcery.SIP
 
         public void OnTimedOutProvisionalResponse()
         {
-            FireTransactionTraceMessage($"Transaction provisional response delivery timed out {this.ReliableProvisionalResponse.ShortDescription}");
+            FireTransactionTraceMessage($"Transaction provisional response delivery timed out {this.ReliableProvisionalResponse?.ShortDescription}");
         }
 
         public void FireTransactionTimedOut()

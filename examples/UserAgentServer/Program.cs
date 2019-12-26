@@ -185,8 +185,9 @@ namespace SIPSorcery
                             uas.CallCancelled += (uasAgent) => 
                             {
                                 rtpCts?.Cancel();
-                                rtpSession.Close();
+                                rtpSession.CloseSession(null);
                             };
+                            rtpSession.OnRtpClosed += (reason) => uas?.Hangup(false);
                             uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
                             uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
@@ -202,17 +203,17 @@ namespace SIPSorcery
 
                             rtpSession.SetRemoteSDP(SDP.ParseSDPDescription(sipRequest.Body));
 
-                            var rtpTask = Task.Run(() => SendRtp(rtpSession, dstRtpEndPoint, audioFile, rtpCts))
+                            _ = Task.Run(() => SendRtp(rtpSession, dstRtpEndPoint, audioFile, rtpCts))
                                 .ContinueWith(_ => 
                                 {
                                     if (uas?.IsHungup == false)
                                     {
                                         uas?.Hangup(false);
-                                        rtpSession?.Close();
+                                        rtpSession?.CloseSession(null);
                                     }
                                 });
 
-                            //uas.Answer(SDP.SDP_MIME_CONTENTTYPE, rtpSession.GetSDP(rtpAddress).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
+                            uas.Answer(SDP.SDP_MIME_CONTENTTYPE, rtpSession.GetSDP(rtpAddress).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
                         }
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)
@@ -221,7 +222,7 @@ namespace SIPSorcery
                         SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         await sipTransport.SendResponseAsync(byeResponse);
                         uas?.Hangup(true);
-                        rtpSession?.Close();
+                        rtpSession?.CloseSession(null);
                         rtpCts?.Cancel();
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
@@ -251,7 +252,7 @@ namespace SIPSorcery
 
                 Hangup(uas).Wait();
 
-                rtpSession?.Close();
+                rtpSession?.CloseSession(null);
                 rtpCts?.Cancel();
 
                 if (sipTransport != null)
@@ -278,7 +279,7 @@ namespace SIPSorcery
 
                             Hangup(uas).Wait();
 
-                            rtpSession?.Close();
+                            rtpSession?.CloseSession(null);
                             rtpCts?.Cancel();
                         }
 
