@@ -55,7 +55,7 @@ namespace SIPSorcery.Net
         { }
 
         /// <summary>
-        /// Extract and load the RTP header from an RTP packet.
+        /// Extract and load the RTCP header from an RTCP packet.
         /// </summary>
         /// <param name="packet"></param>
         public RTCPHeader(byte[] packet)

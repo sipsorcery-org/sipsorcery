@@ -63,7 +63,7 @@ namespace SIPSorcery.Net
 
         public Guid RTPStreamId;
         public uint ReportNumber;
-        public uint LastReceivedReportNumber;       // The report number of teh last RTCP report that was received from the remote agent.
+        public uint LastReceivedReportNumber;       // The report number of the last RTCP report that was received from the remote agent.
         private IPEndPoint m_remoteEndPoint;
         public string RemoteEndPoint
         {
