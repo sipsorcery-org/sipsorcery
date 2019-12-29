@@ -29,7 +29,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that a RTCP Bye payload cna be correctly serialised and 
+        /// Tests that a RTCP Bye payload can be correctly serialised and 
         /// deserialised.
         /// </summary>
         [Fact]
@@ -67,7 +67,7 @@ namespace SIPSorcery.Net.UnitTests
 
             RTCPBye parsedBye = new RTCPBye(buffer);
 
-            Assert.Equal(8, buffer.Length);
+            Assert.Equal(12, buffer.Length);
             Assert.Equal(ssrc, parsedBye.SSRC);
             Assert.Equal(reason, parsedBye.Reason);
         }
@@ -90,7 +90,7 @@ namespace SIPSorcery.Net.UnitTests
 
             RTCPBye parsedBye = new RTCPBye(buffer);
 
-            Assert.Equal(12, buffer.Length);
+            Assert.Equal(16, buffer.Length);
             Assert.Equal(ssrc, parsedBye.SSRC);
             Assert.Equal(reason, parsedBye.Reason);
         }

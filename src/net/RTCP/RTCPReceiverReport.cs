@@ -3,10 +3,14 @@
 //
 // Description:
 //
-//        RTCP Receiver Report Payload
-//        0                   1                   2                   3
-//        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//        RTCP Receiver Report Packet
+//  0                   1                   2                   3
+//         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 //        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// header |V=2|P|    RC   |   PT=RR=201   |             length            |
+//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//        |                     SSRC of packet sender                     |
+//        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 // report |                 SSRC_1(SSRC of first source)                  |
 // block  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //  1     | fraction lost |       cumulative number of packets lost       |
@@ -19,6 +23,12 @@
 //        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //        |                   delay since last SR(DLSR)                   |
 //        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+// report |                 SSRC_2(SSRC of second source)                 |
+// block  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//  2     :                               ...                             :
+//        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+//        |                  profile-specific extensions                  |
+//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -31,53 +41,99 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
     public class RTCPReceiverReport
     {
-        public const int PACKET_TYPE = 201;
+        public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + 4 + ReceptionReport.PAYLOAD_SIZE;
 
-        public const int PAYLOAD_SIZE = 24;
-
+        public RTCPHeader Header;
         public uint SSRC;
-        public ulong NtpTimestamp;
-        public uint RtpTimestamp;
-        public uint PacketCount;
-        public uint OctetCount;
+        public List<ReceptionReport> ReceptionReports;
 
-        public RTCPReceiverReport(uint ssrc, ulong ntpTimestamp, uint rtpTimestamp, uint packetCount, uint octetCount)
+        /// <summary>
+        /// Creates a new RTCP Reception Report payload.
+        /// </summary>
+        /// <param name="ssrc">The synchronisation source of the RTP packet being sent. Can be zero
+        /// if there are none being sent.</param>
+        /// <param name="receptionReports">A list of the reception reports to include. Can be empty.</param>
+        public RTCPReceiverReport(uint ssrc, List<ReceptionReport> receptionReports)
         {
+            if (receptionReports == null || receptionReports.Count == 0)
+            {
+                throw new ArgumentException("At least one reception report must be included for an RTCP Receiver Report.");
+            }
+
+            Header = new RTCPHeader(RTCPReportTypesEnum.RR, receptionReports.Count);
             SSRC = ssrc;
-            NtpTimestamp = ntpTimestamp;
-            RtpTimestamp = rtpTimestamp;
-            PacketCount = packetCount;
-            OctetCount = octetCount;
+            ReceptionReports = receptionReports;
         }
 
-        public byte[] GetBytes()
+        /// <summary>
+        /// Create a new RTCP Receiver Report from a serialised byte array.
+        /// </summary>
+        /// <param name="packet">The byte array holding the serialised receiver report.</param>
+        public RTCPReceiverReport(byte[] packet)
         {
-            byte[] payload = new byte[24];
+            if (packet.Length < MIN_PACKET_SIZE)
+            {
+                throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCPReceiverReport packet.");
+            }
+
+            Header = new RTCPHeader(packet);
+            ReceptionReports = new List<ReceptionReport>();
 
             if (BitConverter.IsLittleEndian)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, payload, 0, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(NtpTimestamp)), 0, payload, 4, 8);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(RtpTimestamp)), 0, payload, 12, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PacketCount)), 0, payload, 16, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(OctetCount)), 0, payload, 20, 4);
+                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, payload, 0, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(NtpTimestamp), 0, payload, 4, 8);
-                Buffer.BlockCopy(BitConverter.GetBytes(RtpTimestamp), 0, payload, 12, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(PacketCount), 0, payload, 16, 4);
-                Buffer.BlockCopy(BitConverter.GetBytes(OctetCount), 0, payload, 20, 4);
+                SSRC = BitConverter.ToUInt32(packet, 4);
             }
 
-            return payload;
+            int rrIndex = 8;
+            for (int i = 0; i < Header.ReceptionReportCount; i++)
+            {
+                var rr = new ReceptionReport(packet.Skip(rrIndex + i * ReceptionReport.PAYLOAD_SIZE).ToArray());
+                ReceptionReports.Add(rr);
+            }
+        }
+
+        /// <summary>
+        /// Gets the serialised bytes for this Receiver Report.
+        /// </summary>
+        /// <returns>A byte array.</returns>
+        public byte[] GetBytes()
+        {
+            int rrCount = (ReceptionReports != null) ? ReceptionReports.Count : 0;
+            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + 4 + rrCount * ReceptionReport.PAYLOAD_SIZE];
+
+            Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
+            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+
+            if (BitConverter.IsLittleEndian)
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, buffer, payloadIndex, 4);
+            }
+            else
+            {
+                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, buffer, payloadIndex, 4);
+            }
+
+            int bufferIndex = payloadIndex + 4;
+            for(int i=0; i<rrCount; i++)
+            {
+                var receptionReportBytes = ReceptionReports[i].GetBytes();
+                Buffer.BlockCopy(receptionReportBytes, 0, buffer, bufferIndex, ReceptionReport.PAYLOAD_SIZE);
+                bufferIndex += ReceptionReport.PAYLOAD_SIZE;
+            }
+
+            return buffer;
         }
     }
 }

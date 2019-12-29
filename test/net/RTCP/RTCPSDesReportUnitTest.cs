@@ -13,7 +13,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -30,7 +29,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that a RTCP SDES report payload cna be correctly serialised and 
+        /// Tests that a RTCP SDES report payload can be correctly serialised and 
         /// deserialised.
         /// </summary>
         [Fact]

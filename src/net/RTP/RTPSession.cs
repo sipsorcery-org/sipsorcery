@@ -45,6 +45,10 @@ namespace SIPSorcery.Net
 
         private static ILogger logger = Log.Logger;
 
+        private static DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
+        private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private static DateTime UtcEpoch1970 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
         private IPEndPoint m_lastReceiveFromEndPoint;
         private bool m_rtpEventInProgress;               // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                 // The last timestamp used in an RTP packet.    
@@ -333,8 +337,6 @@ namespace SIPSorcery.Net
 
             try
             {
-                //_timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + (uint)(RFC_2435_FREQUENCY_BASELINE / framesPerSecond)) % UInt32.MaxValue;
-
                 //System.Diagnostics.Debug.WriteLine("Sending " + jpegBytes.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ", image dimensions " + jpegWidth + " x " + jpegHeight + ".");
 
                 for (int index = 0; index * RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
@@ -382,8 +384,6 @@ namespace SIPSorcery.Net
 
             try
             {
-                //_timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + frameSpacing) % UInt32.MaxValue;
-
                 //System.Diagnostics.Debug.WriteLine("Sending " + frame.Length + " H264 encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
 
                 for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
@@ -439,8 +439,8 @@ namespace SIPSorcery.Net
         {
             try
             {
-                var ntp = RTSPSession.DateTimeToNptTimestamp(DateTime.Now);
-                var rtcpSRPacket = new RTCPPacket(Ssrc, ntp, timestamp, PacketsSent, OctetsSent);
+                var ntpTimestamp = DateTimeToNtpTimestamp(DateTime.Now);
+                var rtcpSRPacket = new RTCPSenderReport(Ssrc, ntpTimestamp, timestamp, PacketsSent, OctetsSent, null);
 
                 if (SrtcpProtect == null)
                 {
@@ -733,6 +733,35 @@ namespace SIPSorcery.Net
         private void OnRTPChannelClosed(string reason)
         {
             CloseSession(reason);
+        }
+
+        public static uint DateTimeToNtpTimestamp32(DateTime value) { return (uint)((DateTimeToNtpTimestamp(value) >> 16) & 0xFFFFFFFF); }
+
+        /// <summary>
+        /// Converts specified DateTime value to long NTP time.
+        /// </summary>
+        /// <param name="value">DateTime value to convert. This value must be in local time.</param>
+        /// <returns>Returns NTP value.</returns>
+        /// <notes>
+        /// Wallclock time (absolute date and time) is represented using the
+        /// timestamp format of the Network Time Protocol (NPT), which is in
+        /// seconds relative to 0h UTC on 1 January 1900 [4].  The full
+        /// resolution NPT timestamp is a 64-bit unsigned fixed-point number with
+        /// the integer part in the first 32 bits and the fractional part in the
+        /// last 32 bits. In some fields where a more compact representation is
+        /// appropriate, only the middle 32 bits are used; that is, the low 16
+        /// bits of the integer part and the high 16 bits of the fractional part.
+        /// The high 16 bits of the integer part must be determined independently.
+        /// </notes>
+        public static ulong DateTimeToNtpTimestamp(DateTime value)
+        {
+            DateTime baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
+
+            TimeSpan elapsedTime = value > baseDate ? value.ToUniversalTime() - baseDate.ToUniversalTime() : baseDate.ToUniversalTime() - value.ToUniversalTime();
+
+            long ticks = elapsedTime.Ticks;
+
+            return (ulong)(elapsedTime.Ticks / TimeSpan.TicksPerSecond << 32) | (ulong)(elapsedTime.Ticks % TimeSpan.TicksPerSecond);
         }
     }
 }
