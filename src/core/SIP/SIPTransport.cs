@@ -177,7 +177,9 @@ namespace SIPSorcery.SIP
 
                 if (m_queueIncoming && !m_transportThreadStarted)
                 {
-                    Start();
+                    // Starts tasks to process queued SIP messages.
+                    m_transportThreadStarted = true;
+                    Task.Run(ProcessReceiveQueue);
                 }
             }
             catch (Exception excp)
@@ -201,18 +203,6 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Starts long running tasks required by the SIP transport layer.
-        /// </summary>
-        private void Start()
-        {
-            if (!m_transportThreadStarted)
-            {
-                m_transportThreadStarted = true;
-                Task.Run(ProcessReceiveQueue);
-            }
-        }
-
-        /// <summary>
         /// Shutsdown the SIP transport layer by closing all SIP channels and stopping long running tasks.
         /// </summary>
         public void Shutdown()
@@ -221,9 +211,9 @@ namespace SIPSorcery.SIP
             {
                 m_closed = true;
 
-                m_transactionEngine?.Shutdown();
-
                 m_inMessageArrived.Set();
+
+                m_transactionEngine?.Shutdown();
 
                 foreach (SIPChannel channel in m_sipChannels.Values)
                 {

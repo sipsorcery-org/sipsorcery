@@ -19,11 +19,11 @@
 // - Length: Length of the data in the report.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 22 Feb 2007	Aaron Clauson	Created (aaron@sipsorcery.com), Montreux, Switzerland (www.sipsorcery.com)
-// 11 Aug 2019  Aaron Clauson   Added full license header.
+// 22 Feb 2007	Aaron Clauson	Created, Hobart, Australia.
+// 28 Dec 2019  Aaron Clauson   Added missing RTCP report types.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -36,8 +36,10 @@ namespace SIPSorcery.Net
 {
     public enum RTCPReportTypesEnum
     {
-        RTCP = 0,
-        NetTestDescription = 1,
+        SR = 0,     // Send Report.
+        RR = 1,     // Receiver Report.
+        SDES = 2,   // Session Description.
+        BYE = 3,    // Goodbye.
     }
 
     public class RTCPReportTypes
@@ -64,7 +66,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Extract and load the RTCPReportHeader from packet.
         /// </summary>
-        /// <param name="packet"></param>
+        /// <param name="packet">The raw RTCP packet to parse.</param>
         public RTCPReportHeader(byte[] packet)
         {
             if (packet.Length < HEADER_BYTES_LENGTH)

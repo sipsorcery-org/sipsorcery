@@ -1,26 +1,12 @@
 //-----------------------------------------------------------------------------
-// Filename: RTCPSenderReport.cs
+// Filename: RTCPReceiverReport.cs
 //
 // Description:
 //
-//        RTCP Sender Report Packet
+//        RTCP Receiver Report Payload
 //        0                   1                   2                   3
 //        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 //        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// header |V=2|P|    RC   |   PT=SR=200   |             length            |
-//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        |                         SSRC of sender                        |
-//        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-// sender |              NTP timestamp, most significant word             |
-// info   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        |             NTP timestamp, least significant word             |
-//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        |                         RTP timestamp                         |
-//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        |                     sender's packet count                     |
-//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        |                      sender's octet count                     |
-//        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 // report |                 SSRC_1(SSRC of first source)                  |
 // block  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //  1     | fraction lost |       cumulative number of packets lost       |
@@ -38,7 +24,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 12 Aug 2019  Aaron Clauson   Created, Montreux, Switzerland.
+// 28 Dec 2019  Aaron Clauson   Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -49,9 +35,10 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class RTCPSenderReport
+    public class RTCPReceiverReport
     {
-        public const int PACKET_TYPE = 200;
+        public const int PACKET_TYPE = 201;
+
         public const int PAYLOAD_SIZE = 24;
 
         public uint SSRC;
@@ -60,7 +47,7 @@ namespace SIPSorcery.Net
         public uint PacketCount;
         public uint OctetCount;
 
-        public RTCPSenderReport(uint ssrc, ulong ntpTimestamp, uint rtpTimestamp, uint packetCount, uint octetCount)
+        public RTCPReceiverReport(uint ssrc, ulong ntpTimestamp, uint rtpTimestamp, uint packetCount, uint octetCount)
         {
             SSRC = ssrc;
             NtpTimestamp = ntpTimestamp;

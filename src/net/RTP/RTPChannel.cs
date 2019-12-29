@@ -11,6 +11,7 @@
 // 27 Feb 2012	Aaron Clauson	Created, Hobart, Australia.
 // 06 Dec 2019  Aaron Clauson   Simplify by removing all frame logic and reduce responsibility
 //                              to only managing sending and receiving of packets.
+// 28 Dec 2019  Aaron Clauson   Added RTCP reporting as per RFC3550.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -157,12 +158,29 @@ namespace SIPSorcery.Net
         Control = 1
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <remarks>
+    /// RTCP Design Decisions:
+    /// - Minimum Report Period set to 5s as per RFC3550: 6.2 RTCP Transmission Interval (page 24).
+    /// - Delay for initial report transmission set to 2.5s (0.5 * minimum report period) as per RFC3550: 6.2 RTCP Transmission Interval (page 26).
+    /// - Randomisation factor to apply to report intervals to attempt to ensure RTCP reports amongst participants don't become synchronised
+    ///   [0.5 * interval, 1.5 * interval] as per RFC3550: 6.2 RTCP Transmission Interval (page 26).
+    /// - Timeout period during which if no RTP or RTCP pakcets received a participant is assumed to have dropped
+    ///   5 x minimum report period as per RFC3550: 6.2.1 (page 27) and 6.3.5 (page 31).
+    /// - All RTCP composite reports must satisfy (this includes when a BYE is sent):
+    ///   - First RTCP packet must be a SR or RR,
+    ///   - Must contain an SDES packet.
+    /// </remarks>
     public class RTPChannel : IDisposable
     {
         private const int MEDIA_PORT_START = 10000;             // Arbitrary port number to start allocating RTP and control ports from.
-        private const int MEDIA_PORT_END = 40000;               // Arbitrary port number that RTP and control ports won't be allocated above.
-        private const int RTCP_SENDER_REPORT_PERIOD_MILLISECONDS = 10000;
-        private const int RTCP_RECEIVER_REPORT_PERIOD_MILLISECONDS = 10000;
+        private const int MEDIA_PORT_END = 20000;               // Arbitrary port number that RTP and control ports won't be allocated above.
+        private const int RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS = 5000;
+        private const int RTCP_INITIAL_REPORT_DELAY_MILLISECONDS = RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS / 2;
+        private const float RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR = 0.5F;
+        private const float RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR = 1.5F;
         private const int NO_RTP_TIMEOUT_SECONDS = 35;          // Number of seconds after which to close a channel if no RTP pakcets are received.
 
         private static ILogger logger = Log.Logger;
@@ -230,7 +248,12 @@ namespace SIPSorcery.Net
         public DateTime RTPLastActivityAt { get; private set; }
         public DateTime ControlLastActivityAt { get; private set; }
 
-        //public bool DontTimeout { get; set; }           // If set to true means a server should not timeout this session even if no activity is received on the RTP socket.
+        /// <summary>
+        /// Tracks whether an RTP pakcet was sent during the later RTCP report interval.
+        /// If no RTP packet is sent within two RTCP intervals we need to classify ourselves
+        /// as a receveir and not a sender.
+        /// </summary>
+        private bool m_weSent; 
 
         public bool IsClosed
         {
@@ -238,14 +261,9 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Time to schedule the delivery of RTCP sender reports.
+        /// Time to schedule the delivery of RTCP reports.
         /// </summary>
-        private Timer m_rtcpSenderReportTimer;
-
-        /// <summary>
-        /// Time to schedule the delivery of RTCP receiver reports.
-        /// </summary>
-        private Timer m_rtcpReceiverReportTimer;
+        private Timer m_rtcpReportsTimer;
 
         // Stats and diagnostic variables.
         //private int _lastRTPReceivedAt;
@@ -290,12 +308,13 @@ namespace SIPSorcery.Net
             m_remoteRTPEndPoint = rtpRemoteEndPoint;
             m_remoteRtcpEndPoint = controlEndPoint;
 
-            m_rtcpSenderReportTimer = new Timer(SendRtcpSenderReport, null, Crypto.GetRandomInt(1000, RTCP_SENDER_REPORT_PERIOD_MILLISECONDS), RTCP_SENDER_REPORT_PERIOD_MILLISECONDS);
-            m_rtcpReceiverReportTimer = new Timer(SendRtcpReceiverReport, null, Crypto.GetRandomInt(1000, RTCP_RECEIVER_REPORT_PERIOD_MILLISECONDS), RTCP_SENDER_REPORT_PERIOD_MILLISECONDS);
+            var initialInterval = GetNextRtcpInterval(RTCP_INITIAL_REPORT_DELAY_MILLISECONDS);
+            var subsequentInterval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
+            m_rtcpReportsTimer = new Timer(SendRtcpReports, null, initialInterval, subsequentInterval);
         }
 
         /// <summary>
-        /// Starts listenting on the RTP and control ports.
+        /// Starts listening on the RTP and control ports.
         /// </summary>
         public void Start()
         {
@@ -331,8 +350,7 @@ namespace SIPSorcery.Net
                     m_isClosed = true;
                     m_rtpReceiver?.Close(null);
                     m_controlReceiver?.Close(null);
-                    m_rtcpSenderReportTimer?.Dispose();
-                    m_rtcpReceiverReportTimer?.Dispose();
+                    m_rtcpReportsTimer?.Dispose();
 
                     OnClosed?.Invoke(closeReason);
                 }
@@ -466,20 +484,6 @@ namespace SIPSorcery.Net
 
                 OnRTPDataReceived?.Invoke(remoteEndPoint, packet);
             }
-
-            // TODO: No activity checks need to account for RTP media status for being on hold.
-            //if (_tickNowCounter++ > 100)
-            //{
-            //    _tickNow = Environment.TickCount;
-            //    _tickNowCounter = 0;
-            //}
-
-            //if ((_tickNow >= _lastRTPReceivedAt && _tickNow - _lastRTPReceivedAt > 1000 * RTP_TIMEOUT_SECONDS)
-            //  || (_tickNow < _lastRTPReceivedAt && Int32.MaxValue - _lastRTPReceivedAt + 1 - (Int32.MinValue - _tickNow) > 1000 * RTP_TIMEOUT_SECONDS))
-            //{
-            //    logger.LogWarning("No RTP packets were received on local port " + RTPPort + " for " + RTP_TIMEOUT_SECONDS + ". The session will now be closed.");
-            //    Close();
-            //}
         }
 
         /// <summary>
@@ -520,32 +524,7 @@ namespace SIPSorcery.Net
             OnControlDataReceived?.Invoke(remoteEndPoint, packet);
         }
 
-        private void SendRtcpSenderReport(Object stateInfo)
-        {
-            try
-            {
-                if (m_rtpSocket != null)
-                {
-                    SIPSorcery.Sys.Log.Logger.LogDebug($"SendRtcpSenderReport {m_rtpSocket.LocalEndPoint}->{m_remoteRTPEndPoint} pkts {PacketsSentCount} bytes {OctetsSentCount}");
-                }
-                else
-                {
-                    Close(null);
-                }
-            }
-            catch (ObjectDisposedException)  // The RTP socket can disappear between the null check and the report send.
-            {
-                m_rtcpSenderReportTimer?.Dispose();
-            }
-            catch (Exception excp)
-            {
-                // RTCP reports are not crticial enough to buuble the exception up to the application.
-                logger.LogError($"Exception SendRtcpSenderReport. {excp.Message}");
-                m_rtcpSenderReportTimer?.Dispose();
-            }
-        }
-
-        private void SendRtcpReceiverReport(Object stateInfo)
+        private void SendRtcpReports(Object stateInfo)
         {
             try
             {
@@ -561,6 +540,9 @@ namespace SIPSorcery.Net
                     {
                         logger.LogDebug($"SendRtcpReceiverReport {m_rtpSocket.LocalEndPoint}->{m_remoteRTPEndPoint} pkts {PacketsReceivedCount} bytes {OctetsReceivedCount}");
                     }
+
+                    var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
+                    m_rtcpReportsTimer.Change(interval, interval);
                 }
                 else
                 {
@@ -569,13 +551,13 @@ namespace SIPSorcery.Net
             }
             catch (ObjectDisposedException) // The RTP socket can disappear between the null check and the report send.
             {
-                m_rtcpReceiverReportTimer?.Dispose();
+                m_rtcpReportsTimer?.Dispose();
             } 
             catch (Exception excp)
             {
                 // RTCP reports are not crticial enough to buuble the exception up to the application.
                 logger.LogError($"Exception SendRtcpReceiverReport. {excp.Message}");
-                m_rtcpReceiverReportTimer?.Dispose();
+                m_rtcpReportsTimer?.Dispose();
             }
         }
 
@@ -587,6 +569,17 @@ namespace SIPSorcery.Net
         public void Dispose()
         {
             Close(null);
+        }
+
+        /// <summary>
+        /// Gets a pseudo-ranominsed interval for the next RTCP report period.
+        /// </summary>
+        /// <param name="baseInterval">The base report interval to randomise.</param>
+        /// <returns>A value in milliseconds to use for teh next RTCP report interval.</returns>
+        private int GetNextRtcpInterval(int baseInterval)
+        {
+           return Crypto.GetRandomInt((int)(RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR * baseInterval),
+               (int)(RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR * baseInterval));
         }
     }
 }
