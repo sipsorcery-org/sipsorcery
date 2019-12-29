@@ -1035,6 +1035,91 @@ references:
   commentId: T:SIPSorcery.Net.ProtectRtpPacket
   fullName: SIPSorcery.Net.ProtectRtpPacket
   nameWithType: ProtectRtpPacket
+- uid: SIPSorcery.Net.RTCPBye
+  name: RTCPBye
+  href: api/SIPSorcery.Net.RTCPBye.html
+  commentId: T:SIPSorcery.Net.RTCPBye
+  fullName: SIPSorcery.Net.RTCPBye
+  nameWithType: RTCPBye
+- uid: SIPSorcery.Net.RTCPBye.#ctor(System.Byte[])
+  name: RTCPBye(Byte[])
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye__ctor_System_Byte___
+  commentId: M:SIPSorcery.Net.RTCPBye.#ctor(System.Byte[])
+  name.vb: RTCPBye(Byte())
+  fullName: SIPSorcery.Net.RTCPBye.RTCPBye(System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTCPBye.RTCPBye(System.Byte())
+  nameWithType: RTCPBye.RTCPBye(Byte[])
+  nameWithType.vb: RTCPBye.RTCPBye(Byte())
+- uid: SIPSorcery.Net.RTCPBye.#ctor(System.UInt32,System.String)
+  name: RTCPBye(UInt32, String)
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye__ctor_System_UInt32_System_String_
+  commentId: M:SIPSorcery.Net.RTCPBye.#ctor(System.UInt32,System.String)
+  fullName: SIPSorcery.Net.RTCPBye.RTCPBye(System.UInt32, System.String)
+  nameWithType: RTCPBye.RTCPBye(UInt32, String)
+- uid: SIPSorcery.Net.RTCPBye.#ctor*
+  name: RTCPBye
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye__ctor_
+  commentId: Overload:SIPSorcery.Net.RTCPBye.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPBye.RTCPBye
+  nameWithType: RTCPBye.RTCPBye
+- uid: SIPSorcery.Net.RTCPBye.GetBytes
+  name: GetBytes()
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye_GetBytes
+  commentId: M:SIPSorcery.Net.RTCPBye.GetBytes
+  fullName: SIPSorcery.Net.RTCPBye.GetBytes()
+  nameWithType: RTCPBye.GetBytes()
+- uid: SIPSorcery.Net.RTCPBye.GetBytes*
+  name: GetBytes
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye_GetBytes_
+  commentId: Overload:SIPSorcery.Net.RTCPBye.GetBytes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPBye.GetBytes
+  nameWithType: RTCPBye.GetBytes
+- uid: SIPSorcery.Net.RTCPBye.MAX_REASON_BYTES
+  name: MAX_REASON_BYTES
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye_MAX_REASON_BYTES
+  commentId: F:SIPSorcery.Net.RTCPBye.MAX_REASON_BYTES
+  fullName: SIPSorcery.Net.RTCPBye.MAX_REASON_BYTES
+  nameWithType: RTCPBye.MAX_REASON_BYTES
+- uid: SIPSorcery.Net.RTCPBye.MIN_PACKET_SIZE
+  name: MIN_PACKET_SIZE
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye_MIN_PACKET_SIZE
+  commentId: F:SIPSorcery.Net.RTCPBye.MIN_PACKET_SIZE
+  fullName: SIPSorcery.Net.RTCPBye.MIN_PACKET_SIZE
+  nameWithType: RTCPBye.MIN_PACKET_SIZE
+- uid: SIPSorcery.Net.RTCPBye.PACKET_TYPE
+  name: PACKET_TYPE
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye_PACKET_TYPE
+  commentId: F:SIPSorcery.Net.RTCPBye.PACKET_TYPE
+  fullName: SIPSorcery.Net.RTCPBye.PACKET_TYPE
+  nameWithType: RTCPBye.PACKET_TYPE
+- uid: SIPSorcery.Net.RTCPBye.Reason
+  name: Reason
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye_Reason
+  commentId: P:SIPSorcery.Net.RTCPBye.Reason
+  fullName: SIPSorcery.Net.RTCPBye.Reason
+  nameWithType: RTCPBye.Reason
+- uid: SIPSorcery.Net.RTCPBye.Reason*
+  name: Reason
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye_Reason_
+  commentId: Overload:SIPSorcery.Net.RTCPBye.Reason
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPBye.Reason
+  nameWithType: RTCPBye.Reason
+- uid: SIPSorcery.Net.RTCPBye.SSRC
+  name: SSRC
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye_SSRC
+  commentId: P:SIPSorcery.Net.RTCPBye.SSRC
+  fullName: SIPSorcery.Net.RTCPBye.SSRC
+  nameWithType: RTCPBye.SSRC
+- uid: SIPSorcery.Net.RTCPBye.SSRC*
+  name: SSRC
+  href: api/SIPSorcery.Net.RTCPBye.html#SIPSorcery_Net_RTCPBye_SSRC_
+  commentId: Overload:SIPSorcery.Net.RTCPBye.SSRC
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPBye.SSRC
+  nameWithType: RTCPBye.SSRC
 - uid: SIPSorcery.Net.RTCPHeader
   name: RTCPHeader
   href: api/SIPSorcery.Net.RTCPHeader.html
@@ -1241,6 +1326,80 @@ references:
   commentId: F:SIPSorcery.Net.RTCPPacket.SenderSyncSource
   fullName: SIPSorcery.Net.RTCPPacket.SenderSyncSource
   nameWithType: RTCPPacket.SenderSyncSource
+- uid: SIPSorcery.Net.RTCPReceiverReport
+  name: RTCPReceiverReport
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html
+  commentId: T:SIPSorcery.Net.RTCPReceiverReport
+  fullName: SIPSorcery.Net.RTCPReceiverReport
+  nameWithType: RTCPReceiverReport
+- uid: SIPSorcery.Net.RTCPReceiverReport.#ctor(System.UInt32,System.UInt64,System.UInt32,System.UInt32,System.UInt32)
+  name: RTCPReceiverReport(UInt32, UInt64, UInt32, UInt32, UInt32)
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html#SIPSorcery_Net_RTCPReceiverReport__ctor_System_UInt32_System_UInt64_System_UInt32_System_UInt32_System_UInt32_
+  commentId: M:SIPSorcery.Net.RTCPReceiverReport.#ctor(System.UInt32,System.UInt64,System.UInt32,System.UInt32,System.UInt32)
+  fullName: SIPSorcery.Net.RTCPReceiverReport.RTCPReceiverReport(System.UInt32, System.UInt64, System.UInt32, System.UInt32, System.UInt32)
+  nameWithType: RTCPReceiverReport.RTCPReceiverReport(UInt32, UInt64, UInt32, UInt32, UInt32)
+- uid: SIPSorcery.Net.RTCPReceiverReport.#ctor*
+  name: RTCPReceiverReport
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html#SIPSorcery_Net_RTCPReceiverReport__ctor_
+  commentId: Overload:SIPSorcery.Net.RTCPReceiverReport.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPReceiverReport.RTCPReceiverReport
+  nameWithType: RTCPReceiverReport.RTCPReceiverReport
+- uid: SIPSorcery.Net.RTCPReceiverReport.GetBytes
+  name: GetBytes()
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html#SIPSorcery_Net_RTCPReceiverReport_GetBytes
+  commentId: M:SIPSorcery.Net.RTCPReceiverReport.GetBytes
+  fullName: SIPSorcery.Net.RTCPReceiverReport.GetBytes()
+  nameWithType: RTCPReceiverReport.GetBytes()
+- uid: SIPSorcery.Net.RTCPReceiverReport.GetBytes*
+  name: GetBytes
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html#SIPSorcery_Net_RTCPReceiverReport_GetBytes_
+  commentId: Overload:SIPSorcery.Net.RTCPReceiverReport.GetBytes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPReceiverReport.GetBytes
+  nameWithType: RTCPReceiverReport.GetBytes
+- uid: SIPSorcery.Net.RTCPReceiverReport.NtpTimestamp
+  name: NtpTimestamp
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html#SIPSorcery_Net_RTCPReceiverReport_NtpTimestamp
+  commentId: F:SIPSorcery.Net.RTCPReceiverReport.NtpTimestamp
+  fullName: SIPSorcery.Net.RTCPReceiverReport.NtpTimestamp
+  nameWithType: RTCPReceiverReport.NtpTimestamp
+- uid: SIPSorcery.Net.RTCPReceiverReport.OctetCount
+  name: OctetCount
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html#SIPSorcery_Net_RTCPReceiverReport_OctetCount
+  commentId: F:SIPSorcery.Net.RTCPReceiverReport.OctetCount
+  fullName: SIPSorcery.Net.RTCPReceiverReport.OctetCount
+  nameWithType: RTCPReceiverReport.OctetCount
+- uid: SIPSorcery.Net.RTCPReceiverReport.PACKET_TYPE
+  name: PACKET_TYPE
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html#SIPSorcery_Net_RTCPReceiverReport_PACKET_TYPE
+  commentId: F:SIPSorcery.Net.RTCPReceiverReport.PACKET_TYPE
+  fullName: SIPSorcery.Net.RTCPReceiverReport.PACKET_TYPE
+  nameWithType: RTCPReceiverReport.PACKET_TYPE
+- uid: SIPSorcery.Net.RTCPReceiverReport.PacketCount
+  name: PacketCount
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html#SIPSorcery_Net_RTCPReceiverReport_PacketCount
+  commentId: F:SIPSorcery.Net.RTCPReceiverReport.PacketCount
+  fullName: SIPSorcery.Net.RTCPReceiverReport.PacketCount
+  nameWithType: RTCPReceiverReport.PacketCount
+- uid: SIPSorcery.Net.RTCPReceiverReport.PAYLOAD_SIZE
+  name: PAYLOAD_SIZE
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html#SIPSorcery_Net_RTCPReceiverReport_PAYLOAD_SIZE
+  commentId: F:SIPSorcery.Net.RTCPReceiverReport.PAYLOAD_SIZE
+  fullName: SIPSorcery.Net.RTCPReceiverReport.PAYLOAD_SIZE
+  nameWithType: RTCPReceiverReport.PAYLOAD_SIZE
+- uid: SIPSorcery.Net.RTCPReceiverReport.RtpTimestamp
+  name: RtpTimestamp
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html#SIPSorcery_Net_RTCPReceiverReport_RtpTimestamp
+  commentId: F:SIPSorcery.Net.RTCPReceiverReport.RtpTimestamp
+  fullName: SIPSorcery.Net.RTCPReceiverReport.RtpTimestamp
+  nameWithType: RTCPReceiverReport.RtpTimestamp
+- uid: SIPSorcery.Net.RTCPReceiverReport.SSRC
+  name: SSRC
+  href: api/SIPSorcery.Net.RTCPReceiverReport.html#SIPSorcery_Net_RTCPReceiverReport_SSRC
+  commentId: F:SIPSorcery.Net.RTCPReceiverReport.SSRC
+  fullName: SIPSorcery.Net.RTCPReceiverReport.SSRC
+  nameWithType: RTCPReceiverReport.SSRC
 - uid: SIPSorcery.Net.RTCPReport
   name: RTCPReport
   href: api/SIPSorcery.Net.RTCPReport.html
@@ -1668,24 +1827,127 @@ references:
   commentId: T:SIPSorcery.Net.RTCPReportTypesEnum
   fullName: SIPSorcery.Net.RTCPReportTypesEnum
   nameWithType: RTCPReportTypesEnum
-- uid: SIPSorcery.Net.RTCPReportTypesEnum.NetTestDescription
-  name: NetTestDescription
-  href: api/SIPSorcery.Net.RTCPReportTypesEnum.html#SIPSorcery_Net_RTCPReportTypesEnum_NetTestDescription
-  commentId: F:SIPSorcery.Net.RTCPReportTypesEnum.NetTestDescription
-  fullName: SIPSorcery.Net.RTCPReportTypesEnum.NetTestDescription
-  nameWithType: RTCPReportTypesEnum.NetTestDescription
-- uid: SIPSorcery.Net.RTCPReportTypesEnum.RTCP
-  name: RTCP
-  href: api/SIPSorcery.Net.RTCPReportTypesEnum.html#SIPSorcery_Net_RTCPReportTypesEnum_RTCP
-  commentId: F:SIPSorcery.Net.RTCPReportTypesEnum.RTCP
-  fullName: SIPSorcery.Net.RTCPReportTypesEnum.RTCP
-  nameWithType: RTCPReportTypesEnum.RTCP
+- uid: SIPSorcery.Net.RTCPReportTypesEnum.BYE
+  name: BYE
+  href: api/SIPSorcery.Net.RTCPReportTypesEnum.html#SIPSorcery_Net_RTCPReportTypesEnum_BYE
+  commentId: F:SIPSorcery.Net.RTCPReportTypesEnum.BYE
+  fullName: SIPSorcery.Net.RTCPReportTypesEnum.BYE
+  nameWithType: RTCPReportTypesEnum.BYE
+- uid: SIPSorcery.Net.RTCPReportTypesEnum.RR
+  name: RR
+  href: api/SIPSorcery.Net.RTCPReportTypesEnum.html#SIPSorcery_Net_RTCPReportTypesEnum_RR
+  commentId: F:SIPSorcery.Net.RTCPReportTypesEnum.RR
+  fullName: SIPSorcery.Net.RTCPReportTypesEnum.RR
+  nameWithType: RTCPReportTypesEnum.RR
+- uid: SIPSorcery.Net.RTCPReportTypesEnum.SDES
+  name: SDES
+  href: api/SIPSorcery.Net.RTCPReportTypesEnum.html#SIPSorcery_Net_RTCPReportTypesEnum_SDES
+  commentId: F:SIPSorcery.Net.RTCPReportTypesEnum.SDES
+  fullName: SIPSorcery.Net.RTCPReportTypesEnum.SDES
+  nameWithType: RTCPReportTypesEnum.SDES
+- uid: SIPSorcery.Net.RTCPReportTypesEnum.SR
+  name: SR
+  href: api/SIPSorcery.Net.RTCPReportTypesEnum.html#SIPSorcery_Net_RTCPReportTypesEnum_SR
+  commentId: F:SIPSorcery.Net.RTCPReportTypesEnum.SR
+  fullName: SIPSorcery.Net.RTCPReportTypesEnum.SR
+  nameWithType: RTCPReportTypesEnum.SR
 - uid: SIPSorcery.Net.RTCPSampleReadyDelegate
   name: RTCPSampleReadyDelegate
   href: api/SIPSorcery.Net.RTCPSampleReadyDelegate.html
   commentId: T:SIPSorcery.Net.RTCPSampleReadyDelegate
   fullName: SIPSorcery.Net.RTCPSampleReadyDelegate
   nameWithType: RTCPSampleReadyDelegate
+- uid: SIPSorcery.Net.RTCPSDesReport
+  name: RTCPSDesReport
+  href: api/SIPSorcery.Net.RTCPSDesReport.html
+  commentId: T:SIPSorcery.Net.RTCPSDesReport
+  fullName: SIPSorcery.Net.RTCPSDesReport
+  nameWithType: RTCPSDesReport
+- uid: SIPSorcery.Net.RTCPSDesReport.#ctor(System.Byte[])
+  name: RTCPSDesReport(Byte[])
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport__ctor_System_Byte___
+  commentId: M:SIPSorcery.Net.RTCPSDesReport.#ctor(System.Byte[])
+  name.vb: RTCPSDesReport(Byte())
+  fullName: SIPSorcery.Net.RTCPSDesReport.RTCPSDesReport(System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTCPSDesReport.RTCPSDesReport(System.Byte())
+  nameWithType: RTCPSDesReport.RTCPSDesReport(Byte[])
+  nameWithType.vb: RTCPSDesReport.RTCPSDesReport(Byte())
+- uid: SIPSorcery.Net.RTCPSDesReport.#ctor(System.UInt32,System.String)
+  name: RTCPSDesReport(UInt32, String)
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport__ctor_System_UInt32_System_String_
+  commentId: M:SIPSorcery.Net.RTCPSDesReport.#ctor(System.UInt32,System.String)
+  fullName: SIPSorcery.Net.RTCPSDesReport.RTCPSDesReport(System.UInt32, System.String)
+  nameWithType: RTCPSDesReport.RTCPSDesReport(UInt32, String)
+- uid: SIPSorcery.Net.RTCPSDesReport.#ctor*
+  name: RTCPSDesReport
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport__ctor_
+  commentId: Overload:SIPSorcery.Net.RTCPSDesReport.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSDesReport.RTCPSDesReport
+  nameWithType: RTCPSDesReport.RTCPSDesReport
+- uid: SIPSorcery.Net.RTCPSDesReport.CNAME
+  name: CNAME
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport_CNAME
+  commentId: P:SIPSorcery.Net.RTCPSDesReport.CNAME
+  fullName: SIPSorcery.Net.RTCPSDesReport.CNAME
+  nameWithType: RTCPSDesReport.CNAME
+- uid: SIPSorcery.Net.RTCPSDesReport.CNAME*
+  name: CNAME
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport_CNAME_
+  commentId: Overload:SIPSorcery.Net.RTCPSDesReport.CNAME
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSDesReport.CNAME
+  nameWithType: RTCPSDesReport.CNAME
+- uid: SIPSorcery.Net.RTCPSDesReport.CNAME_ID
+  name: CNAME_ID
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport_CNAME_ID
+  commentId: F:SIPSorcery.Net.RTCPSDesReport.CNAME_ID
+  fullName: SIPSorcery.Net.RTCPSDesReport.CNAME_ID
+  nameWithType: RTCPSDesReport.CNAME_ID
+- uid: SIPSorcery.Net.RTCPSDesReport.GetBytes
+  name: GetBytes()
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport_GetBytes
+  commentId: M:SIPSorcery.Net.RTCPSDesReport.GetBytes
+  fullName: SIPSorcery.Net.RTCPSDesReport.GetBytes()
+  nameWithType: RTCPSDesReport.GetBytes()
+- uid: SIPSorcery.Net.RTCPSDesReport.GetBytes*
+  name: GetBytes
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport_GetBytes_
+  commentId: Overload:SIPSorcery.Net.RTCPSDesReport.GetBytes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSDesReport.GetBytes
+  nameWithType: RTCPSDesReport.GetBytes
+- uid: SIPSorcery.Net.RTCPSDesReport.MAX_CNAME_BYTES
+  name: MAX_CNAME_BYTES
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport_MAX_CNAME_BYTES
+  commentId: F:SIPSorcery.Net.RTCPSDesReport.MAX_CNAME_BYTES
+  fullName: SIPSorcery.Net.RTCPSDesReport.MAX_CNAME_BYTES
+  nameWithType: RTCPSDesReport.MAX_CNAME_BYTES
+- uid: SIPSorcery.Net.RTCPSDesReport.PACKET_SIZE_WITHOUT_CNAME
+  name: PACKET_SIZE_WITHOUT_CNAME
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport_PACKET_SIZE_WITHOUT_CNAME
+  commentId: F:SIPSorcery.Net.RTCPSDesReport.PACKET_SIZE_WITHOUT_CNAME
+  fullName: SIPSorcery.Net.RTCPSDesReport.PACKET_SIZE_WITHOUT_CNAME
+  nameWithType: RTCPSDesReport.PACKET_SIZE_WITHOUT_CNAME
+- uid: SIPSorcery.Net.RTCPSDesReport.PACKET_TYPE
+  name: PACKET_TYPE
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport_PACKET_TYPE
+  commentId: F:SIPSorcery.Net.RTCPSDesReport.PACKET_TYPE
+  fullName: SIPSorcery.Net.RTCPSDesReport.PACKET_TYPE
+  nameWithType: RTCPSDesReport.PACKET_TYPE
+- uid: SIPSorcery.Net.RTCPSDesReport.SSRC
+  name: SSRC
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport_SSRC
+  commentId: P:SIPSorcery.Net.RTCPSDesReport.SSRC
+  fullName: SIPSorcery.Net.RTCPSDesReport.SSRC
+  nameWithType: RTCPSDesReport.SSRC
+- uid: SIPSorcery.Net.RTCPSDesReport.SSRC*
+  name: SSRC
+  href: api/SIPSorcery.Net.RTCPSDesReport.html#SIPSorcery_Net_RTCPSDesReport_SSRC_
+  commentId: Overload:SIPSorcery.Net.RTCPSDesReport.SSRC
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSDesReport.SSRC
+  nameWithType: RTCPSDesReport.SSRC
 - uid: SIPSorcery.Net.RTCPSenderReport
   name: RTCPSenderReport
   href: api/SIPSorcery.Net.RTCPSenderReport.html
@@ -1730,6 +1992,12 @@ references:
   commentId: F:SIPSorcery.Net.RTCPSenderReport.OctetCount
   fullName: SIPSorcery.Net.RTCPSenderReport.OctetCount
   nameWithType: RTCPSenderReport.OctetCount
+- uid: SIPSorcery.Net.RTCPSenderReport.PACKET_TYPE
+  name: PACKET_TYPE
+  href: api/SIPSorcery.Net.RTCPSenderReport.html#SIPSorcery_Net_RTCPSenderReport_PACKET_TYPE
+  commentId: F:SIPSorcery.Net.RTCPSenderReport.PACKET_TYPE
+  fullName: SIPSorcery.Net.RTCPSenderReport.PACKET_TYPE
+  nameWithType: RTCPSenderReport.PACKET_TYPE
 - uid: SIPSorcery.Net.RTCPSenderReport.PacketCount
   name: PacketCount
   href: api/SIPSorcery.Net.RTCPSenderReport.html#SIPSorcery_Net_RTCPSenderReport_PacketCount
