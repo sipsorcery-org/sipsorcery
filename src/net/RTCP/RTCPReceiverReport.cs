@@ -112,6 +112,7 @@ namespace SIPSorcery.Net
         {
             int rrCount = (ReceptionReports != null) ? ReceptionReports.Count : 0;
             byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + 4 + rrCount * ReceptionReportSample.PAYLOAD_SIZE];
+            Header.SetLength((ushort)(buffer.Length / 4 - 1));
 
             Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
             int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;

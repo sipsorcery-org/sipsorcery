@@ -135,6 +135,7 @@ namespace SIPSorcery.Net
         {
             byte[] cnameBytes = Encoding.UTF8.GetBytes(CNAME);
             byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(cnameBytes.Length)]; // Array automatically initialised with 0x00 values.
+            Header.SetLength((ushort)(buffer.Length / 4 - 1));
 
             Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
             int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;

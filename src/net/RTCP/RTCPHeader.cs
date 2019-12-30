@@ -65,11 +65,11 @@ namespace SIPSorcery.Net
         public const int MAX_RECEPTIONREPORT_COUNT = 32;
         public const int RTCP_VERSION = 2;
 
-        public int Version = RTCP_VERSION;         // 2 bits.
-        public int PaddingFlag = 0;                 // 1 bit.
-        public int ReceptionReportCount = 0;        // 5 bits.
-        public UInt16 PacketType;                   // 8 bits.
-        public UInt16 Length;                       // 16 bits.
+        public int Version { get; private set; } = RTCP_VERSION;         // 2 bits.
+        public int PaddingFlag { get; private set; } = 0;                 // 1 bit.
+        public int ReceptionReportCount { get; private set; } = 0;        // 5 bits.
+        public UInt16 PacketType { get; private set; }                    // 8 bits.
+        public UInt16 Length { get; private set; }                        // 16 bits.
 
         public RTCPHeader(RTCPReportTypesEnum packetType, int reportCount)
         {
@@ -117,6 +117,15 @@ namespace SIPSorcery.Net
             Length = length;
 
             return GetBytes();
+        }
+
+        /// <summary>
+        ///  The length of this RTCP packet in 32-bit words minus one,
+        // including the header and any padding.
+        /// </summary>
+        public void SetLength(ushort length)
+        {
+            Length = length; 
         }
 
         public byte[] GetBytes()

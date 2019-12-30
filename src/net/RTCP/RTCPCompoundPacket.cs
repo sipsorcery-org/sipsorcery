@@ -36,7 +36,7 @@ namespace SIPSorcery.Net
         public RTCPSenderReport SenderReport { get; private set; }
         public RTCPReceiverReport ReceiverReport { get; private set; }
         public RTCPSDesReport SDesReport { get; private set; }
-        public RTCPBye Bye { get; private set; }
+        public RTCPBye Bye { get; set; }
 
         public RTCPCompoundPacket(RTCPSenderReport senderReport, RTCPSDesReport sdesReport)
         {
