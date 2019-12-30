@@ -1,13 +1,13 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: RTCPSenderReportUnitTest.cs
+// Filename: RTCPCompoundPacketUnitTest.cs
 //
-// Description: Unit tests for the RTCPSenderReport class.
+// Description: Unit tests for the RTCPCompoundPacket class.
 
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 29 Dec 2019  Aaron Clauson   Created, Dublin, Ireland.
+// 30 Dec 2019  Aaron Clauson   Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -21,21 +21,21 @@ using Xunit;
 namespace SIPSorcery.Net.UnitTests
 {
     [Trait("Category", "unit")]
-    public class RTCPSenderResportUnitTest
+    public class RTCPCompoundPacketUnitTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;
 
-        public RTCPSenderResportUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        public RTCPCompoundPacketUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
 
         /// <summary>
-        /// Tests that a RTCPSenderReport payload can be correctly serialised and 
+        /// Tests that a RTCPCompoundPacket payload can be correctly serialised and 
         /// deserialised.
         /// </summary>
         [Fact]
-        public void RoundtripRTCPSenderResportUnitTest()
+        public void RoundtripRTCPCompoundPacketUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -54,12 +54,18 @@ namespace SIPSorcery.Net.UnitTests
             uint lastSRTimestamp = 10;
             uint delaySinceLastSR = 11;
 
+            string cname = "dummy";
+
             ReceptionReportSample rr = new ReceptionReportSample(rrSsrc, fractionLost, packetsLost, highestSeqNum, jitter, lastSRTimestamp, delaySinceLastSR);
-
             var sr = new RTCPSenderReport(ssrc, ntpTs, rtpTs, packetCount, octetCount, new List<ReceptionReportSample> { rr });
-            byte[] buffer = sr.GetBytes();
+            RTCPSDesReport sdesReport = new RTCPSDesReport(ssrc, cname);
 
-            RTCPSenderReport parsedSR = new RTCPSenderReport(buffer);
+            RTCPCompoundPacket compoundPacket = new RTCPCompoundPacket(sr, sdesReport);
+
+            byte[] buffer = compoundPacket.GetBytes();
+
+            RTCPCompoundPacket parsedCP = new RTCPCompoundPacket(buffer);
+            RTCPSenderReport parsedSR = parsedCP.SenderReport;
 
             Assert.Equal(ssrc, parsedSR.SSRC);
             Assert.Equal(ntpTs, parsedSR.NtpTimestamp);
@@ -75,6 +81,8 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(jitter, parsedSR.ReceptionReports.First().Jitter);
             Assert.Equal(lastSRTimestamp, parsedSR.ReceptionReports.First().LastSenderReportTimestamp);
             Assert.Equal(delaySinceLastSR, parsedSR.ReceptionReports.First().DelaySinceLastSenderReport);
+
+            Assert.Equal(cname, parsedCP.SDesReport.CNAME);
         }
     }
 }

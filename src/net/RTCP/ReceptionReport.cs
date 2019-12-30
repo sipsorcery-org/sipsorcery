@@ -37,16 +37,46 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class ReceptionReport
+    /// <summary>
+    /// Represents a point in time sample for a reception report.
+    /// </summary>
+    public class ReceptionReportSample
     {
         public const int PAYLOAD_SIZE = 24;
 
+        /// <summary>
+        /// Data source being reported.
+        /// </summary>
         public uint SSRC;
+
+        /// <summary>
+        /// Fraction lost since last SR/RR.
+        /// </summary>
         public byte FractionLost;
-        public uint PacketsLost;
+
+        /// <summary>
+        /// Cumulative number of packets lost (signed!).
+        /// </summary>
+        public int PacketsLost;
+
+        /// <summary>
+        /// Extended last sequence number received.
+        /// </summary>
         public uint ExtendedHighestSequenceNumber;
+
+        /// <summary>
+        /// Interarrival jitter.
+        /// </summary>
         public uint Jitter;
+
+        /// <summary>
+        /// Last SR packet from this source.
+        /// </summary>
         public uint LastSenderReportTimestamp;
+
+        /// <summary>
+        /// Delay since last SR packet.
+        /// </summary>
         public uint DelaySinceLastSenderReport;
 
         /// <summary>
@@ -63,10 +93,10 @@ namespace SIPSorcery.Net
         /// received.</param>
         /// <param name="delaySinceLastSR">The delay between receiving the last Sender Report packet and the sending
         /// of this Reception Report.</param>
-        public ReceptionReport(
+        public ReceptionReportSample(
             uint ssrc,
             byte fractionLost,
-            uint packetsLost,
+            int packetsLost,
             uint highestSeqNum,
             uint jitter,
             uint lastSRTimestamp,
@@ -81,13 +111,13 @@ namespace SIPSorcery.Net
             DelaySinceLastSenderReport = delaySinceLastSR;
         }
 
-        public ReceptionReport(byte[] packet)
+        public ReceptionReportSample(byte[] packet)
         {
             if (BitConverter.IsLittleEndian)
             {
                 SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 0));
                 FractionLost = packet[4];
-                PacketsLost = NetConvert.DoReverseEndian(BitConverter.ToUInt32(new byte[] { 0x00, packet[5], packet[6], packet[7] }, 0));
+                PacketsLost = NetConvert.DoReverseEndian(BitConverter.ToInt32(new byte[] { 0x00, packet[5], packet[6], packet[7] }, 0));
                 ExtendedHighestSequenceNumber = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 8));
                 Jitter = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 12));
                 LastSenderReportTimestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 16));
@@ -97,7 +127,7 @@ namespace SIPSorcery.Net
             {
                 SSRC = BitConverter.ToUInt32(packet, 4);
                 FractionLost = packet[4];
-                PacketsLost = BitConverter.ToUInt32(new byte[] { 0x00, packet[5], packet[6], packet[7] }, 0);
+                PacketsLost = BitConverter.ToInt32(new byte[] { 0x00, packet[5], packet[6], packet[7] }, 0);
                 ExtendedHighestSequenceNumber = BitConverter.ToUInt32(packet, 8);
                 Jitter = BitConverter.ToUInt32(packet, 12);
                 LastSenderReportTimestamp = BitConverter.ToUInt32(packet, 16);
@@ -137,4 +167,252 @@ namespace SIPSorcery.Net
             return payload;
         }
     }
+
+    /// <summary>
+    /// Maintains the reception statistics for a received RTP stream.
+    /// </summary>
+    public class ReceptionReport
+    {
+        private const int MAX_DROPOUT = 3000;
+        private const int MAX_MISORDER = 100;
+        private const int MIN_SEQUENTIAL = 2;
+        private const int RTP_SEQ_MOD = 1 << 16;
+
+        /// <summary>
+        /// Data source being reported.
+        /// </summary>
+        public uint SSRC;
+
+        /// <summary>
+        /// highest seq. number seen
+        /// </summary>
+        private ushort m_max_seq;
+
+        /// <summary>
+        /// shifted count of seq. number cycles.
+        /// </summary>
+        private uint m_cycles;
+
+        /// <summary>
+        /// base seq number
+        /// </summary>
+        private uint m_base_seq;
+
+        /// <summary>
+        /// last 'bad' seq number + 1.
+        /// </summary>
+        private uint m_bad_seq;
+
+        /// <summary>
+        /// sequ. packets till source is valid.
+        /// </summary>
+        private uint m_probation;
+
+        /// <summary>
+        /// packets received.
+        /// </summary>
+        private uint m_received;
+
+        /// <summary>
+        /// packet expected at last interval.
+        /// </summary>
+        private uint m_expected_prior;
+
+        /// <summary>
+        /// packet received at last interval.
+        /// </summary>
+        private uint m_received_prior;
+
+        /// <summary>
+        /// relative trans time for prev pkt.
+        /// </summary>
+        private uint m_transit;
+
+        /// <summary>
+        /// Estimated jitter.
+        /// </summary>
+        private uint m_jitter;
+
+        /// <summary>
+        /// Last SR packet from this source.
+        /// </summary>
+        private uint m_lastSenderReportTimestamp;
+
+        /// <summary>
+        /// Datetime the last sender report was received at.
+        /// </summary>
+        private DateTime m_lastSenderReportReceivedAt = DateTime.MinValue;
+
+        /// <summary>
+        /// Creates a new Reception Report object.
+        /// </summary>
+        /// <param name="ssrc">The synchronisation source this reception report is for.</param>
+        public ReceptionReport(uint ssrc)
+        {
+            SSRC = ssrc;
+        }
+
+        /// <summary>
+        /// Updates the state when an RTCP sender report is received from the remote party.
+        /// </summary>
+        /// <param name="srNtpTimestamp">The sender report timestamp.</param>
+        internal void RtcpSenderReportReceived(ulong srNtpTimestamp)
+        {
+            m_lastSenderReportTimestamp = (uint)((srNtpTimestamp >> 16) & 0xFFFFFFFF);
+            m_lastSenderReportReceivedAt = DateTime.Now;
+        }
+
+        /// <summary>
+        /// Carries out the calcaulations required to measure properties related to the reception of 
+        /// received RTP packets. The algorithms employed are:
+        ///  - RFC3550 A.1 RTP Data Header Validity Checks (for sequence number calculations).
+        ///  - RFC3550 A.3 Determining Number of Packets Expected and Lost.
+        ///  - RFC3550 A.8 Estimating the Interarrival Jitter.
+        /// </summary>
+        /// <param name="seq">The sequence number in the RTP header.</param>
+        /// <param name="rtpTimestamp">The timestamp in the RTP header.</param>
+        /// <param name="arrivalTimestamp">The current timestamp in the SAME units as the RTP timestamp.
+        /// For example for 8Khz audio the arrival timestamp needs 8000 ticks per second.</param>
+        internal void RtpPacketReceived(ushort seq, uint rtpTimestamp, uint arrivalTimestamp)
+        {
+            // Sequence number calculations and cycles as per RFC3550 Appendix A.1.
+            if(m_received == 0)
+            {
+                init_seq(seq);
+                m_max_seq = (ushort)(seq - 1);
+                m_probation = MIN_SEQUENTIAL;
+            }
+            update_seq(seq);
+
+            // Estimating the Interarrival Jitter as defined in RFC3550 Appendix A.8.
+            uint transit = arrivalTimestamp - rtpTimestamp;
+            int d = (int)(transit - m_transit);
+            m_transit = transit;
+            if (d < 0)
+            {
+                d = -d;
+            }
+            m_jitter += (uint)(d - ((m_jitter + 8) >> 4));
+        }
+
+        /// <summary>
+        /// Gets a point in time sample for the reception report.
+        /// </summary>
+        /// <returns>A reception report sample.</returns>
+        public ReceptionReportSample GetSample(uint ntpTimestampNow)
+        {
+            // Determining the number of packets expected and lost in RFC3550 Appendix A.3.
+            uint extended_max = m_cycles + m_max_seq;
+            uint expected = extended_max - m_base_seq + 1;
+            int lost = (int)(expected - m_received);
+
+            uint expected_interval = expected - m_expected_prior;
+            m_expected_prior = expected;
+            uint received_interval = m_received - m_received_prior;
+            m_received_prior = m_received;
+            uint lost_interval = expected_interval - received_interval;
+            byte fraction = (byte)((expected_interval == 0 || lost_interval <= 0) ? 0 : (lost_interval << 8) / expected_interval);
+
+            // In this case, the estimate is sampled for the reception report as:
+            uint jitter = m_jitter >> 4;
+
+            uint delay = 0;
+            if(m_lastSenderReportReceivedAt != DateTime.MinValue)
+            {
+                delay = ntpTimestampNow - m_lastSenderReportTimestamp;
+            }
+
+            return new ReceptionReportSample(SSRC, fraction, lost, m_max_seq, jitter, m_lastSenderReportTimestamp, delay);
+        }
+
+        /// <summary>
+        /// Initialises the sequence number state for the reception RTP stream.
+        /// This method is from RFC3550 Appendix A.1 "RTP Data Header Validity Checks".
+        /// </summary>
+        /// <param name="seq">The sequence number from the received RTP packet that triggered this update.</param>
+        void init_seq(ushort seq)
+        {
+            m_base_seq = seq;
+            m_max_seq = seq;
+            m_bad_seq = RTP_SEQ_MOD + 1;   /* so seq == bad_seq is false */
+            m_cycles = 0;
+            m_received = 0;
+            m_received_prior = 0;
+            m_expected_prior = 0;
+        }
+
+        /// <summary>
+        /// Update the sequence number state for the reception RTP stream.
+        /// This method is from RFC3550 Appendix A.1 "RTP Data Header Validity Checks".
+        /// </summary>
+        /// <param name="seq">The sequence number from the received RTP packet that triggered this update.</param>
+        /// <returns></returns>
+        int update_seq(ushort seq)
+        {
+            ushort udelta = (ushort)(seq - m_max_seq);
+
+            /*
+             * Source is not valid until MIN_SEQUENTIAL packets with
+             * sequential sequence numbers have been received.
+             */
+            if (m_probation > 0)
+            {
+                /* packet is in sequence */
+                if (seq == m_max_seq + 1)
+                {
+                    m_probation--;
+                    m_max_seq = seq;
+                    if (m_probation == 0)
+                    {
+                        init_seq(seq);
+                        m_received++;
+                        return 1;
+                    }
+                }
+                else
+                {
+                    m_probation = MIN_SEQUENTIAL - 1;
+                    m_max_seq = seq;
+                }
+                return 0;
+            }
+            else if (udelta < MAX_DROPOUT)
+            {
+                /* in order, with permissible gap */
+                if (seq < m_max_seq)
+                {
+                    /*
+                     * Sequence number wrapped - count another 64K cycle.
+                     */
+                    m_cycles += RTP_SEQ_MOD;
+                }
+                m_max_seq = seq;
+            }
+            else if (udelta <= RTP_SEQ_MOD - MAX_MISORDER)
+            {
+                /* the sequence number made a very large jump */
+                if (seq == m_bad_seq)
+                {
+                    /*
+                     * Two sequential packets -- assume that the other side
+                     * restarted without telling us so just re-sync
+                     * (i.e., pretend this was the first packet).
+                     */
+                    init_seq(seq);
+                }
+                else
+                {
+                    m_bad_seq = (uint)((seq + 1) & (RTP_SEQ_MOD - 1));
+                    return 0;
+                }
+            }
+            else
+            {
+                /* duplicate or reordered packet */
+            }
+            m_received++;
+            return 1;
+        }
+    }
 }
+ 

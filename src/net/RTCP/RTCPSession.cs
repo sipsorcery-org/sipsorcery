@@ -16,8 +16,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -31,7 +31,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTCPSession
     {
-        private const int SRTP_AUTH_KEY_LENGTH = RTPSession.SRTP_AUTH_KEY_LENGTH;   
+        private const int SRTP_AUTH_KEY_LENGTH = RTPSession.SRTP_AUTH_KEY_LENGTH;
         private const int RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS = 5000;
         private const int RTCP_INITIAL_REPORT_DELAY_MILLISECONDS = RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS / 2;
         private const float RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR = 0.5F;
@@ -48,36 +48,34 @@ namespace SIPSorcery.Net
         public DateTime CreatedAt { get; private set; }
         public DateTime StartedAt { get; private set; }
         public DateTime RTPLastActivityAt { get; private set; }
-        public DateTime ControlLastActivityAt { get; private set; }
-        public uint PacketsSent { get; private set; }
-        public uint OctetsSent { get; private set; }
 
         /// <summary>
         /// Number of RTP packets sent to the remote party.
         /// </summary>
-        public int PacketsSentCount { get; private set; }
+        public uint PacketsSentCount { get; private set; }
 
         /// <summary>
         /// Number of RTP bytes sent to the remote party.
         /// </summary>
-        public int OctetsSentCount { get; private set; }
+        public uint OctetsSentCount { get; private set; }
+
+        public uint LastRtpTimestampSent { get; private set; }
+
+        public ulong LastNtpTimestampSent { get; private set; }
 
         /// <summary>
         /// Number of RTP packets received from the remote party.
         /// </summary>
-        public int PacketsReceivedCount { get; private set; }
+        public uint PacketsReceivedCount { get; private set; }
 
         /// <summary>
         /// Number of RTP bytes received from the remote party.
         /// </summary>
-        public int OctetsReceivedCount { get; private set; }
+        public uint OctetsReceivedCount { get; private set; }
 
-        /// <summary>
-        /// Tracks whether an RTP packet was sent during the later RTCP report interval.
-        /// If no RTP packet is sent within two RTCP intervals we need to classify ourselves
-        /// as a receveir and not a sender.
-        /// </summary>
-        private bool m_weSent;
+        public string Cname { get; private set; }
+
+        public ReceptionReport ReceptionReport { get; private set; }
 
         /// <summary>
         /// Time to schedule the delivery of RTCP reports.
@@ -86,6 +84,7 @@ namespace SIPSorcery.Net
 
         private RTPChannel m_rtpChannel;
         private bool m_isClosed = false;
+        private ReceptionReport m_receptionReport;
 
         /// <summary>
         /// Function pointer to an SRTCP context that encrypts an RTCP packet.
@@ -98,6 +97,7 @@ namespace SIPSorcery.Net
             m_rtpChannel = rtpChannel;
             m_srtcpProtect = srtcpProtect;
             CreatedAt = DateTime.Now;
+            Cname = Guid.NewGuid().ToString();
         }
 
         public void Start()
@@ -111,21 +111,62 @@ namespace SIPSorcery.Net
 
         public void Close(string reason)
         {
-            // Send BYE.
+            // TODO: Send BYE.
 
             m_isClosed = true;
-
             m_rtcpReportTimer?.Dispose();
         }
 
+        /// <summary>
+        /// Event handler for an RTP packet being received by the RTP session.
+        /// </summary>
         internal void RtpPacketReceived(RTPPacket rtpPacket)
         {
+            RTPLastActivityAt = DateTime.Now;
+            PacketsReceivedCount++;
+            OctetsReceivedCount += (uint)rtpPacket.Payload.Length;
 
+            if (m_receptionReport == null)
+            {
+                m_receptionReport = new ReceptionReport(rtpPacket.Header.SyncSource);
+            }
+
+            m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, DateTimeToNtpTimestamp32(DateTime.Now));
         }
 
+        /// <summary>
+        /// Event handler for an RTP packet being sent by the RTP session.
+        /// </summary>
         internal void RtpPacketSent(RTPPacket rtpPacket)
         {
+            PacketsSentCount++;
+            OctetsSentCount += (uint)rtpPacket.Payload.Length;
+            LastRtpTimestampSent = rtpPacket.Header.Timestamp;
+            LastNtpTimestampSent = DateTimeToNtpTimestamp(DateTime.Now);
+        }
 
+        /// <summary>
+        /// Event handler for an RTCP packet being received from the remote party.
+        /// </summary>
+        /// <param name="remoteEndPoint">The end point the packet was received from.</param>
+        /// <param name="buffer">The data received.</param>
+        internal void ControlDataReceived(IPEndPoint remoteEndPoint, byte[] buffer)
+        {
+            var rtcpCompoundPacket = new RTCPCompoundPacket(buffer);
+
+            if (rtcpCompoundPacket != null && rtcpCompoundPacket.SenderReport != null)
+            {
+                if (m_receptionReport == null)
+                {
+                    m_receptionReport = new ReceptionReport(rtcpCompoundPacket.SenderReport.SSRC);
+                }
+
+                m_receptionReport.RtcpSenderReportReceived(rtcpCompoundPacket.SenderReport.NtpTimestamp);
+
+                var sr = rtcpCompoundPacket.SenderReport;
+
+                logger.LogDebug($"Received RtcpSenderReport from {remoteEndPoint} pkts {sr.PacketCount} bytes {sr.OctetCount}");
+            }
         }
 
         private void SendRtcpSenderReport(Object stateInfo)
@@ -138,11 +179,38 @@ namespace SIPSorcery.Net
                         (RTPLastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(CreatedAt).TotalMilliseconds > RTP_NO_ACTIVITY_TIMEOUT_MILLISECONDS))
                     {
                         logger.LogDebug($"RTP channel on {m_rtpChannel?.RTPLocalEndPoint} has not had any activity for over {RTP_NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds, closing.");
+                        // TODO: Send BYE.
                         Close("No activity timeout.");
                     }
                     else
                     {
-                        logger.LogDebug($"SendRtcpReceiverReport {m_rtpChannel?.RTPLocalEndPoint}->{m_rtpChannel?.LastRtpDestination} pkts {PacketsReceivedCount} bytes {OctetsReceivedCount}");
+                        logger.LogDebug($"SendRtcpSenderReport {m_rtpChannel?.RTPLocalEndPoint}->{m_rtpChannel?.LastRtpDestination} pkts {PacketsReceivedCount} bytes {OctetsReceivedCount}");
+                        var rr = m_receptionReport.GetSample(DateTimeToNtpTimestamp32(DateTime.Now));
+                        var senderReport = new RTCPSenderReport(Ssrc, LastNtpTimestampSent, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, new List<ReceptionReportSample>{ rr });
+                        var sdesReport = new RTCPSDesReport(Ssrc, Cname);
+                        var report = new RTCPCompoundPacket(senderReport, sdesReport);
+
+                        var reportBytes = report.GetBytes();
+
+                        if (m_srtcpProtect == null)
+                        {
+                            m_rtpChannel.SendAsync(RTPChannelSocketsEnum.Control, m_rtpChannel.LastControlDestination, reportBytes);
+                        }
+                        else
+                        {
+                            byte[] sendBuffer = new byte[reportBytes.Length + SRTP_AUTH_KEY_LENGTH];
+                            Buffer.BlockCopy(reportBytes, 0, sendBuffer, 0, reportBytes.Length);
+
+                            int rtperr = m_srtcpProtect(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
+                            if (rtperr != 0)
+                            {
+                                logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
+                            }
+                            else
+                            {
+                                m_rtpChannel.SendAsync(RTPChannelSocketsEnum.Control, m_rtpChannel.LastControlDestination, sendBuffer);
+                            }
+                        }
                     }
 
                     var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
@@ -158,40 +226,6 @@ namespace SIPSorcery.Net
                 // RTCP reports are not crticial enough to bubble the exception up to the application.
                 logger.LogError($"Exception SendRtcpSenderReport. {excp.Message}");
                 m_rtcpReportTimer?.Dispose();
-            }
-        }
-
-        private void GetRtcpSenderReport(Socket srcControlSocket, IPEndPoint dstRtpSocket, uint timestamp)
-        {
-            try
-            {
-                var ntpTimestamp = DateTimeToNtpTimestamp(DateTime.Now);
-                var rtcpSRPacket = new RTCPSenderReport(Ssrc, ntpTimestamp, timestamp, PacketsSent, OctetsSent, null);
-
-                if (m_srtcpProtect == null)
-                {
-                    srcControlSocket.SendTo(rtcpSRPacket.GetBytes(), dstRtpSocket);
-                }
-                else
-                {
-                    var rtcpSRBytes = rtcpSRPacket.GetBytes();
-                    byte[] sendBuffer = new byte[rtcpSRBytes.Length + SRTP_AUTH_KEY_LENGTH];
-                    Buffer.BlockCopy(rtcpSRBytes, 0, sendBuffer, 0, rtcpSRBytes.Length);
-
-                    int rtperr = m_srtcpProtect(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
-                    if (rtperr != 0)
-                    {
-                        logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
-                    }
-                    else
-                    {
-                        srcControlSocket.SendTo(sendBuffer, dstRtpSocket);
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.LogWarning("Exception GetRtcpSenderReport. " + excp.Message);
             }
         }
 

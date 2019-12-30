@@ -44,15 +44,15 @@ namespace SIPSorcery.Net.UnitTests
 
             uint rrSsrc = 5;
             byte fractionLost = 6;
-            uint packetsLost = 7;
+            int packetsLost = 7;
             uint highestSeqNum = 8;
             uint jitter = 9;
             uint lastSRTimestamp = 10;
             uint delaySinceLastSR = 11;
 
-            ReceptionReport rr = new ReceptionReport(rrSsrc, fractionLost, packetsLost, highestSeqNum, jitter, lastSRTimestamp, delaySinceLastSR);
+            var rr = new ReceptionReportSample(rrSsrc, fractionLost, packetsLost, highestSeqNum, jitter, lastSRTimestamp, delaySinceLastSR);
 
-            var sr = new RTCPReceiverReport(ssrc, new List<ReceptionReport> { rr });
+            var sr = new RTCPReceiverReport(ssrc, new List<ReceptionReportSample> { rr });
             byte[] buffer = sr.GetBytes();
 
             RTCPReceiverReport parsedRR = new RTCPReceiverReport(buffer);

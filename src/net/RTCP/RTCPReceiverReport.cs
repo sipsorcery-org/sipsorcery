@@ -49,11 +49,11 @@ namespace SIPSorcery.Net
 {
     public class RTCPReceiverReport
     {
-        public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + 4 + ReceptionReport.PAYLOAD_SIZE;
+        public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + 4 + ReceptionReportSample.PAYLOAD_SIZE;
 
         public RTCPHeader Header;
         public uint SSRC;
-        public List<ReceptionReport> ReceptionReports;
+        public List<ReceptionReportSample> ReceptionReports;
 
         /// <summary>
         /// Creates a new RTCP Reception Report payload.
@@ -61,7 +61,7 @@ namespace SIPSorcery.Net
         /// <param name="ssrc">The synchronisation source of the RTP packet being sent. Can be zero
         /// if there are none being sent.</param>
         /// <param name="receptionReports">A list of the reception reports to include. Can be empty.</param>
-        public RTCPReceiverReport(uint ssrc, List<ReceptionReport> receptionReports)
+        public RTCPReceiverReport(uint ssrc, List<ReceptionReportSample> receptionReports)
         {
             if (receptionReports == null || receptionReports.Count == 0)
             {
@@ -85,7 +85,7 @@ namespace SIPSorcery.Net
             }
 
             Header = new RTCPHeader(packet);
-            ReceptionReports = new List<ReceptionReport>();
+            ReceptionReports = new List<ReceptionReportSample>();
 
             if (BitConverter.IsLittleEndian)
             {
@@ -99,7 +99,7 @@ namespace SIPSorcery.Net
             int rrIndex = 8;
             for (int i = 0; i < Header.ReceptionReportCount; i++)
             {
-                var rr = new ReceptionReport(packet.Skip(rrIndex + i * ReceptionReport.PAYLOAD_SIZE).ToArray());
+                var rr = new ReceptionReportSample(packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray());
                 ReceptionReports.Add(rr);
             }
         }
@@ -111,7 +111,7 @@ namespace SIPSorcery.Net
         public byte[] GetBytes()
         {
             int rrCount = (ReceptionReports != null) ? ReceptionReports.Count : 0;
-            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + 4 + rrCount * ReceptionReport.PAYLOAD_SIZE];
+            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + 4 + rrCount * ReceptionReportSample.PAYLOAD_SIZE];
 
             Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
             int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
@@ -129,8 +129,8 @@ namespace SIPSorcery.Net
             for(int i=0; i<rrCount; i++)
             {
                 var receptionReportBytes = ReceptionReports[i].GetBytes();
-                Buffer.BlockCopy(receptionReportBytes, 0, buffer, bufferIndex, ReceptionReport.PAYLOAD_SIZE);
-                bufferIndex += ReceptionReport.PAYLOAD_SIZE;
+                Buffer.BlockCopy(receptionReportBytes, 0, buffer, bufferIndex, ReceptionReportSample.PAYLOAD_SIZE);
+                bufferIndex += ReceptionReportSample.PAYLOAD_SIZE;
             }
 
             return buffer;

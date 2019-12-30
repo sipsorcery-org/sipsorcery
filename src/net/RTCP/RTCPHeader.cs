@@ -39,7 +39,7 @@ namespace SIPSorcery.Net
     /// <summary>
     /// The different types of RTCP packets as defined in RFC3550.
     /// </summary>
-    public enum RTCPReportTypesEnum : ushort
+    public enum RTCPReportTypesEnum : byte
     {
         SR = 200,     // Send Report.
         RR = 201,     // Receiver Report.

@@ -168,7 +168,6 @@ namespace SIPSorcery.Net
             FormatTypeID = formatTypeID;
             SrtpProtect = srtpProtect;
 
-
             Initialise(addrFamily, srtcpProtect);
         }
 
@@ -188,6 +187,7 @@ namespace SIPSorcery.Net
 
             RtcpSession = new RTCPSession(Ssrc, RtpChannel, srtcpProtect);
             OnRtpPacketReceived += RtcpSession.RtpPacketReceived;
+            RtpChannel.OnControlDataReceived += RtcpSession.ControlDataReceived;
             OnRtpPacketSent += RtcpSession.RtpPacketSent;
 
             // Start the RTP and Control socket receivers and the RTCP session.
@@ -583,6 +583,7 @@ namespace SIPSorcery.Net
                 {
                     RtpChannel.OnRTPDataReceived -= RtpPacketReceived;
                     RtpChannel.OnClosed -= OnRTPChannelClosed;
+                    RtpChannel.OnControlDataReceived -= RtcpSession.ControlDataReceived;
                     RtpChannel.Close(reason);
                 }
 
