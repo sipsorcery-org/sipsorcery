@@ -92,7 +92,7 @@ namespace SIPSorcery.Net
         public ProtectRtpPacket SrtpProtect { get; private set; }
 
         /// <summary>
-        /// The remote end point this session is sending to.
+        /// The remote RTP end point this session is sending to.
         /// </summary>
         public IPEndPoint DestinationEndPoint;
 
@@ -218,6 +218,9 @@ namespace SIPSorcery.Net
                     }
                 }
             }
+
+            DestinationEndPoint = sdp.GetSDPRTPEndPoint();
+            RtcpSession.ControlDestinationEndPoint = new IPEndPoint(DestinationEndPoint.Address, DestinationEndPoint.Port + 1);
         }
 
         public void SendAudioFrame(uint timestamp, byte[] buffer)

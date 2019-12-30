@@ -65,7 +65,7 @@ namespace SIPSorcery.Net
         public const int PACKET_SIZE_WITHOUT_CNAME = 6; // 4 byte SSRC, 1 byte CNAME ID, 1 byte CNAME length.
         public const int MAX_CNAME_BYTES = 255;
         public const byte CNAME_ID = 0x01;
-        public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + 8;
+        public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + PACKET_SIZE_WITHOUT_CNAME;
 
         public RTCPHeader Header;
         public uint SSRC { get; private set; }

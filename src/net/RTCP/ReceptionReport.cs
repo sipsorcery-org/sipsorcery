@@ -273,7 +273,7 @@ namespace SIPSorcery.Net
         /// <param name="rtpTimestamp">The timestamp in the RTP header.</param>
         /// <param name="arrivalTimestamp">The current timestamp in the SAME units as the RTP timestamp.
         /// For example for 8Khz audio the arrival timestamp needs 8000 ticks per second.</param>
-        internal void RtpPacketReceived(ushort seq, uint rtpTimestamp, uint arrivalTimestamp)
+        internal bool RtpPacketReceived(ushort seq, uint rtpTimestamp, uint arrivalTimestamp)
         {
             // Sequence number calculations and cycles as per RFC3550 Appendix A.1.
             if(m_received == 0)
@@ -282,7 +282,7 @@ namespace SIPSorcery.Net
                 m_max_seq = (ushort)(seq - 1);
                 m_probation = MIN_SEQUENTIAL;
             }
-            update_seq(seq);
+            bool ready = update_seq(seq);
 
             // Estimating the Interarrival Jitter as defined in RFC3550 Appendix A.8.
             uint transit = arrivalTimestamp - rtpTimestamp;
@@ -293,6 +293,8 @@ namespace SIPSorcery.Net
                 d = -d;
             }
             m_jitter += (uint)(d - ((m_jitter + 8) >> 4));
+
+            return ready;
         }
 
         /// <summary>
@@ -346,8 +348,9 @@ namespace SIPSorcery.Net
         /// This method is from RFC3550 Appendix A.1 "RTP Data Header Validity Checks".
         /// </summary>
         /// <param name="seq">The sequence number from the received RTP packet that triggered this update.</param>
-        /// <returns></returns>
-        int update_seq(ushort seq)
+        /// <returns>True when the required number of packets have been received and a report can be generated. False
+        /// indicates not yet enough data.</returns>
+        bool update_seq(ushort seq)
         {
             ushort udelta = (ushort)(seq - m_max_seq);
 
@@ -366,7 +369,7 @@ namespace SIPSorcery.Net
                     {
                         init_seq(seq);
                         m_received++;
-                        return 1;
+                        return false;
                     }
                 }
                 else
@@ -374,7 +377,7 @@ namespace SIPSorcery.Net
                     m_probation = MIN_SEQUENTIAL - 1;
                     m_max_seq = seq;
                 }
-                return 0;
+                return true;
             }
             else if (udelta < MAX_DROPOUT)
             {
@@ -403,7 +406,7 @@ namespace SIPSorcery.Net
                 else
                 {
                     m_bad_seq = (uint)((seq + 1) & (RTP_SEQ_MOD - 1));
-                    return 0;
+                    return true;
                 }
             }
             else
@@ -411,7 +414,7 @@ namespace SIPSorcery.Net
                 /* duplicate or reordered packet */
             }
             m_received++;
-            return 1;
+            return false;
         }
     }
 }

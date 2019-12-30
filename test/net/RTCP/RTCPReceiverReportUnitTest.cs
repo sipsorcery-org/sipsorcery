@@ -52,8 +52,8 @@ namespace SIPSorcery.Net.UnitTests
 
             var rr = new ReceptionReportSample(rrSsrc, fractionLost, packetsLost, highestSeqNum, jitter, lastSRTimestamp, delaySinceLastSR);
 
-            var sr = new RTCPReceiverReport(ssrc, new List<ReceptionReportSample> { rr });
-            byte[] buffer = sr.GetBytes();
+            var receiverReport = new RTCPReceiverReport(ssrc, new List<ReceptionReportSample> { rr });
+            byte[] buffer = receiverReport.GetBytes();
 
             RTCPReceiverReport parsedRR = new RTCPReceiverReport(buffer);
 
@@ -66,6 +66,20 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(jitter, parsedRR.ReceptionReports.First().Jitter);
             Assert.Equal(lastSRTimestamp, parsedRR.ReceptionReports.First().LastSenderReportTimestamp);
             Assert.Equal(delaySinceLastSR, parsedRR.ReceptionReports.First().DelaySinceLastSenderReport);
+        }
+
+        /// <summary>
+        /// Tests parsing a receiver report with 0 reception reports.
+        /// </summary>
+        [Fact]
+        public void ParseEmtpyReceiverReportUnitTest()
+        {
+            var rrBytes = new byte[] { 0x80, 0xc9, 0x00, 0x01, 0x03, 0x86, 0x4a, 0xb9 };
+
+            var receiverReport = new RTCPReceiverReport(rrBytes);
+
+            Assert.True(receiverReport.ReceptionReports.Count == 0);
+            Assert.Equal((uint)59132601, receiverReport.SSRC);
         }
     }
 }

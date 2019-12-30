@@ -89,6 +89,11 @@ namespace SIPSorcery.Net
         public ReceptionReport ReceptionReport { get; private set; }
 
         /// <summary>
+        /// The remote control (RTCP) end point this session is sending to.
+        /// </summary>
+        public IPEndPoint ControlDestinationEndPoint;
+
+        /// <summary>
         /// Time to schedule the delivery of RTCP reports.
         /// </summary>
         private Timer m_rtcpReportTimer;
@@ -118,12 +123,16 @@ namespace SIPSorcery.Net
 
         public void Close(string reason)
         {
-            var report = GetRtcpReport();
-            report.Bye = new RTCPBye(Ssrc, reason);
-            SendRtcpReport(report);
+            if (!m_isClosed)
+            {
+                var report = GetRtcpReport();
+                report.Bye = new RTCPBye(Ssrc, reason);
+                SendRtcpReport(report);
 
-            m_isClosed = true;
-            m_rtcpReportTimer?.Dispose();
+                m_isClosed = true;
+                m_rtcpReportTimer?.Dispose();
+                m_rtpChannel.Close(reason);
+            }
         }
 
         /// <summary>
@@ -140,12 +149,12 @@ namespace SIPSorcery.Net
                 m_receptionReport = new ReceptionReport(rtpPacket.Header.SyncSource);
             }
 
-            m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, DateTimeToNtpTimestamp32(DateTime.Now));
+            bool ready = m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, DateTimeToNtpTimestamp32(DateTime.Now));
 
-            if(!m_isClosed && m_rtcpReportTimer == null)
+            if(!m_isClosed && ready == true && m_rtcpReportTimer == null)
             {
                 // Send the initial RTCP sender report once the first RTP packet arrives.
-                SendRtcpSenderReport(null);
+                SendReportTimerCallback(null);
             }
         }
 
@@ -167,43 +176,50 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data received.</param>
         internal void ControlDataReceived(IPEndPoint remoteEndPoint, byte[] buffer)
         {
-            var rtcpCompoundPacket = new RTCPCompoundPacket(buffer);
-
-            if (rtcpCompoundPacket != null && rtcpCompoundPacket.SenderReport != null)
+            try
             {
-                if (m_receptionReport == null)
+                var rtcpCompoundPacket = new RTCPCompoundPacket(buffer);
+
+                if (rtcpCompoundPacket != null && rtcpCompoundPacket.SenderReport != null)
                 {
-                    m_receptionReport = new ReceptionReport(rtcpCompoundPacket.SenderReport.SSRC);
+                    if (m_receptionReport == null)
+                    {
+                        m_receptionReport = new ReceptionReport(rtcpCompoundPacket.SenderReport.SSRC);
+                    }
+
+                    m_receptionReport.RtcpSenderReportReceived(rtcpCompoundPacket.SenderReport.NtpTimestamp);
+
+                    var sr = rtcpCompoundPacket.SenderReport;
+
+                    logger.LogDebug($"Received RtcpSenderReport from {remoteEndPoint} pkts {sr.PacketCount} bytes {sr.OctetCount}");
                 }
-
-                m_receptionReport.RtcpSenderReportReceived(rtcpCompoundPacket.SenderReport.NtpTimestamp);
-
-                var sr = rtcpCompoundPacket.SenderReport;
-
-                logger.LogDebug($"Received RtcpSenderReport from {remoteEndPoint} pkts {sr.PacketCount} bytes {sr.OctetCount}");
+            }
+            catch(Exception excp)
+            {
+                logger.LogError($"Exception RTCPSession.ControlDataReceived. {excp.Message}");
             }
         }
 
-        private void SendRtcpSenderReport(Object stateInfo)
+        /// <summary>
+        /// Callback function for the RTCP report timer.
+        /// </summary>
+        /// <param name="stateInfo">Not used.</param>
+        private void SendReportTimerCallback(Object stateInfo)
         {
             try
             {
-                if (!m_isClosed)
+                if (!m_isClosed && ControlDestinationEndPoint != null)
                 {
                     if ((RTPLastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(RTPLastActivityAt).TotalMilliseconds > RTP_NO_ACTIVITY_TIMEOUT_MILLISECONDS) ||
                         (RTPLastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(CreatedAt).TotalMilliseconds > RTP_NO_ACTIVITY_TIMEOUT_MILLISECONDS))
                     {
-                        logger.LogDebug($"RTP channel on {m_rtpChannel?.RTPLocalEndPoint} has not had any activity for over {RTP_NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds, closing.");
-
-                        var report = GetRtcpReport();
-                        report.Bye = new RTCPBye(Ssrc, NO_ACTIVITY_TIMEOUT_REASON);
-                        SendRtcpReport(report);
-
+                        //logger.LogDebug($"RTP channel on {m_rtpChannel?.RTPLocalEndPoint} has not had any activity for over {RTP_NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds, closing.");
+                        m_rtcpReportTimer?.Dispose();
                         Close(NO_ACTIVITY_TIMEOUT_REASON);
                     }
                     else
                     {
-                        logger.LogDebug($"SendRtcpSenderReport {m_rtpChannel?.RTPLocalEndPoint}->{m_rtpChannel?.LastRtpDestination} pkts {PacketsReceivedCount} bytes {OctetsReceivedCount}");
+                        //logger.LogDebug($"SendRtcpSenderReport {m_rtpChannel?.RTPLocalEndPoint}->{m_rtpChannel?.LastRtpDestination} pkts {PacketsReceivedCount} bytes {OctetsReceivedCount}");
 
                         var report = GetRtcpReport();
                         SendRtcpReport(report);
@@ -212,7 +228,7 @@ namespace SIPSorcery.Net
                     var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
                     if (m_rtcpReportTimer == null)
                     {
-                        m_rtcpReportTimer = new Timer(SendRtcpSenderReport, null, interval, interval);
+                        m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, interval);
                     }
                     else
                     {
@@ -227,7 +243,7 @@ namespace SIPSorcery.Net
             catch (Exception excp)
             {
                 // RTCP reports are not crticial enough to bubble the exception up to the application.
-                logger.LogError($"Exception SendRtcpSenderReport. {excp.Message}");
+                logger.LogError($"Exception SendReportTimerCallback. {excp.Message}");
                 m_rtcpReportTimer?.Dispose();
             }
         }
@@ -254,7 +270,7 @@ namespace SIPSorcery.Net
 
             if (m_srtcpProtect == null)
             {
-                m_rtpChannel.SendAsync(RTPChannelSocketsEnum.Control, m_rtpChannel.LastControlDestination, reportBytes);
+                m_rtpChannel.SendAsync(RTPChannelSocketsEnum.Control, ControlDestinationEndPoint, reportBytes);
             }
             else
             {
