@@ -93,6 +93,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// The test uses two different transaction engine instances with one acting as the client and one as the server.
         /// </summary>
         [Fact]
+        [Trait("Category", "txintegration")]
         public void AckRecognitionUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
