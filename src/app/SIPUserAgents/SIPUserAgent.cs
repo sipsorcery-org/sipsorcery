@@ -169,9 +169,46 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Attempts to place a new outgoing call.
         /// </summary>
-        /// <param name="sipCallDescriptor">A call descriptor containing the information about how and where to place the call.</param>
+        /// <param name="dst">The destination SIP URI to call.</param>
+        /// <param name="username">Optional Username if authentication is required.</param>
+        /// <param name="password">Optional. Password if authentication is required.</param>
+        /// <param name="mediaSession">The RTP session for the call.</param>
+        public async Task<bool> Call(string dst, string username, string password, IMediaSession mediaSession)
+        {
+            if(!SIPURI.TryParse(dst, out var dstUri))
+            {
+                throw new ApplicationException("The destination was not recognised as a valid SIP URI.");
+            }
+
+            SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
+               username ?? SIPConstants.SIP_DEFAULT_USERNAME,
+               password,
+               dstUri.ToString(),
+               SIPConstants.SIP_DEFAULT_FROMURI,
+               dstUri.CanonicalAddress,
+               null, null, null,
+               SIPCallDirection.Out,
+               SDP.SDP_MIME_CONTENTTYPE,
+               null,
+               null);
+
+            await InitiateCall(callDescriptor, mediaSession);
+
+            TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>();
+
+            ClientCallAnswered += (uac, resp) => callResult.SetResult(true);
+            ClientCallFailed += (uac, errorMessage) => callResult.SetResult(false);
+
+            return await callResult.Task;
+        }
+
+        /// <summary>
+        /// Attempts to place a new outgoing call.
+        /// </summary>
+        /// <param name="sipCallDescriptor">A call descriptor containing the information about how 
+        /// and where to place the call.</param>
         /// <param name="mediaSession">The media session used for this call</param>
-        public async Task Call(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession)
+        public async Task InitiateCall(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession)
         {
             m_uac = new SIPClientUserAgent(m_transport);
             m_uac.CallTrying += ClientCallTryingHandler;

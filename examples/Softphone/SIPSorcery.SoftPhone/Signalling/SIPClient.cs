@@ -129,7 +129,7 @@ namespace SIPSorcery.SoftPhone
                 m_rtpMediaSessionManager.RTPMediaSession.RemotePutOnHold += OnRemotePutOnHold;
                 m_rtpMediaSessionManager.RTPMediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.Call(callDescriptor, m_rtpMediaSessionManager.RTPMediaSession);
+                await m_userAgent.InitiateCall(callDescriptor, m_rtpMediaSessionManager.RTPMediaSession);
             }
         }
 
