@@ -179,7 +179,7 @@ namespace SIPSorcery
                                 RtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
 
                                 var callDescriptor = GetCallDescriptor(DEFAULT_DESTINATION_SIP_URI);
-                                await userAgent.Call(callDescriptor, RtpMediaSession);
+                                await userAgent.InitiateCall(callDescriptor, RtpMediaSession);
                             }
                             else
                             {

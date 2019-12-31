@@ -66,12 +66,12 @@ namespace SIPSorcery.Net
 
         public RTCPSenderReport(uint ssrc, ulong ntpTimestamp, uint rtpTimestamp, uint packetCount, uint octetCount, List<ReceptionReportSample> receptionReports)
         {
-            if(receptionReports == null || receptionReports.Count == 0)
-            {
-                throw new ArgumentException("At least one reception report must be included for an RTCP Sender Report.");
-            }
+            //if(receptionReports == null || receptionReports.Count == 0)
+            //{
+            //    throw new ArgumentException("At least one reception report must be included for an RTCP Sender Report.");
+            //}
 
-            Header = new RTCPHeader(RTCPReportTypesEnum.SR, receptionReports.Count);
+            Header = new RTCPHeader(RTCPReportTypesEnum.SR, (receptionReports != null) ? receptionReports.Count : 0);
             SSRC = ssrc;
             NtpTimestamp = ntpTimestamp;
             RtpTimestamp = rtpTimestamp;
