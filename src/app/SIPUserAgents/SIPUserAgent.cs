@@ -175,7 +175,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaSession">The RTP session for the call.</param>
         public async Task<bool> Call(string dst, string username, string password, IMediaSession mediaSession)
         {
-            if(!SIPURI.TryParse(dst, out var dstUri))
+            if (!SIPURI.TryParse(dst, out var dstUri))
             {
                 throw new ApplicationException("The destination was not recognised as a valid SIP URI.");
             }
@@ -196,8 +196,8 @@ namespace SIPSorcery.SIP.App
 
             TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>();
 
-            ClientCallAnswered += (uac, resp) => callResult.SetResult(true);
-            ClientCallFailed += (uac, errorMessage) => callResult.SetResult(false);
+            ClientCallAnswered += (uac, resp) => Task.Run(() => callResult.SetResult(true));
+            ClientCallFailed += (uac, errorMessage) => Task.Run(() => callResult.SetResult(false));
 
             return await callResult.Task;
         }
@@ -455,7 +455,7 @@ namespace SIPSorcery.SIP.App
             {
                 if (sipRequest.Method == SIPMethodsEnum.BYE)
                 {
-                    logger.LogDebug($"Matching dialogue found for {sipRequest.StatusLine}.");
+                    logger.LogInformation($"Remote call party hungup {sipRequest.StatusLine}.");
                     Dialogue.DialogueState = SIPDialogueStateEnum.Terminated;
 
                     SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
@@ -665,7 +665,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                logger.LogDebug($"Call attempt to {m_uac.CallDescriptor.Uri} received a trying response {sipResponse.ShortDescription}.");
+                logger.LogInformation($"Call attempt to {m_uac.CallDescriptor.Uri} received a trying response {sipResponse.ShortDescription}.");
             }
         }
 
@@ -682,7 +682,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                logger.LogWarning($"Call attempt to {m_uac.CallDescriptor.Uri} received a ringing response {sipResponse.ShortDescription}.");
+                logger.LogInformation($"Call attempt to {m_uac.CallDescriptor.Uri} received a ringing response {sipResponse.ShortDescription}.");
             }
         }
 
@@ -693,14 +693,9 @@ namespace SIPSorcery.SIP.App
         /// <param name="errorMessage">An error message indicating the reason for the failure.</param>
         private void ClientCallFailedHandler(ISIPClientUserAgent uac, string errorMessage)
         {
-            if (ClientCallFailed != null)
-            {
-                ClientCallFailed(uac, errorMessage);
-            }
-            else
-            {
-                logger.LogWarning($"Call attempt to {m_uac.CallDescriptor.Uri} failed with {errorMessage}.");
-            }
+            logger.LogWarning($"Call attempt to {m_uac.CallDescriptor.Uri} failed with {errorMessage}.");
+
+            ClientCallFailed?.Invoke(uac, errorMessage);
         }
 
         /// <summary>
@@ -725,14 +720,9 @@ namespace SIPSorcery.SIP.App
 
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 
-                if (ClientCallAnswered != null)
-                {
-                    ClientCallAnswered(uac, sipResponse);
-                }
-                else
-                {
-                    logger.LogDebug($"Call attempt to {m_uac.CallDescriptor.Uri} was answered.");
-                }
+                logger.LogInformation($"Call attempt to {m_uac.CallDescriptor.Uri} was answered.");
+
+                ClientCallAnswered?.Invoke(uac, sipResponse);
             }
             else
             {

@@ -151,7 +151,7 @@ namespace SIPSorcery.Net
 
             bool ready = m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, DateTimeToNtpTimestamp32(DateTime.Now));
 
-            if(!m_isClosed && ready == true && m_rtcpReportTimer == null)
+            if (!m_isClosed && ready == true && m_rtcpReportTimer == null)
             {
                 // Send the initial RTCP sender report once the first RTP packet arrives.
                 SendReportTimerCallback(null);
@@ -194,7 +194,7 @@ namespace SIPSorcery.Net
                     logger.LogDebug($"Received RtcpSenderReport from {remoteEndPoint} pkts {sr.PacketCount} bytes {sr.OctetCount}");
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogError($"Exception RTCPSession.ControlDataReceived. {excp.Message}");
             }
@@ -213,13 +213,13 @@ namespace SIPSorcery.Net
                     if ((RTPLastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(RTPLastActivityAt).TotalMilliseconds > RTP_NO_ACTIVITY_TIMEOUT_MILLISECONDS) ||
                         (RTPLastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(CreatedAt).TotalMilliseconds > RTP_NO_ACTIVITY_TIMEOUT_MILLISECONDS))
                     {
-                        //logger.LogDebug($"RTP channel on {m_rtpChannel?.RTPLocalEndPoint} has not had any activity for over {RTP_NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds, closing.");
+                        logger.LogWarning($"RTP channel on {m_rtpChannel?.RTPLocalEndPoint} has not had any activity for over {RTP_NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds, closing.");
                         m_rtcpReportTimer?.Dispose();
                         Close(NO_ACTIVITY_TIMEOUT_REASON);
                     }
                     else
                     {
-                        //logger.LogDebug($"SendRtcpSenderReport {m_rtpChannel?.RTPLocalEndPoint}->{m_rtpChannel?.LastRtpDestination} pkts {PacketsReceivedCount} bytes {OctetsReceivedCount}");
+                        logger.LogDebug($"SendRtcpSenderReport {m_rtpChannel?.RTPLocalEndPoint}->{m_rtpChannel?.LastRtpDestination} pkts {PacketsReceivedCount} bytes {OctetsReceivedCount}");
 
                         var report = GetRtcpReport();
                         SendRtcpReport(report);
@@ -254,8 +254,8 @@ namespace SIPSorcery.Net
         /// <returns>An RTCP compound packet.</returns>
         private RTCPCompoundPacket GetRtcpReport()
         {
-            var rr = m_receptionReport.GetSample(DateTimeToNtpTimestamp32(DateTime.Now));
-            var senderReport = new RTCPSenderReport(Ssrc, LastNtpTimestampSent, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, new List<ReceptionReportSample> { rr });
+            ReceptionReportSample rr = (m_receptionReport != null) ? m_receptionReport.GetSample(DateTimeToNtpTimestamp32(DateTime.Now)) : null;
+            var senderReport = new RTCPSenderReport(Ssrc, LastNtpTimestampSent, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, (rr != null) ? new List<ReceptionReportSample> { rr } : null);
             var sdesReport = new RTCPSDesReport(Ssrc, Cname);
             return new RTCPCompoundPacket(senderReport, sdesReport);
         }
