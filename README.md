@@ -5,14 +5,14 @@
 | dotnetcore3.0 | ![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core30/badge.svg) | ![](https://github.com/sipsorcery/sipsorcery/workflows/examples-core30/badge.svg) |  |
 
 
-This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261) including IPv6 support. In addition 
-there is partial support for the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550), Web Real-Time Communication [(WebRTC)](https://en.wikipedia.org/wiki/WebRTC) and a number of related protocols such as RTCP, STUN, SDP and RTSP. Work is ongoing to fully support RTP.
+This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261) and the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550) including IPv6 support. In addition 
+there is some support for Web Real-Time Communication [(WebRTC)](https://en.wikipedia.org/wiki/WebRTC) and a number of related protocols such as RTSP.
 
-This project does not provide any media (audio and video) handling. There are some limited capabilities in the separate [SIPSorcery.Media](https://github.com/sipsorcery/sipsorcery-media) project but they are Windows specific and not suitable for production. This project can be used for SIP signalling and to send and receive RTP packets but it does not have features to do anything with the payloads in the RTP packets.
+This library does NOT provide any media (audio and video) handling. There are some limited capabilities in the separate [SIPSorcery.Media](https://github.com/sipsorcery/sipsorcery-media) project but they are Windows specific and not suitable for production. This project can be used for SIP signalling and to send and receive RTP packets. To playback audio/video additional libraries such as [NAudio](https://github.com/naudio/NAudio) are required.
 
 ## Installation
 
-The library is compliant with .NET Standard 2.0 and .NET Framework 4.5.2. It is available via NuGet.
+The library is compliant with .NET Standard 2.0, .Net Core 3.0 and .NET Framework 4.5.2. It is available via NuGet.
 
 For .NET Core:
 

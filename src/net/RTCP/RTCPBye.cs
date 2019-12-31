@@ -38,10 +38,11 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTCPBye
     {
-        public const int PACKET_TYPE = 203;
         public const int MAX_REASON_BYTES = 255;
-        public const int MIN_PACKET_SIZE = 4;       // The reason is optional so minimum packet size is 4 bytes for the SSRC.
+        public const int SSRC_SIZE = 4;       // 4 bytes for the SSRC.
+        public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + SSRC_SIZE;
 
+        public RTCPHeader Header;
         public uint SSRC { get; private set; }
         public string Reason { get; private set; }
 
@@ -53,6 +54,7 @@ namespace SIPSorcery.Net
         /// (note bytes not characters).</param>
         public RTCPBye(uint ssrc, string reason)
         {
+            Header = new RTCPHeader(RTCPReportTypesEnum.BYE, 1);
             SSRC = ssrc;
 
             if (reason != null)
@@ -78,22 +80,24 @@ namespace SIPSorcery.Net
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP Goodbye packet.");
             }
 
+            Header = new RTCPHeader(packet);
+
             if (BitConverter.IsLittleEndian)
             {
-                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 0));
+                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
             }
             else
             {
-                SSRC = BitConverter.ToUInt32(packet, 0);
+                SSRC = BitConverter.ToUInt32(packet, 4);
             }
 
             if (packet.Length > MIN_PACKET_SIZE)
             {
-                int reasonLength = packet[4];
+                int reasonLength = packet[8];
 
                 if (packet.Length - MIN_PACKET_SIZE - 1 >= reasonLength)
                 {
-                    Reason = Encoding.UTF8.GetString(packet, 5, reasonLength);
+                    Reason = Encoding.UTF8.GetString(packet, 9, reasonLength);
                 }
             }
         }
@@ -106,24 +110,28 @@ namespace SIPSorcery.Net
         {
             byte[] reasonBytes = (Reason != null) ? Encoding.UTF8.GetBytes(Reason) : null;
             int reasonLength = (reasonBytes != null) ? reasonBytes.Length : 0;
-            byte[] payload = new byte[GetPaddedLength(reasonLength)];
+            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(reasonLength)];
+            Header.SetLength((ushort)(buffer.Length / 4 - 1));
+
+            Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
+            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
 
             if (BitConverter.IsLittleEndian)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, payload, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, buffer, payloadIndex, 4);
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, payload, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, buffer, payloadIndex, 4);
             }
 
             if (reasonLength > 0)
             {   
-                payload[4] = (byte)reasonLength;
-                Buffer.BlockCopy(reasonBytes, 0, payload, 5, reasonBytes.Length);
+                buffer[payloadIndex + 4] = (byte)reasonLength;
+                Buffer.BlockCopy(reasonBytes, 0, buffer, payloadIndex + 5, reasonBytes.Length);
             }
 
-            return payload;
+            return buffer;
         }
 
         /// <summary>
@@ -135,7 +143,13 @@ namespace SIPSorcery.Net
         /// boundary.</returns>
         private int GetPaddedLength(int reasonLength)
         {
-            int nonPaddedSize = reasonLength + MIN_PACKET_SIZE;
+            // Plus one is for the reason length field.
+            if(reasonLength > 0)
+            {
+                reasonLength += 1;
+            }
+
+            int nonPaddedSize = reasonLength + SSRC_SIZE;
 
             if (nonPaddedSize % 4 == 0)
             {

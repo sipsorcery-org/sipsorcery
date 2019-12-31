@@ -31,16 +31,14 @@ namespace SIPSorcery.Net
 {
     public delegate int ProtectRtpPacket(byte[] payload, int length);
 
-    public class RTPSession
+    public class RTPSession : IDisposable
     {
         private const int RTP_MAX_PAYLOAD = 1400;
-        private const int SRTP_AUTH_KEY_LENGTH = 10;
+        public const int SRTP_AUTH_KEY_LENGTH = 10;
         private const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
         public const int H264_RTP_HEADER_LENGTH = 2;
         public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
-
         public const int RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS = 50; // Default sample period for an RTP event as specified by RFC2833.
-
         public const int DTMF_EVENT_PAYLOAD_ID = 101;
 
         private static ILogger logger = Log.Logger;
@@ -55,13 +53,15 @@ namespace SIPSorcery.Net
         public uint Ssrc { get; private set; }
         public ushort SeqNum { get; private set; }
 
-        public uint PacketsSent { get; private set; }
-        public uint OctetsSent { get; private set; }
-
         /// <summary>
         /// The RTP communications channel this session is sending and receiving on.
         /// </summary>
         public RTPChannel RtpChannel { get; private set; }
+
+        /// <summary>
+        /// The RTCP session to manage RTCP reporting requirements for this session.
+        /// </summary>
+        public RTCPSession RtcpSession { get; private set; }
 
         /// <summary>
         /// The media announcement from the Session Description Protocol that describes this RTP session.
@@ -92,12 +92,7 @@ namespace SIPSorcery.Net
         public ProtectRtpPacket SrtpProtect { get; private set; }
 
         /// <summary>
-        /// Function pointer to an SRTCP context that encrypts an RTCP packet.
-        /// </summary>
-        public ProtectRtpPacket SrtcpProtect { get; private set; }
-
-        /// <summary>
-        /// The remote end point this session is sending to.
+        /// The remote RTP end point this session is sending to.
         /// </summary>
         public IPEndPoint DestinationEndPoint;
 
@@ -131,6 +126,16 @@ namespace SIPSorcery.Net
         public event Action<string> OnRtpClosed;
 
         /// <summary>
+        /// Used to notify the RTCP session of an RTP packet receive.
+        /// </summary>
+        internal event Action<RTPPacket> OnRtpPacketReceived;
+
+        /// <summary>
+        /// Used to notify the RTCP session of an RTP packet send.
+        /// </summary
+        internal event Action<RTPPacket> OnRtpPacketSent;
+
+        /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
         /// pseudo random values.
         /// </summary>
@@ -162,15 +167,14 @@ namespace SIPSorcery.Net
             m_rtpEventSupport = rtpEventSupport;
             FormatTypeID = formatTypeID;
             SrtpProtect = srtpProtect;
-            SrtcpProtect = srtcpProtect;
 
-            Initialise(addrFamily);
+            Initialise(addrFamily, srtcpProtect);
         }
 
         /// <summary>
         /// Initialises the RTP session state and starts the RTP channel UDP sockets.
         /// </summary>
-        private void Initialise(AddressFamily addrFamily)
+        private void Initialise(AddressFamily addrFamily, ProtectRtpPacket srtcpProtect)
         {
             Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
             SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
@@ -181,8 +185,14 @@ namespace SIPSorcery.Net
             RtpChannel.OnRTPDataReceived += RtpPacketReceived;
             RtpChannel.OnClosed += OnRTPChannelClosed;
 
-            // Start the RTP and Control socket receivers.
+            RtcpSession = new RTCPSession(Ssrc, RtpChannel, srtcpProtect);
+            OnRtpPacketReceived += RtcpSession.RtpPacketReceived;
+            RtpChannel.OnControlDataReceived += RtcpSession.ControlDataReceived;
+            OnRtpPacketSent += RtcpSession.RtpPacketSent;
+
+            // Start the RTP and Control socket receivers and the RTCP session.
             RtpChannel.Start();
+            RtcpSession.Start();
         }
 
         /// <summary>
@@ -208,6 +218,9 @@ namespace SIPSorcery.Net
                     }
                 }
             }
+
+            DestinationEndPoint = sdp.GetSDPRTPEndPoint();
+            RtcpSession.ControlDestinationEndPoint = new IPEndPoint(DestinationEndPoint.Address, DestinationEndPoint.Port + 1);
         }
 
         public void SendAudioFrame(uint timestamp, byte[] buffer)
@@ -239,6 +252,8 @@ namespace SIPSorcery.Net
 
                     Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, 0, payloadLength);
 
+                    OnRtpPacketSent?.Invoke(rtpPacket);
+
                     var rtpBuffer = rtpPacket.GetBytes();
 
                     int rtperr = SrtpProtect == null ? 0 : SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength);
@@ -251,8 +266,6 @@ namespace SIPSorcery.Net
                         RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
                     }
 
-                    PacketsSent++;
-                    OctetsSent += (uint)payloadLength;
                     m_lastRtpTimestamp = timestamp;
                 }
             }
@@ -291,6 +304,8 @@ namespace SIPSorcery.Net
                     Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
                     Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
 
+                    OnRtpPacketSent?.Invoke(rtpPacket);
+
                     var rtpBuffer = rtpPacket.GetBytes();
 
                     int rtperr = SrtpProtect == null ? 0 : SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength);
@@ -303,8 +318,6 @@ namespace SIPSorcery.Net
                         RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
                     }
 
-                    PacketsSent++;
-                    OctetsSent += (uint)payloadLength;
                     m_lastRtpTimestamp = timestamp;
                 }
             }
@@ -333,8 +346,6 @@ namespace SIPSorcery.Net
 
             try
             {
-                //_timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + (uint)(RFC_2435_FREQUENCY_BASELINE / framesPerSecond)) % UInt32.MaxValue;
-
                 //System.Diagnostics.Debug.WriteLine("Sending " + jpegBytes.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ", image dimensions " + jpegWidth + " x " + jpegHeight + ".");
 
                 for (int index = 0; index * RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
@@ -355,6 +366,8 @@ namespace SIPSorcery.Net
                     rtpPacket.Header.MarkerBit = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1;
                     rtpPacket.Header.PayloadType = (int)SDPMediaFormatsEnum.JPEG;
                     rtpPacket.Payload = packetPayload.ToArray();
+
+                    OnRtpPacketSent?.Invoke(rtpPacket);
 
                     byte[] rtpBytes = rtpPacket.GetBytes();
 
@@ -382,8 +395,6 @@ namespace SIPSorcery.Net
 
             try
             {
-                //_timestamp = (_timestamp == 0) ? DateTimeToNptTimestamp32(DateTime.Now) : (_timestamp + frameSpacing) % UInt32.MaxValue;
-
                 //System.Diagnostics.Debug.WriteLine("Sending " + frame.Length + " H264 encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
 
                 for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
@@ -424,6 +435,8 @@ namespace SIPSorcery.Net
                     h264Stream.InsertRange(0, h264Header);
                     rtpPacket.Payload = h264Stream.ToArray();
 
+                    OnRtpPacketSent?.Invoke(rtpPacket);
+
                     byte[] rtpBytes = rtpPacket.GetBytes();
 
                     RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBytes);
@@ -432,40 +445,6 @@ namespace SIPSorcery.Net
             catch (SocketException sockExcp)
             {
                 logger.LogError("SocketException SendH264Frame. " + sockExcp.Message);
-            }
-        }
-
-        public void SendRtcpSenderReport(Socket srcControlSocket, IPEndPoint dstRtpSocket, uint timestamp)
-        {
-            try
-            {
-                var ntp = RTSPSession.DateTimeToNptTimestamp(DateTime.Now);
-                var rtcpSRPacket = new RTCPPacket(Ssrc, ntp, timestamp, PacketsSent, OctetsSent);
-
-                if (SrtcpProtect == null)
-                {
-                    srcControlSocket.SendTo(rtcpSRPacket.GetBytes(), dstRtpSocket);
-                }
-                else
-                {
-                    var rtcpSRBytes = rtcpSRPacket.GetBytes();
-                    byte[] sendBuffer = new byte[rtcpSRBytes.Length + SRTP_AUTH_KEY_LENGTH];
-                    Buffer.BlockCopy(rtcpSRBytes, 0, sendBuffer, 0, rtcpSRBytes.Length);
-
-                    int rtperr = SrtcpProtect(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
-                    if (rtperr != 0)
-                    {
-                        logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
-                    }
-                    else
-                    {
-                        srcControlSocket.SendTo(sendBuffer, dstRtpSocket);
-                    }
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.LogWarning("Exception SendRtcpSenderReport. " + excp.Message);
             }
         }
 
@@ -522,7 +501,6 @@ namespace SIPSorcery.Net
                     SendRtpPacket(RtpChannel, DestinationEndPoint, buffer, startTimestamp, markerBit, rtpEvent.PayloadTypeID);
 
                     SeqNum++;
-                    PacketsSent++;
                 }
 
                 await Task.Delay(samplePeriod, cancellationToken);
@@ -537,7 +515,6 @@ namespace SIPSorcery.Net
 
                         SendRtpPacket(RtpChannel, DestinationEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID);
 
-                        PacketsSent++;
                         SeqNum++;
 
                         await Task.Delay(samplePeriod, cancellationToken);
@@ -553,7 +530,6 @@ namespace SIPSorcery.Net
                         SendRtpPacket(RtpChannel, DestinationEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID);
 
                         SeqNum++;
-                        PacketsSent++;
                     }
                 }
             }
@@ -602,10 +578,15 @@ namespace SIPSorcery.Net
             {
                 m_isClosed = true;
 
+                OnRtpPacketReceived -= RtcpSession.RtpPacketReceived;
+                OnRtpPacketSent -= RtcpSession.RtpPacketSent;
+                RtcpSession.Close(reason);
+
                 if (RtpChannel != null)
                 {
                     RtpChannel.OnRTPDataReceived -= RtpPacketReceived;
                     RtpChannel.OnClosed -= OnRTPChannelClosed;
+                    RtpChannel.OnControlDataReceived -= RtcpSession.ControlDataReceived;
                     RtpChannel.Close(reason);
                 }
 
@@ -627,6 +608,8 @@ namespace SIPSorcery.Net
             }
 
             var rtpPacket = new RTPPacket(buffer);
+
+            OnRtpPacketReceived?.Invoke(rtpPacket);
 
             if (m_remoteRtpEventPayloadID != 0 && rtpPacket.Header.PayloadType == m_remoteRtpEventPayloadID)
             {
@@ -660,6 +643,8 @@ namespace SIPSorcery.Net
             rtpPacket.Header.PayloadType = payloadType;
 
             Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
+
+            OnRtpPacketSent?.Invoke(rtpPacket);
 
             var rtpBuffer = rtpPacket.GetBytes();
 
@@ -733,6 +718,16 @@ namespace SIPSorcery.Net
         private void OnRTPChannelClosed(string reason)
         {
             CloseSession(reason);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            CloseSession(null);
+        }
+
+        public void Dispose()
+        {
+            CloseSession(null);
         }
     }
 }

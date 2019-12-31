@@ -2,6 +2,7 @@
 // Filename: RTCPSDesReport.cs
 //
 // Description: RTCP Source Description (SDES) report as defined in RFC3550.
+// Only the mandatory CNAME item is supported.
 //
 //         RTCP SDES Payload
 //         0                   1                   2                   3
@@ -57,15 +58,16 @@ namespace SIPSorcery.Net
 {
     /// <summary>
     /// RTCP Source Description (SDES) report as defined in RFC3550.
+    /// Only the mandatory CNAME item is supported.
     /// </summary>
     public class RTCPSDesReport
     {
-        public const int PACKET_TYPE = 202;
         public const int PACKET_SIZE_WITHOUT_CNAME = 6; // 4 byte SSRC, 1 byte CNAME ID, 1 byte CNAME length.
         public const int MAX_CNAME_BYTES = 255;
         public const byte CNAME_ID = 0x01;
-        //public const byte ITEM_TERMINATION_BYTE = 0x00;
+        public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + PACKET_SIZE_WITHOUT_CNAME;
 
+        public RTCPHeader Header;
         public uint SSRC { get; private set; }
         public string CNAME { get; private set; }
 
@@ -83,6 +85,7 @@ namespace SIPSorcery.Net
                 throw new ArgumentNullException("cname");
             }
 
+            Header = new RTCPHeader(RTCPReportTypesEnum.SDES, 1);
             SSRC = ssrc;
             CNAME = (cname.Length > MAX_CNAME_BYTES) ? cname.Substring(0, MAX_CNAME_BYTES) : cname;
 
@@ -99,26 +102,28 @@ namespace SIPSorcery.Net
         /// <param name="packet">The byte array holding the SDES report.</param>
         public RTCPSDesReport(byte[] packet)
         {
-            if (packet.Length < PACKET_SIZE_WITHOUT_CNAME)
+            if (packet.Length < MIN_PACKET_SIZE)
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP SDES packet.");
             }
-            else if(packet[4] != CNAME_ID)
+            else if(packet[8] != CNAME_ID)
             {
                 throw new ApplicationException("The RTCP report packet did not have the requried CNAME type field set correctly.");
             }
 
+            Header = new RTCPHeader(packet);
+
             if (BitConverter.IsLittleEndian)
             {
-                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 0));
+                SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
             }
             else
             {
-                SSRC = BitConverter.ToUInt32(packet, 0);
+                SSRC = BitConverter.ToUInt32(packet, 4);
             }
 
-            int cnameLength = packet[5];
-            CNAME = Encoding.UTF8.GetString(packet, 6, cnameLength);
+            int cnameLength = packet[9];
+            CNAME = Encoding.UTF8.GetString(packet, 10, cnameLength);
         }
 
         /// <summary>
@@ -129,22 +134,26 @@ namespace SIPSorcery.Net
         public byte[] GetBytes()
         {
             byte[] cnameBytes = Encoding.UTF8.GetBytes(CNAME);
-            byte[] payload = new byte[GetPaddedLength(cnameBytes.Length)]; // Array automatically initialised with 0x00 values.
+            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(cnameBytes.Length)]; // Array automatically initialised with 0x00 values.
+            Header.SetLength((ushort)(buffer.Length / 4 - 1));
+
+            Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
+            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
 
             if (BitConverter.IsLittleEndian)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, payload, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, buffer, payloadIndex, 4);
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, payload, 0, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, buffer, payloadIndex, 4);
             }
 
-            payload[4] = CNAME_ID;
-            payload[5] = (byte)cnameBytes.Length;
-            Buffer.BlockCopy(cnameBytes, 0, payload, 6, cnameBytes.Length);
+            buffer[payloadIndex + 4] = CNAME_ID;
+            buffer[payloadIndex + 5] = (byte)cnameBytes.Length;
+            Buffer.BlockCopy(cnameBytes, 0, buffer, payloadIndex + 6, cnameBytes.Length);
 
-            return payload;
+            return buffer;
         }
 
         /// <summary>

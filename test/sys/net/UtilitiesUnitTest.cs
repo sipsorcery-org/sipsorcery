@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -128,6 +129,26 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("Unreversed=" + unReversed);
 
             Assert.True(testNum == unReversed, "Reverse endian operation for uint64 did not work successfully.");
+        }
+
+        [Fact]
+        public void ReverseInt32UnitTest()
+        {
+            //var b = BitConverter.GetBytes(-923871);
+            //logger.LogDebug($"{b[0]:X} {b[1]:X} {b[2]:X} {b[3]:X}");
+            //logger.LogDebug($"{b[3]:X} {b[2]:X} {b[1]:X} {b[0]:X}");
+            //logger.LogDebug(BitConverter.ToInt32(new byte[] { b[3], b[2], b[1], b[0] }, 0).ToString());
+
+            Assert.Equal(0, NetConvert.DoReverseEndian(0));
+            Assert.Equal(-1, NetConvert.DoReverseEndian(-1));
+            Assert.Equal(-2, NetConvert.DoReverseEndian(-16777217));
+            Assert.Equal(568848895, NetConvert.DoReverseEndian(-923871));
+            Assert.Equal(128, NetConvert.DoReverseEndian(Int32.MinValue));
+            Assert.Equal(1, NetConvert.DoReverseEndian(16777216));
+            Assert.Equal(2, NetConvert.DoReverseEndian(33554432));
+            Assert.Equal(4564522, NetConvert.DoReverseEndian(715539712));
+            Assert.Equal(-129, NetConvert.DoReverseEndian(Int32.MaxValue));
+            Assert.Equal(0x0d0c0b0a, NetConvert.DoReverseEndian(0x0a0b0c0d));
         }
     }
 }

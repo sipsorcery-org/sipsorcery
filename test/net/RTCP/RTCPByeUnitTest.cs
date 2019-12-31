@@ -29,7 +29,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that a RTCP Bye payload cna be correctly serialised and 
+        /// Tests that a RTCP Bye payload can be correctly serialised and 
         /// deserialised.
         /// </summary>
         [Fact]
@@ -67,7 +67,7 @@ namespace SIPSorcery.Net.UnitTests
 
             RTCPBye parsedBye = new RTCPBye(buffer);
 
-            Assert.Equal(8, buffer.Length);
+            Assert.Equal(12, buffer.Length);
             Assert.Equal(ssrc, parsedBye.SSRC);
             Assert.Equal(reason, parsedBye.Reason);
         }
@@ -90,7 +90,30 @@ namespace SIPSorcery.Net.UnitTests
 
             RTCPBye parsedBye = new RTCPBye(buffer);
 
-            Assert.Equal(12, buffer.Length);
+            Assert.Equal(16, buffer.Length);
+            Assert.Equal(ssrc, parsedBye.SSRC);
+            Assert.Equal(reason, parsedBye.Reason);
+        }
+
+        /// <summary>
+        /// Tests that a RTCP Bye payload can be correctly serialised and 
+        /// deserialised when the timeout reason is used.
+        /// </summary>
+        [Fact]
+        public void RoundtripByeWithTimeoutReasonUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            uint ssrc = 19;
+            string reason = RTCPSession.NO_ACTIVITY_TIMEOUT_REASON;
+
+            RTCPBye bye = new RTCPBye(ssrc, reason);
+            byte[] buffer = bye.GetBytes();
+
+            RTCPBye parsedBye = new RTCPBye(buffer);
+
+            Assert.Equal(32, buffer.Length);
             Assert.Equal(ssrc, parsedBye.SSRC);
             Assert.Equal(reason, parsedBye.Reason);
         }
