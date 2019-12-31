@@ -12273,12 +12273,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.BlindTransfer
   nameWithType: SIPUserAgent.BlindTransfer
-- uid: SIPSorcery.SIP.App.SIPUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession)
-  name: Call(SIPCallDescriptor, IMediaSession)
-  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Call_SIPSorcery_SIP_App_SIPCallDescriptor_SIPSorcery_SIP_App_IMediaSession_
-  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession)
-  fullName: SIPSorcery.SIP.App.SIPUserAgent.Call(SIPSorcery.SIP.App.SIPCallDescriptor, SIPSorcery.SIP.App.IMediaSession)
-  nameWithType: SIPUserAgent.Call(SIPCallDescriptor, IMediaSession)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Call(System.String,System.String,System.String,SIPSorcery.SIP.App.IMediaSession)
+  name: Call(String, String, String, IMediaSession)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Call_System_String_System_String_System_String_SIPSorcery_SIP_App_IMediaSession_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Call(System.String,System.String,System.String,SIPSorcery.SIP.App.IMediaSession)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Call(System.String, System.String, System.String, SIPSorcery.SIP.App.IMediaSession)
+  nameWithType: SIPUserAgent.Call(String, String, String, IMediaSession)
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Call*
   name: Call
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Call_
@@ -12362,6 +12362,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPUserAgent.Hangup
   nameWithType: SIPUserAgent.Hangup
+- uid: SIPSorcery.SIP.App.SIPUserAgent.InitiateCall(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession)
+  name: InitiateCall(SIPCallDescriptor, IMediaSession)
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_InitiateCall_SIPSorcery_SIP_App_SIPCallDescriptor_SIPSorcery_SIP_App_IMediaSession_
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.InitiateCall(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession)
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.InitiateCall(SIPSorcery.SIP.App.SIPCallDescriptor, SIPSorcery.SIP.App.IMediaSession)
+  nameWithType: SIPUserAgent.InitiateCall(SIPCallDescriptor, IMediaSession)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.InitiateCall*
+  name: InitiateCall
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_InitiateCall_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.InitiateCall
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.InitiateCall
+  nameWithType: SIPUserAgent.InitiateCall
 - uid: SIPSorcery.SIP.App.SIPUserAgent.IsCallActive
   name: IsCallActive
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_IsCallActive
