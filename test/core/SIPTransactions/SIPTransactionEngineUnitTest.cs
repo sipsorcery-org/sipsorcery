@@ -51,6 +51,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// Tests that the transaction ID is correctly generated and matched for a request and response pair.
         /// </summary>
         [Fact]
+        [Trait("Category", "txintegration")]
         public void MatchOnRequestAndResponseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);

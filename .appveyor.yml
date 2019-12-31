@@ -17,6 +17,7 @@ test:
   categories:
     except:
     - transport
+    - txintegration
 on_success:
   - ps: |
         if($env:APPVEYOR_REPO_BRANCH -eq "master" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)
