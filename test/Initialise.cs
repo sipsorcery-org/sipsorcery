@@ -27,6 +27,7 @@ namespace SIPSorcery.UnitTests
     {
         public static Microsoft.Extensions.Logging.ILogger InitTestLogger(Xunit.Abstractions.ITestOutputHelper output)
         {
+#if DEBUG
             string template = "{Timestamp:yyyy-MM-dd HH:mm:ss.ffff} [{Level}] {Scope} {Message}{NewLine}{Exception}";
             //string template = "{Timestamp:yyyy-MM-dd HH:mm:ss.ffff} [{Level}] ({ThreadId:000}){Scope} {Message}{NewLine}{Exception}";
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
@@ -39,6 +40,7 @@ namespace SIPSorcery.UnitTests
             loggerFactory.AddSerilog(loggerConfig);
 
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+#endif
             return SIPSorcery.Sys.Log.Logger;
         }
     }
