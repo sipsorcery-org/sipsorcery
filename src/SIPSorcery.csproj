@@ -41,13 +41,13 @@
   
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net452;netcoreapp3.0</TargetFrameworks>
-	<Version>4.0.4.0-rc</Version>
+	<Version>4.0.7.0-rc</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
-	<Copyright>Copyright © 2010-2019 Aaron Clauson</Copyright>
+	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
 	<Title>SIPSorcery</Title>
-	<Summary>SIP protocol stack with some RTP and WebRtc capabilities.</Summary>
-	<Description>The SIPSorcery library is an open source C# implementation of the SIP protocol as specified in RFC3261. Also included are partial implementations of a number of related protocols including: STUN, SDP, RTP, RTCP and WebRTC. Note that this package does not contain any audio or video processing capabilities (the associated SIPSorceryMedia package does contain some Windows specific audio and video functionality).</Description>
+	<Summary>A cross platform C# .NET library for SIP and RTP.</Summary>
+	<Description>his repository contains the source for a C# .NET library with full support for the Session Initiation Protocol (SIP) and the Real-time Transport Protocol (RTP) including IPv6 support. In addition there is some support for Web Real-Time Communication (WebRTC) and a number of related protocols such as RTSP.</Description>
 	<Company>SIP Sorcery PTY LTD</Company>
 	<Product>SIPSorcery</Product>
 	<PackageId>SIPSorcery</PackageId>
@@ -61,14 +61,15 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP RTP SDP STUN WebRTC SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version 4.0.4 - Added attended transfer capability to SIPUserAgent.
+	<PackageReleaseNotes>- Version 4.0.7 - RTP support complete.
+- Version 4.0.4 - Added attended transfer capability to SIPUserAgent.
 - Version 4.0.3 - Refactor of RTPChannel and RTPSession. SIPUserAgent class incoporates RTPSession (much easier to use).
 - Version 4.0.2 - New SIPUserAgent class, combination of client and server user agents. Support for HOMER logging.
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
   </PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
-	<AssemblyVersion>4.0.4.0</AssemblyVersion>
-	<FileVersion>4.0.4.0</FileVersion>
+	<AssemblyVersion>4.0.7.0</AssemblyVersion>
+	<FileVersion>4.0.7.0</FileVersion>
   </PropertyGroup>    
 
 </Project>
