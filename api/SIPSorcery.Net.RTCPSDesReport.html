@@ -73,7 +73,8 @@
   
   <h1 id="SIPSorcery_Net_RTCPSDesReport" data-uid="SIPSorcery.Net.RTCPSDesReport" class="text-break">Class RTCPSDesReport
   </h1>
-  <div class="markdown level0 summary"><p>RTCP Source Description (SDES) report as defined in RFC3550.</p>
+  <div class="markdown level0 summary"><p>RTCP Source Description (SDES) report as defined in RFC3550.
+Only the mandatory CNAME item is supported.</p>
 </div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
@@ -118,7 +119,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport__ctor_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport.%23ctor(System.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L100">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L103">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPSDesReport__ctor_" data-uid="SIPSorcery.Net.RTCPSDesReport.#ctor*"></a>
   <h4 id="SIPSorcery_Net_RTCPSDesReport__ctor_System_Byte___" data-uid="SIPSorcery.Net.RTCPSDesReport.#ctor(System.Byte[])">RTCPSDesReport(Byte[])</h4>
@@ -152,7 +153,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport__ctor_System_UInt32_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport.%23ctor(System.UInt32%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L79">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L81">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPSDesReport__ctor_" data-uid="SIPSorcery.Net.RTCPSDesReport.#ctor*"></a>
   <h4 id="SIPSorcery_Net_RTCPSDesReport__ctor_System_UInt32_System_String_" data-uid="SIPSorcery.Net.RTCPSDesReport.#ctor(System.UInt32,System.String)">RTCPSDesReport(UInt32, String)</h4>
@@ -196,7 +197,7 @@ length is 255 bytes (note bytes not characters).</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport_CNAME_ID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport.CNAME_ID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L66">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L67">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSDesReport_CNAME_ID" data-uid="SIPSorcery.Net.RTCPSDesReport.CNAME_ID">CNAME_ID</h4>
   <div class="markdown level1 summary"></div>
@@ -222,10 +223,39 @@ length is 255 bytes (note bytes not characters).</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport_Header.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport.Header%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L70">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTCPSDesReport_Header" data-uid="SIPSorcery.Net.RTCPSDesReport.Header">Header</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCPHeader Header</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCPHeader.html">RTCPHeader</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport_MAX_CNAME_BYTES.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport.MAX_CNAME_BYTES%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L65">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L66">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSDesReport_MAX_CNAME_BYTES" data-uid="SIPSorcery.Net.RTCPSDesReport.MAX_CNAME_BYTES">MAX_CNAME_BYTES</h4>
   <div class="markdown level1 summary"></div>
@@ -251,10 +281,39 @@ length is 255 bytes (note bytes not characters).</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport_MIN_PACKET_SIZE.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport.MIN_PACKET_SIZE%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L68">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTCPSDesReport_MIN_PACKET_SIZE" data-uid="SIPSorcery.Net.RTCPSDesReport.MIN_PACKET_SIZE">MIN_PACKET_SIZE</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int MIN_PACKET_SIZE = 10</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport_PACKET_SIZE_WITHOUT_CNAME.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport.PACKET_SIZE_WITHOUT_CNAME%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L64">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L65">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSDesReport_PACKET_SIZE_WITHOUT_CNAME" data-uid="SIPSorcery.Net.RTCPSDesReport.PACKET_SIZE_WITHOUT_CNAME">PACKET_SIZE_WITHOUT_CNAME</h4>
   <div class="markdown level1 summary"></div>
@@ -278,35 +337,6 @@ length is 255 bytes (note bytes not characters).</p>
       </tr>
     </tbody>
   </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport_PACKET_TYPE.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport.PACKET_TYPE%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L63">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_Net_RTCPSDesReport_PACKET_TYPE" data-uid="SIPSorcery.Net.RTCPSDesReport.PACKET_TYPE">PACKET_TYPE</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int PACKET_TYPE = 202</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
   <h3 id="properties">Properties
   </h3>
   <span class="small pull-right mobile-hide">
@@ -314,7 +344,7 @@ length is 255 bytes (note bytes not characters).</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport_CNAME.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport.CNAME%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L70">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L72">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPSDesReport_CNAME_" data-uid="SIPSorcery.Net.RTCPSDesReport.CNAME*"></a>
   <h4 id="SIPSorcery_Net_RTCPSDesReport_CNAME" data-uid="SIPSorcery.Net.RTCPSDesReport.CNAME">CNAME</h4>
@@ -344,7 +374,7 @@ length is 255 bytes (note bytes not characters).</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport_SSRC.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport.SSRC%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L69">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L71">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPSDesReport_SSRC_" data-uid="SIPSorcery.Net.RTCPSDesReport.SSRC*"></a>
   <h4 id="SIPSorcery_Net_RTCPSDesReport_SSRC" data-uid="SIPSorcery.Net.RTCPSDesReport.SSRC">SSRC</h4>
@@ -376,7 +406,7 @@ length is 255 bytes (note bytes not characters).</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport_GetBytes.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport.GetBytes%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L129">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L134">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPSDesReport_GetBytes_" data-uid="SIPSorcery.Net.RTCPSDesReport.GetBytes*"></a>
   <h4 id="SIPSorcery_Net_RTCPSDesReport_GetBytes" data-uid="SIPSorcery.Net.RTCPSDesReport.GetBytes">GetBytes()</h4>
@@ -415,7 +445,7 @@ directly in an RTCP packet.</p>
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSDesReport.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSDesReport%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L61" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSdesReport.cs/#L63" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

@@ -98,31 +98,41 @@ the sole type is SIP).</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.Mjpeg.Tags.html">Mjpeg.Tags</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.ReceptionReport.html">ReceptionReport</a></h4>
+      <section><p>Maintains the reception statistics for a received RTP stream.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.ReceptionReportSample.html">ReceptionReportSample</a></h4>
+      <section><p>Represents a point in time sample for a reception report.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPBye.html">RTCPBye</a></h4>
       <section><p>RTCP Goodbye packet as defined in RFC3550. The BYE packet indicates
 that one or more sources are no longer active.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCPCompoundPacket.html">RTCPCompoundPacket</a></h4>
+      <section><p>Represents an RTCP compound packet consisting of 1 or more
+RTCP packets combined together in a single buffer. According to RFC3550 RTCP
+transmissions should always have at least 2 RTCP packets (a sender/receiver report
+and an SDES report). This implementation does not enforce that contraint for
+received reports but does for sends.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPHeader.html">RTCPHeader</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTCPPacket.html">RTCPPacket</a></h4>
-      <section></section>
+      <section><p>RTCP Header as defined in RFC3550.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPReceiverReport.html">RTCPReceiverReport</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTCPReport.html">RTCPReport</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTCPReportHeader.html">RTCPReportHeader</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTCPReportPacket.html">RTCPReportPacket</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTCPReportSampler.html">RTCPReportSampler</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPReportTypes.html">RTCPReportTypes</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPSDesReport.html">RTCPSDesReport</a></h4>
-      <section><p>RTCP Source Description (SDES) report as defined in RFC3550.</p>
+      <section><p>RTCP Source Description (SDES) report as defined in RFC3550.
+Only the mandatory CNAME item is supported.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPSenderReport.html">RTCPSenderReport</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCPSession.html">RTCPSession</a></h4>
+      <section><p>Represents an RTCP session intended to be used in conjunction with an
+RTP session. This class needs to get notified of all RTP sends and receives
+and will take care of RTCP reporting.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPChannel.html">RTPChannel</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPEvent.html">RTPEvent</a></h4>
@@ -133,8 +143,6 @@ that one or more sources are no longer active.</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPPacket.html">RTPPacket</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPReceiveRecord.html">RTPReceiveRecord</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPSession.html">RTPSession</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPVP8Header.html">RTPVP8Header</a></h4>
@@ -142,10 +150,6 @@ that one or more sources are no longer active.</p>
 <p>For length of first parition 54: S0 = 4, S1 = 0x32, S2 = 0.
 For length of first parition 1777: S0 = 1, S1 = 0xde, S2 = 0.</p>
 </section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTSPClient.html">RTSPClient</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTSPConnection.html">RTSPConnection</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPConstants.html">RTSPConstants</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPEntityHeaders.html">RTSPEntityHeaders</a></h4>
@@ -167,10 +171,6 @@ Request-Line = Method SP Request-URI SP RTSP-Version CRLF</p>
 Status-Line =   RTSP-Version SP Status-Code SP Reason-Phrase CRLF</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPResponseStatusCodes.html">RTSPResponseStatusCodes</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTSPServer.html">RTSPServer</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTSPSession.html">RTSPSession</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPTransportHeader.html">RTSPTransportHeader</a></h4>
       <section><p>Represents the Transport header used in RTSP requests and responses.</p>
@@ -316,7 +316,8 @@ associated with the RTP it should carry on as normal.
 See <a href="https://tools.ietf.org/html/rfc4566#section-6">https://tools.ietf.org/html/rfc4566#section-6</a></p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPReportTypesEnum.html">RTCPReportTypesEnum</a></h4>
-      <section></section>
+      <section><p>The different types of RTCP packets as defined in RFC3550.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPChannelSocketsEnum.html">RTPChannelSocketsEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RtpMediaTypesEnum.html">RtpMediaTypesEnum</a></h4>
@@ -369,8 +370,6 @@ a=fmtp:98 max-fr=30; max-fs=3600;</code></pre>
     <h3 id="delegates">Delegates
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTCPSampleReadyDelegate.html">RTCPSampleReadyDelegate</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNMessageReceived.html">STUNMessageReceived</a></h4>
       <section></section>
