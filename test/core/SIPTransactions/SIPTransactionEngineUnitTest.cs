@@ -51,7 +51,6 @@ namespace SIPSorcery.SIP.UnitTests
         /// Tests that the transaction ID is correctly generated and matched for a request and response pair.
         /// </summary>
         [Fact]
-        [Trait("Category", "txintegration")]
         public void MatchOnRequestAndResponseTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -94,6 +93,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// The test uses two different transaction engine instances with one acting as the client and one as the server.
         /// </summary>
         [Fact]
+        [Trait("Category", "txintegration")]
         public void AckRecognitionUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
