@@ -376,8 +376,7 @@ namespace SIPSorcery.SoftPhone
         /// Event handler that notifies us the remote party has put us on hold.	
         /// </summary>	
         private void OnRemotePutOnHold()
-        {
-            //_mediaManager.StopSending();	
+        {	
             RemotePutOnHold?.Invoke(this);
         }
 
@@ -386,13 +385,19 @@ namespace SIPSorcery.SoftPhone
         /// </summary>	
         private void OnRemoteTookOffHold()
         {
-            //_mediaManager.RestartSending();	
             RemoteTookOffHold?.Invoke(this);
         }
 
         public Task SendDTMF(byte b)
         {
-            return m_rtpMediaSessionManager.RTPMediaSession.SendDtmf(b, _cts.Token);
+            if (m_rtpMediaSessionManager.RTPMediaSession != null)
+            {
+                return m_rtpMediaSessionManager.RTPMediaSession.SendDtmf(b, _cts.Token);
+            }
+            else
+            {
+                return Task.FromResult(0);
+            }
         }
     }
 }
