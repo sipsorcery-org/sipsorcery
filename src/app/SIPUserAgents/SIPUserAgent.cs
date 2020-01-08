@@ -278,6 +278,7 @@ namespace SIPSorcery.SIP.App
 
             MediaSession = mediaSession;
             MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
+            MediaSession.OnRtpDisconnected += Hangup;
 
             var sdpAnswer = await MediaSession.AnswerOffer(sipRequest.Body).ConfigureAwait(false);
 
@@ -424,8 +425,6 @@ namespace SIPSorcery.SIP.App
                     await SendResponseAsync(okResponse).ConfigureAwait(false);
 
                     CallEnded();
-
-                    OnCallHungup?.Invoke();
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
@@ -763,6 +762,8 @@ namespace SIPSorcery.SIP.App
             MediaSession.SessionMediaChanged -= MediaSessionOnSessionMediaChanged;
             MediaSession?.Close();
             MediaSession = null;
+
+            OnCallHungup?.Invoke();
         }
     }
 }

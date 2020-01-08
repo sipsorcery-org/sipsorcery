@@ -44,6 +44,7 @@ namespace SIPSorcery.SIP.App
             Session = rtpSession;
             Session.OnRtpEvent += OnRemoteRtpEvent;
             Session.OnReceivedSampleReady += OnReceivedSampleReady;
+            Session.OnRtpDisconnect += () => OnRtpDisconnected?.Invoke();
         }
 
         /// <summary>
@@ -76,6 +77,12 @@ namespace SIPSorcery.SIP.App
         /// Gets fired when an RTP packet is received, has been identified and is ready for processing.
         /// </summary>
         public event Action<byte[]> OnReceivedSampleReady;
+
+        /// <summary>
+        /// Fired when a network error occurs indicating the remote party is no longer accepting 
+        /// RTP packets.
+        /// </summary>
+        public event Action OnRtpDisconnected;
 
         public Task SendDtmf(byte key, CancellationToken cancellationToken = default)
         {

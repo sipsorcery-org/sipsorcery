@@ -23,8 +23,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -32,15 +35,18 @@ namespace SIPSorcery.SIP
 {
     public class SIPUDPChannel : SIPChannel
     {
+        private const int FAILED_DESTINATION_PERIOD_SECONDS = 30;       // How long a failed send should prevent subsequent sends for.
+        private const int EXPIRED_FAILED_PERIOD_SECONDS = 5;            // Period at which to check the failed send list and remove expired items.
+
         private readonly Socket m_udpSocket;
         private byte[] m_recvBuffer;
+        private CancellationTokenSource m_cts;
 
         /// <summary>
         /// Keep a list of transient send failures to remote end points. With UDP a failure is detected if an ICMP packet is received 
         /// on a receive.
-        /// TODO: Keep looking for a way to access the raw ICMP packet that causes the receive exception.
         /// </summary>
-        //private static ConcurrentDictionary<IPEndPoint, Tuple<IPEndPoint, DateTime>> m_sendFailures = new ConcurrentDictionary<IPEndPoint, Tuple<IPEndPoint, DateTime>>();
+        private static ConcurrentDictionary<IPEndPoint, DateTime> m_sendFailures = new ConcurrentDictionary<IPEndPoint, DateTime>();
 
         /// <summary>
         /// Creates a SIP channel to listen for and send SIP messages over UDP.
@@ -57,6 +63,7 @@ namespace SIPSorcery.SIP
             Port = endPoint.Port;
             SIPProtocol = SIPProtocolsEnum.udp;
             IsReliable = false;
+            m_cts = new CancellationTokenSource();
 
             m_udpSocket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             m_udpSocket.Bind(endPoint);
@@ -70,6 +77,8 @@ namespace SIPSorcery.SIP
             logger.LogInformation($"SIP UDP Channel created for {ListeningEndPoint}.");
 
             Receive();
+
+            Task.Run(ExpireFailedSends);
         }
 
         public SIPUDPChannel(IPAddress listenAddress, int listenPort) : this(new IPEndPoint(listenAddress, listenPort))
@@ -87,7 +96,7 @@ namespace SIPSorcery.SIP
             {
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
                 // the BeginReceiveMessageFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
-                // case the sopcket can be considered to be unusable and there's no point trying another receive.
+                // case the socket can be considered to be unusable and there's no point trying another receive.
                 logger.LogError($"Exception Receive. {excp.Message}");
                 logger.LogDebug($"SIPUDPChannel socket on {ListeningEndPoint} listening halted.");
                 Closed = true;
@@ -96,12 +105,13 @@ namespace SIPSorcery.SIP
 
         private void EndReceiveMessageFrom(IAsyncResult ar)
         {
+            EndPoint remoteEP = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+
             try
             {
                 if (!Closed)
                 {
                     SocketFlags flags = SocketFlags.None;
-                    EndPoint remoteEP = (ListeningIPAddress.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
 
                     int bytesRead = m_udpSocket.EndReceiveMessageFrom(ar, ref flags, ref remoteEP, out var packetInfo);
 
@@ -117,10 +127,13 @@ namespace SIPSorcery.SIP
             }
             catch (SocketException sockExcp)
             {
-                // ToDo. Pretty sure these exceptions get thrown when an ICMP message comes back indicating there is no listening
-                // socket on the other end. It would be nice to be able to relate that back to the socket that the data was sent to
-                // so that we know to stop sending.
-                logger.LogWarning($"SocketException SIPUDPChannel EndReceiveMessageFrom ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                // This exception can occur as the result of a Send operation. It's caused by an ICMP packet from a remote host
+                // rejecting an incoming UDP packet. If that happens we want to stop further sends to the socket for a short period.
+                logger.LogWarning($"SocketException SIPUDPChannel EndReceiveMessageFrom from {remoteEP} ({sockExcp.ErrorCode}). {sockExcp.Message}");
+                if (remoteEP != null)
+                {
+                    m_sendFailures.TryAdd(remoteEP as IPEndPoint, DateTime.Now);
+                }
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
@@ -150,8 +163,17 @@ namespace SIPSorcery.SIP
 
             try
             {
-                m_udpSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint.GetIPEndPoint(), EndSendTo, dstEndPoint);
-                return Task.FromResult(SocketError.Success);
+                IPEndPoint dstIPEndPoint = dstEndPoint.GetIPEndPoint();
+
+                if (m_sendFailures.ContainsKey(dstEndPoint.GetIPEndPoint()))
+                {
+                    return Task.FromResult(SocketError.ConnectionRefused);
+                }
+                else
+                {
+                    m_udpSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstIPEndPoint, EndSendTo, dstEndPoint);
+                    return Task.FromResult(SocketError.Success);
+                }
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             {
@@ -251,6 +273,7 @@ namespace SIPSorcery.SIP
                 logger.LogDebug($"Closing SIP UDP Channel {ListeningEndPoint}.");
 
                 Closed = true;
+                m_cts.Cancel();
                 m_udpSocket.Close();
             }
             catch (Exception excp)
@@ -262,6 +285,31 @@ namespace SIPSorcery.SIP
         public override void Dispose()
         {
             this.Close();
+        }
+
+        /// <summary>
+        /// Removed end points from the send failures list after the timeout period.
+        /// </summary>
+        private async void ExpireFailedSends()
+        {
+            try
+            {
+                while (!Closed)
+                {
+                    var expireds = m_sendFailures.Where(x => DateTime.Now.Subtract(x.Value).TotalSeconds > FAILED_DESTINATION_PERIOD_SECONDS).Select(x => x.Key).ToList();
+
+                    foreach (var expired in expireds)
+                    {
+                        m_sendFailures.TryRemove(expired, out _);
+                    }
+
+                    await Task.Delay(EXPIRED_FAILED_PERIOD_SECONDS * 1000, m_cts.Token);
+                }
+            }
+            catch(Exception excp)
+            {
+                logger.LogError($"Exception SIPUDPChannel.ExpireFailedSends. {excp.Message}");
+            }
         }
     }
 }

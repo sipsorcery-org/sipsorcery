@@ -40,5 +40,11 @@ namespace SIPSorcery.SIP.App
         void Close();
 
         event Action<string> SessionMediaChanged;
+
+        /// <summary>
+        /// Fired when a network error occurs indicating the remote party is no longer 
+        /// accepting RTP packets.
+        /// </summary>
+        event Action OnRtpDisconnected;
     }
 }
