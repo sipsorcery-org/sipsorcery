@@ -187,8 +187,7 @@ namespace SIPSorcery.SIP.App
         private void SetRemoteSDP(string remoteSDP)
         {
             var sdp = SDP.ParseSDPDescription(remoteSDP);
-            SetRemoteSDP(sdp);
-            DestinationEndPoint = sdp.GetSDPRTPEndPoint();
+            base.SetRemoteSDP(sdp);
 
             CheckRemotePartyHoldCondition(sdp);
 

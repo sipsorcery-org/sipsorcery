@@ -26,7 +26,7 @@ using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
 {
-    [Trait("Category", "Integration")]
+    [Trait("Category", "transport")]
     public class SIPTransportUnitTest
     {
         private const int TRANSPORT_TEST_TIMEOUT = 15000;

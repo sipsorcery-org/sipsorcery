@@ -7,6 +7,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="net\RTSP\RTSPClient.cs" />
+    <Compile Remove="net\RTSP\RTSPConnection.cs" />
+    <Compile Remove="net\RTSP\RTSPServer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="core\SIPEvents\Dialog\EventDialogSchema.xsd" />
     <None Remove="core\SIPEvents\Presence\PIDFSchema.xsd" />
     <None Include="icon.png" Pack="true" PackagePath="" />
