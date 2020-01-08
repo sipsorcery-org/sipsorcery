@@ -132,10 +132,10 @@ namespace SIPSorcery.Net
         public int AnnouncementVersion = 0; // Version number for each announcement, number must be increased for each subsequent SDP modification.
         public string NetworkType = "IN";   // Type of network, IN = Internet.
         public string AddressType = ADDRESS_TYPE_IPV4;  // Address type, typically IP4 or IP6.
-        public IPAddress Address;              // IP Address of the machine that created the session, either FQDN or dotted quad or textual for IPv6.
+        public string AddressOrHost;         // IP Address or Host of the machine that created the session, either FQDN or dotted quad or textual for IPv6.
         public string Owner
         {
-            get { return Username + " " + SessionId + " " + AnnouncementVersion + " " + NetworkType + " " + AddressType + " " + Address; }
+            get { return Username + " " + SessionId + " " + AnnouncementVersion + " " + NetworkType + " " + AddressType + " " + AddressOrHost; }
         }
 
         public string SessionName = "-";            // Common name of the session.
@@ -170,7 +170,7 @@ namespace SIPSorcery.Net
 
         public SDP(IPAddress address)
         {
-            Address = address;
+            AddressOrHost = address.ToString();
             AddressType = (address.AddressFamily == AddressFamily.InterNetworkV6) ? ADDRESS_TYPE_IPV6 : ADDRESS_TYPE_IPV4;
         }
 
@@ -204,7 +204,7 @@ namespace SIPSorcery.Net
                             Int32.TryParse(ownerFields[2], out sdp.AnnouncementVersion);
                             sdp.NetworkType = ownerFields[3];
                             sdp.AddressType = ownerFields[4];
-                            sdp.Address = IPAddress.Parse(ownerFields[5]);
+                            sdp.AddressOrHost = ownerFields[5];
                         }
                         else if (sdpLineTrimmed.StartsWith("s="))
                         {
