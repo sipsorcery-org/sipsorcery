@@ -500,7 +500,7 @@ namespace SIPSorcery.SIP.App
                         SIPRequest byeRequest = GetByeRequest();
                         SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_sipTransport, byeRequest, m_outboundProxy);
                         byeTransaction.NonInviteTransactionFinalResponseReceived += ByeServerFinalResponseReceived;
-                        byeTransaction.SendReliableRequest();
+                        byeTransaction.SendRequest();
                     }
                 }
                 catch (Exception excp)
@@ -534,8 +534,8 @@ namespace SIPSorcery.SIP.App
                     authByeRequest.Header.Vias.TopViaHeader.Branch = CallProperties.CreateBranchId();
                     authByeRequest.Header.CSeq = authByeRequest.Header.CSeq + 1;
 
-                    SIPNonInviteTransaction bTransaction = new SIPNonInviteTransaction(m_sipTransport, authByeRequest, null);
-                    bTransaction.SendReliableRequest();
+                    SIPNonInviteTransaction authByeTransaction = new SIPNonInviteTransaction(m_sipTransport, authByeRequest, null);
+                    authByeTransaction.SendRequest();
                 }
             }
             catch (Exception excp)

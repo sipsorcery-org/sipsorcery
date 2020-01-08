@@ -1,8 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: A getting started program to demonstrate how to use the SIPTransport class to respond to
-// OPTIONS requests.
+// Description: A getting started program to demonstrate how to use the 
+// SIPTransport class to respond to OPTIONS requests.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -41,20 +41,20 @@ namespace demo
             sipTransport.AddSIPChannel(sipChannel);
             sipTransport.AddSIPChannel(sipChannelSecure);
 
-            sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+            sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
             {
                 Console.WriteLine($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
 
                 if (sipRequest.Method == SIPMethodsEnum.OPTIONS | sipRequest.Method == SIPMethodsEnum.MESSAGE)
                 {
                     SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    sipTransport.SendResponse(okResponse);
+                    await sipTransport.SendResponseAsync(okResponse);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.REGISTER)
                 {
                     SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                     okResponse.Header.Contact = sipRequest.Header.Contact;
-                    sipTransport.SendResponse(okResponse);
+                    await sipTransport.SendResponseAsync(okResponse);
                 }
             };
 

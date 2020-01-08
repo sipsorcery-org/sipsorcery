@@ -39,7 +39,8 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Default constructor for user agent client INVITE transaction.
         /// </summary>
-        /// <param name="sendOkAckManually">If set an ACK request for the 2xx response will NOT be sent and it will be up to the application to explicitly call the SendACK request.</param>
+        /// <param name="sendOkAckManually">If set an ACK request for the 2xx response will NOT be sent and it will be up to 
+        /// the application to explicitly call the SendACK request.</param>
         /// <param name="disablePrackSupport">If set to true then PRACK support will not be set in the initial INVITE reqeust.</param>
         internal UACInviteTransaction(SIPTransport sipTransport,
             SIPRequest sipRequest,
@@ -70,7 +71,7 @@ namespace SIPSorcery.SIP
             CDR = null;
         }
 
-        public void SendInviteRequest(SIPRequest inviteRequest)
+        public void SendInviteRequest()
         {
             base.SendReliableRequest();
         }
@@ -100,10 +101,13 @@ namespace SIPSorcery.SIP
             {
                 UACInviteTransactionInformationResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
 
-                if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199 && sipResponse.Header.RSeq > 0)
+                if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
                 {
-                    // Send a PRACK for this provisional response.
-                    SendPRackRequest(sipResponse);
+                    if (sipResponse.Header.RSeq > 0)
+                    {
+                        // Send a PRACK for this provisional response.
+                        PRackRequest = GetPRackRequest(sipResponse);
+                    }
                 }
 
                 if (CDR != null)
@@ -128,14 +132,13 @@ namespace SIPSorcery.SIP
                 {
                     if (_sendOkAckManually == false)
                     {
-                        Send2xxAckRequest(null, null);
+                        AckRequest = Get2xxAckRequest(null, null);
                     }
                 }
                 else
                 {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
-                    var ackRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI);
-                    base.SendRequest(ackRequest);
+                    AckRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI);
                 }
 
                 UACInviteTransactionFinalResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
@@ -158,7 +161,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="content">The optional content body for the ACK request.</param>
         /// <param name="contentType">The optional content type.</param>
-        public void Send2xxAckRequest(string content, string contentType)
+        private SIPRequest Get2xxAckRequest(string content, string contentType)
         {
             try
             {
@@ -193,11 +196,12 @@ namespace SIPSorcery.SIP
                     ackRequest.Header.ContentType = contentType;
                 }
 
-                base.SendRequest(ackRequest);
+               return ackRequest;
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception Send2xxAckRequest. {excp.Message}");
+                logger.LogError($"Exception Get2xxAckRequest. {excp.Message}");
+                throw excp;
             }
         }
 
@@ -292,11 +296,16 @@ namespace SIPSorcery.SIP
             return ackRequest;
         }
 
+        /// <summary>
+        /// Cancels this transaction. This does NOT generate a CANCEL request. A separate
+        /// reliable transaction needs to be created for that.
+        /// </summary>
+        /// <param name="cancelReason">The reason for cancelling the transaction.</param>
         public void CancelCall(string cancelReason = null)
         {
             try
             {
-                base.Cancel();
+                UpdateTransactionState(SIPTransactionStatesEnum.Cancelled);
                 CDR?.Cancelled(cancelReason);
             }
             catch (Exception excp)
@@ -310,7 +319,7 @@ namespace SIPSorcery.SIP
         /// Sends a PRACK request to acknowledge a provisional response as per RFC3262.
         /// </summary>
         /// <param name="progressResponse">The provisional response being acknowledged.</param>
-        public void SendPRackRequest(SIPResponse progressResponse)
+        public SIPRequest GetPRackRequest(SIPResponse progressResponse)
         {
             // PRACK requests create a new transaction and get routed based on SIP request fields.
             var prackRequest = GetNewTransactionAcknowledgeRequest(SIPMethodsEnum.PRACK, progressResponse, m_transactionRequest.URI);
@@ -319,7 +328,7 @@ namespace SIPSorcery.SIP
             prackRequest.Header.RAckCSeq = progressResponse.Header.CSeq;
             prackRequest.Header.RAckCSeqMethod = progressResponse.Header.CSeqMethod;
 
-            base.SendRequest(prackRequest);
+           return prackRequest;
         }
     }
 }

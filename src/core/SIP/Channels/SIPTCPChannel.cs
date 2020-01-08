@@ -168,8 +168,8 @@ namespace SIPSorcery.SIP
 
                 m_localTCPSockets.Add(ListeningEndPoint.ToString());
 
-                Task.Run((Action)AcceptConnections);
-                Task.Run((Action)PruneConnections);
+                Task.Run(AcceptConnections);
+                Task.Run(PruneConnections);
 
                 logger.LogInformation($"SIP {ProtDescr} Channel created for {ListeningEndPoint}.");
             }
@@ -183,7 +183,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Processes the socket accepts from the channel's socket listener.
         /// </summary>
-        private async void AcceptConnections()
+        private async Task AcceptConnections()
         {
             logger.LogDebug($"SIP {ProtDescr} Channel socket on {m_tcpServerListener.Server.LocalEndPoint} accept connections thread started.");
 
@@ -332,7 +332,7 @@ namespace SIPSorcery.SIP
         /// <param name="dstEndPoint">The remote TCP end point to attempt to connect to.</param>
         /// <param name="buffer">An optional buffer that if set can contain data to transmit immediately after connecting.</param>
         /// <returns>If successful a connected client socket or null if not.</returns>
-        public async Task<SocketError> ConnectClientAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
+        internal async Task<SocketError> ConnectClientAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName)
         {
             try
             {
@@ -402,7 +402,7 @@ namespace SIPSorcery.SIP
 
                     await OnClientConnect(sipStmConn, serverCertificateName);
 
-                    SendOnConnected(sipStmConn, buffer);
+                    await SendOnConnected(sipStmConn, buffer);
                 }
 
                 return connectResult;
@@ -434,16 +434,6 @@ namespace SIPSorcery.SIP
 
             // Task.IsCompleted not availabe for net452.
             return Task.FromResult(0);
-        }
-
-        /// <summary>
-        /// Attempts to send data to the remote end point over a reliable TCP connection.
-        /// </summary>
-        /// <param name="dstEndPoint">The remote end point to send to.</param>
-        /// <param name="buffer">The data to send.</param>
-        public override async void Send(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
-        {
-            await SendAsync(dstEndPoint, buffer, connectionIDHint);
         }
 
         public override Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
@@ -527,7 +517,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="sipStreamConn">The connected SIP stream wrapping the TCP connection.</param>
         /// <param name="buffer">The data to send.</param>
-        protected virtual void SendOnConnected(SIPStreamConnection sipStreamConn, byte[] buffer)
+        protected virtual Task SendOnConnected(SIPStreamConnection sipStreamConn, byte[] buffer)
         {
             IPEndPoint dstEndPoint = sipStreamConn.RemoteEndPoint;
 
@@ -545,6 +535,8 @@ namespace SIPSorcery.SIP
                         ProcessSend(args);
                     }
                 }
+
+                return Task.FromResult(0);
             }
             catch (SocketException sockExcp)
             {
@@ -602,9 +594,9 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Gets fired when a suspected SIP message is extracted from the TCP data stream.
         /// </summary>
-        protected void SIPTCPMessageReceived(SIPChannel channel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
+        protected Task SIPTCPMessageReceived(SIPChannel channel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
         {
-            SIPMessageReceived?.Invoke(channel, localEndPoint, remoteEndPoint, buffer);
+            return SIPMessageReceived?.Invoke(channel, localEndPoint, remoteEndPoint, buffer);
         }
 
         /// <summary>
@@ -714,7 +706,7 @@ namespace SIPSorcery.SIP
         /// period or where the number of connections allowed per IP address has been exceeded. Only relevant for connection
         /// oriented channels such as TCP and TLS.
         /// </summary>
-        private async void PruneConnections()
+        private async Task PruneConnections()
         {
             try
             {

@@ -87,7 +87,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Event for new SIP requests or responses becoming available.
         /// </summary>
-        public event SIPMessageReceivedDelegate SIPMessageReceived;
+        public event SIPMessageReceivedAsyncDelegate SIPMessageReceived;
 
         /// <summary>
         /// Records the crucial stream connection properties and initialises teh required buffers.

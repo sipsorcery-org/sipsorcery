@@ -2,7 +2,7 @@
 // Filename: Program.cs
 //
 // Description: An example program of how to use the SIPSorcery core library to 
-// place or receive two calls and then brdige them together to accomplish an
+// place or receive two calls and then bridge them together to accomplish an
 // attended transfer.
 //
 // Author(s):
@@ -103,8 +103,8 @@ namespace SIPSorcery
                     sipRequest.Header.To != null &&
                     sipRequest.Header.To.ToTag != null)
                 {
-                        // This is an in-dialog request that will be handled directly by a user agent instance.
-                    }
+                    // This is an in-dialog request that will be handled directly by a user agent instance.
+                }
                 else if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
                     if (!userAgent1.IsCallActive)
@@ -134,8 +134,8 @@ namespace SIPSorcery
                     }
                     else
                     {
-                            // If both user agents are already on a call return a busy response.
-                            Log.LogWarning($"Busy response returned for incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
+                        // If both user agents are already on a call return a busy response.
+                        Log.LogWarning($"Busy response returned for incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
                         SIPResponse busyResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BusyHere, null);
                         uasTransaction.SendFinalResponse(busyResponse);
@@ -145,8 +145,10 @@ namespace SIPSorcery
                 {
                     Log.LogDebug($"SIP {sipRequest.Method} request received but no processing has been set up for it, rejecting.");
                     SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    sipTransport.SendResponse(notAllowedResponse);
+                    return sipTransport.SendResponseAsync(notAllowedResponse);
                 }
+
+                return Task.FromResult(0);
             };
 
             // Wire up the RTP send session to the audio input device.
@@ -195,8 +197,8 @@ namespace SIPSorcery
                         }
                         else if (keyProps.KeyChar == 'q')
                         {
-                                // Quit application.
-                                exitCts.Cancel();
+                            // Quit application.
+                            exitCts.Cancel();
                         }
                     }
                 }

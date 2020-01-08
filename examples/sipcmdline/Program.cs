@@ -292,6 +292,8 @@ namespace SIPSorcery
                         logger.LogDebug($"Expected response received {localSIPEndPoint}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
                         tcs.SetResult(true);
                     }
+
+                    return Task.FromResult(0);
                 };
 
                 SocketError sendResult = await sipTransport.SendRequestAsync(optionsRequest);
