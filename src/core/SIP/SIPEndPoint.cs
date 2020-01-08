@@ -35,9 +35,6 @@ namespace SIPSorcery.SIP
         private const string CHANNELID_ATTRIBUTE_NAME = "cid";
         private const string CONNECTIONID_ATTRIBUTE_NAME = "xid";
 
-        private static int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
-        private static int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;
-
         /// <summary>
         /// The scheme the SIP end point is using. Note that some schemes and protocols are mutually exclusive.
         /// For example sips cannot be sent over UDP.
@@ -97,7 +94,7 @@ namespace SIPSorcery.SIP
         {
             Protocol = protocol;
             Address = address;
-            Port = (port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : port;
+            Port = (port == 0) ? SIPConstants.GetDefaultPort(Protocol) : port;
             ChannelID = channelID;
             ConnectionID = connectionID;
         }
@@ -112,21 +109,21 @@ namespace SIPSorcery.SIP
             }
 
             Address = endPoint.Address;
-            Port = (endPoint.Port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : endPoint.Port;
+            Port = (endPoint.Port == 0) ? SIPConstants.GetDefaultPort(Protocol) : endPoint.Port;
         }
 
         public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint)
         {
             Protocol = protocol;
             Address = endPoint.Address;
-            Port = (endPoint.Port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : endPoint.Port;
+            Port = (endPoint.Port == 0) ? SIPConstants.GetDefaultPort(Protocol) : endPoint.Port;
         }
 
         public SIPEndPoint(SIPProtocolsEnum protocol, IPEndPoint endPoint, string channelID, string connectionID)
         {
             Protocol = protocol;
             Address = endPoint.Address;
-            Port = (endPoint.Port == 0) ? (Protocol == SIPProtocolsEnum.tls) ? m_defaultSIPTLSPort : m_defaultSIPPort : endPoint.Port;
+            Port = (endPoint.Port == 0) ? SIPConstants.GetDefaultPort(Protocol) : endPoint.Port;
             ChannelID = channelID;
             ConnectionID = connectionID;
         }

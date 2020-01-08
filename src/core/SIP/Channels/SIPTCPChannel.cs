@@ -418,35 +418,32 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="dstEndPoint">The remote end point to send to.</param>
         /// <param name="buffer">The data to send.</param>
-        public override async void Send(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
+        public override async void Send(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
             await SendAsync(dstEndPoint, buffer, connectionIDHint);
         }
 
-        public override async void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
+        public override Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
-            await SendSecureAsync(dstEndPoint, buffer, serverCertificateName, connectionIDHint);
-        }
-
-        public override async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
-        {
-            return await SendSecureAsync(dstEndPoint, buffer, null, connectionIDHint);
+            return SendSecureAsync(dstEndPoint, buffer, null, connectionIDHint);
         }
 
         /// <summary>
         /// Attempts to send data to the remote end point over a reliable connection. If an existing
         /// connection exists it will be used otherwise an attempt will be made to establish a new connection.
         /// </summary>
-        /// <param name="dstEndPoint">The remote end point to send the reliable data to.</param>
+        /// <param name="dstSIPEndPoint">The remote SIP end point to send the reliable data to.</param>
         /// <param name="buffer">The data to send.</param>
         /// <param name="serverCertificateName">Optional. Only relevant for SSL streams. The common name
         /// that is expected for the remote SSL server.</param>
         /// <param name="connectionIDHint">Optional. The ID of the specific TCP connection to try and the send the message on.</param>
         /// <returns>If no errors SocketError.Success otherwise an error value.</returns>
-        public override async Task<SocketError> SendSecureAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
+        public override Task<SocketError> SendSecureAsync(SIPEndPoint dstSIPEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             try
             {
+                IPEndPoint dstEndPoint = dstSIPEndPoint?.GetIPEndPoint();
+
                 if (dstEndPoint == null)
                 {
                     throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in SIPTCPChannel.");
@@ -470,7 +467,7 @@ namespace SIPSorcery.SIP
                         m_connections.TryGetValue(connectionIDHint, out sipStreamConn);
                     }
 
-                    if (sipStreamConn == null && HasConnection(dstEndPoint))
+                    if (sipStreamConn == null && HasConnection(dstSIPEndPoint))
                     {
                         sipStreamConn = m_connections.Where(x => x.Value.RemoteEndPoint.Equals(dstEndPoint)).First().Value;
                     }
@@ -478,17 +475,17 @@ namespace SIPSorcery.SIP
                     if (sipStreamConn != null)
                     {
                         SendOnConnected(sipStreamConn, buffer);
-                        return SocketError.Success;
+                        return Task.FromResult(SocketError.Success);
                     }
                     else
                     {
-                        return await ConnectClientAsync(dstEndPoint, buffer, serverCertificateName);
+                        return ConnectClientAsync(dstEndPoint, buffer, serverCertificateName);
                     }
                 }
             }
             catch (SocketException sockExcp)
             {
-                return sockExcp.SocketErrorCode;
+                return Task.FromResult(sockExcp.SocketErrorCode);
             }
             catch (ApplicationException)
             {
@@ -496,7 +493,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception (" + excp.GetType().ToString() + ") SIPTCPChannel Send (sendto=>" + dstEndPoint + "). " + excp.Message);
+                logger.LogError($"Exception SIPTCPChannel Send (sendto=> {dstSIPEndPoint}. {excp.Message}");
                 throw;
             }
         }
@@ -604,9 +601,37 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="remoteEndPoint">The remote end point to check for an existing connection.</param>
         /// <returns>True if there is a connection or false if not.</returns>
-        public override bool HasConnection(IPEndPoint remoteEndPoint)
+        public override bool HasConnection(SIPEndPoint remoteEndPoint)
         {
-            return m_connections.Any(x => x.Value.RemoteEndPoint.Equals(remoteEndPoint));
+            return m_connections.Any(x => x.Value.RemoteEndPoint.Equals(remoteEndPoint.GetIPEndPoint()));
+        }
+
+        /// <summary>
+        /// Not implemented for the TCP channel.
+        /// </summary>
+        public override bool HasConnection(Uri serverUri)
+        {
+            throw new NotImplementedException("This HasConnection method is not available in the SIP TCP channel, please use an alternative overload.");
+        }
+
+        /// <summary>
+        /// Checks whether the specified address family is supported.
+        /// </summary>
+        /// <param name="addresFamily">The address family to check.</param>
+        /// <returns>True if supported, false if not.</returns>
+        public override bool IsAddressFamilySupported(AddressFamily addresFamily)
+        {
+            return addresFamily == ListeningIPAddress.AddressFamily;
+        }
+
+        /// <summary>
+        /// Checks whether the specified protocol is supported.
+        /// </summary>
+        /// <param name="protocol">The protocol to check.</param>
+        /// <returns>True if supported, false if not.</returns>
+        public override bool IsProtocolSupported(SIPProtocolsEnum protocol)
+        {
+            return protocol == SIPProtocolsEnum.tcp;
         }
 
         /// <summary>

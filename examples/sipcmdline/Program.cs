@@ -67,6 +67,7 @@ namespace SIPSorcery
     {
         private const int DEFAULT_SIP_CLIENT_PORT = 0;
         private const int DEFAULT_SIPS_CLIENT_PORT = 0;
+        private const int DEFAULT_RESPONSE_TIMEOUT_SECONDS = 5;
 
         private static Microsoft.Extensions.Logging.ILogger logger;
 
@@ -76,7 +77,7 @@ namespace SIPSorcery
                 HelpText = "The destination SIP end point in the form [(udp|tcp|tls|sip|sips):]<host|ipaddress>[:port] e.g. udp:67.222.131.147:5060.")]
             public string Destination { get; set; }
 
-            [Option('t', "timeout", Required = false, Default = 5, HelpText = "The timeout in seconds for the SIP command to complete.")]
+            [Option('t', "timeout", Required = false, Default = DEFAULT_RESPONSE_TIMEOUT_SECONDS, HelpText = "The timeout in seconds for the SIP command to complete.")]
             public int Timeout { get; set; }
 
             [Option('c', "count", Required = false, Default = 1, HelpText = "The number of requests to send.")]
@@ -149,11 +150,10 @@ namespace SIPSorcery
                             sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
                             break;
                         case SIPProtocolsEnum.ws:
-                            sipChannel = new SIPWebSocketChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT), null);
+                            sipChannel = new SIPClientWebSocketChannel();
                             break;
                         case SIPProtocolsEnum.wss:
-                            var wsCertificate = new X509Certificate2(@"localhost.pfx", "");
-                            sipChannel = new SIPWebSocketChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT), wsCertificate);
+                            sipChannel = new SIPClientWebSocketChannel();
                             break;
                         default:
                             throw new ApplicationException($"Don't know how to create SIP channel for transport {dstEp.Protocol}.");
@@ -289,7 +289,7 @@ namespace SIPSorcery
                 {
                     if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.OPTIONS && sipResponse.Header.CallId == optionsRequest.Header.CallId)
                     {
-                        logger.LogDebug($"Expected response received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipResponse.ShortDescription}");
+                        logger.LogDebug($"Expected response received {localSIPEndPoint}<-{remoteEndPoint}: {sipResponse.ShortDescription}");
                         tcs.SetResult(true);
                     }
                 };

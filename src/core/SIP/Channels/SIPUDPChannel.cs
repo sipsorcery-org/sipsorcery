@@ -137,12 +137,12 @@ namespace SIPSorcery.SIP
             }
         }
 
-        public override async void Send(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
+        public override async void Send(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
             await SendAsync(dstEndPoint, buffer, connectionIDHint);
         }
 
-        public override Task<SocketError> SendAsync(IPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
+        public override Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint)
         {
             if (dstEndPoint == null)
             {
@@ -155,7 +155,7 @@ namespace SIPSorcery.SIP
 
             try
             {
-                m_udpSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, dstEndPoint);
+                m_udpSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint.GetIPEndPoint(), EndSendTo, dstEndPoint);
                 return Task.FromResult(SocketError.Success);
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
@@ -177,8 +177,6 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                IPEndPoint dstEndPoint = (IPEndPoint)ar.AsyncState;
-
                 int bytesSent = m_udpSocket.EndSendTo(ar);
             }
             catch (SocketException sockExcp)
@@ -199,15 +197,15 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// This method is not implemented for the SIP UDP channel.
         /// </summary>
-        public override void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
-        {
-            throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
-        }
+        //public override void SendSecure(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
+        //{
+        //    throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
+        //}
 
         /// <summary>
         /// This method is not implemented for the SIP UDP channel.
         /// </summary>
-        public override Task<SocketError> SendSecureAsync(IPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
+        public override Task<SocketError> SendSecureAsync(SIPEndPoint dstEndPoint, byte[] buffer, string serverCertificateName, string connectionIDHint)
         {
             throw new NotImplementedException("This Send method is not available in the SIP UDP channel, please use an alternative overload.");
         }
@@ -223,9 +221,37 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// The UDP channel does not support connections. Always returns false.
         /// </summary>
-        public override bool HasConnection(IPEndPoint remoteEndPoint)
+        public override bool HasConnection(SIPEndPoint remoteEndPoint)
         {
             return false;
+        }
+
+        /// <summary>
+        /// The UDP channel does not support connections. Always returns false.
+        /// </summary>
+        public override bool HasConnection(Uri serverUri)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Checks whether the specified address family is supported.
+        /// </summary>
+        /// <param name="addresFamily">The address family to check.</param>
+        /// <returns>True if supported, false if not.</returns>
+        public override bool IsAddressFamilySupported(AddressFamily addresFamily)
+        {
+             return addresFamily == ListeningIPAddress.AddressFamily;
+        }
+
+        /// <summary>
+        /// Checks whether the specified protocol is supported.
+        /// </summary>
+        /// <param name="protocol">The protocol to check.</param>
+        /// <returns>True if supported, false if not.</returns>
+        public override bool IsProtocolSupported(SIPProtocolsEnum protocol)
+        {
+            return protocol == SIPProtocolsEnum.udp;
         }
 
         /// <summary>
