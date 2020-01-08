@@ -100,18 +100,17 @@ namespace SIPSorcery.SIP
             }
         }
 
-        private Task<SocketError> UACInviteTransaction_TransactionInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
+        private async Task<SocketError> UACInviteTransaction_TransactionInformationResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse)
         {
             try
             {
-                UACInviteTransactionInformationResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
-
                 if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
                 {
                     if (sipResponse.Header.RSeq > 0)
                     {
                         // Send a PRACK for this provisional response.
                         PRackRequest = GetPRackRequest(sipResponse);
+                        await SendRequestAsync(PRackRequest);
                     }
                 }
 
@@ -122,12 +121,12 @@ namespace SIPSorcery.SIP
                     CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase, localEP, remoteEP);
                 }
 
-                return Task.FromResult(SocketError.Success);
+                return await UACInviteTransactionInformationResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse); ;
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception UACInviteTransaction_TransactionInformationResponseReceived. " + excp.Message);
-                return Task.FromResult(SocketError.Fault);
+                return SocketError.Fault;
             }
         }
 
@@ -143,14 +142,14 @@ namespace SIPSorcery.SIP
                     if (_sendOkAckManually == false)
                     {
                         AckRequest = Get2xxAckRequest(null, null);
-                        await m_sipTransport.SendRequestAsync(AckRequest);
+                        await SendRequestAsync(AckRequest);
                     }
                 }
                 else
                 {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
                     AckRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI);
-                    await m_sipTransport.SendRequestAsync(AckRequest);
+                    await SendRequestAsync(AckRequest);
                 }
 
                 if (CDR != null)

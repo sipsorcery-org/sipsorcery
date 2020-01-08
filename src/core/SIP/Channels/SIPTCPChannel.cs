@@ -48,6 +48,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -93,6 +94,8 @@ namespace SIPSorcery.SIP
         /// layer to quickly find a channel where the same connection must be re-used.
         /// </summary>
         private ConcurrentDictionary<string, SIPStreamConnection> m_connections = new ConcurrentDictionary<string, SIPStreamConnection>();
+
+        private CancellationTokenSource m_cts = new CancellationTokenSource();
 
         /// <summary>
         /// Creates a SIP channel to listen for and send SIP messages over TCP.
@@ -636,6 +639,7 @@ namespace SIPSorcery.SIP
                 logger.LogDebug($"Closing SIP {ProtDescr} Channel {ListeningEndPoint}.");
 
                 Closed = true;
+                m_cts.Cancel();
 
                 lock (m_connections)
                 {
@@ -680,14 +684,13 @@ namespace SIPSorcery.SIP
 
         /// <summary>
         /// Periodically checks the established connections and closes any that have not had a transmission for a specified 
-        /// period or where the number of connections allowed per IP address has been exceeded. Only relevant for connection
-        /// oriented channels such as TCP and TLS.
+        /// period or where the number of connections allowed per IP address has been exceeded.
         /// </summary>
         private async Task PruneConnections()
         {
             try
             {
-                await Task.Delay(PRUNE_CONNECTIONS_INTERVAL);
+                await Task.Delay(PRUNE_CONNECTIONS_INTERVAL, m_cts.Token);
 
                 while (!Closed)
                 {
@@ -734,12 +737,13 @@ namespace SIPSorcery.SIP
                         }
                     }
 
-                    await Task.Delay(PRUNE_CONNECTIONS_INTERVAL);
+                    await Task.Delay(PRUNE_CONNECTIONS_INTERVAL, m_cts.Token);
                     checkComplete = false;
                 }
 
                 logger.LogDebug($"SIP {ProtDescr} Channel socket on {ListeningEndPoint} pruning connections halted.");
             }
+            catch (OperationCanceledException) { }
             catch (Exception excp)
             {
                 logger.LogError($"Exception SIP {ProtDescr} Channel PruneConnections. " + excp.Message);

@@ -49,7 +49,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Fires when there is an error attempting to receive on the UDP socket.
         /// </summary>
-        public event Action<Exception> OnReceiveError;
+        public event Action<string> OnClosed;
 
         public UdpReceiver(Socket udpSocket)
         {
@@ -82,9 +82,8 @@ namespace SIPSorcery.Net
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
                 // the BeginReceiveMessageFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
                 // case the socket can be considered to be unusable and there's no point trying another receive.
-                logger.LogError($"Exception UdpReceiver.Receive. {excp.Message}");
-                OnReceiveError?.Invoke(excp);
-                Close();
+                logger.LogError($"Exception UdpReceiver.BeginReceive. {excp.Message}");
+                Close(excp.Message);
             }
         }
 
@@ -113,28 +112,20 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-            catch (SocketException sockExcp)
+            catch (SocketException)
             {
-                if (sockExcp.SocketErrorCode == SocketError.ConnectionReset)
-                {
-                    logger.LogWarning("RTP connection closed by remote host.");
-                    OnReceiveError?.Invoke(sockExcp);
-                }
-                else
-                {
-                    logger.LogWarning($"SocketException UdpReceiver.EndReceiveMessageFrom ({sockExcp.ErrorCode}). {sockExcp.Message}");
-                    OnReceiveError?.Invoke(sockExcp);
-                }
-
-                Close();
+                // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
+                // normal RTP operation. For example:
+                // - the RTP connection may start sending before the remote socket starts listening,
+                // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
+                //   or new socket during the transition.
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
             catch (Exception excp)
             {
                 logger.LogError($"Exception UdpReceiver.EndReceiveMessageFrom. {excp.Message}");
-                OnReceiveError?.Invoke(excp);
-                Close();
+                Close(excp.Message);
             }
             finally
             {
@@ -148,12 +139,14 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Closes the socket and stops any new receives from being initiated.
         /// </summary>
-        public void Close()
+        public void Close(string reason)
         {
             if (!m_isClosed)
             {
                 m_isClosed = true;
                 m_udpSocket?.Close();
+
+                OnClosed?.Invoke(reason);
             }
         }
     }
@@ -164,12 +157,13 @@ namespace SIPSorcery.Net
         Control = 1
     }
 
-    public class RTPChannel
+    public class RTPChannel : IDisposable
     {
         private const int MEDIA_PORT_START = 10000;             // Arbitrary port number to start allocating RTP and control ports from.
         private const int MEDIA_PORT_END = 40000;               // Arbitrary port number that RTP and control ports won't be allocated above.
         private const int RTCP_SENDER_REPORT_PERIOD_MILLISECONDS = 10000;
         private const int RTCP_RECEIVER_REPORT_PERIOD_MILLISECONDS = 10000;
+        private const int NO_RTP_TIMEOUT_SECONDS = 35;          // Number of seconds after which to close a channel if no RTP pakcets are received.
 
         private static ILogger logger = Log.Logger;
 
@@ -178,6 +172,18 @@ namespace SIPSorcery.Net
         private Socket m_controlSocket;
         private UdpReceiver m_controlReceiver;
         private bool m_isClosed;
+
+        /// <summary>
+        /// The last remote end point an RTP packet was sent to or received from. Used for 
+        /// reporting purposes only.
+        /// </summary>
+        private IPEndPoint m_remoteRTPEndPoint { get; set; }
+
+        /// <summary>
+        /// The last remote end point an RTCP packet was sent to or received from. Used for
+        /// reporting purposes only.
+        /// </summary>
+        private IPEndPoint m_remoteRtcpEndPoint { get; set; }
 
         /// <summary>
         /// Number of RTP packets sent to the remote party.
@@ -198,16 +204,6 @@ namespace SIPSorcery.Net
         /// Number of RTP bytes received from the remote party.
         /// </summary>
         public int OctetsReceivedCount { get; private set; }
-
-        /// <summary>
-        /// The remote end point RTP packets are being sent.
-        /// </summary>
-        public IPEndPoint RemoteRTPEndPoint { get; set; }
-
-        /// <summary>
-        /// The remote end point RTCP packets are being sent.
-        /// </summary>
-        public IPEndPoint RemoteControlEndPoint { get; set; }
 
         /// <summary>
         /// The local port we are listening for RTP (and whatever else is multiplexed) packets on.
@@ -263,9 +259,8 @@ namespace SIPSorcery.Net
         //private double _lastFrameRate;
 
         public event Action<IPEndPoint, byte[]> OnRTPDataReceived;
-        public event Action OnRTPSocketDisconnected;
         public event Action<IPEndPoint, byte[]> OnControlDataReceived;
-        public event Action OnControlSocketDisconnected;
+        public event Action<string> OnClosed;
 
         /// <summary>
         /// Creates a new RTP channel. The RTP and optionally RTCP sockets will be bound in the constructor.
@@ -292,8 +287,8 @@ namespace SIPSorcery.Net
             ControlLocalEndPoint = m_controlSocket.LocalEndPoint as IPEndPoint;
             ControlPort = ControlLocalEndPoint.Port;
 
-            RemoteRTPEndPoint = rtpRemoteEndPoint;
-            RemoteControlEndPoint = controlEndPoint;
+            m_remoteRTPEndPoint = rtpRemoteEndPoint;
+            m_remoteRtcpEndPoint = controlEndPoint;
 
             m_rtcpSenderReportTimer = new Timer(SendRtcpSenderReport, null, Crypto.GetRandomInt(1000, RTCP_SENDER_REPORT_PERIOD_MILLISECONDS), RTCP_SENDER_REPORT_PERIOD_MILLISECONDS);
             m_rtcpReceiverReportTimer = new Timer(SendRtcpReceiverReport, null, Crypto.GetRandomInt(1000, RTCP_RECEIVER_REPORT_PERIOD_MILLISECONDS), RTCP_SENDER_REPORT_PERIOD_MILLISECONDS);
@@ -308,14 +303,14 @@ namespace SIPSorcery.Net
 
             m_rtpReceiver = new UdpReceiver(m_rtpSocket);
             m_rtpReceiver.OnPacketReceived += OnRTPPacketRecived;
-            m_rtpReceiver.OnReceiveError += OnRTPReceiveError;
+            m_rtpReceiver.OnClosed += Close;
             m_rtpReceiver.BeginReceive();
 
             if (m_controlSocket != null)
             {
                 m_controlReceiver = new UdpReceiver(m_controlSocket);
                 m_controlReceiver.OnPacketReceived += OnControlPacketRecived;
-                m_controlReceiver.OnReceiveError += OnControlReceiveError;
+                m_controlReceiver.OnClosed += Close;
                 m_controlReceiver.BeginReceive();
             }
         }
@@ -323,19 +318,23 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Closes the session's RTP and control ports.
         /// </summary>
-        public void Close()
+        public void Close(string reason)
         {
             if (!m_isClosed)
             {
                 try
                 {
-                    logger.LogDebug("RTPChannel closing, RTP receiver on port " + RTPPort + ".");
+                    string closeReason = reason ?? "normal";
+
+                    logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.");
 
                     m_isClosed = true;
-                    m_rtpReceiver?.Close();
-                    m_controlReceiver?.Close();
+                    m_rtpReceiver?.Close(null);
+                    m_controlReceiver?.Close(null);
                     m_rtcpSenderReportTimer?.Dispose();
                     m_rtcpReceiverReportTimer?.Dispose();
+
+                    OnClosed?.Invoke(closeReason);
                 }
                 catch (Exception excp)
                 {
@@ -360,6 +359,7 @@ namespace SIPSorcery.Net
                 Socket sendSocket = m_rtpSocket;
                 if (sendOn == RTPChannelSocketsEnum.Control)
                 {
+                    m_remoteRtcpEndPoint = dstEndPoint;
                     if (m_controlSocket == null)
                     {
                         throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
@@ -371,6 +371,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
+                    m_remoteRTPEndPoint = dstEndPoint;
                     PacketsSentCount++;
                     OctetsSentCount += buffer.Length; // TODO: Think this needs to adjusted to be only the data and not include RTP headers.
                 }
@@ -420,17 +421,24 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Handler for receive errors on the RTP socket.
+        /// Handler for receive errors on the RTP socket. We need to be very specific about
+        /// which conditions result in the RTP Channel being closed. For example if our 
+        /// RTP socket starts sending first before the other end is ready we can get a socket 
+        /// error. In that case the channel should not be closed as the remote socket is still
+        /// likely to become available.
         /// </summary>
         /// <param name="excp">The exception caught by the receiver.</param>
         private void OnRTPReceiveError(Exception excp)
         {
             if (!m_isClosed)
             {
-                if (excp is SocketException && (excp as SocketException).SocketErrorCode == SocketError.Interrupted)
+                if (excp is SocketException)
                 {
-                    // If the receive has been interrupted it means the socket has been closed.
-                    OnRTPSocketDisconnected?.Invoke();
+                    // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
+                    // normal RTP operation. For example:
+                    // - the RTP connection may start sending before the remote socket starts listening,
+                    // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
+                    //   or new socket during the transition.
                 }
                 else
                 {
@@ -450,6 +458,7 @@ namespace SIPSorcery.Net
         {
             if (packet?.Length > 0)
             {
+                m_remoteRTPEndPoint = remoteEndPoint;
                 RTPLastActivityAt = DateTime.Now;
 
                 PacketsReceivedCount++;
@@ -481,10 +490,13 @@ namespace SIPSorcery.Net
         {
             if (!m_isClosed)
             {
-                if (excp is SocketException && (excp as SocketException).SocketErrorCode == SocketError.Interrupted)
+                if (excp is SocketException)
                 {
-                    // If the receive has been interrupted it means the socket has been closed.
-                    OnControlSocketDisconnected?.Invoke();
+                    // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
+                    // normal RTP operation. For example:
+                    // - the RTP connection may start sending before the remote socket starts listening,
+                    // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
+                    //   or new socket during the transition.
                 }
                 else
                 {
@@ -503,6 +515,7 @@ namespace SIPSorcery.Net
         private void OnControlPacketRecived(UdpReceiver receiver, IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] packet)
         {
             ControlLastActivityAt = DateTime.Now;
+            m_remoteRtcpEndPoint = remoteEndPoint;
 
             OnControlDataReceived?.Invoke(remoteEndPoint, packet);
         }
@@ -513,7 +526,11 @@ namespace SIPSorcery.Net
             {
                 if (m_rtpSocket != null)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogDebug($"SendRtcpSenderReport {m_rtpSocket.LocalEndPoint}->{RemoteRTPEndPoint} pkts {PacketsSentCount} bytes {OctetsSentCount}");
+                    SIPSorcery.Sys.Log.Logger.LogDebug($"SendRtcpSenderReport {m_rtpSocket.LocalEndPoint}->{m_remoteRTPEndPoint} pkts {PacketsSentCount} bytes {OctetsSentCount}");
+                }
+                else
+                {
+                    Close(null);
                 }
             }
             catch (ObjectDisposedException)  // The RTP socket can disappear between the null check and the report send.
@@ -534,7 +551,20 @@ namespace SIPSorcery.Net
             {
                 if (m_rtpSocket != null)
                 {
-                    SIPSorcery.Sys.Log.Logger.LogDebug($"SendRtcpReceiverReport {m_rtpSocket.LocalEndPoint}->{RemoteRTPEndPoint} pkts {PacketsReceivedCount} bytes {OctetsReceivedCount}");
+                    if ((RTPLastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(RTPLastActivityAt).TotalSeconds > NO_RTP_TIMEOUT_SECONDS) ||
+                        (RTPLastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(CreatedAt).TotalSeconds > NO_RTP_TIMEOUT_SECONDS))
+                    {
+                        logger.LogDebug($"RTP channel on {m_rtpSocket.LocalEndPoint} has not had any activity for over {NO_RTP_TIMEOUT_SECONDS} seconds, closing.");
+                        Close("No activity timeout.");
+                    }
+                    else
+                    {
+                        logger.LogDebug($"SendRtcpReceiverReport {m_rtpSocket.LocalEndPoint}->{m_remoteRTPEndPoint} pkts {PacketsReceivedCount} bytes {OctetsReceivedCount}");
+                    }
+                }
+                else
+                {
+                    Close(null);
                 }
             }
             catch (ObjectDisposedException) // The RTP socket can disappear between the null check and the report send.
@@ -547,6 +577,16 @@ namespace SIPSorcery.Net
                 logger.LogError($"Exception SendRtcpReceiverReport. {excp.Message}");
                 m_rtcpReceiverReportTimer?.Dispose();
             }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            Close(null);
+        }
+
+        public void Dispose()
+        {
+            Close(null);
         }
     }
 }

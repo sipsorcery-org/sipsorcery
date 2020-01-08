@@ -278,7 +278,7 @@ namespace SIPSorcery.SIP.App
 
             MediaSession = mediaSession;
             MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
-            MediaSession.OnRtpDisconnected += Hangup;
+            MediaSession.OnRtpClosed += (reason) => Hangup();
 
             var sdpAnswer = await MediaSession.AnswerOffer(sipRequest.Body).ConfigureAwait(false);
 
