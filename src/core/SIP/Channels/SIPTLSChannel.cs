@@ -47,12 +47,29 @@ namespace SIPSorcery.SIP
             IsSecure = true;
             m_serverCertificate = serverCertificate;
 
-            logger.LogInformation($"SIP TLS Channel ready for {ListeningEndPoint} and certificate {m_serverCertificate.Subject}.");
+            if (m_serverCertificate != null)
+            {
+                logger.LogInformation($"SIP TLS Channel ready for {ListeningEndPoint} and certificate {m_serverCertificate.Subject}.");
+            }
+            else
+            {
+                logger.LogInformation($"SIP TLS client only channel ready.");
+            }
         }
 
         public SIPTLSChannel(X509Certificate2 serverCertificate, IPAddress listenAddress, int listenPort) :
             this(serverCertificate, new IPEndPoint(listenAddress, listenPort))
         { }
+
+        /// <summary>
+        /// Creates a client only channel, no incoming connections accepted. This is useful for certain SIP client scenarios
+        /// where all communications are expected to be initiated from our end.
+        /// </summary>
+        /// <param name="addressFamily">Whether to connect to IPv4 or IPv6 servers.</param>
+        public SIPTLSChannel(AddressFamily addressFamily) : base(addressFamily, SIPProtocolsEnum.tls)
+        {
+            IsSecure = true;
+        }
 
         /// <summary>
         /// For the TLS channel the SSL stream must be created and any authentication actions undertaken.

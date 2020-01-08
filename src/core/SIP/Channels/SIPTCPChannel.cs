@@ -84,6 +84,12 @@ namespace SIPSorcery.SIP
         public bool DisableLocalTCPSocketsCheck;
 
         /// <summary>
+        /// If set to true this channel accepts new client connections, i.e. it is listening and acting as a server.
+        /// If false the channel is being used to house outgoing connections only, no incoming clients accepted.
+        /// </summary>
+        public bool IsOutboundOnly { get; private set; } = false;
+
+        /// <summary>
         /// Keeps a list of TCP sockets this process is listening on to prevent it establishing TCP connections to itself.
         /// </summary>
         private static List<string> m_localTCPSockets = new List<string>();
@@ -120,6 +126,23 @@ namespace SIPSorcery.SIP
         public SIPTCPChannel(IPAddress listenAddress, int listenPort)
             : this(new IPEndPoint(listenAddress, listenPort), SIPProtocolsEnum.tcp)
         { }
+
+        /// <summary>
+        /// Creates a client only channel, no incoming connections accepted. This is useful for certain SIP client scenarios
+        /// where all communications are expected to be initiated from our end.
+        /// </summary>
+        /// <param name="addressFamily">Whether to connect to IPv4 or IPv6 servers.</param>
+        /// <param name="protocol">The channel protocol, can be TCP or TLS.</param>
+        public SIPTCPChannel(AddressFamily addressFamily, SIPProtocolsEnum protocol)
+        {
+            ListeningIPAddress = (addressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
+            Port = 0;
+            SIPProtocol = protocol;
+            IsReliable = true;
+
+            // Set the flag so the application knows we are a client only channel.
+            IsOutboundOnly = false;
+        }
 
         /// <summary>
         /// Initialises the SIP channel's socket listener.
@@ -662,15 +685,19 @@ namespace SIPSorcery.SIP
                     m_connections.Clear();
                 }
 
-                try
+                // If it's an outbound only channel there will be no listener.
+                if (m_tcpServerListener != null)
                 {
-                    logger.LogDebug($"Stopping SIP {ProtDescr} Channel listener {ListeningEndPoint}.");
+                    try
+                    {
+                        logger.LogDebug($"Stopping SIP {ProtDescr} Channel listener {ListeningEndPoint}.");
 
-                    m_tcpServerListener.Stop();
-                }
-                catch (Exception stopExcp)
-                {
-                    logger.LogError($"Exception SIP {ProtDescr} Channel Close (shutting down listener). {stopExcp.Message}");
+                        m_tcpServerListener.Stop();
+                    }
+                    catch (Exception stopExcp)
+                    {
+                        logger.LogError($"Exception SIP {ProtDescr} Channel Close (shutting down listener). {stopExcp.Message}");
+                    }
                 }
 
                 logger.LogDebug($"Successfully closed SIP {ProtDescr} Channel for {ListeningEndPoint}.");
