@@ -136,7 +136,8 @@ namespace SIPSorcery.Net
         /// <param name="srtpProtect">Optional secure DTLS context for encrypting RTP packets.</param>
         /// <param name="srtcpProtect">Optional secure DTLS context for encrypting RTCP packets.</param>
         /// <param name="rtpEventSupport">True if RTP event sending and receiving should be supported.</param>
-        public RTPSession(int formatTypeID, ProtectRtpPacket srtpProtect, ProtectRtpPacket srtcpProtect, bool rtpEventSupport)
+        /// <param name="addrFamily">Determines whether the RTP channel will use an IPv4 or IPv6 socket.</param>
+        public RTPSession(int formatTypeID, ProtectRtpPacket srtpProtect, ProtectRtpPacket srtcpProtect, bool rtpEventSupport, AddressFamily addrFamily)
         {
             MediaFormat = new SDPMediaFormat(formatTypeID);
             MediaAnnouncement = new SDPMediaAnnouncement
@@ -160,18 +161,18 @@ namespace SIPSorcery.Net
             SrtpProtect = srtpProtect;
             SrtcpProtect = srtcpProtect;
 
-            Initialise();
+            Initialise(addrFamily);
         }
 
         /// <summary>
         /// Initialises the RTP session state and starts the RTP channel UDP sockets.
         /// </summary>
-        private void Initialise()
+        private void Initialise(AddressFamily addrFamily)
         {
             Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
             SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
 
-            RtpChannel = new RTPChannel(IPAddress.Any, true);
+            RtpChannel = new RTPChannel((addrFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any, true);
 
             MediaAnnouncement.Port = RtpChannel.RTPPort;
             RtpChannel.OnRTPDataReceived += RtpPacketReceived;
@@ -575,13 +576,12 @@ namespace SIPSorcery.Net
         /// <returns>An Session Description Protocol object that can be sent to a remote callee.</returns>
         public SDP GetSDP(IPAddress localAddress)
         {
-            var sdp = new SDP()
+            var sdp = new SDP(localAddress)
             {
                 SessionId = Crypto.GetRandomInt(5).ToString(),
-                Address = localAddress.ToString(),
                 SessionName = "sipsorcery",
                 Timing = "0 0",
-                Connection = new SDPConnectionInformation(localAddress.ToString()),
+                Connection = new SDPConnectionInformation(localAddress),
             };
 
             sdp.Media.Add(MediaAnnouncement);

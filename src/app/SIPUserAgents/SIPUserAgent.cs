@@ -234,9 +234,6 @@ namespace SIPSorcery.SIP.App
         /// <param name="sipCallDescriptor">A call descriptor containing the information about how and where to place the call.</param>
         public void Call(SIPCallDescriptor sipCallDescriptor)
         {
-            RtpSession = new RTPSession((int)m_defaultAudioFormat, null, null, true);
-            RtpSession.OnRtpEvent += OnRemoteRtpEvent;
-
             m_uac = new SIPClientUserAgent(m_transport);
             m_uac.CallTrying += ClientCallTryingHandler;
             m_uac.CallRinging += ClientCallRingingHandler;
@@ -248,6 +245,10 @@ namespace SIPSorcery.SIP.App
             if (serverEndPoint != null)
             {
                 IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
+
+                RtpSession = new RTPSession((int)m_defaultAudioFormat, null, null, true, localIPAddress.AddressFamily);
+                RtpSession.OnRtpEvent += OnRemoteRtpEvent;
+                
                 var sdp = RtpSession.GetSDP(localIPAddress);
                 sipCallDescriptor.Content = sdp.ToString();
 
@@ -329,7 +330,9 @@ namespace SIPSorcery.SIP.App
                 Hangup();
             }
 
-            RtpSession = new RTPSession((int)m_defaultAudioFormat, null, null, true);
+            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(RtpSession.DestinationEndPoint.Address);
+
+            RtpSession = new RTPSession((int)m_defaultAudioFormat, null, null, true, localIPAddress.AddressFamily);
             RtpSession.OnRtpEvent += OnRemoteRtpEvent;
 
             var sipRequest = uas.ClientTransaction.TransactionRequest;
@@ -337,7 +340,7 @@ namespace SIPSorcery.SIP.App
             // TODO: Deal with multiple media offers.
             RtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
             RtpSession.SetRemoteSDP(remoteSDP);
-            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(RtpSession.DestinationEndPoint.Address);
+
             var sdpAnswer = RtpSession.GetSDP(localIPAddress);
 
             m_uas = uas;
