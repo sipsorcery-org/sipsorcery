@@ -366,7 +366,7 @@ namespace SIPSorcery.SIP
                                                     break;
 
                                                 case SIPTransactionStatesEnum.Cancelled:
-                                                    transaction.DeliveryPending = false;
+                                                    sendResult = await SendTransactionFinalResponse(transaction);
                                                     break;
 
                                                 default:

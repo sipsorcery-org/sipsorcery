@@ -36,6 +36,8 @@ namespace SIPSorcery.SIP
             TransactionTimedOut += SIPNonInviteTransaction_TransactionTimedOut;
             TransactionRemoved += SIPNonInviteTransaction_TransactionRemoved;
             TransactionRequestRetransmit += SIPNonInviteTransaction_TransactionRequestRetransmit;
+
+            sipTransport.AddTransaction(this);
         }
 
         private void SIPNonInviteTransaction_TransactionRemoved(SIPTransaction transaction)
