@@ -27,7 +27,7 @@ namespace SIPSorcery.SIP
 {
     internal class SIPTransactionEngine
     {
-        private const int MAX_QUEUEWAIT_PERIOD = 200;              // Maximum time to wait to check for new pending transactions .
+        private const int MAX_QUEUEWAIT_PERIOD = 100;              // Maximum time to wait to check for new pending transactions.
         private static readonly int m_t1 = SIPTimings.T1;
         private static readonly int m_t2 = SIPTimings.T2;
         private static readonly int m_t6 = SIPTimings.T6;
@@ -308,7 +308,7 @@ namespace SIPSorcery.SIP
                         await Task.Delay(MAX_QUEUEWAIT_PERIOD);
                     }
 
-                    foreach (SIPTransaction transaction in m_pendingTransactions.Values.Where(x => x.DeliveryPending || x.ProvisionalResponse != null))
+                    foreach (SIPTransaction transaction in m_pendingTransactions.Values.Where(x => x.DeliveryPending))
                     {
                         try
                         {
@@ -334,15 +334,6 @@ namespace SIPSorcery.SIP
                             }
                             else
                             {
-                                if (transaction.ProvisionalResponse != null)
-                                {
-                                    // Sending provisional responses are fire and forget. If a UAS wants to 
-                                    // send reliable provisional responses there's a seperate response property
-                                    // to set.
-                                    await m_sipTransport.SendResponseAsync(transaction.ProvisionalResponse);
-                                    transaction.ProvisionalResponse = null;
-                                }
-
                                 if (transaction.DeliveryPending && transaction.IsRetransmitDue(m_t1, m_t2))
                                 {
                                     SocketError sendResult = SocketError.Success;
@@ -404,12 +395,7 @@ namespace SIPSorcery.SIP
                                                     break;
 
                                                 case SIPTransactionStatesEnum.Completed:
-                                                    if(transaction.AckRequest != null)
-                                                    {
-                                                        sendResult = await m_sipTransport.SendRequestAsync(transaction.AckRequest);
-                                                    }
                                                     transaction.DeliveryPending = false;
-                                                    // Send ACK.
                                                     break;
 
                                                 case SIPTransactionStatesEnum.Confirmed:

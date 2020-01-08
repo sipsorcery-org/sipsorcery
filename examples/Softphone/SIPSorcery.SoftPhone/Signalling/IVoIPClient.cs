@@ -21,9 +21,9 @@ namespace SIPSorcery.SoftPhone
 {
     public interface IVoIPClient
     {
-        void Call(string destination);
+        Task Call(string destination);
         void Cancel();
-        void Answer();
+        Task Answer();
         void Reject();
         void Redirect(string destination);
         void PutOnHold();

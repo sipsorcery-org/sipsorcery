@@ -9,15 +9,13 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace SIPSorcery.SIP.UnitTests
 {
@@ -129,6 +127,7 @@ namespace SIPSorcery.SIP.UnitTests
                         logger.LogDebug("Server new call received.");
                         var busyResponse = SIPResponse.GetResponse(newCallRequest, SIPResponseStatusCodesEnum.BusyHere, null);
                         (sipTransaction as UASInviteTransaction).SendFinalResponse(busyResponse);
+                        return Task.FromResult(SocketError.Success);
                     };
                     serverTransaction.TransactionStateChanged += (tx) =>
                     {

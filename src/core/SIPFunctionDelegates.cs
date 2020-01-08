@@ -15,6 +15,7 @@
 // ============================================================================
 
 using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace SIPSorcery.SIP
@@ -36,8 +37,8 @@ namespace SIPSorcery.SIP
 
     // SIP Transaction delegates.
     public delegate void SIPTransactionStateChangeDelegate(SIPTransaction sipTransaction);
-    public delegate void SIPTransactionResponseReceivedDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse);
-    public delegate void SIPTransactionRequestReceivedDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest);
+    public delegate Task<SocketError> SIPTransactionResponseReceivedDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPResponse sipResponse);
+    public delegate Task<SocketError> SIPTransactionRequestReceivedDelegate(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest);
     public delegate void SIPTransactionCancelledDelegate(SIPTransaction sipTransaction);
     public delegate void SIPTransactionTimedOutDelegate(SIPTransaction sipTransaction);
     public delegate void SIPTransactionRequestRetransmitDelegate(SIPTransaction sipTransaction, SIPRequest sipRequest, int retransmitNumber);
