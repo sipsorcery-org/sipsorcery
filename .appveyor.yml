@@ -47,7 +47,7 @@ deploy:
     symbol_server:           # remove to push symbols to SymbolSource.org
     artifact: /.*\.nupkg/
     on:
-      branch: master                # release from master branch only
+      # branch: master                # release from master branch only
       APPVEYOR_REPO_TAG: true       # deploy on tag push only
 #  - provider: GitHub
 #    artifact: /.*\.nupkg/           # upload all NuGet packages to release assets

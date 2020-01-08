@@ -32,50 +32,173 @@ Class reference documentation and articles explaining common usage are available
 
 ## Getting Started
 
-The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examples) contains full sample code designed to demonstrate some common use cases. The [GetStarted](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted) example is the best place to start and the main program is shown below.
+The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examples) contains full sample code designed to demonstrate some common use cases. The [GetStarted](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted) example which places a SIP call to `sip:time@sipsorcery.com` is the best place to start and the main program is shown below.
 
 ````csharp
 using System;
-using System.Net;
+using System.Net.Sockets;
+using System.Threading.Tasks;
+using NAudio.Wave;
+using Serilog;
 using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
+using SIPSorcery.Net;
 
 namespace demo
 {
-  class Program
-  {
-    static void Main(string[] args)
+    class Program
     {
-      Console.WriteLine("SIPSorcery demo");
+        private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
+        private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 20;           // This sets the frequency of the RTP packets.
+        private static string DESTINATION = "time@sipsorcery.com";
 
-      var sipTransport = new SIPTransport();
-      var sipChannel = new SIPUDPChannel(IPAddress.Any, 5060);
-      sipTransport.AddSIPChannel(sipChannel);
-
-      sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
-      {
-        Console.WriteLine($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
-
-        if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
+        static async Task Main()
         {
-          SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-          sipTransport.SendResponse(optionsResponse);
+            Console.WriteLine("SIPSorcery Getting Started Demo");
+
+            AddConsoleLogger();
+
+            var sipTransport = new SIPTransport();
+            var userAgent = new SIPUserAgent(sipTransport, null);
+            var rtpSession = new RTPMediaSession((int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork);
+
+            // Connect audio devices to RTP session.
+            WaveInEvent microphone = GetAudioInputDevice();
+            var speaker = GetAudioOutputDevice();
+            ConnectAudioDevicesToRtp(rtpSession, microphone, speaker);
+
+            // Place the call and wait for the result.
+            bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
+
+            if(callResult)
+            {
+                Console.WriteLine("Call attempt successful.");
+                microphone.StartRecording();
+            }
+            else
+            {
+                Console.WriteLine("Call attempt failed.");
+            }
+          
+            Console.WriteLine("press any key to exit...");
+            Console.Read();
+
+            if (userAgent.IsCallActive)
+            {
+                Console.WriteLine("Hanging up.");
+                userAgent.Hangup();
+            }
+
+            // Clean up.
+            microphone.StopRecording();
+            sipTransport.Shutdown();
+            SIPSorcery.Net.DNSManager.Stop();
         }
-      };
 
-      Console.Write("press any key to exit...");
-      Console.Read();
+        /// <summary>
+        /// Connects the RTP packets we receive to the speaker and sends RTP packets for microphone samples.
+        /// </summary>
+        /// <param name="rtpSession">The RTP session to use for sending and receiving.</param>
+        /// <param name="microphone">The default system  audio input device found.</param>
+        /// <param name="speaker">The default system audio output device.</param>
+        private static void ConnectAudioDevicesToRtp(RTPMediaSession rtpSession, WaveInEvent microphone, BufferedWaveProvider speaker)
+        {
+            // Wire up the RTP send session to the audio input device.
+            uint rtpSendTimestamp = 0;
+            microphone.DataAvailable += (object sender, WaveInEventArgs args) =>
+            {
+                byte[] sample = new byte[args.Buffer.Length / 2];
+                int sampleIndex = 0;
 
-      sipTransport.Shutdown();
+                for (int index = 0; index < args.BytesRecorded; index += 2)
+                {
+                    var ulawByte = NAudio.Codecs.MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(args.Buffer, index));
+                    sample[sampleIndex++] = ulawByte;
+                }
+
+                if (rtpSession.DestinationEndPoint != null)
+                {
+                    rtpSession.SendAudioFrame(rtpSendTimestamp, sample);
+                    rtpSendTimestamp += (uint)(8000 / microphone.BufferMilliseconds);
+                }
+            };
+
+            // Wire up the RTP receive session to the audio output device.
+            rtpSession.OnReceivedSampleReady += (sample) =>
+            {
+                for (int index = 0; index < sample.Length; index++)
+                {
+                    short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);
+                    byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
+                    speaker.AddSamples(pcmSample, 0, 2);
+                }
+            };
+        }
+
+        /// <summary>
+        /// Get the audio output device, e.g. speaker.
+        /// Note that NAudio.Wave.WaveOut is not available for .Net Standard so no easy way to check if 
+        /// there's a speaker.
+        /// </summary>
+        private static BufferedWaveProvider GetAudioOutputDevice()
+        {
+            WaveOutEvent waveOutEvent = new WaveOutEvent();
+            var waveProvider = new BufferedWaveProvider(_waveFormat);
+            waveProvider.DiscardOnBufferOverflow = true;
+            waveOutEvent.Init(waveProvider);
+            waveOutEvent.Play();
+
+            return waveProvider;
+        }
+
+        /// <summary>
+        /// Get the audio input device, e.g. microphone. The input device that will provide 
+        /// audio samples that can be encoded, packaged into RTP and sent to the remote call party.
+        /// </summary>
+        private static WaveInEvent GetAudioInputDevice()
+        {
+            if (WaveInEvent.DeviceCount == 0)
+            {
+                throw new ApplicationException("No audio input devices available. No audio will be sent.");
+            }
+            else
+            {
+                WaveInEvent waveInEvent = new WaveInEvent();
+                WaveFormat waveFormat = _waveFormat;
+                waveInEvent.BufferMilliseconds = INPUT_SAMPLE_PERIOD_MILLISECONDS;
+                waveInEvent.NumberOfBuffers = 1;
+                waveInEvent.DeviceNumber = 0;
+                waveInEvent.WaveFormat = waveFormat;
+
+                return waveInEvent;
+            }
+        }
+
+        /// <summary>
+        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        /// </summary>
+        private static void AddConsoleLogger()
+        {
+            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
+            var loggerConfig = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Information)
+                .WriteTo.Console()
+                .CreateLogger();
+            loggerFactory.AddSerilog(loggerConfig);
+            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+        }
     }
-  }
 }
 ````
 
+#### SIP Transport Layer
+
 To use the SIP functionality the first step is to initialise the `SIPTransport` class. It takes care of things like retransmitting requests and responses, DNS resolution, selecting the next hop for requests, matching SIP messages to transactions and more.
 
-The `SIPTransport` class can have multiple SIP channels added to it. A SIP channel is roughly the equivalent to the HTTP connection between a Web Browser and Server. It expects all packets received to be either a SIP request or response. The types of SIP channels supported are UDP, TCP and TLS.
+The `SIPTransport` class can have multiple SIP channels added to it. A SIP channel is roughly the equivalent to the HTTP connection between a Web Browser and Server. It expects all packets received to be either a SIP request or response. The types of SIP channels supported are UDP, TCP, TLS and Web Sockets.
 
-The code below shows how to create a `SIPTransport` instance and add a single UDP channel to it.
+The code below shows how to create a `SIPTransport` instance and add a single UDP channel to it. If no channel is added to the transport it will attempt to create them on demand.
 
 ````csharp
 var sipTransport = new SIPTransport();
@@ -89,65 +212,39 @@ To shutdown the `SIPTransport` use:
 sipTransport.Shutdown();
 ````
 
-There are two common scenarios when using the `SIPTransport` class:
+#### SIP User Agent and RTP Session
 
-1. For a server application wire up the `SIPTransport` event handlers, see code below,
-2. For client applications the `SIPTranpsort` class can be passed as a constructor parameter. There are a number of client user agents in the `app\SIPUserAgents` folder that
-can be used for common client scenarios. See [Next Steps](#next-steps) for a description of the example client applications.
-
-An example of the first approach of wiring up the `SIPTransport` event handlers is shown below. It will respond with a 200 OK response for OPTIONS requests 
-and will ignore all other request types.
+The easiest way to make use of the SIP Transport layer is to use it with a `SIPUserAgent` object. The `SIPUserAgent` takes care of the SIP signalling for most common SIP functions. An `RTPMediaSession` is needed to handle the sending and receiving of `RTP` packets and the media (audio/video) information within them.
 
 ````csharp
-sipTransport.SIPTransportRequestReceived += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
+var userAgent = new SIPUserAgent(sipTransport, null);
+var rtpSession = new RTPMediaSession((int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork);
+````
+
+A call can then be placed using the `SIPUserAgent.Call` method and if successfully answered then sampling of the local audio input device can be started.
+
+````csharp
+// Place the call and wait for the result.
+bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
+
+if(callResult)
 {
-  Console.WriteLine($"Request received {localSIPEndPoint.ToString()}<-{remoteEndPoint.ToString()}: {sipRequest.StatusLine}");
-
-  if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
-  {
-     SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-     sipTransport.SendResponse(optionsResponse);
-  }
-};
-````
-
-## Testing
-
-A convenient tool to test SIP applications is [SIPp](https://github.com/SIPp/sipp). The OPTIONS request handling can be tested from Ubuntu or 
-[WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) using the steps below.
-
-````bash
-$ sudo apt install sip-tester
-$ wget https://raw.githubusercontent.com/saghul/sipp-scenarios/master/sipp_uac_options.xml
-$ sipp -sf sipp_uac_options.xml -m 3 127.0.0.1
-````
-
-If working correctly the message below should appear on the SIPSorcery demo program console:
-
-````bash
-SIPSorcery Getting Started Demo
-press any key to exit...
-Request received udp:127.0.0.1:5060<-udp:127.0.0.1:5061: OPTIONS sip:127.0.0.1:5060 SIP/2.0
-Request received udp:127.0.0.1:5060<-udp:127.0.0.1:5061: OPTIONS sip:127.0.0.1:5060 SIP/2.0
-Request received udp:127.0.0.1:5060<-udp:127.0.0.1:5061: OPTIONS sip:127.0.0.1:5060 SIP/2.0
-````
-
-The SIPp program will also report some test results after a completed test run. In correct operation the `Successful call` row should be greater than 0 and `Failed call` should be 0.
-
-````
--------------------------+---------------------------+--------------------------
-  Successful call        |        0                  |        3
-  Failed call            |        0                  |        0
--------------------------+---------------------------+--------------------------
+	Console.WriteLine("Call attempt successful.");
+	microphone.StartRecording();
+}
+else
+{
+	Console.WriteLine("Call attempt failed.");
+}
 ````
 
 ## Next Steps
 
 Additional example programs are provided to demonstrate how to use the SIPSorcery library in some common scenarios. The example programs are in the `examples` folder.
 
-* [Get Started](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted): Simplest example. Demonstrates how to initialise a SIP channel and respond to an OPTIONS request.
+* [Get Started](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted): Simplest example. Demonstrates how to place a SIP call.
 
-* [SIP Proxy](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPProxy): Expands the `Get Started` example to also handle REGISTER requests. 
+* [SIP Proxy](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SIPProxy): Very rudimentary example for a SIP Proxy and SIP Registrar. 
 
 * [Registration Client](https://github.com/sipsorcery/sipsorcery/tree/master/examples/UserAgentRegister): Demonstrates how to use the `SIPRegistrationUserAgent` class to register with a SIP Registrar server.
 
@@ -161,7 +258,9 @@ Additional example programs are provided to demonstrate how to use the SIPSorcer
 
 * [STUN Server](https://github.com/sipsorcery/sipsorcery/tree/master/examples/StunServer): An example of how to create a basic STUN ([RFC3849](https://tools.ietf.org/html/rfc3489)) server. An explanation of the example is available [here](https://sipsorcery.github.io/sipsorcery/articles/stunserver.html).
 
-* [Call Transfer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/CallTransfer): An example of how to transfer a call using a REFER request as specified in [RFC3515](https://tools.ietf.org/html/rfc3515). An explanation of the example is available [here](https://sipsorcery.github.io/sipsorcery/articles/calltransfer.html).
+* [Call Hold and Blind Transfer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/CallHoldAndTransfer): An example of how to place a call on hold and perform a blind transfer using a REFER request as specified in [RFC3515](https://tools.ietf.org/html/rfc3515). An explanation of the example is available [here](https://sipsorcery.github.io/sipsorcery/articles/callholdtransfer.html).
+
+* [Call Attended Transfer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/AttendedTransfer): An example of how to perform an attended transfer. An explanation of the example is available [here](https://sipsorcery.github.io/sipsorcery/articles/attendedtransfer.html).
 
 * [Send DTMF (as RTP events)](https://github.com/sipsorcery/sipsorcery/tree/master/examples/SendDtmf): An example of how to send DTMF tones using RTP events as specified in [RFC2833](https://tools.ietf.org/html/rfc2833). An explanation of the example is available [here](https://sipsorcery.github.io/sipsorcery/articles/senddtmf.html).
 
