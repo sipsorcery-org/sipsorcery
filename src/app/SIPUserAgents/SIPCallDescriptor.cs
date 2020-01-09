@@ -108,6 +108,10 @@ namespace SIPSorcery.SIP.App
         public Guid DialPlanContextID;
         public int ReinviteDelay = -1;          // If >= 0 a SIP re-INVITE request will be sent to the remote caller after this many seconds. This is an attempt to work around a bug with one way audio and early media on a particular SIP server.
 
+        //rj2
+        public string CallId;
+        public string BranchId;
+
         // Real-time call control variables.
         public string AccountCode;          // If set indicates this is a billable call and this is the account code to bill the call against.
         public string RateCode;             // If set indicates and the call is billable indicates the rate code that should be used to determine the rate for the call.

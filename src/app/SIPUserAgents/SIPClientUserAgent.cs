@@ -9,6 +9,7 @@
 // History:
 // 22 Feb 2008	Aaron Clauson   Created, Hobart, Australia.
 // 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
+// rj2: use CallID,BranchId from CallDescriptor in Call-method
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -189,7 +190,7 @@ namespace SIPSorcery.SIP.App
                     lookupResult = m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI, false);
                 }
                 else
-                { 
+                {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Attempting to resolve " + callURI.Host + ".", Owner));
                     lookupResult = m_sipTransport.GetURIEndPoint(callURI, false);
                 }
@@ -304,6 +305,15 @@ namespace SIPSorcery.SIP.App
                         }
 
                         SIPRequest switchServerInvite = GetInviteRequest(m_sipCallDescriptor, CallProperties.CreateBranchId(), CallProperties.CreateNewCallId(), routeSet, content, sipCallDescriptor.ContentType);
+                        if (this.m_sipCallDescriptor.BranchId.IsNullOrBlank())
+                        {
+                            this.m_sipCallDescriptor.BranchId = CallProperties.CreateBranchId();
+                        }
+                        if (this.m_sipCallDescriptor.CallId.IsNullOrBlank())
+                        {
+                            this.m_sipCallDescriptor.CallId = CallProperties.CreateNewCallId();
+                        }
+
 
                         // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
                         m_serverTransaction = new UACInviteTransaction(m_sipTransport, switchServerInvite, m_outboundProxy);
