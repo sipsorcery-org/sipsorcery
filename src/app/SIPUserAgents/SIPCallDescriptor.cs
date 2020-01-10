@@ -109,7 +109,25 @@ namespace SIPSorcery.SIP.App
         public int ReinviteDelay = -1;          // If >= 0 a SIP re-INVITE request will be sent to the remote caller after this many seconds. This is an attempt to work around a bug with one way audio and early media on a particular SIP server.
 
         //rj2
+        /// <summary>
+        /// A string representing the Call Identifier
+        /// defaults to <see cref="CallProperties.CreateNewCallId()"/> if not set
+        /// 
+        /// CallId MUST be unique between different calls
+        /// </summary>
         public string CallId;
+        /// <summary>
+        /// A string representing the Branch part of the SIP-VIA header to identify Call-Requests and Call-Responses
+        /// defaults to <see cref="CallProperties.CreateBranchId()"/> if not set
+        /// 
+        /// BranchId MUST be unique between different calls and even requests
+        /// BranchId MUST start with "z9hG4bK"
+        /// </summary>
+        /// <remarks>
+        /// to avoid unexpected behaviour:
+        /// BranchId should only be cutomized in fully controlled enclosed environments
+        /// or for testing purposes 
+        /// </remarks>
         public string BranchId;
 
         // Real-time call control variables.

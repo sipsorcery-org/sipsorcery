@@ -857,7 +857,9 @@ namespace SIPSorcery.SIP.App
             {
                 inviteHeader.ProxySendFrom = sipCallDescriptor.ProxySendFrom;
             }
-            inviteRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
+            
+            SIPViaHeader viaHeader = new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), branchId);
+            inviteRequest.Header.Vias.PushViaHeader(viaHeader);
 
             inviteRequest.Body = content;
             inviteRequest.Header.ContentLength = (inviteRequest.Body != null) ? inviteRequest.Body.Length : 0;
