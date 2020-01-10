@@ -9646,6 +9646,12 @@ references:
   commentId: F:SIPSorcery.SIP.App.SIPCallDescriptor.AuthUsername
   fullName: SIPSorcery.SIP.App.SIPCallDescriptor.AuthUsername
   nameWithType: SIPCallDescriptor.AuthUsername
+- uid: SIPSorcery.SIP.App.SIPCallDescriptor.BranchId
+  name: BranchId
+  href: api/SIPSorcery.SIP.App.SIPCallDescriptor.html#SIPSorcery_SIP_App_SIPCallDescriptor_BranchId
+  commentId: F:SIPSorcery.SIP.App.SIPCallDescriptor.BranchId
+  fullName: SIPSorcery.SIP.App.SIPCallDescriptor.BranchId
+  nameWithType: SIPCallDescriptor.BranchId
 - uid: SIPSorcery.SIP.App.SIPCallDescriptor.CALL_DURATION_OPTION_KEY
   name: CALL_DURATION_OPTION_KEY
   href: api/SIPSorcery.SIP.App.SIPCallDescriptor.html#SIPSorcery_SIP_App_SIPCallDescriptor_CALL_DURATION_OPTION_KEY
@@ -9682,6 +9688,12 @@ references:
   commentId: F:SIPSorcery.SIP.App.SIPCallDescriptor.CallDurationLimit
   fullName: SIPSorcery.SIP.App.SIPCallDescriptor.CallDurationLimit
   nameWithType: SIPCallDescriptor.CallDurationLimit
+- uid: SIPSorcery.SIP.App.SIPCallDescriptor.CallId
+  name: CallId
+  href: api/SIPSorcery.SIP.App.SIPCallDescriptor.html#SIPSorcery_SIP_App_SIPCallDescriptor_CallId
+  commentId: F:SIPSorcery.SIP.App.SIPCallDescriptor.CallId
+  fullName: SIPSorcery.SIP.App.SIPCallDescriptor.CallId
+  nameWithType: SIPCallDescriptor.CallId
 - uid: SIPSorcery.SIP.App.SIPCallDescriptor.Content
   name: Content
   href: api/SIPSorcery.SIP.App.SIPCallDescriptor.html#SIPSorcery_SIP_App_SIPCallDescriptor_Content
