@@ -9,6 +9,8 @@
 // History:
 // 22 Feb 2008	Aaron Clauson   Created, Hobart, Australia.
 // 30 Oct 2019  Aaron Clauson   Added support for reliable provisional responses as per RFC3262.
+// rj2: use CallID,BranchId from CallDescriptor in Call-method
+// rj2: return SIPRequest in Call-method
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -189,7 +191,7 @@ namespace SIPSorcery.SIP.App
                     lookupResult = m_sipTransport.GetURIEndPoint(routeSet.TopRoute.URI, false);
                 }
                 else
-                { 
+                {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Attempting to resolve " + callURI.Host + ".", Owner));
                     lookupResult = m_sipTransport.GetURIEndPoint(callURI, false);
                 }
@@ -211,7 +213,7 @@ namespace SIPSorcery.SIP.App
         /// Initiates the call to the remote user agent server.
         /// </summary>
         /// <param name="sipCallDescriptor">The descriptor for the call that describes how to reach the user agent server and other properties.</param>
-        public void Call(SIPCallDescriptor sipCallDescriptor)
+        public SIPRequest Call(SIPCallDescriptor sipCallDescriptor)
         {
             try
             {
@@ -303,7 +305,16 @@ namespace SIPSorcery.SIP.App
                             }
                         }
 
-                        SIPRequest switchServerInvite = GetInviteRequest(m_sipCallDescriptor, CallProperties.CreateBranchId(), CallProperties.CreateNewCallId(), routeSet, content, sipCallDescriptor.ContentType);
+                        if (this.m_sipCallDescriptor.BranchId.IsNullOrBlank())
+                        {
+                            this.m_sipCallDescriptor.BranchId = CallProperties.CreateBranchId();
+                        }
+                        if (this.m_sipCallDescriptor.CallId.IsNullOrBlank())
+                        {
+                            this.m_sipCallDescriptor.CallId = CallProperties.CreateNewCallId();
+                        }
+
+                        SIPRequest switchServerInvite = GetInviteRequest(m_sipCallDescriptor, m_sipCallDescriptor.BranchId, m_sipCallDescriptor.CallId, routeSet, content, sipCallDescriptor.ContentType);
 
                         // Now that we have a destination socket create a new UAC transaction for forwarded leg of the call.
                         m_serverTransaction = new UACInviteTransaction(m_sipTransport, switchServerInvite, m_outboundProxy);
@@ -409,6 +420,8 @@ namespace SIPSorcery.SIP.App
                             m_serverTransaction.CancelCall(rtccError);
                             CallFailed?.Invoke(this, rtccError);
                         }
+
+                        return switchServerInvite;
                     }
                     else
                     {
@@ -447,6 +460,7 @@ namespace SIPSorcery.SIP.App
                 m_serverTransaction?.CancelCall("Unknown exception");
                 CallFailed?.Invoke(this, excp.Message);
             }
+            return null;
         }
 
         /// <summary>
@@ -843,7 +857,9 @@ namespace SIPSorcery.SIP.App
             {
                 inviteHeader.ProxySendFrom = sipCallDescriptor.ProxySendFrom;
             }
-            inviteRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
+            
+            SIPViaHeader viaHeader = new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), branchId);
+            inviteRequest.Header.Vias.PushViaHeader(viaHeader);
 
             inviteRequest.Body = content;
             inviteRequest.Header.ContentLength = (inviteRequest.Body != null) ? inviteRequest.Body.Length : 0;
