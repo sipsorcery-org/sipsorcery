@@ -8,6 +8,7 @@
 //
 // History:
 // 22 Feb 2008	Aaron Clauson   Created, Hobart, Australia.
+// rj2: added overloads for Answer/Reject/Redirect-methods with/out customHeader
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -362,7 +363,17 @@ namespace SIPSorcery.SIP.App
             return Answer(contentType, body, null, answeredDialogue, transferMode);
         }
 
+        public SIPDialogue Answer(string contentType, string body, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode, string[] customHeaders)
+        {
+            return Answer(contentType, body, null, answeredDialogue, transferMode, customHeaders);
+        }
+
         public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode)
+        {
+            return Answer(contentType, body, toTag, answeredDialogue, transferMode, null);
+        }
+
+        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode, string[] customHeaders)
         {
             try
             {
@@ -388,6 +399,13 @@ namespace SIPSorcery.SIP.App
                         okResponse.Header.ContentLength = body.Length;
                         okResponse.Body = body;
                     }
+                    if (customHeaders != null && customHeaders.Length > 0)
+                    {
+                        foreach (string header in customHeaders)
+                        {
+                            okResponse.Header.UnknownHeaders.Add(header);
+                        }
+                    }
 
                     m_uasTransaction.SendFinalResponse(okResponse);
 
@@ -407,6 +425,11 @@ namespace SIPSorcery.SIP.App
         public void AnswerNonInvite(SIPResponseStatusCodesEnum answerStatus, string reasonPhrase, string[] customHeaders, string contentType, string body)
         {
             throw new NotImplementedException();
+        }
+
+        public void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase)
+        {
+            Reject(failureStatus, reasonPhrase, null);
         }
 
         public void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders)
@@ -452,12 +475,25 @@ namespace SIPSorcery.SIP.App
 
         public void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI)
         {
+            Redirect(redirectCode, redirectURI, null);
+        }
+        public void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI, string[] customHeaders)
+        {
             try
             {
                 if (m_uasTransaction.TransactionFinalResponse == null)
                 {
                     SIPResponse redirectResponse = SIPResponse.GetResponse(m_uasTransaction.TransactionRequest, redirectCode, null);
                     redirectResponse.Header.Contact = SIPContactHeader.CreateSIPContactList(redirectURI);
+
+                    if (customHeaders != null && customHeaders.Length > 0)
+                    {
+                        foreach (string header in customHeaders)
+                        {
+                            redirectResponse.Header.UnknownHeaders.Add(header);
+                        }
+                    }
+                    
                     m_uasTransaction.SendFinalResponse(redirectResponse);
                 }
             }
