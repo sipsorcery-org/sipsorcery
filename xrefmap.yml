@@ -8686,12 +8686,30 @@ references:
   commentId: M:SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
   fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
   nameWithType: ISIPServerUserAgent.Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum)
+- uid: SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name: Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum, String[])
+  href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_Answer_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_System_String___
+  commentId: M:SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name.vb: Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum, String())
+  fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String[])
+  fullName.vb: SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String())
+  nameWithType: ISIPServerUserAgent.Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum, String[])
+  nameWithType.vb: ISIPServerUserAgent.Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum, String())
 - uid: SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
   name: Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum)
   href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_
   commentId: M:SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
   fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
   nameWithType: ISIPServerUserAgent.Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum)
+- uid: SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name: Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum, String[])
+  href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_System_String___
+  commentId: M:SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name.vb: Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum, String())
+  fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String[])
+  fullName.vb: SIPSorcery.SIP.App.ISIPServerUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String())
+  nameWithType: ISIPServerUserAgent.Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum, String[])
+  nameWithType.vb: ISIPServerUserAgent.Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum, String())
 - uid: SIPSorcery.SIP.App.ISIPServerUserAgent.Answer*
   name: Answer
   href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_Answer_
@@ -8892,6 +8910,15 @@ references:
   commentId: M:SIPSorcery.SIP.App.ISIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI)
   fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI)
   nameWithType: ISIPServerUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI)
+- uid: SIPSorcery.SIP.App.ISIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI,System.String[])
+  name: Redirect(SIPResponseStatusCodesEnum, SIPURI, String[])
+  href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_Redirect_SIPSorcery_SIP_SIPResponseStatusCodesEnum_SIPSorcery_SIP_SIPURI_System_String___
+  commentId: M:SIPSorcery.SIP.App.ISIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI,System.String[])
+  name.vb: Redirect(SIPResponseStatusCodesEnum, SIPURI, String())
+  fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI, System.String[])
+  fullName.vb: SIPSorcery.SIP.App.ISIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI, System.String())
+  nameWithType: ISIPServerUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI, String[])
+  nameWithType.vb: ISIPServerUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI, String())
 - uid: SIPSorcery.SIP.App.ISIPServerUserAgent.Redirect*
   name: Redirect
   href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_Redirect_
@@ -8899,6 +8926,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.Redirect
   nameWithType: ISIPServerUserAgent.Redirect
+- uid: SIPSorcery.SIP.App.ISIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)
+  name: Reject(SIPResponseStatusCodesEnum, String)
+  href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_
+  commentId: M:SIPSorcery.SIP.App.ISIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)
+  fullName: SIPSorcery.SIP.App.ISIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String)
+  nameWithType: ISIPServerUserAgent.Reject(SIPResponseStatusCodesEnum, String)
 - uid: SIPSorcery.SIP.App.ISIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[])
   name: Reject(SIPResponseStatusCodesEnum, String, String[])
   href: api/SIPSorcery.SIP.App.ISIPServerUserAgent.html#SIPSorcery_SIP_App_ISIPServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___
@@ -11831,12 +11864,30 @@ references:
   commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
   nameWithType: SIPServerUserAgent.Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum)
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name: Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum, String[])
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Answer_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_System_String___
+  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name.vb: Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum, String())
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String[])
+  fullName.vb: SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String())
+  nameWithType: SIPServerUserAgent.Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum, String[])
+  nameWithType.vb: SIPServerUserAgent.Answer(String, String, SIPDialogue, SIPDialogueTransferModesEnum, String())
 - uid: SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
   name: Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum)
   href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_
   commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum)
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum)
   nameWithType: SIPServerUserAgent.Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum)
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name: Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum, String[])
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Answer_System_String_System_String_System_String_SIPSorcery_SIP_SIPDialogue_SIPSorcery_SIP_SIPDialogueTransferModesEnum_System_String___
+  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String,System.String,System.String,SIPSorcery.SIP.SIPDialogue,SIPSorcery.SIP.SIPDialogueTransferModesEnum,System.String[])
+  name.vb: Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum, String())
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String[])
+  fullName.vb: SIPSorcery.SIP.App.SIPServerUserAgent.Answer(System.String, System.String, System.String, SIPSorcery.SIP.SIPDialogue, SIPSorcery.SIP.SIPDialogueTransferModesEnum, System.String())
+  nameWithType: SIPServerUserAgent.Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum, String[])
+  nameWithType.vb: SIPServerUserAgent.Answer(String, String, String, SIPDialogue, SIPDialogueTransferModesEnum, String())
 - uid: SIPSorcery.SIP.App.SIPServerUserAgent.Answer*
   name: Answer
   href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Answer_
@@ -12102,6 +12153,15 @@ references:
   commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI)
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI)
   nameWithType: SIPServerUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI)
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI,System.String[])
+  name: Redirect(SIPResponseStatusCodesEnum, SIPURI, String[])
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Redirect_SIPSorcery_SIP_SIPResponseStatusCodesEnum_SIPSorcery_SIP_SIPURI_System_String___
+  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum,SIPSorcery.SIP.SIPURI,System.String[])
+  name.vb: Redirect(SIPResponseStatusCodesEnum, SIPURI, String())
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI, System.String[])
+  fullName.vb: SIPSorcery.SIP.App.SIPServerUserAgent.Redirect(SIPSorcery.SIP.SIPResponseStatusCodesEnum, SIPSorcery.SIP.SIPURI, System.String())
+  nameWithType: SIPServerUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI, String[])
+  nameWithType.vb: SIPServerUserAgent.Redirect(SIPResponseStatusCodesEnum, SIPURI, String())
 - uid: SIPSorcery.SIP.App.SIPServerUserAgent.Redirect*
   name: Redirect
   href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Redirect_
@@ -12109,6 +12169,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Redirect
   nameWithType: SIPServerUserAgent.Redirect
+- uid: SIPSorcery.SIP.App.SIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)
+  name: Reject(SIPResponseStatusCodesEnum, String)
+  href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_
+  commentId: M:SIPSorcery.SIP.App.SIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)
+  fullName: SIPSorcery.SIP.App.SIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum, System.String)
+  nameWithType: SIPServerUserAgent.Reject(SIPResponseStatusCodesEnum, String)
 - uid: SIPSorcery.SIP.App.SIPServerUserAgent.Reject(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,System.String[])
   name: Reject(SIPResponseStatusCodesEnum, String, String[])
   href: api/SIPSorcery.SIP.App.SIPServerUserAgent.html#SIPSorcery_SIP_App_SIPServerUserAgent_Reject_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_System_String___
@@ -12252,6 +12318,15 @@ references:
   commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession)
   fullName: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent, SIPSorcery.SIP.App.IMediaSession)
   nameWithType: SIPUserAgent.Answer(SIPServerUserAgent, IMediaSession)
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession,System.String[])
+  name: Answer(SIPServerUserAgent, IMediaSession, String[])
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_SIP_App_SIPServerUserAgent_SIPSorcery_SIP_App_IMediaSession_System_String___
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession,System.String[])
+  name.vb: Answer(SIPServerUserAgent, IMediaSession, String())
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent, SIPSorcery.SIP.App.IMediaSession, System.String[])
+  fullName.vb: SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent, SIPSorcery.SIP.App.IMediaSession, System.String())
+  nameWithType: SIPUserAgent.Answer(SIPServerUserAgent, IMediaSession, String[])
+  nameWithType.vb: SIPUserAgent.Answer(SIPServerUserAgent, IMediaSession, String())
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Answer*
   name: Answer
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Answer_
