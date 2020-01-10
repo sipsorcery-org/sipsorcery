@@ -8,6 +8,7 @@
 //
 // History:
 // 30 Aug 2009	Aaron Clauson   Created, Hobart, Australia.
+// rj2: need the original SIPRequest as return of Call-method
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -33,7 +34,7 @@ namespace SIPSorcery.SIP.App
         event SIPCallResponseDelegate CallAnswered;
         event SIPCallFailedDelegate CallFailed;
 
-        void Call(SIPCallDescriptor sipCallDescriptor);
+        SIPRequest Call(SIPCallDescriptor sipCallDescriptor);
         void Cancel();
         void Update(CRMHeaders crmHeaders);
     }
