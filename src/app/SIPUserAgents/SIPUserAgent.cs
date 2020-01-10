@@ -306,23 +306,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaSession">The media session used for this call</param>
         public async Task Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
         {
-            // This call is now taking over any existing call.
-            if (IsCallActive)
-            {
-                Hangup();
-            }
-
-            var sipRequest = uas.ClientTransaction.TransactionRequest;
-
-            MediaSession = mediaSession;
-            MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
-            MediaSession.OnRtpClosed += (reason) => Hangup();
-
-            var sdpAnswer = await MediaSession.AnswerOffer(sipRequest.Body).ConfigureAwait(false);
-
-            m_uas = uas;
-            m_uas.Answer(m_sdpContentType, sdpAnswer, null, SIPDialogueTransferModesEnum.Default);
-            Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+            await Answer(uas, mediaSession, null);
         }
 
         /// <summary>
