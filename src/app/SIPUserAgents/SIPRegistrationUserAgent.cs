@@ -133,7 +133,14 @@ namespace SIPSorcery.SIP.App
             m_owner = owner;
             m_callID = Guid.NewGuid().ToString();
 
-            Log_External = logDelegate;
+            if (logDelegate != null)
+            {
+                Log_External = logDelegate;
+            }
+            else
+            {
+                Log_External = (ev) => logger.LogDebug(ev?.Message);
+            }
         }
 
         public void Start()
