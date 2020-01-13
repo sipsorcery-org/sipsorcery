@@ -10,6 +10,7 @@
 //
 // History:
 // 26 Nov 2019	Aaron Clauson   Created, Dublin, Ireland.
+// rj2: added overload for Answer with customHeader
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -321,6 +322,35 @@ namespace SIPSorcery.SIP.App
 
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer, null, SIPDialogueTransferModesEnum.Default);
+            Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+        }
+
+        /// <summary>
+        /// Answers the call request contained in the user agent server parameter. Note the
+        /// <see cref="AcceptCall(SIPRequest)"/> method should be used to create the user agent server.
+        /// Any existing call will be hungup.
+        /// </summary>
+        /// <param name="uas">The user agent server holding the pending call to answer.</param>
+        /// <param name="mediaSession">The media session used for this call</param>
+        /// <param name="customHeaders">Custom SIP-Headers to use in Answer.</param>
+        public async Task Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
+        {
+            // This call is now taking over any existing call.
+            if (IsCallActive)
+            {
+                Hangup();
+            }
+
+            var sipRequest = uas.ClientTransaction.TransactionRequest;
+
+            MediaSession = mediaSession;
+            MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
+            MediaSession.OnRtpClosed += (reason) => Hangup();
+
+            var sdpAnswer = await MediaSession.AnswerOffer(sipRequest.Body).ConfigureAwait(false);
+
+            m_uas = uas;
+            m_uas.Answer(m_sdpContentType, sdpAnswer, null, SIPDialogueTransferModesEnum.Default, customHeaders);
             Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
         }
 
