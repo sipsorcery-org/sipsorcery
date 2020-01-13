@@ -549,8 +549,6 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                string realm = (m_realm != null) ? m_realm : IPSocket.ParseHostFromSocket(m_registrarHost);
-
                 SIPURI registerURI = m_sipAccountAOR.CopyOf();
                 registerURI.User = null;
 
@@ -582,6 +580,10 @@ namespace SIPSorcery.SIP.App
                 SIPAuthorisationDigest authRequest = sipResponse.Header.AuthenticationHeader.SIPDigest;
                 string username = (m_authUsername != null) ? m_authUsername : m_sipAccountAOR.User;
                 authRequest.SetCredentials(username, m_password, registerRequest.URI.ToString(), SIPMethodsEnum.REGISTER.ToString());
+                if (!this.m_realm.IsNullOrBlank())
+                {
+                    authRequest.Realm = this.m_realm;
+                }
 
                 SIPRequest regRequest = registerRequest.Copy();
                 regRequest.SetSendFromHints(registerRequest.LocalSIPEndPoint);
