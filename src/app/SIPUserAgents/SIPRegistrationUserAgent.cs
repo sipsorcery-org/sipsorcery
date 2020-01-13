@@ -286,7 +286,7 @@ namespace SIPSorcery.SIP.App
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterInProgress, "Initiating registration to " + m_registrarHost + " at " + registrarSIPEndPoint.ToString() + " for " + m_sipAccountAOR.ToString() + ".", m_owner));
                         SIPRequest regRequest = GetRegistrationRequest();
 
-                        SIPNonInviteTransaction regTransaction = new SIPNonInviteTransaction(m_sipTransport, regRequest, m_outboundProxy);
+                        SIPNonInviteTransaction regTransaction = new SIPNonInviteTransaction(m_sipTransport, regRequest, registrarSIPEndPoint);
                         // These handlers need to be on their own threads to take the processing off the SIP transport layer.
                         regTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { ThreadPool.QueueUserWorkItem(delegate { ServerResponseReceived(lep, rep, tn, rsp); }); return Task.FromResult(SocketError.Success); };
                         regTransaction.NonInviteTransactionTimedOut += (tn) => { ThreadPool.QueueUserWorkItem(delegate { RegistrationTimedOut(tn); }); };
@@ -333,10 +333,32 @@ namespace SIPSorcery.SIP.App
                         {
                             m_attempts++;
                             SIPRequest authenticatedRequest = GetAuthenticatedRegistrationRequest(sipTransaction.TransactionRequest, sipResponse);
-                            SIPNonInviteTransaction regAuthTransaction = new SIPNonInviteTransaction(m_sipTransport, authenticatedRequest, m_outboundProxy);
-                            regAuthTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { ThreadPool.QueueUserWorkItem(delegate { AuthResponseReceived(lep, rep, tn, rsp); }); return Task.FromResult(SocketError.Success); };
-                            regAuthTransaction.NonInviteTransactionTimedOut += (tn) => { ThreadPool.QueueUserWorkItem(delegate { RegistrationTimedOut(tn); }); };
-                            m_sipTransport.SendTransaction(regAuthTransaction);
+                            SIPEndPoint registrarSIPEndPoint = m_outboundProxy;
+                            if (registrarSIPEndPoint == null)
+                            {
+                                SIPDNSLookupResult lookupResult = m_sipTransport.GetHostEndPoint(m_registrarHost, false);
+                                if (lookupResult.LookupError != null)
+                                {
+                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Could not resolve " + m_registrarHost + ", " + lookupResult.LookupError, m_owner));
+                                }
+                                else
+                                {
+                                    registrarSIPEndPoint = lookupResult.GetSIPEndPoint();
+                                }
+                            }
+                            if (registrarSIPEndPoint == null)
+                            {
+                                logger.LogWarning("SIPRegistrationAgent could not resolve " + m_registrarHost + ".");
+
+                                RegistrationFailed?.Invoke(m_sipAccountAOR, "Could not resolve " + m_registrarHost + ".");
+                            }
+                            else
+                            {
+                                SIPNonInviteTransaction regAuthTransaction = new SIPNonInviteTransaction(m_sipTransport, authenticatedRequest, registrarSIPEndPoint);
+                                regAuthTransaction.NonInviteTransactionFinalResponseReceived += (lep, rep, tn, rsp) => { ThreadPool.QueueUserWorkItem(delegate { AuthResponseReceived(lep, rep, tn, rsp); }); return Task.FromResult(SocketError.Success); };
+                                regAuthTransaction.NonInviteTransactionTimedOut += (tn) => { ThreadPool.QueueUserWorkItem(delegate { RegistrationTimedOut(tn); }); };
+                                m_sipTransport.SendTransaction(regAuthTransaction);
+                            }
                         }
                     }
                     else
