@@ -301,7 +301,9 @@ namespace SIPSorcery.SIP
             byte[] bHA1 = md5.ComputeHash(Encoding.UTF8.GetBytes(val));
             string HA1 = null;
             for (int i = 0; i < 16; i++)
+            {
                 HA1 += String.Format("{0:x02}", bHA1[i]);
+            }
             return HA1;
         }
     }
