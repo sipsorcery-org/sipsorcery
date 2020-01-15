@@ -95,7 +95,7 @@ namespace SIPSorcery.SIP.App
             m_password = password;
             m_registrarHost = server;
             m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
-            m_callID = Guid.NewGuid().ToString();
+            m_callID = CallProperties.CreateNewCallId();
 
             // Setting the contact to "0.0.0.0" tells the transport layer to populate it at send time.
             m_contactURI = new SIPURI(m_sipAccountAOR.Scheme, IPAddress.Any, 0);
