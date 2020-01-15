@@ -160,6 +160,23 @@ namespace SIPSorcery.SIP
             }
         }
 
+        public string ToStringShort()
+        {
+            try
+            {
+                string methodStr = (Method != SIPMethodsEnum.UNKNOWN) ? Method.ToString() : UnknownMethod;
+
+                string message = methodStr + " " + URI.ToString();
+
+                return message;
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception SIPRequest ToStringShort. ", excp);
+                throw excp;
+            }
+        }
+
         /// <summary>
         /// Creates an identical copy of the SIP Request for the caller.
         /// </summary>
