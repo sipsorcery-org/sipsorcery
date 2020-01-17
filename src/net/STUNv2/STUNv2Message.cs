@@ -136,6 +136,8 @@ namespace SIPSorcery.Net
                 attributeIndex += attr.ToByteBuffer(buffer, attributeIndex);
             }
 
+            //logger.LogDebug($"Pre HMAC STUN message: {ByteBufferInfo.HexStr(buffer, attributeIndex)}");
+
             if (messageIntegrityKey != null)
             {
                 var integrityAttibtue = new STUNv2Attribute(STUNv2AttributeTypesEnum.MessageIntegrity, new byte[MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH]);
@@ -161,6 +163,8 @@ namespace SIPSorcery.Net
                 {
                     Buffer.BlockCopy(BitConverter.GetBytes(attributesLength), 0, buffer, 2, 2);
                 }
+
+                //logger.LogDebug($"Fingerprint inout buffer: {ByteBufferInfo.HexStr(buffer, buffer.Length)}");
 
                 var fingerprintAttribute = new STUNv2Attribute(STUNv2AttributeTypesEnum.FingerPrint, new byte[FINGERPRINT_ATTRIBUTE_CRC32_LENGTH]);
                 uint crc = Crc32.Compute(buffer) ^ FINGERPRINT_XOR;
