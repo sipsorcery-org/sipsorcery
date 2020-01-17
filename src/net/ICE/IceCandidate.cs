@@ -31,32 +31,25 @@ namespace SIPSorcery.Net
         relay = 3
     }
 
-    public enum RtpMediaTypesEnum
-    {
-        None = 0,
-        Audio = 1,
-        Video = 2,
-        Multiple = 3
-    }
-
     public class IceCandidate
     {
         public const string m_CRLF = "\r\n";
         public const string REMOTE_ADDRESS_KEY = "raddr";
         public const string REMOTE_PORT_KEY = "rport";
 
-        public Socket LocalRtpSocket;
-        public Socket LocalControlSocket;
+        //public RTPChannel RtpChannel;
+        //public Socket LocalRtpSocket;
+        //public Socket LocalControlSocket;
         public IPAddress LocalAddress;
-        public Task RtpListenerTask;
+        //public Task RtpListenerTask;
         public TurnServer TurnServer;
         public bool IsGatheringComplete;
         public int TurnAllocateAttempts;
         public IPEndPoint StunRflxIPEndPoint;
         public IPEndPoint TurnRelayIPEndPoint;
-        public IPEndPoint RemoteRtpEndPoint;
-        public bool IsDisconnected;
-        public string DisconnectionMessage;
+        //public IPEndPoint RemoteRtpEndPoint;
+        //public bool IsDisconnected;
+        //public string DisconnectionMessage;
         public DateTime LastSTUNSendAt;
         public DateTime LastStunRequestReceivedAt;
         public DateTime LastStunResponseReceivedAt;
@@ -64,7 +57,6 @@ namespace SIPSorcery.Net
         public bool IsStunRemoteExchangeComplete;     // This is the authenticated STUN request sent by the remote WebRTC peer to us.
         public int StunConnectionRequestAttempts = 0;
         public DateTime LastCommunicationAt;
-        public RtpMediaTypesEnum MediaType;
         public bool HasConnectionError;
 
         public string Transport;
@@ -75,9 +67,27 @@ namespace SIPSorcery.Net
         public int RemotePort;
         public string RawString;
 
-        public bool IsConnected
+        //public bool IsConnected
+        //{
+        //    get { return IsStunLocalExchangeComplete == true && IsStunRemoteExchangeComplete && !IsDisconnected; }
+        //}
+
+        private IceCandidate()
+        { }
+
+        public IceCandidate(IPAddress localAddress, int port, TurnServer turnServer)
         {
-            get { return IsStunLocalExchangeComplete == true && IsStunRemoteExchangeComplete && !IsDisconnected; }
+            LocalAddress = localAddress;
+            Port = port;
+            TurnServer = turnServer;
+        }
+
+        public IceCandidate(string transport, IPAddress remoteAddress, int port, IceCandidateTypesEnum candidateType)
+        {
+            Transport = transport;
+            NetworkAddress = remoteAddress.ToString();
+            Port = port;
+            CandidateType = candidateType;
         }
 
         public static IceCandidate Parse(string candidateLine)
@@ -107,11 +117,11 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            var candidateStr = String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ host generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), LocalAddress.ToString(), (LocalRtpSocket.LocalEndPoint as IPEndPoint).Port);
+            var candidateStr = String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ host generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), LocalAddress.ToString(), Port);
 
             if (StunRflxIPEndPoint != null)
             {
-                candidateStr += String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), StunRflxIPEndPoint.Address, StunRflxIPEndPoint.Port, LocalAddress.ToString(), (LocalRtpSocket.LocalEndPoint as IPEndPoint).Port);
+                candidateStr += String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), StunRflxIPEndPoint.Address, StunRflxIPEndPoint.Port, LocalAddress.ToString(), Port);
                 //logger.LogDebug(" " + srflxCandidateStr);
                 //iceCandidateString += srflxCandidateStr;
             }

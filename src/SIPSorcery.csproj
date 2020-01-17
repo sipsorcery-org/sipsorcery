@@ -10,6 +10,7 @@
     <Compile Remove="net\RTSP\RTSPClient.cs" />
     <Compile Remove="net\RTSP\RTSPConnection.cs" />
     <Compile Remove="net\RTSP\RTSPServer.cs" />
+    <Compile Remove="net\WebRTC\WebRtcPeer.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,6 +38,10 @@
     <PackageReference Include="System.Net.WebSockets.Client">
       <Version>4.3.2</Version>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="net\WebRTC\" />
   </ItemGroup>
   
   <PropertyGroup>

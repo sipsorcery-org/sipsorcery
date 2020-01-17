@@ -36,13 +36,15 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public class RTPMediaSession : RTPSession, IMediaSession
     {
+        public const int DTMF_EVENT_DURATION = 1200;        // Default duration for a DTMF event.
+
         private static readonly ILogger logger = Log.Logger;
 
         public bool LocalOnHold { get; set; }
         public bool RemoteOnHold { get; set; }
 
         public RTPMediaSession(int formatTypeID, AddressFamily addrFamily)
-             : base(formatTypeID, null, null, true, addrFamily)
+             : base(formatTypeID, addrFamily, false, null)
         { }
 
         /// <summary>
@@ -68,7 +70,7 @@ namespace SIPSorcery.SIP.App
 
         public Task SendDtmf(byte key, CancellationToken cancellationToken = default)
         {
-            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
             return SendDtmfEvent(dtmfEvent, cancellationToken);
         }
 
