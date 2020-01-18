@@ -9,7 +9,7 @@
 // - No switch from Sender Report to Receiver Report if there are no sends
 //   within the 2 sample period Window. For 2 party sessions the tiny 
 //   bandwidth saving does not justify the complexity.
-// - First report will be sent striaght after the first RTP send. The initial
+// - First report will be sent straight after the first RTP send. The initial
 //   delay is inconsequential for 2 party sessions.
 // - The jitter calculation uses a millisecond resolution NTP timestamp for the
 //   arrival time. RFC3550 states to use a arrival clock with the same resolution
@@ -255,7 +255,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                // RTCP reports are not crticial enough to bubble the exception up to the application.
+                // RTCP reports are not critical enough to bubble the exception up to the application.
                 logger.LogError($"Exception SendReportTimerCallback. {excp.Message}");
                 m_rtcpReportTimer?.Dispose();
             }
@@ -305,10 +305,10 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Gets a pseudo-randominsed interval for the next RTCP report period.
+        /// Gets a pseudo-randomised interval for the next RTCP report period.
         /// </summary>
         /// <param name="baseInterval">The base report interval to randomise.</param>
-        /// <returns>A value in milliseconds to use for teh next RTCP report interval.</returns>
+        /// <returns>A value in milliseconds to use for the next RTCP report interval.</returns>
         private int GetNextRtcpInterval(int baseInterval)
         {
             return Crypto.GetRandomInt((int)(RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR * baseInterval),

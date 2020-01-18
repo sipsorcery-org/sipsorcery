@@ -8,7 +8,7 @@
 // Alphons van der Heijden
 //
 // History:
-// 28 Mar 2008	Aaron Clauson   Added to sipwitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
+// 28 Mar 2008	Aaron Clauson   Added to sipswitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
 // 14 Oct 2019  Aaron Clauson   Synchronised with latest version of source from at https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 //
 // License:
@@ -79,7 +79,7 @@ and the MINIMUM field in the appropriate SOA.  Thus MINIMUM is a lower
 bound on the TTL field for all RRs in a zone.  Note that this use of
 MINIMUM should occur when the RRs are copied into the response and not
 when the zone is loaded from a master file or via a zone transfer.  The
-reason for this provison is to allow future dynamic update facilities to
+reason for this provision is to allow future dynamic update facilities to
 change the SOA RR with known semantics.
 */
 

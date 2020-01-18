@@ -101,7 +101,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Gets the attribute to include in a serialised SDP payload for a media stram status.
+        /// Gets the attribute to include in a serialised SDP payload for a media stream status.
         /// </summary>
         /// <param name="mediaStreamStatus">The status to get the attribute for.</param>
         /// <returns>An attribute string matching the status value.</returns>

@@ -52,7 +52,7 @@ namespace SIPSorcery.SIP.UnitTests
         //        m_eventDialogSchema.Add(m_dialogXMLNS, schemaReader);
         //    }
 
-        //    // The mandatory version attribue on dialog-info is missing.
+        //    // The mandatory version attribute on dialog-info is missing.
         //    string invalidDialogInfoXMLStr =
         //         "<?xml version='1.0' encoding='utf-16'?>" +
         //         "<dialog-info state='full' entity='sip:test@test.com' xmlns='urn:ietf:params:xml:ns:dialog-info'>" +
@@ -216,7 +216,7 @@ namespace SIPSorcery.SIP.UnitTests
         }
 
         /// <summary>
-        /// Tests that a dialog-info block of XML text with a child dialog containting participants is correctly parsed 
+        /// Tests that a dialog-info block of XML text with a child dialog containing participants is correctly parsed 
         /// and the value of the critical pieces of information is correctly extracted.
         /// </summary>
         [Fact]

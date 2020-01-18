@@ -19,8 +19,8 @@ using System.Text.RegularExpressions;
 namespace SIPSorcery.Net
 {
     /// <summary>
-    /// A list of standard media formats that can be idenitifed by an ID if
-    /// there is no qualifiying format attribute provided.
+    /// A list of standard media formats that can be identified by an ID if
+    /// there is no qualifying format attribute provided.
     /// </summary>
     public enum SDPMediaFormatsEnum
     {
@@ -83,7 +83,7 @@ namespace SIPSorcery.Net
     {
         /// <summary>
         /// The mandatory ID for the media format. Warning, even though some ID's are normally used to represent
-        /// a standard media type, e.g "0" for "PCMU" etc, there is no guaranteee that's the case. "0" can be used
+        /// a standard media type, e.g "0" for "PCMU" etc, there is no guarantee that's the case. "0" can be used
         /// for any media format if there is a format attribute describing it. In the absence of a format attribute
         /// then it is required that it represents a standard media type.
         /// 

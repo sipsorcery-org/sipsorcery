@@ -529,7 +529,7 @@ namespace SIPSorcery.SIP.App
                 {
                     try
                     {
-                        // Cases found where the Contact in the INVITE was to a different protocol than the oringinal request.
+                        // Cases found where the Contact in the INVITE was to a different protocol than the original request.
                         var inviteContact = m_uasTransaction.TransactionRequest.Header.Contact.FirstOrDefault();
                         if (inviteContact == null)
                         {

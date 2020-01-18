@@ -123,7 +123,7 @@ namespace SIPSorcery.SIP
 
                 if (bytesRead == 0)
                 {
-                    // SSL stream was disconnected by the remote end pont sending a FIN or RST.
+                    // SSL stream was disconnected by the remote end point sending a FIN or RST.
                     logger.LogDebug($"TLS socket disconnected by {sipStreamConnection.RemoteEndPoint}.");
                     OnSIPStreamDisconnected(sipStreamConnection, SocketError.ConnectionReset);
                 }

@@ -148,7 +148,7 @@ namespace SIPSorcery.SIP.App
                         SIPURI origContact = sipResponse.Header.Contact[0].ContactURI;
                         sipResponse.Header.Contact[0].ContactURI = new SIPURI(origContact.Scheme, remoteEndPoint);
 
-                        //logger.LogDebug("INVITE response Contact URI identified as containing private address, original " + origContact + " adjustied to " + remoteEndPoint.ToString() + ".");
+                        //logger.LogDebug("INVITE response Contact URI identified as containing private address, original " + origContact + " adjusted to " + remoteEndPoint.ToString() + ".");
                         //FireProxyLogEvent(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.Registrar, SIPMonitorServerTypesEnum.ContactRegisterInProgress, "INVITE Response contact adjusted from " + origContact + " to " + remoteEndPoint.ToString() + ".", username));
                     }
                 }

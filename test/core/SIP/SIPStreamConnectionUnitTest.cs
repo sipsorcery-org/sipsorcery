@@ -72,7 +72,7 @@ CRLF +
 
         /// <summary>
         /// Tests that a socket read leaves the buffers and positions in the correct state when the SIP message has spurious characters
-        /// preceeding the transmission.
+        /// preceding the transmission.
         /// </summary>
         [Fact]
         public void TestSocketReadWithBytesToSkipTest()
@@ -114,7 +114,7 @@ CRLF + CRLF +
 
         /// <summary>
         /// Tests that a socket read leaves the buffers and positions in the correct state when the receive contains multiple 
-        /// SIP message has spurious characters preceeding the transmission.
+        /// SIP message has spurious characters preceding the transmission.
         /// </summary>
         [Fact]
         public void TestSocketReadWithTwoMessagesAndBytesToSkipTest()

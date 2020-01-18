@@ -236,7 +236,7 @@ namespace SIPSorcery.Net
         /// type ID field in the RTP header.</param>
         /// <param name="mediaAnnouncement">Optional but required if the GetSDP method is being relied
         /// upon to describe this session.</param>
-        /// <returns>The ID of the stream fo this media type. It must be supplied when
+        /// <returns>The ID of the stream of this media type. It must be supplied when
         /// doing a send for this stream.</returns>
         public int AddStream(int payloadTypeID, SDPMediaAnnouncement mediaAnnouncement)
         {
@@ -394,7 +394,7 @@ namespace SIPSorcery.Net
         /// It's intended as a quick convenient way to send something like a test pattern image over an RTSP connection. More than likely it won't be suitable when a high
         /// quality image is required since the header used in this method does not support quantization tables.
         /// </summary>
-        /// <param name="jpegBytes">The raw encoded bytes of teh JPEG image to transmit.</param>
+        /// <param name="jpegBytes">The raw encoded bytes of the JPEG image to transmit.</param>
         /// <param name="jpegQuality">The encoder quality of the JPEG image.</param>
         /// <param name="jpegWidth">The width of the JPEG image.</param>
         /// <param name="jpegHeight">The height of the JPEG image.</param>
@@ -692,7 +692,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Does the actual sending of an RTP packet using the specified data nad header values.
+        /// Does the actual sending of an RTP packet using the specified data and header values.
         /// </summary>
         /// <param name="rtpChannel">The RTP channel to send from.</param>
         /// <param name="dstRtpSocket">Destination to send to.</param>

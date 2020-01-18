@@ -12,7 +12,7 @@
 // 17 Nov 2019  Aaron Clauson   Added IPAddress.Any support, see https://github.com/sipsorcery/sipsorcery/issues/97.
 //
 // Notes:
-// This class is using the "Asychronous Programming Model" (APM*) BeginReceiveMessageFrom/EndReceiveMessageFrom approach. 
+// This class is using the "Asynchronous Programming Model" (APM*) BeginReceiveMessageFrom/EndReceiveMessageFrom approach. 
 // The motivation for the decision is that it's the only one of the UDP socket receives methods that provides access to 
 // the received on IP address when listening on IPAddress.Any.
 //

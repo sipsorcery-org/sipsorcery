@@ -21,7 +21,7 @@
 //       +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
 //
 // (V)ersion (2 bits) = 2
-// (P)adding (1 bit) = Inidcates whether the packet contains additional padding octets.
+// (P)adding (1 bit) = Indicates whether the packet contains additional padding octets.
 // Reception Report Count (RC) (5 bits) = The number of reception report blocks contained in this packet. A
 //      value of zero is valid.
 // Packet Type (PT) (8 bits) = Contains the constant 200 to identify this as an RTCP SR packet.

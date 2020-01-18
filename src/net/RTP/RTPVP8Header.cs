@@ -22,14 +22,14 @@ namespace SIPSorcery.Net
     /// <summary>
     /// Examples of size Payload Header size calculations:
     /// 
-    /// For length of first parition 54: S0 = 4, S1 = 0x32, S2 = 0.
-    /// For length of first parition 1777: S0 = 1, S1 = 0xde, S2 = 0.
+    /// For length of first partition 54: S0 = 4, S1 = 0x32, S2 = 0.
+    /// For length of first partition 1777: S0 = 1, S1 = 0xde, S2 = 0.
     /// </summary>
     public class RTPVP8Header
     {
         // Payload Descriptor Fields.
         public bool ExtendedControlBitsPresent;     // Indicated whether extended control bits are present.
-        public bool NonReferenceFrame;              // When set indicates the frame can be discarded wihtout affecting any other frames.
+        public bool NonReferenceFrame;              // When set indicates the frame can be discarded without affecting any other frames.
         public bool StartOfVP8Partition;            // Should be set when the first payload octet is the start of a new VP8 partition.
         public byte PartitionIndex;                 // Denotes the VP8 partition index that the first payload octet of the packet belongs to.
         public bool IsPictureIDPresent;
@@ -79,7 +79,7 @@ namespace SIPSorcery.Net
             {
                 if (((rtpPayload[2] >> 7) & 0x01) == 1)
                 {
-                    // The Picure ID is using two bytes.
+                    // The Picture ID is using two bytes.
                     vp8Header._length = 4;
                     payloadHeaderStartIndex = 4;
                     vp8Header.PictureID = BitConverter.ToUInt16(rtpPayload, 2);

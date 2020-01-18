@@ -492,7 +492,7 @@ CRLF +
         }
 
         /// <summary>
-        /// Test that parsing a request with a single byte missing from its content is correcty handled.
+        /// Test that parsing a request with a single byte missing from its content is correctly handled.
         /// </summary>
         [Fact]
         public void ParseRequestOneByteMissingTest()
@@ -523,7 +523,7 @@ CRLF +
         }
 
         /// <summary>
-        /// Test that parsing a request with a single byte missing from its content is correcty handled.
+        /// Test that parsing a request with a single byte missing from its content is correctly handled.
         /// </summary>
         [Fact]
         public void ParseRequestOneByteExtraTest()
@@ -623,7 +623,7 @@ CRLF +
         }
 
         /// <summary>
-        /// Tests that processing a buffer with a SIP message and some preceeding spurious characters skips the correct number of bytes.
+        /// Tests that processing a buffer with a SIP message and some preceding spurious characters skips the correct number of bytes.
         /// </summary>
         [Fact]
         public void TestProcessRecevieWithBytesToSkipTest()

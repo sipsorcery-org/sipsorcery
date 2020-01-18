@@ -108,8 +108,8 @@ namespace SIPSorcery.SIP
         public DateTime Created = DateTime.Now;
 
         /// <summary>
-        /// For INVITEs this is the time they recieved the final response and is used to calculate the time 
-        /// they expie as T6 after this.
+        /// For INVITEs this is the time they received the final response and is used to calculate the time 
+        /// they expire as T6 after this.
         /// </summary>
         public DateTime CompletedAt = DateTime.Now;
 
@@ -160,12 +160,12 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// The most recent non reliable provisonal response that was requested to be sent.
+        /// The most recent non reliable provisional response that was requested to be sent.
         /// </summary>
         //public SIPResponse ProvisionalResponse { get; internal set; }
 
         /// <summary>
-        /// The most recent provisonal response that was requested to be sent. If reliable provisional responses
+        /// The most recent provisional response that was requested to be sent. If reliable provisional responses
         /// are being used then this response needs to be sent reliably in the same manner as the final response.
         /// </summary>
         public SIPResponse ReliableProvisionalResponse { get; private set; }
@@ -543,7 +543,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Marks a trnasaction as expired and prevents anymore delivery attemps of outstanding 
+        /// Marks a transaction as expired and prevents anymore delivery attempts of outstanding 
         /// requests of responses.
         /// </summary>
         internal void Expire()

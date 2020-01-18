@@ -32,7 +32,7 @@ namespace SIPSorcery.SIP
 {
     /// <summary>
     ///  A SIP transport Channel for establishing an outbound connection  over a Web Socket communications layer as per RFC7118.
-    ///  The channel can manage multiple connections. All SIP clients wishing to initate a connection to a SIP web socket
+    ///  The channel can manage multiple connections. All SIP clients wishing to initiate a connection to a SIP web socket
     ///  server should use a single instance of this class.
     ///  
     /// <code>
@@ -60,7 +60,7 @@ namespace SIPSorcery.SIP
         public const string WEB_SOCKET_SECURE_URI_PREFIX = "wss://";
 
         /// <summary>
-        /// Maintains a list of current egresss web socket connections (one's that have been initiated by us).
+        /// Maintains a list of current egress web socket connections (one's that have been initiated by us).
         /// </summary>
         private ConcurrentDictionary<string, ClientWebSocketConnection> m_egressConnections = new ConcurrentDictionary<string, ClientWebSocketConnection>();
 
@@ -170,7 +170,7 @@ namespace SIPSorcery.SIP
                     var recvBuffer = new ArraySegment<byte>(new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize]);
                     Task<WebSocketReceiveResult> receiveTask = clientWebSocket.ReceiveAsync(recvBuffer, m_cts.Token);
 
-                    // There's currently no way to get the socket IP end point used by the client web socket to estasblish
+                    // There's currently no way to get the socket IP end point used by the client web socket to establish
                     // the connection. Instead provide a dummy local end point that has as much of the information as we can.
                     IPEndPoint localEndPoint = new IPEndPoint((serverEndPoint.Address.AddressFamily == AddressFamily.InterNetwork) ? IPAddress.Any : IPAddress.IPv6Any, 0);
                     SIPEndPoint localSIPEndPoint = new SIPEndPoint(serverEndPoint.Protocol, localEndPoint, this.ID, connectionID);
@@ -356,7 +356,7 @@ namespace SIPSorcery.SIP
                         }
                         else
                         {
-                            logger.LogWarning($"Client web socket connection to {conn.ServerUri} returned without completeing, closing.");
+                            logger.LogWarning($"Client web socket connection to {conn.ServerUri} returned without completing, closing.");
                             _ = Close(conn.ConnectionID, conn.Client);
                         }
                     }

@@ -26,7 +26,7 @@ namespace SIPSorcery.SIP
     /// Represents a series of name value pairs that are optionally included in SIP URIs and also as an additional
     /// optional setting on some SIP Headers (Contact, To, From, Via).
     /// This class also treats the header value of a SIP URI as a special case of a SIP parameter. The difference between
-    /// a paramter and a SIP URI header is the start and delimiter characters used.
+    /// a parameter and a SIP URI header is the start and delimiter characters used.
     ///
     /// <code>
     /// <![CDATA[

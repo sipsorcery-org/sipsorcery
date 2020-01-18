@@ -9,7 +9,7 @@
 //
 // History:
 // 19 Oct 2007	Aaron Clauson	Created, (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Dublin, Ireland (www.sipsorcery.com).
-// 14 Oct 2019  Aaron Clauson   Updatyes after synchronsing DNS classes with source from https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
+// 14 Oct 2019  Aaron Clauson   Updates after synchronizing DNS classes with source from https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 // rj2: IDisposable for LookupRequest
 // rj2: Get/Set custom DNSSuffixes to append in DNS queries (instead of suffixes from NIC configuration)
 // rj2: use DNS-Cache

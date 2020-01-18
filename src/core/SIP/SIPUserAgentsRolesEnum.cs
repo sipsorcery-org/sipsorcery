@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // Filename: SIPUserAgentsRolesEnum.cs
 //
-// Description: The roles a SIP User Agent can beahve as.
+// Description: The roles a SIP User Agent can behave as.
 //
 // Author(s):
 // Aaron Clauson

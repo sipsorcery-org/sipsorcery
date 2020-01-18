@@ -459,14 +459,14 @@ namespace SIPSorcery.Net
                 mkiLen = null;
                 lifeTimeString = null;
                 base64KeySalt = null;
-                //KeyInfo must only contain wisible printing characters
-                //and 40 char long, as its is the base64representation of concated Key and Salt
+                //KeyInfo must only contain visible printing characters
+                //and 40 char long, as its is the base64representation of concatenated Key and Salt
                 int pospipe1 = keyInfo.IndexOf(PIPE);
                 if (pospipe1 > 0)
                 {
                     base64KeySalt = keyInfo.Substring(0, pospipe1);
                     //find lifetime and mki
-                    //both may be ommitted, but mki is recognized by a colon
+                    //both may be omitted, but mki is recognized by a colon
                     //usually lifetime comes before mki, if specified
                     int posclnmki = keyInfo.IndexOf(COLON, pospipe1 + 1);
                     int pospipe2 = keyInfo.IndexOf(PIPE, pospipe1 + 1);

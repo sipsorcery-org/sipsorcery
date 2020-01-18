@@ -83,7 +83,7 @@ namespace SIPSorcery.SIP
         public string CRMPictureURL { get; set; }
 
         /// <summary>
-        /// Used as a flag to indicate whether to send an immeidate or slightly delayed re-INVITE request 
+        /// Used as a flag to indicate whether to send an immediate or slightly delayed re-INVITE request 
         /// when a call is answered as an attempt to help solve audio issues.
         /// </summary>
         public int ReinviteDelay = 0;
@@ -342,7 +342,7 @@ namespace SIPSorcery.SIP
         /// This is safe to do even if the request does not end up being sent.
         /// </summary>
         /// <param name="method">The method of the SIP request to create.</param>
-        /// <returns>An in dailog SIP request.</returns>
+        /// <returns>An in dialog SIP request.</returns>
         public SIPRequest GetInDialogRequest(SIPMethodsEnum method)
         {
             CSeq++;

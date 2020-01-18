@@ -31,12 +31,12 @@ namespace SIPSorcery.Net
         public string ConnectionNetworkType = "IN";
         
         /// <summary>
-        /// Sesssion level address family.
+        /// Session level address family.
         /// </summary>
         public string ConnectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
 
         /// <summary>
-        /// IP or mulicast address for the media connection.
+        /// IP or multicast address for the media connection.
         /// </summary>
         public string ConnectionAddress;
 
