@@ -6,6 +6,7 @@
 // History:
 // 04 Mar 2016	Aaron Clauson	Created.
 // 25 Aug 2019  Aaron Clauson   Updated from video only to audio and video.
+// 18 Jan 2020  Aaron Clauson   Combined WebRTCPeer and WebRTCSession.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -58,7 +59,6 @@ a=end-of-candidates
 a=ice-ufrag:{4}
 a=ice-pwd:{5}{6}
 a=setup:actpass
-a=mid:audio
 a=sendonly
 a=rtcp-mux
 a=mid:audio
@@ -72,7 +72,6 @@ a=ice-ufrag:{2}
 a=ice-pwd:{3}{4}
 a=bundle-only 
 a=setup:actpass
-a=mid:video
 a=sendonly
 a=rtcp-mux
 a=mid:video
@@ -85,7 +84,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         private static ManualResetEvent _secureChannelInitMre = new ManualResetEvent(false);
 
-        //public WebRtcPeer Peer;
+        public string SessionID { get; private set; }
         public string SDP;
         public string SdpSessionID;
         public string LocalIceUser;
@@ -146,10 +145,13 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         private string _dtlsCertFilePath;
         private string _dtlsKeyFilePath;
 
-        public WebRtcSession(string dtlsCertFilePath, string dtlsKeyFilePath, List<IPAddress> offerAddresses)
+        public WebRtcSession(string dtlsCertFilePath, string dtlsKeyFilePath, string dtlsFingerprint, List<IPAddress> offerAddresses)
         {
             _dtlsCertFilePath = dtlsCertFilePath;
             _dtlsKeyFilePath = dtlsKeyFilePath;
+            _dtlsCertificateFingerprint = dtlsFingerprint;
+
+            SessionID = Guid.NewGuid().ToString();
 
             _rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork, true, null);
             _videoSessionID = _rtpSession.AddStream(VP8_PAYLOAD_TYPE_ID, null);
@@ -194,7 +196,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     else if (buffer[0] >= 128 && buffer[0] <= 191)
                     {
                         // RTP/RTCP packet.
-
+                        // Don't need to do anything here, these get handled by the RTPSession.
                     }
                     else if (buffer[0] >= 20 && buffer[0] <= 63)
                     {
@@ -329,7 +331,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     _rtpSession.DestinationEndPoint = RemoteEndPoint;
                     _rtpSession.SendVp8Frame(sampleTimestamp, sample, streamID);
                 }
-                else if(mediaType == SDPMediaTypesEnum.audio)
+                else if (mediaType == SDPMediaTypesEnum.audio)
                 {
                     int streamID = _audioSessionID;
                     _rtpSession.DestinationEndPoint = RemoteEndPoint;
@@ -377,8 +379,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                         localIceCandidateString += iceCandidate.ToString();
                     }
 
-                    var localIceUser = Crypto.GetRandomString(20);
-                    var localIcePassword = Crypto.GetRandomString(20) + Crypto.GetRandomString(20);
+                    LocalIceUser = LocalIceUser ?? Crypto.GetRandomString(20);
+                    LocalIcePassword = LocalIcePassword ?? Crypto.GetRandomString(20) + Crypto.GetRandomString(20);
                     //var localIceCandidate = GetIceCandidatesForMediaType(RtpMediaTypesEnum.None).First();
 
                     var offerHeader = String.Format(_sdpOfferTemplate, Crypto.GetRandomInt(10).ToString());
@@ -391,24 +393,22 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                          rtpSecurityDescriptor,
                          IPAddress.Loopback,
                          localIceCandidateString.TrimEnd(),
-                         localIceUser,
-                         localIcePassword,
+                         LocalIceUser,
+                         LocalIcePassword,
                          dtlsAttribute);
 
                     var videoOffer = String.Format(_sdpVideoOfferTemplate,
                         rtpSecurityDescriptor,
                         IPAddress.Loopback,
-                        localIceUser,
-                         localIcePassword,
-                         dtlsAttribute);
+                        LocalIceUser,
+                        LocalIcePassword,
+                        dtlsAttribute);
 
                     string offer = offerHeader + audioOffer + videoOffer;
 
                     //logger.LogDebug("WebRTC Offer SDP: " + offer);
 
                     SDP = offer;
-                    LocalIceUser = localIceUser;
-                    LocalIcePassword = localIcePassword;
 
                     // TODO: Reactivate.
                     //Task.Run(() => { SendStunConnectivityChecks(); });
