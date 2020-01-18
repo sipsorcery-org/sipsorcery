@@ -91,7 +91,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that the VP8 header is correctly parsed when a two byte picure ID is used.
+        /// Tests that the VP8 header is correctly parsed when a two byte picture ID is used.
         /// </summary>
         [Fact]
         public void CheckLengthForTwoBytePicutreIDTest()
@@ -107,7 +107,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that the VP8 header is correctly parsed when a single byte picure ID is used.
+        /// Tests that the VP8 header is correctly parsed when a single byte picture ID is used.
         /// </summary>
         [Fact]
         public void CheckLengthForSingleBytePicutreIDTest()

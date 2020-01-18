@@ -9,7 +9,7 @@
 // History:
 // 11 Mar 2009	Aaron Clauson	Created, Hobart, Australia.
 // 28 Oct 2019  Aaron Clauson   Added lookup mechanism for local machine hostname. Useful for testing purposes.
-// 18 Nov 2019  Aaron Clauson   Added Task-based Asyn Pattern (TAP) resolve method (i.e. allow await/async).
+// 18 Nov 2019  Aaron Clauson   Added Task-based Async Pattern (TAP) resolve method (i.e. allow await/async).
 // rj2: enable NAPTR lookup
 // rj2: IPv6 Name Resolution
 // rj2: add nullable argument to select if you prefer to get IPv4 or IPv6 Addresses in NameResolution
@@ -53,7 +53,7 @@ namespace SIPSorcery.SIP.App
     public class SIPDNSManager
     {
         private const int DNS_LOOKUP_TIMEOUT = 5;                       // 2 second timeout for DNS lookups.
-        private const int DNS_A_RECORD_LOOKUP_TIMEOUT = 15;              // 5 second timeout for crticial A record DNS lookups.
+        private const int DNS_A_RECORD_LOOKUP_TIMEOUT = 15;              // 5 second timeout for critical A record DNS lookups.
 
         private static ILogger logger = Log.Logger;
 

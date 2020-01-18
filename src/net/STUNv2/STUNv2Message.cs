@@ -164,8 +164,6 @@ namespace SIPSorcery.Net
                     Buffer.BlockCopy(BitConverter.GetBytes(attributesLength), 0, buffer, 2, 2);
                 }
 
-                //logger.LogDebug($"Fingerprint inout buffer: {ByteBufferInfo.HexStr(buffer, buffer.Length)}");
-
                 var fingerprintAttribute = new STUNv2Attribute(STUNv2AttributeTypesEnum.FingerPrint, new byte[FINGERPRINT_ATTRIBUTE_CRC32_LENGTH]);
                 uint crc = Crc32.Compute(buffer) ^ FINGERPRINT_XOR;
                 byte[] fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);

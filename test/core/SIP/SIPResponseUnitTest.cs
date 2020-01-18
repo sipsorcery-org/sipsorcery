@@ -393,7 +393,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPResponse okResp = SIPResponse.ParseSIPResponse(sipMessageBuffer);
 
             Assert.True(okResp.Header.Vias.Length == 2, "The wrong number of Record-Route headers were present in the parsed response.");
-            Assert.True(okResp.Header.Vias.TopViaHeader.ContactAddress == "194.213.29.100:5060", "The top via contact address was not ocrrectly parsed.");
+            Assert.True(okResp.Header.Vias.TopViaHeader.ContactAddress == "194.213.29.100:5060", "The top via contact address was not correctly parsed.");
 
             logger.LogDebug("-----------------------------------------");
         }

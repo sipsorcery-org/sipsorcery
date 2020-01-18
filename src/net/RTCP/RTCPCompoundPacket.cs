@@ -26,7 +26,7 @@ namespace SIPSorcery.Net
     /// Represents an RTCP compound packet consisting of 1 or more
     /// RTCP packets combined together in a single buffer. According to RFC3550 RTCP 
     /// transmissions should always have at least 2 RTCP packets (a sender/receiver report
-    /// and an SDES report). This implementation does not enforce that contraint for
+    /// and an SDES report). This implementation does not enforce that constraint for
     /// received reports but does for sends.
     /// </summary>
     public class RTCPCompoundPacket
@@ -90,7 +90,7 @@ namespace SIPSorcery.Net
                             offset += byeLength;
                             break;
                         default:
-                            logger.LogWarning($"RTCPCompoundPacket did not recgnise packet type ID {packetTypeID}.");
+                            logger.LogWarning($"RTCPCompoundPacket did not recognise packet type ID {packetTypeID}.");
                             offset = Int32.MaxValue;
                             break;
                     }
@@ -101,7 +101,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Serialises a compound RTCP packet to a byte array ready for transmission.
         /// </summary>
-        /// <returns>A byte array representing a serialised comound RTCP packet.</returns>
+        /// <returns>A byte array representing a serialised compound RTCP packet.</returns>
         public byte[] GetBytes()
         {
             if (SenderReport == null && ReceiverReport == null)

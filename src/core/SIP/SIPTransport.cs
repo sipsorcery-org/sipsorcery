@@ -59,7 +59,7 @@ namespace SIPSorcery.SIP
         private bool m_closed = false;
 
         /// <summary>
-        /// If true allows this class to attempt to create a new SIP channel if a requried protocol
+        /// If true allows this class to attempt to create a new SIP channel if a required protocol
         /// is missing. Set to false to prevent new channels being created on demand.
         /// Note that when listening SIP end points are required they will always need to be
         /// created manually.
@@ -127,7 +127,7 @@ namespace SIPSorcery.SIP
         /// and will NOT use a transaction engine.</param>
         /// <param name="sipResolver">Optional DNS resolver. If null a default one will be used. Examples of 
         /// where a custom DNS resolver is useful is when the application is acting as a Proxy and forwards
-        /// all messages to an upstream SIP server irrespecitive of the URI.</param>
+        /// all messages to an upstream SIP server irrespective of the URI.</param>
         public SIPTransport(bool stateless, ResolveSIPEndPointDelegate sipResolver)
         {
             if (sipResolver == null)
@@ -237,7 +237,7 @@ namespace SIPSorcery.SIP
         /// up to 10s.
         /// </summary>
         /// <param name="sipChannel">The SIP channel that received the message.</param>
-        /// <param name="localEndPoint">The local end point the message was receeived on.</param>
+        /// <param name="localEndPoint">The local end point the message was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the message came from.</param>
         /// <param name="buffer">A buffer containing the received message.</param>
         public Task ReceiveMessage(SIPChannel sipChannel, SIPEndPoint localEndPoint, SIPEndPoint remoteEndPoint, byte[] buffer)
@@ -283,7 +283,7 @@ namespace SIPSorcery.SIP
         /// The steps to process requests for Route headers are:
         ///  1. If route set is empty no further action is required, forward to destination resolved from request URI,
         ///  2. If the request URI is identified as a value that was previously set as a Route by this SIP agent it means the
-        ///     previous hop was a strict router. Replace the reqest URI with the last Route header and go to next step,
+        ///     previous hop was a strict router. Replace the request URI with the last Route header and go to next step,
         ///  3. If the top most route header was set by this SIP agent then remove it and go to next step,
         ///  4. If the top most route set does contain the lr parameter then forward to the destination resolved by it,
         ///  5. If the top most route header does NOT contain the lr parameter is must be popped and inserted as the request URI
@@ -345,7 +345,7 @@ namespace SIPSorcery.SIP
 
         /// <summary>
         /// Allows raw bytes to be sent from one of the SIPTransport sockets. This should not be used for SIP payloads and instead is
-        /// provided to allow other types of payloads to be multi-plexed on the SIP socket. Examples are sending NAT keep alives and
+        /// provided to allow other types of payloads to be multiplexed on the SIP socket. Examples are sending NAT keep-alives and
         /// STUN responses where it's useful to use the same socket as the SIP packets.
         /// </summary>
         /// <param name="localSIPEndPoint">The local SIP end point to do the send from. Must match the local end point of one of
@@ -489,7 +489,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Sends a SIP request/response and keeps track of whether a response/acknowledgement has been received.
+        /// Sends a SIP request/response and keeps track of whether a response/acknowledgment has been received.
         /// For UDP "reliably" means retransmitting the message up to eleven times.
         /// If no response is received then periodic retransmits are made for up to T1 x 64 seconds (defaults to 30 seconds with 11 retransmits).
         /// </summary>
@@ -517,7 +517,7 @@ namespace SIPSorcery.SIP
         ///   different channel to send on compared to the one it arrived on.
         /// 
         /// Forwarding logic:
-        /// - If the channel hints are set then an attempt will be made to use them to find an approriate channel to
+        /// - If the channel hints are set then an attempt will be made to use them to find an appropriate channel to
         ///   send the response on. If the hinted channel can't be found or it is found but is the wrong protocol then
         ///   move onto the next step,
         /// - The information in the Top Via header will be used to find the best channel to forward the response on.
@@ -642,7 +642,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Attempts to resolve the desintation end point for a SIP response from the top SIP Via header. 
+        /// Attempts to resolve the destination end point for a SIP response from the top SIP Via header. 
         /// Normally the address in the header will be an IP address but the standard does permit a host which 
         /// will require a DNS lookup.
         /// </summary>
@@ -836,7 +836,7 @@ namespace SIPSorcery.SIP
                                                 }
                                                 else
                                                 {
-                                                    SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, "ACK recieved on " + requestTransaction.TransactionState + " transaction, ignoring.", SIPValidationFieldsEnum.Request, null);
+                                                    SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, "ACK received on " + requestTransaction.TransactionState + " transaction, ignoring.", SIPValidationFieldsEnum.Request, null);
                                                 }
                                             }
                                             else if (sipRequest.Method == SIPMethodsEnum.PRACK)
@@ -879,7 +879,7 @@ namespace SIPSorcery.SIP
                                             else if (sipRequest.Header.UnknownRequireExtension != null)
                                             {
                                                 // The sender requires an extension that we don't support.
-                                                SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, $"Rejecting request to one or more required exensions not being supported, unsupported extensions: {sipRequest.Header.UnknownRequireExtension}.", SIPValidationFieldsEnum.Request, sipRequest.ToString());
+                                                SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, $"Rejecting request to one or more required extensions not being supported, unsupported extensions: {sipRequest.Header.UnknownRequireExtension}.", SIPValidationFieldsEnum.Request, sipRequest.ToString());
                                                 SIPResponse badRequireResp = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadExtension, null);
                                                 badRequireResp.Header.Unsupported = sipRequest.Header.UnknownRequireExtension;
                                                 return SendResponseAsync(badRequireResp);
@@ -981,7 +981,7 @@ namespace SIPSorcery.SIP
                     return matchingChannel;
                 }
 
-                // Check for an exact match on the destination address and a SIP channel. Barring duplciate IP addresses and other 
+                // Check for an exact match on the destination address and a SIP channel. Barring duplicate IP addresses and other 
                 // shenanigans this would mean we're on the same machine. Note this will also catch loopback to loopback cases.
                 matchingChannel = GetSIPChannel(protocol, dst.Address);
                 if (matchingChannel != null)
@@ -1022,7 +1022,7 @@ namespace SIPSorcery.SIP
         /// Helper method for GetSIPChannelForDestination to do the SIP channel match check when it is known 
         /// exactly which SIP protocol and listening IP address we're after.
         /// </summary>
-        /// <param name="protocol">The SIP protcol to find a match for.</param>
+        /// <param name="protocol">The SIP protocol to find a match for.</param>
         /// <param name="reqdAddress">The listening IP address to find a match for.</param>
         /// <returns>A SIP channel if a match is found or null if not.</returns>
         private SIPChannel GetSIPChannel(SIPProtocolsEnum protocol, IPAddress listeningAddress)
@@ -1041,7 +1041,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Gets a list of this tranpsort's SIP channels.
+        /// Gets a list of this transport's SIP channels.
         /// </summary>
         /// <returns>A list of SIP channels.</returns>
         public List<SIPChannel> GetSIPChannels()

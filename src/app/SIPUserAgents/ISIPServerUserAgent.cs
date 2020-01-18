@@ -31,7 +31,7 @@ namespace SIPSorcery.SIP.App
         SIPAccount SIPAccount { get; set; }
         bool IsAuthenticated { get; set; }
         bool IsB2B { get; }
-        bool IsInvite { get; }                      // Set to true for server user agents that are handling an INVITE reqquest.
+        bool IsInvite { get; }                      // Set to true for server user agents that are handling an INVITE request.
         SIPRequest CallRequest { get; }
         string CallDestination { get; }
         bool IsUASAnswered { get; }

@@ -351,7 +351,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Ends an async send on one of the channel's sockets.
         /// </summary>
-        /// <param name="ar">The async result to compelete the send with.</param>
+        /// <param name="ar">The async result to complete the send with.</param>
         private void EndSendTo(IAsyncResult ar)
         {
             try

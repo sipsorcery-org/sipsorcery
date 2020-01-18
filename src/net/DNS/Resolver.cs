@@ -9,7 +9,7 @@
 // Aaron Clauson
 //
 // History:
-// 28 Mar 2008	Aaron Clauson   Added to sipwitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
+// 28 Mar 2008	Aaron Clauson   Added to sipswitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
 // 28 Mar 2008  Aaron Clauson   Moved timeout from being class scoped field to parameter for individual DNS requests.
 // 28 Mar 2008  Aaron Clauson   Removed deprecated System.DNS methods.
 // 28 Mar 2008  Aaron Clauson   Added log4net logging.
@@ -413,7 +413,7 @@ namespace Heijden.DNS
                 }
             }
 
-            logger.LogDebug("DNS cache curent result found for " + strKey + ".");
+            logger.LogDebug("DNS cache current result found for " + strKey + ".");
             return response;
         }
 
@@ -428,9 +428,6 @@ namespace Heijden.DNS
                 throw new ApplicationException("Cannot add a DNS response to the cache with an empty question key.");
             }
 
-            // Question question = response.Questions[0];
-
-            //string questionKey = question.QClass + "-" + question.QType + "-" + question.QName;
             if (response.Answers.Count == 0)
             {
                 response.Error = "DNS response had no answers.";
@@ -1073,7 +1070,7 @@ namespace Heijden.DNS
                     // Check that the active DNS server is getting responses.
                     if (m_receiveTimeouts.ContainsKey(m_activeDNSServer) && m_receiveTimeouts[m_activeDNSServer] >= SWITCH_ACTIVE_TIMEOUT_COUNT)
                     {
-                        // Switch active DNS server to alternative end point as too many consectutive receive failures on this one.
+                        // Switch active DNS server to alternative end point as too many consecutive receive failures on this one.
                         foreach (IPEndPoint dnsServer in m_DnsServers)
                         {
                             if (dnsServer != m_activeDNSServer)

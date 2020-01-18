@@ -95,7 +95,7 @@ namespace SIPSorcery.SIP.App
         public SIPCallDirection CallDirection;  // Indicates whether the call is incoming out outgoing relative to this server. An outgoing call is one that is placed by a user the server authenticates.
         public string ContentType;
         public string Content;
-        public int DelaySeconds;                        // An amount in seconds to delay the intiation of this call when used as part of a dial string.
+        public int DelaySeconds;                        // An amount in seconds to delay the initiation of this call when used as part of a dial string.
         public SIPCallRedirectModesEnum RedirectMode;   // Determines how the call will handle 3xx redirect responses.
         public int CallDurationLimit;                   // If non-zero sets a limit on the duration of any call created with this descriptor.
         public bool MangleResponseSDP = true;           // If false indicates the response SDP should be left alone if it contains a private IP address.
@@ -125,7 +125,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <remarks>
         /// to avoid unexpected behaviour:
-        /// BranchId should only be cutomized in fully controlled enclosed environments
+        /// BranchId should only be customized in fully controlled enclosed environments
         /// or for testing purposes 
         /// </remarks>
         public string BranchId;

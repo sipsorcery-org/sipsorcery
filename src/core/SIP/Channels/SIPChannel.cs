@@ -77,7 +77,7 @@ namespace SIPSorcery.SIP
         protected static int CHANNEL_ID_LENGTH = 3;         // Length of the random numeric string to use for channel ID's.
         private static int CREATE_CHANNELID_ATTEMPTS = 10; // Number of attempts to make at creating a random channel ID.
 
-        private static ConcurrentDictionary<int, int> _inUseChannelIDs = new ConcurrentDictionary<int, int>(); // Make sure we don't create dulpicate channel ID's.
+        private static ConcurrentDictionary<int, int> _inUseChannelIDs = new ConcurrentDictionary<int, int>(); // Make sure we don't create duplicate channel ID's.
 
         protected ILogger logger = Log.Logger;
 
@@ -88,8 +88,8 @@ namespace SIPSorcery.SIP
         public string ID { get; protected set; }
 
         /// <summary>
-        /// The list of IP addresses that this SIP channel is listening on. The only mechansim
-        /// for a channel to have mutliple addresses is if it's socket address is set to 
+        /// The list of IP addresses that this SIP channel is listening on. The only mechanism
+        /// for a channel to have multiple addresses is if it's socket address is set to 
         /// IPAddress.Any.
         /// </summary>
         public static List<IPAddress> LocalIPAddresses { get; private set; }
@@ -102,7 +102,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// The IP address the channel is listening on. Can be IPAddress.Any so cannot
         /// be used directly in SIP Headers, SIP URIs etc. Instead call GetContactURI and
-        /// provdie the desintation address.
+        /// provide the destination address.
         /// </summary>
         public IPAddress ListeningIPAddress { get; protected set; }
 
@@ -146,7 +146,7 @@ namespace SIPSorcery.SIP
 
         /// <summary>
         /// Indicates whether close has been called on the SIP channel. Once closed a SIP channel can no longer be used
-        /// to send or receive messages. It should generally only be called at the same time the SIP tranpsort class using it
+        /// to send or receive messages. It should generally only be called at the same time the SIP transport class using it
         /// is shutdown.
         /// </summary>
         protected bool Closed;
@@ -217,7 +217,7 @@ namespace SIPSorcery.SIP
         public abstract Task<SocketError> SendAsync(SIPEndPoint dstEndPoint, byte[] buffer, string connectionIDHint = null);
 
         /// <summary>
-        /// Asynchronous SIP message send over a secure TLS connetion to a remote end point.
+        /// Asynchronous SIP message send over a secure TLS connection to a remote end point.
         /// </summary>
         /// <param name="dstEndPoint">The remote end point to send the message to.</param>
         /// <param name="buffer">The data to send.</param>
@@ -293,11 +293,11 @@ namespace SIPSorcery.SIP
         /// The contact SIP URI to be used for contacting this SIP channel WHEN sending to the destination IP address.
         /// The contact URI can change based on the destination. For example if the SIP channel is listening on IPAddress.Any
         /// a destination address of 127.0.0.1 will result in a contact of sip:127.0.0.1:X. Using the same channel to
-        /// send to a desintation address on the internet will result in a different URI.
+        /// send to a destination address on the Internet will result in a different URI.
         /// </summary>
         /// <param name="scheme">The SIP scheme to use for the Contact URI.</param>
         /// <param name="dstEndPoint">The destination SIP end point the Contact URI is for. For a SIPChannel using
-        /// IPAddress.Any the desintation needs to be known so it can select the correct local address.</param>
+        /// IPAddress.Any the destination needs to be known so it can select the correct local address.</param>
         public SIPURI GetContactURI(SIPSchemesEnum scheme, SIPEndPoint dstEndPoint)
         {
             return new SIPURI(scheme, GetLocalSIPEndPointForDestination(dstEndPoint));

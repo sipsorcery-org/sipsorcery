@@ -779,7 +779,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            // This is an example of a malformed response recieved in the wild. It matches the bnf format for a request,
+            // This is an example of a malformed response received in the wild. It matches the bnf format for a request,
             // if the format of the SIP URI is not taken into account.
             string sipMsg =
                 "16394SIP/2.0 200 OK" + m_CRLF +
@@ -951,7 +951,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(Encoding.UTF8.GetBytes(sipMsg), null, null);
             SIPRequest byeReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
-            Assert.True(byeReq.Header.Routes.Length == 7, "The wrong number of Ruute headers were parsed.");
+            Assert.True(byeReq.Header.Routes.Length == 7, "The wrong number of Route headers were parsed.");
             SIPRoute nextRoute = byeReq.Header.Routes.PopRoute();
             Assert.True(nextRoute.Host == "220.240.255.198:64300", "The first route was incorrect.");
             nextRoute = byeReq.Header.Routes.PopRoute();

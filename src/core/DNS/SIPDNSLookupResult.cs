@@ -88,7 +88,7 @@ namespace SIPSorcery.SIP
         public Dictionary<SIPServicesEnum, SIPDNSServiceResult> SIPNAPTRResults;
         public List<SIPDNSServiceResult> SIPSRVResults;
         public List<SIPDNSLookupEndPoint> EndPointResults;
-        public bool Pending;                // If an aysnc lookup request is made this will be set to true if no immediate result is available.
+        public bool Pending;                // If an async lookup request is made this will be set to true if no immediate result is available.
 
         public SIPDNSLookupResult(SIPURI uri)
         {

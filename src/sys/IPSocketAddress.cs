@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // Filename: IPSocketAddress.cs
 //
-// Description: Converts special charatcers in XML to their safe equivalent.
+// Description: Converts special characters in XML to their safe equivalent.
 //
 // Author(s):
 // Aaron Clauson

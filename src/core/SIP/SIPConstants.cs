@@ -124,7 +124,7 @@ namespace SIPSorcery.SIP
 
     /// <summary>
     /// A list of the transport layer protocols that are supported (the network layers
-    /// supported are IPv4 amd IPv6).
+    /// supported are IPv4 mad IPv6).
     /// </summary>
     public enum SIPProtocolsEnum
     {

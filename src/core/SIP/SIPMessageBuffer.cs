@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // Filename: SIPMessageBuffer.cs
 //
-// Desciption: Functionality to determine whether a SIP message is a request or
+// Description: Functionality to determine whether a SIP message is a request or
 // a response and break a message up into its constituent parts.
 //
 // Author(s):
@@ -50,10 +50,10 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Attempts to parse a SIP message from a single buffer that can only contain a single message.
         /// </summary>
-        /// <param name="buffer">The buffer rhat will be parsed for a SIP message.</param>
+        /// <param name="buffer">The buffer that will be parsed for a SIP message.</param>
         /// <param name="localSIPEndPoint">The end point the message was received on.</param>
         /// <param name="remoteSIPEndPoint">The end point the message was received from.</param>
-        /// <returns>If successfull a SIP message or null if not.</returns>
+        /// <returns>If successful a SIP message or null if not.</returns>
         public static SIPMessageBuffer ParseSIPMessage(byte[] buffer, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)
         {
             string message = null;
@@ -105,7 +105,7 @@ namespace SIPSorcery.SIP
         /// <param name="message">The string to parse.</param>
         /// <param name="localSIPEndPoint">The end point the message was received on.</param>
         /// <param name="remoteSIPEndPoint">The end point the message was received from.</param>
-        /// <returns>If successfull a SIP message or null if not.</returns>
+        /// <returns>If successful a SIP message or null if not.</returns>
         public static SIPMessageBuffer ParseSIPMessage(string message, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)
         {
             try
@@ -279,7 +279,7 @@ namespace SIPSorcery.SIP
                 {
                     if (possibleHeaderFound)
                     {
-                        // A possilbe match has been found for the Content-Length header. The next characters can only be whitespace or colon.
+                        // A possible match has been found for the Content-Length header. The next characters can only be whitespace or colon.
                         if (buffer[index] == ':')
                         {
                             // The Content-Length header has been found.

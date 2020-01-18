@@ -14,7 +14,7 @@
 //                              ICMP packets in a firewall rule had to be set.
 //
 // Notes:
-// netsh advfirewall firewall add rule name="All ICPM v4" dir=in action=allow protocol=icmpv4:any,any
+// netsh advfirewall firewall add rule name="All ICMP v4" dir=in action=allow protocol=icmpv4:any,any
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

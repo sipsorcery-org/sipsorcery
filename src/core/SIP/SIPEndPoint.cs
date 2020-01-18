@@ -1,13 +1,14 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SIPEndPoint.cs
 //
-// Description: Represents what needs to be known about a SIP end point for network communications.
+// Description: Represents what needs to be known about a SIP end point for 
+// network communications.
 //
 // Author(s):
 // Aaron Clauson
 //
 // History:
-// 14 Oct 2019	Aaron Clauson	Added mssing header.
+// 14 Oct 2019	Aaron Clauson	Added missing header.
 // 07 Nov 2019  Aaron Clauson   Added ConnectionID property.
 //
 // License: 
@@ -21,7 +22,7 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.SIP
 {
     /// <summary>
-    /// This class is a more specific verions of the SIPURI class BUT is only concerned with the network and
+    /// This class is a more specific versions of the SIPURI class BUT is only concerned with the network and
     /// transport properties. It contains all the information needed to determine the remote end point to
     /// deliver a SIP request or response to.
     /// 

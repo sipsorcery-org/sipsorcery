@@ -179,7 +179,7 @@ namespace SIPSorcery.SIP.UnitTests
             SIPParameters testParam1 = new SIPParameters(testParamStr1, ';');
             logger.LogDebug("Parameter 1:" + testParam1.ToString());
 
-            Assert.True(testParam1.Has("emptykey"), "The empty parameter \"emptykey\" was not correctly extracted from the paramter string.");
+            Assert.True(testParam1.Has("emptykey"), "The empty parameter \"emptykey\" was not correctly extracted from the parameter string.");
             Assert.True(Regex.Match(testParam1.ToString(), "emptykey").Success, "The emptykey name was not in the output parameter string.");
         }
     }

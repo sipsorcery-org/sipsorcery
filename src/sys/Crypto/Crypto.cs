@@ -274,15 +274,15 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
-        /// This vesion reads the whole file in at once. This is not great since it can consume
+        /// This version reads the whole file in at once. This is not great since it can consume
         /// a lot of memory if the file is large. However a buffered approach generates
-        /// diferrent hashes across different platforms.
+        /// different hashes across different platforms.
         /// </summary>
         /// <param name="filepath"></param>
         /// <returns></returns>
         public static string GetHash(string filepath)
         {
-            // Check and then attempt to open the plaintext stream.
+            // Check and then attempt to open the plain-text stream.
             FileStream fileStream = GetFileStream(filepath);
 
             // Encrypt the file using its hash as the key.
@@ -360,7 +360,7 @@ namespace SIPSorcery.Sys
         /// Returns the hash with each byte as an X2 string. This is useful for situations where
         /// the hash needs to only contain safe ASCII characters.
         /// </summary>
-        /// <param name="values">The list of string to concantenate and hash.</param>
+        /// <param name="values">The list of string to concatenate and hash.</param>
         /// <returns>A string with "safe" (0-9 and A-F) characters representing the hash.</returns>
         public static string GetSHAHashAsHex(params string[] values)
         {

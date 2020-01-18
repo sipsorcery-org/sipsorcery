@@ -8,7 +8,7 @@
 // Alphons van der Heijden
 //
 // History:
-// 28 Mar 2008	Aaron Clauson   Added to sipwitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
+// 28 Mar 2008	Aaron Clauson   Added to sipswitch code base based on http://www.codeproject.com/KB/library/DNS.NET_Resolver.aspx.
 //
 // License:
 // The Code Project Open License (CPOL) https://www.codeproject.com/info/cpol10.aspx

@@ -4,10 +4,10 @@
 // Description: Implements STUN message attributes as defined in RFC5389.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 26 Nov 2010	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com).
+// 26 Nov 2010	Aaron Clauson	Created, Hobart, Australia.
 //
 // Notes:
 //

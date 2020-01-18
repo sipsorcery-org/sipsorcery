@@ -224,7 +224,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Helper method to create a SIP response for a SIP request. This method can be thoght of as creating a 
+        /// Helper method to create a SIP response for a SIP request. This method can be thought of as creating a 
         /// vanilla (or no frills) response for a request. It's suitable for generating error responses. For requests that
         /// require an action such as creating a call or registering a contact the response will require additional 
         /// information and this method will not be suitable.
@@ -284,7 +284,7 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="localSIPEndPoint">The local SIP end point the request was received on.</param>
         /// <param name="remoteSIPEndPoint">The remote SIP end point the request was received on.</param>
-        /// <param name="responseCode">The repsonse code to set on the response.</param>
+        /// <param name="responseCode">The response code to set on the response.</param>
         /// <param name="reasonPhrase">Optional reason phrase to set on the response (keep short).</param>
         public static SIPResponse GetResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint, SIPResponseStatusCodesEnum responseCode, string reasonPhrase)
         {
