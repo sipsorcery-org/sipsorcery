@@ -77,6 +77,11 @@ namespace SIPSorcery.Net
                 m_udpSocket.BeginReceiveMessageFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveMessageFrom, null);
             }
             catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
+            catch(SocketException sockExcp)
+            {
+                logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceive. {sockExcp.Message}");
+                Close(sockExcp.Message);
+            }
             catch (Exception excp)
             {
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
@@ -119,6 +124,8 @@ namespace SIPSorcery.Net
                 // - the RTP connection may start sending before the remote socket starts listening,
                 // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
                 //   or new socket during the transition.
+                // It also seems that once a UDP socket pair have exchanged packets and the remote party closes the socket exception will occur
+                // in the BeginReceive method (very handy).
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }

@@ -40,8 +40,11 @@ namespace WebRTCServer
         private const int POINTS_PER_INCH = 72;
         private const int VP8_TIMESTAMP_SPACING = 3000;
         private const int VP8_PAYLOAD_TYPE_ID = 100;
-        private const string DTLS_CERTIFICATE_PATH = "certs/loalhost.pem";
-        private const string DTLS_KEY_PATH = "certs/loalhost_key.pem";
+        private const string DTLS_CERTIFICATE_PATH = "certs/localhost.pem";
+        private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
+        private const string DTLS_CERTIFICATE_FINGERPRINT = "C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
+        private const string ICE_USER = "EJYWWCUDJQLTXTNQRXEJ";
+        private const string ICE_PASSWORD = "SKYKPPYLTZOAVCLTGHDUODANRKSPOVQVKXJULOGG";
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -50,62 +53,50 @@ namespace WebRTCServer
 
         static void Main()
         {
-            Console.WriteLine("WebRTC Server");
+            Console.WriteLine("WebRTC Server Sample Program");
             Console.WriteLine("Press ctrl-c to exit.");
 
             // Plumbing code to facilitate a graceful exit.
             CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
+            ManualResetEvent exitMre = new ManualResetEvent(false);
 
             AddConsoleLogger();
+
+            WebRtcStartCall();
+
+            Console.WriteLine("Waiting for browser to initiate session...");
+
+            // Ctrl-c will gracefully exit the call at any point.
+            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+            {
+                e.Cancel = true;
+                exitMre.Set();
+            };
+
+            // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
+            exitMre.WaitOne();
         }
 
-        private void WebRtcStartCall()
+        private static void WebRtcStartCall()
         {
             //var mediaTypes = new List<RtpMediaTypesEnum> { RtpMediaTypesEnum.Video, RtpMediaTypesEnum.Audio };
 
+            var webRtcSession = new WebRtcSession(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH, DTLS_CERTIFICATE_FINGERPRINT, new List<IPAddress> { IPAddress.Loopback });
 
-            var webRtcSession = new WebRtcSession(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH, new List<IPAddress> { IPAddress.Loopback });
+            // Normally these are set pseudo-randomly but in this case we're hard coding the SDP offer in the Browser so need preset values.
+            webRtcSession.LocalIceUser = ICE_USER;
+            webRtcSession.LocalIcePassword = ICE_PASSWORD;
 
-            //string dtlsThumbrpint = (isEncryptionDisabled == false) ? _dtlsCertificateThumbprint : null;
-
-            webRtcSession.OnSdpOfferReady += (sdp) => { logger.LogDebug("Offer SDP: " + sdp); };
+            //webRtcSession.OnSdpOfferReady += (sdp) => { logger.LogDebug("Offer SDP: " + sdp); };
             //webRtcSession.OnMediaPacket += webRtcSession.MediaPacketReceived;
             webRtcSession.Initialise(null);
-            webRtcSession.OnClose += (reason) => { logger.LogDebug($"WebRTCSession was closed with reason {reason}."); PeerClosed(null); };
-        }
+            webRtcSession.OnClose += (reason) => { 
+                logger.LogDebug($"WebRTCSession was closed with reason {reason}.");
+                _webRtcSessions.TryRemove(webRtcSession.SessionID, out var closedSession); };
 
-        private void PeerClosed(string callID)
-        {
-            try
-            {
-                logger.LogDebug("WebRTC session for closed for call ID " + callID + ".");
+            _webRtcSessions.TryAdd(webRtcSession.SessionID, webRtcSession);
 
-                WebRtcSession closedSession = null;
-
-                if (!_webRtcSessions.TryRemove(callID, out closedSession))
-                {
-                    logger.LogError("Failed to remove closed WebRTC session from dictionary.");
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception WebRTCDaemon.PeerClosed. " + excp);
-            }
-        }
-
-        /// <summary>
-        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
-        /// </summary>
-        private static void AddConsoleLogger()
-        {
-            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
-            var loggerConfig = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console()
-                .CreateLogger();
-            loggerFactory.AddSerilog(loggerConfig);
-            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+            SendTestPattern();
         }
 
         private static void SendTestPattern()
@@ -217,7 +208,7 @@ namespace WebRTCServer
             }
             catch (Exception)
             {
-                return new byte[0];
+                return new byte[] { };
             }
         }
 
@@ -251,6 +242,21 @@ namespace WebRTCServer
                     }
                 }
             }
+        }
+
+        /// <summary>
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// </summary>
+        private static void AddConsoleLogger()
+        {
+            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
+            var loggerConfig = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console()
+                .CreateLogger();
+            loggerFactory.AddSerilog(loggerConfig);
+            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
         }
     }
 }
