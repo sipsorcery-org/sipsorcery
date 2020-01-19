@@ -15,22 +15,46 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Net;
 using SIPSorceryMedia;
+using WebSocketSharp;
+using WebSocketSharp.Net.WebSockets;
+using WebSocketSharp.Server;
 
 namespace WebRTCServer
 {
+    public class SDPExchange : WebSocketBehavior
+    {
+        public WebRtcSession WebRtcSession;
+
+        public event Func<WebSocketContext, Task<WebRtcSession>> WebSocketOpened;
+        public event Action<WebRtcSession, string> SDPAnswerReceived;
+
+        public SDPExchange()
+        { }
+
+        protected override void OnMessage(MessageEventArgs e)
+        {
+            SDPAnswerReceived(WebRtcSession, e.Data);
+            this.Close();
+        }
+
+        protected override async void OnOpen()
+        {
+            base.OnOpen();
+            WebRtcSession = await WebSocketOpened(this.Context);
+        }
+    }
+
     class Program
     {
         private static string TEST_PATTERN_IMAGE_PATH = "media/testpattern.jpeg";
@@ -40,16 +64,22 @@ namespace WebRTCServer
         private const int POINTS_PER_INCH = 72;
         private const int VP8_TIMESTAMP_SPACING = 3000;
         private const int VP8_PAYLOAD_TYPE_ID = 100;
+        private const string WEBSOCKET_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const string DTLS_CERTIFICATE_PATH = "certs/localhost.pem";
         private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
         private const string DTLS_CERTIFICATE_FINGERPRINT = "C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
         private const string ICE_USER = "EJYWWCUDJQLTXTNQRXEJ";
         private const string ICE_PASSWORD = "SKYKPPYLTZOAVCLTGHDUODANRKSPOVQVKXJULOGG";
+        private const int WEBSOCKET_PORT = 8081;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
+        private static WebSocketServer _webSocketServer;
         private static bool _exit = false;
-        private static ConcurrentDictionary<string, WebRtcSession> _webRtcSessions = new ConcurrentDictionary<string, WebRtcSession>();
+        //private static ConcurrentDictionary<string, WebRtcSession> _webRtcSessions = new ConcurrentDictionary<string, WebRtcSession>();
+        //private static WebRtcSession _webRtcSession;
+
+        private static event Action<uint, byte[]> OnTestPatternSampleReady;
 
         static void Main()
         {
@@ -62,9 +92,24 @@ namespace WebRTCServer
 
             AddConsoleLogger();
 
-            WebRtcStartCall();
+            // Initialise OpenSSL, saves a couple of seconds for the first client connection.
+            Dtls.InitialiseOpenSSL();
 
-            Console.WriteLine("Waiting for browser to initiate session...");
+            Task.Run(SendTestPattern);
+
+            // Start web socket.
+            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
+            _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
+            _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
+            //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
+            _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
+            {
+                sdpExchanger.WebSocketOpened += SendSDPOffer;
+                sdpExchanger.SDPAnswerReceived += SDPAnswerReceived;
+            });
+            _webSocketServer.Start();
+
+            Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
@@ -77,26 +122,66 @@ namespace WebRTCServer
             exitMre.WaitOne();
         }
 
-        private static void WebRtcStartCall()
+        private static async Task<WebRtcSession> SendSDPOffer(WebSocketContext context)
         {
-            //var mediaTypes = new List<RtpMediaTypesEnum> { RtpMediaTypesEnum.Video, RtpMediaTypesEnum.Audio };
+            logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            var webRtcSession = new WebRtcSession(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH, DTLS_CERTIFICATE_FINGERPRINT, new List<IPAddress> { IPAddress.Loopback });
+            //var webRtcSession = new WebRtcSession(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH, DTLS_CERTIFICATE_FINGERPRINT, new List<IPAddress> { IPAddress.Loopback });
+            var webRtcSession = new WebRtcSession(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH, DTLS_CERTIFICATE_FINGERPRINT, null);
 
-            // Normally these are set pseudo-randomly but in this case we're hard coding the SDP offer in the Browser so need preset values.
-            webRtcSession.LocalIceUser = ICE_USER;
-            webRtcSession.LocalIcePassword = ICE_PASSWORD;
+            logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
-            //webRtcSession.OnSdpOfferReady += (sdp) => { logger.LogDebug("Offer SDP: " + sdp); };
-            //webRtcSession.OnMediaPacket += webRtcSession.MediaPacketReceived;
-            webRtcSession.Initialise(null);
-            webRtcSession.OnClose += (reason) => { 
+            webRtcSession.OnClose += (reason) =>
+            {
                 logger.LogDebug($"WebRTCSession was closed with reason {reason}.");
-                _webRtcSessions.TryRemove(webRtcSession.SessionID, out var closedSession); };
+            };
 
-            _webRtcSessions.TryAdd(webRtcSession.SessionID, webRtcSession);
+            await webRtcSession.Initialise(null);
 
-            SendTestPattern();
+            context.WebSocket.Send(webRtcSession.SDP);
+
+            return webRtcSession;
+        }
+
+        private static void SDPAnswerReceived(WebRtcSession webRtcSession, string sdpAnswer)
+        {
+            try
+            {
+                logger.LogDebug("Answer SDP: " + sdpAnswer);
+
+                var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
+
+                webRtcSession.SdpSessionID = answerSDP.SessionId;
+                webRtcSession.RemoteIceUser = answerSDP.IceUfrag;
+                webRtcSession.RemoteIcePassword = answerSDP.IcePwd;
+
+                // All browsers seem to have gone to trickling ICE candidates now but just
+                // in case one or more are given we can start the STUN dance immediately.
+                if (answerSDP.IceCandidates != null)
+                {
+                    foreach (var iceCandidate in answerSDP.IceCandidates)
+                    {
+                        webRtcSession.AppendRemoteIceCandidate(iceCandidate);
+                    }
+                }
+
+                OnTestPatternSampleReady += (timestamp, sample) =>
+                {
+                    try
+                    {
+                        webRtcSession.SendMedia(SDPMediaTypesEnum.video, timestamp, sample);
+                    }
+                    catch (Exception sendExcp)
+                    {
+                        logger.LogWarning("Exception OnTestPatternSampleReady. " + sendExcp.Message);
+                        webRtcSession.Close();
+                    }
+                };
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception SDPAnswerReceived. " + excp.Message);
+            }
         }
 
         private static void SendTestPattern()
@@ -131,8 +216,7 @@ namespace WebRTCServer
 
                     while (!_exit)
                     {
-                        if (_webRtcSessions.Any(x => (x.Value.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
-                             x.Value.IsConnected))
+                        if (OnTestPatternSampleReady != null)
                         {
                             var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
                             AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
@@ -158,22 +242,7 @@ namespace WebRTCServer
                             stampedTestPattern.Dispose();
                             stampedTestPattern = null;
 
-                            lock (_webRtcSessions)
-                            {
-                                foreach (var session in _webRtcSessions.Where(x => (x.Value.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
-                                        x.Value.IsConnected))
-                                {
-                                    try
-                                    {
-                                        session.Value.SendMedia(SDPMediaTypesEnum.video, rtpTimestamp, encodedBuffer);
-                                    }
-                                    catch (Exception sendExcp)
-                                    {
-                                        logger.LogWarning("Exception SendTestPattern.SendMedia. " + sendExcp.Message);
-                                        session.Value.Close();
-                                    }
-                                }
-                            }
+                            OnTestPatternSampleReady(rtpTimestamp, encodedBuffer);
 
                             encodedBuffer = null;
 

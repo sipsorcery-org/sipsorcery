@@ -32,10 +32,10 @@ namespace SIPSorcery.Net
     {
         private const int PAYLOAD_TYPE_ID = 100;
         private const int ICE_GATHERING_TIMEOUT_MILLISECONDS = 5000;
-        private const int INITIAL_STUN_BINDING_PERIOD_MILLISECONDS = 5000;       // The period to send the initial STUN requests used to get an ICE candidates public IP address.
+        private const int INITIAL_STUN_BINDING_PERIOD_MILLISECONDS = 1000;       // The period to send the initial STUN requests used to get an ICE candidates public IP address.
         private const int INITIAL_STUN_BINDING_ATTEMPTS_LIMIT = 3;              // The maximum number of binding attempts to determine a local socket's public IP address before giving up.
         private const int ESTABLISHED_STUN_BINDING_PERIOD_MILLISECONDS = 15000;  // The period to send STUN binding requests to remote peers once the ICE gathering stage is complete.
-        private const int COMMUNICATION_FAILURE_COUNT_FOR_CLOSE = 20;           // If a peer gets this number of communication failures on a socket it will close the peer.
+        private const int ICE_CONNECTED_NO_COMMUNICATIONS_TIMEOUT_SECONDS = 35;  // If there are no messages received (STUN/RTP/RTCP) within this period the session will be closed.
         private const int MAXIMUM_TURN_ALLOCATE_ATTEMPTS = 4;
         private const int MAXIMUM_STUN_CONNECTION_ATTEMPTS = 5;
         private const int ICE_TIMEOUT_SECONDS = 5;                              // If no response is received to the STUN connectivity check within this number of seconds the WebRTC connection will be assumed to be broken.
@@ -44,6 +44,10 @@ namespace SIPSorcery.Net
         private const string RTP_MEDIA_UNSECURE_DESCRIPTOR = "RTP/AVP";
         private const int VP8_PAYLOAD_TYPE_ID = 100;
         private const int DTLS_READ_BUFFER_LENGTH = 8192;
+
+        private const int STUN_CHECK_BASE_PERIOD_MILLISECONDS = 5000;
+        private const float STUN_CHECK_LOW_RANDOMISATION_FACTOR = 0.5F;
+        private const float STUN_CHECK_HIGH_RANDOMISATION_FACTOR = 1.5F;
 
         private static string _sdpOfferTemplate = @"v=0
 o=- {0} 2 IN IP4 127.0.0.1
@@ -82,8 +86,6 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         private static ILogger logger = Log.Logger;
 
-        private static ManualResetEvent _secureChannelInitMre = new ManualResetEvent(false);
-
         public string SessionID { get; private set; }
         public string SDP;
         public string SdpSessionID;
@@ -117,8 +119,6 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         RTPChannel _rtpChannel;
         private string _dtlsCertificateFingerprint;
         private IPEndPoint _turnServerEndPoint;
-        private ManualResetEvent _iceGatheringMRE;
-        private int _communicationFailureCount = 0;
         private List<IPAddress> _offerAddresses;            // If set restricts which local IP addresses will be offered in ICE candidates.
         private int _audioSessionID = 0;
         private int _videoSessionID;
@@ -133,7 +133,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         //public event Action<IceCandidate, byte[], IPEndPoint> OnMediaPacket;
         //public event Action<IceCandidate, IPEndPoint> OnIceConnected;
 
-        public DtlsManaged DtlsContext;
+        public Dtls Dtls;
         public SRTPManaged SrtpContext;
         public SRTPManaged SrtpReceiveContext;  // Used to decrypt packets received from the remote peer.
         public RTPSession _rtpSession;
@@ -144,6 +144,11 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         private string _dtlsCertFilePath;
         private string _dtlsKeyFilePath;
+
+        /// <summary>
+        /// Time to schedule the STUN checks on each ICE candidate.
+        /// </summary>
+        private Timer m_stunChecksTimer;
 
         public WebRtcSession(string dtlsCertFilePath, string dtlsKeyFilePath, string dtlsFingerprint, List<IPAddress> offerAddresses)
         {
@@ -160,208 +165,28 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             _rtpSession.OnRtpClosed += (reason) => { Close(); OnClose?.Invoke(reason); };
 
             _offerAddresses = offerAddresses;
-
-            // TODO: Set control endpoint to remote RTP end point for RTCP reports.
         }
 
         /// <summary>
-        /// From RFC5764:
-        ///             +----------------+
-        ///             | 127 < B< 192  -+--> forward to RTP
-        ///             |                |
-        /// packet -->  |  19 < B< 64   -+--> forward to DTLS
-        ///             |                |
-        ///             |       B< 2    -+--> forward to STUN
-        ///             +----------------+
+        /// Initialises the WebRTC session by carrying out the ICE connectivity steps and when complete
+        /// handing the RTP socket off for the DTLS handshake. Once the handshake is complete the session
+        /// is ready for to exchange encrypted RTP and RTCP packets.
         /// </summary>
-        /// <param name="remoteEP"></param>
-        /// <param name="buffer"></param>
-        private void OnRTPDataReceived(IPEndPoint remoteEP, byte[] buffer)
-        {
-            //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
-
-            if (buffer?.Length > 0)
-            {
-                _lastCommunicationAt = DateTime.Now;
-
-                try
-                {
-                    if (buffer[0] == 0x00 || buffer[0] == 0x01)
-                    {
-                        // STUN packet.
-                        _lastStunMessageReceivedAt = DateTime.Now;
-                        var stunMessage = STUNv2Message.ParseSTUNMessage(buffer, buffer.Length);
-                        ProcessStunMessage(stunMessage, remoteEP);
-                    }
-                    else if (buffer[0] >= 128 && buffer[0] <= 191)
-                    {
-                        // RTP/RTCP packet.
-                        // Don't need to do anything here, these get handled by the RTPSession.
-                    }
-                    else if (buffer[0] >= 20 && buffer[0] <= 63)
-                    {
-                        // DTLS packet.
-                        DtlsPacketReceived(remoteEP, buffer);
-                    }
-                    else
-                    {
-                        logger.LogWarning("Unknown packet type received on RTP channel.");
-                    }
-                }
-                catch (Exception excp)
-                {
-                    logger.LogError($"Exception WebRtcSession.OnRTPDataReceived {excp.Message}.");
-                }
-            }
-        }
-
-        public void Close()
-        {
-            // TODO.
-            IsClosed = true;
-        }
-
-        private void DtlsPacketReceived(IPEndPoint remoteEndPoint, byte[] buffer)
-        {
-            logger.LogDebug("DTLS packet received of " + buffer.Length + " bytes from " + remoteEndPoint.ToString() + ".");
-
-            if (!File.Exists(_dtlsCertFilePath))
-            {
-                throw new ApplicationException($"The DTLS certificate file could not be found at {_dtlsCertFilePath}.");
-            }
-
-            if (!File.Exists(_dtlsKeyFilePath))
-            {
-                throw new ApplicationException($"The DTLS key file could not be found at {_dtlsKeyFilePath}.");
-            }
-
-            if (DtlsContext == null)
-            {
-                lock (_secureChannelInitMre)
-                {
-                    DtlsContext = new DtlsManaged(_dtlsCertFilePath, _dtlsKeyFilePath);
-                    int res = DtlsContext.Init();
-                    logger.LogDebug("DtlsContext initialisation result=" + res);
-                }
-            }
-
-            int bytesWritten = DtlsContext.Write(buffer, buffer.Length);
-
-            if (bytesWritten != buffer.Length)
-            {
-                logger.LogWarning("The required number of bytes were not successfully written to the DTLS context.");
-            }
-            else
-            {
-                byte[] dtlsOutBytes = new byte[DTLS_READ_BUFFER_LENGTH];
-
-                int bytesRead = DtlsContext.Read(dtlsOutBytes, dtlsOutBytes.Length);
-
-                if (bytesRead == 0)
-                {
-                    logger.LogDebug("No bytes read from DTLS context :(.");
-                }
-                else
-                {
-                    logger.LogDebug(bytesRead + " bytes read from DTLS context sending to " + remoteEndPoint.ToString() + ".");
-                    //iceCandidate.LocalRtpSocket.SendTo(dtlsOutBytes, 0, bytesRead, SocketFlags.None, remoteEndPoint);
-                    _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, dtlsOutBytes.Take(bytesRead).ToArray());
-
-                    //if (client.DtlsContext.IsHandshakeComplete())
-                    if (DtlsContext.GetState() == 3)
-                    {
-                        logger.LogDebug("DTLS negotiation complete for " + remoteEndPoint.ToString() + ".");
-
-                        lock (_secureChannelInitMre)
-                        {
-                            SrtpContext = new SRTPManaged(DtlsContext, false);
-                            SrtpReceiveContext = new SRTPManaged(DtlsContext, true);
-                        }
-
-                        IsDtlsNegotiationComplete = true;
-
-                        _rtpSession.SrtpProtect = SrtpContext.ProtectRTP;
-                        _rtpSession.SrtcpProtect = SrtpContext.ProtectRTCP;
-                    }
-                }
-            }
-        }
-
-        public void InitEncryptionDisabledSession(IceCandidate iceCandidate, IPEndPoint remoteEndPoint)
-        {
-            logger.LogDebug($"Initialising non encrypted WebRtc session for remote end point {remoteEndPoint.ToString()}.");
-            RemoteEndPoint = remoteEndPoint;
-        }
-
-        public void MediaPacketReceived(IceCandidate iceCandidate, byte[] buffer, IPEndPoint remoteEndPoint)
-        {
-            if ((buffer[0] >= 128) && (buffer[0] <= 191))
-            {
-                //logger.Debug("A non-STUN packet was received Receiver Client.");
-
-                if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
-                {
-                    // RTCP packet.
-                    //webRtcClient.LastSTUNReceiveAt = DateTime.Now;
-                }
-                else
-                {
-                    // RTP packet.
-                    //int res = peer.SrtpReceiveContext.UnprotectRTP(buffer, buffer.Length);
-
-                    //if (res != 0)
-                    //{
-                    //    logger.Warn("SRTP unprotect failed, result " + res + ".");
-                    //}
-                }
-            }
-            else
-            {
-                logger.LogDebug("An unrecognised packet was received on the WebRTC media socket.");
-            }
-        }
-
-        public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
-        {
-            if (RemoteEndPoint != null)
-            {
-                if (mediaType == SDPMediaTypesEnum.video)
-                {
-                    int streamID = _videoSessionID;
-                    _rtpSession.DestinationEndPoint = RemoteEndPoint;
-                    _rtpSession.SendVp8Frame(sampleTimestamp, sample, streamID);
-                }
-                else if (mediaType == SDPMediaTypesEnum.audio)
-                {
-                    int streamID = _audioSessionID;
-                    _rtpSession.DestinationEndPoint = RemoteEndPoint;
-                    _rtpSession.SendAudioFrame(sampleTimestamp, sample, streamID);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="turnServerEndPoint">An optional parameter that can be used include a TURN server in this peer's ICE candidate gathering.</param>
-        /// <param name="localAddress">Optional parameter to specify the local IP address to use for STUN/RTP sockets. If null all available interfaces will be used.</param>
-        public void Initialise(IPEndPoint turnServerEndPoint)
+        /// <param name="turnServerEndPoint">An optional parameter that can be used include a TURN 
+        /// server in this session's ICE candidate gathering.</param>
+        public async Task Initialise(IPEndPoint turnServerEndPoint)
         {
             try
             {
                 _turnServerEndPoint = turnServerEndPoint;
 
-                _iceGatheringMRE = new ManualResetEvent(false);
-
                 DateTime startGatheringTime = DateTime.Now;
 
                 IceConnectionState = IceConnectionStatesEnum.Gathering;
 
-                GetIceCandidates(_iceGatheringMRE);
+                await GetIceCandidatesAsync();
 
-                _iceGatheringMRE.WaitOne(ICE_GATHERING_TIMEOUT_MILLISECONDS, true);
-
-                logger.LogDebug("ICE gathering completed for in " + DateTime.Now.Subtract(startGatheringTime).TotalMilliseconds + "ms, number of local sockets " + LocalIceCandidates.Count + ".");
+                logger.LogDebug($"ICE gathering completed for in {DateTime.Now.Subtract(startGatheringTime).TotalMilliseconds:#}ms, candidate count {LocalIceCandidates.Count}.");
 
                 IceConnectionState = IceConnectionStatesEnum.GatheringComplete;
 
@@ -374,7 +199,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 {
                     string localIceCandidateString = null;
 
-                    foreach (var iceCandidate in GetIceCandidates())
+                    foreach (var iceCandidate in LocalIceCandidates)
                     {
                         localIceCandidateString += iceCandidate.ToString();
                     }
@@ -410,11 +235,14 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                     SDP = offer;
 
-                    // TODO: Reactivate.
-                    //Task.Run(() => { SendStunConnectivityChecks(); });
-
                     OnSdpOfferReady?.Invoke(offer);
                 }
+
+                // We may have received some remote candidates from the remote part SDP so perform an immediate STUN check.
+                // If there are no remote candidates this call will end up being a NOP.
+                SendStunConnectivityChecks(null);
+
+                _ = Task.Run(() => DoDtlsHandshake(_rtpChannel.m_rtpSocket));
             }
             catch (Exception excp)
             {
@@ -454,28 +282,147 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     _remoteIceCandidates.Add(remoteIceCandidate);
                 }
             }
+
+            // We now should have a remote ICE candidate to start the STUN dance with.
+            SendStunConnectivityChecks(null);
         }
 
-        private List<IceCandidate> GetIceCandidates()
+        public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
         {
-            //List<IceCandidate> candidates = new List<IceCandidate>();
-
-            //foreach (var candidate in LocalIceCandidates)
-            //{
-            //    var localRtpEndPoint = candidate.LocalRtpSocket.LocalEndPoint as IPEndPoint;
-
-            //    if (localRtpEndPoint.Port >= WEBRTC_START_RTP_PORT && localRtpEndPoint.Port <= WEBRTC_END_RTP_PORT)
-            //    {
-            //        candidates.Add(candidate);
-            //    }
-            //}
-
-            //return candidates;
-
-            return LocalIceCandidates;
+            if (RemoteEndPoint != null && IsDtlsNegotiationComplete)
+            {
+                if (mediaType == SDPMediaTypesEnum.video)
+                {
+                    int streamID = _videoSessionID;
+                    _rtpSession.DestinationEndPoint = RemoteEndPoint;
+                    _rtpSession.SendVp8Frame(sampleTimestamp, sample, streamID);
+                }
+                else if (mediaType == SDPMediaTypesEnum.audio)
+                {
+                    int streamID = _audioSessionID;
+                    _rtpSession.DestinationEndPoint = RemoteEndPoint;
+                    _rtpSession.SendAudioFrame(sampleTimestamp, sample, streamID);
+                }
+            }
         }
 
-        private void GetIceCandidates(ManualResetEvent iceGatheringCompleteMRE)
+        public void Close()
+        {
+            IsClosed = true;
+            IceConnectionState = IceConnectionStatesEnum.Closed;
+            m_stunChecksTimer.Dispose();
+
+            if (Dtls != null)
+            {
+                Dtls.Shutdown();
+            }
+        }
+
+        /// <summary>
+        /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
+        /// </summary>
+        /// <param name="rtpSocket">The RTP socket being used for the WebRTC session.</param>
+        private void DoDtlsHandshake(Socket rtpSocket)
+        {
+            logger.LogDebug("DoDtlsHandshake started.");
+
+            if (!File.Exists(_dtlsCertFilePath))
+            {
+                throw new ApplicationException($"The DTLS certificate file could not be found at {_dtlsCertFilePath}.");
+            }
+            else if (!File.Exists(_dtlsKeyFilePath))
+            {
+                throw new ApplicationException($"The DTLS key file could not be found at {_dtlsKeyFilePath}.");
+            }
+
+            Dtls = new Dtls(_dtlsCertFilePath, _dtlsKeyFilePath);
+
+            int res = Dtls.DoHandshake((ulong)rtpSocket.Handle);
+
+            logger.LogDebug("DtlsContext initialisation result=" + res);
+
+            if (Dtls.GetState() == (int)DtlsState.OK)
+            {
+                //logger.LogDebug("DTLS negotiation complete for " + remoteEndPoint.ToString() + ".");
+                logger.LogDebug("DTLS negotiation complete.");
+
+                SrtpContext = new SRTPManaged(Dtls, false);
+                SrtpReceiveContext = new SRTPManaged(Dtls, true);
+
+                IsDtlsNegotiationComplete = true;
+
+                _rtpSession.SrtpProtect = SrtpContext.ProtectRTP;
+                _rtpSession.SrtcpProtect = SrtpContext.ProtectRTCP;
+            }
+        }
+
+        /// <summary>
+        /// From RFC5764:
+        ///             +----------------+
+        ///             | 127 < B< 192  -+--> forward to RTP
+        ///             |                |
+        /// packet -->  |  19 < B< 64   -+--> forward to DTLS
+        ///             |                |
+        ///             |       B< 2    -+--> forward to STUN
+        ///             +----------------+
+        /// </summary>
+        /// <param name="remoteEP"></param>
+        /// <param name="buffer"></param>
+        private void OnRTPDataReceived(IPEndPoint remoteEP, byte[] buffer)
+        {
+            //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
+
+            if (buffer?.Length > 0)
+            {
+                _lastCommunicationAt = DateTime.Now;
+
+                try
+                {
+                    if (buffer[0] == 0x00 || buffer[0] == 0x01)
+                    {
+                        // STUN packet.
+                        _lastStunMessageReceivedAt = DateTime.Now;
+                        var stunMessage = STUNv2Message.ParseSTUNMessage(buffer, buffer.Length);
+                        ProcessStunMessage(stunMessage, remoteEP);
+                    }
+                    else if (buffer[0] >= 128 && buffer[0] <= 191)
+                    {
+                        // RTP/RTCP packet need to decrypt.
+                        //if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
+                        //{
+                        //    // RTCP packet.
+                        //    //webRtcClient.LastSTUNReceiveAt = DateTime.Now;
+                        //}
+                        //else
+                        //{
+                        //    // RTP packet.
+                        //    //int res = peer.SrtpReceiveContext.UnprotectRTP(buffer, buffer.Length);
+
+                        //    //if (res != 0)
+                        //    //{
+                        //    //    logger.Warn("SRTP unprotect failed, result " + res + ".");
+                        //    //}
+                        //}
+                    }
+                    else if (buffer[0] >= 20 && buffer[0] <= 63)
+                    {
+                        // DTLS packet.
+                        // Do nothing. The DTLSContext already has the socket handle and is monitoring
+                        // for DTLS packets.
+                    }
+                    else
+                    {
+                        logger.LogWarning("Unknown packet type received on RTP channel.");
+                    }
+                }
+                catch (Exception excp)
+                {
+                    logger.LogError($"Exception WebRtcSession.OnRTPDataReceived {excp.Message}.");
+                }
+            }
+        }
+
+        private async Task GetIceCandidatesAsync()
         {
             var localIPAddresses = _offerAddresses ?? NetServices.GetAllLocalIPAddresses();
             IceNegotiationStartedAt = DateTime.Now;
@@ -483,32 +430,21 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
             foreach (var address in localIPAddresses.Where(x => x.AddressFamily == _rtpChannel.RTPLocalEndPoint.AddressFamily))
             {
-                var iceCandidate = new IceCandidate(address, _rtpChannel.RTPPort, (_turnServerEndPoint != null) ? new TurnServer() { ServerEndPoint = _turnServerEndPoint } : null);
-
-                LocalIceCandidates.Add(iceCandidate);
-
-                //var listenerTask = Task.Run(() => { StartWebRtcRtpListener(iceCandidate); });
-
-                //iceCandidate.RtpListenerTask = listenerTask;
+                var iceCandidate = new IceCandidate(address, _rtpChannel.RTPPort);
 
                 if (_turnServerEndPoint != null)
                 {
-                    var stunBindingTask = Task.Run(() => { SendInitialStunBindingRequest(iceCandidate, iceGatheringCompleteMRE); });
+                    iceCandidate.TurnServer = new TurnServer() { ServerEndPoint = _turnServerEndPoint };
+                    iceCandidate.InitialStunBindingCheck = SendTurnServerBindingRequest(iceCandidate);
                 }
-                else
-                {
-                    iceCandidate.IsGatheringComplete = true;
 
-                    // Potentially save a few seconds if all the ICE candidates are now ready.
-                    if (LocalIceCandidates.All(x => x.IsGatheringComplete))
-                    {
-                        iceGatheringCompleteMRE.Set();
-                    }
-                }
+                LocalIceCandidates.Add(iceCandidate);
             }
+
+            await Task.WhenAll(LocalIceCandidates.Where(x => x.InitialStunBindingCheck != null).Select(x => x.InitialStunBindingCheck));
         }
 
-        private void SendInitialStunBindingRequest(IceCandidate iceCandidate, ManualResetEvent iceGatheringCompleteMRE)
+        private async Task SendTurnServerBindingRequest(IceCandidate iceCandidate)
         {
             int attempt = 1;
 
@@ -520,120 +456,124 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
                 byte[] stunReqBytes = stunRequest.ToByteBuffer(null, false);
 
-                //iceCandidate.LocalRtpSocket.SendTo(stunReqBytes, iceCandidate.TurnServer.ServerEndPoint);
                 _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceCandidate.TurnServer.ServerEndPoint, stunReqBytes);
 
-                Thread.Sleep(INITIAL_STUN_BINDING_PERIOD_MILLISECONDS);
+                await Task.Delay(INITIAL_STUN_BINDING_PERIOD_MILLISECONDS);
 
                 attempt++;
             }
 
             iceCandidate.IsGatheringComplete = true;
-
-            // Potentially save a few seconds if all the ICE candidates are now ready.
-            if (LocalIceCandidates.All(x => x.IsGatheringComplete))
-            {
-                iceGatheringCompleteMRE.Set();
-            }
         }
 
-        private void SendStunConnectivityChecks()
+        /// <summary>
+        /// Periodically send a STUN binding request to check connectivity.
+        /// </summary>
+        /// <param name="stateInfo">Not used.</param>
+        private void SendStunConnectivityChecks(Object stateInfo)
         {
             try
             {
-                while (!IsClosed)
+                //logger.LogDebug($"Send STUN connectivity checks, local candidates {LocalIceCandidates.Count()}, remote candidates {_remoteIceCandidates.Count()}.");
+
+                // If one of the ICE candidates has the remote RTP socket set then the negotiation is complete and the STUN checks are to keep the connection alive.
+                if (IsConnected)
                 {
-                    try
+                    // Remote RTP endpoint gets set when the DTLS negotiation is finished.
+                    if (RemoteEndPoint != null)
                     {
-                        // If one of the ICE candidates has the remote RTP socket set then the negotiation is complete and the STUN checks are to keep the connection alive.
-                        if (IsConnected)
+                        //logger.LogDebug("Sending STUN connectivity check to client " + iceCandidate.RemoteRtpEndPoint + ".");
+
+                        string localUser = LocalIceUser;
+
+                        STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
+                        stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
+                        stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + localUser);
+                        stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
+                        stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
+                        byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
+
+                        _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, RemoteEndPoint, stunReqBytes);
+
+                        _lastStunSentAt = DateTime.Now;
+                    }
+
+                    if (_lastCommunicationAt != DateTime.MinValue)
+                    {
+                        var secondsSinceLastResponse = DateTime.Now.Subtract(_lastCommunicationAt).TotalSeconds;
+
+                        if (secondsSinceLastResponse > ICE_CONNECTED_NO_COMMUNICATIONS_TIMEOUT_SECONDS)
                         {
-                            // Remote RTP endpoint gets set when the DTLS negotiation is finished.
-                            if (RemoteEndPoint != null)
+                            logger.LogWarning($"No packets have been received from {RemoteEndPoint} within the last {secondsSinceLastResponse:#} seconds, closing session.");
+                            Close();
+                        }
+                        //else if (secondsSinceLastResponse > ICE_TIMEOUT_SECONDS)
+                        //{
+                        //    logger.LogWarning($"No packets have been received from {RemoteEndPoint} within the last {secondsSinceLastResponse:#} seconds.");
+                        //}
+                    }
+                }
+                else
+                {
+                    if (_remoteIceCandidates.Count() > 0)
+                    {
+                        foreach (var localIceCandidate in LocalIceCandidates.Where(x => x.IsStunLocalExchangeComplete == false && x.StunConnectionRequestAttempts < MAXIMUM_STUN_CONNECTION_ATTEMPTS))
+                        {
+                            localIceCandidate.StunConnectionRequestAttempts++;
+
+                            // ToDo: Include srflx and relay addresses.
+
+                            // Only supporting UDP candidates at this stage.
+                            foreach (var remoteIceCandidate in RemoteIceCandidates.Where(x => x.Transport.ToLower() == "udp" && x.NetworkAddress.NotNullOrBlank() && x.HasConnectionError == false))
                             {
-                                //logger.LogDebug("Sending STUN connectivity check to client " + iceCandidate.RemoteRtpEndPoint + ".");
-
-                                string localUser = LocalIceUser;
-
-                                STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
-                                stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
-                                stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + localUser);
-                                stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
-                                stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
-                                byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
-
-                                _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, RemoteEndPoint, stunReqBytes);
-
-                                _lastStunSentAt = DateTime.Now;
-                            }
-
-                            if (_lastCommunicationAt != DateTime.MinValue)
-                            {
-                                var secondsSinceLastResponse = DateTime.Now.Subtract(_lastCommunicationAt).TotalSeconds;
-
-                                if (secondsSinceLastResponse > ICE_TIMEOUT_SECONDS)
+                                try
                                 {
-                                    logger.LogWarning($"No packets have been received from {RemoteEndPoint} within the last {secondsSinceLastResponse:#} seconds.");
+                                    IPAddress remoteAddress = IPAddress.Parse(remoteIceCandidate.NetworkAddress);
+
+                                    logger.LogDebug($"Sending authenticated STUN binding request {localIceCandidate.StunConnectionRequestAttempts} from {_rtpChannel.RTPLocalEndPoint} to WebRTC peer at {remoteIceCandidate.NetworkAddress}:{remoteIceCandidate.Port}.");
+
+                                    string localUser = LocalIceUser;
+
+                                    STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
+                                    stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
+                                    stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + localUser);
+                                    stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
+                                    stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
+                                    byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
+
+                                    //localIceCandidate.LocalRtpSocket.SendTo(stunReqBytes, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.NetworkAddress), remoteIceCandidate.Port));
+                                    _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.NetworkAddress), remoteIceCandidate.Port), stunReqBytes);
+
+                                    localIceCandidate.LastSTUNSendAt = DateTime.Now;
+                                }
+                                catch (System.Net.Sockets.SocketException sockExcp)
+                                {
+                                    logger.LogWarning($"SocketException sending STUN request to {remoteIceCandidate.NetworkAddress}:{remoteIceCandidate.Port}, removing candidate. {sockExcp.Message}");
+                                    remoteIceCandidate.HasConnectionError = true;
                                 }
                             }
                         }
-                        //else
-                        //{
-                        //    if (_remoteIceCandidates.Count() > 0)
-                        //    {
-                        //        foreach (var localIceCandidate in LocalIceCandidates.Where(x => x.IsStunLocalExchangeComplete == false && x.StunConnectionRequestAttempts < MAXIMUM_STUN_CONNECTION_ATTEMPTS))
-                        //        {
-                        //            localIceCandidate.StunConnectionRequestAttempts++;
-
-                        //            // ToDo: Include srflx and relay addresses.
-
-                        //            // Only supporting UDP candidates at this stage.
-                        //            foreach (var remoteIceCandidate in RemoteIceCandidates.Where(x => x.Transport.ToLower() == "udp" && x.NetworkAddress.NotNullOrBlank() && x.HasConnectionError == false))
-                        //            {
-                        //                try
-                        //                {
-                        //                    IPAddress remoteAddress = IPAddress.Parse(remoteIceCandidate.NetworkAddress);
-
-                        //                    logger.LogDebug($"Sending authenticated STUN binding request {localIceCandidate.StunConnectionRequestAttempts} from {_rtpChannel.RTPLocalEndPoint} to WebRTC peer at {remoteIceCandidate.NetworkAddress}:{remoteIceCandidate.Port}.");
-
-                        //                    string localUser = LocalIceUser;
-
-                        //                    STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
-                        //                    stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
-                        //                    stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + localUser);
-                        //                    stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, new byte[] { 0x6e, 0x7f, 0x1e, 0xff }));
-                        //                    stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
-                        //                    byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
-
-                        //                    //localIceCandidate.LocalRtpSocket.SendTo(stunReqBytes, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.NetworkAddress), remoteIceCandidate.Port));
-                        //                    _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.NetworkAddress), remoteIceCandidate.Port), stunReqBytes);
-
-                        //                    localIceCandidate.LastSTUNSendAt = DateTime.Now;
-                        //                }
-                        //                catch (System.Net.Sockets.SocketException sockExcp)
-                        //                {
-                        //                    logger.LogWarning($"SocketException sending STUN request to {remoteIceCandidate.NetworkAddress}:{remoteIceCandidate.Port}, removing candidate. {sockExcp.Message}");
-                        //                    remoteIceCandidate.HasConnectionError = true;
-                        //                }
-                        //            }
-                        //        }
-                        //    }
-                        //}
                     }
-                    catch (Exception excp)
-                    {
-                        logger.LogError("Exception SendStunConnectivityCheck ConnectivityCheck. " + excp);
-                    }
+                }
 
-                    if (!IsClosed)
+                if (!IsClosed)
+                {
+                    var interval = GetNextStunCheckInterval(STUN_CHECK_BASE_PERIOD_MILLISECONDS);
+
+                    if (m_stunChecksTimer == null)
                     {
-                        Thread.Sleep(ESTABLISHED_STUN_BINDING_PERIOD_MILLISECONDS);
+                        m_stunChecksTimer = new Timer(SendStunConnectivityChecks, null, interval, interval);
+                    }
+                    else
+                    {
+                        m_stunChecksTimer.Change(interval, interval);
                     }
                 }
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception SendStunConnectivityCheck. " + excp);
+                //m_stunChecksTimer?.Dispose();
             }
         }
 
@@ -659,7 +599,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                 if (RemoteEndPoint == null)
                 {
-                    RemoteEndPoint = remoteEndPoint; // Don't need to wait for DTLS negotiation.
+                    RemoteEndPoint = remoteEndPoint;
                     //OnIceConnected?.Invoke(iceCandidate, remoteEndPoint);
                     IceConnectionState = IceConnectionStatesEnum.Connected;
                 }
@@ -670,17 +610,13 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 {
                     // This STUN request has come from a socket not in the remote ICE candidates list. Add it so we can send our STUN binding request to it.
                     IceCandidate remoteIceCandidate = new IceCandidate("udp", remoteEndPoint.Address, remoteEndPoint.Port, IceCandidateTypesEnum.host);
-                    //{
-                    //    Transport = "udp",
-                    //    NetworkAddress = remoteEndPoint.Address.ToString(),
-                    //    Port = remoteEndPoint.Port,
-                    //    CandidateType = IceCandidateTypesEnum.host,
-                    //    //MediaType = iceCandidate.MediaType
-                    //};
-
                     logger.LogDebug("Adding missing remote ICE candidate for " + remoteEndPoint + ".");
-
                     _remoteIceCandidates.Add(remoteIceCandidate);
+
+                    // Some browsers require a STUN binding request from our end before the DTLS handshake will be initiated.
+                    // The STUN connectivity checks are already scheduled but we can speed things up by sending a binding
+                    // request immediately.
+                    SendStunConnectivityChecks(null);
                 }
             }
             else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingSuccessResponse)
@@ -731,6 +667,17 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             }
         }
 
+        /// <summary>
+        /// Gets a pseudo-randomised interval for the next STUN check period.
+        /// </summary>
+        /// <param name="baseInterval">The base check interval to randomise.</param>
+        /// <returns>A value in milliseconds to wait before performing the next STUN check.</returns>
+        private int GetNextStunCheckInterval(int baseInterval)
+        {
+            return Crypto.GetRandomInt((int)(STUN_CHECK_LOW_RANDOMISATION_FACTOR * baseInterval),
+                (int)(STUN_CHECK_HIGH_RANDOMISATION_FACTOR * baseInterval));
+        }
+
         private void AllocateTurn(IceCandidate iceCandidate)
         {
             try
@@ -752,7 +699,6 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Lifetime, 3600));
                     stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.RequestedTransport, STUNv2AttributeConstants.UdpTransportType));   // UDP
                     byte[] stunReqBytes = stunRequest.ToByteBuffer(null, false);
-                    //iceCandidate.LocalRtpSocket.SendTo(stunReqBytes, iceCandidate.TurnServer.ServerEndPoint);
                     _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceCandidate.TurnServer.ServerEndPoint, stunReqBytes);
                 }
             }

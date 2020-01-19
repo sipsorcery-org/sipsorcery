@@ -79,7 +79,7 @@ namespace SIPSorcery.Net
             catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
             catch(SocketException sockExcp)
             {
-                logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceive. {sockExcp.Message}");
+                //logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceive. {sockExcp.Message}");
                 Close(sockExcp.Message);
             }
             catch (Exception excp)
@@ -171,12 +171,12 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTPChannel : IDisposable
     {
-        private const int RTP_PORT_START = 10000;             // Arbitrary port number to start allocating RTP and control ports from.
-        private const int RTP_PORT_END = 20000;               // Arbitrary port number that RTP and control ports won't be allocated above.
+        private const int RTP_PORT_START = 10000;             // Arbitrary port number for the start of the range allocate RTP and control ports from.
+        private const int RTP_PORT_END = 20000;               // Arbitrary port number for the end of the range to allocate RTP and control ports from.
 
         private static ILogger logger = Log.Logger;
 
-        private Socket m_rtpSocket;
+        public Socket m_rtpSocket;
         private UdpReceiver m_rtpReceiver;
         private Socket m_controlSocket;
         private UdpReceiver m_controlReceiver;
@@ -241,7 +241,9 @@ namespace SIPSorcery.Net
                           int mediaStartPort = RTP_PORT_START,
                           int mediaEndPort = RTP_PORT_END)
         {
-            NetServices.CreateRtpSocket(localAddress, mediaStartPort, mediaEndPort, createControlSocket, out m_rtpSocket, out m_controlSocket);
+            int startFrom = Crypto.GetRandomInt(RTP_PORT_START, RTP_PORT_END);
+
+            NetServices.CreateRtpSocket(localAddress, mediaStartPort, mediaEndPort, startFrom, createControlSocket, out m_rtpSocket, out m_controlSocket);
 
             RTPLocalEndPoint = m_rtpSocket.LocalEndPoint as IPEndPoint;
             RTPPort = RTPLocalEndPoint.Port;
