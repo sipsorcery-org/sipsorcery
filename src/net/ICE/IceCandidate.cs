@@ -1,9 +1,9 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: IceCandidate.cs
 //
-// Description: Represents a candidate used in the Interactive Connectivity Establishment (ICE) 
-// negotiation to set up a usable network connection between two peers as 
-// per RFC5245 https://tools.ietf.org/html/rfc5245.
+// Description: Represents a candidate used in the Interactive Connectivity 
+// Establishment (ICE) negotiation to set up a usable network connection 
+// between two peers as per RFC5245 https://tools.ietf.org/html/rfc5245.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -17,7 +17,6 @@
 
 using System;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 using SIPSorcery.Sys;
 
@@ -31,17 +30,23 @@ namespace SIPSorcery.Net
         relay = 3
     }
 
+    public enum IceConnectionStatesEnum
+    {
+        None = 0,
+        Gathering = 1,
+        GatheringComplete = 2,
+        Connecting = 3,
+        Connected = 4,
+        Closed = 5
+    }
+
     public class IceCandidate
     {
         public const string m_CRLF = "\r\n";
         public const string REMOTE_ADDRESS_KEY = "raddr";
         public const string REMOTE_PORT_KEY = "rport";
 
-        //public RTPChannel RtpChannel;
-        //public Socket LocalRtpSocket;
-        //public Socket LocalControlSocket;
         public IPAddress LocalAddress;
-        //public Task RtpListenerTask;
         public TurnServer TurnServer;
         public bool IsGatheringComplete;
         public int TurnAllocateAttempts;
@@ -67,6 +72,8 @@ namespace SIPSorcery.Net
         public int RemotePort;
         public string RawString;
 
+        public Task InitialStunBindingCheck;
+
         //public bool IsConnected
         //{
         //    get { return IsStunLocalExchangeComplete == true && IsStunRemoteExchangeComplete && !IsDisconnected; }
@@ -75,11 +82,10 @@ namespace SIPSorcery.Net
         private IceCandidate()
         { }
 
-        public IceCandidate(IPAddress localAddress, int port, TurnServer turnServer)
+        public IceCandidate(IPAddress localAddress, int port)
         {
             LocalAddress = localAddress;
             Port = port;
-            TurnServer = turnServer;
         }
 
         public IceCandidate(string transport, IPAddress remoteAddress, int port, IceCandidateTypesEnum candidateType)
@@ -100,7 +106,7 @@ namespace SIPSorcery.Net
             candidate.Transport = candidateFields[2];
             candidate.NetworkAddress = candidateFields[4];
             candidate.Port = Convert.ToInt32(candidateFields[5]);
-            Enum.TryParse<IceCandidateTypesEnum>(candidateFields[7], out candidate.CandidateType);
+            Enum.TryParse(candidateFields[7], out candidate.CandidateType);
 
             if (candidateFields.Length > 8 && candidateFields[8] == REMOTE_ADDRESS_KEY)
             {
@@ -117,11 +123,24 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            var candidateStr = String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ host generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), LocalAddress.ToString(), Port);
+            var candidateStr = String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ host generation 0\r\n", 
+                Crypto.GetRandomInt(10).ToString(), 
+                "1", 
+                Crypto.GetRandomInt(10).ToString(), 
+                LocalAddress.ToString(), 
+                Port);
 
             if (StunRflxIPEndPoint != null)
             {
-                candidateStr += String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0\r\n", Crypto.GetRandomInt(10).ToString(), "1", Crypto.GetRandomInt(10).ToString(), StunRflxIPEndPoint.Address, StunRflxIPEndPoint.Port, LocalAddress.ToString(), Port);
+                candidateStr += String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0\r\n", 
+                    Crypto.GetRandomInt(10).ToString(), 
+                    "1", 
+                    Crypto.GetRandomInt(10).ToString(), 
+                    StunRflxIPEndPoint.Address, 
+                    StunRflxIPEndPoint.Port, 
+                    LocalAddress.ToString(), 
+                    Port);
+
                 //logger.LogDebug(" " + srflxCandidateStr);
                 //iceCandidateString += srflxCandidateStr;
             }
