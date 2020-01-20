@@ -348,7 +348,7 @@ namespace SIPSorcery.SoftPhone
         {
             if (sipFrag?.Contains("SIP/2.0 200") == true)
             {
-                // The transfer attempt got a succesful answer. Can hangup the call.
+                // The transfer attempt got a successful answer. Can hangup the call.
                 Hangup();
             }
             else

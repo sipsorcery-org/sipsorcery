@@ -1,8 +1,9 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An abbreviated example program of how to use the SIPSorcery core library to place a SIP call.
-// The example program depends on one audio input and one audio output being available.
+// Description: An abbreviated example program of how to use the SIPSorcery 
+// core library to place a SIP call. The example program depends on one audio 
+// input and one audio output being available.
 //
 // Author(s):
 // Aaron Clauson  (aaron@sipsorcery.com)
@@ -74,7 +75,7 @@ namespace SIPSorcery
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(dstAddress);
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, true, localIPAddress.AddressFamily);
+            var rtpSession = new RTPMediaSession((int)SDPMediaFormatsEnum.PCMU, localIPAddress.AddressFamily);
             var offerSDP = rtpSession.GetSDP(localIPAddress);
 
             // Get the audio input device.

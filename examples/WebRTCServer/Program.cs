@@ -193,7 +193,7 @@ namespace WebRTCServer
         /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
         /// </summary>
         /// <param name="rtpSocket">The RTP socket being used for the WebRTC session.</param>
-        private static int DoDtlsHandshake(Socket rtpSocket, out ProtectRtpPacket protectRtp, out ProtectRtpPacket protectRtcp)
+        private static int DoDtlsHandshake(WebRtcSession webRtcSession, Socket rtpSocket, out ProtectRtpPacket protectRtp, out ProtectRtpPacket protectRtcp)
         {
             logger.LogDebug("DoDtlsHandshake started.");
 
@@ -210,6 +210,7 @@ namespace WebRTCServer
             }
 
             var dtls = new Dtls(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
+            webRtcSession.OnClose += (reason) => dtls.Shutdown();
 
             int res = dtls.DoHandshake((ulong)rtpSocket.Handle);
 
@@ -231,7 +232,7 @@ namespace WebRTCServer
                 protectRtcp = srtpContext.ProtectRTCP;
             }
 
-            // TODO: CHECK that DTLS context automatically gets shutdown when the RTP socket is closed.
+            
 
             return res;
         }

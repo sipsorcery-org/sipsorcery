@@ -140,7 +140,11 @@ namespace SIPSorcery.Net
             {
                 var report = GetRtcpReport();
                 report.Bye = new RTCPBye(Ssrc, reason);
-                SendRtcpReport(report);
+
+                if (ControlDestinationEndPoint != null)
+                {
+                    SendRtcpReport(report);
+                }
 
                 m_isClosed = true;
                 m_rtcpReportTimer?.Dispose();

@@ -10,12 +10,15 @@
 // 12/23/2019	Yitzchok	    Created.
 // 26 Dec 2019  Aaron Clauson   Modified to inherit from RTPSession instead of
 //                              using an instance and wrapping same methods.
+// 20 Jan 2020  Aaron Clauson   Extracted SDP functions from RTPSession and placed
+//                              into this class.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -28,7 +31,7 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.SIP.App
 {
     /// <summary>
-    /// The SipSorcery concrete implementation of IMediaSession.
+    /// A concrete implementation of IMediaSession.
     /// Relies on RTPSession and RTPChannel for RTP and network functions.
     ///
     /// This implementation sets up the RTP stream but doesn't process the actual audio or video
@@ -36,16 +39,57 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public class RTPMediaSession : RTPSession, IMediaSession
     {
+        public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
         public const int DTMF_EVENT_DURATION = 1200;        // Default duration for a DTMF event.
+        public const int DTMF_EVENT_PAYLOAD_ID = 101;
+        public const string SDP_SESSION_NAME = "sipsorcery";
 
         private static readonly ILogger logger = Log.Logger;
 
         public bool LocalOnHold { get; set; }
         public bool RemoteOnHold { get; set; }
 
+        /// <summary>
+        /// The media announcements from each of the streams multiplexed in this RTP session.
+        /// <code>
+        /// // Example:
+        /// m=audio 10000 RTP/AVP 0
+        /// a=rtpmap:0 PCMU/8000
+        /// a=rtpmap:101 telephone-event/8000
+        /// a=fmtp:101 0-15
+        /// a=sendrecv
+        /// </code>
+        /// </summary>
+        public List<SDPMediaAnnouncement> MediaAnnouncements { get; private set; } = new List<SDPMediaAnnouncement>();
+
+        /// <summary>
+        /// The SDP offered by the remote call party for this session.
+        /// </summary>
+        public SDP RemoteSDP { get; private set; }
+
         public RTPMediaSession(int formatTypeID, AddressFamily addrFamily)
-             : base(formatTypeID, addrFamily, false, null)
-        { }
+             : base(formatTypeID, addrFamily, false)
+        {
+            // Construct the local SDP. There are a number of assumptions being made here:
+            // PCMU audio, RTP event support etc.
+            var mediaFormat = new SDPMediaFormat(formatTypeID);
+            var mediaAnnouncement = new SDPMediaAnnouncement
+            {
+                Media = SDPMediaTypesEnum.audio,
+                MediaFormats = new List<SDPMediaFormat> { mediaFormat },
+                MediaStreamStatus = MediaStreamStatusEnum.SendRecv,
+                Port = base.RtpChannel.RTPPort
+            };
+
+            // RTP event support.
+            int clockRate = mediaFormat.GetClockRate();
+            SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
+            rtpEventFormat.SetFormatAttribute($"{TELEPHONE_EVENT_ATTRIBUTE}/{clockRate}");
+            rtpEventFormat.SetFormatParameterAttribute("0-16");
+            mediaAnnouncement.MediaFormats.Add(rtpEventFormat);
+
+            MediaAnnouncements.Add(mediaAnnouncement);
+        }
 
         /// <summary>
         /// This event is invoked when the session media has changed
@@ -70,7 +114,7 @@ namespace SIPSorcery.SIP.App
 
         public Task SendDtmf(byte key, CancellationToken cancellationToken = default)
         {
-            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, DTMF_EVENT_DURATION, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, DTMF_EVENT_DURATION, DTMF_EVENT_PAYLOAD_ID);
             return SendDtmfEvent(dtmfEvent, cancellationToken);
         }
 
@@ -95,6 +139,59 @@ namespace SIPSorcery.SIP.App
         public virtual void Close()
         {
             CloseSession(null);
+        }
+
+        /// <summary>
+        /// Gets the a basic Session Description Protocol object that describes this RTP session.
+        /// </summary>
+        /// <param name="localAddress">The RTP socket we will be sending from. Note this can't be IPAddress.Any as
+        /// it's getting sent to the callee. An IP address of 0.0.0.0 or [::0] will typically be interpreted as
+        /// "don't send me any RTP".</param>
+        /// <returns>An Session Description Protocol object that can be sent to a remote callee.</returns>
+        public SDP GetSDP(IPAddress localAddress)
+        {
+            var sdp = new SDP(localAddress)
+            {
+                SessionId = Crypto.GetRandomInt(5).ToString(),
+                SessionName = SDP_SESSION_NAME,
+                Timing = "0 0",
+                Connection = new SDPConnectionInformation(localAddress),
+            };
+
+            sdp.Media = MediaAnnouncements;
+
+            return sdp;
+        }
+
+        /// <summary>
+        /// Sets relevant properties for this session based on the SDP from the remote party.
+        /// </summary>
+        /// <param name="sdp">The SDP from the remote call party.</param>
+        public void SetRemoteSDP(SDP sdp)
+        {
+            RemoteSDP = sdp;
+
+            foreach (var announcement in sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio))
+            {
+                foreach (var mediaFormat in announcement.MediaFormats)
+                {
+                    if (mediaFormat.FormatAttribute?.StartsWith(TELEPHONE_EVENT_ATTRIBUTE) == true)
+                    {
+                        if (!int.TryParse(mediaFormat.FormatID, out var remoteRtpEventPayloadID))
+                        {
+                            logger.LogWarning("The media format on the telephone event attribute was not a valid integer.");
+                        }
+                        else
+                        {
+                            base.RemoteRtpEventPayloadID = remoteRtpEventPayloadID;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            DestinationEndPoint = sdp.GetSDPRTPEndPoint();
+            RtcpSession.ControlDestinationEndPoint = new IPEndPoint(DestinationEndPoint.Address, DestinationEndPoint.Port + 1);
         }
 
         public Task<string> CreateOffer(IPAddress destinationAddress = null) =>
@@ -189,7 +286,7 @@ namespace SIPSorcery.SIP.App
         private void SetRemoteSDP(string remoteSDP)
         {
             var sdp = SDP.ParseSDPDescription(remoteSDP);
-            base.SetRemoteSDP(sdp);
+            SetRemoteSDP(sdp);
 
             CheckRemotePartyHoldCondition(sdp);
 

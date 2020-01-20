@@ -55,7 +55,7 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Creates a new RTP media session object.
         /// </summary>
-        /// <param name="addressFamily">The type of socket the the RTP session should use, IPv4 or IPv6.</param>
+        /// <param name="addressFamily">The type of socket the RTP session should use, IPv4 or IPv6.</param>
         /// <returns>A new RTP media session object.</returns>
         public virtual RTPMediaSession Create(AddressFamily addressFamily)
         {
