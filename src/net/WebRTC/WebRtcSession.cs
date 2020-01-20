@@ -24,10 +24,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
-using SIPSorceryMedia;
+//using SIPSorceryMedia;
 
 namespace SIPSorcery.Net
 {
+    public delegate int DoDtlsHandshakeDelegate(Socket rtpSocket, out ProtectRtpPacket protectRtp, out ProtectRtpPacket protectRtcp);
+
     public class WebRtcSession
     {
         private const int PAYLOAD_TYPE_ID = 100;
@@ -128,27 +130,19 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         //public event Action<IceCandidate, byte[], IPEndPoint> OnMediaPacket;
         //public event Action<IceCandidate, IPEndPoint> OnIceConnected;
 
-        public Dtls Dtls;
-        public Srtp SrtpContext;
-        public Srtp SrtpReceiveContext;  // Used to decrypt packets received from the remote peer.
+        private DoDtlsHandshakeDelegate _doDtlsHandshake;
+
         public RTPSession _rtpSession;
 
-        //public RTPSession _videoRtpSession;
-
         public bool IsEncryptionDisabled { get; private set; }
-
-        private string _dtlsCertFilePath;
-        private string _dtlsKeyFilePath;
 
         /// <summary>
         /// Time to schedule the STUN checks on each ICE candidate.
         /// </summary>
         private Timer m_stunChecksTimer;
 
-        public WebRtcSession(string dtlsCertFilePath, string dtlsKeyFilePath, string dtlsFingerprint, List<IPAddress> offerAddresses)
+        public WebRtcSession(string dtlsFingerprint, List<IPAddress> offerAddresses)
         {
-            _dtlsCertFilePath = dtlsCertFilePath;
-            _dtlsKeyFilePath = dtlsKeyFilePath;
             _dtlsCertificateFingerprint = dtlsFingerprint;
 
             SessionID = Guid.NewGuid().ToString();
@@ -169,10 +163,11 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         /// </summary>
         /// <param name="turnServerEndPoint">An optional parameter that can be used include a TURN 
         /// server in this session's ICE candidate gathering.</param>
-        public async Task Initialise(IPEndPoint turnServerEndPoint)
+        public async Task Initialise(DoDtlsHandshakeDelegate doDtlsHandshake, IPEndPoint turnServerEndPoint)
         {
             try
             {
+                _doDtlsHandshake = doDtlsHandshake;
                 _turnServerEndPoint = turnServerEndPoint;
 
                 DateTime startGatheringTime = DateTime.Now;
@@ -237,7 +232,14 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 // If there are no remote candidates this call will end up being a NOP.
                 SendStunConnectivityChecks(null);
 
-                _ = Task.Run(() => DoDtlsHandshake(_rtpChannel.m_rtpSocket));
+                if (_doDtlsHandshake != null)
+                {
+                    _ = Task.Run(() =>
+                    {
+                        int result = _doDtlsHandshake(_rtpChannel.m_rtpSocket, out _rtpSession.SrtpProtect, out _rtpSession.SrtcpProtect);
+                        IsDtlsNegotiationComplete = (result == 0);
+                    });
+                }
             }
             catch (Exception excp)
             {
@@ -306,49 +308,6 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             IsClosed = true;
             IceConnectionState = IceConnectionStatesEnum.Closed;
             m_stunChecksTimer.Dispose();
-
-            if (Dtls != null)
-            {
-                Dtls.Shutdown();
-            }
-        }
-
-        /// <summary>
-        /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
-        /// </summary>
-        /// <param name="rtpSocket">The RTP socket being used for the WebRTC session.</param>
-        private void DoDtlsHandshake(Socket rtpSocket)
-        {
-            logger.LogDebug("DoDtlsHandshake started.");
-
-            if (!File.Exists(_dtlsCertFilePath))
-            {
-                throw new ApplicationException($"The DTLS certificate file could not be found at {_dtlsCertFilePath}.");
-            }
-            else if (!File.Exists(_dtlsKeyFilePath))
-            {
-                throw new ApplicationException($"The DTLS key file could not be found at {_dtlsKeyFilePath}.");
-            }
-
-            Dtls = new Dtls(_dtlsCertFilePath, _dtlsKeyFilePath);
-
-            int res = Dtls.DoHandshake((ulong)rtpSocket.Handle);
-
-            logger.LogDebug("DtlsContext initialisation result=" + res);
-
-            if (Dtls.GetState() == (int)DtlsState.OK)
-            {
-                //logger.LogDebug("DTLS negotiation complete for " + remoteEndPoint.ToString() + ".");
-                logger.LogDebug("DTLS negotiation complete.");
-
-                SrtpContext = new Srtp(Dtls, false);
-                SrtpReceiveContext = new Srtp(Dtls, true);
-
-                IsDtlsNegotiationComplete = true;
-
-                _rtpSession.SrtpProtect = SrtpContext.ProtectRTP;
-                _rtpSession.SrtcpProtect = SrtpContext.ProtectRTCP;
-            }
         }
 
         /// <summary>

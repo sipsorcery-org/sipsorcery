@@ -1,14 +1,14 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example WebRTC server application that serves media streams
-// to a WebRTC enabled browser.
+// Description: An example WebRTC server application that serves a media stream
+// sourced from an MP4 file to a WebRTC enabled browser.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 17 Jan 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 20 Jan 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -217,16 +217,9 @@ namespace WebRTCServer
 
             if (dtls.GetState() == (int)DtlsState.OK)
             {
-                //logger.LogDebug("DTLS negotiation complete for " + remoteEndPoint.ToString() + ".");
                 logger.LogDebug("DTLS negotiation complete.");
 
                 var srtpContext = new Srtp(dtls, false);
-                //var srtpReceiveContext = new Srtp(dtls, true);
-
-                //IsDtlsNegotiationComplete = true;
-
-                //_rtpSession.SrtpProtect = srtpContext.ProtectRTP;
-                //_rtpSession.SrtcpProtect = srtpContext.ProtectRTCP;
                 protectRtp = srtpContext.ProtectRTP;
                 protectRtcp = srtpContext.ProtectRTCP;
             }
