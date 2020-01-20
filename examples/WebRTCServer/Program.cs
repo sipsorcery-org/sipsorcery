@@ -92,12 +92,15 @@ namespace WebRTCServer
 
             AddConsoleLogger();
 
-            // Initialise OpenSSL, saves a couple of seconds for the first client connection.
+            // Initialise OpenSSL & libsrtp, saves a couple of seconds for the first client connection.
+            Console.WriteLine("Initialising OpenSSL and libsrtp...");
             Dtls.InitialiseOpenSSL();
+            Srtp.InitialiseLibSrtp();
 
             Task.Run(SendTestPattern);
 
             // Start web socket.
+            Console.WriteLine("Starting web socket server...");
             _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
             _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
             _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
