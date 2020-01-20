@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WebRTCServer": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
