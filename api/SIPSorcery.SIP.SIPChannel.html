@@ -177,7 +177,7 @@ A SIP channel's primary responsibility is sending and receiving messages from th
   </span>
   <h4 id="SIPSorcery_SIP_SIPChannel_Closed" data-uid="SIPSorcery.SIP.SIPChannel.Closed">Closed</h4>
   <div class="markdown level1 summary"><p>Indicates whether close has been called on the SIP channel. Once closed a SIP channel can no longer be used
-to send or receive messages. It should generally only be called at the same time the SIP tranpsort class using it
+to send or receive messages. It should generally only be called at the same time the SIP transport class using it
 is shutdown.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -429,7 +429,7 @@ IPAddress.Any which means it can match multiple IP addresses.</p>
   <h4 id="SIPSorcery_SIP_SIPChannel_ListeningIPAddress" data-uid="SIPSorcery.SIP.SIPChannel.ListeningIPAddress">ListeningIPAddress</h4>
   <div class="markdown level1 summary"><p>The IP address the channel is listening on. Can be IPAddress.Any so cannot
 be used directly in SIP Headers, SIP URIs etc. Instead call GetContactURI and
-provdie the desintation address.</p>
+provide the destination address.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -492,8 +492,8 @@ IPAddress.Any which means it can match multiple IP addresses.</p>
   </span>
   <a id="SIPSorcery_SIP_SIPChannel_LocalIPAddresses_" data-uid="SIPSorcery.SIP.SIPChannel.LocalIPAddresses*"></a>
   <h4 id="SIPSorcery_SIP_SIPChannel_LocalIPAddresses" data-uid="SIPSorcery.SIP.SIPChannel.LocalIPAddresses">LocalIPAddresses</h4>
-  <div class="markdown level1 summary"><p>The list of IP addresses that this SIP channel is listening on. The only mechansim
-for a channel to have mutliple addresses is if it's socket address is set to
+  <div class="markdown level1 summary"><p>The list of IP addresses that this SIP channel is listening on. The only mechanism
+for a channel to have multiple addresses is if it's socket address is set to
 IPAddress.Any.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -625,7 +625,7 @@ should only be done at the same time the parent SIP transport layer is shutdown.
   <div class="markdown level1 summary"><p>The contact SIP URI to be used for contacting this SIP channel WHEN sending to the destination IP address.
 The contact URI can change based on the destination. For example if the SIP channel is listening on IPAddress.Any
 a destination address of 127.0.0.1 will result in a contact of sip:127.0.0.1:X. Using the same channel to
-send to a desintation address on the internet will result in a different URI.</p>
+send to a destination address on the Internet will result in a different URI.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -652,7 +652,7 @@ send to a desintation address on the internet will result in a different URI.</p
         <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
         <td><span class="parametername">dstEndPoint</span></td>
         <td><p>The destination SIP end point the Contact URI is for. For a SIPChannel using
-IPAddress.Any the desintation needs to be known so it can select the correct local address.</p>
+IPAddress.Any the destination needs to be known so it can select the correct local address.</p>
 </td>
       </tr>
     </tbody>
@@ -1041,7 +1041,7 @@ and connections that have been initiated due to sends from this channel.</p>
   </span>
   <a id="SIPSorcery_SIP_SIPChannel_SendSecureAsync_" data-uid="SIPSorcery.SIP.SIPChannel.SendSecureAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_String_" data-uid="SIPSorcery.SIP.SIPChannel.SendSecureAsync(SIPSorcery.SIP.SIPEndPoint,System.Byte[],System.String,System.String)">SendSecureAsync(SIPEndPoint, Byte[], String, String)</h4>
-  <div class="markdown level1 summary"><p>Asynchronous SIP message send over a secure TLS connetion to a remote end point.</p>
+  <div class="markdown level1 summary"><p>Asynchronous SIP message send over a secure TLS connection to a remote end point.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>

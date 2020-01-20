@@ -112,7 +112,7 @@ that one or more sources are no longer active.</p>
       <section><p>Represents an RTCP compound packet consisting of 1 or more
 RTCP packets combined together in a single buffer. According to RFC3550 RTCP
 transmissions should always have at least 2 RTCP packets (a sender/receiver report
-and an SDES report). This implementation does not enforce that contraint for
+and an SDES report). This implementation does not enforce that constraint for
 received reports but does for sends.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPHeader.html">RTCPHeader</a></h4>
@@ -134,10 +134,11 @@ RTP session. This class needs to get notified of all RTP sends and receives
 and will take care of RTCP reporting.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPChannel.html">RTPChannel</a></h4>
-      <section></section>
+      <section><p>A communications channel for transmitting and receiving Real-time Protocol (RTP) and
+Real-time Control Protocol (RTCP) packets. This class performs the socket management
+functions.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPEvent.html">RTPEvent</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPFrame.html">RTPFrame</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPHeader.html">RTPHeader</a></h4>
       <section></section>
@@ -145,11 +146,8 @@ and will take care of RTCP reporting.</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPSession.html">RTPSession</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTPVP8Header.html">RTPVP8Header</a></h4>
-      <section><p>Examples of size Payload Header size calculations:</p>
-<p>For length of first parition 54: S0 = 4, S1 = 0x32, S2 = 0.
-For length of first parition 1777: S0 = 1, S1 = 0xde, S2 = 0.</p>
-</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTPSessionStream.html">RTPSessionStream</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPConstants.html">RTSPConstants</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPEntityHeaders.html">RTSPEntityHeaders</a></h4>
@@ -288,20 +286,20 @@ one the Binding Request was received on.</p>
       <h4><a class="xref" href="SIPSorcery.Net.STUNv2MessageTypes.html">STUNv2MessageTypes</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNv2XORAddressAttribute.html">STUNv2XORAddressAttribute</a></h4>
-      <section><p>This attribue is the same as the mapped address attribute except the address details are XOR'ed with the STUN magic cookie.
-THe reason for this is to stop NAT application layer gateways from doing string replacements of private IP adresses and ports.</p>
+      <section><p>This attribute is the same as the mapped address attribute except the address details are XOR'ed with the STUN magic cookie.
+THe reason for this is to stop NAT application layer gateways from doing string replacements of private IP addresses and ports.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.TurnServer.html">TurnServer</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.Utility.html">Utility</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a></h4>
       <section></section>
     <h3 id="enums">Enums
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.CaptureProtocolTypeEnum.html">CaptureProtocolTypeEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ChunkTypeEnum.html">ChunkTypeEnum</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.FrameTypesEnum.html">FrameTypesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.IceCandidateTypesEnum.html">IceCandidateTypesEnum</a></h4>
       <section></section>
@@ -320,8 +318,6 @@ See <a href="https://tools.ietf.org/html/rfc4566#section-6">https://tools.ietf.o
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPChannelSocketsEnum.html">RTPChannelSocketsEnum</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.RtpMediaTypesEnum.html">RtpMediaTypesEnum</a></h4>
-      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPHeaderError.html">RTSPHeaderError</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPHeaderParserError.html">RTSPHeaderParserError</a></h4>
@@ -337,8 +333,8 @@ See <a href="https://tools.ietf.org/html/rfc4566#section-6">https://tools.ietf.o
       <h4><a class="xref" href="SIPSorcery.Net.RTSPResponseStatusCodesEnum.html">RTSPResponseStatusCodesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaFormatsEnum.html">SDPMediaFormatsEnum</a></h4>
-      <section><p>A list of standard media formats that can be idenitifed by an ID if
-there is no qualifiying format attribute provided.</p>
+      <section><p>A list of standard media formats that can be identified by an ID if
+there is no qualifying format attribute provided.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></h4>
       <section></section>
@@ -369,6 +365,8 @@ a=fmtp:98 max-fr=30; max-fs=3600;</code></pre>
       <section></section>
     <h3 id="delegates">Delegates
   </h3>
+      <h4><a class="xref" href="SIPSorcery.Net.DoDtlsHandshakeDelegate.html">DoDtlsHandshakeDelegate</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNMessageReceived.html">STUNMessageReceived</a></h4>

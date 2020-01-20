@@ -166,7 +166,7 @@ and will NOT use a transaction engine.</p>
         <td><span class="parametername">sipResolver</span></td>
         <td><p>Optional DNS resolver. If null a default one will be used. Examples of
 where a custom DNS resolver is useful is when the application is acting as a Proxy and forwards
-all messages to an upstream SIP server irrespecitive of the URI.</p>
+all messages to an upstream SIP server irrespective of the URI.</p>
 </td>
       </tr>
     </tbody>
@@ -286,7 +286,7 @@ sipRequest.Header.Contact = new List&lt;SIPContactHeader>() { SIPContactHeader.G
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_CanCreateMissingChannels_" data-uid="SIPSorcery.SIP.SIPTransport.CanCreateMissingChannels*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_CanCreateMissingChannels" data-uid="SIPSorcery.SIP.SIPTransport.CanCreateMissingChannels">CanCreateMissingChannels</h4>
-  <div class="markdown level1 summary"><p>If true allows this class to attempt to create a new SIP channel if a requried protocol
+  <div class="markdown level1 summary"><p>If true allows this class to attempt to create a new SIP channel if a required protocol
 is missing. Set to false to prevent new channels being created on demand.
 Note that when listening SIP end points are required they will always need to be
 created manually.</p>
@@ -533,7 +533,7 @@ be sent to.</p>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_GetSIPChannels_" data-uid="SIPSorcery.SIP.SIPTransport.GetSIPChannels*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_GetSIPChannels" data-uid="SIPSorcery.SIP.SIPTransport.GetSIPChannels">GetSIPChannels()</h4>
-  <div class="markdown level1 summary"><p>Gets a list of this tranpsort's SIP channels.</p>
+  <div class="markdown level1 summary"><p>Gets a list of this transport's SIP channels.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -648,7 +648,7 @@ The steps to process requests for Route headers are:</p>
 <ol>
 <li>If route set is empty no further action is required, forward to destination resolved from request URI,</li>
 <li>If the request URI is identified as a value that was previously set as a Route by this SIP agent it means the
-previous hop was a strict router. Replace the reqest URI with the last Route header and go to next step,</li>
+previous hop was a strict router. Replace the request URI with the last Route header and go to next step,</li>
 <li>If the top most route header was set by this SIP agent then remove it and go to next step,</li>
 <li>If the top most route set does contain the lr parameter then forward to the destination resolved by it,</li>
 <li>If the top most route header does NOT contain the lr parameter is must be popped and inserted as the request URI
@@ -697,7 +697,7 @@ up to 10s.</p>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
         <td><span class="parametername">localEndPoint</span></td>
-        <td><p>The local end point the message was receeived on.</p>
+        <td><p>The local end point the message was received on.</p>
 </td>
       </tr>
       <tr>
@@ -773,7 +773,7 @@ up to 10s.</p>
   <a id="SIPSorcery_SIP_SIPTransport_SendRawAsync_" data-uid="SIPSorcery.SIP.SIPTransport.SendRawAsync*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_SendRawAsync_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_System_Byte___" data-uid="SIPSorcery.SIP.SIPTransport.SendRawAsync(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,System.Byte[])">SendRawAsync(SIPEndPoint, SIPEndPoint, Byte[])</h4>
   <div class="markdown level1 summary"><p>Allows raw bytes to be sent from one of the SIPTransport sockets. This should not be used for SIP payloads and instead is
-provided to allow other types of payloads to be multi-plexed on the SIP socket. Examples are sending NAT keep alives and
+provided to allow other types of payloads to be multiplexed on the SIP socket. Examples are sending NAT keep-alives and
 STUN responses where it's useful to use the same socket as the SIP packets.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -1008,7 +1008,7 @@ different channel to send on compared to the one it arrived on.</li>
 </ul>
 <p>Forwarding logic:</p>
 <ul>
-<li>If the channel hints are set then an attempt will be made to use them to find an approriate channel to
+<li>If the channel hints are set then an attempt will be made to use them to find an appropriate channel to
 send the response on. If the hinted channel can't be found or it is found but is the wrong protocol then
 move onto the next step,</li>
 <li>The information in the Top Via header will be used to find the best channel to forward the response on.</li>
@@ -1061,7 +1061,7 @@ move onto the next step,</li>
   </span>
   <a id="SIPSorcery_SIP_SIPTransport_SendTransaction_" data-uid="SIPSorcery.SIP.SIPTransport.SendTransaction*"></a>
   <h4 id="SIPSorcery_SIP_SIPTransport_SendTransaction_SIPSorcery_SIP_SIPTransaction_" data-uid="SIPSorcery.SIP.SIPTransport.SendTransaction(SIPSorcery.SIP.SIPTransaction)">SendTransaction(SIPTransaction)</h4>
-  <div class="markdown level1 summary"><p>Sends a SIP request/response and keeps track of whether a response/acknowledgement has been received.
+  <div class="markdown level1 summary"><p>Sends a SIP request/response and keeps track of whether a response/acknowledgment has been received.
 For UDP &quot;reliably&quot; means retransmitting the message up to eleven times.
 If no response is received then periodic retransmits are made for up to T1 x 64 seconds (defaults to 30 seconds with 11 retransmits).</p>
 </div>

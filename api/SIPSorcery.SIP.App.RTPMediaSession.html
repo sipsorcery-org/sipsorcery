@@ -73,7 +73,7 @@
   
   <h1 id="SIPSorcery_SIP_App_RTPMediaSession" data-uid="SIPSorcery.SIP.App.RTPMediaSession" class="text-break">Class RTPMediaSession
   </h1>
-  <div class="markdown level0 summary"><p>The SipSorcery concrete implementation of IMediaSession.
+  <div class="markdown level0 summary"><p>A concrete implementation of IMediaSession.
 Relies on RTPSession and RTPChannel for RTP and network functions.</p>
 <p>This implementation sets up the RTP stream but doesn't process the actual audio or video
 and will need another component to do the processing of the media and send/receive it to/from the RTP session.</p>
@@ -99,19 +99,7 @@ and will need another component to do the processing of the media and send/recei
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_H264_RTP_HEADER_LENGTH">RTPSession.H264_RTP_HEADER_LENGTH</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_TELEPHONE_EVENT_ATTRIBUTE">RTPSession.TELEPHONE_EVENT_ATTRIBUTE</a>
-    </div>
-    <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS">RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_DTMF_EVENT_PAYLOAD_ID">RTPSession.DTMF_EVENT_PAYLOAD_ID</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Ssrc">RTPSession.Ssrc</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SeqNum">RTPSession.SeqNum</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RtpChannel">RTPSession.RtpChannel</a>
@@ -120,22 +108,10 @@ and will need another component to do the processing of the media and send/recei
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RtcpSession">RTPSession.RtcpSession</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_MediaAnnouncement">RTPSession.MediaAnnouncement</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_MediaFormat">RTPSession.MediaFormat</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_FormatTypeID">RTPSession.FormatTypeID</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SrtpProtect">RTPSession.SrtpProtect</a>
-    </div>
-    <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_DestinationEndPoint">RTPSession.DestinationEndPoint</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteSDP">RTPSession.RemoteSDP</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteRtpEventPayloadID">RTPSession.RemoteRtpEventPayloadID</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceiveFromEndPointChanged">RTPSession.OnReceiveFromEndPointChanged</a>
@@ -150,25 +126,22 @@ and will need another component to do the processing of the media and send/recei
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpClosed">RTPSession.OnRtpClosed</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetRemoteSDP_SIPSorcery_Net_SDP_">RTPSession.SetRemoteSDP(SDP)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AddStream_System_Int32_SIPSorcery_Net_SDPMediaAnnouncement_">RTPSession.AddStream(Int32, SDPMediaAnnouncement)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudioFrame_System_UInt32_System_Byte___">RTPSession.SendAudioFrame(UInt32, Byte[])</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudioFrame_System_UInt32_System_Byte___System_Int32_">RTPSession.SendAudioFrame(UInt32, Byte[], Int32)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVp8Frame_System_UInt32_System_Byte___">RTPSession.SendVp8Frame(UInt32, Byte[])</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVp8Frame_System_UInt32_System_Byte___System_Int32_">RTPSession.SendVp8Frame(UInt32, Byte[], Int32)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendJpegFrame_System_UInt32_System_Byte___System_Int32_System_Int32_System_Int32_System_Int32_">RTPSession.SendJpegFrame(UInt32, Byte[], Int32, Int32, Int32, Int32)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendH264Frame_System_UInt32_System_Byte___System_UInt32_System_Int32_">RTPSession.SendH264Frame(UInt32, Byte[], UInt32, Int32)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendH264Frame_System_UInt32_System_Byte___System_UInt32_System_Int32_System_Int32_">RTPSession.SendH264Frame(UInt32, Byte[], UInt32, Int32, Int32)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationToken_">RTPSession.SendDtmfEvent(RTPEvent, CancellationToken)</a>
-    </div>
-    <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetSDP_System_Net_IPAddress_">RTPSession.GetSDP(IPAddress)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationToken_System_Int32_System_Int32_">RTPSession.SendDtmfEvent(RTPEvent, CancellationToken, Int32, Int32)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CloseSession_System_String_">RTPSession.CloseSession(String)</a>
@@ -214,7 +187,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession__ctor_System_Int32_System_Net_Sockets_AddressFamily_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.%23ctor(System.Int32%2CSystem.Net.Sockets.AddressFamily)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L44">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L70">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_RTPMediaSession__ctor_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.#ctor*"></a>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession__ctor_System_Int32_System_Net_Sockets_AddressFamily_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.#ctor(System.Int32,System.Net.Sockets.AddressFamily)">RTPMediaSession(Int32, AddressFamily)</h4>
@@ -246,6 +219,124 @@ and will need another component to do the processing of the media and send/recei
       </tr>
     </tbody>
   </table>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_DTMF_EVENT_DURATION.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.DTMF_EVENT_DURATION%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L43">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_RTPMediaSession_DTMF_EVENT_DURATION" data-uid="SIPSorcery.SIP.App.RTPMediaSession.DTMF_EVENT_DURATION">DTMF_EVENT_DURATION</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int DTMF_EVENT_DURATION = 1200</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_DTMF_EVENT_PAYLOAD_ID.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.DTMF_EVENT_PAYLOAD_ID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L44">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_RTPMediaSession_DTMF_EVENT_PAYLOAD_ID" data-uid="SIPSorcery.SIP.App.RTPMediaSession.DTMF_EVENT_PAYLOAD_ID">DTMF_EVENT_PAYLOAD_ID</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int DTMF_EVENT_PAYLOAD_ID = 101</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_SDP_SESSION_NAME.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.SDP_SESSION_NAME%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L45">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_RTPMediaSession_SDP_SESSION_NAME" data-uid="SIPSorcery.SIP.App.RTPMediaSession.SDP_SESSION_NAME">SDP_SESSION_NAME</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const string SDP_SESSION_NAME = &quot;sipsorcery&quot;</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_TELEPHONE_EVENT_ATTRIBUTE.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.TELEPHONE_EVENT_ATTRIBUTE%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L42">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_RTPMediaSession_TELEPHONE_EVENT_ATTRIBUTE" data-uid="SIPSorcery.SIP.App.RTPMediaSession.TELEPHONE_EVENT_ATTRIBUTE">TELEPHONE_EVENT_ATTRIBUTE</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const string TELEPHONE_EVENT_ATTRIBUTE = &quot;telephone-event&quot;</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="properties">Properties
   </h3>
   <span class="small pull-right mobile-hide">
@@ -253,7 +344,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_LocalOnHold.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.LocalOnHold%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L41">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L49">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_RTPMediaSession_LocalOnHold_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.LocalOnHold*"></a>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_LocalOnHold" data-uid="SIPSorcery.SIP.App.RTPMediaSession.LocalOnHold">LocalOnHold</h4>
@@ -280,10 +371,47 @@ and will need another component to do the processing of the media and send/recei
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_MediaAnnouncements.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.MediaAnnouncements%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L63">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_RTPMediaSession_MediaAnnouncements_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.MediaAnnouncements*"></a>
+  <h4 id="SIPSorcery_SIP_App_RTPMediaSession_MediaAnnouncements" data-uid="SIPSorcery.SIP.App.RTPMediaSession.MediaAnnouncements">MediaAnnouncements</h4>
+  <div class="markdown level1 summary"><p>The media announcements from each of the streams multiplexed in this RTP session.</p>
+<pre><code>// Example:
+m=audio 10000 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-15
+a=sendrecv</code></pre>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;SDPMediaAnnouncement&gt; MediaAnnouncements { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaAnnouncement.html">SDPMediaAnnouncement</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_RemoteOnHold.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.RemoteOnHold%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L42">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L50">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_RTPMediaSession_RemoteOnHold_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.RemoteOnHold*"></a>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_RemoteOnHold" data-uid="SIPSorcery.SIP.App.RTPMediaSession.RemoteOnHold">RemoteOnHold</h4>
@@ -308,6 +436,37 @@ and will need another component to do the processing of the media and send/recei
       </tr>
     </tbody>
   </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_RemoteSDP.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.RemoteSDP%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L68">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_RTPMediaSession_RemoteSDP_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.RemoteSDP*"></a>
+  <h4 id="SIPSorcery_SIP_App_RTPMediaSession_RemoteSDP" data-uid="SIPSorcery.SIP.App.RTPMediaSession.RemoteSDP">RemoteSDP</h4>
+  <div class="markdown level1 summary"><p>The SDP offered by the remote call party for this session.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SDP RemoteSDP { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="methods">Methods
   </h3>
   <span class="small pull-right mobile-hide">
@@ -315,7 +474,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_AnswerOffer_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.AnswerOffer(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L175">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L274">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_RTPMediaSession_AnswerOffer_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.AnswerOffer*"></a>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_AnswerOffer_System_String_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.AnswerOffer(System.String)">AnswerOffer(String)</h4>
@@ -362,7 +521,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_Close.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.Close%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L93">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L139">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_RTPMediaSession_Close_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.Close*"></a>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_Close" data-uid="SIPSorcery.SIP.App.RTPMediaSession.Close">Close()</h4>
@@ -377,7 +536,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_CreateOffer_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.CreateOffer(System.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L98">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L197">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_RTPMediaSession_CreateOffer_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.CreateOffer*"></a>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_CreateOffer_System_Net_IPAddress_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.CreateOffer(System.Net.IPAddress)">CreateOffer(IPAddress)</h4>
@@ -421,10 +580,62 @@ and will need another component to do the processing of the media and send/recei
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_GetSDP_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.GetSDP(System.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L151">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_RTPMediaSession_GetSDP_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.GetSDP*"></a>
+  <h4 id="SIPSorcery_SIP_App_RTPMediaSession_GetSDP_System_Net_IPAddress_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.GetSDP(System.Net.IPAddress)">GetSDP(IPAddress)</h4>
+  <div class="markdown level1 summary"><p>Gets the a basic Session Description Protocol object that describes this RTP session.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SDP GetSDP(IPAddress localAddress)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="parametername">localAddress</span></td>
+        <td><p>The RTP socket we will be sending from. Note this can't be IPAddress.Any as
+it's getting sent to the callee. An IP address of 0.0.0.0 or [::0] will typically be interpreted as
+&quot;don't send me any RTP&quot;.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a></td>
+        <td><p>An Session Description Protocol object that can be sent to a remote callee.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_OfferAnswered_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.OfferAnswered(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L169">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L268">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_RTPMediaSession_OfferAnswered_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.OfferAnswered*"></a>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_OfferAnswered_System_String_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.OfferAnswered(System.String)">OfferAnswered(String)</h4>
@@ -471,7 +682,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_PutOnHold.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.PutOnHold%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L78">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L124">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_RTPMediaSession_PutOnHold_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.PutOnHold*"></a>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_PutOnHold" data-uid="SIPSorcery.SIP.App.RTPMediaSession.PutOnHold">PutOnHold()</h4>
@@ -487,7 +698,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_RemoteReInvite_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.RemoteReInvite(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L181">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L280">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_RTPMediaSession_RemoteReInvite_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.RemoteReInvite*"></a>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_RemoteReInvite_System_String_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.RemoteReInvite(System.String)">RemoteReInvite(String)</h4>
@@ -534,7 +745,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_SendDtmf_System_Byte_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.SendDtmf(System.Byte%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L69">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L115">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_RTPMediaSession_SendDtmf_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.SendDtmf*"></a>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_SendDtmf_System_Byte_System_Threading_CancellationToken_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.SendDtmf(System.Byte,System.Threading.CancellationToken)">SendDtmf(Byte, CancellationToken)</h4>
@@ -583,10 +794,44 @@ and will need another component to do the processing of the media and send/recei
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_SetRemoteSDP_SIPSorcery_Net_SDP_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.SetRemoteSDP(SIPSorcery.Net.SDP)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L170">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_RTPMediaSession_SetRemoteSDP_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.SetRemoteSDP*"></a>
+  <h4 id="SIPSorcery_SIP_App_RTPMediaSession_SetRemoteSDP_SIPSorcery_Net_SDP_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.SetRemoteSDP(SIPSorcery.Net.SDP)">SetRemoteSDP(SDP)</h4>
+  <div class="markdown level1 summary"><p>Sets relevant properties for this session based on the SDP from the remote party.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetRemoteSDP(SDP sdp)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a></td>
+        <td><span class="parametername">sdp</span></td>
+        <td><p>The SDP from the remote call party.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_TakeOffHold.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.TakeOffHold%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L87">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L133">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_App_RTPMediaSession_TakeOffHold_" data-uid="SIPSorcery.SIP.App.RTPMediaSession.TakeOffHold*"></a>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_TakeOffHold" data-uid="SIPSorcery.SIP.App.RTPMediaSession.TakeOffHold">TakeOffHold()</h4>
@@ -604,7 +849,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_DtmfCompleted.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.DtmfCompleted%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L67">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L113">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_DtmfCompleted" data-uid="SIPSorcery.SIP.App.RTPMediaSession.DtmfCompleted">DtmfCompleted</h4>
   <div class="markdown level1 summary"><p>Gets fired when an RTP DTMF event is completed on the remote call party's RTP stream.</p>
@@ -634,7 +879,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_RemotePutOnHold.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.RemotePutOnHold%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L57">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L103">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_RemotePutOnHold" data-uid="SIPSorcery.SIP.App.RTPMediaSession.RemotePutOnHold">RemotePutOnHold</h4>
   <div class="markdown level1 summary"><p>The remote call party has put us on hold.</p>
@@ -664,7 +909,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_RemoteTookOffHold.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.RemoteTookOffHold%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L62">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L108">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_RemoteTookOffHold" data-uid="SIPSorcery.SIP.App.RTPMediaSession.RemoteTookOffHold">RemoteTookOffHold</h4>
   <div class="markdown level1 summary"><p>The remote call party has taken us off hold.</p>
@@ -694,7 +939,7 @@ and will need another component to do the processing of the media and send/recei
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession_SessionMediaChanged.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession.SessionMediaChanged%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L52">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L98">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_RTPMediaSession_SessionMediaChanged" data-uid="SIPSorcery.SIP.App.RTPMediaSession.SessionMediaChanged">SessionMediaChanged</h4>
   <div class="markdown level1 summary"><p>This event is invoked when the session media has changed
@@ -738,7 +983,7 @@ and a new SDP is available.</p>
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_RTPMediaSession.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.RTPMediaSession%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L37" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RTPMediaSession.cs/#L40" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
