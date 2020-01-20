@@ -95,16 +95,6 @@ namespace SIPSorcery.Net
         public List<SDPMediaAnnouncement> MediaAnnouncements { get; private set; } = new List<SDPMediaAnnouncement>();
 
         /// <summary>
-        /// Function pointer to an SRTP context that encrypts an RTP packet.
-        /// </summary>
-        public ProtectRtpPacket SrtpProtect { get; set; }
-
-        /// <summary>
-        /// Function pointer to an SRTP context that encrypts an RTCP packet.
-        /// </summary>
-        public ProtectRtpPacket SrtcpProtect { get; set; }
-
-        /// <summary>
         /// The remote RTP end point this session is sending to.
         /// </summary>
         public IPEndPoint DestinationEndPoint;
@@ -113,6 +103,16 @@ namespace SIPSorcery.Net
         /// The SDP offered by the remote call party for this session.
         /// </summary>
         public SDP RemoteSDP { get; private set; }
+
+        /// <summary>
+        /// Function pointer to an SRTP context that encrypts an RTP packet.
+        /// </summary>
+        internal ProtectRtpPacket SrtpProtect;// { get; set; }
+
+        /// <summary>
+        /// Function pointer to an SRTP context that encrypts an RTCP packet.
+        /// </summary>
+        internal ProtectRtpPacket SrtcpProtect; // { get; set; }
 
         /// <summary>
         /// Gets fired when the session detects that the remote end point 
