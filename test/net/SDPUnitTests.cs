@@ -246,7 +246,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Test that an SDP payload from Mircosoft's Edge browser for a WebRTC session gets parsed correctly..
+        /// Test that an SDP payload from Microsoft's Edge browser for a WebRTC session gets parsed correctly.
         /// </summary>
         [Fact]
         public void ParseEdgeBrowserSdpUnitTest()

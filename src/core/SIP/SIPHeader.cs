@@ -77,7 +77,7 @@ namespace SIPSorcery.SIP
             }
             set { ViaParameters.Set(m_branchKey, value); }
         }
-        public string ReceivedFromIPAddress     // IP Address contained in the recevied parameter.
+        public string ReceivedFromIPAddress     // IP Address contained in the received parameter.
         {
             get
             {
@@ -746,7 +746,7 @@ namespace SIPSorcery.SIP
             }
             else
             {
-                // Compare invaraiant parameters.
+                // Compare invariant parameters.
                 string[] contact1Keys = contact1.ContactParameters.GetKeys();
 
                 if (contact1Keys != null && contact1Keys.Length > 0)
@@ -1342,7 +1342,7 @@ namespace SIPSorcery.SIP
         public string Reason;
         public SIPRouteSet RecordRoutes = new SIPRouteSet();
         public string ReferredBy;                           // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
-        public string ReferSub;                             // RFC 4488 If set to false indicates the implict REFER subscription should not be created.
+        public string ReferSub;                             // RFC 4488 If set to false indicates the implicit REFER subscription should not be created.
         public string ReferTo;                              // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
         public string ReplyTo;
         public string Require;
@@ -1479,7 +1479,7 @@ namespace SIPSorcery.SIP
                     string headerName = null;
                     string headerValue = null;
 
-                    // If the first character of a line is whitespace it's a contiuation of the previous line.
+                    // If the first character of a line is whitespace it's a continuation of the previous line.
                     if (headerLine.StartsWith(" "))
                     {
                         headerName = lastHeader;

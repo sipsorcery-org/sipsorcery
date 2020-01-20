@@ -271,5 +271,31 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(STUNv2MessageTypesEnum.BindingSuccessResponse, stunHeader.MessageType);
         }
+
+        /// <summary>
+        /// Tests that the fingerprint and hmac attributes get generated correctly..
+        /// </summary>
+        [Fact]
+        public void GenerateHmacAndFingerprintTestMethod()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string icePassword = "SKYKPPYLTZOAVCLTGHDUODANRKSPOVQVKXJULOGG";
+
+            STUNv2Message msg = new STUNv2Message(STUNv2MessageTypesEnum.BindingSuccessResponse);
+            msg.Header.TransactionId = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+            msg.AddXORMappedAddressAttribute(IPAddress.Loopback, 55477);
+            var buffer = msg.ToByteBufferStringKey(icePassword, true);
+
+            string hmac = "HMAC: ";
+            for(int i=36; i < 56; i++)
+            {
+                hmac += $"{buffer[i]:X2} ";
+            }
+            logger.LogDebug(hmac);
+
+            logger.LogDebug($"Fingerprint: {buffer[buffer.Length - 4]:X2} {buffer[buffer.Length - 3]:X2} {buffer[buffer.Length - 2]:X2} {buffer[buffer.Length - 1]:X2}.");
+        }
     }
 }

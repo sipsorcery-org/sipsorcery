@@ -9,7 +9,7 @@
 // - No switch from Sender Report to Receiver Report if there are no sends
 //   within the 2 sample period Window. For 2 party sessions the tiny 
 //   bandwidth saving does not justify the complexity.
-// - First report will be sent striaght after the first RTP send. The initial
+// - First report will be sent straight after the first RTP send. The initial
 //   delay is inconsequential for 2 party sessions.
 // - The jitter calculation uses a millisecond resolution NTP timestamp for the
 //   arrival time. RFC3550 states to use a arrival clock with the same resolution
@@ -40,6 +40,18 @@ namespace SIPSorcery.Net
     /// RTP session. This class needs to get notified of all RTP sends and receives 
     /// and will take care of RTCP reporting.
     /// </summary>
+    /// <remarks>
+    /// RTCP Design Decisions:
+    /// - Minimum Report Period set to 5s as per RFC3550: 6.2 RTCP Transmission Interval (page 24).
+    /// - Delay for initial report transmission set to 2.5s (0.5 * minimum report period) as per RFC3550: 6.2 RTCP Transmission Interval (page 26).
+    /// - Randomisation factor to apply to report intervals to attempt to ensure RTCP reports amongst participants don't become synchronised
+    ///   [0.5 * interval, 1.5 * interval] as per RFC3550: 6.2 RTCP Transmission Interval (page 26).
+    /// - Timeout period during which if no RTP or RTCP packets received a participant is assumed to have dropped
+    ///   5 x minimum report period as per RFC3550: 6.2.1 (page 27) and 6.3.5 (page 31).
+    /// - All RTCP composite reports must satisfy (this includes when a BYE is sent):
+    ///   - First RTCP packet must be a SR or RR,
+    ///   - Must contain an SDES packet.
+    /// </remarks>
     public class RTCPSession
     {
         public const string NO_ACTIVITY_TIMEOUT_REASON = "No activity timeout.";
@@ -101,17 +113,18 @@ namespace SIPSorcery.Net
         private RTPChannel m_rtpChannel;
         private bool m_isClosed = false;
         private ReceptionReport m_receptionReport;
+        private bool m_isMultiplexed;               // if true indicates RTCP reports should be sent on the RTP socket.
 
         /// <summary>
         /// Function pointer to an SRTCP context that encrypts an RTCP packet.
         /// </summary>
-        public ProtectRtpPacket m_srtcpProtect { get; private set; }
+        public ProtectRtpPacket RtcpProtect { get; set; }
 
-        public RTCPSession(uint ssrc, RTPChannel rtpChannel, ProtectRtpPacket srtcpProtect)
+        public RTCPSession(uint ssrc, RTPChannel rtpChannel, bool isMultiplexed)
         {
             Ssrc = ssrc;
             m_rtpChannel = rtpChannel;
-            m_srtcpProtect = srtcpProtect;
+            m_isMultiplexed = isMultiplexed;
             CreatedAt = DateTime.Now;
             Cname = Guid.NewGuid().ToString();
         }
@@ -127,7 +140,11 @@ namespace SIPSorcery.Net
             {
                 var report = GetRtcpReport();
                 report.Bye = new RTCPBye(Ssrc, reason);
-                SendRtcpReport(report);
+
+                if (ControlDestinationEndPoint != null)
+                {
+                    SendRtcpReport(report);
+                }
 
                 m_isClosed = true;
                 m_rtcpReportTimer?.Dispose();
@@ -242,7 +259,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                // RTCP reports are not crticial enough to bubble the exception up to the application.
+                // RTCP reports are not critical enough to bubble the exception up to the application.
                 logger.LogError($"Exception SendReportTimerCallback. {excp.Message}");
                 m_rtcpReportTimer?.Dispose();
             }
@@ -268,32 +285,34 @@ namespace SIPSorcery.Net
         {
             var reportBytes = report.GetBytes();
 
-            if (m_srtcpProtect == null)
+            var sendOnSocket = (m_isMultiplexed) ? RTPChannelSocketsEnum.RTP : RTPChannelSocketsEnum.Control;
+
+            if (RtcpProtect == null)
             {
-                m_rtpChannel.SendAsync(RTPChannelSocketsEnum.Control, ControlDestinationEndPoint, reportBytes);
+                m_rtpChannel.SendAsync(sendOnSocket, ControlDestinationEndPoint, reportBytes);
             }
             else
             {
                 byte[] sendBuffer = new byte[reportBytes.Length + SRTP_AUTH_KEY_LENGTH];
                 Buffer.BlockCopy(reportBytes, 0, sendBuffer, 0, reportBytes.Length);
 
-                int rtperr = m_srtcpProtect(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
+                int rtperr = RtcpProtect(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
                 if (rtperr != 0)
                 {
                     logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
                 }
                 else
                 {
-                    m_rtpChannel.SendAsync(RTPChannelSocketsEnum.Control, m_rtpChannel.LastControlDestination, sendBuffer);
+                    m_rtpChannel.SendAsync(sendOnSocket, m_rtpChannel.LastControlDestination, sendBuffer);
                 }
             }
         }
 
         /// <summary>
-        /// Gets a pseudo-randominsed interval for the next RTCP report period.
+        /// Gets a pseudo-randomised interval for the next RTCP report period.
         /// </summary>
         /// <param name="baseInterval">The base report interval to randomise.</param>
-        /// <returns>A value in milliseconds to use for teh next RTCP report interval.</returns>
+        /// <returns>A value in milliseconds to use for the next RTCP report interval.</returns>
         private int GetNextRtcpInterval(int baseInterval)
         {
             return Crypto.GetRandomInt((int)(RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR * baseInterval),

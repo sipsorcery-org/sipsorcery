@@ -68,7 +68,7 @@ namespace SIPSorcery.Sys
         /// <param name="s">The input string to extract the slice from.</param>
         /// <param name="startDelimiter">The character to start the slice from. The first instance of the character found is used.</param>
         /// <param name="endDelimeter">The character to end the slice on. The first instance of the character found is used.</param>
-        /// <returns>A slice fo the input string or null if the slcie is not possible.</returns>
+        /// <returns>A slice of the input string or null if the slcie is not possible.</returns>
         public static string Slice(this string s, char startDelimiter, char endDelimeter)
         {
             if (String.IsNullOrEmpty(s))

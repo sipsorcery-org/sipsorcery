@@ -55,7 +55,7 @@ namespace SIPSorcery.Sys
         // Fragmentation flags. Bit 0=0, Bit 1=DF, Bit 2=MF
         public int DF = 1;              // 0 = May fragment, 1 = Don't fragment.
         public int MF = 0;              // 0 = Last fragment, 1 = More fragments.
-        public int FragmentOffset;      // Indiciates where in the datagram the fragment belongs.
+        public int FragmentOffset;      // Indicates where in the datagram the fragment belongs.
 
         public IPv4Header(ProtocolType protocol, int id, IPAddress sourceAddress, IPAddress dstAddress)
         {

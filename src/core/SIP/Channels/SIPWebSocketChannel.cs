@@ -125,7 +125,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// This object is reponsible for all the web sockets magic including accepting HTTP requests, matching URLs, handling the
+        /// This object is responsible for all the web sockets magic including accepting HTTP requests, matching URLs, handling the
         /// keep alives etc. etc. Any data messages received by the server will be handed over to the SIP transport layer for processing.
         /// </summary>
         private WebSocketServer m_webSocketServer;

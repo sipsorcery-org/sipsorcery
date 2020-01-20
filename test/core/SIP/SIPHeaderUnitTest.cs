@@ -262,7 +262,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug(sipHeader.ToString());
             logger.LogDebug(sipHeader.AuthenticationHeader.ToString());
 
-            Assert.True(Regex.Match(sipHeader.AuthenticationHeader.ToString(), "nonce").Success, "The WWW-Authenticate header was not correctly parsed across multpiple lines.");
+            Assert.True(Regex.Match(sipHeader.AuthenticationHeader.ToString(), "nonce").Success, "The WWW-Authenticate header was not correctly parsed across multiple lines.");
 
             logger.LogDebug("-----------------------------------------");
         }

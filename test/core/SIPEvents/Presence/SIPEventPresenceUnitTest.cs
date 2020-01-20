@@ -44,7 +44,7 @@ namespace SIPSorcery.SIP.UnitTests
         //        m_presenceSchema.Add(m_pidfXMLNS, schemaReader);
         //    }
 
-        //    // The mandatory entity attribue on the presence element is missing.
+        //    // The mandatory entity attribute on the presence element is missing.
         //    string invalidPresenceXMLStr =
         //         "<?xml version='1.0' encoding='utf-16'?>" +
         //         "<presence xmlns='urn:ietf:params:xml:ns:pidf'>" +

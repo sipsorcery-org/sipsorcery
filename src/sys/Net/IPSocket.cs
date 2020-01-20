@@ -17,7 +17,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-
 using System;
 using System.Globalization;
 using System.Linq;
@@ -55,8 +54,8 @@ namespace SIPSorcery.Sys
         /// If/when that feature makes it into .NET Standard this method can be replaced.
         /// </summary>
         /// <param name="s">The end point string to parse.</param>
-        /// <param name="result">If the parse is successfull this output parameter will contain the IPv4 or IPv6 end point.</param>
-        /// <returns>Returns true if the string could be successfully parsed an an IPv4 or IPv6 end point. False if not.</returns>
+        /// <param name="result">If the parse is successful this output parameter will contain the IPv4 or IPv6 end point.</param>
+        /// <returns>Returns true if the string could be successfully parsed as an IPv4 or IPv6 end point. False if not.</returns>
         public static bool TryParseIPEndPoint(string s, out IPEndPoint result)
         {
             int addressLength = s.Length;  // If there's no port then send the entire string to the address parser
@@ -183,28 +182,6 @@ namespace SIPSorcery.Sys
         /// </summary>
         public static bool IsPrivateAddress(string host)
         {
-            //if (host != null && host.Trim().Length > 0)
-            //{
-            //    if (host.StartsWith("127.0.0.1") ||
-            //        host.StartsWith("10.") ||
-            //        Regex.Match(host, @"^172\.1[6-9]\.").Success ||
-            //        Regex.Match(host, @"^172\.2\d\.").Success ||
-            //        host.StartsWith("172.30.") ||
-            //        host.StartsWith("172.31.") ||
-            //        host.StartsWith("192.168."))
-            //    {
-            //        return true;
-            //    }
-            //    else
-            //    {
-            //        return false;
-            //    }
-            //}
-            //else
-            //{
-            //    return false;
-            //}
-
             if (IPAddress.TryParse(host, out var ipAddress))
             {
                 if (IPAddress.IsLoopback(ipAddress) || ipAddress.IsIPv6LinkLocal || ipAddress.IsIPv6SiteLocal)
@@ -226,18 +203,20 @@ namespace SIPSorcery.Sys
             return false;
         }
 
-        //rj2: I had the requirement of parsing an IPEndpoint with IPv6, v4 and hostnames and getting them as string and int
         /// <summary>
-        /// check if <paramref name="endpointstring"/> contains a hostname or ip-address and ip-port
+        /// Check if <paramref name="endpointstring"/> contains a hostname or ip-address and ip-port
         /// accepts IPv4 and IPv6 and IPv6 mapped IPv4 addresses
         /// return detected values in <paramref name="host"/> and <paramref name="port"/>
         /// 
         /// adapted from: http://stackoverflow.com/questions/2727609/best-way-to-create-ipendpoint-from-string
         /// </summary>
-        /// <param name="endpointstring">string to checki</param>
+        /// <remarks>
+        /// rj2: I had the requirement of parsing an IPEndpoint with IPv6, v4 and hostnames and getting them as string and int
+        /// </remarks>
+        /// <param name="endpointstring">string to check</param>
         /// <param name="host">host-portion of <paramref name="endpointstring"/>, if host can be parsed as IPAddress, then <paramref name="host"/> is IPAddress.ToString</param>
         /// <param name="port">port-portion of <paramref name="endpointstring"/></param>
-        /// <returns>true if host-portion of endpointstring is valid ip-address</returns>
+        /// <returns>true if host-portion of endpoint string is valid ip-address</returns>
         /// <exception cref="ArgumentException">if <paramref name="endpointstring"/> is null/empty </exception>
         /// <exception cref="FormatException">if host looks like ip-address but can't be parsed</exception>
         public static bool Parse(string endpointstring, out string host, out int port)
@@ -385,7 +364,6 @@ namespace SIPSorcery.Sys
 
             if (port == -1)
             {
-                //throw new ArgumentException(string.Format("No port specified: '{0}'", endpointstring));
                 port = 0;
             }
 
@@ -430,33 +408,6 @@ namespace SIPSorcery.Sys
         public static IPEndPoint GetIPEndPoint(string IPSocket)
         {
             return Parse(IPSocket);
-
-            //if (IPSocket == null || IPSocket.Trim().Length == 0)
-            //{
-            //    throw new ApplicationException("IPSocket cannot parse an IPEndPoint from an empty string.");
-            //}
-
-            //try
-            //{
-            //    int colonIndex = IPSocket.LastIndexOf(":");
-
-            //    if (colonIndex != -1)
-            //    {
-            //        string ipAddress = IPSocket.Substring(0, colonIndex).Trim();
-            //        int port = Convert.ToInt32(IPSocket.Substring(colonIndex + 1).Trim());
-            //        IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
-
-            //        return endPoint;
-            //    }
-            //    else
-            //    {
-            //        return new IPEndPoint(IPAddress.Parse(IPSocket.Trim()), 0);
-            //    }
-            //}
-            //catch (Exception excp)
-            //{
-            //    throw new ApplicationException(excp.Message + "(" + IPSocket + ")", excp);
-            //}
         }
     }
 }

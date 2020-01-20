@@ -55,7 +55,7 @@ namespace SIPSorcery.SIP
         public SIPEndPoint LocalSIPEndPoint { get; protected set; }
 
         /// <summary>
-        /// When the SIP transport layer has mutliple channels it will use this ID hint to choose amongst them when 
+        /// When the SIP transport layer has multiple channels it will use this ID hint to choose amongst them when 
         /// sending this request/response.
         /// </summary>
         public string SendFromHintChannelID;

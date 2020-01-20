@@ -43,7 +43,7 @@ namespace SIPSorcery.SIP
 
         /// <summary>
         /// Contains a list of the transactions that are being monitored or responses and retransmitted 
-        /// on when none is recieved to attempt a more reliable delivery rather then just relying on the initial 
+        /// on when none is received to attempt a more reliable delivery rather then just relying on the initial 
         /// request to get through.
         /// </summary>
         private ConcurrentDictionary<string, SIPTransaction> m_pendingTransactions = new ConcurrentDictionary<string, SIPTransaction>();
@@ -133,7 +133,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
-                    // No normal match found so look fo a 2xx INVITE response waiting for an ACK.
+                    // No normal match found so look of a 2xx INVITE response waiting for an ACK.
                     if (sipRequest.Method == SIPMethodsEnum.ACK)
                     {
                         //logger.LogDebug("Looking for ACK transaction, branchid=" + sipRequest.Header.Via.TopViaHeader.Branch + ".");
@@ -232,7 +232,7 @@ namespace SIPSorcery.SIP
 
             foreach (SIPTransaction transaction in m_pendingTransactions.Values)
             {
-                logger.LogDebug("Pending tansaction " + transaction.TransactionRequest.Method + " " + transaction.TransactionState + " " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0.##") + "s " + transaction.TransactionRequestURI.ToString() + " (" + transaction.TransactionId + ").");
+                logger.LogDebug("Pending transaction " + transaction.TransactionRequest.Method + " " + transaction.TransactionState + " " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0.##") + "s " + transaction.TransactionRequestURI.ToString() + " (" + transaction.TransactionId + ").");
             }
         }
 
@@ -242,7 +242,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Removes a transction from the pending list.
+        /// Removes a transaction from the pending list.
         /// </summary>
         /// <param name="transactionId"></param>
         private void RemoveTransaction(string transactionId)
@@ -453,7 +453,7 @@ namespace SIPSorcery.SIP
                                         if (sendResult != SocketError.Success)
                                         {
                                             // Example of failures here are requiring a specific TCP or TLS connection that no longer exists
-                                            // or attemptign to send to a UDP socket that has previously returned an ICMP error.
+                                            // or attempting to send to a UDP socket that has previously returned an ICMP error.
                                             transaction.DeliveryPending = false;
                                             transaction.DeliveryFailed = true;
                                             transaction.TimedOutAt = DateTime.Now;
@@ -593,7 +593,7 @@ namespace SIPSorcery.SIP
                         }
                         else if (transaction.HasTimedOut)
                         {
-                            // For INVITES need to give timed out transactions time to send the reliable repsonses and receive the ACKs.
+                            // For INVITES need to give timed out transactions time to send the reliable responses and receive the ACKs.
                             if (DateTime.Now.Subtract(transaction.TimedOutAt).TotalSeconds >= m_t6)
                             {
                                 expiredTransactionIds.Add(transaction.TransactionId);

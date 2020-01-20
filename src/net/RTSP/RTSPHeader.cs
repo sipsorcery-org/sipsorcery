@@ -297,7 +297,7 @@ namespace SIPSorcery.Net
                     string headerName = null;
                     string headerValue = null;
 
-                    // If the first character of a line is whitespace it's a contiuation of the previous line.
+                    // If the first character of a line is whitespace it's a continuation of the previous line.
                     if (headerLine.StartsWith(" "))
                     {
                         headerName = lastHeader;

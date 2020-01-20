@@ -31,7 +31,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
 
         /// <summary>
-        /// Tests that an IP address can be reoslved when the resolution can only be done via a SRV record.
+        /// Tests that an IP address can be resolved when the resolution can only be done via a SRV record.
         /// </summary>
         [Fact]
         public void ResolveHostFromServiceTest()

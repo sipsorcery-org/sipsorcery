@@ -33,7 +33,7 @@ namespace SIPSorcery.SIP
     /// </summary>
     /// <remarks>
     /// RFC4235 on Dialog Event Packages:
-    ///  - To estalish a subscription to a specific dialog the call-id, to-tag and from-tag must be specified,
+    ///  - To establish a subscription to a specific dialog the call-id, to-tag and from-tag must be specified,
     ///  - To establish a subscription to a set of dialogs the call-id and to-tag must be specified.
     ///  Treatment of the Event header:
     ///   - If the Event header contains dialog identifiers a notification is sent for any dialogs that match them AND the user in the SUBSCRIBE URI.

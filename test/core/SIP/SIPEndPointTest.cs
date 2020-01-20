@@ -180,7 +180,7 @@ namespace SIPSorcery.SIP.UnitTests
         }
 
         /// <summary>
-        /// Tests that a SIP end point with an IPv6 loopback address gets represented as astring correctly.
+        /// Tests that a SIP end point with an IPv6 loopback address gets represented as a string correctly.
         /// </summary>
         [Fact]
         public void IPv6LoopbackToStringTest()

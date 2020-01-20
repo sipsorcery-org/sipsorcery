@@ -10,6 +10,7 @@
     <Compile Remove="net\RTSP\RTSPClient.cs" />
     <Compile Remove="net\RTSP\RTSPConnection.cs" />
     <Compile Remove="net\RTSP\RTSPServer.cs" />
+    <Compile Remove="net\WebRTC\WebRtcPeer.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,6 +39,10 @@
       <Version>4.3.2</Version>
     </PackageReference>
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="net\WebRTC\" />
+  </ItemGroup>
   
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net452;netcoreapp3.0</TargetFrameworks>
@@ -47,7 +52,7 @@
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
 	<Title>SIPSorcery</Title>
 	<Summary>A cross platform C# .NET library for SIP and RTP.</Summary>
-	<Description>his repository contains the source for a C# .NET library with full support for the Session Initiation Protocol (SIP) and the Real-time Transport Protocol (RTP) including IPv6 support. In addition there is some support for Web Real-Time Communication (WebRTC) and a number of related protocols such as RTSP.</Description>
+	<Description>This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol (SIP) and the Real-time Transport Protocol (RTP) including IPv6 support. In addition there is some support for Web Real-Time Communication (WebRTC) and a number of related protocols such as RTSP.</Description>
 	<Company>SIP Sorcery PTY LTD</Company>
 	<Product>SIPSorcery</Product>
 	<PackageId>SIPSorcery</PackageId>

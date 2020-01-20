@@ -4,10 +4,10 @@
 // Description: Implements STUN error attribute as defined in RFC5389.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 04 Feb 2016	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com).
+// 04 Feb 2016	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -21,7 +21,7 @@ namespace SIPSorcery.Net
     public class STUNv2ErrorCodeAttribute : STUNv2Attribute
     {
         public byte ErrorClass;             // The hundreds value of the error code must be between 3 and 6.
-        public byte ErrorNumber;            // The units value of the eror code must be between 0 and 99.
+        public byte ErrorNumber;            // The units value of the error code must be between 0 and 99.
         public string ReasonPhrase;
 
         public int ErrorCode

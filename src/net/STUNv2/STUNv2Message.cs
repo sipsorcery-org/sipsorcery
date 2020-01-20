@@ -136,6 +136,8 @@ namespace SIPSorcery.Net
                 attributeIndex += attr.ToByteBuffer(buffer, attributeIndex);
             }
 
+            //logger.LogDebug($"Pre HMAC STUN message: {ByteBufferInfo.HexStr(buffer, attributeIndex)}");
+
             if (messageIntegrityKey != null)
             {
                 var integrityAttibtue = new STUNv2Attribute(STUNv2AttributeTypesEnum.MessageIntegrity, new byte[MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH]);

@@ -4,10 +4,10 @@
 // Description: Implements a STUN Server as defined in RFC3489.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 27 Dec 2006	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
+// 27 Dec 2006	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -21,7 +21,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public delegate void STUNSendMessageDelegate(IPEndPoint dst, byte[] buffer);  // Used so the STUN server can operate in a muli-plexed fashion with things like a SIP server.
+    public delegate void STUNSendMessageDelegate(IPEndPoint dst, byte[] buffer);  // Used so the STUN server can operate in a multiplexed fashion with things like a SIP server.
 
     public delegate void STUNServerRequestInTraceDelegate(IPEndPoint localEndPoint, IPEndPoint fromEndPoint, STUNMessage stunMessage);
     public delegate void STUNServerResponseOutTraceDelegate(IPEndPoint localEndPoint, IPEndPoint toEndPoint, STUNMessage stunMessage);
@@ -220,7 +220,7 @@ namespace SIPSorcery.Net
                     stunResponse.Attributes.Add(sourceAddressAtt);
                 }
 
-                // Add ChangedAddress attribute to inidcate the servers alternative socket.
+                // Add ChangedAddress attribute to indicate the servers alternative socket.
                 if (primary)
                 {
                     STUNAddressAttribute changedAddressAtt = new STUNAddressAttribute(STUNAttributeTypesEnum.ChangedAddress, m_secondaryEndPoint.Port, m_secondaryEndPoint.Address);

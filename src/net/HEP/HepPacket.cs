@@ -48,8 +48,8 @@ namespace SIPSorcery.Net
         SourcePort = 0x0007,            // Payload Type: ushort.
         DestinationPort = 0x0008,       // Payload Type: ushort.
         TimestampSeconds = 0x0009,      // Payload Type: uint, seconds since UNIX epoch.
-        TimestampMicroSeconds = 0x000a, // Payload Type: uint, ofset added to timestamp seconds.
-        ProtocolType = 0x000b,          // Payload Type: byte, pre-defined values from CaptureProtocolTypeEnum.
+        TimestampMicroSeconds = 0x000a, // Payload Type: uint, offset added to timestamp seconds.
+        ProtocolType = 0x000b,          // Payload Type: byte, predefined values from CaptureProtocolTypeEnum.
         CaptureAgentID = 0x000c,        // Payload Type: uint, arbitrary, used to identify agent sending packets.
         KeepAliveTimeSeconds = 0x000d,  // Payload Type: ushort.
         AuthenticationKey = 0x000e,     // Payload Type: octet-string, variable.
@@ -272,7 +272,7 @@ namespace SIPSorcery.Net
             Buffer.BlockCopy(timestampBuffer, 0, packetBuffer, offset, timestampBuffer.Length);
             offset += timestampBuffer.Length;
 
-            // Timestamp micro seconds (.NET only has milliscond resolution).
+            // Timestamp micro seconds (.NET only has millisecond resolution).
             var timestampMicrosBuffer = HepChunk.GetBytes(ChunkTypeEnum.TimestampMicroSeconds, (uint)(timestamp.Millisecond * 1000));
             Buffer.BlockCopy(timestampMicrosBuffer, 0, packetBuffer, offset, timestampMicrosBuffer.Length);
             offset += timestampMicrosBuffer.Length;

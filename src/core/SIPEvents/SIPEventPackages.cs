@@ -2,7 +2,7 @@
 // FileName: SIPEventPackages.cs
 //
 // Description:
-// Data structures and types realted to RFC3265 "Session Initiation Protocol (SIP)-Specific Event Notification".
+// Data structures and types related to RFC3265 "Session Initiation Protocol (SIP)-Specific Event Notification".
 //
 // Author(s):
 // Aaron Clauson

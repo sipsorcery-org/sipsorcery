@@ -4,10 +4,10 @@
 // Description: Implements STUN XOR mapped address attribute as defined in RFC5389.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 15 Oct 2014	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery Pty Ltd, Hobart, Australia (www.sipsorcery.com).
+// 15 Oct 2014	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -19,8 +19,8 @@ using System.Net;
 namespace SIPSorcery.Net
 {
     /// <summary>
-    /// This attribue is the same as the mapped address attribute except the address details are XOR'ed with the STUN magic cookie. 
-    /// THe reason for this is to stop NAT application layer gateways from doing string replacements of private IP adresses and ports.
+    /// This attribute is the same as the mapped address attribute except the address details are XOR'ed with the STUN magic cookie. 
+    /// THe reason for this is to stop NAT application layer gateways from doing string replacements of private IP addresses and ports.
     /// </summary>
     public class STUNv2XORAddressAttribute : STUNv2Attribute
     {

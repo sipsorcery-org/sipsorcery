@@ -95,7 +95,7 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception parsing RTSP reqsponse. " + excp.Message);
+                logger.LogError("Exception parsing RTSP response. " + excp.Message);
                 throw new ApplicationException("There was an exception parsing an RTSP response. " + excp.Message);
             }
         }

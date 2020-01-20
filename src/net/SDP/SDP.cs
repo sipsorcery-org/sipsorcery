@@ -14,7 +14,7 @@
 //
 // Relevant Bits from the RFC:
 // "SDP is intended for describing mulitmedia sessions for the purposes of session
-// announcement, session inviatation, and other forms of multimedia session
+// announcement, session invitation, and other forms of multimedia session
 // initiation." 
 //
 // SDP Includes:
@@ -23,9 +23,9 @@
 // - The media comprising the session,
 // - Information to receive those media (addresses, ports, formats etc.)
 // As resources to participate in the session may be limited, some additional information
-// may also be deisreable:
+// may also be desirable:
 // - Information about the bandwidth to be used,
-// - Contatc information for the person responsible for the conference.
+// - Contact information for the person responsible for the conference.
 //
 // Media Information, SDP Includes:
 // - The type of media (video, audio, etc),
@@ -481,7 +481,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Gets the media stream staus for the specified media announcement.
+        /// Gets the media stream status for the specified media announcement.
         /// </summary>
         /// <param name="mediaType">The type of media (audio, video etc) to get the status for.</param>
         /// <param name="announcementIndex">THe index of the announcement to get the status for.</param>

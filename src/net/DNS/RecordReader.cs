@@ -129,7 +129,7 @@ namespace Heijden.DNS
             return str.ToString();
         }
 
-        // changed 28 augustus 2008
+        // changed 28 August 2008
         public byte[] ReadBytes(int intLength)
         {
             byte[] list = new byte[intLength];

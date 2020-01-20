@@ -30,7 +30,7 @@
 // The async socket mechanism used in this class is the "new high performance" approach described at
 // https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socketasynceventargs?view=netframework-4.8#remarks
 // While that sounds nice the main motivation for this class was simply to switch to an async method
-// that did not require the BeginReceive & EndReceive callbacks or the "Asychronous Programming Model" (APM)
+// that did not require the BeginReceive & EndReceive callbacks or the "Asynchronous Programming Model" (APM)
 // see https://docs.microsoft.com/en-us/dotnet/standard/asynchronous-programming-patterns/. A "Task-based Asynchronous Pattern"
 // would have been preferred but only for consistency with the rest of the code base and .NET libraries.
 // Also note that the SIPUDPChannel is using the APM BeginReceiveMessageFrom/EndReceiveMessageFrom approach. The motivation
@@ -207,7 +207,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// For TCP channel no special action is required when accepting a new client connection. Can start receiving immeidately.
+        /// For TCP channel no special action is required when accepting a new client connection. Can start receiving immediately.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly accepted client socket.</param>
         protected virtual Task OnAccept(SIPStreamConnection streamConnection)
@@ -396,7 +396,7 @@ namespace SIPSorcery.SIP
 
         /// <summary>
         /// For TCP channel no special action is required when a new outgoing client connection is established. 
-        /// Can start receiving immeidately.
+        /// Can start receiving immediately.
         /// </summary>
         /// <param name="streamConnection">The stream connection holding the newly connected client socket.</param>
         protected virtual Task OnClientConnect(SIPStreamConnection streamConnection, string certificateName)
@@ -412,7 +412,7 @@ namespace SIPSorcery.SIP
                 ProcessReceive(recvArgs);
             }
 
-            // Task.IsCompleted not availabe for net452.
+            // Task.IsCompleted not available for net452.
             return Task.FromResult(0);
         }
 
@@ -546,7 +546,7 @@ namespace SIPSorcery.SIP
                         // Important: Due to the way TCP works the end of the connection that initiates the close
                         // is meant to go into a TIME_WAIT state. On Windows that results in the same pair of sockets
                         // being unable to reconnect for 30s. SIP can deal with stray and duplicate messages at the 
-                        // appliction layer so the TIME_WAIT is not that useful. In fact it TIME_WAIT is a major annoyance for SIP
+                        // application layer so the TIME_WAIT is not that useful. In fact it TIME_WAIT is a major annoyance for SIP
                         // as if a connection is dropped for whatever reason, such as a parser error or inactivity, it will
                         // prevent the connection being re-established for the TIME_WAIT period.
                         //

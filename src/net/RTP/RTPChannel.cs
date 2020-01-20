@@ -20,7 +20,6 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -78,6 +77,11 @@ namespace SIPSorcery.Net
                 m_udpSocket.BeginReceiveMessageFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveMessageFrom, null);
             }
             catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
+            catch(SocketException sockExcp)
+            {
+                //logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceive. {sockExcp.Message}");
+                Close(sockExcp.Message);
+            }
             catch (Exception excp)
             {
                 // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
@@ -120,6 +124,8 @@ namespace SIPSorcery.Net
                 // - the RTP connection may start sending before the remote socket starts listening,
                 // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
                 //   or new socket during the transition.
+                // It also seems that once a UDP socket pair have exchanged packets and the remote party closes the socket exception will occur
+                // in the BeginReceive method (very handy).
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
@@ -159,31 +165,22 @@ namespace SIPSorcery.Net
     }
 
     /// <summary>
-    /// 
+    /// A communications channel for transmitting and receiving Real-time Protocol (RTP) and
+    /// Real-time Control Protocol (RTCP) packets. This class performs the socket management
+    /// functions.
     /// </summary>
-    /// <remarks>
-    /// RTCP Design Decisions:
-    /// - Minimum Report Period set to 5s as per RFC3550: 6.2 RTCP Transmission Interval (page 24).
-    /// - Delay for initial report transmission set to 2.5s (0.5 * minimum report period) as per RFC3550: 6.2 RTCP Transmission Interval (page 26).
-    /// - Randomisation factor to apply to report intervals to attempt to ensure RTCP reports amongst participants don't become synchronised
-    ///   [0.5 * interval, 1.5 * interval] as per RFC3550: 6.2 RTCP Transmission Interval (page 26).
-    /// - Timeout period during which if no RTP or RTCP pakcets received a participant is assumed to have dropped
-    ///   5 x minimum report period as per RFC3550: 6.2.1 (page 27) and 6.3.5 (page 31).
-    /// - All RTCP composite reports must satisfy (this includes when a BYE is sent):
-    ///   - First RTCP packet must be a SR or RR,
-    ///   - Must contain an SDES packet.
-    /// </remarks>
     public class RTPChannel : IDisposable
     {
-        private const int MEDIA_PORT_START = 10000;             // Arbitrary port number to start allocating RTP and control ports from.
-        private const int MEDIA_PORT_END = 20000;               // Arbitrary port number that RTP and control ports won't be allocated above.
+        private const int RTP_PORT_START = 10000;             // Arbitrary port number for the start of the range allocate RTP and control ports from.
+        private const int RTP_PORT_END = 20000;               // Arbitrary port number for the end of the range to allocate RTP and control ports from.
 
         private static ILogger logger = Log.Logger;
 
-        private Socket m_rtpSocket;
+        public Socket m_rtpSocket;
         private UdpReceiver m_rtpReceiver;
         private Socket m_controlSocket;
         private UdpReceiver m_controlReceiver;
+        private bool m_started = false;
         private bool m_isClosed;
 
         /// <summary>
@@ -241,15 +238,17 @@ namespace SIPSorcery.Net
                           bool createControlSocket,
                           IPEndPoint rtpRemoteEndPoint = null,
                           IPEndPoint controlEndPoint = null,
-                          int mediaStartPort = MEDIA_PORT_START,
-                          int mediaEndPort = MEDIA_PORT_END)
+                          int mediaStartPort = RTP_PORT_START,
+                          int mediaEndPort = RTP_PORT_END)
         {
-            NetServices.CreateRtpSocket(localAddress, mediaStartPort, mediaEndPort, createControlSocket, out m_rtpSocket, out m_controlSocket);
+            int startFrom = Crypto.GetRandomInt(RTP_PORT_START, RTP_PORT_END);
+
+            NetServices.CreateRtpSocket(localAddress, mediaStartPort, mediaEndPort, startFrom, createControlSocket, out m_rtpSocket, out m_controlSocket);
 
             RTPLocalEndPoint = m_rtpSocket.LocalEndPoint as IPEndPoint;
             RTPPort = RTPLocalEndPoint.Port;
-            ControlLocalEndPoint = m_controlSocket.LocalEndPoint as IPEndPoint;
-            ControlPort = ControlLocalEndPoint.Port;
+            ControlLocalEndPoint = (m_controlSocket != null) ? m_controlSocket.LocalEndPoint as IPEndPoint : null;
+            ControlPort = (m_controlSocket != null) ? ControlLocalEndPoint.Port : 0;
 
             LastRtpDestination = rtpRemoteEndPoint;
             LastControlDestination = controlEndPoint;
@@ -260,17 +259,22 @@ namespace SIPSorcery.Net
         /// </summary>
         public void Start()
         {
-            m_rtpReceiver = new UdpReceiver(m_rtpSocket);
-            m_rtpReceiver.OnPacketReceived += OnRTPPacketRecived;
-            m_rtpReceiver.OnClosed += Close;
-            m_rtpReceiver.BeginReceive();
-
-            if (m_controlSocket != null)
+            if (!m_started)
             {
-                m_controlReceiver = new UdpReceiver(m_controlSocket);
-                m_controlReceiver.OnPacketReceived += OnControlPacketRecived;
-                m_controlReceiver.OnClosed += Close;
-                m_controlReceiver.BeginReceive();
+                m_started = true;
+
+                m_rtpReceiver = new UdpReceiver(m_rtpSocket);
+                m_rtpReceiver.OnPacketReceived += OnRTPPacketRecived;
+                m_rtpReceiver.OnClosed += Close;
+                m_rtpReceiver.BeginReceive();
+
+                if (m_controlSocket != null)
+                {
+                    m_controlReceiver = new UdpReceiver(m_controlSocket);
+                    m_controlReceiver.OnPacketReceived += OnControlPacketRecived;
+                    m_controlReceiver.OnClosed += Close;
+                    m_controlReceiver.BeginReceive();
+                }
             }
         }
 
@@ -295,14 +299,18 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.LogError("Exception RTChannel.Close. " + excp);
+                    logger.LogError("Exception RTPChannel.Close. " + excp);
                 }
             }
         }
 
         public SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
-            if (dstEndPoint == null)
+            if(m_isClosed)
+            {
+                return SocketError.Disconnecting;
+            }
+            else if (dstEndPoint == null)
             {
                 throw new ArgumentException("dstEndPoint", "An empty destination was specified to SendAsync in RTPChannel.");
             }
@@ -352,7 +360,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Ends an async send on one of the channel's sockets.
         /// </summary>
-        /// <param name="ar">The async result to compelete the send with.</param>
+        /// <param name="ar">The async result to complete the send with.</param>
         private void EndSendTo(IAsyncResult ar)
         {
             try

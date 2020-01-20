@@ -30,7 +30,7 @@ namespace SIPSorcery.SIP.App
     {
         private const int MAX_EXPIRY = 7200;
         private const int MAX_REGISTRATION_ATTEMPT_TIMEOUT = 60;
-        private const int REGISTRATION_HEAD_TIME = 5;                // Time in seconds to go to next registration to initate.
+        private const int REGISTRATION_HEAD_TIME = 5;                // Time in seconds to go to next registration to initiate.
         private const int REGISTER_FAILURERETRY_INTERVAL = 300;      // Number of seconds between consecutive register requests in the event of failures or timeouts.
         //rj2: there are PBX which send new Expires header in SIP OK with value lesser than 60 -> set hardcoded minimum to 10, so registration on PBX does not timeout
         private const int REGISTER_MINIMUM_EXPIRY = 10;              // The minimum interval a registration will be accepted for. Anything less than this interval will use this minimum value.
@@ -70,7 +70,7 @@ namespace SIPSorcery.SIP.App
         public event Action<SIPURI> RegistrationRemoved;
 
         /// <summary>
-        /// Creates a new SIP registation agent that will attempt to register with a SIP Registrar server.
+        /// Creates a new SIP registration agent that will attempt to register with a SIP Registrar server.
         /// If the registration fails the agent will retry up to a hard coded maximum number of 3 attempts.
         /// If successful the agent will periodically refresh the registration based on the Expiry time 
         /// returned by the server.
@@ -78,7 +78,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="sipTransport">The SIP transport layer to use to send the register request.</param>
         /// <param name="username">The username to use if the server requests authorisation.</param>
         /// <param name="password">The password to use if the server requests authorisation.</param>
-        /// <param name="server">The hostname or socket address for the registrat server. Can be in a format of
+        /// <param name="server">The hostname or socket address for the registration server. Can be in a format of
         /// hostname:port or ipaddress:port, e.g. sipsorcery.com or 67.222.131.147:5060.</param>
         /// <param name="expiry">The expiry value to request for the contact. This value can be rejected or overridden
         /// by the server.</param>

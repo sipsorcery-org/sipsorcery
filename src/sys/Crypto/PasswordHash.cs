@@ -2,13 +2,14 @@
 // FileName: PasswordHash.cs
 //
 // Description:
-// This class deals with storing and verfying password hashes.
+// This class deals with storing and verifying password hashes.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 13 Jan 2012  Aaron Clauson   Created. Borrowed some code snippets from http://code.google.com/p/stackid/source/browse/OpenIdProvider/Current.cs#1135.
+// 13 Jan 2012  Aaron Clauson   Created. Borrowed some code snippets from 
+//  http://code.google.com/p/stackid/source/browse/OpenIdProvider/Current.cs#1135.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -22,15 +23,15 @@ namespace SIPSorcery.Sys
 {
     public class PasswordHash
     {
-        private const int RFC289_MINIMUM_ITERATIONS = 5000;     // The minimum number of iterations to use when deriving tha password hash. This slows the algorithm down to help mitigate against brute force and rainbow attacks. 
+        private const int RFC289_MINIMUM_ITERATIONS = 5000;     // The minimum number of iterations to use when deriving the password hash. This slows the algorithm down to help mitigate against brute force and rainbow attacks. 
         private const int SALT_SIZE = 16;
 
         private static RNGCryptoServiceProvider _randomProvider = new RNGCryptoServiceProvider();
 
         /// <summary>
         /// Generates a salt that can be used to generate a password hash. The salt is a combination of a block of bytes to represent the 
-        /// salt entropy and an integer that represents the interation count to feed into the RFC289 algorithm used to derive the password hash.
-        /// The iterations count is used to slow down the hash generating alrogithm to mitigate brute force and rainbow table attacks.
+        /// salt entropy and an integer that represents the iteration count to feed into the RFC289 algorithm used to derive the password hash.
+        /// The iterations count is used to slow down the hash generating algorithm to mitigate brute force and rainbow table attacks.
         /// </summary>
         /// <param name="explicitIterations">The number of iterations used to derive the password bytes. Must be greater than the constant specifying the minimum iterations.</param>
         /// <returns>A string it the format iterations.salt.</returns>
