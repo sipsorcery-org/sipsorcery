@@ -134,7 +134,7 @@ namespace SIPSorcery
             // acts as a singleton
             SIPServerUserAgent uas = null;
             CancellationTokenSource rtpCts = null; // Cancellation token to stop the RTP stream.
-            RTPSession rtpSession = null;
+            RTPMediaSession rtpSession = null;
 
             // Because this is a server user agent the SIP transport must start listening for client user agents.
             sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -153,13 +153,13 @@ namespace SIPSorcery
                         if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.G722)))
                         {
                             Log.LogDebug($"Using G722 RTP media type and audio file {AUDIO_FILE_G722}.");
-                            rtpSession = new RTPSession((int)SDPMediaFormatsEnum.G722, null, null, false, dstRtpEndPoint.AddressFamily);
+                            rtpSession = new RTPMediaSession((int)SDPMediaFormatsEnum.G722, dstRtpEndPoint.AddressFamily);
                             audioFile = AUDIO_FILE_G722;
                         }
                         else if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
                         {
                             Log.LogDebug($"Using PCMU RTP media type and audio file {AUDIO_FILE_PCMU}.");
-                            rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, false, dstRtpEndPoint.AddressFamily);
+                            rtpSession = new RTPMediaSession((int)SDPMediaFormatsEnum.PCMU, dstRtpEndPoint.AddressFamily);
                             audioFile = AUDIO_FILE_PCMU;
                         }
 
@@ -458,7 +458,7 @@ namespace SIPSorcery
         /// </summary>
         private static void EnableConsoleLogger()
         {
-            // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+            // Logging configuration. Can be omitted if internal SIPSorcery debug and warning messages are not required.
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
             var loggerConfig = new LoggerConfiguration()
                 .Enrich.FromLogContext()

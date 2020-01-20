@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -24,11 +23,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
-//using SIPSorceryMedia;
 
 namespace SIPSorcery.Net
 {
-    public delegate int DoDtlsHandshakeDelegate(Socket rtpSocket, out ProtectRtpPacket protectRtp, out ProtectRtpPacket protectRtcp);
+    public delegate int DoDtlsHandshakeDelegate(WebRtcSession session, Socket rtpSocket, out ProtectRtpPacket protectRtp, out ProtectRtpPacket protectRtcp);
 
     public class WebRtcSession
     {
@@ -147,7 +145,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
             SessionID = Guid.NewGuid().ToString();
 
-            _rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork, true, null);
+            _rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork, true);
             _videoSessionID = _rtpSession.AddStream(VP8_PAYLOAD_TYPE_ID, null);
             _rtpChannel = _rtpSession.RtpChannel;
             _rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
@@ -236,7 +234,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 {
                     _ = Task.Run(() =>
                     {
-                        int result = _doDtlsHandshake(_rtpChannel.m_rtpSocket, out _rtpSession.SrtpProtect, out _rtpSession.SrtcpProtect);
+                        int result = _doDtlsHandshake(this, _rtpChannel.m_rtpSocket, out _rtpSession.SrtpProtect, out _rtpSession.SrtcpProtect);
                         IsDtlsNegotiationComplete = (result == 0);
                     });
                 }

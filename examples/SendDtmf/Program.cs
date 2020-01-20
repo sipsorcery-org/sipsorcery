@@ -23,7 +23,7 @@
 // is to playback the presses via speech synthesis. The dialplan below is an
 // example of how to do that with Asterisk.
 //
-// Example Aterisk dialplan snippet to repeat back any DTMF tones received:
+// Example Asterisk dialplan snippet to repeat back any DTMF tones received:
 //
 // exten => *63,1(start),Gotoif($[ "${LEN(${extensao})}" < "3"]?collect:bye)
 // exten => *63,n(collect),Read(digito,,1)
@@ -91,7 +91,7 @@ namespace SIPSorcery
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(callUri.ToSIPEndPoint().Address);
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, null, null, true, localIPAddress.AddressFamily);
+            var rtpSession = new RTPMediaSession((int)SDPMediaFormatsEnum.PCMU, localIPAddress.AddressFamily);
             var offerSDP = rtpSession.GetSDP(localIPAddress);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
@@ -178,15 +178,15 @@ namespace SIPSorcery
             Task.Delay(3000).Wait();
 
             // Send some DTMF key presses via RTP events.
-            var dtmf5 = new RTPEvent(0x05, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            var dtmf5 = new RTPEvent(0x05, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPMediaSession.DTMF_EVENT_PAYLOAD_ID);
             rtpSession.SendDtmfEvent(dtmf5, rtpCts.Token).Wait();
             Task.Delay(2000, rtpCts.Token).Wait();
 
-            var dtmf9 = new RTPEvent(0x09, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            var dtmf9 = new RTPEvent(0x09, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPMediaSession.DTMF_EVENT_PAYLOAD_ID);
             rtpSession.SendDtmfEvent(dtmf9, rtpCts.Token).Wait();
             Task.Delay(2000, rtpCts.Token).Wait();
 
-            var dtmf2 = new RTPEvent(0x02, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPSession.DTMF_EVENT_PAYLOAD_ID);
+            var dtmf2 = new RTPEvent(0x02, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPMediaSession.DTMF_EVENT_PAYLOAD_ID);
             rtpSession.SendDtmfEvent(dtmf2, rtpCts.Token).Wait();
             Task.Delay(2000, rtpCts.Token).ContinueWith((task) => { }).Wait(); // Don't care about the exception if the cancellation token is set.
 
@@ -243,19 +243,18 @@ namespace SIPSorcery
         /// Sends the sounds of silence. If the destination is on the other side of a NAT this is useful to open
         /// a pinhole and hopefully get the remote RTP stream through.
         /// </summary>
-        /// <param name="rtpChannel">The RTP channel we're sending from.</param>
-        /// <param name="rtpSendSession">Our RTP sending session.</param>
+        /// <param name="rtpMediaSession">Our RTP sending session.</param>
         /// <param name="cts">Cancellation token to stop the call.</param>
-        private static async void SendSilence(RTPSession rtpSession, CancellationTokenSource cts)
+        private static async void SendSilence(RTPMediaSession rtpMediaSession, CancellationTokenSource cts)
         {
-            int samplingFrequency = rtpSession.MediaFormat.GetClockRate();
+            int samplingFrequency = rtpMediaSession.MediaAnnouncements.First().MediaFormats.First().GetClockRate();
             uint rtpTimestampStep = (uint)(samplingFrequency * SILENCE_SAMPLE_PERIOD / 1000);
             uint bufferSize = (uint)SILENCE_SAMPLE_PERIOD;
             uint rtpSampleTimestamp = 0;
 
             while (cts.IsCancellationRequested == false)
             {
-                if (rtpSession.DestinationEndPoint != null)
+                if (rtpMediaSession.DestinationEndPoint != null)
                 {
                     byte[] sample = new byte[bufferSize / 2];
                     int sampleIndex = 0;
@@ -266,7 +265,7 @@ namespace SIPSorcery
                         sample[sampleIndex + 1] = PCMU_SILENCE_BYTE_ONE;
                     }
 
-                    rtpSession.SendAudioFrame(rtpSampleTimestamp, sample);
+                    rtpMediaSession.SendAudioFrame(rtpSampleTimestamp, sample);
                     rtpSampleTimestamp += rtpTimestampStep;
                 }
 
@@ -275,7 +274,7 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static void AddConsoleLogger()
         {

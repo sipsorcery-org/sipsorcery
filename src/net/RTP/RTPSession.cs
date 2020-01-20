@@ -57,17 +57,13 @@ namespace SIPSorcery.Net
         public const int SRTP_AUTH_KEY_LENGTH = 10;
         private const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
         public const int H264_RTP_HEADER_LENGTH = 2;
-        public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
         public const int RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS = 50; // Default sample period for an RTP event as specified by RFC2833.
-        public const int DTMF_EVENT_PAYLOAD_ID = 101;
-        public const string SDP_SESSION_NAME = "sipsorcery";
 
         private static ILogger logger = Log.Logger;
 
         private IPEndPoint m_lastReceiveFromEndPoint;
         private bool m_rtpEventInProgress;               // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                 // The last timestamp used in an RTP packet.    
-        private int m_remoteRtpEventPayloadID;           // If the remote party supports RTP events this is the RTP header payload ID they are using.
         private bool m_isClosed;
         private List<RTPSessionStream> m_sessionStreams = new List<RTPSessionStream>();
 
@@ -82,37 +78,25 @@ namespace SIPSorcery.Net
         public RTCPSession RtcpSession { get; private set; }
 
         /// <summary>
-        /// The media announcements from each of the streams multiplexed in this RTP session.
-        /// <code>
-        /// // Example:
-        /// m=audio 10000 RTP/AVP 0
-        /// a=rtpmap:0 PCMU/8000
-        /// a=rtpmap:101 telephone-event/8000
-        /// a=fmtp:101 0-15
-        /// a=sendrecv
-        /// </code>
-        /// </summary>
-        public List<SDPMediaAnnouncement> MediaAnnouncements { get; private set; } = new List<SDPMediaAnnouncement>();
-
-        /// <summary>
         /// The remote RTP end point this session is sending to.
         /// </summary>
         public IPEndPoint DestinationEndPoint;
 
         /// <summary>
-        /// The SDP offered by the remote call party for this session.
+        /// In order to detect RTP events from the remote party this property needs to 
+        /// be set to tge payload ID they are using.
         /// </summary>
-        public SDP RemoteSDP { get; private set; }
+        public int RemoteRtpEventPayloadID { get; set; }
 
         /// <summary>
         /// Function pointer to an SRTP context that encrypts an RTP packet.
         /// </summary>
-        internal ProtectRtpPacket SrtpProtect;// { get; set; }
+        internal ProtectRtpPacket SrtpProtect;
 
         /// <summary>
         /// Function pointer to an SRTP context that encrypts an RTCP packet.
         /// </summary>
-        internal ProtectRtpPacket SrtcpProtect; // { get; set; }
+        internal ProtectRtpPacket SrtcpProtect;
 
         /// <summary>
         /// Gets fired when the session detects that the remote end point 
@@ -160,45 +144,14 @@ namespace SIPSorcery.Net
         /// <param name="addrFamily">Determines whether the RTP channel will use an IPv4 or IPv6 socket.</param>
         /// <param name="isRtcpMultiplexed">If true RTCP reports will be multiplexed with RTP on a single channel.
         /// If false (standard mode) then a separate socket is used to send and receive RTCP reports.</param>
-        /// <param name="mediaAnnouncement">Optional but required if the GetSDP method is being relied
-        /// upon to describe this session.</param>
         public RTPSession(
             int payloadTypeID,
             AddressFamily addrFamily,
-            bool isRtcpMultiplexed,
-            SDPMediaAnnouncement mediaAnnouncement)
+            bool isRtcpMultiplexed)
         {
             var sessionStream = new RTPSessionStream(0, payloadTypeID);
-
-            //sessionStream.MediaFormat = new SDPMediaFormat(formatTypeID);
-            //MediaAnnouncement = new SDPMediaAnnouncement
-            //{
-            //    Media = SDPMediaTypesEnum.audio,
-            //    MediaFormats = new List<SDPMediaFormat> { sessionStream.MediaFormat },
-            //    MediaStreamStatus = MediaStreamStatusEnum.SendRecv
-            //};
-
             m_sessionStreams.Add(sessionStream);
-
-            int rtpPort = InitialiseRtpChannel(addrFamily, isRtcpMultiplexed);
-
-            // Recording media announcements are for convenience. Allows a consumer to keep the 
-            // description for this RTP session in a single place. The media announcements DO
-            // NOT have any bearing on the operation of the RTP communications.
-            if (mediaAnnouncement != null)
-            {
-                mediaAnnouncement.Port = rtpPort;
-
-                // TODO FIX.
-                // RTP event support.
-                //int clockRate = sessionStream.MediaFormat.GetClockRate();
-                //SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
-                //rtpEventFormat.SetFormatAttribute($"{TELEPHONE_EVENT_ATTRIBUTE}/{clockRate}");
-                //rtpEventFormat.SetFormatParameterAttribute("0-16");
-                //MediaAnnouncement.MediaFormats.Add(rtpEventFormat);
-
-                MediaAnnouncements.Add(mediaAnnouncement);
-            }
+            InitialiseRtpChannel(addrFamily, isRtcpMultiplexed);
         }
 
         /// <summary>
@@ -207,8 +160,7 @@ namespace SIPSorcery.Net
         /// <param name="addrFamily">Whether the RTP channel should use IPv4 or IPv6.</param>
         /// <param name="isRtcpMultiplexed">If true RTCP reports will be multiplexed with RTP on a single channel.
         /// If false (standard mode) then a separate socket is used to send and receive RTCP reports.</param>
-        /// <returns>THe port number being used for RTP communications.</returns>
-        private int InitialiseRtpChannel(AddressFamily addrFamily, bool isRtcpMultiplexed)
+        private void InitialiseRtpChannel(AddressFamily addrFamily, bool isRtcpMultiplexed)
         {
             var channelAddress = (addrFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
             RtpChannel = new RTPChannel(channelAddress, !isRtcpMultiplexed);
@@ -224,8 +176,6 @@ namespace SIPSorcery.Net
             // Start the RTP and Control socket receivers and the RTCP session.
             RtpChannel.Start();
             RtcpSession.Start();
-
-            return RtpChannel.RTPPort;
         }
 
         /// <summary>
@@ -234,8 +184,6 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="payloadTypeID">The payload type ID for this RTP stream. It's what gets set in the payload 
         /// type ID field in the RTP header.</param>
-        /// <param name="mediaAnnouncement">Optional but required if the GetSDP method is being relied
-        /// upon to describe this session.</param>
         /// <returns>The ID of the stream of this media type. It must be supplied when
         /// doing a send for this stream.</returns>
         public int AddStream(int payloadTypeID, SDPMediaAnnouncement mediaAnnouncement)
@@ -243,42 +191,7 @@ namespace SIPSorcery.Net
             int nextID = m_sessionStreams.OrderByDescending(x => x.ID).First().ID + 1;
             var sessionStream = new RTPSessionStream(nextID, payloadTypeID);
             m_sessionStreams.Add(sessionStream);
-
-            if(mediaAnnouncement != null)
-            {
-                mediaAnnouncement.Port = RtpChannel.RTPPort;
-                MediaAnnouncements.Add(mediaAnnouncement);
-            }
-
             return sessionStream.ID;
-        }
-
-        /// <summary>
-        /// Sets the remote SDP offer for this RTP session. It contains required information about payload ID's
-        /// for media formats and RTP events.
-        /// </summary>
-        /// <param name="sdp">The SDP from the remote call party.</param>
-        public void SetRemoteSDP(SDP sdp)
-        {
-            RemoteSDP = sdp;
-
-            foreach (var announcement in sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio))
-            {
-                foreach (var mediaFormat in announcement.MediaFormats)
-                {
-                    if (mediaFormat.FormatAttribute?.StartsWith(TELEPHONE_EVENT_ATTRIBUTE) == true)
-                    {
-                        if (!int.TryParse(mediaFormat.FormatID, out m_remoteRtpEventPayloadID))
-                        {
-                            logger.LogWarning("The media format on the telephone event attribute was not a valid integer.");
-                        }
-                        break;
-                    }
-                }
-            }
-
-            DestinationEndPoint = sdp.GetSDPRTPEndPoint();
-            RtcpSession.ControlDestinationEndPoint = new IPEndPoint(DestinationEndPoint.Address, DestinationEndPoint.Port + 1);
         }
 
         public void SendAudioFrame(uint timestamp, byte[] buffer, int streamID = 0)
@@ -613,28 +526,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Gets the a basic Session Description Protocol object that describes this RTP session.
-        /// </summary>
-        /// <param name="localAddress">The RTP socket we will be sending from. Note this can't be IPAddress.Any as
-        /// it's getting sent to the callee. An IP address of 0.0.0.0 or [::0] will typically be interpreted as
-        /// "don't send me any RTP".</param>
-        /// <returns>An Session Description Protocol object that can be sent to a remote callee.</returns>
-        public SDP GetSDP(IPAddress localAddress)
-        {
-            var sdp = new SDP(localAddress)
-            {
-                SessionId = Crypto.GetRandomInt(5).ToString(),
-                SessionName = SDP_SESSION_NAME,
-                Timing = "0 0",
-                Connection = new SDPConnectionInformation(localAddress),
-            };
-
-            sdp.Media = MediaAnnouncements;
-
-            return sdp;
-        }
-
-        /// <summary>
         /// Close the session and RTP channel.
         /// </summary>
         public void CloseSession(string reason)
@@ -679,7 +570,7 @@ namespace SIPSorcery.Net
 
                 OnRtpPacketReceived?.Invoke(rtpPacket);
 
-                if (m_remoteRtpEventPayloadID != 0 && rtpPacket.Header.PayloadType == m_remoteRtpEventPayloadID)
+                if (RemoteRtpEventPayloadID != 0 && rtpPacket.Header.PayloadType == RemoteRtpEventPayloadID)
                 {
                     RTPEvent rtpEvent = new RTPEvent(rtpPacket.Payload);
                     OnRtpEvent?.Invoke(rtpEvent);
