@@ -114,11 +114,12 @@ namespace SIPSorcery.Net
         private bool m_isClosed = false;
         private ReceptionReport m_receptionReport;
         private bool m_isMultiplexed;               // if true indicates RTCP reports should be sent on the RTP socket.
+        private bool m_isFirstReport = true;
 
         /// <summary>
-        /// Function pointer to an SRTCP context that encrypts an RTCP packet.
+        /// Function pointer to an SRTP context that encrypts an RTCP packet.
         /// </summary>
-        public ProtectRtpPacket RtcpProtect { get; set; }
+        internal ProtectRtpPacket SrtcpProtect;
 
         public RTCPSession(uint ssrc, RTPChannel rtpChannel, bool isMultiplexed)
         {
@@ -132,6 +133,11 @@ namespace SIPSorcery.Net
         public void Start()
         {
             StartedAt = DateTime.Now;
+
+            // Schedule the report timer. Will most likely get beaten to it if an RTP packet
+            // is received.
+            var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
+            m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, interval);
         }
 
         public void Close(string reason)
@@ -168,7 +174,7 @@ namespace SIPSorcery.Net
 
             bool ready = m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, DateTimeToNtpTimestamp32(DateTime.Now));
 
-            if (!m_isClosed && ready == true && m_rtcpReportTimer == null)
+            if (!m_isClosed && ready == true && m_isFirstReport)
             {
                 // Send the initial RTCP sender report once the first RTP packet arrives.
                 SendReportTimerCallback(null);
@@ -225,6 +231,8 @@ namespace SIPSorcery.Net
         {
             try
             {
+                m_isFirstReport = false;
+
                 if (!m_isClosed && ControlDestinationEndPoint != null)
                 {
                     if ((RTPLastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(RTPLastActivityAt).TotalMilliseconds > RTP_NO_ACTIVITY_TIMEOUT_MILLISECONDS) ||
@@ -287,7 +295,7 @@ namespace SIPSorcery.Net
 
             var sendOnSocket = (m_isMultiplexed) ? RTPChannelSocketsEnum.RTP : RTPChannelSocketsEnum.Control;
 
-            if (RtcpProtect == null)
+            if (SrtcpProtect == null)
             {
                 m_rtpChannel.SendAsync(sendOnSocket, ControlDestinationEndPoint, reportBytes);
             }
@@ -296,14 +304,14 @@ namespace SIPSorcery.Net
                 byte[] sendBuffer = new byte[reportBytes.Length + SRTP_AUTH_KEY_LENGTH];
                 Buffer.BlockCopy(reportBytes, 0, sendBuffer, 0, reportBytes.Length);
 
-                int rtperr = RtcpProtect(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
+                int rtperr = SrtcpProtect(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
                 if (rtperr != 0)
                 {
                     logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
                 }
                 else
                 {
-                    m_rtpChannel.SendAsync(sendOnSocket, m_rtpChannel.LastControlDestination, sendBuffer);
+                    m_rtpChannel.SendAsync(sendOnSocket, ControlDestinationEndPoint, sendBuffer);
                 }
             }
         }

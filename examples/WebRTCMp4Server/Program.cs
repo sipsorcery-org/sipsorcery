@@ -15,9 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -25,6 +22,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NAudio.Codecs;
 using Serilog;
 using SIPSorcery.Net;
 using SIPSorceryMedia;
@@ -59,29 +57,26 @@ namespace WebRTCServer
 
     class Program
     {
-        private static string TEST_PATTERN_IMAGE_PATH = "media/testpattern.jpeg";
-        private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // height of text as a percentage of the total image height
-        private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
-        private const int TEXT_MARGIN_PIXELS = 5;
-        private const int POINTS_PER_INCH = 72;
+        private static string MP4_FILE_PATH = "media/big_buck_bunny.mp4";
         private const int VP8_TIMESTAMP_SPACING = 3000;
         private const int VP8_PAYLOAD_TYPE_ID = 100;
         private const string WEBSOCKET_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const string DTLS_CERTIFICATE_PATH = "certs/localhost.pem";
         private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
         private const string DTLS_CERTIFICATE_FINGERPRINT = "C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
-        private const string ICE_USER = "EJYWWCUDJQLTXTNQRXEJ";
-        private const string ICE_PASSWORD = "SKYKPPYLTZOAVCLTGHDUODANRKSPOVQVKXJULOGG";
         private const int WEBSOCKET_PORT = 8081;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static WebSocketServer _webSocketServer;
-        private static bool _exit = false;
-        //private static ConcurrentDictionary<string, WebRtcSession> _webRtcSessions = new ConcurrentDictionary<string, WebRtcSession>();
-        //private static WebRtcSession _webRtcSession;
+        private static MFSampleGrabber _mfSampleGrabber;
+        private static VpxEncoder _vpxEncoder;
+        private static bool _vpxEncoderReady = false;
+        private static uint _vp8Timestamp;
+        private static uint _mulawTimestamp;
 
-        private static event Action<uint, byte[]> OnTestPatternSampleReady;
+        private delegate void MediaSampleReadyDelegate(SDPMediaTypesEnum mediaType, uint timestamp, byte[] sample);
+        private static event MediaSampleReadyDelegate OnMediaSampleReady;
 
         static void Main()
         {
@@ -94,12 +89,28 @@ namespace WebRTCServer
 
             AddConsoleLogger();
 
+            if (!File.Exists(MP4_FILE_PATH))
+            {
+                throw new ApplicationException($"The media file at does not exist at {MP4_FILE_PATH}.");
+            }
+
             // Initialise OpenSSL & libsrtp, saves a couple of seconds for the first client connection.
             Console.WriteLine("Initialising OpenSSL and libsrtp...");
             Dtls.InitialiseOpenSSL();
             Srtp.InitialiseLibSrtp();
 
-            Task.Run(SendTestPattern);
+            // Initialise the Media Foundation library that will pull the samples from the mp4 file.
+            _mfSampleGrabber = new SIPSorceryMedia.MFSampleGrabber();
+            _mfSampleGrabber.OnClockStartEvent += OnClockStartEvent;
+            _mfSampleGrabber.OnVideoResolutionChangedEvent += OnVideoResolutionChangedEvent;
+            unsafe
+            {
+                _mfSampleGrabber.OnProcessSampleEvent += OnProcessSampleEvent;
+            }
+            Task.Run(() => _mfSampleGrabber.Run(MP4_FILE_PATH, true));
+
+            // Hook up event handlers to send the media samples to the network.
+            //InitMediaToWebRtcClients();
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -125,6 +136,9 @@ namespace WebRTCServer
 
             // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
             exitMre.WaitOne();
+
+            _mfSampleGrabber.StopAndExit();
+            _webSocketServer.Stop();
         }
 
         private static async Task<WebRtcSession> SendSDPOffer(WebSocketContext context)
@@ -137,8 +151,8 @@ namespace WebRTCServer
 
             webRtcSession.OnClose += (reason) =>
             {
-                logger.LogDebug($"WebRTCSession was closed with reason {reason}.");
-                //dtls.Shutdown();
+                logger.LogDebug($"WebRtcSession was closed with reason {reason}");
+                OnMediaSampleReady -= webRtcSession.SendMedia;
             };
 
             await webRtcSession.Initialise(DoDtlsHandshake, null);
@@ -170,18 +184,12 @@ namespace WebRTCServer
                     }
                 }
 
-                OnTestPatternSampleReady += (timestamp, sample) =>
+                OnMediaSampleReady += webRtcSession.SendMedia;
+
+                if (_mfSampleGrabber.Paused)
                 {
-                    try
-                    {
-                        webRtcSession.SendMedia(SDPMediaTypesEnum.video, timestamp, sample);
-                    }
-                    catch (Exception sendExcp)
-                    {
-                        logger.LogWarning("Exception OnTestPatternSampleReady. " + sendExcp.Message);
-                        webRtcSession.Close();
-                    }
-                };
+                    _mfSampleGrabber.Start();
+                }
             }
             catch (Exception excp)
             {
@@ -225,139 +233,153 @@ namespace WebRTCServer
                 protectRtcp = srtpContext.ProtectRTCP;
             }
 
-            // TODO: CHECK that DTLS context automatically gets shutdown when the RTP socket is closed.
-
             return res;
         }
 
-        private static void SendTestPattern()
+        private static void OnVideoResolutionChangedEvent(uint width, uint height, uint stride)
         {
             try
             {
-                unsafe
+                if (_vpxEncoder == null ||
+                    (_vpxEncoder.GetWidth() != width || _vpxEncoder.GetHeight() != height || _vpxEncoder.GetStride() != stride))
                 {
-                    Bitmap testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
+                    _vpxEncoderReady = false;
 
-                    // Get the stride.
-                    Rectangle rect = new Rectangle(0, 0, testPattern.Width, testPattern.Height);
-                    System.Drawing.Imaging.BitmapData bmpData =
-                        testPattern.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite,
-                        testPattern.PixelFormat);
-
-                    // Get the address of the first line.
-                    int stride = bmpData.Stride;
-
-                    testPattern.UnlockBits(bmpData);
-
-                    // Initialise the video codec and color converter.
-                    SIPSorceryMedia.VpxEncoder vpxEncoder = new VpxEncoder();
-                    vpxEncoder.InitEncoder((uint)testPattern.Width, (uint)testPattern.Height, (uint)stride);
-
-                    SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
-
-                    byte[] sampleBuffer = null;
-                    byte[] encodedBuffer = null;
-                    int sampleCount = 0;
-                    uint rtpTimestamp = 0;
-
-                    while (!_exit)
+                    if (_vpxEncoder != null)
                     {
-                        if (OnTestPatternSampleReady != null)
+                        _vpxEncoder.Dispose();
+                    }
+
+                    _vpxEncoder = new VpxEncoder();
+                    _vpxEncoder.InitEncoder(width, height, stride);
+
+                    logger.LogInformation($"VPX encoder initialised with width {width}, height {height} and stride {stride}.");
+
+                    _vpxEncoderReady = true;
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.LogWarning("Exception MfSampleGrabber_OnVideoResolutionChangedEvent. " + excp.Message);
+            }
+        }
+
+        unsafe private static void OnProcessSampleEvent(int mediaTypeID, uint dwSampleFlags, long llSampleTime, long llSampleDuration, uint dwSampleSize, ref byte[] sampleBuffer)
+        {
+            try
+            {
+                if (OnMediaSampleReady == null)
+                {
+                    if (!_mfSampleGrabber.Paused)
+                    {
+                        _mfSampleGrabber.Pause();
+                        logger.LogDebug("No active clients, media sampling paused.");
+                    }
+                }
+                else
+                {
+                    if (mediaTypeID == 0)
+                    {
+                        if (!_vpxEncoderReady)
                         {
-                            var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
-                            AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
-                            sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
+                            logger.LogWarning("Video sample cannot be processed as the VPX encoder is not in a ready state.");
+                        }
+                        else
+                        {
+                            byte[] vpxEncodedBuffer = null;
 
-                            fixed (byte* p = sampleBuffer)
+                            unsafe
                             {
-                                byte[] convertedFrame = null;
-                                colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, testPattern.Width, testPattern.Height, stride, VideoSubTypesEnum.I420, ref convertedFrame);
-
-                                fixed (byte* q = convertedFrame)
+                                fixed (byte* p = sampleBuffer)
                                 {
-                                    int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
+                                    int encodeResult = _vpxEncoder.Encode(p, (int)dwSampleSize, 1, ref vpxEncodedBuffer);
 
                                     if (encodeResult != 0)
                                     {
                                         logger.LogWarning("VPX encode of video sample failed.");
-                                        continue;
                                     }
                                 }
                             }
 
-                            stampedTestPattern.Dispose();
-                            stampedTestPattern = null;
+                            OnMediaSampleReady?.Invoke(SDPMediaTypesEnum.video, _vp8Timestamp, vpxEncodedBuffer);
 
-                            OnTestPatternSampleReady(rtpTimestamp, encodedBuffer);
+                            //Console.WriteLine($"Video SeqNum {videoSeqNum}, timestamp {videoTimestamp}, buffer length {vpxEncodedBuffer.Length}, frame count {sampleProps.FrameCount}.");
 
-                            encodedBuffer = null;
+                            _vp8Timestamp += VP8_TIMESTAMP_SPACING;
+                        }
+                    }
+                    else
+                    {
+                        uint sampleDuration = (uint)(sampleBuffer.Length / 2);
 
-                            sampleCount++;
-                            rtpTimestamp += VP8_TIMESTAMP_SPACING;
+                        byte[] mulawSample = new byte[sampleDuration];
+                        int sampleIndex = 0;
+
+                        // ToDo: Find a way to wire up the Media foundation WAVE_FORMAT_MULAW codec so the encoding below is not necessary.
+                        for (int index = 0; index < sampleBuffer.Length; index += 2)
+                        {
+                            var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
+                            mulawSample[sampleIndex++] = ulawByte;
                         }
 
-                        Thread.Sleep(30);
+                        OnMediaSampleReady?.Invoke(SDPMediaTypesEnum.audio, _mulawTimestamp, mulawSample);
+
+                        //Console.WriteLine($"Audio SeqNum {audioSeqNum}, timestamp {audioTimestamp}, buffer length {mulawSample.Length}.");
+
+                        _mulawTimestamp += sampleDuration;
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SendTestPattern. " + excp);
+                logger.LogWarning("Exception MfSampleGrabber_OnProcessSampleEvent. " + excp.Message);
             }
         }
 
-        private static byte[] BitmapToRGB24(Bitmap bitmap)
+        public static void OnClockStartEvent(long hnsSystemTime, long llClockStartOffset)
         {
-            try
-            {
-                BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                var length = bitmapData.Stride * bitmapData.Height;
-
-                byte[] bytes = new byte[length];
-
-                // Copy bitmap to byte[]
-                Marshal.Copy(bitmapData.Scan0, bytes, 0, length);
-                bitmap.UnlockBits(bitmapData);
-
-                return bytes;
-            }
-            catch (Exception)
-            {
-                return new byte[] { };
-            }
+            //Console.WriteLine($"C# OnClockStart {hnsSystemTime}, {llClockStartOffset}.");
         }
 
-        private static void AddTimeStampAndLocation(System.Drawing.Image image, string timeStamp, string locationText)
-        {
-            int pixelHeight = (int)(image.Height * TEXT_SIZE_PERCENTAGE);
-
-            Graphics g = Graphics.FromImage(image);
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-            using (StringFormat format = new StringFormat())
-            {
-                format.LineAlignment = StringAlignment.Center;
-                format.Alignment = StringAlignment.Center;
-
-                using (Font f = new Font("Tahoma", pixelHeight, GraphicsUnit.Pixel))
-                {
-                    using (var gPath = new GraphicsPath())
-                    {
-                        float emSize = g.DpiY * f.Size / POINTS_PER_INCH;
-                        if (locationText != null)
-                        {
-                            gPath.AddString(locationText, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, TEXT_MARGIN_PIXELS, image.Width, pixelHeight), format);
-                        }
-
-                        gPath.AddString(timeStamp /* + " -- " + fps.ToString("0.00") + " fps" */, f.FontFamily, (int)FontStyle.Bold, emSize, new Rectangle(0, image.Height - (pixelHeight + TEXT_MARGIN_PIXELS), image.Width, pixelHeight), format);
-                        g.FillPath(Brushes.White, gPath);
-                        g.DrawPath(new Pen(Brushes.Black, pixelHeight * TEXT_OUTLINE_REL_THICKNESS), gPath);
-                    }
-                }
-            }
-        }
+        /// <summary>
+        /// This method sets up the streaming of the first audio and video stream from an mp4 file to a WebRtc browser 
+        /// (tested predominantly with Chrome). This method deals only with the media, the signaling and WebRtc session
+        /// needs to have already been set up by the respective WebRtc classes.
+        /// </summary>
+        //private static void InitMediaToWebRtcClients()
+        //{
+        //    OnMediaSampleReady += (mediaType, timestamp, sample) =>
+        //    {
+        //        if (String.IsNullOrEmpty(_rawRtpBaseEndPoint) && _webRtcSessions.Count() == 0)
+        //        {
+        //            if (_mfSampleGrabber.Paused == false)
+        //            {
+        //                logger.LogInformation("No active clients, pausing media sampling.");
+        //                _mfSampleGrabber.Pause();
+        //            }
+        //        }
+        //        else
+        //        {
+        //            lock (_webRtcSessions)
+        //            {
+        //                foreach (var session in _webRtcSessions.Where(x => (x.Value.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
+        //                   x.Value.IsConnected && x.Value.MediaSource == MediaSourceEnum.Max &&
+        //                   x.Value.IsClosed == false))
+        //                {
+        //                    try
+        //                    {
+        //                        session.Value.SendMedia(mediaType, timestamp, sample);
+        //                    }
+        //                    catch (Exception sendExcp)
+        //                    {
+        //                        logger.LogWarning("Exception OnMediaSampleReady.SendMedia. " + sendExcp.Message);
+        //                        session.Value.Close();
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    };
+        //}
 
         /// <summary>
         ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.

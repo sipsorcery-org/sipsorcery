@@ -149,7 +149,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             _videoSessionID = _rtpSession.AddStream(VP8_PAYLOAD_TYPE_ID, null);
             _rtpChannel = _rtpSession.RtpChannel;
             _rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
-            _rtpSession.OnRtpClosed += (reason) => { Close(); OnClose?.Invoke(reason); };
+            _rtpSession.OnRtpClosed += Close;
 
             _offerAddresses = offerAddresses;
         }
@@ -181,7 +181,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 if (LocalIceCandidates.Count == 0)
                 {
                     logger.LogWarning("No local socket candidates were found for WebRTC call closing.");
-                    Close();
+                    Close("No local ICE candidates available.");
                 }
                 else
                 {
@@ -234,7 +234,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 {
                     _ = Task.Run(() =>
                     {
-                        int result = _doDtlsHandshake(this, _rtpChannel.m_rtpSocket, out _rtpSession.SrtpProtect, out _rtpSession.SrtcpProtect);
+                        int result = _doDtlsHandshake(this, _rtpChannel.m_rtpSocket, out _rtpSession.SrtpProtect, out _rtpSession.RtcpSession.SrtcpProtect);
                         IsDtlsNegotiationComplete = (result == 0);
                     });
                 }
@@ -242,7 +242,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             catch (Exception excp)
             {
                 logger.LogError("Exception WebRtcPeer.Initialise. " + excp);
-                Close();
+                Close(excp.Message);
             }
         }
 
@@ -289,23 +289,25 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 if (mediaType == SDPMediaTypesEnum.video)
                 {
                     int streamID = _videoSessionID;
-                    _rtpSession.DestinationEndPoint = RemoteEndPoint;
+
                     _rtpSession.SendVp8Frame(sampleTimestamp, sample, streamID);
                 }
                 else if (mediaType == SDPMediaTypesEnum.audio)
                 {
                     int streamID = _audioSessionID;
-                    _rtpSession.DestinationEndPoint = RemoteEndPoint;
                     _rtpSession.SendAudioFrame(sampleTimestamp, sample, streamID);
                 }
             }
         }
 
-        public void Close()
+        public void Close(string reason)
         {
             IsClosed = true;
             IceConnectionState = IceConnectionStatesEnum.Closed;
             m_stunChecksTimer.Dispose();
+            _rtpSession.CloseSession(reason);
+
+            OnClose?.Invoke(reason);
         }
 
         /// <summary>
@@ -459,7 +461,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                             if (secondsSinceLastResponse > ICE_CONNECTED_NO_COMMUNICATIONS_TIMEOUT_SECONDS)
                             {
                                 logger.LogWarning($"No packets have been received from {RemoteEndPoint} within the last {secondsSinceLastResponse:#} seconds, closing session.");
-                                Close();
+                                Close("Inactivity timeout.");
                             }
                         }
                     }
@@ -550,6 +552,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 if (RemoteEndPoint == null)
                 {
                     RemoteEndPoint = remoteEndPoint;
+                    _rtpSession.DestinationEndPoint = RemoteEndPoint;
+                    _rtpSession.RtcpSession.ControlDestinationEndPoint = RemoteEndPoint;
                     //OnIceConnected?.Invoke(iceCandidate, remoteEndPoint);
                     IceConnectionState = IceConnectionStatesEnum.Connected;
                 }

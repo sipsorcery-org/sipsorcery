@@ -2,7 +2,7 @@
 // Filename: ReceptionReport.cs
 //
 // Description: One or more reception report blocks are included in each
-// RTCP Sender and Receiver reports
+// RTCP Sender and Receiver report.
 
 //
 //        RTCP Reception Report Block
