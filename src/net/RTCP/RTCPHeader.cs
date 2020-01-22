@@ -45,7 +45,15 @@ namespace SIPSorcery.Net
         RR = 201,     // Receiver Report.
         SDES = 202,   // Session Description.
         BYE = 203,    // Goodbye.
-        APP = 204     // Application-defined.
+        APP = 204,    // Application-defined.
+
+        // From RFC5760: https://tools.ietf.org/html/rfc5760
+        // "RTP Control Protocol (RTCP) Extensions for
+        // Single-Source Multicast Sessions with Unicast Feedback"
+
+        RTPFB = 205,    // Generic RTP feedback 
+        PSFB = 206,     // Payload-specific feedback 
+        XR = 207,       // RTCP Extension
     }
 
     public class RTCPReportTypes
@@ -120,12 +128,12 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        ///  The length of this RTCP packet in 32-bit words minus one,
-        // including the header and any padding.
+        /// The length of this RTCP packet in 32-bit words minus one,
+        /// including the header and any padding.
         /// </summary>
         public void SetLength(ushort length)
         {
-            Length = length; 
+            Length = length;
         }
 
         public byte[] GetBytes()

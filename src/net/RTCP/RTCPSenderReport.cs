@@ -51,6 +51,18 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
+    /// <summary>
+    /// An RTCP sender report is for use by active RTP senders. 
+    /// </summary>
+    /// <remarks>
+    /// From https://tools.ietf.org/html/rfc3550#section-6.4:
+    /// "The only difference between the
+    /// sender report(SR) and receiver report(RR) forms, besides the packet
+    /// type code, is that the sender report includes a 20-byte sender
+    /// information section for use by active senders.The SR is issued if a
+    /// site has sent any data packets during the interval since issuing the
+    /// last report or the previous one, otherwise the RR is issued."
+    /// </remarks>
     public class RTCPSenderReport
     {
         public const int SENDER_PAYLOAD_SIZE = 20;

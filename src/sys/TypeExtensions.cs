@@ -8,12 +8,15 @@
 //
 // History:
 // ??	Aaron Clauson	Created.
+// 21 Jan 2020  Aaron Clauson   Added HexStr and ParseHexStr (borrowed from
+//                              Bitcoin Core source).
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 
 namespace SIPSorcery.Sys
 {
@@ -25,6 +28,24 @@ namespace SIPSorcery.Sys
             (char)0x06, (char)0x07, (char)0x08, (char)0x09, (char)0x0a, (char)0x0b, (char)0x0c, (char)0x0d, (char)0x0e, (char)0x0f,
             (char)0x10, (char)0x11, (char)0x12, (char)0x13, (char)0x14, (char)0x15, (char)0x16, (char)0x17, (char)0x18, (char)0x19, (char)0x20,
             (char)0x1a, (char)0x1b, (char)0x1c, (char)0x1d, (char)0x1e, (char)0x1f, (char)0x7f, (char)0x85, (char)0x2028, (char)0x2029 };
+
+        private static readonly sbyte[] _hexDigits =
+            { -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              0,1,2,3,4,5,6,7,8,9,-1,-1,-1,-1,-1,-1,
+              -1,0xa,0xb,0xc,0xd,0xe,0xf,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,0xa,0xb,0xc,0xd,0xe,0xf,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+              -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, };
 
         /// <summary>    
         /// Gets a value that indicates whether or not the collection is empty.    
@@ -89,6 +110,54 @@ namespace SIPSorcery.Sys
                     return null;
                 }
             }
+        }
+
+        public static string HexStr(this byte[] buffer)
+        {
+            return buffer.HexStr(buffer.Length);
+        }
+
+        public static string HexStr(this byte[] buffer, int length)
+        {
+            // Each byte requires 2 characters.
+            string hexStr = null;
+
+            char[] hexmap = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+
+            for (int i = 0; i < length; i++)
+            {
+                hexStr += buffer[i].ToString("X2");
+            }
+
+            return hexStr;
+        }
+
+        public static byte[] ParseHexStr(string hexStr)
+        {
+            List<byte> buffer = new List<byte>();
+            var chars = hexStr.ToCharArray();
+            int posn = 0;
+            while (posn < hexStr.Length)
+            {
+                while (char.IsWhiteSpace(chars[posn]))
+                {
+                    posn++;
+                }
+                sbyte c = _hexDigits[chars[posn++]];
+                if (c == -1)
+                {
+                    break;
+                }
+                sbyte n = (sbyte)(c << 4);
+                c = _hexDigits[chars[posn++]];
+                if (c == -1)
+                {
+                    break;
+                }
+                n |= c;
+                buffer.Add((byte)n);
+            }
+            return buffer.ToArray();
         }
     }
 }
