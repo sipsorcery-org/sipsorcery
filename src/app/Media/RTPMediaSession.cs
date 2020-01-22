@@ -189,9 +189,8 @@ namespace SIPSorcery.SIP.App
                     }
                 }
             }
-
-            DestinationEndPoint = sdp.GetSDPRTPEndPoint();
-            RtcpSession.ControlDestinationEndPoint = new IPEndPoint(DestinationEndPoint.Address, DestinationEndPoint.Port + 1);
+            var dstEndPoint = sdp.GetSDPRTPEndPoint();
+            SetDestination(dstEndPoint, new IPEndPoint(dstEndPoint.Address, dstEndPoint.Port + 1));
         }
 
         public Task<string> CreateOffer(IPAddress destinationAddress = null) =>

@@ -201,12 +201,20 @@ namespace WebRTCServer
         /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
         /// </summary>
         /// <param name="rtpSocket">The RTP socket being used for the WebRTC session.</param>
-        private static int DoDtlsHandshake(WebRtcSession webRtcSession, Socket rtpSocket, out ProtectRtpPacket protectRtp, out ProtectRtpPacket protectRtcp)
+        private static int DoDtlsHandshake(
+            WebRtcSession webRtcSession, 
+            Socket rtpSocket, 
+            out ProtectRtpPacket protectRtp,
+            out ProtectRtpPacket unprotectRtp,
+            out ProtectRtpPacket protectRtcp,
+            out ProtectRtpPacket unprotectRtcp)
         {
             logger.LogDebug("DoDtlsHandshake started.");
 
             protectRtp = null;
+            unprotectRtp = null;
             protectRtcp = null;
+            unprotectRtcp = null;
 
             if (!File.Exists(DTLS_CERTIFICATE_PATH))
             {
@@ -228,9 +236,13 @@ namespace WebRTCServer
             {
                 logger.LogDebug("DTLS negotiation complete.");
 
-                var srtpContext = new Srtp(dtls, false);
-                protectRtp = srtpContext.ProtectRTP;
-                protectRtcp = srtpContext.ProtectRTCP;
+                var srtpSendContext = new Srtp(dtls, false);
+                protectRtp = srtpSendContext.ProtectRTP;
+                protectRtcp = srtpSendContext.ProtectRTCP;
+
+                var srtpReceiveContext = new Srtp(dtls, true);
+                unprotectRtp = srtpReceiveContext.UnprotectRTP;
+                unprotectRtcp = srtpReceiveContext.UnprotectRTCP;
             }
 
             return res;

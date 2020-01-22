@@ -26,7 +26,12 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public delegate int DoDtlsHandshakeDelegate(WebRtcSession session, Socket rtpSocket, out ProtectRtpPacket protectRtp, out ProtectRtpPacket protectRtcp);
+    public delegate int DoDtlsHandshakeDelegate(WebRtcSession session, 
+        Socket rtpSocket, 
+        out ProtectRtpPacket protectRtp,
+        out ProtectRtpPacket unprotectRtp,
+        out ProtectRtpPacket protectRtcp,
+        out ProtectRtpPacket unprotectRtcp);
 
     public class WebRtcSession
     {
@@ -146,7 +151,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             SessionID = Guid.NewGuid().ToString();
 
             _rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork, true);
-            _videoSessionID = _rtpSession.AddStream(VP8_PAYLOAD_TYPE_ID, null);
+            _videoSessionID = _rtpSession.AddStream(VP8_PAYLOAD_TYPE_ID);
             _rtpChannel = _rtpSession.RtpChannel;
             _rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
             _rtpSession.OnRtpClosed += Close;
@@ -234,7 +239,13 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 {
                     _ = Task.Run(() =>
                     {
-                        int result = _doDtlsHandshake(this, _rtpChannel.m_rtpSocket, out _rtpSession.SrtpProtect, out _rtpSession.RtcpSession.SrtcpProtect);
+                        int result = _doDtlsHandshake(
+                            this, 
+                            _rtpChannel.m_rtpSocket, 
+                            out _rtpSession.SrtpProtect,
+                            out _rtpSession.SrtpUnprotect,
+                            out _rtpSession.SrtcpControlProtect,
+                            out _rtpSession.SrtcpControlUnprotect);
                         IsDtlsNegotiationComplete = (result == 0);
                     });
                 }
@@ -302,12 +313,15 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         public void Close(string reason)
         {
-            IsClosed = true;
-            IceConnectionState = IceConnectionStatesEnum.Closed;
-            m_stunChecksTimer.Dispose();
-            _rtpSession.CloseSession(reason);
+            if (!IsClosed)
+            {
+                IsClosed = true;
+                IceConnectionState = IceConnectionStatesEnum.Closed;
+                m_stunChecksTimer.Dispose();
+                _rtpSession.CloseSession(reason);
 
-            OnClose?.Invoke(reason);
+                OnClose?.Invoke(reason);
+            }
         }
 
         /// <summary>
@@ -552,8 +566,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 if (RemoteEndPoint == null)
                 {
                     RemoteEndPoint = remoteEndPoint;
-                    _rtpSession.DestinationEndPoint = RemoteEndPoint;
-                    _rtpSession.RtcpSession.ControlDestinationEndPoint = RemoteEndPoint;
+                    _rtpSession.SetDestination(RemoteEndPoint, RemoteEndPoint);
                     //OnIceConnected?.Invoke(iceCandidate, remoteEndPoint);
                     IceConnectionState = IceConnectionStatesEnum.Connected;
                 }
