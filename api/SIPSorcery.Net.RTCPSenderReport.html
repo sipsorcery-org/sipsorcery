@@ -73,7 +73,8 @@
   
   <h1 id="SIPSorcery_Net_RTCPSenderReport" data-uid="SIPSorcery.Net.RTCPSenderReport" class="text-break">Class RTCPSenderReport
   </h1>
-  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 summary"><p>An RTCP sender report is for use by active RTP senders.</p>
+</div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
     <h5>Inheritance</h5>
@@ -110,6 +111,15 @@
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public class RTCPSenderReport</code></pre>
   </div>
+  <h5 id="SIPSorcery_Net_RTCPSenderReport_remarks"><strong>Remarks</strong></h5>
+  <div class="markdown level0 remarks"><p>From <a href="https://tools.ietf.org/html/rfc3550#section-6.4">https://tools.ietf.org/html/rfc3550#section-6.4</a>:
+&quot;The only difference between the
+sender report(SR) and receiver report(RR) forms, besides the packet
+type code, is that the sender report includes a 20-byte sender
+information section for use by active senders.The SR is issued if a
+site has sent any data packets during the interval since issuing the
+last report or the previous one, otherwise the RR is issued.&quot;</p>
+</div>
   <h3 id="constructors">Constructors
   </h3>
   <span class="small pull-right mobile-hide">
@@ -117,7 +127,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport__ctor_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.%23ctor(System.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L82">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L94">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPSenderReport__ctor_" data-uid="SIPSorcery.Net.RTCPSenderReport.#ctor*"></a>
   <h4 id="SIPSorcery_Net_RTCPSenderReport__ctor_System_Byte___" data-uid="SIPSorcery.Net.RTCPSenderReport.#ctor(System.Byte[])">RTCPSenderReport(Byte[])</h4>
@@ -151,7 +161,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport__ctor_System_UInt32_System_UInt64_System_UInt32_System_UInt32_System_UInt32_System_Collections_Generic_List_SIPSorcery_Net_ReceptionReportSample__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.%23ctor(System.UInt32%2CSystem.UInt64%2CSystem.UInt32%2CSystem.UInt32%2CSystem.UInt32%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.ReceptionReportSample%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L67">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L79">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPSenderReport__ctor_" data-uid="SIPSorcery.Net.RTCPSenderReport.#ctor*"></a>
   <h4 id="SIPSorcery_Net_RTCPSenderReport__ctor_System_UInt32_System_UInt64_System_UInt32_System_UInt32_System_UInt32_System_Collections_Generic_List_SIPSorcery_Net_ReceptionReportSample__" data-uid="SIPSorcery.Net.RTCPSenderReport.#ctor(System.UInt32,System.UInt64,System.UInt32,System.UInt32,System.UInt32,System.Collections.Generic.List{SIPSorcery.Net.ReceptionReportSample})">RTCPSenderReport(UInt32, UInt64, UInt32, UInt32, UInt32, List&lt;ReceptionReportSample&gt;)</h4>
@@ -210,7 +220,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport_Header.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.Header%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L59">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L71">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSenderReport_Header" data-uid="SIPSorcery.Net.RTCPSenderReport.Header">Header</h4>
   <div class="markdown level1 summary"></div>
@@ -239,7 +249,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport_MIN_PACKET_SIZE.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.MIN_PACKET_SIZE%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L57">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L69">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSenderReport_MIN_PACKET_SIZE" data-uid="SIPSorcery.Net.RTCPSenderReport.MIN_PACKET_SIZE">MIN_PACKET_SIZE</h4>
   <div class="markdown level1 summary"></div>
@@ -268,7 +278,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport_NtpTimestamp.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.NtpTimestamp%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L61">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L73">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSenderReport_NtpTimestamp" data-uid="SIPSorcery.Net.RTCPSenderReport.NtpTimestamp">NtpTimestamp</h4>
   <div class="markdown level1 summary"></div>
@@ -297,7 +307,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport_OctetCount.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.OctetCount%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L64">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L76">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSenderReport_OctetCount" data-uid="SIPSorcery.Net.RTCPSenderReport.OctetCount">OctetCount</h4>
   <div class="markdown level1 summary"></div>
@@ -326,7 +336,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport_PacketCount.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.PacketCount%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L63">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L75">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSenderReport_PacketCount" data-uid="SIPSorcery.Net.RTCPSenderReport.PacketCount">PacketCount</h4>
   <div class="markdown level1 summary"></div>
@@ -355,7 +365,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport_ReceptionReports.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.ReceptionReports%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L65">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L77">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSenderReport_ReceptionReports" data-uid="SIPSorcery.Net.RTCPSenderReport.ReceptionReports">ReceptionReports</h4>
   <div class="markdown level1 summary"></div>
@@ -384,7 +394,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport_RtpTimestamp.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.RtpTimestamp%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L62">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L74">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSenderReport_RtpTimestamp" data-uid="SIPSorcery.Net.RTCPSenderReport.RtpTimestamp">RtpTimestamp</h4>
   <div class="markdown level1 summary"></div>
@@ -413,7 +423,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport_SENDER_PAYLOAD_SIZE.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.SENDER_PAYLOAD_SIZE%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L56">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L68">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSenderReport_SENDER_PAYLOAD_SIZE" data-uid="SIPSorcery.Net.RTCPSenderReport.SENDER_PAYLOAD_SIZE">SENDER_PAYLOAD_SIZE</h4>
   <div class="markdown level1 summary"></div>
@@ -442,7 +452,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport_SSRC.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.SSRC%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L60">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L72">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTCPSenderReport_SSRC" data-uid="SIPSorcery.Net.RTCPSenderReport.SSRC">SSRC</h4>
   <div class="markdown level1 summary"></div>
@@ -473,7 +483,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport_GetBytes.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport.GetBytes%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L117">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L129">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCPSenderReport_GetBytes_" data-uid="SIPSorcery.Net.RTCPSenderReport.GetBytes*"></a>
   <h4 id="SIPSorcery_Net_RTCPSenderReport_GetBytes" data-uid="SIPSorcery.Net.RTCPSenderReport.GetBytes">GetBytes()</h4>
@@ -509,7 +519,7 @@
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPSenderReport.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPSenderReport%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L54" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTCP/RTCPSenderReport.cs/#L66" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
