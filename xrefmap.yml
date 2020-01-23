@@ -2609,12 +2609,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.RTPSession
   nameWithType: RTPSession.RTPSession
-- uid: SIPSorcery.Net.RTPSession.AddStream(System.Int32)
-  name: AddStream(Int32)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AddStream_System_Int32_
-  commentId: M:SIPSorcery.Net.RTPSession.AddStream(System.Int32)
-  fullName: SIPSorcery.Net.RTPSession.AddStream(System.Int32)
-  nameWithType: RTPSession.AddStream(Int32)
+- uid: SIPSorcery.Net.RTPSession.AddStream(System.Int32,System.Collections.Generic.List{System.Int32})
+  name: AddStream(Int32, List<Int32>)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AddStream_System_Int32_System_Collections_Generic_List_System_Int32__
+  commentId: M:SIPSorcery.Net.RTPSession.AddStream(System.Int32,System.Collections.Generic.List{System.Int32})
+  name.vb: AddStream(Int32, List(Of Int32))
+  fullName: SIPSorcery.Net.RTPSession.AddStream(System.Int32, System.Collections.Generic.List<System.Int32>)
+  fullName.vb: SIPSorcery.Net.RTPSession.AddStream(System.Int32, System.Collections.Generic.List(Of System.Int32))
+  nameWithType: RTPSession.AddStream(Int32, List<Int32>)
+  nameWithType.vb: RTPSession.AddStream(Int32, List(Of Int32))
 - uid: SIPSorcery.Net.RTPSession.AddStream*
   name: AddStream
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AddStream_
@@ -2844,12 +2847,15 @@ references:
   commentId: T:SIPSorcery.Net.RTPSessionStream
   fullName: SIPSorcery.Net.RTPSessionStream
   nameWithType: RTPSessionStream
-- uid: SIPSorcery.Net.RTPSessionStream.#ctor(System.Int32,System.Int32)
-  name: RTPSessionStream(Int32, Int32)
-  href: api/SIPSorcery.Net.RTPSessionStream.html#SIPSorcery_Net_RTPSessionStream__ctor_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.RTPSessionStream.#ctor(System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.RTPSessionStream.RTPSessionStream(System.Int32, System.Int32)
-  nameWithType: RTPSessionStream.RTPSessionStream(Int32, Int32)
+- uid: SIPSorcery.Net.RTPSessionStream.#ctor(System.Int32,System.Int32,System.Collections.Generic.List{System.Int32})
+  name: RTPSessionStream(Int32, Int32, List<Int32>)
+  href: api/SIPSorcery.Net.RTPSessionStream.html#SIPSorcery_Net_RTPSessionStream__ctor_System_Int32_System_Int32_System_Collections_Generic_List_System_Int32__
+  commentId: M:SIPSorcery.Net.RTPSessionStream.#ctor(System.Int32,System.Int32,System.Collections.Generic.List{System.Int32})
+  name.vb: RTPSessionStream(Int32, Int32, List(Of Int32))
+  fullName: SIPSorcery.Net.RTPSessionStream.RTPSessionStream(System.Int32, System.Int32, System.Collections.Generic.List<System.Int32>)
+  fullName.vb: SIPSorcery.Net.RTPSessionStream.RTPSessionStream(System.Int32, System.Int32, System.Collections.Generic.List(Of System.Int32))
+  nameWithType: RTPSessionStream.RTPSessionStream(Int32, Int32, List<Int32>)
+  nameWithType.vb: RTPSessionStream.RTPSessionStream(Int32, Int32, List(Of Int32))
 - uid: SIPSorcery.Net.RTPSessionStream.#ctor*
   name: RTPSessionStream
   href: api/SIPSorcery.Net.RTPSessionStream.html#SIPSorcery_Net_RTPSessionStream__ctor_
@@ -2870,6 +2876,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSessionStream.ID
   nameWithType: RTPSessionStream.ID
+- uid: SIPSorcery.Net.RTPSessionStream.IsRemotePayloadIDMatch(System.Int32)
+  name: IsRemotePayloadIDMatch(Int32)
+  href: api/SIPSorcery.Net.RTPSessionStream.html#SIPSorcery_Net_RTPSessionStream_IsRemotePayloadIDMatch_System_Int32_
+  commentId: M:SIPSorcery.Net.RTPSessionStream.IsRemotePayloadIDMatch(System.Int32)
+  fullName: SIPSorcery.Net.RTPSessionStream.IsRemotePayloadIDMatch(System.Int32)
+  nameWithType: RTPSessionStream.IsRemotePayloadIDMatch(Int32)
+- uid: SIPSorcery.Net.RTPSessionStream.IsRemotePayloadIDMatch*
+  name: IsRemotePayloadIDMatch
+  href: api/SIPSorcery.Net.RTPSessionStream.html#SIPSorcery_Net_RTPSessionStream_IsRemotePayloadIDMatch_
+  commentId: Overload:SIPSorcery.Net.RTPSessionStream.IsRemotePayloadIDMatch
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSessionStream.IsRemotePayloadIDMatch
+  nameWithType: RTPSessionStream.IsRemotePayloadIDMatch
 - uid: SIPSorcery.Net.RTPSessionStream.PayloadTypeID
   name: PayloadTypeID
   href: api/SIPSorcery.Net.RTPSessionStream.html#SIPSorcery_Net_RTPSessionStream_PayloadTypeID
@@ -7975,6 +7994,19 @@ references:
   commentId: E:SIPSorcery.Net.WebRtcSession.OnClose
   fullName: SIPSorcery.Net.WebRtcSession.OnClose
   nameWithType: WebRtcSession.OnClose
+- uid: SIPSorcery.Net.WebRtcSession.OnSdpAnswer(SIPSorcery.Net.SDP)
+  name: OnSdpAnswer(SDP)
+  href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession_OnSdpAnswer_SIPSorcery_Net_SDP_
+  commentId: M:SIPSorcery.Net.WebRtcSession.OnSdpAnswer(SIPSorcery.Net.SDP)
+  fullName: SIPSorcery.Net.WebRtcSession.OnSdpAnswer(SIPSorcery.Net.SDP)
+  nameWithType: WebRtcSession.OnSdpAnswer(SDP)
+- uid: SIPSorcery.Net.WebRtcSession.OnSdpAnswer*
+  name: OnSdpAnswer
+  href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession_OnSdpAnswer_
+  commentId: Overload:SIPSorcery.Net.WebRtcSession.OnSdpAnswer
+  isSpec: "True"
+  fullName: SIPSorcery.Net.WebRtcSession.OnSdpAnswer
+  nameWithType: WebRtcSession.OnSdpAnswer
 - uid: SIPSorcery.Net.WebRtcSession.OnSdpOfferReady
   name: OnSdpOfferReady
   href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession_OnSdpOfferReady
