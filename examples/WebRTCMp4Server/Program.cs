@@ -170,6 +170,7 @@ namespace WebRTCServer
 
                 var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
 
+                webRtcSession.OnSdpAnswer(answerSDP);
                 webRtcSession.SdpSessionID = answerSDP.SessionId;
                 webRtcSession.RemoteIceUser = answerSDP.IceUfrag;
                 webRtcSession.RemoteIcePassword = answerSDP.IcePwd;

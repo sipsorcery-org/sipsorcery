@@ -26,8 +26,8 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public delegate int DoDtlsHandshakeDelegate(WebRtcSession session, 
-        Socket rtpSocket, 
+    public delegate int DoDtlsHandshakeDelegate(WebRtcSession session,
+        Socket rtpSocket,
         out ProtectRtpPacket protectRtp,
         out ProtectRtpPacket unprotectRtp,
         out ProtectRtpPacket protectRtcp,
@@ -42,7 +42,7 @@ namespace SIPSorcery.Net
         private const int ICE_CONNECTED_NO_COMMUNICATIONS_TIMEOUT_SECONDS = 35;  // If there are no messages received (STUN/RTP/RTCP) within this period the session will be closed.
         private const int MAXIMUM_TURN_ALLOCATE_ATTEMPTS = 4;
         private const int MAXIMUM_STUN_CONNECTION_ATTEMPTS = 5;
-        private const string RTP_MEDIA_SECURE_DESCRIPTOR = "RTP/SAVPF";
+        private const string RTP_MEDIA_SECURE_DESCRIPTOR = "RTP/SAVP";
         private const int VP8_PAYLOAD_TYPE_ID = 100;
 
         private const int STUN_CHECK_BASE_PERIOD_MILLISECONDS = 5000;
@@ -151,7 +151,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             SessionID = Guid.NewGuid().ToString();
 
             _rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork, true);
-            _videoSessionID = _rtpSession.AddStream(VP8_PAYLOAD_TYPE_ID);
+            //_videoSessionID = _rtpSession.AddStream(VP8_PAYLOAD_TYPE_ID, null);
             _rtpChannel = _rtpSession.RtpChannel;
             _rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
             _rtpSession.OnRtpClosed += Close;
@@ -240,8 +240,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     _ = Task.Run(() =>
                     {
                         int result = _doDtlsHandshake(
-                            this, 
-                            _rtpChannel.m_rtpSocket, 
+                            this,
+                            _rtpChannel.m_rtpSocket,
                             out _rtpSession.SrtpProtect,
                             out _rtpSession.SrtpUnprotect,
                             out _rtpSession.SrtcpControlProtect,
@@ -255,6 +255,16 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 logger.LogError("Exception WebRtcPeer.Initialise. " + excp);
                 Close(excp.Message);
             }
+        }
+
+        /// <summary>
+        /// Updates the session after receiving the remote SDP.
+        /// </summary>
+        /// <param name="remoteSdp">The answer/offer SDP from the remote party.</param>
+        public void OnSdpAnswer(SDP remoteSdp)
+        {
+            // TODO: get video payload ID's from SDP.
+            _videoSessionID = _rtpSession.AddStream(VP8_PAYLOAD_TYPE_ID, new List<int> { 100 });
         }
 
         public void AppendRemoteIceCandidate(IceCandidate remoteIceCandidate)
