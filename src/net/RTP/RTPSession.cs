@@ -43,12 +43,50 @@ namespace SIPSorcery.Net
         /// </summary>
         public int PayloadTypeID { get; private set; }
 
-        public RTPSessionStream(int id, int payloadTypeID)
+        /// <summary>
+        /// Required when multiple RTP streams are being multiplexed. The initial stream
+        /// can leave this as null and it will be matched to any incoming RTP payload ID
+        /// that does not match another stream.
+        /// </summary>
+        private List<int> m_remotePayloadIDs;
+
+        /// <summary>
+        /// Creates a lightweight class to track an RTP stream within an RTP session. When 
+        /// supporting RFC3550 (the standard RTP specification) the relationship between
+        /// an RTP stream and session is 1:1. For WebRTC and RFC8101 there can be multiple
+        /// streams per session.
+        /// </summary>
+        /// <param name="id">An internal monotonic ID to differentiate the streams belonging
+        /// to a particular session.</param>
+        /// <param name="payloadTypeID">The payload type ID set in RTP packets sent by us.</param>
+        /// <param name="remotePayloadIDs">The list of potential payload ID's that the
+        /// remote party may use in RTP packets sent to us. Must be mutually exclusive across
+        /// all streams in the same session.</param>
+        public RTPSessionStream(int id, int payloadTypeID, List<int> remotePayloadIDs)
         {
             ID = id;
             PayloadTypeID = payloadTypeID;
             Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
             SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+            m_remotePayloadIDs = remotePayloadIDs;
+        }
+
+        /// <summary>
+        /// Checks whether the payload ID in an RTP packet received from the remote call party
+        /// is in this stream's list.
+        /// </summary>
+        /// <param name="remotePayloadID">The payload ID set in the remote party's RTP header.</param>
+        /// <returns>True if the payload ID matches this stream. False if not.</returns>
+        public bool IsRemotePayloadIDMatch(int remotePayloadID)
+        {
+            if(m_remotePayloadIDs?.Count() == 0)
+            {
+                return false;
+            }
+            else
+            {
+                return m_remotePayloadIDs.Any(x => x == remotePayloadID);
+            }
         }
     }
 
@@ -67,6 +105,7 @@ namespace SIPSorcery.Net
         private bool m_rtpEventInProgress;               // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                 // The last timestamp used in an RTP packet.    
         private bool m_isClosed;
+        private RTCPSession m_defaultRtcpSession;       // RTCP session for the first session stream.
 
         /// <summary>
         /// A session stream represents values for RTP header fields that differentiate
@@ -97,7 +136,7 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// In order to detect RTP events from the remote party this property needs to 
-        /// be set to tge payload ID they are using.
+        /// be set to the payload ID they are using.
         /// </summary>
         public int RemoteRtpEventPayloadID { get; set; }
 
@@ -174,7 +213,7 @@ namespace SIPSorcery.Net
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
             RtpChannel.Start();
 
-            AddStream(payloadTypeID);
+            AddStream(payloadTypeID, null);
         }
 
         /// <summary>
@@ -183,15 +222,21 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="payloadTypeID">The payload type ID for this RTP stream. It's what gets set in the payload 
         /// type ID field in the RTP header.</param>
+        /// <param name="remotePayloadIDs">A list of the payload IDs the remote party can set in their RTP headers.</param>
         /// <returns>The ID of the stream of this media type. It must be supplied when
         /// doing a send for this stream.</returns>
-        public int AddStream(int payloadTypeID)
+        public int AddStream(int payloadTypeID, List<int> remotePayloadIDs)
         {
+            if(m_sessionStreams.Count() > 0 && remotePayloadIDs?.Count() == 0)
+            {
+                throw new ApplicationException("The remote party payload ID's need to be provided for RTP stream multiplexing.");
+            }
+
             int nextID = (m_sessionStreams.Count()) == 0 ? 0 : m_sessionStreams.OrderByDescending(x => x.ID).First().ID + 1;
-            var sessionStream = new RTPSessionStream(nextID, payloadTypeID);
+            var sessionStream = new RTPSessionStream(nextID, payloadTypeID, remotePayloadIDs);
             m_sessionStreams.Add(sessionStream);
 
-            var rtcpSession = new RTCPSession(m_sessionStreams.First().Ssrc);
+            var rtcpSession = new RTCPSession(sessionStream.Ssrc);
             if (m_rtcpSessions.TryAdd(sessionStream.Ssrc, rtcpSession))
             {
                 rtcpSession.OnReportReadyToSend += SendRtcpReport;
@@ -200,6 +245,11 @@ namespace SIPSorcery.Net
             else
             {
                 logger.LogWarning($"Failed to add RTCP session for RTP SSRC {sessionStream.Ssrc}.");
+            }
+
+            if(nextID == 0)
+            {
+                m_defaultRtcpSession = rtcpSession;
             }
 
             return sessionStream.ID;
@@ -544,7 +594,7 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    logger.LogDebug($"RTCP packet received from {remoteEndPoint}: {buffer.HexStr()}");
+                    //logger.LogDebug($"RTCP packet received from {remoteEndPoint}: {buffer.HexStr()}");
 
                     // There are multiple RTCP sessions, find the correct RTCP session and hand it over.
                     if (m_rtcpSessions.Count == 1)
@@ -578,13 +628,13 @@ namespace SIPSorcery.Net
                             try
                             {
                                 var rr = new RTCPReceiverReport(buffer);
-                                logger.LogDebug($"RR SSRC {rr.SSRC}");
-                                foreach (var rep in rr.ReceptionReports)
-                                {
-                                    logger.LogDebug($" RR reception report sources SSRC: {rep.SSRC}");
-                                }
+                                //logger.LogDebug($"RR SSRC {rr.SSRC}");
+                                //foreach (var rep in rr.ReceptionReports)
+                                //{
+                                //    logger.LogDebug($" RR reception report sources SSRC: {rep.SSRC}");
+                                //}
 
-                                ssrc = rr.SSRC;
+                                ssrc = rr.ReceptionReports.Count() >0 ? rr.ReceptionReports.First().SSRC : 0;
                                 if (ssrc != 0 && m_rtcpSessions.ContainsKey(ssrc))
                                 {
                                     m_rtcpSessions[ssrc].ControlDataReceived(remoteEndPoint, buffer);
@@ -629,9 +679,16 @@ namespace SIPSorcery.Net
                         OnReceivedSampleReady?.Invoke(rtpPacket.Payload);
                     }
 
-                    // TODO: How to match remote SSRC to an RTCP session. PayloadID?
                     // Used for reporting purposes.
-                    //m_rtcpSessions[rtpPacket.Header.SyncSource]?.RtpPacketReceived(rtpPacket);
+                    var sessionStream = m_sessionStreams.Where(x => x.IsRemotePayloadIDMatch(rtpPacket.Header.PayloadType)).FirstOrDefault();
+                    if (sessionStream != null && m_rtcpSessions.ContainsKey(sessionStream.Ssrc))
+                    {
+                        m_rtcpSessions[sessionStream.Ssrc].RecordRtpPacketReceived(rtpPacket);
+                    }
+                    else
+                    {
+                        m_defaultRtcpSession.RecordRtpPacketReceived(rtpPacket);
+                    }
                 }
             }
         }

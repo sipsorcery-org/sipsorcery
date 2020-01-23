@@ -181,9 +181,12 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var buffer = TypeExtensions.ParseHexStr("80000001FF6EBFCCFAFB3C6D6291");
+            var buffer = TypeExtensions.ParseHexStr("800000099D5904B4838FCECF7F1E");
 
             RTPPacket rtp = new RTPPacket(buffer);
+
+            logger.LogDebug($"RTP SSRC: {rtp.Header.SyncSource}");
+            logger.LogDebug($"RTP length: {rtp.Header.Length}");
 
             Assert.NotNull(rtp);
         }
