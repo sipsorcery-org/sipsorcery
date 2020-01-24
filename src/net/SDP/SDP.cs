@@ -159,7 +159,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The stream status of this session. Note that None means no explicit value has been set
         /// and the default is sendrecv. Also if child media announcements have an explicit status set then 
-        /// it takes precedence.
+        /// they take precedence.
         /// </summary>
         public MediaStreamStatusEnum SessionMediaStreamStatus { get; set; } = MediaStreamStatusEnum.None;
 

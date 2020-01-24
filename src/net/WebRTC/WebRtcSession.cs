@@ -118,6 +118,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         RTPChannel _rtpChannel;
         private string _dtlsCertificateFingerprint;
+        private List<SDPMediaFormatsEnum> _supportedAudioFormats;
+        private List<SDPMediaFormatsEnum> _supportedVideoFormats;
         private IPEndPoint _turnServerEndPoint;
         private List<IPAddress> _offerAddresses;            // If set restricts which local IP addresses will be offered in ICE candidates.
         private int _audioSessionID = 0;
@@ -144,14 +146,30 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         /// </summary>
         private Timer m_stunChecksTimer;
 
-        public WebRtcSession(string dtlsFingerprint, List<IPAddress> offerAddresses)
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
+        /// <param name="dtlsFingerprint">The fingerprint of our DTLS certificate (we always act as the DTLS server).
+        /// It gets placed in the SDP offer sent to the remote party.</param>
+        /// <param name="supportedAudioFormats">List of audio codecs that we support. Can be null or empty if
+        /// the session is not supporting audio.</param>
+        /// <param name="supportedVideoFormats">List of video codecs that we support. Can be null or empty if 
+        /// the session is not supporting video.</param>
+        /// <param name="offerAddresses">Optional. A list of the IP addresses used as local ICE candidates.
+        /// If null then all local IP addresses get used.</param>
+        public WebRtcSession(
+            string dtlsFingerprint,
+            List<SDPMediaFormatsEnum> supportedAudioFormats,
+            List<SDPMediaFormatsEnum> supportedVideoFormats,
+            List<IPAddress> offerAddresses)
         {
             _dtlsCertificateFingerprint = dtlsFingerprint;
+            _supportedAudioFormats = supportedAudioFormats;
+            _supportedVideoFormats = supportedVideoFormats;
 
             SessionID = Guid.NewGuid().ToString();
 
             _rtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork, true);
-            //_videoSessionID = _rtpSession.AddStream(VP8_PAYLOAD_TYPE_ID, null);
             _rtpChannel = _rtpSession.RtpChannel;
             _rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
             _rtpSession.OnRtpClosed += Close;
@@ -199,7 +217,6 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
                     LocalIceUser = LocalIceUser ?? Crypto.GetRandomString(20);
                     LocalIcePassword = LocalIcePassword ?? Crypto.GetRandomString(20) + Crypto.GetRandomString(20);
-                    //var localIceCandidate = GetIceCandidatesForMediaType(RtpMediaTypesEnum.None).First();
 
                     var offerHeader = String.Format(_sdpOfferTemplate, Crypto.GetRandomInt(10).ToString());
 
@@ -259,12 +276,50 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         /// <summary>
         /// Updates the session after receiving the remote SDP.
+        /// At this point check that the codecs match. We currently only support:
+        ///  - Audio: PCMU,
+        ///  - Video: VP8.
+        /// If they are not available there's no point carrying on.
         /// </summary>
         /// <param name="remoteSdp">The answer/offer SDP from the remote party.</param>
         public void OnSdpAnswer(SDP remoteSdp)
         {
-            // TODO: get video payload ID's from SDP.
-            _videoSessionID = _rtpSession.AddStream(VP8_PAYLOAD_TYPE_ID, new List<int> { 100 });
+            // Check remote party audio is acceptable.
+            if(_supportedAudioFormats?.Count() > 0)
+            {
+                var remoteAudioOffer = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
+                if(remoteAudioOffer?.MediaFormats.Count() == 0)
+                {
+                    logger.LogWarning("No audio formats were available in the remote party's SDP.");
+                    Close("No audio codecs offered.");
+                }
+                else if(remoteAudioOffer.MediaFormats.Select(x => x.FormatCodec).Union(_supportedAudioFormats).Count() == 0)
+                {
+                    logger.LogWarning("No matching audio codec was available.");
+                    Close("No matching audio codec.");
+                }
+            }
+
+            // Check remote party video is acceptable.
+            if (_supportedVideoFormats?.Count() > 0)
+            {
+                var remoteVideoOffer = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
+                if (remoteVideoOffer?.MediaFormats.Count() == 0)
+                {
+                    logger.LogWarning("No video formats were available in the remote party's SDP.");
+                    Close("No video codecs offered.");
+                }
+                else if(remoteVideoOffer.MediaFormats.Select(x => x.FormatCodec).Union(_supportedVideoFormats).Count() == 0)
+                {
+                    logger.LogWarning("No matching video codec was available.");
+                    Close("No matching video codec.");
+                }
+
+                // Since we only currently support VP8 there's only a single remote payload ID that can be 
+                // associated with the video stream.
+                var remoteVP8MediaFormat = remoteVideoOffer.MediaFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).Single();
+                _videoSessionID = _rtpSession.AddStream(VP8_PAYLOAD_TYPE_ID, new List<int> { Convert.ToInt32(remoteVP8MediaFormat.FormatID) });
+            }
         }
 
         public void AppendRemoteIceCandidate(IceCandidate remoteIceCandidate)
