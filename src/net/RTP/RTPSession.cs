@@ -30,7 +30,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public delegate int ProtectRtpPacket(byte[] payload, int length);
+    public delegate int ProtectRtpPacket(byte[] payload, int length, out int outputBufferLength);
 
     public class RTPSessionStream
     {
@@ -93,7 +93,26 @@ namespace SIPSorcery.Net
     public class RTPSession : IDisposable
     {
         private const int RTP_MAX_PAYLOAD = 1400;
-        public const int SRTP_AUTH_KEY_LENGTH = 10;
+
+        /// <summary>
+        /// From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer
+        /// (authentication tag and MKI) supported by libSRTP.This value is
+        /// the maximum number of octets that will be added to an RTP packet by
+        /// srtp_protect().
+        /// 
+        /// srtp_protect():
+        /// @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN
+        /// into the location in memory immediately following the RTP packet.
+        /// Callers MUST ensure that this much writable memory is available in
+        /// the buffer that holds the RTP packet.
+        /// 
+        /// srtp_protect_rtcp():
+        /// @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN+4
+        /// to the location in memory immediately following the RTCP packet.
+        /// Callers MUST ensure that this much writable memory is available in
+        /// the buffer that holds the RTCP packet.
+        /// </summary>
+        public const int SRTP_MAX_PREFIX_LENGTH = 148;
         private const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
         public const int H264_RTP_HEADER_LENGTH = 2;
         public const int RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS = 50; // Default sample period for an RTP event as specified by RFC2833.
@@ -582,19 +601,26 @@ namespace SIPSorcery.Net
             {
                 if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
                 {
+                    //logger.LogDebug($"RTCP packet received from {remoteEndPoint} before: {buffer.HexStr()}");
+
                     // RTCP packet.
                     if (SrtcpControlUnprotect != null)
                     {
-                        int res = SrtcpControlUnprotect(buffer, buffer.Length);
+                        int outBufLen = 0;
+                        int res = SrtcpControlUnprotect(buffer, buffer.Length, out outBufLen);
 
                         if (res != 0)
                         {
                             logger.LogWarning($"SRTCP unprotect failed, result {res}.");
                             return;
                         }
+                        else
+                        {
+                            buffer = buffer.Take(outBufLen).ToArray();
+                        }
                     }
 
-                    //logger.LogDebug($"RTCP packet received from {remoteEndPoint}: {buffer.HexStr()}");
+                    //logger.LogDebug($"RTCP packet received from {remoteEndPoint} after: {buffer.HexStr()}");
 
                     // There are multiple RTCP sessions, find the correct RTCP session and hand it over.
                     if (m_rtcpSessions.Count == 1)
@@ -658,12 +684,17 @@ namespace SIPSorcery.Net
                     // RTP packet.
                     if (SrtpUnprotect != null)
                     {
-                        int res = SrtpUnprotect(buffer, buffer.Length);
+                        int outBufLen = 0;
+                        int res = SrtpUnprotect(buffer, buffer.Length, out outBufLen);
 
                         if (res != 0)
                         {
                             logger.LogWarning($"SRTP unprotect failed, result {res}.");
                             return;
+                        }
+                        else
+                        {
+                            buffer = buffer.Take(outBufLen).ToArray();
                         }
                     }
 
@@ -704,7 +735,7 @@ namespace SIPSorcery.Net
         /// <param name="payloadType">The RTP header payload type.</param>
         private void SendRtpPacket(RTPChannel rtpChannel, IPEndPoint dstRtpSocket, byte[] data, uint timestamp, int markerBit, int payloadType, uint ssrc, ushort seqNum, RTCPSession rtcpSession)
         {
-            int srtpProtectionLength = (SrtpProtect != null) ? SRTP_AUTH_KEY_LENGTH : 0;
+            int srtpProtectionLength = (SrtpProtect != null) ? SRTP_MAX_PREFIX_LENGTH : 0;
 
             RTPPacket rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
             rtpPacket.Header.SyncSource = ssrc;
@@ -716,17 +747,24 @@ namespace SIPSorcery.Net
             Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
 
             var rtpBuffer = rtpPacket.GetBytes();
-
-            int rtperr = SrtpProtect == null ? 0 : SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength);
-            if (rtperr != 0)
-            {
-                logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
-            }
-            else
+            
+            if (SrtpProtect == null)
             {
                 rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer);
             }
-
+            else
+            {
+                int outBufLen = 0;
+                int rtperr = SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
+                if (rtperr != 0)
+                {
+                    logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
+                }
+                else
+                {
+                    rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer.Take(outBufLen).ToArray());
+                }
+            }
             m_lastRtpTimestamp = timestamp;
 
             rtcpSession?.RecordRtpPacketSend(rtpPacket);
@@ -752,17 +790,18 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    byte[] sendBuffer = new byte[reportBytes.Length + SRTP_AUTH_KEY_LENGTH];
+                    byte[] sendBuffer = new byte[reportBytes.Length + SRTP_MAX_PREFIX_LENGTH];
                     Buffer.BlockCopy(reportBytes, 0, sendBuffer, 0, reportBytes.Length);
 
-                    int rtperr = SrtcpControlProtect(sendBuffer, sendBuffer.Length - SRTP_AUTH_KEY_LENGTH);
+                    int outBufLen = 0;
+                    int rtperr = SrtcpControlProtect(sendBuffer, sendBuffer.Length - SRTP_MAX_PREFIX_LENGTH, out outBufLen);
                     if (rtperr != 0)
                     {
                         logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
                     }
                     else
                     {
-                        RtpChannel.SendAsync(sendOnSocket, ControlDestinationEndPoint, sendBuffer);
+                        RtpChannel.SendAsync(sendOnSocket, ControlDestinationEndPoint, sendBuffer.Take(outBufLen).ToArray());
                     }
                 }
             }

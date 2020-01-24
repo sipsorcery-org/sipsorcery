@@ -62,22 +62,10 @@ namespace SIPSorcery.Net
                 {
                     var buffer = packet.Skip(offset).ToArray();
 
-                    // TODO: Fix this nasty hack when I find out why Chrome is putting seeming non-RTCP packets in the
-                    // compound RTCP packet.
-                    // https://groups.google.com/forum/#!topic/discuss-webrtc/E_bft1pOH9g
-                    if (buffer[0x00] == 0x80)
-                    {
-                        offset += 14;
-                        continue;
-                    }
-
                     // The payload type field is the second byte in the RTCP header.
                     byte packetTypeID = buffer[1];
                     switch (packetTypeID)
                     {
-                        //case 0x00:
-                        //    // TODO: Feedback RTP packet.
-                        //    return;
                         case (byte)RTCPReportTypesEnum.SR:
                             SenderReport = new RTCPSenderReport(buffer);
                             int srLength = (SenderReport != null) ? SenderReport.GetBytes().Length : Int32.MaxValue;

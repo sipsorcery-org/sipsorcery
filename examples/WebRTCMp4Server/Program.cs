@@ -15,10 +15,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -67,6 +67,9 @@ namespace WebRTCServer
         private const int WEBSOCKET_PORT = 8081;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public static readonly List<SDPMediaFormatsEnum> _supportedAudioFormats = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU };
+        public static readonly List<SDPMediaFormatsEnum> _supportedVideoFormats = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.VP8 };
 
         private static WebSocketServer _webSocketServer;
         private static MFSampleGrabber _mfSampleGrabber;
@@ -145,7 +148,11 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            var webRtcSession = new WebRtcSession(DTLS_CERTIFICATE_FINGERPRINT, null);
+            var webRtcSession = new WebRtcSession(
+                DTLS_CERTIFICATE_FINGERPRINT,
+                _supportedAudioFormats,
+                _supportedVideoFormats,
+                null);
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
@@ -186,11 +193,6 @@ namespace WebRTCServer
                 }
 
                 OnMediaSampleReady += webRtcSession.SendMedia;
-
-                if (_mfSampleGrabber.Paused)
-                {
-                    _mfSampleGrabber.Start();
-                }
             }
             catch (Exception excp)
             {
@@ -244,6 +246,11 @@ namespace WebRTCServer
                 var srtpReceiveContext = new Srtp(dtls, true);
                 unprotectRtp = srtpReceiveContext.UnprotectRTP;
                 unprotectRtcp = srtpReceiveContext.UnprotectRTCP;
+
+                if (_mfSampleGrabber.Paused)
+                {
+                    _mfSampleGrabber.Start();
+                }
             }
 
             return res;

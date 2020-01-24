@@ -242,19 +242,6 @@ namespace SIPSorcery.Net
                 LastActivityAt = DateTime.Now;
                 IsTimedOut = false;
 
-                //if (SrtcpUnprotect != null)
-                //{
-                //    int res = SrtcpUnprotect(buffer, buffer.Length);
-
-                //    if (res != 0)
-                //    {
-                //        logger.LogWarning($"SRTCP unprotect failed, result {res}.");
-                //        return;
-                //    }
-                //}
-
-                //logger.LogDebug("RTCP in: " + buffer.HexStr());
-
                 var rtcpCompoundPacket = new RTCPCompoundPacket(buffer);
 
                 if (rtcpCompoundPacket != null)
@@ -270,13 +257,13 @@ namespace SIPSorcery.Net
 
                         var sr = rtcpCompoundPacket.SenderReport;
 
-                        logger.LogDebug($"Received RTCP sender report from {remoteEndPoint} pkts {sr.PacketCount} bytes {sr.OctetCount}");
+                        //logger.LogDebug($"Received RTCP sender report from {remoteEndPoint} pkts {sr.PacketCount} bytes {sr.OctetCount}");
                     }
 
                     if (rtcpCompoundPacket.ReceiverReport != null)
                     {
                         var rr = rtcpCompoundPacket.ReceiverReport.ReceptionReports.First();
-                        logger.LogDebug($"Received RTCP receiver report from {remoteEndPoint} ssrc {rr.SSRC} highest seqnum {rr.ExtendedHighestSequenceNumber}");
+                        //logger.LogDebug($"Received RTCP receiver report from {remoteEndPoint} ssrc {rr.SSRC} highest seqnum {rr.ExtendedHighestSequenceNumber}");
                     }
                 }
             }
@@ -308,7 +295,7 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    logger.LogDebug($"SendRtcpSenderReport ssrc {Ssrc}, last seqnum {LastSeqNum}, pkts {PacketsReceivedCount}, bytes {OctetsReceivedCount} ");
+                    logger.LogDebug($"SendRtcpSenderReport ssrc {Ssrc}, last seqnum {LastSeqNum}, pkts {PacketsSentCount}, bytes {OctetsSentCount} ");
 
                     var report = GetRtcpReport();
                     OnReportReadyToSend?.Invoke(report);

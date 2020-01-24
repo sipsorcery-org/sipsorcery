@@ -62,6 +62,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(sdp.Media[0].GetFormatListToString() == "0 101", "The media format list was incorrect.");
             Assert.True(sdp.Media[0].MediaFormats[0].FormatID == "0", "The highest priority media format ID was incorrect.");
             Assert.True(sdp.Media[0].MediaFormats[0].Name == "PCMU", "The highest priority media format name was incorrect.");
+            Assert.Equal(SDPMediaFormatsEnum.PCMU, sdp.Media[0].MediaFormats[0].FormatCodec);
             Assert.True(sdp.Media[0].MediaFormats[0].ClockRate == 8000, "The highest priority media format clockrate was incorrect.");
         }
 
@@ -79,6 +80,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(sdp.Connection.ConnectionAddress == "144.137.16.240", "The connection address was not parsed correctly.");
             Assert.True(sdp.Media[0].Port == 34640, "The connection port was not parsed correctly.");
             Assert.True(sdp.Media[0].MediaFormats[0].Name == "PCMU", "The highest priority media format name was incorrect.");
+            Assert.Equal(SDPMediaFormatsEnum.PCMU, sdp.Media[0].MediaFormats[0].FormatCodec);
         }
 
         [Fact]
@@ -109,6 +111,8 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(sdp.Username == "root", "The owner was not parsed correctly.");
             Assert.True(sdp.SessionName == "session", "The SessionName was not parsed correctly.");
             Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
+            Assert.Equal(SDPMediaFormatsEnum.PCMU, sdp.Media[0].MediaFormats[0].FormatCodec);
+            Assert.Equal(SDPMediaFormatsEnum.Event, sdp.Media[0].MediaFormats[1].FormatCodec);
         }
 
         [Fact]
@@ -215,6 +219,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(sdp.Connection.ConnectionAddress == "101.180.234.134", "The connection address was not parsed correctly.");
             Assert.NotEmpty(sdp.Media);
             Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
+            Assert.Equal(SDPMediaFormatsEnum.PCMU, sdp.Media[0].MediaFormats[0].FormatCodec);
             Assert.True(sdp.Media[1].Media == SDPMediaTypesEnum.video, "The media type not parsed correctly.");
             Assert.True(sdp.Media[1].Connection.ConnectionAddress == "10.0.0.10", "The connection address was not parsed correctly.");
         }
