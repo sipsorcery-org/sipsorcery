@@ -79,7 +79,7 @@
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_ProtectRtpPacket_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public delegate int ProtectRtpPacket(byte[] payload, int length);</code></pre>
+    <pre><code class="lang-csharp hljs">public delegate int ProtectRtpPacket(byte[] payload, int length, out int outputBufferLength);</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -99,6 +99,11 @@
       <tr>
         <td><span class="xref">System.Int32</span></td>
         <td><span class="parametername">length</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">outputBufferLength</span></td>
         <td></td>
       </tr>
     </tbody>

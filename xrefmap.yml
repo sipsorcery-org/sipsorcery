@@ -2835,12 +2835,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SetDestination
   nameWithType: RTPSession.SetDestination
-- uid: SIPSorcery.Net.RTPSession.SRTP_AUTH_KEY_LENGTH
-  name: SRTP_AUTH_KEY_LENGTH
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SRTP_AUTH_KEY_LENGTH
-  commentId: F:SIPSorcery.Net.RTPSession.SRTP_AUTH_KEY_LENGTH
-  fullName: SIPSorcery.Net.RTPSession.SRTP_AUTH_KEY_LENGTH
-  nameWithType: RTPSession.SRTP_AUTH_KEY_LENGTH
+- uid: SIPSorcery.Net.RTPSession.SRTP_MAX_PREFIX_LENGTH
+  name: SRTP_MAX_PREFIX_LENGTH
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SRTP_MAX_PREFIX_LENGTH
+  commentId: F:SIPSorcery.Net.RTPSession.SRTP_MAX_PREFIX_LENGTH
+  fullName: SIPSorcery.Net.RTPSession.SRTP_MAX_PREFIX_LENGTH
+  nameWithType: RTPSession.SRTP_MAX_PREFIX_LENGTH
 - uid: SIPSorcery.Net.RTPSessionStream
   name: RTPSessionStream
   href: api/SIPSorcery.Net.RTPSessionStream.html
@@ -5037,6 +5037,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPMediaFormat.FormatAttribute
   nameWithType: SDPMediaFormat.FormatAttribute
+- uid: SIPSorcery.Net.SDPMediaFormat.FormatCodec
+  name: FormatCodec
+  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_FormatCodec
+  commentId: F:SIPSorcery.Net.SDPMediaFormat.FormatCodec
+  fullName: SIPSorcery.Net.SDPMediaFormat.FormatCodec
+  nameWithType: SDPMediaFormat.FormatCodec
 - uid: SIPSorcery.Net.SDPMediaFormat.FormatID
   name: FormatID
   href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_FormatID
@@ -5069,6 +5075,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPMediaFormat.GetClockRate
   nameWithType: SDPMediaFormat.GetClockRate
+- uid: SIPSorcery.Net.SDPMediaFormat.GetFormatCodec(System.String)
+  name: GetFormatCodec(String)
+  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_GetFormatCodec_System_String_
+  commentId: M:SIPSorcery.Net.SDPMediaFormat.GetFormatCodec(System.String)
+  fullName: SIPSorcery.Net.SDPMediaFormat.GetFormatCodec(System.String)
+  nameWithType: SDPMediaFormat.GetFormatCodec(String)
+- uid: SIPSorcery.Net.SDPMediaFormat.GetFormatCodec*
+  name: GetFormatCodec
+  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_GetFormatCodec_
+  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.GetFormatCodec
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPMediaFormat.GetFormatCodec
+  nameWithType: SDPMediaFormat.GetFormatCodec
 - uid: SIPSorcery.Net.SDPMediaFormat.IsStandardAttribute
   name: IsStandardAttribute
   href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_IsStandardAttribute
@@ -5146,6 +5165,12 @@ references:
   commentId: T:SIPSorcery.Net.SDPMediaFormatsEnum
   fullName: SIPSorcery.Net.SDPMediaFormatsEnum
   nameWithType: SDPMediaFormatsEnum
+- uid: SIPSorcery.Net.SDPMediaFormatsEnum.Event
+  name: Event
+  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_Event
+  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.Event
+  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.Event
+  nameWithType: SDPMediaFormatsEnum.Event
 - uid: SIPSorcery.Net.SDPMediaFormatsEnum.G722
   name: G722
   href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_G722
@@ -5194,6 +5219,18 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.PCMU
   fullName: SIPSorcery.Net.SDPMediaFormatsEnum.PCMU
   nameWithType: SDPMediaFormatsEnum.PCMU
+- uid: SIPSorcery.Net.SDPMediaFormatsEnum.Unknown
+  name: Unknown
+  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_Unknown
+  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.Unknown
+  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.Unknown
+  nameWithType: SDPMediaFormatsEnum.Unknown
+- uid: SIPSorcery.Net.SDPMediaFormatsEnum.VP8
+  name: VP8
+  href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html#SIPSorcery_Net_SDPMediaFormatsEnum_VP8
+  commentId: F:SIPSorcery.Net.SDPMediaFormatsEnum.VP8
+  fullName: SIPSorcery.Net.SDPMediaFormatsEnum.VP8
+  nameWithType: SDPMediaFormatsEnum.VP8
 - uid: SIPSorcery.Net.SDPMediaTypes
   name: SDPMediaTypes
   href: api/SIPSorcery.Net.SDPMediaTypes.html
@@ -5261,18 +5298,6 @@ references:
   commentId: F:SIPSorcery.Net.SDPMediaTypesEnum.video
   fullName: SIPSorcery.Net.SDPMediaTypesEnum.video
   nameWithType: SDPMediaTypesEnum.video
-- uid: SIPSorcery.Net.SDPNonStandardMediaFormatsEnum
-  name: SDPNonStandardMediaFormatsEnum
-  href: api/SIPSorcery.Net.SDPNonStandardMediaFormatsEnum.html
-  commentId: T:SIPSorcery.Net.SDPNonStandardMediaFormatsEnum
-  fullName: SIPSorcery.Net.SDPNonStandardMediaFormatsEnum
-  nameWithType: SDPNonStandardMediaFormatsEnum
-- uid: SIPSorcery.Net.SDPNonStandardMediaFormatsEnum.VP8
-  name: VP8
-  href: api/SIPSorcery.Net.SDPNonStandardMediaFormatsEnum.html#SIPSorcery_Net_SDPNonStandardMediaFormatsEnum_VP8
-  commentId: F:SIPSorcery.Net.SDPNonStandardMediaFormatsEnum.VP8
-  fullName: SIPSorcery.Net.SDPNonStandardMediaFormatsEnum.VP8
-  nameWithType: SDPNonStandardMediaFormatsEnum.VP8
 - uid: SIPSorcery.Net.SDPSecurityDescription
   name: SDPSecurityDescription
   href: api/SIPSorcery.Net.SDPSecurityDescription.html
@@ -7859,15 +7884,15 @@ references:
   commentId: T:SIPSorcery.Net.WebRtcSession
   fullName: SIPSorcery.Net.WebRtcSession
   nameWithType: WebRtcSession
-- uid: SIPSorcery.Net.WebRtcSession.#ctor(System.String,System.Collections.Generic.List{System.Net.IPAddress})
-  name: WebRtcSession(String, List<IPAddress>)
-  href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession__ctor_System_String_System_Collections_Generic_List_System_Net_IPAddress__
-  commentId: M:SIPSorcery.Net.WebRtcSession.#ctor(System.String,System.Collections.Generic.List{System.Net.IPAddress})
-  name.vb: WebRtcSession(String, List(Of IPAddress))
-  fullName: SIPSorcery.Net.WebRtcSession.WebRtcSession(System.String, System.Collections.Generic.List<System.Net.IPAddress>)
-  fullName.vb: SIPSorcery.Net.WebRtcSession.WebRtcSession(System.String, System.Collections.Generic.List(Of System.Net.IPAddress))
-  nameWithType: WebRtcSession.WebRtcSession(String, List<IPAddress>)
-  nameWithType.vb: WebRtcSession.WebRtcSession(String, List(Of IPAddress))
+- uid: SIPSorcery.Net.WebRtcSession.#ctor(System.String,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Collections.Generic.List{System.Net.IPAddress})
+  name: WebRtcSession(String, List<SDPMediaFormatsEnum>, List<SDPMediaFormatsEnum>, List<IPAddress>)
+  href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession__ctor_System_String_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormatsEnum__System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormatsEnum__System_Collections_Generic_List_System_Net_IPAddress__
+  commentId: M:SIPSorcery.Net.WebRtcSession.#ctor(System.String,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Collections.Generic.List{System.Net.IPAddress})
+  name.vb: WebRtcSession(String, List(Of SDPMediaFormatsEnum), List(Of SDPMediaFormatsEnum), List(Of IPAddress))
+  fullName: SIPSorcery.Net.WebRtcSession.WebRtcSession(System.String, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormatsEnum>, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormatsEnum>, System.Collections.Generic.List<System.Net.IPAddress>)
+  fullName.vb: SIPSorcery.Net.WebRtcSession.WebRtcSession(System.String, System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormatsEnum), System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormatsEnum), System.Collections.Generic.List(Of System.Net.IPAddress))
+  nameWithType: WebRtcSession.WebRtcSession(String, List<SDPMediaFormatsEnum>, List<SDPMediaFormatsEnum>, List<IPAddress>)
+  nameWithType.vb: WebRtcSession.WebRtcSession(String, List(Of SDPMediaFormatsEnum), List(Of SDPMediaFormatsEnum), List(Of IPAddress))
 - uid: SIPSorcery.Net.WebRtcSession.#ctor*
   name: WebRtcSession
   href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession__ctor_
