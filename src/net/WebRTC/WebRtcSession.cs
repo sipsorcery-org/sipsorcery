@@ -430,22 +430,8 @@ namespace SIPSorcery.Net
                     }
                     else if (buffer[0] >= 128 && buffer[0] <= 191)
                     {
-                        // RTP/RTCP packet need to decrypt.
-                        //if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
-                        //{
-                        //    // RTCP packet.
-                        //    //webRtcClient.LastSTUNReceiveAt = DateTime.Now;
-                        //}
-                        //else
-                        //{
-                        //    // RTP packet.
-                        //    //int res = peer.SrtpReceiveContext.UnprotectRTP(buffer, buffer.Length);
-
-                        //    //if (res != 0)
-                        //    //{
-                        //    //    logger.Warn("SRTP unprotect failed, result " + res + ".");
-                        //    //}
-                        //}
+                        // RTP/RTCP packet.
+                        // Do nothing. The RTPSession takes care of these.
                     }
                     else if (buffer[0] >= 20 && buffer[0] <= 63)
                     {
