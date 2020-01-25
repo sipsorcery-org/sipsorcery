@@ -235,7 +235,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="remoteEndPoint">The end point the packet was received from.</param>
         /// <param name="buffer">The data received.</param>
-        internal void ControlDataReceived(IPEndPoint remoteEndPoint, byte[] buffer)
+        internal RTCPCompoundPacket ControlDataReceived(IPEndPoint remoteEndPoint, byte[] buffer)
         {
             try
             {
@@ -266,10 +266,13 @@ namespace SIPSorcery.Net
                         //logger.LogDebug($"Received RTCP receiver report from {remoteEndPoint} ssrc {rr.SSRC} highest seqnum {rr.ExtendedHighestSequenceNumber}");
                     }
                 }
+
+                return rtcpCompoundPacket;
             }
             catch (Exception excp)
             {
                 logger.LogError($"Exception RTCPSession.ControlDataReceived. {excp.Message}");
+                return null;
             }
         }
 
@@ -295,7 +298,7 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                    logger.LogDebug($"SendRtcpSenderReport ssrc {Ssrc}, last seqnum {LastSeqNum}, pkts {PacketsSentCount}, bytes {OctetsSentCount} ");
+                    //logger.LogDebug($"SendRtcpSenderReport ssrc {Ssrc}, last seqnum {LastSeqNum}, pkts {PacketsSentCount}, bytes {OctetsSentCount} ");
 
                     var report = GetRtcpReport();
                     OnReportReadyToSend?.Invoke(report);

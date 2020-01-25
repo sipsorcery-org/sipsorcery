@@ -139,9 +139,41 @@ namespace SIPSorcery.Net
         private ConcurrentDictionary<uint, RTCPSession> m_rtcpSessions = new ConcurrentDictionary<uint, RTCPSession>();
 
         /// <summary>
+        /// Function pointer to an SRTP context that encrypts an RTP packet.
+        /// </summary>
+        private ProtectRtpPacket m_srtpProtect;
+
+        /// <summary>
+        /// Function pointer to an SRTP context that decrypts an RTP packet.
+        /// </summary>
+        private ProtectRtpPacket m_srtpUnprotect;
+
+        /// <summary>
+        /// Function pointer to an SRTCP context that encrypts an RTP packet.
+        /// </summary>
+        private ProtectRtpPacket m_srtcpControlProtect;
+
+        /// <summary>
+        /// Function pointer to an SRTP context that decrypts an RTP packet.
+        /// </summary>
+        private ProtectRtpPacket m_srtcpControlUnprotect;
+
+        /// <summary>
         /// The RTP communications channel this session is sending and receiving on.
         /// </summary>
         public RTPChannel RtpChannel { get; private set; }
+
+        /// <summary>
+        /// Indicates whether this session is using a secure SRTP context to encrypt RTP and
+        /// RTCP packets.
+        /// </summary>
+        public bool IsSecure { get; private set; } = false;
+
+        /// <summary>
+        /// If this session is using a secure context this flag MUST be set to indicate
+        /// the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
+        /// </summary>
+        public bool IsSecureContextReady { get; private set; } = false;
 
         /// <summary>
         /// The remote RTP end point this session is sending to.
@@ -158,26 +190,6 @@ namespace SIPSorcery.Net
         /// be set to the payload ID they are using.
         /// </summary>
         public int RemoteRtpEventPayloadID { get; set; }
-
-        /// <summary>
-        /// Function pointer to an SRTP context that encrypts an RTP packet.
-        /// </summary>
-        internal ProtectRtpPacket SrtpProtect;
-
-        /// <summary>
-        /// Function pointer to an SRTP context that decrypts an RTP packet.
-        /// </summary>
-        internal ProtectRtpPacket SrtpUnprotect;
-
-        /// <summary>
-        /// Function pointer to an SRTCP context that encrypts an RTP packet.
-        /// </summary>
-        internal ProtectRtpPacket SrtcpControlProtect;
-
-        /// <summary>
-        /// Function pointer to an SRTP context that decrypts an RTP packet.
-        /// </summary>
-        internal ProtectRtpPacket SrtcpControlUnprotect;
 
         /// <summary>
         /// Gets fired when the session detects that the remote end point 
@@ -207,6 +219,16 @@ namespace SIPSorcery.Net
         public event Action<string> OnRtpClosed;
 
         /// <summary>
+        /// Gets fired when an RTCP report is received. This event is for diagnostics only.
+        /// </summary>
+        public event Action<RTCPCompoundPacket> OnReceiveReport;
+
+        /// <summary>
+        /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
+        /// </summary>
+        public event Action<RTCPCompoundPacket> OnSendReport;
+
+        /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
         /// pseudo random values.
         /// </summary>
@@ -215,12 +237,17 @@ namespace SIPSorcery.Net
         /// <param name="addrFamily">Determines whether the RTP channel will use an IPv4 or IPv6 socket.</param>
         /// <param name="isRtcpMultiplexed">If true RTCP reports will be multiplexed with RTP on a single channel.
         /// If false (standard mode) then a separate socket is used to send and receive RTCP reports.</param>
+        /// <param name="isSecure">If true indicated this session is using SRTP to encrypt and authorise
+        /// RTP and RTCP packets. No communications or reporting will commence until the 
+        /// is explicitly set as complete.</param>
         public RTPSession(
             int payloadTypeID,
             AddressFamily addrFamily,
-            bool isRtcpMultiplexed)
+            bool isRtcpMultiplexed,
+            bool isSecure)
         {
             m_isRtcpMultiplexed = isRtcpMultiplexed;
+            IsSecure = isSecure;
 
             var channelAddress = (addrFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
             RtpChannel = new RTPChannel(channelAddress, !isRtcpMultiplexed);
@@ -259,7 +286,10 @@ namespace SIPSorcery.Net
             if (m_rtcpSessions.TryAdd(sessionStream.Ssrc, rtcpSession))
             {
                 rtcpSession.OnReportReadyToSend += SendRtcpReport;
-                rtcpSession.Start();
+                if (!IsSecure)
+                {
+                    rtcpSession.Start();
+                }
             }
             else
             {
@@ -272,6 +302,35 @@ namespace SIPSorcery.Net
             }
 
             return sessionStream.ID;
+        }
+
+        /// <summary>
+        /// Sets the Secure RTP (SRTP) delegates and marks this session as ready for communications.
+        /// </summary>
+        /// <param name="protectRtp">SRTP encrypt RTP packet delegate.</param>
+        /// <param name="unprotectRtp">SRTP decrypt RTP packet delegate.</param>
+        /// <param name="protectRtcp">SRTP encrypt RTCP packet delegate.</param>
+        /// <param name="unprotectRtcp">SRTP decrypt RTCP packet delegate.</param>
+        public void SetSecurityContext(
+            ProtectRtpPacket protectRtp,
+            ProtectRtpPacket unprotectRtp,
+            ProtectRtpPacket protectRtcp,
+            ProtectRtpPacket unprotectRtcp)
+        {
+            m_srtpProtect = protectRtp;
+            m_srtpUnprotect = unprotectRtp;
+            m_srtcpControlProtect = protectRtcp;
+            m_srtcpControlUnprotect = unprotectRtcp;
+
+            IsSecureContextReady = true;
+
+            // Start the reporting sessions.
+            foreach(var rtcpSession in m_rtcpSessions)
+            {
+                rtcpSession.Value.Start();
+            }
+
+            logger.LogDebug("Secure context successfully set on RTPSession.");
         }
 
         public void SetDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
@@ -604,10 +663,12 @@ namespace SIPSorcery.Net
                     //logger.LogDebug($"RTCP packet received from {remoteEndPoint} before: {buffer.HexStr()}");
 
                     // RTCP packet.
-                    if (SrtcpControlUnprotect != null)
+                    RTCPCompoundPacket receivedReport = null;
+
+                    if (m_srtcpControlUnprotect != null)
                     {
                         int outBufLen = 0;
-                        int res = SrtcpControlUnprotect(buffer, buffer.Length, out outBufLen);
+                        int res = m_srtcpControlUnprotect(buffer, buffer.Length, out outBufLen);
 
                         if (res != 0)
                         {
@@ -625,7 +686,7 @@ namespace SIPSorcery.Net
                     // There are multiple RTCP sessions, find the correct RTCP session and hand it over.
                     if (m_rtcpSessions.Count == 1)
                     {
-                        m_rtcpSessions.First().Value.ControlDataReceived(remoteEndPoint, buffer);
+                        receivedReport = m_rtcpSessions.First().Value.ControlDataReceived(remoteEndPoint, buffer);
                     }
                     else
                     {
@@ -640,7 +701,7 @@ namespace SIPSorcery.Net
                                 ssrc = sr.ReceptionReports.FirstOrDefault().SSRC;
                                 if (ssrc != 0 && m_rtcpSessions.ContainsKey(ssrc))
                                 {
-                                    m_rtcpSessions[ssrc].ControlDataReceived(remoteEndPoint, buffer);
+                                    receivedReport = m_rtcpSessions[ssrc].ControlDataReceived(remoteEndPoint, buffer);
                                     wasMatched = true;
                                 }
                             }
@@ -663,7 +724,7 @@ namespace SIPSorcery.Net
                                 ssrc = rr.ReceptionReports.Count() >0 ? rr.ReceptionReports.First().SSRC : 0;
                                 if (ssrc != 0 && m_rtcpSessions.ContainsKey(ssrc))
                                 {
-                                    m_rtcpSessions[ssrc].ControlDataReceived(remoteEndPoint, buffer);
+                                    receivedReport = m_rtcpSessions[ssrc].ControlDataReceived(remoteEndPoint, buffer);
                                     wasMatched = true;
                                 }
                             }
@@ -678,14 +739,19 @@ namespace SIPSorcery.Net
                             logger.LogWarning($"An RTCP report was received for a non-existent ssrc {ssrc}.");
                         }
                     }
+
+                    if (receivedReport != null)
+                    {
+                        OnReceiveReport?.Invoke(receivedReport);
+                    }
                 }
                 else
                 {
                     // RTP packet.
-                    if (SrtpUnprotect != null)
+                    if (m_srtpUnprotect != null)
                     {
                         int outBufLen = 0;
-                        int res = SrtpUnprotect(buffer, buffer.Length, out outBufLen);
+                        int res = m_srtpUnprotect(buffer, buffer.Length, out outBufLen);
 
                         if (res != 0)
                         {
@@ -742,39 +808,46 @@ namespace SIPSorcery.Net
         /// <param name="payloadType">The RTP header payload type.</param>
         private void SendRtpPacket(RTPChannel rtpChannel, IPEndPoint dstRtpSocket, byte[] data, uint timestamp, int markerBit, int payloadType, uint ssrc, ushort seqNum, RTCPSession rtcpSession)
         {
-            int srtpProtectionLength = (SrtpProtect != null) ? SRTP_MAX_PREFIX_LENGTH : 0;
-
-            RTPPacket rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
-            rtpPacket.Header.SyncSource = ssrc;
-            rtpPacket.Header.SequenceNumber = seqNum;
-            rtpPacket.Header.Timestamp = timestamp;
-            rtpPacket.Header.MarkerBit = markerBit;
-            rtpPacket.Header.PayloadType = payloadType;
-
-            Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
-
-            var rtpBuffer = rtpPacket.GetBytes();
-            
-            if (SrtpProtect == null)
+            if (IsSecure && !IsSecureContextReady)
             {
-                rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer);
+                logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
             }
             else
             {
-                int outBufLen = 0;
-                int rtperr = SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
-                if (rtperr != 0)
+                int srtpProtectionLength = (m_srtpProtect != null) ? SRTP_MAX_PREFIX_LENGTH : 0;
+
+                RTPPacket rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
+                rtpPacket.Header.SyncSource = ssrc;
+                rtpPacket.Header.SequenceNumber = seqNum;
+                rtpPacket.Header.Timestamp = timestamp;
+                rtpPacket.Header.MarkerBit = markerBit;
+                rtpPacket.Header.PayloadType = payloadType;
+
+                Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
+
+                var rtpBuffer = rtpPacket.GetBytes();
+
+                if (m_srtpProtect == null)
                 {
-                    logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
+                    rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer);
                 }
                 else
                 {
-                    rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer.Take(outBufLen).ToArray());
+                    int outBufLen = 0;
+                    int rtperr = m_srtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
+                    if (rtperr != 0)
+                    {
+                        logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
+                    }
+                    else
+                    {
+                        rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer.Take(outBufLen).ToArray());
+                    }
                 }
-            }
-            m_lastRtpTimestamp = timestamp;
+                m_lastRtpTimestamp = timestamp;
 
-            rtcpSession?.RecordRtpPacketSend(rtpPacket);
+                rtcpSession?.RecordRtpPacketSend(rtpPacket);
+            }
         }
 
         /// <summary>
@@ -783,7 +856,11 @@ namespace SIPSorcery.Net
         /// <param name="report">RTCP report to send.</param>
         private void SendRtcpReport(RTCPCompoundPacket report)
         {
-            if (ControlDestinationEndPoint != null)
+            if(IsSecure && !IsSecureContextReady)
+            {
+                logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
+            }
+            else if (ControlDestinationEndPoint != null)
             {
                 var reportBytes = report.GetBytes();
 
@@ -791,7 +868,7 @@ namespace SIPSorcery.Net
 
                 var sendOnSocket = (m_isRtcpMultiplexed) ? RTPChannelSocketsEnum.RTP : RTPChannelSocketsEnum.Control;
 
-                if (SrtcpControlProtect == null)
+                if (m_srtcpControlProtect == null)
                 {
                     RtpChannel.SendAsync(sendOnSocket, ControlDestinationEndPoint, reportBytes);
                 }
@@ -801,7 +878,7 @@ namespace SIPSorcery.Net
                     Buffer.BlockCopy(reportBytes, 0, sendBuffer, 0, reportBytes.Length);
 
                     int outBufLen = 0;
-                    int rtperr = SrtcpControlProtect(sendBuffer, sendBuffer.Length - SRTP_MAX_PREFIX_LENGTH, out outBufLen);
+                    int rtperr = m_srtcpControlProtect(sendBuffer, sendBuffer.Length - SRTP_MAX_PREFIX_LENGTH, out outBufLen);
                     if (rtperr != 0)
                     {
                         logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
@@ -811,6 +888,8 @@ namespace SIPSorcery.Net
                         RtpChannel.SendAsync(sendOnSocket, ControlDestinationEndPoint, sendBuffer.Take(outBufLen).ToArray());
                     }
                 }
+
+                OnSendReport?.Invoke(report);
             }
         }
 
