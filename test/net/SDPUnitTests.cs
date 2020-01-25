@@ -589,6 +589,10 @@ a=rtpmap:100 VP8/90000";
             Assert.Equal(3, rndTripSdp.Media[0].IceCandidates.Count());
             Assert.Equal("sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD", sdp.Media[0].DtlsFingerprint);
             Assert.Equal("sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD", rndTripSdp.Media[0].DtlsFingerprint);
+            Assert.Equal("audio", sdp.Media[0].MediaID);
+            Assert.Equal("audio", rndTripSdp.Media[0].MediaID);
+            Assert.Equal("video", sdp.Media[1].MediaID);
+            Assert.Equal("video", rndTripSdp.Media[1].MediaID);
         }
     }
 }
