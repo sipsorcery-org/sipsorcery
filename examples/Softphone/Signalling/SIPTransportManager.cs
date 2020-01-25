@@ -20,7 +20,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Xml;
-using log4net;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.Sys;
@@ -35,10 +35,9 @@ namespace SIPSorcery.SoftPhone
         private static string HOMER_SERVER_ADDRESS = null; //"192.168.11.49";
         private static int HOMER_SERVER_PORT = 9060;
 
-        private ILog logger = AppState.logger;
+        private ILogger logger = Log.Logger;
 
         private XmlNode m_sipSocketsNode = SIPSoftPhoneState.SIPSocketsNode;    // Optional XML node that can be used to configure the SIP channels used with the SIP transport layer.
-        private string m_DnsServer = SIPSoftPhoneState.DnsServer;
 
         private bool _isInitialised = false;
         public SIPTransport SIPTransport { get; private set; }
@@ -60,7 +59,7 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
-        /// Shutdown the SIP tranpsort layer and any other resources. Should only be called when the application exits.
+        /// Shutdown the SIP transport layer and any other resources. Should only be called when the application exits.
         /// </summary>
         public void Shutdown()
         {
@@ -82,13 +81,6 @@ namespace SIPSorcery.SoftPhone
                 await Task.Run(() =>
                 {
                     _isInitialised = true;
-
-                    if (String.IsNullOrEmpty(m_DnsServer) == false)
-                    {
-                        // Use a custom DNS server.
-                        m_DnsServer = m_DnsServer.Contains(":") ? m_DnsServer : m_DnsServer + ":53";
-                        DNSManager.SetDNSServers(new List<IPEndPoint> { IPSocket.ParseSocketString(m_DnsServer) });
-                    }
 
                     // Configure the SIP transport layer.
                     SIPTransport = new SIPTransport();
@@ -115,7 +107,7 @@ namespace SIPSorcery.SoftPhone
                         }
                         catch (SocketException bindExcp)
                         {
-                            logger.Warn($"Socket exception attempting to bind UDP channel to port {SIP_DEFAULT_PORT}, will use random port. {bindExcp.Message}.");
+                            logger.LogWarning($"Socket exception attempting to bind UDP channel to port {SIP_DEFAULT_PORT}, will use random port. {bindExcp.Message}.");
                             udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0));
                         }
                         var tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Any, udpChannel.Port));
@@ -163,7 +155,7 @@ namespace SIPSorcery.SoftPhone
             }
             else
             {
-                logger.Debug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
+                logger.LogDebug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
                 SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
                 return SIPTransport.SendResponseAsync(notAllowedResponse);
             }
@@ -173,7 +165,7 @@ namespace SIPSorcery.SoftPhone
 
         private void SIPRequestInTraceEvent(SIPEndPoint localEP, SIPEndPoint remoteEP, SIPRequest sipRequest)
         {
-            logger.Debug($"Request Received {localEP}<-{remoteEP}: {sipRequest.StatusLine}.");
+            logger.LogDebug($"Request Received {localEP}<-{remoteEP}: {sipRequest.StatusLine}.");
 
             if (_homerSIPClient != null)
             {
@@ -184,7 +176,7 @@ namespace SIPSorcery.SoftPhone
 
         private void SIPRequestOutTraceEvent(SIPEndPoint localEP, SIPEndPoint remoteEP, SIPRequest sipRequest)
         {
-            logger.Debug($"Request Sent {localEP}<-{remoteEP}: {sipRequest.StatusLine}.");
+            logger.LogDebug($"Request Sent {localEP}<-{remoteEP}: {sipRequest.StatusLine}.");
 
             if (_homerSIPClient != null)
             {
@@ -195,7 +187,7 @@ namespace SIPSorcery.SoftPhone
 
         private void SIPResponseInTraceEvent(SIPEndPoint localEP, SIPEndPoint remoteEP, SIPResponse sipResponse)
         {
-            logger.Debug($"Response Received {localEP}<-{remoteEP}: {sipResponse.ShortDescription}.");
+            logger.LogDebug($"Response Received {localEP}<-{remoteEP}: {sipResponse.ShortDescription}.");
 
             if (_homerSIPClient != null)
             {
@@ -206,7 +198,7 @@ namespace SIPSorcery.SoftPhone
 
         private void SIPResponseOutTraceEvent(SIPEndPoint localEP, SIPEndPoint remoteEP, SIPResponse sipResponse)
         {
-            logger.Debug($"Response Sent {localEP}<-{remoteEP}: {sipResponse.ShortDescription}.");
+            logger.LogDebug($"Response Sent {localEP}<-{remoteEP}: {sipResponse.ShortDescription}.");
 
             if (_homerSIPClient != null)
             {

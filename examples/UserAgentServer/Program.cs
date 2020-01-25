@@ -33,8 +33,8 @@
 // and can be downloaded directly from: https://www.jamendo.com/track/579315/simplicity?language=en
 // The use of the audio is licensed under the Creative Commons 
 // https://creativecommons.org/licenses/by-nd/2.0/
-// The audio is free for personal use but a license may be required for commerical use.
-// If it sounds familair this particular file is also included as part of Asterisk's 
+// The audio is free for personal use but a license may be required for commercial use.
+// If it sounds familiar this particular file is also included as part of Asterisk's 
 // (asterisk.org) music on hold.
 //
 // ffmpeg can be used to convert the mp3 file into the required format for placing directly 
@@ -197,7 +197,7 @@ namespace SIPSorcery
                             // Only set the remote RTP end point if there hasn't already been a packet received on it.
                             if (rtpSession.DestinationEndPoint == null)
                             {
-                                rtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
+                                rtpSession.SetRemoteSDP(SDP.ParseSDPDescription(sipRequest.Body));
                                 Log.LogDebug($"Remote RTP socket {rtpSession.DestinationEndPoint}.");
                             }
 

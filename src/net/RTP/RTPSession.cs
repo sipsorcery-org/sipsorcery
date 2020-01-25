@@ -79,7 +79,7 @@ namespace SIPSorcery.Net
         /// <returns>True if the payload ID matches this stream. False if not.</returns>
         public bool IsRemotePayloadIDMatch(int remotePayloadID)
         {
-            if(m_remotePayloadIDs?.Count() == 0)
+            if(m_remotePayloadIDs == null || m_remotePayloadIDs.Count() == 0)
             {
                 return false;
             }
@@ -711,14 +711,21 @@ namespace SIPSorcery.Net
                     }
 
                     // Used for reporting purposes.
-                    var sessionStream = m_sessionStreams.Where(x => x.IsRemotePayloadIDMatch(rtpPacket.Header.PayloadType)).FirstOrDefault();
-                    if (sessionStream != null && m_rtcpSessions.ContainsKey(sessionStream.Ssrc))
+                    if (m_sessionStreams == null || m_sessionStreams.Count <= 1)
                     {
-                        m_rtcpSessions[sessionStream.Ssrc].RecordRtpPacketReceived(rtpPacket);
+                        m_defaultRtcpSession.RecordRtpPacketReceived(rtpPacket);
                     }
                     else
                     {
-                        m_defaultRtcpSession.RecordRtpPacketReceived(rtpPacket);
+                        var sessionStream = m_sessionStreams.Where(x => x.IsRemotePayloadIDMatch(rtpPacket.Header.PayloadType)).FirstOrDefault();
+                        if (sessionStream != null && m_rtcpSessions.ContainsKey(sessionStream.Ssrc))
+                        {
+                            m_rtcpSessions[sessionStream.Ssrc].RecordRtpPacketReceived(rtpPacket);
+                        }
+                        else
+                        {
+                            m_defaultRtcpSession.RecordRtpPacketReceived(rtpPacket);
+                        }
                     }
                 }
             }

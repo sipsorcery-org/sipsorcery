@@ -23,7 +23,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using log4net;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -40,7 +40,7 @@ namespace SIPSorcery.SoftPhone
         // Currently only supporting these mode(s) from local web cams. Extra work to convert other formats to bitmaps that can be displayed by WPF.
         private static readonly List<MFVideoSubTypesEnum> _supportedVideoModes = new List<MFVideoSubTypesEnum>() { MFVideoSubTypesEnum.MFVideoFormat_RGB24 };
 
-        private ILog logger = AppState.logger;
+        private static ILogger logger = Log.Logger;
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
@@ -88,7 +88,7 @@ namespace SIPSorcery.SoftPhone
         private async void OnWindowLoaded(object sender, RoutedEventArgs e)
         {
             _mediaManager = new MediaManager(Dispatcher);
-            logger.Debug("Media Manager Initialized.");
+            logger.LogDebug("Media Manager Initialized.");
             _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
             _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
             _mediaManager.OnLocalVideoError += LocalVideoError;
@@ -142,7 +142,7 @@ namespace SIPSorcery.SoftPhone
             m_sipServer,
             new SIPURI(m_sipUsername, IPAddress.Any.ToString(), null),
             180,
-            (message) => { logger.Debug(message); });
+            (message) => { logger.LogDebug(message.ToString()); });
 
             _sipRegistrationClient.Start();
         }
@@ -631,7 +631,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void SetStatusText(TextBlock textBlock, string text)
         {
-            logger.Debug(text);
+            logger.LogDebug(text);
             Dispatcher.DoOnUIThread(() =>
             {
                 textBlock.Text = text;

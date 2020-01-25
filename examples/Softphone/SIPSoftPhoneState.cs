@@ -1,7 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SIPSoftPhoneState.cs
 //
-// Description: A helper class to load the application's settings and to hold some application wide variables. 
+// Description: A helper class to load the application's settings and to hold 
+// some application wide variables. 
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -17,20 +18,18 @@ using System;
 using System.Configuration;
 using System.Net;
 using System.Xml;
-using log4net;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone
 {
-    public class SIPSoftPhoneState
+    public class SIPSoftPhoneState : IConfigurationSectionHandler
     {
         private const string SIPSOFTPHONE_CONFIGNODE_NAME = "sipsoftphone";
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
         private const string STUN_SERVER_KEY = "STUNServerHostname";
-        private const string VIDEO_DEVICE_INDEX_KEY = "VideoDeviceIndex";
-        private const int DEFAULT_VIDEO_DEVICE_INDEX = 0;
 
-        private static ILog logger = AppState.logger;
+        private static ILogger logger = Log.Logger;
 
         private static readonly XmlNode m_sipSoftPhoneConfigNode;
         public static readonly XmlNode SIPSocketsNode;
@@ -40,7 +39,6 @@ namespace SIPSorcery.SoftPhone
         public static readonly string SIPPassword = ConfigurationManager.AppSettings["SIPPassword"];    // Get the SIP password from the config file.
         public static readonly string SIPServer = ConfigurationManager.AppSettings["SIPServer"];        // Get the SIP server from the config file.
         public static readonly string SIPFromName = ConfigurationManager.AppSettings["SIPFromName"];    // Get the SIP From display name from the config file.
-        public static readonly string DnsServer = ConfigurationManager.AppSettings["DnsServer"];        // Get the optional DNS server from the config file.
 
         public static IPAddress PublicIPAddress;
 
@@ -62,9 +60,17 @@ namespace SIPSorcery.SoftPhone
             }
             catch (Exception excp)
             {
-                logger.Error("Exception SIPSoftPhoneState. " + excp.Message);
+                logger.LogError("Exception SIPSoftPhoneState. " + excp.Message);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Handler for processing the App.Config file and retrieving a custom XML node.
+        /// </summary>
+        public object Create(object parent, object context, XmlNode configSection)
+        {
+            return configSection;
         }
     }
 }

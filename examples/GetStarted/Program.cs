@@ -155,7 +155,7 @@ namespace demo
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static void AddConsoleLogger()
         {
