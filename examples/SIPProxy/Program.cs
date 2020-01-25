@@ -9,6 +9,7 @@
 // History: 
 // 15 Nov 2016	Aaron Clauson	Created, Hobart, Australia.
 // 13 Oct 2019  Aaron Clauson   Updated to use the SIPSorcery nuget package.
+// 25 Jan 2020  Aaron Clauson   Converted from net452 to netcoreapp3.0.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -29,18 +30,18 @@
 //
 // $ wget http://tomeko.net/other/sipp/scenarios/REGISTER_client.xml
 // $ wget http://tomeko.net/other/sipp/scenarios/REGISTER_SUBSCRIBE_client.csv
-// $ sipp 127.0.0.1 -sf REGISTER_client.xml -inf REGISTER_client.csv -m 1 -trace_msg -trace_err 
+// $ sipp 127.0.0.1 -sf REGISTER_client.xml -inf REGISTER_SUBSCRIBE_client.csv -m 1 -trace_msg -trace_err 
 //-----------------------------------------------------------------------------
 
-using Microsoft.Extensions.Logging;
-using SIPSorcery.SIP;
-using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
-using System.Xml;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
 
 namespace SIPSorcery.SIPProxy
 {
@@ -64,11 +65,9 @@ namespace SIPSorcery.SIPProxy
 
     class Program
     {
-        private static ILogger logger = null;
+        private static int _listenPort = SIPConstants.DEFAULT_SIP_PORT;             // The default UDP SIP port.
 
-        private static XmlNode _sipSocketsNode = ProxyState.SIPSocketsNode;                // Optional XML node that can be used to configure the SIP channels used with the SIP transport layer.
-        private static IPAddress _defaultLocalAddress = ProxyState.DefaultLocalAddress;   // The default IPv4 address for the machine running the application.
-        private static int _defaultSIPUdpPort = SIPConstants.DEFAULT_SIP_PORT;             // The default UDP SIP port.
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static SIPTransport _sipTransport;
         private static Dictionary<string, SIPAccountBinding> _sipRegistrations = new Dictionary<string, SIPAccountBinding>(); // [SIP Username, Binding], tracks SIP clients that have registered with the server.
@@ -79,23 +78,14 @@ namespace SIPSorcery.SIPProxy
             {
                 Console.WriteLine("SIPSorcery SIP Proxy Demo");
 
-                logger = SIPSorcery.Sys.Log.Logger;
+                AddConsoleLogger();
 
                 // Configure the SIP transport layer.
                 _sipTransport = new SIPTransport();
 
-                if (_sipSocketsNode != null)
-                {
-                    // Set up the SIP channels based on the app.config file.
-                    List<SIPChannel> sipChannels = SIPTransportConfig.ParseSIPChannelsNode(_sipSocketsNode);
-                    _sipTransport.AddSIPChannel(sipChannels);
-                }
-                else
-                {
-                    // Use default options to set up a SIP channel.
-                    var sipChannel = new SIPUDPChannel(new IPEndPoint(_defaultLocalAddress, _defaultSIPUdpPort));
-                    _sipTransport.AddSIPChannel(sipChannel);
-                }
+                // Use default options to set up a SIP channel.
+                var sipChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, _listenPort));
+                _sipTransport.AddSIPChannel(sipChannel);
 
                 // Wire up the transport layer so SIP requests and responses have somewhere to go.
                 _sipTransport.SIPTransportRequestReceived += SIPTransportRequestReceived;
@@ -124,7 +114,7 @@ namespace SIPSorcery.SIPProxy
         /// <param name="localSIPEndPoint">The end point the request was received on.</param>
         /// <param name="remoteEndPoint">The end point the request came from.</param>
         /// <param name="sipRequest">The SIP request received.</param>
-        private static void SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
+        private static async Task SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             try
             {
@@ -142,14 +132,13 @@ namespace SIPSorcery.SIPProxy
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                 {
-                    SIPNonInviteTransaction optionsTransaction = _sipTransport.CreateNonInviteTransaction(sipRequest, null);
-                    SIPResponse optionsResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    optionsTransaction.SendFinalResponse(optionsResponse);
+                    SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                    await _sipTransport.SendResponseAsync(optionsResponse);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.REGISTER)
                 {
-                    SIPResponse tryingResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
-                    _sipTransport.SendResponse(tryingResponse);
+                    SIPResponse tryingResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
+                    await _sipTransport.SendResponseAsync(tryingResponse);
 
                     SIPResponseStatusCodesEnum registerResponse = SIPResponseStatusCodesEnum.Ok;
 
@@ -173,9 +162,9 @@ namespace SIPSorcery.SIPProxy
                         registerResponse = SIPResponseStatusCodesEnum.BadRequest;
                     }
 
-                    SIPNonInviteTransaction registerTransaction = _sipTransport.CreateNonInviteTransaction(sipRequest, null);
-                    SIPResponse okResponse = SIPTransport.GetResponse(sipRequest, registerResponse, null);
-                    registerTransaction.SendFinalResponse(okResponse);
+                    SIPNonInviteTransaction registerTransaction = new SIPNonInviteTransaction(_sipTransport, sipRequest, null);
+                    SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, registerResponse, null);
+                    registerTransaction.SendResponse(okResponse);
                 }
                 else
                 {
@@ -186,9 +175,8 @@ namespace SIPSorcery.SIPProxy
             {
                 logger.LogDebug(sipRequest.Method + " request processing not implemented for " + sipRequest.URI.ToParameterlessString() + " from " + remoteEndPoint + ".");
 
-                SIPNonInviteTransaction notImplTransaction = _sipTransport.CreateNonInviteTransaction(sipRequest, null);
-                SIPResponse notImplResponse = SIPTransport.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotImplemented, null);
-                notImplTransaction.SendFinalResponse(notImplResponse);
+                SIPResponse notImplResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotImplemented, null);
+                await _sipTransport.SendResponseAsync(notImplResponse);
             }
         }
 
@@ -198,35 +186,51 @@ namespace SIPSorcery.SIPProxy
         /// <param name="localSIPEndPoint">The end point the response was received on.</param>
         /// <param name="remoteEndPoint">The end point the response came from.</param>
         /// <param name="sipResponse">The SIP response received.</param>
-        private static void SIPTransportResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
+        private static Task SIPTransportResponseReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
             logger.LogDebug("Response received from " + remoteEndPoint + " method " + sipResponse.Header.CSeqMethod + " status " + sipResponse.Status + ".");
+            return Task.CompletedTask;
         }
 
         #region Non-functional trace/logging handlers. Main use is troubleshooting.
 
+        /// <summary>
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
+        /// </summary>
+        private static void AddConsoleLogger()
+        {
+            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
+            var loggerConfig = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Console()
+                .CreateLogger();
+            loggerFactory.AddSerilog(loggerConfig);
+            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+        }
+
         private static void SIPRequestInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            logger.LogDebug("REQUEST IN {0}->{1}", remoteEndPoint.ToString(), localSIPEndPoint.ToString());
-            logger.LogDebug(sipRequest.ToString());
+            logger.LogDebug("REQUEST IN {0}->{1}: {2}", remoteEndPoint.ToString(), localSIPEndPoint.ToString(), sipRequest.StatusLine);
+            //logger.LogDebug(sipRequest.ToString());
         }
 
         private static void SIPRequestOutTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            logger.LogDebug("REQUEST OUT {0}->{1}", localSIPEndPoint.ToString(), remoteEndPoint.ToString());
-            logger.LogDebug(sipRequest.ToString());
+            logger.LogDebug("REQUEST OUT {0}->{1}: {2}", localSIPEndPoint.ToString(), remoteEndPoint.ToString(), sipRequest.StatusLine);
+            //logger.LogDebug(sipRequest.ToString());
         }
 
         private static void SIPResponseInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
-            logger.LogDebug("RESPONSE IN {0}->{1}", remoteEndPoint.ToString(), localSIPEndPoint.ToString());
-            logger.LogDebug(sipResponse.ToString());
+            logger.LogDebug("RESPONSE IN {0}->{1}: {2}", remoteEndPoint.ToString(), localSIPEndPoint.ToString(), sipResponse.ShortDescription);
+            //logger.LogDebug(sipResponse.ToString());
         }
 
         private static void SIPResponseOutTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPResponse sipResponse)
         {
-            logger.LogDebug("RESPONSE OUT {0}->{1}", localSIPEndPoint.ToString(), remoteEndPoint.ToString());
-            logger.LogDebug(sipResponse.ToString());
+            logger.LogDebug("RESPONSE OUT {0}->{1}: {2}", localSIPEndPoint.ToString(), remoteEndPoint.ToString(), sipResponse.ShortDescription);
+            //logger.LogDebug(sipResponse.ToString());
         }
 
         private static void SIPBadRequestInTraceEvent(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, string message, SIPValidationFieldsEnum sipErrorField, string rawMessage)

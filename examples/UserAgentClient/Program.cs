@@ -99,7 +99,7 @@ namespace SIPSorcery
                     // Only set the remote RTP end point if there hasn't already been a packet received on it.
                     if (rtpSession.DestinationEndPoint == null)
                     {
-                        rtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(resp.Body);
+                        rtpSession.SetRemoteSDP(SDP.ParseSDPDescription(resp.Body));
                         Log.LogDebug($"Remote RTP socket {rtpSession.DestinationEndPoint}.");
                     }
 

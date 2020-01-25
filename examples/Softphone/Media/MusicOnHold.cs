@@ -21,7 +21,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using log4net;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
@@ -32,7 +32,7 @@ namespace SIPSorcery.SoftPhone
         private const string AUDIO_FILE_PCMU = @"content\Macroform_-_Simplicity.ulaw";
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 40;
 
-        private ILog logger = AppState.logger;
+        private ILogger logger = Log.Logger;
 
         private bool _stop = false;
         private Task _samplesTask;
@@ -55,11 +55,11 @@ namespace SIPSorcery.SoftPhone
 
             if (_samplesTask == null || _samplesTask.Status != TaskStatus.Running)
             {
-                logger.Debug("Music on hold samples task starting.");
+                logger.LogDebug("Music on hold samples task starting.");
 
                 _samplesTask = Task.Run(async () =>
                 {
-                    // Read the same file in an endless loop while samples are still requried.
+                    // Read the same file in an endless loop while samples are still required.
                     while (!_stop)
                     {
                         using (StreamReader sr = new StreamReader(AUDIO_FILE_PCMU))
@@ -73,7 +73,7 @@ namespace SIPSorcery.SoftPhone
                                 if (OnAudioSampleReady == null)
                                 {
                                     // Nobody needs music on hold so exit.
-                                    logger.Debug("Music on hold has no subscribers, stopping.");
+                                    logger.LogDebug("Music on hold has no subscribers, stopping.");
                                     return;
                                 }
                                 else

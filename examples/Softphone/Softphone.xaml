@@ -2,9 +2,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"    
     x:Class="SIPSorcery.SoftPhone.SoftPhone"
-    Title="SIPSorcery SoftPhone" Width="490" Background="#FF808080" HorizontalAlignment="Left" mc:Ignorable="d" Closing="Window_Closing" Icon="favicon.ico" MinHeight="560" Height="560" MinWidth="490" Loaded="OnWindowLoaded">
+    Title="SIPSorcery SoftPhone" Background="#FF808080" Closing="Window_Closing" Icon="favicon.ico" MinHeight="560" MinWidth="490" Loaded="OnWindowLoaded" Height="560" Width="490">
 
     <Grid>
         <Border BorderBrush="#FF807FC3" BorderThickness="2" CornerRadius="2">

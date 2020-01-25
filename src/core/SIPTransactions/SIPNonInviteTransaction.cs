@@ -1,7 +1,8 @@
 //-----------------------------------------------------------------------------
 // Filename: SIPnonInviteTransaction.cs
 //
-// Description: SIP Transaction for all non-INVITE transactions where no dialog is required.
+// Description: SIP Transaction for all non-INVITE transactions where no dialog 
+// is required.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -77,6 +78,11 @@ namespace SIPSorcery.SIP
         public void SendRequest()
         {
             base.SendReliableRequest();
+        }
+
+        public void SendResponse(SIPResponse finalResponse)
+        {
+            base.SendFinalResponse(finalResponse);
         }
     }
 }
