@@ -2134,12 +2134,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.IsClosed
   nameWithType: RTPChannel.IsClosed
-- uid: SIPSorcery.Net.RTPChannel.m_rtpSocket
-  name: m_rtpSocket
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_m_rtpSocket
-  commentId: F:SIPSorcery.Net.RTPChannel.m_rtpSocket
-  fullName: SIPSorcery.Net.RTPChannel.m_rtpSocket
-  nameWithType: RTPChannel.m_rtpSocket
 - uid: SIPSorcery.Net.RTPChannel.OnClosed
   name: OnClosed
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnClosed
@@ -2184,6 +2178,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.RTPPort
   nameWithType: RTPChannel.RTPPort
+- uid: SIPSorcery.Net.RTPChannel.RtpSocket
+  name: RtpSocket
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RtpSocket
+  commentId: P:SIPSorcery.Net.RTPChannel.RtpSocket
+  fullName: SIPSorcery.Net.RTPChannel.RtpSocket
+  nameWithType: RTPChannel.RtpSocket
+- uid: SIPSorcery.Net.RTPChannel.RtpSocket*
+  name: RtpSocket
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RtpSocket_
+  commentId: Overload:SIPSorcery.Net.RTPChannel.RtpSocket
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPChannel.RtpSocket
+  nameWithType: RTPChannel.RtpSocket
 - uid: SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
   name: SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___
@@ -2590,12 +2597,12 @@ references:
   commentId: T:SIPSorcery.Net.RTPSession
   fullName: SIPSorcery.Net.RTPSession
   nameWithType: RTPSession
-- uid: SIPSorcery.Net.RTPSession.#ctor(System.Int32,System.Net.Sockets.AddressFamily,System.Boolean)
-  name: RTPSession(Int32, AddressFamily, Boolean)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Int32_System_Net_Sockets_AddressFamily_System_Boolean_
-  commentId: M:SIPSorcery.Net.RTPSession.#ctor(System.Int32,System.Net.Sockets.AddressFamily,System.Boolean)
-  fullName: SIPSorcery.Net.RTPSession.RTPSession(System.Int32, System.Net.Sockets.AddressFamily, System.Boolean)
-  nameWithType: RTPSession.RTPSession(Int32, AddressFamily, Boolean)
+- uid: SIPSorcery.Net.RTPSession.#ctor(System.Int32,System.Net.Sockets.AddressFamily,System.Boolean,System.Boolean)
+  name: RTPSession(Int32, AddressFamily, Boolean, Boolean)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Int32_System_Net_Sockets_AddressFamily_System_Boolean_System_Boolean_
+  commentId: M:SIPSorcery.Net.RTPSession.#ctor(System.Int32,System.Net.Sockets.AddressFamily,System.Boolean,System.Boolean)
+  fullName: SIPSorcery.Net.RTPSession.RTPSession(System.Int32, System.Net.Sockets.AddressFamily, System.Boolean, System.Boolean)
+  nameWithType: RTPSession.RTPSession(Int32, AddressFamily, Boolean, Boolean)
 - uid: SIPSorcery.Net.RTPSession.#ctor*
   name: RTPSession
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_
@@ -2683,6 +2690,32 @@ references:
   commentId: F:SIPSorcery.Net.RTPSession.H264_RTP_HEADER_LENGTH
   fullName: SIPSorcery.Net.RTPSession.H264_RTP_HEADER_LENGTH
   nameWithType: RTPSession.H264_RTP_HEADER_LENGTH
+- uid: SIPSorcery.Net.RTPSession.IsSecure
+  name: IsSecure
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecure
+  commentId: P:SIPSorcery.Net.RTPSession.IsSecure
+  fullName: SIPSorcery.Net.RTPSession.IsSecure
+  nameWithType: RTPSession.IsSecure
+- uid: SIPSorcery.Net.RTPSession.IsSecure*
+  name: IsSecure
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecure_
+  commentId: Overload:SIPSorcery.Net.RTPSession.IsSecure
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.IsSecure
+  nameWithType: RTPSession.IsSecure
+- uid: SIPSorcery.Net.RTPSession.IsSecureContextReady
+  name: IsSecureContextReady
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecureContextReady
+  commentId: P:SIPSorcery.Net.RTPSession.IsSecureContextReady
+  fullName: SIPSorcery.Net.RTPSession.IsSecureContextReady
+  nameWithType: RTPSession.IsSecureContextReady
+- uid: SIPSorcery.Net.RTPSession.IsSecureContextReady*
+  name: IsSecureContextReady
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecureContextReady_
+  commentId: Overload:SIPSorcery.Net.RTPSession.IsSecureContextReady
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.IsSecureContextReady
+  nameWithType: RTPSession.IsSecureContextReady
 - uid: SIPSorcery.Net.RTPSession.OnReceivedSampleReady
   name: OnReceivedSampleReady
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceivedSampleReady
@@ -2695,6 +2728,12 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
   fullName: SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
   nameWithType: RTPSession.OnReceiveFromEndPointChanged
+- uid: SIPSorcery.Net.RTPSession.OnReceiveReport
+  name: OnReceiveReport
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceiveReport
+  commentId: E:SIPSorcery.Net.RTPSession.OnReceiveReport
+  fullName: SIPSorcery.Net.RTPSession.OnReceiveReport
+  nameWithType: RTPSession.OnReceiveReport
 - uid: SIPSorcery.Net.RTPSession.OnRtpClosed
   name: OnRtpClosed
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpClosed
@@ -2707,6 +2746,12 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnRtpEvent
   fullName: SIPSorcery.Net.RTPSession.OnRtpEvent
   nameWithType: RTPSession.OnRtpEvent
+- uid: SIPSorcery.Net.RTPSession.OnSendReport
+  name: OnSendReport
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnSendReport
+  commentId: E:SIPSorcery.Net.RTPSession.OnSendReport
+  fullName: SIPSorcery.Net.RTPSession.OnSendReport
+  nameWithType: RTPSession.OnSendReport
 - uid: SIPSorcery.Net.RTPSession.RemoteRtpEventPayloadID
   name: RemoteRtpEventPayloadID
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteRtpEventPayloadID
@@ -2829,6 +2874,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SetDestination
   nameWithType: RTPSession.SetDestination
+- uid: SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
+  name: SetSecurityContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_
+  commentId: M:SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)
+  fullName: SIPSorcery.Net.RTPSession.SetSecurityContext(SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket, SIPSorcery.Net.ProtectRtpPacket)
+  nameWithType: RTPSession.SetSecurityContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)
+- uid: SIPSorcery.Net.RTPSession.SetSecurityContext*
+  name: SetSecurityContext
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_
+  commentId: Overload:SIPSorcery.Net.RTPSession.SetSecurityContext
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.SetSecurityContext
+  nameWithType: RTPSession.SetSecurityContext
 - uid: SIPSorcery.Net.RTPSession.SRTP_MAX_PREFIX_LENGTH
   name: SRTP_MAX_PREFIX_LENGTH
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SRTP_MAX_PREFIX_LENGTH
@@ -7979,12 +8037,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.WebRtcSession.WebRtcSession
   nameWithType: WebRtcSession.WebRtcSession
-- uid: SIPSorcery.Net.WebRtcSession._rtpSession
-  name: _rtpSession
-  href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession__rtpSession
-  commentId: F:SIPSorcery.Net.WebRtcSession._rtpSession
-  fullName: SIPSorcery.Net.WebRtcSession._rtpSession
-  nameWithType: WebRtcSession._rtpSession
 - uid: SIPSorcery.Net.WebRtcSession.AppendRemoteIceCandidate(SIPSorcery.Net.IceCandidate)
   name: AppendRemoteIceCandidate(IceCandidate)
   href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession_AppendRemoteIceCandidate_SIPSorcery_Net_IceCandidate_
@@ -8155,6 +8207,12 @@ references:
   commentId: F:SIPSorcery.Net.WebRtcSession.RemoteIceUser
   fullName: SIPSorcery.Net.WebRtcSession.RemoteIceUser
   nameWithType: WebRtcSession.RemoteIceUser
+- uid: SIPSorcery.Net.WebRtcSession.RtpSession
+  name: RtpSession
+  href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession_RtpSession
+  commentId: F:SIPSorcery.Net.WebRtcSession.RtpSession
+  fullName: SIPSorcery.Net.WebRtcSession.RtpSession
+  nameWithType: WebRtcSession.RtpSession
 - uid: SIPSorcery.Net.WebRtcSession.SDP
   name: SDP
   href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession_SDP

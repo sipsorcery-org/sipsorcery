@@ -79,7 +79,7 @@
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_DoDtlsHandshakeDelegate_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public delegate int DoDtlsHandshakeDelegate(WebRtcSession session, Socket rtpSocket, out ProtectRtpPacket protectRtp, out ProtectRtpPacket unprotectRtp, out ProtectRtpPacket protectRtcp, out ProtectRtpPacket unprotectRtcp);</code></pre>
+    <pre><code class="lang-csharp hljs">public delegate int DoDtlsHandshakeDelegate(WebRtcSession session);</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -94,31 +94,6 @@
       <tr>
         <td><a class="xref" href="SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a></td>
         <td><span class="parametername">session</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Net.Sockets.Socket</span></td>
-        <td><span class="parametername">rtpSocket</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></td>
-        <td><span class="parametername">protectRtp</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></td>
-        <td><span class="parametername">unprotectRtp</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></td>
-        <td><span class="parametername">protectRtcp</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></td>
-        <td><span class="parametername">unprotectRtcp</span></td>
         <td></td>
       </tr>
     </tbody>
