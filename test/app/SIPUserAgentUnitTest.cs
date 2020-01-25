@@ -222,7 +222,7 @@ namespace SIPSorcery.SIP.App.UnitTests
 
         private IMediaSession CreateMediaSession()
         {
-            return new RTPMediaSession(0, AddressFamily.InterNetwork);
+            return new RTPMediaSession(SDPMediaTypesEnum.audio, 0, AddressFamily.InterNetwork);
         }
     }
 }

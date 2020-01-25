@@ -67,26 +67,29 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public SDP RemoteSDP { get; private set; }
 
-        public RTPMediaSession(int formatTypeID, AddressFamily addrFamily)
-             : base(formatTypeID, addrFamily, false, false)
+        public RTPMediaSession(SDPMediaTypesEnum mediaType, int formatTypeID, AddressFamily addrFamily)
+             : base(mediaType, formatTypeID, addrFamily, false, false)
         {
             // Construct the local SDP. There are a number of assumptions being made here:
             // PCMU audio, RTP event support etc.
             var mediaFormat = new SDPMediaFormat(formatTypeID);
             var mediaAnnouncement = new SDPMediaAnnouncement
             {
-                Media = SDPMediaTypesEnum.audio,
+                Media = mediaType,
                 MediaFormats = new List<SDPMediaFormat> { mediaFormat },
                 MediaStreamStatus = MediaStreamStatusEnum.SendRecv,
                 Port = base.RtpChannel.RTPPort
             };
 
-            // RTP event support.
-            int clockRate = mediaFormat.GetClockRate();
-            SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
-            rtpEventFormat.SetFormatAttribute($"{TELEPHONE_EVENT_ATTRIBUTE}/{clockRate}");
-            rtpEventFormat.SetFormatParameterAttribute("0-16");
-            mediaAnnouncement.MediaFormats.Add(rtpEventFormat);
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                // RTP event support.
+                int clockRate = mediaFormat.GetClockRate();
+                SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
+                rtpEventFormat.SetFormatAttribute($"{TELEPHONE_EVENT_ATTRIBUTE}/{clockRate}");
+                rtpEventFormat.SetFormatParameterAttribute("0-16");
+                mediaAnnouncement.MediaFormats.Add(rtpEventFormat);
+            }
 
             MediaAnnouncements.Add(mediaAnnouncement);
         }
