@@ -54,7 +54,7 @@ namespace SIPSorcery.Net.UnitTests
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
-            Debug.WriteLine(sdp.ToString());
+            logger.LogDebug(sdp.ToString());
 
             Assert.True(sdp.Connection.ConnectionAddress == "10.0.0.4", "The connection address was not parsed  correctly.");
             Assert.True(sdp.Media[0].Media == SDPMediaTypesEnum.audio, "The media type not parsed correctly.");
@@ -75,7 +75,7 @@ namespace SIPSorcery.Net.UnitTests
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
-            Debug.WriteLine(sdp.ToString());
+            logger.LogDebug(sdp.ToString());
 
             Assert.True(sdp.Connection.ConnectionAddress == "144.137.16.240", "The connection address was not parsed correctly.");
             Assert.True(sdp.Media[0].Port == 34640, "The connection port was not parsed correctly.");
@@ -105,7 +105,10 @@ namespace SIPSorcery.Net.UnitTests
 
             SDP sdp = SDP.ParseSDPDescription(sdpStr);
 
-            Debug.WriteLine(sdp.ToString());
+            logger.LogDebug(sdp.ToString());
+
+            logger.LogDebug($"audio format[0]: {sdp.Media[0].MediaFormats[0].ToString()}");
+            logger.LogDebug($"audio format[1]: {sdp.Media[0].MediaFormats[1].ToString()}");
 
             Assert.True(sdp.Connection.ConnectionAddress == "10.0.0.4", "The connection address was not parsed  correctly.");
             Assert.True(sdp.Username == "root", "The owner was not parsed correctly.");
@@ -527,6 +530,65 @@ namespace SIPSorcery.Net.UnitTests
             SDP sdpRoundTrip = SDP.ParseSDPDescription(sdp.ToString());
 
             Assert.Equal(MediaStreamStatusEnum.RecvOnly, sdpRoundTrip.SessionMediaStreamStatus);
+        }
+
+        /// <summary>
+        /// Tests that parsing a typical SDP for a WebRTC session gets parsed correctly
+        /// </summary>
+        [Fact]
+        public void ParseWebRtcSDPUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            string sdpStr =
+                @"v=0
+o=- 1090343221 2 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE audio video
+m=audio 11158 RTP/SAVP 0
+c=IN IP4 127.0.0.1
+a=candidate:1988909849 1 udp 1124657401 192.168.11.50 11158 typ host generation 0
+a=candidate:1846148317 1 udp 2094219785 127.0.0.1 11158 typ host generation 0
+a=candidate:2012632329 1 udp 2122820711 172.30.224.1 11158 typ host generation 0
+a=end-of-candidates 
+a=ice-ufrag:UWWAVCUMPZHPCLNIMZYA
+a=ice-pwd:IEUVYLWMXMQZKCMLTXQHZZVWXRCBLPPNUYFPCABK
+a=fingerprint:sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD
+a=setup:actpass
+a=sendonly
+a=rtcp-mux
+a=mid:audio
+a=rtpmap:0 PCMU/8000
+m=video 0 RTP/SAVP 100
+c=IN IP4 127.0.0.1
+a=ice-ufrag:UWWAVCUMPZHPCLNIMZYA
+a=ice-pwd:IEUVYLWMXMQZKCMLTXQHZZVWXRCBLPPNUYFPCABK
+a=fingerprint:sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD
+a=bundle-only 
+a=setup:actpass
+a=sendonly
+a=rtcp-mux
+a=mid:video
+a=rtpmap:100 VP8/90000";
+
+            SDP sdp = SDP.ParseSDPDescription(sdpStr);
+
+            logger.LogDebug(sdp.ToString());
+
+            SDP rndTripSdp = SDP.ParseSDPDescription(sdp.ToString());
+
+            Assert.Equal("BUNDLE audio video", sdp.Group);
+            Assert.Equal("BUNDLE audio video", rndTripSdp.Group);
+            Assert.Equal("UWWAVCUMPZHPCLNIMZYA", sdp.Media[0].IceUfrag);
+            Assert.Equal("UWWAVCUMPZHPCLNIMZYA", rndTripSdp.Media[0].IceUfrag);
+            Assert.Equal("IEUVYLWMXMQZKCMLTXQHZZVWXRCBLPPNUYFPCABK", sdp.Media[0].IcePwd);
+            Assert.Equal("IEUVYLWMXMQZKCMLTXQHZZVWXRCBLPPNUYFPCABK", rndTripSdp.Media[0].IcePwd);
+            Assert.Equal(3, sdp.Media[0].IceCandidates.Count());
+            Assert.Equal(3, rndTripSdp.Media[0].IceCandidates.Count());
+            Assert.Equal("sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD", sdp.Media[0].DtlsFingerprint);
+            Assert.Equal("sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD", rndTripSdp.Media[0].DtlsFingerprint);
         }
     }
 }

@@ -42,52 +42,24 @@ namespace SIPSorcery.Net
         private const int ICE_CONNECTED_NO_COMMUNICATIONS_TIMEOUT_SECONDS = 35;  // If there are no messages received (STUN/RTP/RTCP) within this period the session will be closed.
         private const int MAXIMUM_TURN_ALLOCATE_ATTEMPTS = 4;
         private const int MAXIMUM_STUN_CONNECTION_ATTEMPTS = 5;
-        private const string RTP_MEDIA_SECURE_DESCRIPTOR = "RTP/SAVP";
         private const int VP8_PAYLOAD_TYPE_ID = 100;
 
         private const int STUN_CHECK_BASE_PERIOD_MILLISECONDS = 5000;
         private const float STUN_CHECK_LOW_RANDOMISATION_FACTOR = 0.5F;
         private const float STUN_CHECK_HIGH_RANDOMISATION_FACTOR = 1.5F;
 
-        private static string _sdpOfferTemplate = @"v=0
-o=- {0} 2 IN IP4 127.0.0.1
-s=-
-t=0 0
-a=group:BUNDLE audio video
-";
-        private static string _sdpAudioPcmOfferTemplate =
-    @"m=audio {0} {1} 0
-c=IN IP4 {2}
-{3}
-a=end-of-candidates 
-a=ice-ufrag:{4}
-a=ice-pwd:{5}{6}
-a=setup:actpass
-a=sendonly
-a=rtcp-mux
-a=mid:audio
-a=rtpmap:0 PCMU/8000
-";
-
-        private static string _sdpVideoOfferTemplate =
-    "m=video 0 {0} " + PAYLOAD_TYPE_ID + @"
-c=IN IP4 {1}
-a=ice-ufrag:{2}
-a=ice-pwd:{3}{4}
-a=bundle-only 
-a=setup:actpass
-a=sendonly
-a=rtcp-mux
-a=mid:video
-a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
-";
-
-        private static string _dtlsFingerprint = "\na=fingerprint:sha-256 {0}";
+        // SDP constants.
+        private const string MEDIA_GROUPING = "BUNDLE audio video";
+        private const string RTP_MEDIA_PROFILE = "RTP/SAVP";
+        private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
+        private const string SETUP_ATTRIBUTE = "a=setup:actpass";     // Indicates the media announcement DTLS negotiation state is active/passive.
+        private const string AUDIO_MEDIA_ID = "audio";
+        private const string VIDEO_MEDIA_ID = "video";
 
         private static ILogger logger = Log.Logger;
 
         public string SessionID { get; private set; }
-        public string SDP;
+        public SDP SDP;
         public string SdpSessionID;
         public string LocalIceUser;
         public string LocalIcePassword;
@@ -118,8 +90,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         RTPChannel _rtpChannel;
         private string _dtlsCertificateFingerprint;
-        private List<SDPMediaFormatsEnum> _supportedAudioFormats;
-        private List<SDPMediaFormatsEnum> _supportedVideoFormats;
+        private List<SDPMediaFormat> _supportedAudioFormats;
+        private List<SDPMediaFormat> _supportedVideoFormats;
         private IPEndPoint _turnServerEndPoint;
         private List<IPAddress> _offerAddresses;            // If set restricts which local IP addresses will be offered in ICE candidates.
         private int _audioSessionID = 0;
@@ -129,7 +101,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         private DateTime _lastCommunicationAt = DateTime.MinValue;
 
         public event Action<string> OnClose;
-        public event Action<string> OnSdpOfferReady;
+        public event Action<SDP> OnSdpOfferReady;
         //public event Action<IceConnectionStatesEnum> OnIceStateChange;
         //public event Action<IceCandidate, byte[], IPEndPoint> OnDtlsPacket;
         //public event Action<IceCandidate, byte[], IPEndPoint> OnMediaPacket;
@@ -139,7 +111,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
 
         public RTPSession _rtpSession;
 
-        public bool IsEncryptionDisabled { get; private set; }
+        public MediaStreamStatusEnum AudioStreamStatus { get; set; } = MediaStreamStatusEnum.SendRecv;
+        public MediaStreamStatusEnum VideoStreamStatus { get; set; } = MediaStreamStatusEnum.SendRecv;
 
         /// <summary>
         /// Time to schedule the STUN checks on each ICE candidate.
@@ -159,8 +132,8 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
         /// If null then all local IP addresses get used.</param>
         public WebRtcSession(
             string dtlsFingerprint,
-            List<SDPMediaFormatsEnum> supportedAudioFormats,
-            List<SDPMediaFormatsEnum> supportedVideoFormats,
+            List<SDPMediaFormat> supportedAudioFormats,
+            List<SDPMediaFormat> supportedVideoFormats,
             List<IPAddress> offerAddresses)
         {
             _dtlsCertificateFingerprint = dtlsFingerprint;
@@ -208,6 +181,10 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                 }
                 else
                 {
+                    bool includeAudioOffer = _supportedAudioFormats?.Count() > 0;
+                    bool includeVideoOffer = _supportedVideoFormats?.Count() > 0;
+                    bool haveIceCandidatesBeenAdded = false;
+
                     string localIceCandidateString = null;
 
                     foreach (var iceCandidate in LocalIceCandidates)
@@ -218,34 +195,67 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     LocalIceUser = LocalIceUser ?? Crypto.GetRandomString(20);
                     LocalIcePassword = LocalIcePassword ?? Crypto.GetRandomString(20) + Crypto.GetRandomString(20);
 
-                    var offerHeader = String.Format(_sdpOfferTemplate, Crypto.GetRandomInt(10).ToString());
+                    SDP offerSdp = new SDP(IPAddress.Loopback);
 
-                    string dtlsAttribute = String.Format(_dtlsFingerprint, _dtlsCertificateFingerprint);
-                    string rtpSecurityDescriptor = RTP_MEDIA_SECURE_DESCRIPTOR;
+                    // Add a bundle attribute. Indicates that audio and video sessions will be multiplexed
+                    // on a single RTP socket.
+                    if(includeAudioOffer && includeVideoOffer)
+                    {
+                        offerSdp.Group = MEDIA_GROUPING;
+                    }
+                    
+                    if(includeAudioOffer)
+                    {
+                        SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
+                            SDPMediaTypesEnum.audio,
+                            _rtpChannel.RTPPort,
+                           _supportedAudioFormats);
 
-                    var audioOffer = String.Format(_sdpAudioPcmOfferTemplate,
-                        _rtpChannel.RTPPort,
-                         rtpSecurityDescriptor,
-                         IPAddress.Loopback,
-                         localIceCandidateString.TrimEnd(),
-                         LocalIceUser,
-                         LocalIcePassword,
-                         dtlsAttribute);
+                        audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
+                        if (!haveIceCandidatesBeenAdded)
+                        {
+                            audioAnnouncement.IceCandidates = LocalIceCandidates;
+                            haveIceCandidatesBeenAdded = true;
+                        }
+                        audioAnnouncement.IceUfrag = LocalIceUser;
+                        audioAnnouncement.IcePwd = LocalIcePassword;
+                        audioAnnouncement.DtlsFingerprint = _dtlsCertificateFingerprint;
+                        audioAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
+                        audioAnnouncement.AddExtra(SETUP_ATTRIBUTE);
+                        audioAnnouncement.MediaID = AUDIO_MEDIA_ID;
+                        audioAnnouncement.MediaStreamStatus = AudioStreamStatus;
 
-                    var videoOffer = String.Format(_sdpVideoOfferTemplate,
-                        rtpSecurityDescriptor,
-                        IPAddress.Loopback,
-                        LocalIceUser,
-                        LocalIcePassword,
-                        dtlsAttribute);
+                        offerSdp.Media.Add(audioAnnouncement);
+                    }
+                    
+                    if(includeVideoOffer)
+                    {
+                        SDPMediaAnnouncement videoAnnouncement = new SDPMediaAnnouncement(
+                            SDPMediaTypesEnum.video,
+                            _rtpChannel.RTPPort,
+                           _supportedVideoFormats);
 
-                    string offer = offerHeader + audioOffer + videoOffer;
+                       videoAnnouncement.Transport = RTP_MEDIA_PROFILE;
+                        if (!haveIceCandidatesBeenAdded)
+                        {
+                            videoAnnouncement.IceCandidates = LocalIceCandidates;
+                            haveIceCandidatesBeenAdded = true;
+                        }
 
-                    //logger.LogDebug("WebRTC Offer SDP: " + offer);
+                        videoAnnouncement.IceUfrag = LocalIceUser;
+                        videoAnnouncement.IcePwd = LocalIcePassword;
+                        videoAnnouncement.DtlsFingerprint = _dtlsCertificateFingerprint;
+                        videoAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
+                        videoAnnouncement.AddExtra(SETUP_ATTRIBUTE);
+                        videoAnnouncement.MediaID = VIDEO_MEDIA_ID;
+                        videoAnnouncement.MediaStreamStatus = VideoStreamStatus;
 
-                    SDP = offer;
+                        offerSdp.Media.Add(videoAnnouncement);
+                    }
 
-                    OnSdpOfferReady?.Invoke(offer);
+                    SDP = offerSdp;
+
+                    OnSdpOfferReady?.Invoke(SDP);
                 }
 
                 // We may have received some remote candidates from the remote part SDP so perform an immediate STUN check.
@@ -293,7 +303,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     logger.LogWarning("No audio formats were available in the remote party's SDP.");
                     Close("No audio codecs offered.");
                 }
-                else if(remoteAudioOffer.MediaFormats.Select(x => x.FormatCodec).Union(_supportedAudioFormats).Count() == 0)
+                else if(remoteAudioOffer.MediaFormats.Select(x => x.FormatCodec).Union(_supportedAudioFormats.Select(y => y.FormatCodec)).Count() == 0)
                 {
                     logger.LogWarning("No matching audio codec was available.");
                     Close("No matching audio codec.");
@@ -309,7 +319,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
                     logger.LogWarning("No video formats were available in the remote party's SDP.");
                     Close("No video codecs offered.");
                 }
-                else if(remoteVideoOffer.MediaFormats.Select(x => x.FormatCodec).Union(_supportedVideoFormats).Count() == 0)
+                else if(remoteVideoOffer.MediaFormats.Select(x => x.FormatCodec).Union(_supportedVideoFormats.Select(y => y.FormatCodec)).Count() == 0)
                 {
                     logger.LogWarning("No matching video codec was available.");
                     Close("No matching video codec.");
@@ -716,7 +726,7 @@ a=rtpmap:" + PAYLOAD_TYPE_ID + @" VP8/90000
             {
                 if (iceCandidate.TurnAllocateAttempts >= MAXIMUM_TURN_ALLOCATE_ATTEMPTS)
                 {
-                    logger.LogDebug("TURN allocation for local socket " + iceCandidate.LocalAddress + " failed after " + iceCandidate.TurnAllocateAttempts + " attempts.");
+                    logger.LogDebug("TURN allocation for local socket " + iceCandidate.NetworkAddress + " failed after " + iceCandidate.TurnAllocateAttempts + " attempts.");
 
                     iceCandidate.IsGatheringComplete = true;
                 }

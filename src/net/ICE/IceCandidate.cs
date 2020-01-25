@@ -46,7 +46,6 @@ namespace SIPSorcery.Net
         public const string REMOTE_ADDRESS_KEY = "raddr";
         public const string REMOTE_PORT_KEY = "rport";
 
-        public IPAddress LocalAddress;
         public TurnServer TurnServer;
         public bool IsGatheringComplete;
         public int TurnAllocateAttempts;
@@ -84,7 +83,8 @@ namespace SIPSorcery.Net
 
         public IceCandidate(IPAddress localAddress, int port)
         {
-            LocalAddress = localAddress;
+            //LocalAddress = localAddress;
+            NetworkAddress = localAddress.ToString();
             Port = port;
         }
 
@@ -126,8 +126,8 @@ namespace SIPSorcery.Net
             var candidateStr = String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ host generation 0\r\n", 
                 Crypto.GetRandomInt(10).ToString(), 
                 "1", 
-                Crypto.GetRandomInt(10).ToString(), 
-                LocalAddress.ToString(), 
+                Crypto.GetRandomInt(10).ToString(),
+               NetworkAddress, 
                 Port);
 
             if (StunRflxIPEndPoint != null)
@@ -137,8 +137,8 @@ namespace SIPSorcery.Net
                     "1", 
                     Crypto.GetRandomInt(10).ToString(), 
                     StunRflxIPEndPoint.Address, 
-                    StunRflxIPEndPoint.Port, 
-                    LocalAddress.ToString(), 
+                    StunRflxIPEndPoint.Port,
+                    NetworkAddress, 
                     Port);
 
                 //logger.LogDebug(" " + srflxCandidateStr);

@@ -114,11 +114,16 @@ namespace SIPSorcery.Net
         public const string CRLF = "\r\n";
         public const string SDP_MIME_CONTENTTYPE = "application/sdp";
         public const decimal SDP_PROTOCOL_VERSION = 0M;
+        public const string GROUP_ATRIBUTE_PREFIX = "group";
         public const string ICE_UFRAG_ATTRIBUTE_PREFIX = "ice-ufrag";
         public const string ICE_PWD_ATTRIBUTE_PREFIX = "ice-pwd";
+        public const string DTLS_FINGERPRINT_ATTRIBUTE_PREFIX = "fingerprint";
         public const string ICE_CANDIDATE_ATTRIBUTE_PREFIX = "candidate";
         public const string ADDRESS_TYPE_IPV4 = "IP4";
         public const string ADDRESS_TYPE_IPV6 = "IP6";
+        public const string DEFAULT_TIMING = "0 0";
+        public const string END_ICE_CANDIDATES_ATTRIBUTE = "end-of-candidates";
+        public const string MEDIA_ID_ATTRIBUTE_PREFIX = "mid";
 
         private static ILogger logger = Log.Logger;
 
@@ -139,7 +144,7 @@ namespace SIPSorcery.Net
         }
 
         public string SessionName = "-";            // Common name of the session.
-        public string Timing;
+        public string Timing = DEFAULT_TIMING;
         public List<string> BandwidthAttributes = new List<string>();
 
         // Optional fields.
@@ -149,7 +154,14 @@ namespace SIPSorcery.Net
         public string[] OriginatorPhoneNumbers;     // Phone numbers for the person responsible for the session.
         public string IceUfrag;                     // If ICE is being used the username for the STUN requests.
         public string IcePwd;                       // If ICE is being used the password for the STUN requests.
+        public string DtlsFingerprint;              // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
         public List<IceCandidate> IceCandidates;
+
+        /// <summary>
+        /// Indicates multiple media offers will be bundled on a single RTP connection.
+        /// Example: a=group:BUNDLE audio video
+        /// </summary>
+        public string Group;
 
         public SDPConnectionInformation Connection;
 
@@ -256,13 +268,46 @@ namespace SIPSorcery.Net
                                 logger.LogWarning("A media line in SDP was invalid: " + sdpLineTrimmed.Substring(2) + ".");
                             }
                         }
+                        else if (sdpLineTrimmed.StartsWith("a=" + GROUP_ATRIBUTE_PREFIX))
+                        {
+                            sdp.Group = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                        }
                         else if (sdpLineTrimmed.StartsWith("a=" + ICE_UFRAG_ATTRIBUTE_PREFIX))
                         {
-                            sdp.IceUfrag = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                            if (activeAnnouncement != null)
+                            {
+                                activeAnnouncement.IceUfrag = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                            }
+                            else
+                            {
+                                sdp.IceUfrag = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                            }
                         }
                         else if (sdpLineTrimmed.StartsWith("a=" + ICE_PWD_ATTRIBUTE_PREFIX))
                         {
-                            sdp.IcePwd = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                            if (activeAnnouncement != null)
+                            {
+                                activeAnnouncement.IcePwd = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                            }
+                            else
+                            {
+                                sdp.IcePwd = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                            }
+                        }
+                        else if (sdpLineTrimmed.StartsWith("a=" + DTLS_FINGERPRINT_ATTRIBUTE_PREFIX))
+                        {
+                            if (activeAnnouncement != null)
+                            {
+                                activeAnnouncement.DtlsFingerprint = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                            }
+                            else
+                            {
+                                sdp.DtlsFingerprint = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                            }
+                        }
+                        else if(sdpLineTrimmed.StartsWith($"a={END_ICE_CANDIDATES_ATTRIBUTE}"))
+                        {
+                            // Do nothing.
                         }
                         else if (sdpLineTrimmed.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX))
                         {
@@ -320,12 +365,22 @@ namespace SIPSorcery.Net
                         }
                         else if (sdpLineTrimmed.StartsWith("a=" + ICE_CANDIDATE_ATTRIBUTE_PREFIX))
                         {
-                            if (sdp.IceCandidates == null)
+                            if (activeAnnouncement != null)
                             {
-                                sdp.IceCandidates = new List<IceCandidate>();
+                                if (activeAnnouncement.IceCandidates == null)
+                                {
+                                    activeAnnouncement.IceCandidates = new List<IceCandidate>();
+                                }
+                                activeAnnouncement.IceCandidates.Add(IceCandidate.Parse(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1)));
                             }
-
-                            sdp.IceCandidates.Add(IceCandidate.Parse(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1)));
+                            else
+                            {
+                                if (sdp.IceCandidates == null)
+                                {
+                                    sdp.IceCandidates = new List<IceCandidate>();
+                                }
+                                sdp.IceCandidates.Add(IceCandidate.Parse(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1)));
+                            }
                         }
                         //2018-12-21 rj2: add a=crypto
                         else if (sdpLineTrimmed.StartsWith(SDPSecurityDescription.CRYPTO_ATTRIBUE_PREFIX))
@@ -351,6 +406,17 @@ namespace SIPSorcery.Net
                             else
                             {
                                 sdp.SessionMediaStreamStatus = mediaStreamStatus;
+                            }
+                        }
+                        else if (sdpLineTrimmed.StartsWith("a=" + MEDIA_ID_ATTRIBUTE_PREFIX))
+                        {
+                            if (activeAnnouncement != null)
+                            {
+                                activeAnnouncement.MediaID = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                            }
+                            else
+                            {
+                                logger.LogWarning("A media ID can only be set on a media announcement.");
                             }
                         }
                         else
@@ -396,6 +462,7 @@ namespace SIPSorcery.Net
             }
             return this.m_rawSdp;
         }
+
         public override string ToString()
         {
             string sdp =
@@ -412,6 +479,7 @@ namespace SIPSorcery.Net
 
             sdp += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + CRLF : null;
             sdp += !string.IsNullOrWhiteSpace(IcePwd) ? "a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + CRLF : null;
+            sdp += !string.IsNullOrWhiteSpace(DtlsFingerprint) ? "a=" + DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":" + DtlsFingerprint + CRLF : null;
             sdp += string.IsNullOrWhiteSpace(SessionDescription) ? null : "i=" + SessionDescription + CRLF;
             sdp += string.IsNullOrWhiteSpace(URI) ? null : "u=" + URI + CRLF;
 
@@ -430,6 +498,8 @@ namespace SIPSorcery.Net
                     sdp += string.IsNullOrWhiteSpace(originatorNumber) ? null : "p=" + originatorNumber + CRLF;
                 }
             }
+
+            sdp += (Group == null) ? null : $"a={GROUP_ATRIBUTE_PREFIX}:{Group}" + CRLF; 
 
             foreach (string extra in ExtraSessionAttributes)
             {
