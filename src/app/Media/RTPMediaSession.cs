@@ -68,7 +68,7 @@ namespace SIPSorcery.SIP.App
         public SDP RemoteSDP { get; private set; }
 
         public RTPMediaSession(int formatTypeID, AddressFamily addrFamily)
-             : base(formatTypeID, addrFamily, false)
+             : base(formatTypeID, addrFamily, false, false)
         {
             // Construct the local SDP. There are a number of assumptions being made here:
             // PCMU audio, RTP event support etc.

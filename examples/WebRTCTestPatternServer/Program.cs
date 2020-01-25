@@ -1,8 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: An example WebRTC server application that serves media streams
-// to a WebRTC enabled browser.
+// Description: An example WebRTC server application that serves a test pattern
+// video stream to a WebRTC enabled browser.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -15,12 +15,13 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -69,19 +70,19 @@ namespace WebRTCServer
         private const string WEBSOCKET_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const string DTLS_CERTIFICATE_PATH = "certs/localhost.pem";
         private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
-        private const string DTLS_CERTIFICATE_FINGERPRINT = "C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
-        private const string ICE_USER = "EJYWWCUDJQLTXTNQRXEJ";
-        private const string ICE_PASSWORD = "SKYKPPYLTZOAVCLTGHDUODANRKSPOVQVKXJULOGG";
+        private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
         private const int WEBSOCKET_PORT = 8081;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public static readonly List<SDPMediaFormat> _supportedVideoFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) };
 
         private static WebSocketServer _webSocketServer;
         private static bool _exit = false;
         //private static ConcurrentDictionary<string, WebRtcSession> _webRtcSessions = new ConcurrentDictionary<string, WebRtcSession>();
         //private static WebRtcSession _webRtcSession;
 
-        private static event Action<uint, byte[]> OnTestPatternSampleReady;
+        private static event Action<SDPMediaTypesEnum, uint, byte[]> OnTestPatternSampleReady;
 
         static void Main()
         {
@@ -131,19 +132,22 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            var webRtcSession = new WebRtcSession(DTLS_CERTIFICATE_FINGERPRINT, null);
+            var webRtcSession = new WebRtcSession(DTLS_CERTIFICATE_FINGERPRINT, null, _supportedVideoFormats, null);
+            webRtcSession.VideoStreamStatus = MediaStreamStatusEnum.SendOnly;
+            webRtcSession.RtpSession.OnReceiveReport += RtpSession_OnReceiveReport;
+            webRtcSession.RtpSession.OnSendReport += RtpSession_OnSendReport;
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
             webRtcSession.OnClose += (reason) =>
             {
                 logger.LogDebug($"WebRTCSession was closed with reason {reason}.");
-                //dtls.Shutdown();
+                OnTestPatternSampleReady -= webRtcSession.SendMedia;
             };
 
             await webRtcSession.Initialise(DoDtlsHandshake, null);
 
-            context.WebSocket.Send(webRtcSession.SDP);
+            context.WebSocket.Send(webRtcSession.SDP.ToString());
 
             return webRtcSession;
         }
@@ -170,18 +174,7 @@ namespace WebRTCServer
                     }
                 }
 
-                OnTestPatternSampleReady += (timestamp, sample) =>
-                {
-                    try
-                    {
-                        webRtcSession.SendMedia(SDPMediaTypesEnum.video, timestamp, sample);
-                    }
-                    catch (Exception sendExcp)
-                    {
-                        logger.LogWarning("Exception OnTestPatternSampleReady. " + sendExcp.Message);
-                        webRtcSession.Close();
-                    }
-                };
+                OnTestPatternSampleReady += webRtcSession.SendMedia;
             }
             catch (Exception excp)
             {
@@ -192,13 +185,10 @@ namespace WebRTCServer
         /// <summary>
         /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
         /// </summary>
-        /// <param name="rtpSocket">The RTP socket being used for the WebRTC session.</param>
-        private static int DoDtlsHandshake(WebRtcSession webRtcSession, Socket rtpSocket, out ProtectRtpPacket protectRtp, out ProtectRtpPacket protectRtcp)
+        /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
+        private static int DoDtlsHandshake(WebRtcSession webRtcSession)
         {
             logger.LogDebug("DoDtlsHandshake started.");
-
-            protectRtp = null;
-            protectRtcp = null;
 
             if (!File.Exists(DTLS_CERTIFICATE_PATH))
             {
@@ -211,28 +201,24 @@ namespace WebRTCServer
 
             var dtls = new Dtls(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
             webRtcSession.OnClose += (reason) => dtls.Shutdown();
-
-            int res = dtls.DoHandshake((ulong)rtpSocket.Handle);
+            
+            int res = dtls.DoHandshake((ulong)webRtcSession.RtpSession.RtpChannel.RtpSocket.Handle);
 
             logger.LogDebug("DtlsContext initialisation result=" + res);
 
             if (dtls.GetState() == (int)DtlsState.OK)
             {
-                //logger.LogDebug("DTLS negotiation complete for " + remoteEndPoint.ToString() + ".");
                 logger.LogDebug("DTLS negotiation complete.");
 
-                var srtpContext = new Srtp(dtls, false);
-                //var srtpReceiveContext = new Srtp(dtls, true);
+                var srtpSendContext = new Srtp(dtls, false);
+                var srtpReceiveContext = new Srtp(dtls, true);
 
-                //IsDtlsNegotiationComplete = true;
-
-                //_rtpSession.SrtpProtect = srtpContext.ProtectRTP;
-                //_rtpSession.SrtcpProtect = srtpContext.ProtectRTCP;
-                protectRtp = srtpContext.ProtectRTP;
-                protectRtcp = srtpContext.ProtectRTCP;
+                webRtcSession.RtpSession.SetSecurityContext(
+                    srtpSendContext.ProtectRTP,
+                    srtpReceiveContext.UnprotectRTP,
+                    srtpSendContext.ProtectRTCP,
+                    srtpReceiveContext.UnprotectRTCP);
             }
-
-            
 
             return res;
         }
@@ -295,7 +281,7 @@ namespace WebRTCServer
                             stampedTestPattern.Dispose();
                             stampedTestPattern = null;
 
-                            OnTestPatternSampleReady(rtpTimestamp, encodedBuffer);
+                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, rtpTimestamp, encodedBuffer);
 
                             encodedBuffer = null;
 
@@ -364,6 +350,24 @@ namespace WebRTCServer
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Diagnostic handler to print out our RTCP sender reports.
+        /// </summary>
+        private static void RtpSession_OnSendReport(RTCPCompoundPacket sentRtcpReport)
+        {
+            var sr = sentRtcpReport.SenderReport;
+            logger.LogDebug($"RTCP Sender Report: SSRC {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount} ");
+        }
+
+        /// <summary>
+        /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
+        /// </summary>
+        private static void RtpSession_OnReceiveReport(RTCPCompoundPacket recvRtcpReport)
+        {
+            var rr = recvRtcpReport.ReceiverReport.ReceptionReports.First();
+            logger.LogDebug($"RTCP Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport} ");
         }
 
         /// <summary>
