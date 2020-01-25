@@ -91,7 +91,7 @@ namespace SIPSorcery
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(callUri.ToSIPEndPoint().Address);
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var rtpSession = new RTPMediaSession((int)SDPMediaFormatsEnum.PCMU, localIPAddress.AddressFamily);
+            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, (int)SDPMediaFormatsEnum.PCMU, localIPAddress.AddressFamily);
             var offerSDP = rtpSession.GetSDP(localIPAddress);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.

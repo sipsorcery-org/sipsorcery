@@ -160,19 +160,7 @@ namespace WebRTCServer
 
                 var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
 
-                webRtcSession.SdpSessionID = answerSDP.SessionId;
-                webRtcSession.RemoteIceUser = answerSDP.IceUfrag;
-                webRtcSession.RemoteIcePassword = answerSDP.IcePwd;
-
-                // All browsers seem to have gone to trickling ICE candidates now but just
-                // in case one or more are given we can start the STUN dance immediately.
-                if (answerSDP.IceCandidates != null)
-                {
-                    foreach (var iceCandidate in answerSDP.IceCandidates)
-                    {
-                        webRtcSession.AppendRemoteIceCandidate(iceCandidate);
-                    }
-                }
+                webRtcSession.OnSdpAnswer(answerSDP);
 
                 OnTestPatternSampleReady += webRtcSession.SendMedia;
             }

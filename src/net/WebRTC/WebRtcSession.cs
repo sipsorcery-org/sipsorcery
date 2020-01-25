@@ -89,8 +89,6 @@ namespace SIPSorcery.Net
         private List<SDPMediaFormat> _supportedVideoFormats;
         private IPEndPoint _turnServerEndPoint;
         private List<IPAddress> _offerAddresses;            // If set restricts which local IP addresses will be offered in ICE candidates.
-        private int _audioSessionID = 0;
-        private int _videoSessionID;
         private DateTime _lastStunSentAt = DateTime.MinValue;
         private DateTime _lastStunMessageReceivedAt = DateTime.MinValue;
         private DateTime _lastCommunicationAt = DateTime.MinValue;
@@ -127,13 +125,31 @@ namespace SIPSorcery.Net
             List<SDPMediaFormat> supportedVideoFormats,
             List<IPAddress> offerAddresses)
         {
+            if(supportedAudioFormats == null && supportedVideoFormats == null) 
+            {
+                throw new ApplicationException("At least one of the audio or video supported formats must be specified.");
+            }
+
             _dtlsCertificateFingerprint = dtlsFingerprint;
             _supportedAudioFormats = supportedAudioFormats;
             _supportedVideoFormats = supportedVideoFormats;
 
             SessionID = Guid.NewGuid().ToString();
 
-            RtpSession = new RTPSession((int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork, true, true);
+            if (_supportedAudioFormats != null && supportedAudioFormats.Count > 0)
+            {
+                RtpSession = new RTPSession(SDPMediaTypesEnum.audio, (int)supportedAudioFormats.First().FormatCodec, AddressFamily.InterNetwork, true, true);
+            }
+            else if(_supportedVideoFormats != null && supportedVideoFormats.Count > 0)
+            {
+                RtpSession = new RTPSession(SDPMediaTypesEnum.video, (int)supportedVideoFormats.First().FormatCodec, AddressFamily.InterNetwork, true, true);
+            }
+
+            if(RtpSession == null)
+            {
+                throw new ApplicationException("No supported audio or video types were provided.");
+            }
+
             _rtpChannel = RtpSession.RtpChannel;
             _rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
             RtpSession.OnRtpClosed += Close;
@@ -326,7 +342,21 @@ namespace SIPSorcery.Net
                 // Since we only currently support VP8 there's only a single remote payload ID that can be 
                 // associated with the video stream.
                 var remoteVP8MediaFormat = remoteVideoOffer.MediaFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).Single();
-                _videoSessionID = RtpSession.AddStream(VP8_PAYLOAD_TYPE_ID, new List<int> { Convert.ToInt32(remoteVP8MediaFormat.FormatID) });
+                RtpSession.AddStream(SDPMediaTypesEnum.video, VP8_PAYLOAD_TYPE_ID, new List<int> { Convert.ToInt32(remoteVP8MediaFormat.FormatID) });
+            }
+
+            SdpSessionID = remoteSdp.SessionId;
+            RemoteIceUser = remoteSdp.IceUfrag;
+            RemoteIcePassword = remoteSdp.IcePwd;
+
+            // All browsers seem to have gone to trickling ICE candidates now but just
+            // in case one or more are given we can start the STUN dance immediately.
+            if (remoteSdp.IceCandidates != null)
+            {
+                foreach (var iceCandidate in remoteSdp.IceCandidates)
+                {
+                    AppendRemoteIceCandidate(iceCandidate);
+                }
             }
         }
 
@@ -372,14 +402,11 @@ namespace SIPSorcery.Net
             {
                 if (mediaType == SDPMediaTypesEnum.video)
                 {
-                    int streamID = _videoSessionID;
-
-                    RtpSession.SendVp8Frame(sampleTimestamp, sample, streamID);
+                    RtpSession.SendVp8Frame(sampleTimestamp, sample);
                 }
                 else if (mediaType == SDPMediaTypesEnum.audio)
                 {
-                    int streamID = _audioSessionID;
-                    RtpSession.SendAudioFrame(sampleTimestamp, sample, streamID);
+                    RtpSession.SendAudioFrame(sampleTimestamp, sample);
                 }
             }
         }
