@@ -53,7 +53,7 @@ namespace SIPSorcery.Net
     ///   - First RTCP packet must be a SR or RR,
     ///   - Must contain an SDES packet.
     /// </remarks>
-    public class RTCPSession
+    internal class RTCPSession
     {
         public const string NO_ACTIVITY_TIMEOUT_REASON = "No activity timeout.";
         private const int RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS = 5000;
@@ -66,6 +66,11 @@ namespace SIPSorcery.Net
 
         private static DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
         private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        /// <summary>
+        /// The media type this report session is measuring.
+        /// </summary>
+        public SDPMediaTypesEnum MediaType {get; private set;}
 
         /// <summary>
         /// The SSRC number of the RTP packets we are sending.
@@ -141,14 +146,6 @@ namespace SIPSorcery.Net
         public ReceptionReport ReceptionReport { get; private set; }
 
         /// <summary>
-        /// The SSRC number of the RTP stream from the remote call party.
-        /// </summary>
-        public uint RemoteSsrc
-        {
-            get { return m_receptionReport != null ? m_receptionReport.SSRC : 0; }
-        }
-
-        /// <summary>
         /// Time to schedule the delivery of RTCP reports.
         /// </summary>
         private Timer m_rtcpReportTimer;
@@ -160,10 +157,16 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Event handler for sending RTCP reports.
         /// </summary>
-        internal event Action<RTCPCompoundPacket> OnReportReadyToSend;
+        internal event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnReportReadyToSend;
 
-        public RTCPSession(uint ssrc)
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
+        /// <param name="mediaType">The media type this reporting session will be measuring.</param>
+        /// <param name="ssrc">The SSRC of the RTP stream being sent.</param>
+        public RTCPSession(SDPMediaTypesEnum mediaType, uint ssrc)
         {
+            MediaType = mediaType;
             Ssrc = ssrc;
             CreatedAt = DateTime.Now;
             Cname = Guid.NewGuid().ToString();
@@ -173,10 +176,9 @@ namespace SIPSorcery.Net
         {
             StartedAt = DateTime.Now;
 
-            // Schedule the report timer. Will most likely get beaten to it if an RTP packet
-            // is received.
+            // Schedule an immediate sender report.
             var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
-            m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, interval);
+            m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, 0, interval);
         }
 
         public void Close(string reason)
@@ -188,7 +190,7 @@ namespace SIPSorcery.Net
 
                 var byeReport = GetRtcpReport();
                 byeReport.Bye = new RTCPBye(Ssrc, reason);
-                OnReportReadyToSend?.Invoke(byeReport);
+                OnReportReadyToSend?.Invoke(MediaType, byeReport);
             }
         }
 
@@ -208,13 +210,13 @@ namespace SIPSorcery.Net
                 m_receptionReport = new ReceptionReport(rtpPacket.Header.SyncSource);
             }
 
-            bool ready = m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, DateTimeToNtpTimestamp32(DateTime.Now));
+            m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, DateTimeToNtpTimestamp32(DateTime.Now));
 
-            if (!m_isClosed && ready == true && m_isFirstReport)
-            {
-                // Send the initial RTCP sender report once the first RTP packet arrives.
-                SendReportTimerCallback(null);
-            }
+            //if (!m_isClosed && ready == true && m_isFirstReport)
+            //{
+            //    // Send the initial RTCP sender report once the first RTP packet arrives.
+            //    SendReportTimerCallback(null);
+            //}
         }
 
         /// <summary>
@@ -235,44 +237,42 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="remoteEndPoint">The end point the packet was received from.</param>
         /// <param name="buffer">The data received.</param>
-        internal RTCPCompoundPacket ControlDataReceived(IPEndPoint remoteEndPoint, byte[] buffer)
+        internal void ReportReceived(IPEndPoint remoteEndPoint, RTCPCompoundPacket rtcpCompoundPacket)
         {
             try
             {
                 LastActivityAt = DateTime.Now;
                 IsTimedOut = false;
 
-                var rtcpCompoundPacket = new RTCPCompoundPacket(buffer);
-
                 if (rtcpCompoundPacket != null)
                 {
-                    if (rtcpCompoundPacket.SenderReport != null)
+                    if(rtcpCompoundPacket.SenderReport != null && m_receptionReport != null)
                     {
-                        if (m_receptionReport == null)
-                        {
-                            m_receptionReport = new ReceptionReport(rtcpCompoundPacket.SenderReport.SSRC);
-                        }
-
-                        m_receptionReport.RtcpSenderReportReceived(rtcpCompoundPacket.SenderReport.NtpTimestamp);
-
-                        var sr = rtcpCompoundPacket.SenderReport;
-
-                        //logger.LogDebug($"Received RTCP sender report from {remoteEndPoint} pkts {sr.PacketCount} bytes {sr.OctetCount}");
+                        m_receptionReport.RtcpSenderReportReceived(DateTimeToNtpTimestamp(DateTime.Now));
                     }
 
-                    if (rtcpCompoundPacket.ReceiverReport != null)
-                    {
-                        var rr = rtcpCompoundPacket.ReceiverReport.ReceptionReports.First();
-                        //logger.LogDebug($"Received RTCP receiver report from {remoteEndPoint} ssrc {rr.SSRC} highest seqnum {rr.ExtendedHighestSequenceNumber}");
-                    }
+                    // TODO: Apply information from report.
+                    //if (rtcpCompoundPacket.SenderReport != null)
+                    //{
+                    //    if (m_receptionReport == null)
+                    //    {
+                    //        m_receptionReport = new ReceptionReport(rtcpCompoundPacket.SenderReport.SSRC);
+                    //    }
+
+                    //    m_receptionReport.RtcpSenderReportReceived(rtcpCompoundPacket.SenderReport.NtpTimestamp);
+
+                    //    var sr = rtcpCompoundPacket.SenderReport;
+                    //}
+
+                    //if (rtcpCompoundPacket.ReceiverReport != null)
+                    //{
+                    //    var rr = rtcpCompoundPacket.ReceiverReport.ReceptionReports.First();
+                    //}
                 }
-
-                return rtcpCompoundPacket;
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception RTCPSession.ControlDataReceived. {excp.Message}");
-                return null;
+                logger.LogError($"Exception RTCPSession.ReportReceived. {excp.Message}");
             }
         }
 
@@ -301,7 +301,7 @@ namespace SIPSorcery.Net
                     //logger.LogDebug($"SendRtcpSenderReport ssrc {Ssrc}, last seqnum {LastSeqNum}, pkts {PacketsSentCount}, bytes {OctetsSentCount} ");
 
                     var report = GetRtcpReport();
-                    OnReportReadyToSend?.Invoke(report);
+                    OnReportReadyToSend?.Invoke(MediaType, report);
 
                     var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
                     if (m_rtcpReportTimer == null)
