@@ -337,19 +337,26 @@ namespace WebRTCServer
         /// <summary>
         /// Diagnostic handler to print out our RTCP sender reports.
         /// </summary>
-        private static void RtpSession_OnSendReport(RTCPCompoundPacket sentRtcpReport)
+        private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
         {
             var sr = sentRtcpReport.SenderReport;
-            logger.LogDebug($"RTCP Sender Report: SSRC {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount} ");
+            logger.LogDebug($"RTCP {mediaType} Sender Report: SSRC {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
         }
 
         /// <summary>
         /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
         /// </summary>
-        private static void RtpSession_OnReceiveReport(RTCPCompoundPacket recvRtcpReport)
+        private static void RtpSession_OnReceiveReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
         {
-            var rr = recvRtcpReport.ReceiverReport.ReceptionReports.First();
-            logger.LogDebug($"RTCP Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport} ");
+            var rr = recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
+            if (rr != null)
+            {
+                logger.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
+            }
+            else
+            {
+                logger.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
+            }
         }
 
         /// <summary>
