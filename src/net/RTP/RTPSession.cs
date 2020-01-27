@@ -739,13 +739,12 @@ namespace SIPSorcery.Net
                             if (rtcpSession != null)
                             {
                                 rtcpSession.ReportReceived(remoteEndPoint, rtcpPkt);
+                                OnReceiveReport?.Invoke(rtcpSession.MediaType, rtcpPkt);
                             }
                             else
                             {
                                 logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
                             }
-
-                            OnReceiveReport?.Invoke(rtcpSession.MediaType, rtcpPkt);
                         }
                     }
                     else

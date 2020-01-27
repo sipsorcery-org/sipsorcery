@@ -131,7 +131,7 @@ namespace SIPSorcery.Net
             { }
             catch (Exception excp)
             {
-                logger.LogError($"Exception UdpReceiver.EndReceiveMessageFrom. {excp.Message}");
+                logger.LogError($"Exception UdpReceiver.EndReceiveMessageFrom. {excp}");
                 Close(excp.Message);
             }
             finally

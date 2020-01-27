@@ -113,9 +113,9 @@ namespace WebRTCServer
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
-            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
-            _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
-            _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
+            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, false);
+            //_webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
+            //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
             //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
             _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
             {
