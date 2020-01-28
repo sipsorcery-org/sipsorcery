@@ -72,9 +72,9 @@ namespace WebRTCServer
         public static readonly List<SDPMediaFormat> _supportedVideoFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) };
 
         private static WebSocketServer _webSocketServer;
-        private static MFSampleGrabber _mfSampleGrabber;
+        private static MFVideoSampler _mfSampler;
+        private static bool _isSampling = false;
         private static VpxEncoder _vpxEncoder;
-        private static bool _vpxEncoderReady = false;
         private static uint _vp8Timestamp;
         private static uint _mulawTimestamp;
 
@@ -103,20 +103,25 @@ namespace WebRTCServer
             Srtp.InitialiseLibSrtp();
 
             // Initialise the Media Foundation library that will pull the samples from the mp4 file.
-            _mfSampleGrabber = new SIPSorceryMedia.MFSampleGrabber();
-            _mfSampleGrabber.OnVideoResolutionChangedEvent += OnVideoResolutionChangedEvent;
-            unsafe
-            {
-                _mfSampleGrabber.OnProcessSampleEvent += OnProcessSampleEvent;
-            }
-            Task.Run(() => _mfSampleGrabber.Run(MP4_FILE_PATH, true));
+            //_mfSampleGrabber = new SIPSorceryMedia.MFSampleGrabber();
+            //_mfSampleGrabber.OnVideoResolutionChangedEvent += OnVideoResolutionChangedEvent;
+            //unsafe
+            //{
+            //    _mfSampleGrabber.OnProcessSampleEvent += OnProcessSampleEvent;
+            //}
+            //Task.Run(() => _mfSampleGrabber.Run(MP4_FILE_PATH, true));
+
+            _mfSampler = new MFVideoSampler();
+            //_mfSampler.InitFromFile(MP4_FILE_PATH);
+            _mfSampler.Init(0, VideoSubTypesEnum.I420, 640, 480);
+            //StartMedia();
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
-            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, false);
-            //_webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
-            //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
-            //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
+            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
+            _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
+            _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
+            _webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
             _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
             {
                 sdpExchanger.WebSocketOpened += SendSDPOffer;
@@ -136,7 +141,8 @@ namespace WebRTCServer
             // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
             exitMre.WaitOne();
 
-            _mfSampleGrabber.StopAndExit();
+            //_mfSampleGrabber.StopAndExit();
+            _mfSampler.Stop();
             _webSocketServer.Stop();
         }
 
@@ -225,23 +231,23 @@ namespace WebRTCServer
                     srtpSendContext.ProtectRTCP,
                     srtpReceiveContext.UnprotectRTCP);
 
-                if (_mfSampleGrabber.Paused)
+                if (!_isSampling)
                 {
-                    _mfSampleGrabber.Start();
+                    Task.Run(StartMedia);
                 }
             }
 
             return res;
         }
 
-        private static void OnVideoResolutionChangedEvent(uint width, uint height, uint stride)
+        private static void OnVideoResolutionChanged(uint width, uint height, uint stride)
         {
             try
             {
                 if (_vpxEncoder == null ||
                     (_vpxEncoder.GetWidth() != width || _vpxEncoder.GetHeight() != height || _vpxEncoder.GetStride() != stride))
                 {
-                    _vpxEncoderReady = false;
+                    //_vpxEncoderReady = false;
 
                     if (_vpxEncoder != null)
                     {
@@ -253,7 +259,7 @@ namespace WebRTCServer
 
                     logger.LogInformation($"VPX encoder initialised with width {width}, height {height} and stride {stride}.");
 
-                    _vpxEncoderReady = true;
+                    //_vpxEncoderReady = true;
                 }
             }
             catch (Exception excp)
@@ -262,35 +268,38 @@ namespace WebRTCServer
             }
         }
 
-        unsafe private static void OnProcessSampleEvent(int mediaTypeID, uint dwSampleFlags, long llSampleTime, long llSampleDuration, uint dwSampleSize, ref byte[] sampleBuffer)
+        unsafe private static void StartMedia()
         {
             try
             {
-                if (OnMediaSampleReady == null)
+                while (true)
                 {
-                    if (!_mfSampleGrabber.Paused)
+                    if (OnMediaSampleReady == null)
                     {
-                        _mfSampleGrabber.Pause();
                         logger.LogDebug("No active clients, media sampling paused.");
+                        break;
                     }
-                }
-                else
-                {
-                    if (mediaTypeID == 0)
+                    else
                     {
-                        if (!_vpxEncoderReady)
+                        byte[] sampleBuffer = null;
+                        //var sample = _mfSampler.GetNextSample(ref sampleBuffer);
+                        var sample = _mfSampler.GetSample(ref sampleBuffer);
+
+                        if (sample != null && sample.HasVideoSample)
                         {
-                            logger.LogWarning("Video sample cannot be processed as the VPX encoder is not in a ready state.");
-                        }
-                        else
-                        {
+                            if (_vpxEncoder == null ||
+                                (_vpxEncoder.GetWidth() != sample.Width || _vpxEncoder.GetHeight() != sample.Height || _vpxEncoder.GetStride() != sample.Stride))
+                            {
+                                OnVideoResolutionChanged((uint)sample.Width, (uint)sample.Height, (uint)sample.Stride);
+                            }
+
                             byte[] vpxEncodedBuffer = null;
 
                             unsafe
                             {
                                 fixed (byte* p = sampleBuffer)
                                 {
-                                    int encodeResult = _vpxEncoder.Encode(p, (int)dwSampleSize, 1, ref vpxEncodedBuffer);
+                                    int encodeResult = _vpxEncoder.Encode(p, sampleBuffer.Length, 1, ref vpxEncodedBuffer);
 
                                     if (encodeResult != 0)
                                     {
@@ -304,27 +313,28 @@ namespace WebRTCServer
                             //Console.WriteLine($"Video SeqNum {videoSeqNum}, timestamp {videoTimestamp}, buffer length {vpxEncodedBuffer.Length}, frame count {sampleProps.FrameCount}.");
 
                             _vp8Timestamp += VP8_TIMESTAMP_SPACING;
+
                         }
-                    }
-                    else
-                    {
-                        uint sampleDuration = (uint)(sampleBuffer.Length / 2);
-
-                        byte[] mulawSample = new byte[sampleDuration];
-                        int sampleIndex = 0;
-
-                        // ToDo: Find a way to wire up the Media foundation WAVE_FORMAT_MULAW codec so the encoding below is not necessary.
-                        for (int index = 0; index < sampleBuffer.Length; index += 2)
+                        else if (sample != null && sample.HasAudioSample)
                         {
-                            var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
-                            mulawSample[sampleIndex++] = ulawByte;
+                            uint sampleDuration = (uint)(sampleBuffer.Length / 2);
+
+                            byte[] mulawSample = new byte[sampleDuration];
+                            int sampleIndex = 0;
+
+                            // ToDo: Find a way to wire up the Media foundation WAVE_FORMAT_MULAW codec so the encoding below is not necessary.
+                            for (int index = 0; index < sampleBuffer.Length; index += 2)
+                            {
+                                var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
+                                mulawSample[sampleIndex++] = ulawByte;
+                            }
+
+                            OnMediaSampleReady?.Invoke(SDPMediaTypesEnum.audio, _mulawTimestamp, mulawSample);
+
+                            //Console.WriteLine($"Audio SeqNum {audioSeqNum}, timestamp {audioTimestamp}, buffer length {mulawSample.Length}.");
+
+                            _mulawTimestamp += sampleDuration;
                         }
-
-                        OnMediaSampleReady?.Invoke(SDPMediaTypesEnum.audio, _mulawTimestamp, mulawSample);
-
-                        //Console.WriteLine($"Audio SeqNum {audioSeqNum}, timestamp {audioTimestamp}, buffer length {mulawSample.Length}.");
-
-                        _mulawTimestamp += sampleDuration;
                     }
                 }
             }
@@ -333,6 +343,95 @@ namespace WebRTCServer
                 logger.LogWarning("Exception OnProcessSampleEvent. " + excp.Message);
             }
         }
+
+        //private static void SampleFile(MFVideoSampler mfSampler)
+        //{
+        //    try
+        //    {
+        //        var vpxEncoder = new VpxEncoder();
+        //        // TODO: The last parameter passed to the vpx encoder init needs to be the frame stride not the width.
+        //        //vpxEncoder.InitEncoder(Convert.ToUInt32(videoMode.Width), Convert.ToUInt32(videoMode.Height), Convert.ToUInt32(videoMode.Width));
+
+        //        // var videoSampler = new MFVideoSampler();
+        //        //videoSampler.Init(videoMode.DeviceIndex, videoMode.Width, videoMode.Height);
+        //        // videoSampler.InitFromFile();
+
+        //        while (true)
+        //        {
+        //            byte[] mediaSample = null;
+        //            var sample = mfSampler.GetNextSample((int)MediaFoundationStreamsEnum.MF_SOURCE_READER_ANY_STREAM, ref mediaSample);
+
+        //            //if (result == NAudio.MediaFoundation.MediaFoundationErrors.MF_E_HW_MFT_FAILED_START_STREAMING)
+        //            //{
+        //            //    logger.Warn("A sample could not be acquired from the local webcam. Check that it is not already in use.");
+        //            //    OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use.");
+        //            //    break;
+        //            //}
+        //            //else if (result != 0)
+        //            //{
+        //            //    logger.Warn("A sample could not be acquired from the local webcam. Check that it is not already in use. Error code: " + result);
+        //            //    OnLocalVideoError("A sample could not be acquired from the local webcam. Check that it is not already in use. Error code: " + result);
+        //            //    break;
+        //            //}
+        //            //else 
+        //            if (sample?.HasVideoSample == true)
+        //            {
+        //                Console.WriteLine($"Video sample ready {sample.Width}x{sample.Height} timestamp {sample.Timestamp}.");
+
+        //                // This event sends the raw bitmap to the WPF UI.
+        //                //OnLocalVideoSampleReady?.Invoke(videoSample, videoSampler.Width, videoSampler.Height);
+
+        //                //// This event encodes the sample and forwards it to the RTP manager for network transmission.
+        //                //if (OnLocalVideoEncodedSampleReady != null)
+        //                //{
+        //                //    IntPtr rawSamplePtr = Marshal.AllocHGlobal(videoSample.Length);
+        //                //    Marshal.Copy(videoSample, 0, rawSamplePtr, videoSample.Length);
+
+        //                //    byte[] yuv = null;
+
+        //                //    unsafe
+        //                //    {
+        //                //        // TODO: using width instead of stride.
+        //                //        _imageConverter.ConvertRGBtoYUV((byte*)rawSamplePtr, VideoSubTypesEnum.RGB24, Convert.ToInt32(videoMode.Width), Convert.ToInt32(videoMode.Height), Convert.ToInt32(videoMode.Width), VideoSubTypesEnum.I420, ref yuv);
+        //                //        //_imageConverter.ConvertToI420((byte*)rawSamplePtr, VideoSubTypesEnum.RGB24, Convert.ToInt32(videoMode.Width), Convert.ToInt32(videoMode.Height), ref yuv);
+        //                //    }
+
+        //                //    Marshal.FreeHGlobal(rawSamplePtr);
+
+        //                //    IntPtr yuvPtr = Marshal.AllocHGlobal(yuv.Length);
+        //                //    Marshal.Copy(yuv, 0, yuvPtr, yuv.Length);
+
+        //                //    byte[] encodedBuffer = null;
+
+        //                //    unsafe
+        //                //    {
+        //                //        vpxEncoder.Encode((byte*)yuvPtr, yuv.Length, _encodingSample++, ref encodedBuffer);
+        //                //    }
+
+        //                //    Marshal.FreeHGlobal(yuvPtr);
+
+        //                //    OnLocalVideoEncodedSampleReady(encodedBuffer);
+        //                //}
+        //            }
+        //            else if (sample?.HasAudioSample == true)
+        //            {
+        //                Console.WriteLine($"Audio sample ready timestamp {sample.Timestamp}.");
+        //            }
+        //            else if (sample?.EndOfStream == true)
+        //            {
+        //                break;
+        //            }
+
+        //        }
+
+        //        mfSampler.Stop();
+        //        vpxEncoder.Dispose();
+        //    }
+        //    catch (Exception excp)
+        //    {
+        //        logger.LogError($"Exception SampleWebCam. {excp.Message}");
+        //    }
+        //}
 
         /// <summary>
         /// Diagnostic handler to print out our RTCP sender reports.
