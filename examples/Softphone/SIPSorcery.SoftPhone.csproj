@@ -31,4 +31,13 @@
     <ProjectReference Include="..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="content\LICENSE-Macroform">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="content\Macroform_-_Simplicity.ulaw">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

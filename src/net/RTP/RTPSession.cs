@@ -226,9 +226,9 @@ namespace SIPSorcery.Net
         public event Action<IPEndPoint, IPEndPoint> OnReceiveFromEndPointChanged;
 
         /// <summary>
-        /// Gets fired when an RTP packet is received, has been identified and is ready for processing.
+        /// Gets fired when an RTP packet is received from a remote party.
         /// </summary>
-        public event Action<byte[]> OnReceivedSampleReady;
+        public event Action<RTPPacket> OnRtpPacketReceived;
 
         /// <summary>
         /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
@@ -787,7 +787,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            OnReceivedSampleReady?.Invoke(rtpPacket.Payload);
+                            OnRtpPacketReceived?.Invoke(rtpPacket);
                         }
 
                         // Used for reporting purposes.
@@ -821,13 +821,29 @@ namespace SIPSorcery.Net
             {
                 return SDPMediaTypesEnum.video;
             }
+            else if (m_audioStream != null && m_videoStream == null)
+            {
+                if(m_audioStream.RemoteSsrc == null)
+                {
+                    m_audioStream.RemoteSsrc = header.SyncSource;
+                }
+                return SDPMediaTypesEnum.audio;
+            }
+            else if (m_videoStream != null && m_audioStream == null)
+            {
+                if (m_videoStream.RemoteSsrc == null)
+                {
+                    m_videoStream.RemoteSsrc = header.SyncSource;
+                }
+                return SDPMediaTypesEnum.video;
+            }
             else if (m_videoStream != null && !m_videoStream.RemoteSsrc.HasValue && m_videoStream.IsRemotePayloadIDMatch(header.PayloadType))
             {
                 m_videoStream.RemoteSsrc = header.SyncSource;
                 return SDPMediaTypesEnum.video;
             }
             else if (m_audioStream != null && !m_audioStream.RemoteSsrc.HasValue &&
-               (m_audioStream.IsRemotePayloadIDMatch(header.PayloadType) || m_audioStream.RemotePayloadIDs.Count == 0))
+               (m_audioStream.IsRemotePayloadIDMatch(header.PayloadType) || m_audioStream.RemotePayloadIDs== null))
             {
                 // For audio only SIP calls it's likely that setting the payload ID's will be 
                 // overlooked. Assume that if nothing previous has matched then this is an audio 

@@ -119,7 +119,7 @@ namespace SIPSorcery
                             {
                                 activeUserAgent = userAgent1;
                                 activeRtpSession = rtpMediaSession;
-                                activeRtpSession.OnReceivedSampleReady += PlaySample;
+                                activeRtpSession.OnRtpPacketReceived += PlaySample;
                                 waveInEvent.StartRecording();
 
                                 Log.LogInformation($"UA1: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
@@ -137,12 +137,12 @@ namespace SIPSorcery
                         userAgent2.Answer(incomingCall, rtpMediaSession)
                             .ContinueWith(task =>
                             {
-                                activeRtpSession.OnReceivedSampleReady -= PlaySample;
+                                activeRtpSession.OnRtpPacketReceived -= PlaySample;
 
                                 activeUserAgent = userAgent2;
                                 activeRtpSession = rtpMediaSession;
                                 activeRtpSession.PutOnHold();
-                                activeRtpSession.OnReceivedSampleReady += PlaySample;
+                                activeRtpSession.OnRtpPacketReceived += PlaySample;
 
                                 Log.LogInformation($"UA2: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                             }, exitCts.Token);
@@ -261,8 +261,10 @@ namespace SIPSorcery
         /// 
         /// </summary>
         /// <param name="audioOutProvider">The audio buffer for the default system audio output device.</param>
-        private static void PlaySample(byte[] sample)
+        private static void PlaySample(RTPPacket rtpPacket)
         {
+            var sample = rtpPacket.Payload;
+
             for (int index = 0; index < sample.Length; index++)
             {
                 short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);

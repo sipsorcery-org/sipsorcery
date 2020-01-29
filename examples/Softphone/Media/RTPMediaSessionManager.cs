@@ -68,7 +68,7 @@ namespace SIPSorcery.SoftPhone
             };
 
             _mediaManager.OnLocalAudioSampleReady += LocalAudioSampleReadyForSession;
-            RTPMediaSession.OnReceivedSampleReady += RemoteAudioSampleReceived;
+            RTPMediaSession.OnRtpPacketReceived += RemoteRtpPacketReceived;
 
             return RTPMediaSession;
         }
@@ -124,12 +124,12 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
-        /// Event handler for the availability of a new audio RTP sample from a remote party.
+        /// Event handler for the availability of a new RTP packet from a remote party.
         /// </summary>
-        /// <param name="sample">The audio sample.</param>
-        private void RemoteAudioSampleReceived(byte[] sample)
+        /// <param name="rtpPacket">The RTP packet from the remote party.</param>
+        private void RemoteRtpPacketReceived(RTPPacket rtpPacket)
         {
-            _mediaManager.EncodedAudioSampleReceived(sample);
+            _mediaManager.EncodedAudioSampleReceived(rtpPacket.Payload);
         }
     }
 }

@@ -152,7 +152,6 @@ namespace SIPSorcery.Net
 
         private bool m_isClosed = false;
         private ReceptionReport m_receptionReport;
-        private bool m_isFirstReport = true;
 
         /// <summary>
         /// Event handler for sending RTCP reports.
@@ -211,12 +210,6 @@ namespace SIPSorcery.Net
             }
 
             m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, DateTimeToNtpTimestamp32(DateTime.Now));
-
-            //if (!m_isClosed && ready == true && m_isFirstReport)
-            //{
-            //    // Send the initial RTCP sender report once the first RTP packet arrives.
-            //    SendReportTimerCallback(null);
-            //}
         }
 
         /// <summary>
@@ -284,8 +277,6 @@ namespace SIPSorcery.Net
         {
             try
             {
-                m_isFirstReport = false;
-
                 if (!m_isClosed)
                 {
                     if ((LastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(LastActivityAt).TotalMilliseconds > NO_ACTIVITY_TIMEOUT_MILLISECONDS) ||
