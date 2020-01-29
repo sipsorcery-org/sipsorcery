@@ -298,6 +298,7 @@ namespace SIPSorcery.Sys
 
             return rc;
         }
+
         public static IPEndPoint Parse(string endpointstring, int defaultport = -1)
         {
             if (endpointstring.IsNullOrBlank())
