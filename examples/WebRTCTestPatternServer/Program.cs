@@ -97,7 +97,7 @@ namespace WebRTCServer
 
             // Initialise OpenSSL & libsrtp, saves a couple of seconds for the first client connection.
             Console.WriteLine("Initialising OpenSSL and libsrtp...");
-            Dtls.InitialiseOpenSSL();
+            DtlsHandshake.InitialiseOpenSSL();
             Srtp.InitialiseLibSrtp();
 
             Task.Run(SendTestPattern);
@@ -187,14 +187,14 @@ namespace WebRTCServer
                 throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
             }
 
-            var dtls = new Dtls(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
+            var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
             webRtcSession.OnClose += (reason) => dtls.Shutdown();
             
-            int res = dtls.DoHandshake((ulong)webRtcSession.RtpSession.RtpChannel.RtpSocket.Handle);
+            int res = dtls.DoHandshakeAsServer((ulong)webRtcSession.RtpSession.RtpChannel.RtpSocket.Handle);
 
             logger.LogDebug("DtlsContext initialisation result=" + res);
 
-            if (dtls.GetState() == (int)DtlsState.OK)
+            if (dtls.IsHandshakeComplete())
             {
                 logger.LogDebug("DTLS negotiation complete.");
 
