@@ -83,7 +83,7 @@ namespace WebRTCServer
         private delegate void MediaSampleReadyDelegate(SDPMediaTypesEnum mediaType, uint timestamp, byte[] sample);
         private static event MediaSampleReadyDelegate OnMediaSampleReady;
 
-        static async Task Main()
+        static void Main()
         {
             Console.WriteLine("WebRTC Server Sample Program");
             Console.WriteLine("Press ctrl-c to exit.");
@@ -104,7 +104,7 @@ namespace WebRTCServer
             DtlsHandshake.InitialiseOpenSSL();
             Srtp.InitialiseLibSrtp();
 
-            await Task.Run(DoDtlsHandshakeLoopbackTest);
+            //await Task.Run(DoDtlsHandshakeLoopbackTest);
 
             Console.WriteLine("Test DTLS handshake complete.");
 
@@ -117,7 +117,7 @@ namespace WebRTCServer
             _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
             _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
             _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
-            _webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
+            //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
             _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
             {
                 sdpExchanger.WebSocketOpened += SendSDPOffer;

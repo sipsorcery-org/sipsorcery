@@ -33,7 +33,7 @@ namespace SIPSorcery
         private static int SIP_LISTEN_PORT = 5060;
         //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*61@192.168.11.48";
         private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7000@192.168.11.48";
-        private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.48";  // The destination to transfer the intial call to.
+        private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.48";  // The destination to transfer the initial call to.
         private static readonly string SIP_USERNAME = "7001";
         private static readonly string SIP_PASSWORD = "password";
         private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
@@ -326,8 +326,9 @@ namespace SIPSorcery
                 return;
             }
 
-            rtpSession.OnReceivedSampleReady += (sample) =>
+            rtpSession.OnRtpPacketReceived += (rtpPacket) =>
             {
+                var sample = rtpPacket.Payload;
                 for (int index = 0; index < sample.Length; index++)
                 {
                     short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);
@@ -377,7 +378,7 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static void AddConsoleLogger()
         {

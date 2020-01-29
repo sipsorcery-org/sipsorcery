@@ -1,0 +1,76 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const url = "wss://localhost:8081/"
+		var pc;
+	
+		function start() {
+		
+			closePeer();
+
+			audioControl = document.querySelector('#audioCtl');
+
+            var ws = new WebSocket(url, []);
+
+			ws.onopen = function () {
+                console.log("web socket onopen.");
+
+                pc = new RTCPeerConnection(null);
+
+                pc.ontrack = function (event) {
+                    console.log('Remote track added.');
+                    console.log(event);
+
+                    if (event.streams && event.streams[0]) {
+                        audioControl.srcObject = event.streams[0];
+                    }
+                    else {
+                        if (!inboundStream) {
+                            inboundStream = new MediaStream();
+                            audioControl.srcObject = inboundStream;
+                        }
+                        inboundStream.addTrack(event.track);
+                    }
+                }
+            };
+
+            ws.onmessage = async function (evt) {
+                // Received SDP offer from the remote web socket server.
+                console.log("web socket onmessage: " + evt.data + ".");
+                await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
+
+                // Now create our offer SDP to send back to the web socket server.
+                pc.createAnswer().then(function (answer) {
+                    return pc.setLocalDescription(answer);
+                }).then(function () {
+                    console.log("Sending answer SDP.");
+					console.log("SDP: " + pc.localDescription.sdp);
+                    ws.send(pc.localDescription.sdp);
+                });
+            };
+		};
+
+		function closePeer() {
+			console.log("close peer");
+			if(pc != null) {
+				pc.close();
+			}
+		};
+
+    </script>
+</head>
+<body>
+
+	<div>
+		<audio controls autoplay="autoplay" id="audioCtl"/>
+	</div>
+	
+    <div>
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+		<button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+</body>

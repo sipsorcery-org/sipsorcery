@@ -226,9 +226,9 @@ namespace SIPSorcery.Net
         public event Action<IPEndPoint, IPEndPoint> OnReceiveFromEndPointChanged;
 
         /// <summary>
-        /// Gets fired when an RTP packet is received, has been identified and is ready for processing.
+        /// Gets fired when an RTP packet is received from a remote party.
         /// </summary>
-        public event Action<byte[]> OnReceivedSampleReady;
+        public event Action<RTPPacket> OnRtpPacketReceived;
 
         /// <summary>
         /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
@@ -787,7 +787,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            OnReceivedSampleReady?.Invoke(rtpPacket.Payload);
+                            OnRtpPacketReceived?.Invoke(rtpPacket);
                         }
 
                         // Used for reporting purposes.

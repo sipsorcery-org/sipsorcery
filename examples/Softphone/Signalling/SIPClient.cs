@@ -200,7 +200,7 @@ namespace SIPSorcery.SoftPhone
         {
             m_rtpMediaSessionManager.UseMusicOnHold(false);
             m_rtpMediaSessionManager.RTPMediaSession.TakeOffHold();
-            // At ths point we should reverse whatever changes we made to the media stream when we
+            // At this point we should reverse whatever changes we made to the media stream when we
             // put the remote call part on hold.
             StatusMessage(this, "Local party taken off on hold");
         }
