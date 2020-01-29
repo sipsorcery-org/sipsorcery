@@ -2444,12 +2444,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.IsSecureContextReady
   nameWithType: RTPSession.IsSecureContextReady
-- uid: SIPSorcery.Net.RTPSession.OnReceivedSampleReady
-  name: OnReceivedSampleReady
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceivedSampleReady
-  commentId: E:SIPSorcery.Net.RTPSession.OnReceivedSampleReady
-  fullName: SIPSorcery.Net.RTPSession.OnReceivedSampleReady
-  nameWithType: RTPSession.OnReceivedSampleReady
 - uid: SIPSorcery.Net.RTPSession.OnReceiveFromEndPointChanged
   name: OnReceiveFromEndPointChanged
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceiveFromEndPointChanged
@@ -2474,6 +2468,12 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnRtpEvent
   fullName: SIPSorcery.Net.RTPSession.OnRtpEvent
   nameWithType: RTPSession.OnRtpEvent
+- uid: SIPSorcery.Net.RTPSession.OnRtpPacketReceived
+  name: OnRtpPacketReceived
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpPacketReceived
+  commentId: E:SIPSorcery.Net.RTPSession.OnRtpPacketReceived
+  fullName: SIPSorcery.Net.RTPSession.OnRtpPacketReceived
+  nameWithType: RTPSession.OnRtpPacketReceived
 - uid: SIPSorcery.Net.RTPSession.OnSendReport
   name: OnSendReport
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnSendReport
@@ -23331,38 +23331,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.IPSocket.TryParseIPEndPoint
   nameWithType: IPSocket.TryParseIPEndPoint
-- uid: SIPSorcery.Sys.IPSocketAddress
-  name: IPSocketAddress
-  href: api/SIPSorcery.Sys.IPSocketAddress.html
-  commentId: T:SIPSorcery.Sys.IPSocketAddress
-  fullName: SIPSorcery.Sys.IPSocketAddress
-  nameWithType: IPSocketAddress
-- uid: SIPSorcery.Sys.IPSocketAddress.GetIPEndPoint(System.String)
-  name: GetIPEndPoint(String)
-  href: api/SIPSorcery.Sys.IPSocketAddress.html#SIPSorcery_Sys_IPSocketAddress_GetIPEndPoint_System_String_
-  commentId: M:SIPSorcery.Sys.IPSocketAddress.GetIPEndPoint(System.String)
-  fullName: SIPSorcery.Sys.IPSocketAddress.GetIPEndPoint(System.String)
-  nameWithType: IPSocketAddress.GetIPEndPoint(String)
-- uid: SIPSorcery.Sys.IPSocketAddress.GetIPEndPoint*
-  name: GetIPEndPoint
-  href: api/SIPSorcery.Sys.IPSocketAddress.html#SIPSorcery_Sys_IPSocketAddress_GetIPEndPoint_
-  commentId: Overload:SIPSorcery.Sys.IPSocketAddress.GetIPEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.IPSocketAddress.GetIPEndPoint
-  nameWithType: IPSocketAddress.GetIPEndPoint
-- uid: SIPSorcery.Sys.IPSocketAddress.GetSocketString(System.Net.IPEndPoint)
-  name: GetSocketString(IPEndPoint)
-  href: api/SIPSorcery.Sys.IPSocketAddress.html#SIPSorcery_Sys_IPSocketAddress_GetSocketString_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Sys.IPSocketAddress.GetSocketString(System.Net.IPEndPoint)
-  fullName: SIPSorcery.Sys.IPSocketAddress.GetSocketString(System.Net.IPEndPoint)
-  nameWithType: IPSocketAddress.GetSocketString(IPEndPoint)
-- uid: SIPSorcery.Sys.IPSocketAddress.GetSocketString*
-  name: GetSocketString
-  href: api/SIPSorcery.Sys.IPSocketAddress.html#SIPSorcery_Sys_IPSocketAddress_GetSocketString_
-  commentId: Overload:SIPSorcery.Sys.IPSocketAddress.GetSocketString
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.IPSocketAddress.GetSocketString
-  nameWithType: IPSocketAddress.GetSocketString
 - uid: SIPSorcery.Sys.IPv4Header
   name: IPv4Header
   href: api/SIPSorcery.Sys.IPv4Header.html
