@@ -104,7 +104,7 @@ namespace WebRTCServer
             DtlsHandshake.InitialiseOpenSSL();
             Srtp.InitialiseLibSrtp();
 
-            //await Task.Run(DoDtlsHandshakeLoopbackTest);
+            Task.Run(DoDtlsHandshakeLoopbackTest).Wait();
 
             Console.WriteLine("Test DTLS handshake complete.");
 
@@ -155,6 +155,7 @@ namespace WebRTCServer
             webRtcSession.VideoStreamStatus = MediaStreamStatusEnum.SendOnly;
             //webRtcSession.RtpSession.OnReceiveReport += RtpSession_OnReceiveReport;
             webRtcSession.RtpSession.OnSendReport += RtpSession_OnSendReport;
+            OnMediaSampleReady += webRtcSession.SendMedia;
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
@@ -178,12 +179,8 @@ namespace WebRTCServer
             try
             {
                 logger.LogDebug("Answer SDP: " + sdpAnswer);
-
                 var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
-
                 webRtcSession.OnSdpAnswer(answerSDP);
-
-                OnMediaSampleReady += webRtcSession.SendMedia;
             }
             catch (Exception excp)
             {
@@ -278,6 +275,10 @@ namespace WebRTCServer
         {
             try
             {
+                logger.LogDebug("Starting media sampling thread.");
+
+                _isSampling = true;
+
                 while (true)
                 {
                     if (OnMediaSampleReady == null)
@@ -288,7 +289,7 @@ namespace WebRTCServer
                     else
                     {
                         byte[] sampleBuffer = null;
-                        var sample = _mfSampler.GetNextSample(ref sampleBuffer);
+                        var sample = _mfSampler.GetSample(ref sampleBuffer);
 
                         if (sample != null && sample.HasVideoSample)
                         {
@@ -346,6 +347,12 @@ namespace WebRTCServer
             catch (Exception excp)
             {
                 logger.LogWarning("Exception OnProcessSampleEvent. " + excp.Message);
+            }
+            finally
+            {
+                logger.LogDebug("Media sampling thread stopped.");
+
+                _isSampling = false;
             }
         }
 
