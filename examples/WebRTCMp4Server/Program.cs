@@ -74,7 +74,7 @@ namespace WebRTCServer
         public static readonly List<SDPMediaFormat> _supportedVideoFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) };
 
         private static WebSocketServer _webSocketServer;
-        private static MFVideoSampler _mfSampler;
+        private static MediaSource _mediaSource;
         private static bool _isSampling = false;
         private static VpxEncoder _vpxEncoder;
         private static uint _vp8Timestamp;
@@ -108,9 +108,9 @@ namespace WebRTCServer
 
             Console.WriteLine("Test DTLS handshake complete.");
 
-            _mfSampler = new MFVideoSampler();
-            _mfSampler.InitFromFile(MP4_FILE_PATH);
-            //_mfSampler.Init(0, VideoSubTypesEnum.I420, 640, 480);
+            _mediaSource = new MediaSource();
+            //_mfSampler.Init(MP4_FILE_PATH);
+            _mediaSource.Init(0, 0, VideoSubTypesEnum.I420, 640, 480);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -137,7 +137,7 @@ namespace WebRTCServer
             // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
             exitMre.WaitOne();
 
-            _mfSampler.Stop();
+            _mediaSource.Shutdown();
             _webSocketServer.Stop();
         }
 
@@ -289,7 +289,7 @@ namespace WebRTCServer
                     else
                     {
                         byte[] sampleBuffer = null;
-                        var sample = _mfSampler.GetSample(ref sampleBuffer);
+                        var sample = _mediaSource.GetSample(ref sampleBuffer);
 
                         if (sample != null && sample.HasVideoSample)
                         {
