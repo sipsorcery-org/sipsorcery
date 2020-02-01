@@ -11,7 +11,9 @@
 		
 			closePeer();
 
-			videoControl = document.querySelector('#videoCtl');
+			const remoteStream = new MediaStream();
+			const remoteVideo = document.querySelector('#videoCtl');
+			remoteVideo.srcObject = remoteStream;
 
             var ws = new WebSocket(url, []);
 
@@ -19,27 +21,28 @@
                 console.log("web socket onopen.");
 
                 pc = new RTCPeerConnection(null);
-
-                pc.ontrack = function (event) {
-                    console.log('Remote track added.');
-                    console.log(event);
-
-                    if (event.streams && event.streams[0]) {
-                        videoControl.srcObject = event.streams[0];
-                    }
-                    else {
-                        if (!inboundStream) {
-                            inboundStream = new MediaStream();
-                            videoControl.srcObject = inboundStream;
-                        }
-                        inboundStream.addTrack(event.track);
-                    }
-                }
+				
+				pc.addEventListener('icecandidate', event => {
+					if (event.candidate) {
+						console.log('new-ice-candidate:');
+						console.log(event.candidate.candidate);
+						console.log(event.candidate);
+						//console.log(pc.localDescription.sdp);
+					}
+				});
+				
+				pc.addEventListener('track', async (event) => {
+					console.log('Remote ' + event.track.kind + ' stream available.');
+					console.log(event);
+					remoteStream.addTrack(event.track, remoteStream);
+				});
             };
 
             ws.onmessage = async function (evt) {
                 // Received SDP offer from the remote web socket server.
-                console.log("web socket onmessage: " + evt.data + ".");
+				console.log("Offer SDP received.");
+                console.log(evt.data);
+				
                 await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
 
                 // Now create our offer SDP to send back to the web socket server.
@@ -47,7 +50,7 @@
                     return pc.setLocalDescription(answer);
                 }).then(function () {
                     console.log("Sending answer SDP.");
-					console.log("SDP: " + pc.localDescription.sdp);
+					console.log(pc.localDescription.sdp);
                     ws.send(pc.localDescription.sdp);
                 });
             };
