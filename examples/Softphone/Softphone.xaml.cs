@@ -38,8 +38,8 @@ namespace SIPSorcery.SoftPhone
         private const int SIP_CLIENT_COUNT = 2;                             // The number of SIP clients (simultaneous calls) that the UI can handle.
 
         // Currently only supporting these mode(s) from local web cams. Extra work to convert other formats to bitmaps that can be displayed by WPF.
-        private static readonly List<MFVideoSubTypesEnum> _supportedVideoModes = new List<MFVideoSubTypesEnum>() { MFVideoSubTypesEnum.MFVideoFormat_RGB24 };
-
+        private static readonly List<VideoSubTypesEnum> _supportedVideoModes = new List<VideoSubTypesEnum>() { VideoSubTypesEnum.RGB24 };
+        
         private static ILogger logger = Log.Logger;
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
@@ -178,10 +178,10 @@ namespace SIPSorcery.SoftPhone
             {
                 for (int index = 0; index < videoDevices.Count; index++)
                 {
-                    if (_supportedVideoModes.Contains(MFVideoSubTypes.FindVideoSubTypeForGuid(videoDevices[index].VideoSubType)))
+                    if (_supportedVideoModes.Contains(videoDevices[index].VideoSubType))
                     {
-                        var videoSubType = MFVideoSubTypes.FindVideoSubTypeForGuid(videoDevices[index].VideoSubType);
-                        string videoModeName = String.Format("{0} {1} x {2} {3}", videoDevices[index].DeviceFriendlyName, videoDevices[index].Width, videoDevices[index].Height, videoSubType.GetSubTypeDescription());
+                        var videoSubType = videoDevices[index].VideoSubType; // MFVideoSubTypes.FindVideoSubTypeForGuid(videoDevices[index].VideoSubType);
+                        string videoModeName = String.Format("{0} {1} x {2} {3}", videoDevices[index].DeviceFriendlyName, videoDevices[index].Width, videoDevices[index].Height, videoSubType.ToString());
 
                         videoDeviceKeys.Add(new KeyValuePair<string, VideoMode>(videoModeName, videoDevices[index]));
                         //_localVideoDevices.Items.Add();
