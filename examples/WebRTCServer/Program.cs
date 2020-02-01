@@ -109,8 +109,7 @@ namespace WebRTCServer
             Console.WriteLine("Test DTLS handshake complete.");
 
             _mediaSource = new MediaSource();
-            //_mfSampler.Init(MP4_FILE_PATH);
-            _mediaSource.Init(0, 0, VideoSubTypesEnum.I420, 640, 480);
+            _mediaSource.Init(MP4_FILE_PATH, true);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -247,8 +246,6 @@ namespace WebRTCServer
                 if (_vpxEncoder == null ||
                     (_vpxEncoder.GetWidth() != width || _vpxEncoder.GetHeight() != height || _vpxEncoder.GetStride() != stride))
                 {
-                    //_vpxEncoderReady = false;
-
                     if (_vpxEncoder != null)
                     {
                         _vpxEncoder.Dispose();
@@ -258,8 +255,6 @@ namespace WebRTCServer
                     _vpxEncoder.InitEncoder(width, height, stride);
 
                     logger.LogInformation($"VPX encoder initialised with width {width}, height {height} and stride {stride}.");
-
-                    //_vpxEncoderReady = true;
                 }
             }
             catch (Exception excp)
@@ -328,7 +323,6 @@ namespace WebRTCServer
                             byte[] mulawSample = new byte[sampleDuration];
                             int sampleIndex = 0;
 
-                            // ToDo: Find a way to wire up the Media foundation WAVE_FORMAT_MULAW codec so the encoding below is not necessary.
                             for (int index = 0; index < sampleBuffer.Length; index += 2)
                             {
                                 var ulawByte = MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(sampleBuffer, index));
