@@ -10,7 +10,6 @@
     <Compile Remove="net\RTSP\RTSPClient.cs" />
     <Compile Remove="net\RTSP\RTSPConnection.cs" />
     <Compile Remove="net\RTSP\RTSPServer.cs" />
-    <Compile Remove="net\WebRTC\WebRtcPeer.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,19 +33,15 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
     <PackageReference Include="System.Net.WebSockets.Client">
       <Version>4.3.2</Version>
     </PackageReference>
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="net\WebRTC\" />
-  </ItemGroup>
-  
+ 
   <PropertyGroup>
-  <TargetFrameworks>netstandard2.0;net452;netcoreapp3.0</TargetFrameworks>
-	<Version>4.0.7.0-rc</Version>
+  <TargetFrameworks>netstandard2.0;net452;netcoreapp3.1</TargetFrameworks>
+	<Version>4.0.8.0-rc</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -65,16 +60,17 @@
 	<RepositoryUrl>https://github.com/sipsorcery/sipsorcery</RepositoryUrl>
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
-	<PackageTags>SIP RTP SDP STUN WebRTC SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version 4.0.7 - RTP support complete.
+	<PackageTags>SIP WebRTC RTP SDP STUN SIPSorcery</PackageTags>
+	<PackageReleaseNotes>- Version 4.0.8 - Adds WebRTCSession and preliminary WebRTC support.
+- Version 4.0.7 - RTP support complete.
 - Version 4.0.4 - Added attended transfer capability to SIPUserAgent.
-- Version 4.0.3 - Refactor of RTPChannel and RTPSession. SIPUserAgent class incoporates RTPSession (much easier to use).
+- Version 4.0.3 - Refactor of RTPChannel and RTPSession. SIPUserAgent class incorporates RTPSession (much easier to use).
 - Version 4.0.2 - New SIPUserAgent class, combination of client and server user agents. Support for HOMER logging.
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
   </PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
-	<AssemblyVersion>4.0.7.0</AssemblyVersion>
-	<FileVersion>4.0.7.0</FileVersion>
+	<AssemblyVersion>4.0.8.0</AssemblyVersion>
+	<FileVersion>4.0.8.0</FileVersion>
   </PropertyGroup>    
 
 </Project>
