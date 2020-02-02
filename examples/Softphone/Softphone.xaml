@@ -7,8 +7,8 @@
     Title="SIPSorcery SoftPhone" Background="#FF808080" Closing="Window_Closing" Icon="favicon.ico" MinHeight="560" MinWidth="490" Loaded="OnWindowLoaded" Height="560" Width="490">
 
     <Grid>
-        <Border BorderBrush="#FF807FC3" BorderThickness="2" CornerRadius="2">
-            <Image x:Name="_localVideo" MinWidth="160" MinHeight="300" Source="favicon.ico" Opacity="0.2"/>
+        <Border BorderBrush="#FF807FC3" BorderThickness="2" CornerRadius="2" Visibility="Hidden" x:Name="_locaVIdeoBorder">
+            <Image x:Name="_localVideo" MinWidth="160" MinHeight="300" Source="favicon.ico" Opacity="0.8"/>
         </Border>
         <Border BorderBrush="#FF807FC3" BorderThickness="2" CornerRadius="2" Visibility="Collapsed">
             <Image x:Name="_remoteVideo" MinWidth="160" MinHeight="300"/>

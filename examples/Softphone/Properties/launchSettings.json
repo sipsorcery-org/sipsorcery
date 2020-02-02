@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SIPSorcery.SoftPhone": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
