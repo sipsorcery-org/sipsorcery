@@ -857,6 +857,7 @@ namespace SIPSorcery.SIP
                                             {
                                                 inviteTransaction.CancelCall();
                                                 SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                                                okResponse.Header.To.ToTag = inviteTransaction.LocalTag;
                                                 return SendResponseAsync(okResponse);
                                             }
                                             else
