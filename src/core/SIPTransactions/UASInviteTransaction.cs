@@ -32,7 +32,11 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// The local tag is set on the To SIP header and forms part of the information used to identify a SIP dialog.
         /// </summary>
-        public string LocalTag { get; set; }
+        public string LocalTag
+        {
+            get { return m_localTag; }
+            set { m_localTag = value; }
+        }
 
         public event SIPTransactionCancelledDelegate UASInviteTransactionCancelled;
         public event SIPTransactionRequestReceivedDelegate NewCallReceived;
@@ -183,6 +187,7 @@ namespace SIPSorcery.SIP
                     UASInviteTransactionCancelled?.Invoke(this);
 
                     SIPResponse cancelResponse = SIPResponse.GetResponse(TransactionRequest, SIPResponseStatusCodesEnum.RequestTerminated, null);
+                    cancelResponse.Header.To.ToTag = LocalTag;
                     base.SendFinalResponse(cancelResponse);
                 }
                 else
