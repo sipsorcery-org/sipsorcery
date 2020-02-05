@@ -320,6 +320,8 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="mediaType">The type of media for this stream. When multiplexing streams on an
         /// RTP session there can be only one stream per media type.</param>
+        /// <param name="isRemote">Set to true if the stream being added is from a remote source. Set to
+        /// false to indicate this is a stream originating from us.</param>
         /// <param name="payloadIDs">A list of the payload IDs the remote party can set in their RTP headers.
         /// Note that the remote payload ID for a particular format must match the local payload ID, i.e. if
         /// the remote format ID for VP8 is 96 we must also use 96.</param>
@@ -341,7 +343,7 @@ namespace SIPSorcery.Net
 
                     if (m_audioRtcpSession == null)
                     {
-                        m_audioRtcpSession = new RTCPSession(SDPMediaTypesEnum.audio, 0);
+                        m_audioRtcpSession = new RTCPSession(SDPMediaTypesEnum.audio, audioTrack.Ssrc);
                         m_audioRtcpSession.OnReportReadyToSend += SendRtcpReport;
                         if (!IsSecure)
                         {
@@ -357,7 +359,7 @@ namespace SIPSorcery.Net
 
                     if (m_videoRtcpSession == null)
                     {
-                        m_videoRtcpSession = new RTCPSession(SDPMediaTypesEnum.video, 0);
+                        m_videoRtcpSession = new RTCPSession(SDPMediaTypesEnum.video, videoTrack.Ssrc);
                         m_videoRtcpSession.OnReportReadyToSend += SendRtcpReport;
                         if (!IsSecure)
                         {

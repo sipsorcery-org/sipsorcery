@@ -157,7 +157,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Creates an intial SDP offer to send to a remote peer.
+        /// Creates an initial SDP offer to send to a remote peer.
         /// </summary>
         public Task<SDP> createOffer()
         {

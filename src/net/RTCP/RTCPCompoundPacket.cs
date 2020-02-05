@@ -44,6 +44,12 @@ namespace SIPSorcery.Net
             SDesReport = sdesReport;
         }
 
+        public RTCPCompoundPacket(RTCPReceiverReport receiverReport, RTCPSDesReport sdesReport)
+        {
+            ReceiverReport = receiverReport;
+            SDesReport = sdesReport;
+        }
+
         /// <summary>
         /// Creates a new RTCP compound packet from a serialised buffer.
         /// </summary>

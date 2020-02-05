@@ -261,8 +261,16 @@ namespace TestConsole
         /// </summary>
         private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
         {
-            var sr = sentRtcpReport.SenderReport;
-            Console.WriteLine($"RTCP {mediaType} Sender Report: SSRC {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+            if (sentRtcpReport.SenderReport != null)
+            {
+                var sr = sentRtcpReport.SenderReport;
+                Console.WriteLine($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+            }
+            else
+            {
+                var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
+                Console.WriteLine($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
+            }
         }
 
         /// <summary>
@@ -292,7 +300,7 @@ namespace TestConsole
             {
                 var sr = report.SenderReport;
                 rrs = report.SenderReport.ReceptionReports.FirstOrDefault();
-                Console.WriteLine($"RTCP recv SR (cname={cname}) {mediaType}, ssrc {sr.SSRC}, packets sent {sr.PacketCount}, bytes sent {sr.OctetCount}.");
+                Console.WriteLine($"RTCP recv SR {mediaType}, ssrc {sr.SSRC}, packets sent {sr.PacketCount}, bytes sent {sr.OctetCount}, (cname={cname}).");
             }
 
             if (report.ReceiverReport != null)
@@ -302,12 +310,12 @@ namespace TestConsole
 
             if (rrs != null)
             {
-                Console.WriteLine($"RTCP recv RR (cname={cname}) {mediaType}, SSRC {rrs.SSRC}, pkts lost {rrs.PacketsLost}, delay since SR {rrs.DelaySinceLastSenderReport}.");
+                Console.WriteLine($"RTCP recv RR {mediaType}, ssrc {rrs.SSRC}, pkts lost {rrs.PacketsLost}, delay since SR {rrs.DelaySinceLastSenderReport}, (cname={cname}).");
             }
 
             if (report.Bye != null)
             {
-                Console.WriteLine($"RTCP recv BYE (cname={cname}) {mediaType}, reason {report.Bye.Reason}.");
+                Console.WriteLine($"RTCP recv BYE {mediaType}, reason {report.Bye.Reason}, (cname={cname}).");
             }
         }
 

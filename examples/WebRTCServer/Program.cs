@@ -106,7 +106,8 @@ namespace WebRTCServer
             Console.WriteLine("Test DTLS handshake complete.");
 
             _mediaSource = new MediaSource();
-            _mediaSource.Init(MP4_FILE_PATH, true);
+            //_mediaSource.Init(MP4_FILE_PATH, true);
+            _mediaSource.Init(0, 0, VideoSubTypesEnum.I420, 640, 480);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
