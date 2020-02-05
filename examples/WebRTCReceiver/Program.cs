@@ -7,7 +7,7 @@
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 05 FEb 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 05 Feb 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
