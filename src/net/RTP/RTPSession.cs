@@ -38,7 +38,7 @@ namespace SIPSorcery.Net
         public ushort SeqNum { get; internal set; }
 
         /// <summary>
-        /// Inidicated whether this is a remote or a local track. A local track indicates
+        /// Indicated whether this is a remote or a local track. A local track indicates
         /// this RTP session is sending a particular media type. A remote track indicates
         /// it's receiving it.
         /// </summary>
