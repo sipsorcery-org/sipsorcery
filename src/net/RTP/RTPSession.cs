@@ -236,7 +236,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
         /// </summary>
-        public event Action<RTPPacket> OnRtpPacketReceived;
+        public event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
 
         /// <summary>
         /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
@@ -329,7 +329,7 @@ namespace SIPSorcery.Net
             {
                 throw new ApplicationException($"The RTPSession does not know how to transmit media type {mediaType}.");
             }
-            else if(m_tracks.Any(x => x.MediaType == mediaType && x.IsRemote == isRemote))
+            else if (m_tracks.Any(x => x.MediaType == mediaType && x.IsRemote == isRemote))
             {
                 throw new ApplicationException($"Track for {mediaType} and {isRemote} already exists.");
             }
@@ -349,7 +349,7 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                        m_tracks.Add(audioTrack);
+                    m_tracks.Add(audioTrack);
                 }
                 else if (mediaType == SDPMediaTypesEnum.video)
                 {
@@ -365,8 +365,8 @@ namespace SIPSorcery.Net
                         }
                     }
 
-                        m_tracks.Add(videoTrack);
-                    }
+                    m_tracks.Add(videoTrack);
+                }
             }
         }
 
@@ -445,6 +445,13 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Sends a VP8 frame as one or more RTP packets.
+        /// </summary>
+        /// <param name="timestamp">The timestamp to place in the RTP header. Needs
+        /// to be based on a 90Khz clock.</param>
+        /// <param name="payloadTypeID">The payload ID to place in the RTP header.</param>
+        /// <param name="buffer">The VP8 encoded payload.</param>
         public void SendVp8Frame(uint timestamp, int payloadTypeID, byte[] buffer)
         {
             if (m_isClosed || m_rtpEventInProgress || DestinationEndPoint == null)
@@ -747,7 +754,11 @@ namespace SIPSorcery.Net
             // Quick sanity check on whether this is not an RTP or RTCP packet.
             if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {
-                if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
+                if (IsSecure && !IsSecureContextReady)
+                {
+                    logger.LogWarning("RTP or RTCP packet received before secure context ready.");
+                }
+                else if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
                 {
                     //logger.LogDebug($"RTCP packet received from {remoteEndPoint} before: {buffer.HexStr()}");
 
@@ -832,7 +843,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            OnRtpPacketReceived?.Invoke(rtpPacket);
+                            OnRtpPacketReceived?.Invoke(rtpMediaType.Value, rtpPacket);
                         }
 
                         // Used for reporting purposes.

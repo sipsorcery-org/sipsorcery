@@ -1,0 +1,158 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        const url = "wss://localhost:8081/"
+		var pc;
+	
+		async function start() {
+		
+			//closePeer();
+
+			//const remoteStream = new MediaStream();
+			const remoteVideo = document.querySelector('#videoCtl');
+			//remoteVideo.srcObject = remoteStream;
+
+            //var ws = new WebSocket(url, []);
+
+            const constraints = {
+                'video': true,
+                'audio': true
+			}
+
+			const localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+			remoteVideo.srcObject = localStream;
+			
+			pc = new RTCPeerConnection(null);
+			
+			localStream.getTracks().forEach(track => {
+				console.log('add local track ' + track.kind + ' to peer connection.');
+				console.log(track);
+				pc.addTrack(track, localStream);
+			});
+
+            /*const localStream = navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    console.log('Got MediaStream:', stream);
+					
+					stream.getTracks().forEach(track => {
+						console.log('add track ' + track.kind + ' to peer connection.');
+						console.log(track);
+						pc.addTrack(track, stream);
+					});
+                })
+                .catch(error => {
+                    console.error('Error accessing media devices.', error);
+                });*/
+
+			//ws.onopen = function () {
+             //   console.log("web socket onopen.");
+			
+				pc.addEventListener('icecandidate', event => {
+					if (event.candidate) {
+						console.log('new-ice-candidate:');
+						//console.log(event.candidate.candidate);
+						console.log(event.candidate);
+						//console.log(pc.localDescription.sdp);
+						//iceStr = "ice" + event.candidate.candidate + "\n" + event.candidate.sdpMLineIndex + "\n" + event.candidate.sdpMid
+						//console.log(iceStr);
+						//ws.send(iceStr);
+					}
+				});
+				
+				pc.addEventListener("icegatheringstatechange", async (ev) => {
+					  console.log('icegatheringstatechange');
+					  console.log(ev);
+				
+					  let connection = ev.target;
+					  console.log('icegatheringstatechange state: ' + connection.iceGatheringState);
+					  
+					  switch(connection.iceGatheringState) {
+						case "gathering":
+						  /* collection of candidates has begun */
+						  break;
+						case "complete":
+						  /* collection of candidates is finished */
+						  console.log('ice gathering complete.');
+						  const offer = await pc.createOffer();
+				
+						  console.log('offer sdp:');
+						  console.log(offer);
+						  console.log(offer.sdp);
+						  
+						  ws = new WebSocket(url, []);
+						  ws.onopen = function () {
+							ws.send(offer.sdp);
+						  };
+						  ws.onmessage =  async function (evt) {
+							await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: evt.data }))
+						  };
+						  
+						  break;
+					  }
+					}, false);
+				
+				pc.addEventListener('connectionstatechange', event => {
+					console.log('ice connection state change ' + event);
+					console.log(event);
+					console.log("pc ice conn state = " + pc.iceConnectionState);
+					if (pc.iceConnectionState === 'connected') {
+						// Peers connected!
+						console.log('ice state connected.');
+					}
+				});
+				
+				pc.addEventListener('track', async (event) => {
+					console.log('Remote ' + event.track.kind + ' stream available.');
+					console.log(event);
+					remoteStream.addTrack(event.track, remoteStream);
+				});
+				
+				const offer = await pc.createOffer();
+				
+				//console.log('offer sdp:');
+				//console.log(offer);
+				//console.log(offer.sdp);
+				
+				await pc.setLocalDescription(offer);
+            //};
+
+            /*ws.onmessage = async function (evt) {
+                // Received SDP offer from the remote web socket server.
+				console.log("Offer SDP received.");
+                console.log(evt.data);
+				
+                await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
+
+                // Now create our offer SDP to send back to the web socket server.
+                pc.createAnswer().then(function (answer) {
+                    return pc.setLocalDescription(answer);
+                }).then(function () {
+                    console.log("Sending answer SDP.");
+					console.log(pc.localDescription.sdp);
+                    ws.send("sdp" + pc.localDescription.sdp);
+                });
+            };*/
+		};
+
+		function closePeer() {
+			console.log("close peer");
+			if(pc != null) {
+				pc.close();
+			}
+		};
+
+    </script>
+</head>
+<body>
+
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+	
+    <div>
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+		<button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+    </div>
+
+</body>
