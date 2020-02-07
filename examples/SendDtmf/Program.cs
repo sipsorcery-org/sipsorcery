@@ -91,7 +91,7 @@ namespace SIPSorcery
             IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(callUri.ToSIPEndPoint().Address);
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, (int)SDPMediaFormatsEnum.PCMU, localIPAddress.AddressFamily);
+            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), localIPAddress.AddressFamily);
             var offerSDP = rtpSession.GetSDP(localIPAddress);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
@@ -140,7 +140,7 @@ namespace SIPSorcery
 
             // Wire up the RTP receive session to the default speaker.
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
-            rtpSession.OnRtpPacketReceived += (rtpPacket) => 
+            rtpSession.OnRtpPacketReceived += (mediaType, rtpPacket) => 
             {
                 var sample = rtpPacket.Payload;
                 for (int index = 0; index < sample.Length; index++)
@@ -266,7 +266,7 @@ namespace SIPSorcery
                         sample[sampleIndex + 1] = PCMU_SILENCE_BYTE_ONE;
                     }
 
-                    rtpMediaSession.SendAudioFrame(rtpSampleTimestamp, sample);
+                    rtpMediaSession.SendAudioFrame(rtpSampleTimestamp, (int)SDPMediaFormatsEnum.PCMU, sample);
                     rtpSampleTimestamp += rtpTimestampStep;
                 }
 

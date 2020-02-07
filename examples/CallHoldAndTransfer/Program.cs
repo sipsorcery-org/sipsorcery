@@ -122,7 +122,7 @@ namespace SIPSorcery
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
 
-                        RtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, (int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork);
+                        RtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
                         RtpMediaSession.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
                         RtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
                         await userAgent.Answer(incomingCall, RtpMediaSession);
@@ -156,7 +156,7 @@ namespace SIPSorcery
 
                 if (RtpMediaSession != null)
                 {
-                    RtpMediaSession.SendAudioFrame(rtpSendTimestamp, sample);
+                    RtpMediaSession.SendAudioFrame(rtpSendTimestamp, (int)SDPMediaFormatsEnum.PCMU, sample);
                     rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
                 }
             };
@@ -174,7 +174,7 @@ namespace SIPSorcery
                         {
                             if (!userAgent.IsCallActive)
                             {
-                                RtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, (int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork);
+                                RtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
                                 RtpMediaSession.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
                                 RtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
 
@@ -326,7 +326,7 @@ namespace SIPSorcery
                 return;
             }
 
-            rtpSession.OnRtpPacketReceived += (rtpPacket) =>
+            rtpSession.OnRtpPacketReceived += (mediaType, rtpPacket) =>
             {
                 var sample = rtpPacket.Payload;
                 for (int index = 0; index < sample.Length; index++)

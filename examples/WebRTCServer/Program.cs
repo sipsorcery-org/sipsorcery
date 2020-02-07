@@ -106,8 +106,8 @@ namespace WebRTCServer
             Console.WriteLine("Test DTLS handshake complete.");
 
             _mediaSource = new MediaSource();
-            //_mediaSource.Init(MP4_FILE_PATH, true);
-            _mediaSource.Init(0, 0, VideoSubTypesEnum.I420, 640, 480);
+            _mediaSource.Init(MP4_FILE_PATH, true);
+            //_mediaSource.Init(0, 0, VideoSubTypesEnum.I420, 640, 480);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -148,8 +148,8 @@ namespace WebRTCServer
                 null,
                 null);
 
-            webRtcSession.addTrack(SDPMediaTypesEnum.audio, new List<int>{ (int)SDPMediaFormatsEnum.PCMU});
-            webRtcSession.addTrack(SDPMediaTypesEnum.video, new List<int> { (int)SDPMediaFormatsEnum.VP8 });
+            webRtcSession.addTrack(SDPMediaTypesEnum.audio, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU)});
+            webRtcSession.addTrack(SDPMediaTypesEnum.video, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
 
             //webRtcSession.RtpSession.OnReceiveReport += RtpSession_OnReceiveReport;
             webRtcSession.RtpSession.OnSendReport += RtpSession_OnSendReport;
@@ -365,12 +365,20 @@ namespace WebRTCServer
         }
 
         /// <summary>
-        /// Diagnostic handler to print out our RTCP sender reports.
+        /// Diagnostic handler to print out our RTCP sender/receiver reports.
         /// </summary>
         private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
         {
-            var sr = sentRtcpReport.SenderReport;
-            logger.LogDebug($"RTCP {mediaType} Sender Report: SSRC {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+            if (sentRtcpReport.SenderReport != null)
+            {
+                var sr = sentRtcpReport.SenderReport;
+                Console.WriteLine($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+            }
+            else
+            {
+                var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
+                Console.WriteLine($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
+            }
         }
 
         /// <summary>

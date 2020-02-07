@@ -53,20 +53,10 @@ namespace SIPSorcery.Net
         private const string RTP_MEDIA_PROFILE = "RTP/SAVP";
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
         private const string SETUP_OFFER_ATTRIBUTE = "a=setup:actpass"; // Indicates the media announcement DTLS negotiation state is active/passive.
-        private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is apassive.
+        private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is passive.
         private const string AUDIO_MEDIA_ID = "0";
         private const string VIDEO_MEDIA_ID = "1";
         private const string MEDIA_GROUPING = "BUNDLE 0 1";
-
-        private List<SDPMediaFormat> _supportedAudioFormats = new List<SDPMediaFormat>
-        {
-            new SDPMediaFormat(SDPMediaFormatsEnum.PCMU)
-        };
-
-        private List<SDPMediaFormat> _supportedVideoFormats = new List<SDPMediaFormat>
-        {
-            new SDPMediaFormat(SDPMediaFormatsEnum.VP8)
-        };
 
         private static ILogger logger = Log.Logger;
 
@@ -150,10 +140,22 @@ namespace SIPSorcery.Net
         /// Adds a new audio or video track to the session. Tracks are sent from one peer to another.
         /// </summary>
         /// <param name="mediaType">The track's media type (audio or video).</param>
-        /// <param name="payloadTypeIDs">The payload type ID's being used by the track's media type.</param>
-        public void addTrack(SDPMediaTypesEnum mediaType, List<int> payloadTypeIDs)
+        /// <param name="capabilities">The codecs we support.</param>
+        /// <returns>Returns the media stream track that was added or updated.</returns>
+        public MediaStreamTrack addTrack(SDPMediaTypesEnum mediaType, List<SDPMediaFormat> capabilities)
         {
-            RtpSession.AddTrack(mediaType, false, payloadTypeIDs);
+            string mid;
+            MediaStreamTrack existingTrack = (mediaType == SDPMediaTypesEnum.audio) ? RtpSession.AudioTrack : RtpSession.VideoTrack;
+            if (existingTrack != null)
+            {
+                mid = existingTrack.Transceiver.MID;
+            }
+            else
+            {
+                mid = RtpSession.GetNextMediaID();
+            }
+
+            return RtpSession.AddTrack(mid, mediaType, false, capabilities);
         }
 
         /// <summary>
@@ -192,60 +194,16 @@ namespace SIPSorcery.Net
         /// <param name="remoteSdp">The answer/offer SDP from the remote party.</param>
         public void setRemoteDescription(SdpType sdpType, SDP remoteSdp)
         {
-            // Check remote party audio is acceptable.
-            if (_supportedAudioFormats?.Count() > 0)
+            var audioAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
+            if (audioAnnounce != null)
             {
-                var remoteAudioOffer = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
-                if (remoteAudioOffer?.MediaFormats.Count() == 0)
-                {
-                    logger.LogWarning("No audio formats were available in the remote party's SDP.");
-                    Close("No audio codecs offered.");
-                }
-                else if (remoteAudioOffer.MediaFormats.Select(x => x.FormatCodec).Union(_supportedAudioFormats.Select(y => y.FormatCodec)).Count() == 0)
-                {
-                    logger.LogWarning("No matching audio codec was available.");
-                    Close("No matching audio codec.");
-                }
-
-                // Since we only currently support PCM ULAW there's only a single remote payload ID that can be 
-                // associated with the audio stream.
-                var remotePcmuMediaFormat = remoteAudioOffer.MediaFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).Single();
-                RtpSession.AddTrack(SDPMediaTypesEnum.audio, true, new List<int> { Convert.ToInt32(remotePcmuMediaFormat.FormatID) });
-
-                if (sdpType == SdpType.offer)
-                {
-                    // The format ID's in an SDP offer override our default ones.
-                    logger.LogDebug($"PCMU format ID set to {remotePcmuMediaFormat.FormatID}.");
-                    _supportedAudioFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).Single().FormatID = remotePcmuMediaFormat.FormatID;
-                }
+                RtpSession.AddTrack(audioAnnounce.MediaID, SDPMediaTypesEnum.audio, true, audioAnnounce.MediaFormats);
             }
 
-            // Check remote party video is acceptable.
-            if (_supportedVideoFormats?.Count() > 0)
+            var videoAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
+            if (videoAnnounce != null)
             {
-                var remoteVideoOffer = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
-                if (remoteVideoOffer?.MediaFormats.Count() == 0)
-                {
-                    logger.LogWarning("No video formats were available in the remote party's SDP.");
-                    Close("No video codecs offered.");
-                }
-                else if (remoteVideoOffer.MediaFormats.Select(x => x.FormatCodec).Union(_supportedVideoFormats.Select(y => y.FormatCodec)).Count() == 0)
-                {
-                    logger.LogWarning("No matching video codec was available.");
-                    Close("No matching video codec.");
-                }
-
-                // Since we only currently support VP8 there's only a single remote payload ID that can be 
-                // associated with the video stream.
-                var remoteVP8MediaFormat = remoteVideoOffer.MediaFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).Single();
-                RtpSession.AddTrack(SDPMediaTypesEnum.video, true, new List<int> { Convert.ToInt32(remoteVP8MediaFormat.FormatID) });
-
-                if (sdpType == SdpType.offer)
-                {
-                    // The format ID's in an SDP offer override our default ones.
-                    logger.LogDebug($"VP8 format ID set to {remoteVP8MediaFormat.FormatID}.");
-                    _supportedVideoFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).Single().FormatID = remoteVP8MediaFormat.FormatID;
-                }
+                RtpSession.AddTrack(videoAnnounce.MediaID, SDPMediaTypesEnum.video, true, videoAnnounce.MediaFormats);
             }
 
             SdpSessionID = remoteSdp.SessionId;
@@ -262,9 +220,9 @@ namespace SIPSorcery.Net
                 }
             }
 
-            foreach(var media in remoteSdp.Media)
+            foreach (var media in remoteSdp.Media)
             {
-                if(media.IceCandidates != null)
+                if (media.IceCandidates != null)
                 {
                     foreach (var iceCandidate in media.IceCandidates)
                     {
@@ -326,12 +284,14 @@ namespace SIPSorcery.Net
             {
                 if (mediaType == SDPMediaTypesEnum.video)
                 {
-                    int vp8PayloadID = Convert.ToInt32(_supportedVideoFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).Single().FormatID);
+                    //int vp8PayloadID = Convert.ToInt32(_supportedVideoFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).Single().FormatID);
+                    int vp8PayloadID = Convert.ToInt32(RtpSession.VideoTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
                     RtpSession.SendVp8Frame(sampleTimestamp, vp8PayloadID, sample);
                 }
                 else if (mediaType == SDPMediaTypesEnum.audio)
                 {
-                    int pcmuPayloadID = Convert.ToInt32(_supportedAudioFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).Single().FormatID);
+                    //int pcmuPayloadID = Convert.ToInt32(_supportedAudioFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).Single().FormatID);
+                    int pcmuPayloadID = Convert.ToInt32(RtpSession.AudioTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).FormatID);
                     RtpSession.SendAudioFrame(sampleTimestamp, pcmuPayloadID, sample);
                 }
             }
@@ -379,10 +339,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    bool isSendingAudio = RtpSession.HasLocalAudioTrack;
-                    bool isSendingVideo = RtpSession.HasLocalVideoTrack;
                     bool haveIceCandidatesBeenAdded = false;
-                    //bool isMediaBundle = includeAudioOffer && includeVideoOffer;    // Is this SDP offer bundling audio and video on the same RTP connection.
 
                     string localIceCandidateString = null;
 
@@ -399,57 +356,64 @@ namespace SIPSorcery.Net
 
                     // Add a bundle attribute. Indicates that audio and video sessions will be multiplexed
                     // on a single RTP socket.
-                    offerSdp.Group = MEDIA_GROUPING;
+                    if (RtpSession.AudioTrack != null && RtpSession.VideoTrack != null)
+                    {
+                        offerSdp.Group = MEDIA_GROUPING;
+                    }
 
                     // --- Audio announcement ---
-
-                    SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
-                        SDPMediaTypesEnum.audio,
-                        _rtpChannel.RTPPort,
-                       _supportedAudioFormats);
-
-                    audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
-                    if (!haveIceCandidatesBeenAdded)
+                    if (RtpSession.AudioTrack != null)
                     {
-                        audioAnnouncement.IceCandidates = LocalIceCandidates;
-                        haveIceCandidatesBeenAdded = true;
+                        SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
+                            SDPMediaTypesEnum.audio,
+                            _rtpChannel.RTPPort,
+                           RtpSession.AudioTrack.Capabilties);
+
+                        audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
+                        if (!haveIceCandidatesBeenAdded)
+                        {
+                            audioAnnouncement.IceCandidates = LocalIceCandidates;
+                            haveIceCandidatesBeenAdded = true;
+                        }
+
+                        audioAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
+                        audioAnnouncement.IceUfrag = LocalIceUser;
+                        audioAnnouncement.IcePwd = LocalIcePassword;
+                        audioAnnouncement.DtlsFingerprint = _dtlsCertificateFingerprint;
+                        audioAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
+                        audioAnnouncement.AddExtra(setupAttribute);
+                        audioAnnouncement.MediaStreamStatus = RtpSession.AudioTrack.Transceiver.Direction;
+                        audioAnnouncement.MediaID = RtpSession.AudioTrack.Transceiver.MID;
+
+                        offerSdp.Media.Add(audioAnnouncement);
                     }
-
-                    audioAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
-                    audioAnnouncement.IceUfrag = LocalIceUser;
-                    audioAnnouncement.IcePwd = LocalIcePassword;
-                    audioAnnouncement.DtlsFingerprint = _dtlsCertificateFingerprint;
-                    audioAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
-                    audioAnnouncement.AddExtra(setupAttribute);
-                    audioAnnouncement.MediaStreamStatus = (isSendingAudio) ? MediaStreamStatusEnum.SendRecv : MediaStreamStatusEnum.RecvOnly;
-                    audioAnnouncement.MediaID = AUDIO_MEDIA_ID;
-
-                    offerSdp.Media.Add(audioAnnouncement);
 
                     // --- Video announcement ---
-
-                    SDPMediaAnnouncement videoAnnouncement = new SDPMediaAnnouncement(
-                        SDPMediaTypesEnum.video,
-                        _rtpChannel.RTPPort,
-                       _supportedVideoFormats);
-
-                    videoAnnouncement.Transport = RTP_MEDIA_PROFILE;
-                    if (!haveIceCandidatesBeenAdded)
+                    if (RtpSession.VideoTrack != null)
                     {
-                        videoAnnouncement.IceCandidates = LocalIceCandidates;
-                        haveIceCandidatesBeenAdded = true;
+                        SDPMediaAnnouncement videoAnnouncement = new SDPMediaAnnouncement(
+                            SDPMediaTypesEnum.video,
+                            _rtpChannel.RTPPort,
+                           RtpSession.VideoTrack.Capabilties);
+
+                        videoAnnouncement.Transport = RTP_MEDIA_PROFILE;
+                        if (!haveIceCandidatesBeenAdded)
+                        {
+                            videoAnnouncement.IceCandidates = LocalIceCandidates;
+                            haveIceCandidatesBeenAdded = true;
+                        }
+
+                        videoAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
+                        videoAnnouncement.IceUfrag = LocalIceUser;
+                        videoAnnouncement.IcePwd = LocalIcePassword;
+                        videoAnnouncement.DtlsFingerprint = _dtlsCertificateFingerprint;
+                        videoAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
+                        videoAnnouncement.AddExtra(setupAttribute);
+                        videoAnnouncement.MediaStreamStatus = RtpSession.VideoTrack.Transceiver.Direction;
+                        videoAnnouncement.MediaID = RtpSession.VideoTrack.Transceiver.MID; ;
+
+                        offerSdp.Media.Add(videoAnnouncement);
                     }
-
-                    videoAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
-                    videoAnnouncement.IceUfrag = LocalIceUser;
-                    videoAnnouncement.IcePwd = LocalIcePassword;
-                    videoAnnouncement.DtlsFingerprint = _dtlsCertificateFingerprint;
-                    videoAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
-                    videoAnnouncement.AddExtra(setupAttribute);
-                    videoAnnouncement.MediaStreamStatus = (isSendingVideo) ? MediaStreamStatusEnum.SendRecv : MediaStreamStatusEnum.RecvOnly;
-                    videoAnnouncement.MediaID = VIDEO_MEDIA_ID;
-
-                    offerSdp.Media.Add(videoAnnouncement);
 
                     OnSdpOfferReady?.Invoke(offerSdp);
 

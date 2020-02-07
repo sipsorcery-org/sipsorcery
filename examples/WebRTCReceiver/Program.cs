@@ -126,6 +126,13 @@ namespace TestConsole
                 _webRtcSessions.Remove(webRtcSession);
             };
 
+            // Add local recvonly tracks. This ensures that the SDP answer includes only
+            // the codecs we support.
+            var videoTrack = webRtcSession.addTrack(SDPMediaTypesEnum.video, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            videoTrack.Transceiver.SetStreamStatus(MediaStreamStatusEnum.RecvOnly);
+            var audioTrack = webRtcSession.addTrack(SDPMediaTypesEnum.audio, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            audioTrack.Transceiver.SetStreamStatus(MediaStreamStatusEnum.RecvOnly);
+
             var answerSdp = await webRtcSession.createAnswer();
             webRtcSession.setLocalDescription(answerSdp);
 
@@ -257,7 +264,7 @@ namespace TestConsole
         }
 
         /// <summary>
-        /// Diagnostic handler to print out our RTCP sender reports.
+        /// Diagnostic handler to print out our RTCP sender/receiver reports.
         /// </summary>
         private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
         {

@@ -30,6 +30,10 @@
 //        |                  profile-specific extensions                  |
 //        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
+//  An empty RR packet (RC = 0) MUST be put at the head of a compound
+//  RTCP packet when there is no data transmission or reception to
+//  report.
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
@@ -63,12 +67,7 @@ namespace SIPSorcery.Net
         /// <param name="receptionReports">A list of the reception reports to include. Can be empty.</param>
         public RTCPReceiverReport(uint ssrc, List<ReceptionReportSample> receptionReports)
         {
-            if (receptionReports == null || receptionReports.Count == 0)
-            {
-                throw new ArgumentException("At least one reception report must be included for an RTCP Receiver Report.");
-            }
-
-            Header = new RTCPHeader(RTCPReportTypesEnum.RR, receptionReports.Count);
+            Header = new RTCPHeader(RTCPReportTypesEnum.RR, receptionReports != null ? receptionReports.Count : 0);
             SSRC = ssrc;
             ReceptionReports = receptionReports;
         }
