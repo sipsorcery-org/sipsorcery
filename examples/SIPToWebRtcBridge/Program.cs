@@ -51,7 +51,7 @@ namespace SIPSorcery
     {
         public WebRtcSession WebRtcSession;
 
-        public event Func<WebSocketContext, Task<WebRtcSession>> WebSocketOpened;
+        public event Func<WebSocketContext, WebRtcSession> WebSocketOpened;
         public event Action<WebRtcSession, string> SDPAnswerReceived;
 
         public SDPExchange()
@@ -66,7 +66,7 @@ namespace SIPSorcery
         protected override async void OnOpen()
         {
             base.OnOpen();
-            WebRtcSession = await WebSocketOpened(this.Context);
+            WebRtcSession = WebSocketOpened(this.Context);
         }
     }
 
@@ -81,7 +81,7 @@ namespace SIPSorcery
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        public static readonly List<SDPMediaFormat> _supportedAudioFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) };
+        //public static readonly List<SDPMediaFormat> _supportedAudioFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) };
 
         private static WebSocketServer _webSocketServer;
 
@@ -157,9 +157,9 @@ namespace SIPSorcery
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
 
-                        RtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, (int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork);
+                        RtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
                         await userAgent.Answer(incomingCall, RtpMediaSession);
-                        RtpMediaSession.OnRtpPacketReceived += (rtpPacket) => OnMediaSampleReady?.Invoke(SDPMediaTypesEnum.audio, rtpPacket.Header.Timestamp, rtpPacket.Payload);
+                        RtpMediaSession.OnRtpPacketReceived += (mediaType, rtpPacket) => OnMediaSampleReady?.Invoke(mediaType, rtpPacket.Header.Timestamp, rtpPacket.Payload);
 
                         Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
@@ -212,18 +212,18 @@ namespace SIPSorcery
             #endregion
         }
 
-        private static async Task<WebRtcSession> SendSDPOffer(WebSocketContext context)
+        private static WebRtcSession SendSDPOffer(WebSocketContext context)
         {
             Log.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
             var webRtcSession = new WebRtcSession(
+                AddressFamily.InterNetwork,
                 DTLS_CERTIFICATE_FINGERPRINT,
-                _supportedAudioFormats,
                 null,
                 null);
 
-            webRtcSession.AudioStreamStatus = MediaStreamStatusEnum.SendOnly;
-            webRtcSession.VideoStreamStatus = MediaStreamStatusEnum.SendOnly;
+            //webRtcSession.AudioStreamStatus = MediaStreamStatusEnum.SendOnly;
+            //webRtcSession.VideoStreamStatus = MediaStreamStatusEnum.SendOnly;
             webRtcSession.RtpSession.OnReceiveReport += RtpSession_OnReceiveReport;
             webRtcSession.RtpSession.OnSendReport += RtpSession_OnSendReport;
 
@@ -237,9 +237,16 @@ namespace SIPSorcery
                 webRtcSession.RtpSession.OnSendReport -= RtpSession_OnSendReport;
             };
 
-            await webRtcSession.Initialise(DoDtlsHandshake, null);
+            webRtcSession.addTrack(SDPMediaTypesEnum.audio, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
 
-            context.WebSocket.Send(webRtcSession.SDP.ToString());
+            if (DoDtlsHandshake(webRtcSession))
+            {
+                context.WebSocket.Send(webRtcSession.SDP.ToString());
+            }
+            else
+            {
+                webRtcSession.Close("dtls handshake failed.");
+            }
 
             return webRtcSession;
         }
@@ -252,7 +259,7 @@ namespace SIPSorcery
 
                 var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
 
-                webRtcSession.OnSdpAnswer(answerSDP);
+                webRtcSession.setRemoteDescription(SdpType.answer, answerSDP);
 
                 OnMediaSampleReady += webRtcSession.SendMedia;
             }
@@ -266,7 +273,7 @@ namespace SIPSorcery
         /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
         /// </summary>
         /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
-        private static int DoDtlsHandshake(WebRtcSession webRtcSession)
+        private static bool DoDtlsHandshake(WebRtcSession webRtcSession)
         {
             Log.LogDebug("DoDtlsHandshake started.");
 
@@ -298,9 +305,13 @@ namespace SIPSorcery
                     srtpReceiveContext.UnprotectRTP,
                     srtpSendContext.ProtectRTCP,
                     srtpReceiveContext.UnprotectRTCP);
-            }
 
-            return res;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>

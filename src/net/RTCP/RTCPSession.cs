@@ -70,12 +70,12 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The media type this report session is measuring.
         /// </summary>
-        public SDPMediaTypesEnum MediaType {get; private set;}
+        public SDPMediaTypesEnum MediaType { get; private set; }
 
         /// <summary>
         /// The SSRC number of the RTP packets we are sending.
         /// </summary>
-        public uint Ssrc { get; private set; }
+        public uint Ssrc { get; internal set; }
 
         /// <summary>
         /// Timestamp that the RTCP session was created at.
@@ -152,6 +152,7 @@ namespace SIPSorcery.Net
 
         private bool m_isClosed = false;
         private ReceptionReport m_receptionReport;
+        private uint m_previousPacketsSentCount = 0;    // Used to track whether we have sent any packets since the last report was sent.
 
         /// <summary>
         /// Event handler for sending RTCP reports.
@@ -177,7 +178,7 @@ namespace SIPSorcery.Net
 
             // Schedule an immediate sender report.
             var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
-            m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, 0, interval);
+            m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, Timeout.Infinite);
         }
 
         public void Close(string reason)
@@ -239,7 +240,7 @@ namespace SIPSorcery.Net
 
                 if (rtcpCompoundPacket != null)
                 {
-                    if(rtcpCompoundPacket.SenderReport != null && m_receptionReport != null)
+                    if (rtcpCompoundPacket.SenderReport != null && m_receptionReport != null)
                     {
                         m_receptionReport.RtcpSenderReportReceived(DateTimeToNtpTimestamp(DateTime.Now));
                     }
@@ -292,16 +293,19 @@ namespace SIPSorcery.Net
                     //logger.LogDebug($"SendRtcpSenderReport ssrc {Ssrc}, last seqnum {LastSeqNum}, pkts {PacketsSentCount}, bytes {OctetsSentCount} ");
 
                     var report = GetRtcpReport();
+
                     OnReportReadyToSend?.Invoke(MediaType, report);
+
+                    m_previousPacketsSentCount = PacketsSentCount;
 
                     var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
                     if (m_rtcpReportTimer == null)
                     {
-                        m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, interval);
+                        m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, Timeout.Infinite);
                     }
                     else
                     {
-                        m_rtcpReportTimer.Change(interval, interval);
+                        m_rtcpReportTimer.Change(interval, Timeout.Infinite);
                     }
                 }
             }
@@ -324,9 +328,28 @@ namespace SIPSorcery.Net
         private RTCPCompoundPacket GetRtcpReport()
         {
             ReceptionReportSample rr = (m_receptionReport != null) ? m_receptionReport.GetSample(DateTimeToNtpTimestamp32(DateTime.Now)) : null;
-            var senderReport = new RTCPSenderReport(Ssrc, LastNtpTimestampSent, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, (rr != null) ? new List<ReceptionReportSample> { rr } : null);
             var sdesReport = new RTCPSDesReport(Ssrc, Cname);
-            return new RTCPCompoundPacket(senderReport, sdesReport);
+
+            if (PacketsSentCount > m_previousPacketsSentCount)
+            {
+                // If we have sent a packet since the last report then we send an RTCP Sender Report.
+                var senderReport = new RTCPSenderReport(Ssrc, LastNtpTimestampSent, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, (rr != null) ? new List<ReceptionReportSample> { rr } : null);
+                return new RTCPCompoundPacket(senderReport, sdesReport);
+            }
+            else
+            {
+                // If we have NOT sent a packet since the last report then we send an RTCP Receiver Report.
+                if (rr != null)
+                {
+                    var receiverReport = new RTCPReceiverReport(Ssrc, new List<ReceptionReportSample> { rr });
+                    return new RTCPCompoundPacket(receiverReport, sdesReport);
+                }
+                else
+                {
+                    var receiverReport = new RTCPReceiverReport(Ssrc, null);
+                    return new RTCPCompoundPacket(receiverReport, sdesReport);
+                }
+            }
         }
 
         /// <summary>

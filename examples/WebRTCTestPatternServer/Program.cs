@@ -22,6 +22,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -75,7 +76,7 @@ namespace WebRTCServer
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
-        public static readonly List<SDPMediaFormat> _supportedVideoFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) };
+        //public static readonly List<SDPMediaFormat> _supportedVideoFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) };
 
         private static WebSocketServer _webSocketServer;
         private static bool _exit = false;
@@ -132,22 +133,41 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            var webRtcSession = new WebRtcSession(DTLS_CERTIFICATE_FINGERPRINT, null, _supportedVideoFormats, null);
-            webRtcSession.VideoStreamStatus = MediaStreamStatusEnum.SendOnly;
+            var webRtcSession = new WebRtcSession(
+                AddressFamily.InterNetwork,
+                DTLS_CERTIFICATE_FINGERPRINT,
+                null,
+                null);
+
+            webRtcSession.addTrack(SDPMediaTypesEnum.video, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+
             webRtcSession.RtpSession.OnReceiveReport += RtpSession_OnReceiveReport;
             webRtcSession.RtpSession.OnSendReport += RtpSession_OnSendReport;
 
-            logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
-
             webRtcSession.OnClose += (reason) =>
             {
-                logger.LogDebug($"WebRTCSession was closed with reason {reason}.");
+                logger.LogDebug($"WebRtcSession was closed with reason {reason}");
                 OnTestPatternSampleReady -= webRtcSession.SendMedia;
+                webRtcSession.RtpSession.OnReceiveReport -= RtpSession_OnReceiveReport;
+                webRtcSession.RtpSession.OnSendReport -= RtpSession_OnSendReport;
             };
 
-            await webRtcSession.Initialise(DoDtlsHandshake, null);
+            var offerSdp = await webRtcSession.createOffer();
+            webRtcSession.setLocalDescription(offerSdp);
+
+            logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
+            logger.LogDebug(webRtcSession.SDP.ToString());
 
             context.WebSocket.Send(webRtcSession.SDP.ToString());
+
+            if (DoDtlsHandshake(webRtcSession))
+            {
+                OnTestPatternSampleReady += webRtcSession.SendMedia;
+            }
+            else
+            {
+                webRtcSession.Close("dtls handshake failed.");
+            }
 
             return webRtcSession;
         }
@@ -157,12 +177,8 @@ namespace WebRTCServer
             try
             {
                 logger.LogDebug("Answer SDP: " + sdpAnswer);
-
                 var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
-
-                webRtcSession.OnSdpAnswer(answerSDP);
-
-                OnTestPatternSampleReady += webRtcSession.SendMedia;
+                webRtcSession.setRemoteDescription(SdpType.answer, answerSDP); 
             }
             catch (Exception excp)
             {
@@ -174,7 +190,7 @@ namespace WebRTCServer
         /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
         /// </summary>
         /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
-        private static int DoDtlsHandshake(WebRtcSession webRtcSession)
+        private static bool DoDtlsHandshake(WebRtcSession webRtcSession)
         {
             logger.LogDebug("DoDtlsHandshake started.");
 
@@ -206,9 +222,15 @@ namespace WebRTCServer
                     srtpReceiveContext.UnprotectRTP,
                     srtpSendContext.ProtectRTCP,
                     srtpReceiveContext.UnprotectRTCP);
-            }
 
-            return res;
+                webRtcSession.IsDtlsNegotiationComplete = true;
+
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private static void SendTestPattern()
@@ -341,12 +363,31 @@ namespace WebRTCServer
         }
 
         /// <summary>
-        /// Diagnostic handler to print out our RTCP sender reports.
+        /// Diagnostic handler to print out our RTCP sender/receiver reports.
         /// </summary>
         private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
         {
-            var sr = sentRtcpReport.SenderReport;
-            logger.LogDebug($"RTCP {mediaType} Sender Report: SSRC {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+            if(sentRtcpReport.Bye != null)
+            {
+                logger.LogDebug($"RTCP sent BYE {mediaType}.");
+            }
+            else if (sentRtcpReport.SenderReport != null)
+            {
+                var sr = sentRtcpReport.SenderReport;
+                logger.LogDebug($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+            }
+            else
+            {
+                if (sentRtcpReport.ReceiverReport.ReceptionReports?.Count > 0)
+                {
+                    var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
+                    logger.LogDebug($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
+                }
+                else
+                {
+                    logger.LogDebug($"RTCP sent RR {mediaType}, no packets sent or received.");
+                }
+            }
         }
 
         /// <summary>
@@ -354,14 +395,21 @@ namespace WebRTCServer
         /// </summary>
         private static void RtpSession_OnReceiveReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
         {
-            var rr = recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
-            if (rr != null)
+            if (recvRtcpReport.Bye != null)
             {
-                logger.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
+                logger.LogDebug($"RTCP recv BYE {mediaType}.");
             }
             else
             {
-                logger.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
+                var rr = recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
+                if (rr != null)
+                {
+                    logger.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
+                }
+                else
+                {
+                    logger.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
+                }
             }
         }
 
