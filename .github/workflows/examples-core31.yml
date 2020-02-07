@@ -8,7 +8,7 @@ on:
 jobs:
   build:
 
-    runs-on: windows
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v1 # https://github.com/actions/checkout
