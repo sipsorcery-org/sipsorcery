@@ -25,7 +25,6 @@ using Serilog;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
@@ -41,7 +40,7 @@ namespace SIPSorcery
         private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
         private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 20;           // This sets the frequency of the RTP packets.
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             Console.WriteLine("SIPSorcery client user agent example.");
             Console.WriteLine("Press ctrl-c to exit.");
@@ -72,11 +71,11 @@ namespace SIPSorcery
             var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
             Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
             var dstAddress = lookupResult.GetSIPEndPoint().Address;
-            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(dstAddress);
+            //IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(dstAddress);
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), localIPAddress.AddressFamily);
-            var offerSDP = rtpSession.GetSDP(localIPAddress);
+            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), dstAddress.AddressFamily);
+            var offerSDP = await rtpSession.CreateOffer(dstAddress);
 
             // Get the audio input device.
             WaveInEvent waveInEvent = GetAudioInputDevice();

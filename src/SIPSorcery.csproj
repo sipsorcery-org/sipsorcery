@@ -41,7 +41,7 @@
  
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net452;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.12-pre</Version>
+	<Version>4.0.13-pre</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -61,7 +61,7 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP WebRTC RTP SDP STUN SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version 4.0.12-pre - Adjustments to WebRTCSession to support WebRTC receive.
+	<PackageReleaseNotes>- Version 4.0.13-pre - RTPSession and WebRTCSession enhancements.
 - Version 4.0.8 - Adds WebRTCSession and preliminary WebRTC support.
 - Version 4.0.7 - RTP support complete.
 - Version 4.0.4 - Added attended transfer capability to SIPUserAgent.
@@ -70,8 +70,8 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
   </PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
-	<AssemblyVersion>4.0.12.0</AssemblyVersion>
-	<FileVersion>4.0.12.0</FileVersion>
+	<AssemblyVersion>4.0.13.0</AssemblyVersion>
+	<FileVersion>4.0.13.0</FileVersion>
   </PropertyGroup>    
 
 </Project>

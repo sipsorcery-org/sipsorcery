@@ -65,7 +65,7 @@ namespace SIPSorcery
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        static void Main()
+        static async Task Main()
         {
             Console.WriteLine("SIPSorcery client user agent example.");
             Console.WriteLine("Press ctrl-c to exit.");
@@ -88,11 +88,11 @@ namespace SIPSorcery
             EnableTraceLogs(sipTransport);
 
             // Note this relies on the callURI host being an IP address. If it's a hostname a DNS lookup is required.
-            IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(callUri.ToSIPEndPoint().Address);
+            IPAddress dstAddress = callUri.ToSIPEndPoint().Address;
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), localIPAddress.AddressFamily);
-            var offerSDP = rtpSession.GetSDP(localIPAddress);
+            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), dstAddress.AddressFamily);
+            var offerSDP = await rtpSession.CreateOffer(dstAddress);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var uac = new SIPClientUserAgent(sipTransport);

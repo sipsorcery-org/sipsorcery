@@ -118,15 +118,15 @@ namespace SIPSorcery
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenAddress, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(listenAddress, SIPS_LISTEN_PORT)));
-            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_WEBSOCKET_LISTEN_PORT));
-            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
+            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_WEBSOCKET_LISTEN_PORT));
+            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
 
             // IPv6 channels.
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(listenIPv6Address, SIP_LISTEN_PORT)));
             sipTransport.AddSIPChannel(new SIPTLSChannel(localhostCertificate, new IPEndPoint(listenIPv6Address, SIPS_LISTEN_PORT)));
-            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_WEBSOCKET_LISTEN_PORT));
-            sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
+            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_WEBSOCKET_LISTEN_PORT));
+            //sipTransport.AddSIPChannel(new SIPWebSocketChannel(IPAddress.IPv6Any, SIP_SECURE_WEBSOCKET_LISTEN_PORT, localhostCertificate));
 
             EnableTraceLogs(sipTransport);
 
@@ -192,7 +192,7 @@ namespace SIPSorcery
                             uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
                             // The RTP socket is listening on IPAddress.Any but the IP address placed into the SDP needs to be one the caller can reach.
-                            IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
+                            //IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
 
                             // Only set the remote RTP end point if there hasn't already been a packet received on it.
                             if (rtpSession.DestinationEndPoint == null)
@@ -213,7 +213,8 @@ namespace SIPSorcery
                                     }
                                 });
 
-                            uas.Answer(SDP.SDP_MIME_CONTENTTYPE, rtpSession.GetSDP(rtpAddress).ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
+                            var answerSdp = await rtpSession.CreateOffer(dstRtpEndPoint.Address);
+                            uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
                         }
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)
