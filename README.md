@@ -50,18 +50,18 @@ There are 3 example applications which demonstrate different use cases:
 
 * [WebRTCTestPatternServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCTestPatternServer): The simplest example. This program serves up a test pattern video stream to a WebRTC peer.
 
-![Test pattern example screenshot](https://github.com/sipsorcery/sipsorcery/blob/master/img/webrtctestpattern_screenshot.png)
+![Test pattern example screenshot](https://github.com/sipsorcery/sipsorcery/blob/master/examples/img/webrtctestpattern_screenshot.png =800x)
 
 * [WebRTCServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCServer): This example extends the test pattern example and can act as a media source for a peer. It has two source options:
   - An mp4 file.
   - Capture devices (webcam and microphone).
 The example includes an html file which runs in a Browser and will connect to a sample program running on the same machine.
 
-![MP4 server example screenshot](https://github.com/sipsorcery/sipsorcery/blob/master/img/webrtcsvr_screenshot.png)
+![MP4 server example screenshot](https://github.com/sipsorcery/sipsorcery/blob/master/examples/img/webrtcsvr_screenshot.png =800x)
 
 * [WebRTCReceiver](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCReceiver): A receive only example. It attempts to connect to a WebRTC peer and display the video stream that it receives.
 
-![Receive example screenshot](https://github.com/sipsorcery/sipsorcery/blob/master/img/webrtcrecv_screenshot.png)
+![Receive example screenshot](https://github.com/sipsorcery/sipsorcery/blob/master/examples/img/webrtcrecv_screenshot.png =800x)
 
 **The WebRtcSession class and all WebRTC functionality in this library are still under heavy development. There are large blocks of functionality still missing, particularly ICE and codec support. All issues and PR's are very welcome.**
 
