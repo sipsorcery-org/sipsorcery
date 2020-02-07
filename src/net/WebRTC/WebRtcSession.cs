@@ -73,6 +73,8 @@ namespace SIPSorcery.Net
         public bool IsClosed;
         public IceConnectionStatesEnum IceConnectionState = IceConnectionStatesEnum.None;
 
+        private SDP m_remoteSDP;
+
         private List<IceCandidate> _remoteIceCandidates = new List<IceCandidate>();
         public List<IceCandidate> RemoteIceCandidates
         {
@@ -134,6 +136,7 @@ namespace SIPSorcery.Net
             _rtpChannel = RtpSession.RtpChannel;
             _rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
             RtpSession.OnRtpClosed += Close;
+            RtpSession.OnRtcpBye += Close;
         }
 
         /// <summary>
@@ -171,7 +174,14 @@ namespace SIPSorcery.Net
         /// </summary>
         public Task<SDP> createAnswer()
         {
-            return getSdp(SETUP_ANSWER_ATTRIBUTE);
+            if (m_remoteSDP == null)
+            {
+                throw new ApplicationException("The remote SDP must be set before an SDP answer can be created.");
+            }
+            else
+            {
+                return getSdp(SETUP_ANSWER_ATTRIBUTE);
+            }
         }
 
         /// <summary>
@@ -230,6 +240,8 @@ namespace SIPSorcery.Net
                     }
                 }
             }
+
+            m_remoteSDP = remoteSdp;
         }
 
         /// <summary>

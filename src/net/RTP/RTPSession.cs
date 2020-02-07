@@ -269,6 +269,12 @@ namespace SIPSorcery.Net
         public event Action<string> OnRtpClosed;
 
         /// <summary>
+        /// Gets fired when an RTCP BYE packet is received from the remote party.
+        /// The string parameter contains the BYE reason.
+        /// </summary>
+        public event Action<string> OnRtcpBye;
+
+        /// <summary>
         /// Gets fired when an RTCP report is received. This event is for diagnostics only.
         /// </summary>
         public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReport;
@@ -855,8 +861,9 @@ namespace SIPSorcery.Net
                     {
                         if (rtcpPkt.Bye != null)
                         {
-                            logger.LogDebug($"RTCP BYE received for SSRC {rtcpPkt.Bye.SSRC}.");
-                            CloseSession("rtcp bye received.");
+                            logger.LogDebug($"RTCP BYE received for SSRC {rtcpPkt.Bye.SSRC}, reason {rtcpPkt.Bye.Reason}.");
+                            
+                            OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
                         }
                         else if (!m_isClosed)
                         {

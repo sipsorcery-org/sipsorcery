@@ -61,7 +61,7 @@ namespace SIPSorcery.SoftPhone
         /// <returns>A new RTP media session object.</returns>
         public virtual RTPMediaSession Create(AddressFamily addressFamily)
         {
-            RTPMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, (int)DefaultAudioFormat, addressFamily);
+            RTPMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(DefaultAudioFormat), addressFamily);
 
             RTPMediaSession.OnRtpClosed += (reason) =>
             {
