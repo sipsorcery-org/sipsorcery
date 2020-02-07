@@ -405,7 +405,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTPSession.html",
-          "hash": "bH0OfKR7SO2d/ljqhOmRSQ=="
+          "hash": "vCe2HHT8GQA9eoRacAPFNw=="
         }
       },
       "is_incremental": false,
@@ -1209,7 +1209,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.WebRtcSession.html",
-          "hash": "0gjHV9GwVDCRVQIys9rWgQ=="
+          "hash": "ZBYxne339IFRU4zKMXbHYA=="
         }
       },
       "is_incremental": false,
@@ -1377,7 +1377,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.RTPMediaSession.html",
-          "hash": "Tm9uIo/osVvppbqNO4Go3Q=="
+          "hash": "8srybNQL6nug9jB67i5A1g=="
         }
       },
       "is_incremental": false,
