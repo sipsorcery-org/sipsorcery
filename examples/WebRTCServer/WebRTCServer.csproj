@@ -23,10 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SIPSorcery.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="certs\localhost.pem">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
