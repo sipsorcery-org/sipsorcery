@@ -275,6 +275,12 @@ namespace SIPSorcery.Net
         public event Action<string> OnRtcpBye;
 
         /// <summary>
+        /// Fires when the connection for a media type is classified as timed out due to not
+        /// receiving any RTP or RTCP packets within the given period.
+        /// </summary>
+        public event Action<SDPMediaTypesEnum> OnTimeout;
+
+        /// <summary>
         /// Gets fired when an RTCP report is received. This event is for diagnostics only.
         /// </summary>
         public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReport;
@@ -314,9 +320,10 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
-        /// pseudo random values. This constructor also adds a default stream to the session. Typically this
-        /// is suitable for sessions that only have a single stream per session such as a standard SIP call.
+        /// Creates a new RTP session and adds a media track. The synchronisation source and sequence number
+        /// are initialised to pseudo random values. This constructor also adds a default stream to the session.
+        /// Typically this is suitable for sessions that only have a single stream per session such as a 
+        /// voice only SIP call.
         /// </summary>
         /// <param name="mediaType">The default media type for this RTP session. If media multiplexing
         /// is being used additional streams can be added by calling AddStream.</param>
@@ -387,10 +394,12 @@ namespace SIPSorcery.Net
                 if (mediaType == SDPMediaTypesEnum.audio && m_audioRtcpSession == null)
                 {
                     m_audioRtcpSession = new RTCPSession(mediaType, (!isRemote) ? track.Ssrc : 0);
+                    m_audioRtcpSession.OnTimeout += (mt) => OnTimeout?.Invoke(mt);
                 }
                 else if (mediaType == SDPMediaTypesEnum.video && m_videoRtcpSession == null)
                 {
                     m_videoRtcpSession = new RTCPSession(mediaType, (!isRemote) ? track.Ssrc : 0);
+                    m_videoRtcpSession.OnTimeout += (mt) => OnTimeout?.Invoke(mt);
                 }
 
                 RTCPSession rtcpSession = (mediaType == SDPMediaTypesEnum.audio) ? m_audioRtcpSession : m_videoRtcpSession;
