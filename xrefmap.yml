@@ -2708,6 +2708,12 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnSendReport
   fullName: SIPSorcery.Net.RTPSession.OnSendReport
   nameWithType: RTPSession.OnSendReport
+- uid: SIPSorcery.Net.RTPSession.OnTimeout
+  name: OnTimeout
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnTimeout
+  commentId: E:SIPSorcery.Net.RTPSession.OnTimeout
+  fullName: SIPSorcery.Net.RTPSession.OnTimeout
+  nameWithType: RTPSession.OnTimeout
 - uid: SIPSorcery.Net.RTPSession.RemoteRtpEventPayloadID
   name: RemoteRtpEventPayloadID
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteRtpEventPayloadID
