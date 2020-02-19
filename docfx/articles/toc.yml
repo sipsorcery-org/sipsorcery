@@ -1,10 +1,16 @@
 - name: Introduction
   href: intro.md
-- name: Concepts
+- name: Concepts & Guides
   href: concepts.md
   items:
-    - name: Transport Layer
+    - name: SIP Transport Layer
       href: transport.md
+    - name: SIP User Agent
+      href: sipuseragent.md
+    - name: RTP & RTCP Sessions
+      href: rtpsession.md
+    - name: WebRTC Session
+      href: webrtcsession.md
 - name: Examples
   href: examples.md
   items:
