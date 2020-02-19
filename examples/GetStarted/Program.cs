@@ -40,12 +40,12 @@ namespace demo
 
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) , AddressFamily.InterNetwork);
+            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
 
             // Connect audio devices to RTP session.
-            //WaveInEvent microphone = GetAudioInputDevice();
-            //var speaker = GetAudioOutputDevice();
-            //ConnectAudioDevicesToRtp(rtpSession, microphone, speaker);
+            WaveInEvent microphone = GetAudioInputDevice();
+            var speaker = GetAudioOutputDevice();
+            ConnectAudioDevicesToRtp(rtpSession, microphone, speaker);
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
@@ -53,7 +53,7 @@ namespace demo
             if(callResult)
             {
                 Console.WriteLine("Call attempt successful.");
-                //microphone.StartRecording();
+                microphone.StartRecording();
             }
             else
             {
@@ -70,7 +70,7 @@ namespace demo
             }
 
             // Clean up.
-            //microphone.StopRecording();
+            microphone.StopRecording();
             sipTransport.Shutdown();
             SIPSorcery.Net.DNSManager.Stop();
         }
