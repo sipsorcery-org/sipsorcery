@@ -920,6 +920,7 @@ namespace SIPSorcery.SIP
             }
             catch (Exception excp)
             {
+                Log.Logger.LogError($"Exception SIPMessageReceived. {excp.Message}");
                 SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, "Exception SIPTransport. " + excp.Message, SIPValidationFieldsEnum.Unknown, rawSIPMessage);
                 return Task.FromResult(SocketError.Fault);
             }
