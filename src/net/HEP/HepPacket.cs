@@ -195,6 +195,8 @@ namespace SIPSorcery.Net
     /// </summary>
     public class HepPacket
     {
+        private const int MAX_HEP_PACKET_LENGTH = 1460;
+
         /// <summary>
         /// All the SIP protocols except UDP use TCP as the underlying transport protocol.
         /// </summary>
@@ -224,7 +226,7 @@ namespace SIPSorcery.Net
         /// to a HOMER server.</returns>
         public static byte[] GetBytes(SIPEndPoint srcEndPoint, SIPEndPoint dstEndPoint, DateTime timestamp, uint agentID, string password, string payload)
         {
-            byte[] packetBuffer = new byte[1024];
+            byte[] packetBuffer = new byte[MAX_HEP_PACKET_LENGTH];
             int offset = 0;
 
             // HEP3 ASCII code to start the packet.
@@ -297,8 +299,12 @@ namespace SIPSorcery.Net
 
             // Payload
             var payloadBuffer = HepChunk.GetBytes(ChunkTypeEnum.CapturedPayload, Encoding.UTF8.GetBytes(payload));
-            Buffer.BlockCopy(payloadBuffer, 0, packetBuffer, offset, payloadBuffer.Length);
-            offset += payloadBuffer.Length;
+
+            // If we don't have enough space left truncate the payload.
+            int payloadLength = (payloadBuffer.Length > packetBuffer.Length - offset) ? packetBuffer.Length - offset : payloadBuffer.Length;
+
+            Buffer.BlockCopy(payloadBuffer, 0, packetBuffer, offset, payloadLength);
+            offset += payloadLength;
 
             // Length
             if (BitConverter.IsLittleEndian)

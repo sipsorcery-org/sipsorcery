@@ -13,4 +13,8 @@
     <PackageReference Include="SIPSorcery" Version="4.0.13-pre" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.RtpAVSession\SIPSorcery.RtpAVSession.csproj" />
+  </ItemGroup>
+
 </Project>

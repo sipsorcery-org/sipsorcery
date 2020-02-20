@@ -2,25 +2,27 @@
 // Filename: Program.cs
 //
 // Description: An example program of how to use the SIPSorcery core library to 
-// place a SIP call and then place it on and off hold.
+// place a SIP call and then place it on and off hold as well as demonstrate how
+// a blind transfer can be initiated.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
 // 25 Nov 2019	Aaron Clauson	Created, Dublin, Ireland.
+// 20 Feb 2020  Aaron Clauson   Switched to RtpAVSession and simplified.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NAudio.Wave;
 using Serilog;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -31,26 +33,25 @@ namespace SIPSorcery
     class Program
     {
         private static int SIP_LISTEN_PORT = 5060;
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*61@192.168.11.48";
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7000@192.168.11.48";
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*61@192.168.11.48";
+        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7000@192.168.11.48";
         private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.48";  // The destination to transfer the initial call to.
         private static readonly string SIP_USERNAME = "7001";
         private static readonly string SIP_PASSWORD = "password";
-        private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
-        private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 20;           // This sets the frequency of the RTP packets.
         private static int TRANSFER_TIMEOUT_SECONDS = 10;                    // Give up on transfer if no response within this period.
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
         static void Main()
         {
-            Console.WriteLine("SIPSorcery call hold example.");
-            Console.WriteLine("Press ctrl-c to exit.");
+            Console.WriteLine("SIPSorcery Call Hold and Blind Transfer example.");
+            Console.WriteLine("Press 'c' to initiate a call to the default destination.");
+            Console.WriteLine("Press 'h' to place an established call on and off hold.");
+            Console.WriteLine("Press 't' to request a blind transfer on an established call.");
+            Console.WriteLine("Press 'q' or ctrl-c to exit.");
 
             // Plumbing code to facilitate a graceful exit.
             CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
-            bool isCallHungup = false;
-            bool hasCallFailed = false;
 
             AddConsoleLogger();
 
@@ -58,45 +59,14 @@ namespace SIPSorcery
             var sipTransport = new SIPTransport();
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
 
+            Console.WriteLine($"Listening for incoming calls on: {sipTransport.GetSIPChannels().First().ListeningEndPoint}.");
+
             //EnableTraceLogs(sipTransport);
 
-            // Get the default speaker.
-            var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
-            WaveInEvent waveInEvent = GetAudioInputDevice();
-
-            RTPMediaSession RtpMediaSession = null;
+            RtpAVSession rtpAVSession = null;
 
             // Create a client/server user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var userAgent = new SIPUserAgent(sipTransport, null);
-
-            userAgent.ClientCallTrying += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
-            userAgent.ClientCallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
-            userAgent.ClientCallFailed += (uac, err) =>
-            {
-                Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
-                hasCallFailed = true;
-                exitCts.Cancel();
-            };
-            userAgent.ClientCallAnswered += (uac, resp) =>
-            {
-                if (resp.Status == SIPResponseStatusCodesEnum.Ok)
-                {
-                    Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                    PlayRemoteMedia(RtpMediaSession, audioOutProvider);
-                }
-                else
-                {
-                    Log.LogWarning($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                    hasCallFailed = true;
-                    exitCts.Cancel();
-                }
-            };
-            userAgent.OnCallHungup += () =>
-            {
-                Log.LogInformation($"Call hungup by remote party.");
-                exitCts.Cancel();
-            };
-            userAgent.ServerCallCancelled += (uas) => Log.LogInformation("Incoming call cancelled by caller.");
 
             sipTransport.SIPTransportRequestReceived += async (localEndPoint, remoteEndPoint, sipRequest) =>
             {
@@ -122,13 +92,12 @@ namespace SIPSorcery
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
 
-                        RtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
-                        RtpMediaSession.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
-                        RtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
-                        await userAgent.Answer(incomingCall, RtpMediaSession);
+                        rtpAVSession = new RtpAVSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
+                        rtpAVSession.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
+                        rtpAVSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
+                        await userAgent.Answer(incomingCall, rtpAVSession);
 
-                        PlayRemoteMedia(RtpMediaSession, audioOutProvider);
-                        waveInEvent.StartRecording();
+                        rtpAVSession.Start();
 
                         Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
@@ -138,26 +107,6 @@ namespace SIPSorcery
                     Log.LogDebug($"SIP {sipRequest.Method} request received but no processing has been set up for it, rejecting.");
                     SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
                     await sipTransport.SendResponseAsync(notAllowedResponse);
-                }
-            };
-
-            // Wire up the RTP send session to the audio output device.
-            uint rtpSendTimestamp = 0;
-            waveInEvent.DataAvailable += (object sender, WaveInEventArgs args) =>
-            {
-                byte[] sample = new byte[args.Buffer.Length / 2];
-                int sampleIndex = 0;
-
-                for (int index = 0; index < args.BytesRecorded; index += 2)
-                {
-                    var ulawByte = NAudio.Codecs.MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(args.Buffer, index));
-                    sample[sampleIndex++] = ulawByte;
-                }
-
-                if (RtpMediaSession != null)
-                {
-                    RtpMediaSession.SendAudioFrame(rtpSendTimestamp, (int)SDPMediaFormatsEnum.PCMU, sample);
-                    rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
                 }
             };
 
@@ -174,12 +123,22 @@ namespace SIPSorcery
                         {
                             if (!userAgent.IsCallActive)
                             {
-                                RtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
-                                RtpMediaSession.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
-                                RtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
+                                rtpAVSession = new RtpAVSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
+                                rtpAVSession.RemotePutOnHold += () => Log.LogInformation("Remote call party has placed us on hold.");
+                                rtpAVSession.RemoteTookOffHold += () => Log.LogInformation("Remote call party took us off hold.");
 
-                                var callDescriptor = GetCallDescriptor(DEFAULT_DESTINATION_SIP_URI);
-                                await userAgent.InitiateCall(callDescriptor, RtpMediaSession);
+                                bool callResult = await userAgent.Call(DEFAULT_DESTINATION_SIP_URI, SIP_USERNAME, SIP_PASSWORD, rtpAVSession);
+
+                                if (callResult)
+                                {
+                                    // Start the audio capture and playback.
+                                    rtpAVSession.Start();
+                                    Console.WriteLine("Call attempt successful.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Call attempt failed.");
+                                }
                             }
                             else
                             {
@@ -191,15 +150,15 @@ namespace SIPSorcery
                             // Place call on/off hold.
                             if (userAgent.IsCallActive)
                             {
-                                if (RtpMediaSession.LocalOnHold)
+                                if (rtpAVSession.LocalOnHold)
                                 {
                                     Log.LogInformation("Taking the remote call party off hold.");
-                                    RtpMediaSession.TakeOffHold();
+                                    rtpAVSession.TakeOffHold();
                                 }
                                 else
                                 {
                                     Log.LogInformation("Placing the remote call party on hold.");
-                                    RtpMediaSession.PutOnHold();
+                                    rtpAVSession.PutOnHold();
                                 }
                             }
                             else
@@ -209,6 +168,7 @@ namespace SIPSorcery
                         }
                         else if (keyProps.KeyChar == 't')
                         {
+                            // Initiate a blind transfer to the remote call party.
                             if (userAgent.IsCallActive)
                             {
                                 var transferURI = SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI);
@@ -257,21 +217,14 @@ namespace SIPSorcery
 
             Log.LogInformation("Exiting...");
 
-            RtpMediaSession?.Close();
-            waveInEvent?.StopRecording();
-            audioOutEvent?.Stop();
+            rtpAVSession?.Close();
 
-            if (!isCallHungup && userAgent != null)
+            if (userAgent != null)
             {
                 if (userAgent.IsCallActive)
                 {
                     Log.LogInformation($"Hanging up call to {userAgent?.CallDescriptor?.To}.");
                     userAgent.Hangup();
-                }
-                else if (!hasCallFailed)
-                {
-                    Log.LogInformation($"Cancelling call to {userAgent?.CallDescriptor?.To}.");
-                    userAgent.Cancel();
                 }
 
                 // Give the BYE or CANCEL request time to be transmitted.
@@ -288,93 +241,6 @@ namespace SIPSorcery
             }
 
             #endregion
-        }
-
-        /// <summary>
-        /// Gets the call descriptor to allow an outgoing call to be placed.
-        /// </summary>
-        /// <param name="callUri">The URI to place the call to.</param>
-        /// <param name="rtpSession">The RTP session that will be handling the RTP/RTCP packets for the call.</param>
-        /// <returns>A call descriptor.</returns>
-        private static SIPCallDescriptor GetCallDescriptor(string callUri)
-        {
-            // Create a call descriptor to place an outgoing call.
-            SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
-                SIP_USERNAME,
-                SIP_PASSWORD,
-                callUri,
-                $"sip:{SIP_USERNAME}@localhost",
-                callUri,
-                null, null, null,
-                SIPCallDirection.Out,
-                SDP.SDP_MIME_CONTENTTYPE,
-                null,
-                null);
-
-            return callDescriptor;
-        }
-
-        /// <summary>
-        /// Wires up the active RTP session to the speaker.
-        /// </summary>
-        /// <param name="rtpSession">The active RTP session receiving the remote party's RTP packets.</param>
-        /// <param name="audioOutProvider">The audio buffer for the default system audio output device.</param>
-        private static void PlayRemoteMedia(RTPMediaSession rtpSession, BufferedWaveProvider audioOutProvider)
-        {
-            if (rtpSession == null)
-            {
-                return;
-            }
-
-            rtpSession.OnRtpPacketReceived += (mediaType, rtpPacket) =>
-            {
-                var sample = rtpPacket.Payload;
-                for (int index = 0; index < sample.Length; index++)
-                {
-                    short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);
-                    byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
-                    audioOutProvider.AddSamples(pcmSample, 0, 2);
-                }
-            };
-        }
-
-        /// <summary>
-        /// Get the audio output device, e.g. speaker.
-        /// Note that NAudio.Wave.WaveOut is not available for .Net Standard so no easy way to check if 
-        /// there's a speaker.
-        /// </summary>
-        private static (WaveOutEvent, BufferedWaveProvider) GetAudioOutputDevice()
-        {
-            WaveOutEvent waveOutEvent = new WaveOutEvent();
-            var waveProvider = new BufferedWaveProvider(_waveFormat);
-            waveProvider.DiscardOnBufferOverflow = true;
-            waveOutEvent.Init(waveProvider);
-            waveOutEvent.Play();
-
-            return (waveOutEvent, waveProvider);
-        }
-
-        /// <summary>
-        /// Get the audio input device, e.g. microphone. The input device that will provide 
-        /// audio samples that can be encoded, packaged into RTP and sent to the remote call party.
-        /// </summary>
-        private static WaveInEvent GetAudioInputDevice()
-        {
-            if (WaveInEvent.DeviceCount == 0)
-            {
-                throw new ApplicationException("No audio input devices available. No audio will be sent.");
-            }
-            else
-            {
-                WaveInEvent waveInEvent = new WaveInEvent();
-                WaveFormat waveFormat = _waveFormat;
-                waveInEvent.BufferMilliseconds = INPUT_SAMPLE_PERIOD_MILLISECONDS;
-                waveInEvent.NumberOfBuffers = 1;
-                waveInEvent.DeviceNumber = 0;
-                waveInEvent.WaveFormat = waveFormat;
-
-                return waveInEvent;
-            }
         }
 
         /// <summary>

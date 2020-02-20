@@ -246,8 +246,11 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void Cancel()
         {
-            MediaSession.SessionMediaChanged -= MediaSessionOnSessionMediaChanged;
-            MediaSession?.Close();
+            if (MediaSession != null)
+            {
+                MediaSession.SessionMediaChanged -= MediaSessionOnSessionMediaChanged;
+                MediaSession.Close();
+            }
 
             if (m_uac != null)
             {

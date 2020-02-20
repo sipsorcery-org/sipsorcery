@@ -5,11 +5,24 @@
 // place or receive two calls and then bridge them together to accomplish an
 // attended transfer.
 //
+// Testing:
+// This example does not play well with all SIP user agents. It seems support
+// for attended transfers is patchy. A successful scenario was:
+// 
+// 1. Start this application,
+// 2. Place first call from Bria to this app (gets automatically answered),
+// 3. Place second call from MicroSIP to this app (gets automatically answered),
+// 4. Press the 't' key and the transfer works.
+//
+// Note if the order of the Bria and MicroSIP calls are reversed the MicroSIP
+// softphone will crash when the 't' key is pressed.
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
 // 12 Dec 2019	Aaron Clauson	Created, Dublin, Ireland.
+// 20 Feb 2020  Aaron Clauson   Switched to RtpAVSession and simplified.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -21,7 +34,6 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NAudio.Wave;
 using Serilog;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -32,22 +44,19 @@ namespace SIPSorcery
     class Program
     {
         private static int SIP_LISTEN_PORT = 5060;
-        private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
-        private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 20;           // This sets the frequency of the RTP packets.
-        private static int TRANSFER_TIMEOUT_SECONDS = 2; //10;               // Give up on transfer if no response within this period.
+        private static int TRANSFER_TIMEOUT_SECONDS = 2;    // Give up on transfer if no response within this period.
 
         // If set will mirror SIP packets to a Homer (sipcapture.org) logging and analysis server.
-        private static string HOMER_SERVER_ADDRESS = "192.168.11.49";
+        private static string HOMER_SERVER_ADDRESS = null; //"192.168.11.49";
         private static int HOMER_SERVER_PORT = 9060;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        private static BufferedWaveProvider m_audioOutProvider;
-
         static void Main()
         {
-            Console.WriteLine("SIPSorcery call hold example.");
-            Console.WriteLine("Press ctrl-c to exit.");
+            Console.WriteLine("SIPSorcery Attended Transfer example.");
+            Console.WriteLine("Place two simultaneous SIP calls to this program and then press 't'.");
+            Console.WriteLine("Press 'q' or ctrl-c to exit.");
 
             // Plumbing code to facilitate a graceful exit.
             CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
@@ -58,21 +67,11 @@ namespace SIPSorcery
             var sipTransport = new SIPTransport();
             sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
 
-            EnableTraceLogs(sipTransport);
+            //EnableTraceLogs(sipTransport);
 
             // Create two user agents. Each gets configured to answer an incoming call.
             var userAgent1 = new SIPUserAgent(sipTransport, null);
             var userAgent2 = new SIPUserAgent(sipTransport, null);
-
-            // Only one of the user agents can use the microphone and speaker. The one designated
-            // as the active agent gets the devices.
-            SIPUserAgent activeUserAgent = null;
-            RTPMediaSession activeRtpSession = null;
-
-            // Get the default speaker.
-            var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
-            m_audioOutProvider = audioOutProvider;
-            WaveInEvent waveInEvent = GetAudioInputDevice();
 
             userAgent1.OnCallHungup += () => Log.LogInformation($"UA1: Call hungup by remote party.");
             userAgent1.ServerCallCancelled += (uas) => Log.LogInformation("UA1: Incoming call cancelled by caller.");
@@ -87,14 +86,14 @@ namespace SIPSorcery
                     Log.LogInformation($"UA2: Transfer status update: {sipFrag.Trim()}.");
                     if (sipFrag?.Contains("SIP/2.0 200") == true)
                     {
-                        // The transfer attempt got a succesful answer. Can hangup the call.
+                        // The transfer attempt got a successful answer. Can hangup the call.
                         userAgent2.Hangup();
                         exitCts.Cancel();
                     }
                 }
             };
 
-            sipTransport.SIPTransportRequestReceived += (locelEndPoint, remoteEndPoint, sipRequest) =>
+            sipTransport.SIPTransportRequestReceived += async (localEndPoint, remoteEndPoint, sipRequest) =>
             {
                 if (sipRequest.Header.From != null &&
                     sipRequest.Header.From.FromTag != null &&
@@ -105,46 +104,23 @@ namespace SIPSorcery
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
-                    if (!userAgent1.IsCallActive)
+                    if (!userAgent1.IsCallActive || !userAgent2.IsCallActive)
                     {
-                        Log.LogInformation($"UA1: Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
-                        var incomingCall = userAgent1.AcceptCall(sipRequest);
+                        SIPUserAgent activeAgent = (!userAgent1.IsCallActive) ? userAgent1 : userAgent2;
+                        string agentDesc = (!userAgent1.IsCallActive) ? "UA1" : "UA2";
 
-                        var rtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
-                        rtpMediaSession.RemotePutOnHold += () => Log.LogInformation("UA1: Remote call party has placed us on hold.");
-                        rtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("UA1: Remote call party took us off hold.");
+                        Log.LogInformation($"{agentDesc}: Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
+                        var incomingCall = activeAgent.AcceptCall(sipRequest);
 
-                        userAgent1.Answer(incomingCall, rtpMediaSession)
+                        var rtpAVSession = new RtpAVSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
+                        rtpAVSession.RemotePutOnHold += () => Log.LogInformation($"{agentDesc}: Remote call party has placed us on hold.");
+                        rtpAVSession.RemoteTookOffHold += () => Log.LogInformation($"{agentDesc}: Remote call party took us off hold.");
+
+                        await activeAgent.Answer(incomingCall, rtpAVSession)
                             .ContinueWith(task =>
                             {
-                                activeUserAgent = userAgent1;
-                                activeRtpSession = rtpMediaSession;
-                                activeRtpSession.OnRtpPacketReceived += PlaySample;
-                                waveInEvent.StartRecording();
-
-                                Log.LogInformation($"UA1: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
-                            }, exitCts.Token);
-                    }
-                    else if (!userAgent2.IsCallActive)
-                    {
-                        Log.LogInformation($"UA2: Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
-
-                        var incomingCall = userAgent2.AcceptCall(sipRequest);
-                        var rtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
-                        rtpMediaSession.RemotePutOnHold += () => Log.LogInformation("UA2: Remote call party has placed us on hold.");
-                        rtpMediaSession.RemoteTookOffHold += () => Log.LogInformation("UA2: Remote call party took us off hold.");
-
-                        userAgent2.Answer(incomingCall, rtpMediaSession)
-                            .ContinueWith(task =>
-                            {
-                                activeRtpSession.OnRtpPacketReceived -= PlaySample;
-
-                                activeUserAgent = userAgent2;
-                                activeRtpSession = rtpMediaSession;
-                                activeRtpSession.PutOnHold();
-                                activeRtpSession.OnRtpPacketReceived += PlaySample;
-
-                                Log.LogInformation($"UA2: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
+                                rtpAVSession.Start();
+                                Log.LogInformation($"{agentDesc}: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                             }, exitCts.Token);
                     }
                     else
@@ -160,29 +136,7 @@ namespace SIPSorcery
                 {
                     Log.LogDebug($"SIP {sipRequest.Method} request received but no processing has been set up for it, rejecting.");
                     SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    return sipTransport.SendResponseAsync(notAllowedResponse);
-                }
-
-                return Task.FromResult(0);
-            };
-
-            // Wire up the RTP send session to the audio input device.
-            uint rtpSendTimestamp = 0;
-            waveInEvent.DataAvailable += (object sender, WaveInEventArgs args) =>
-            {
-                byte[] sample = new byte[args.Buffer.Length / 2];
-                int sampleIndex = 0;
-
-                for (int index = 0; index < args.BytesRecorded; index += 2)
-                {
-                    var ulawByte = NAudio.Codecs.MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(args.Buffer, index));
-                    sample[sampleIndex++] = ulawByte;
-                }
-
-                if (activeRtpSession != null)
-                {
-                    activeRtpSession.SendAudioFrame(rtpSendTimestamp, (int)SDPMediaFormatsEnum.PCMU, sample);
-                    rtpSendTimestamp += (uint)sample.Length;
+                    await sipTransport.SendResponseAsync(notAllowedResponse);
                 }
             };
 
@@ -239,8 +193,6 @@ namespace SIPSorcery
 
             userAgent1?.Hangup();
             userAgent2?.Hangup();
-            waveInEvent?.StopRecording();
-            audioOutEvent?.Stop();
 
             // Give any BYE or CANCEL requests time to be transmitted.
             Log.LogInformation("Waiting 1s for calls to be cleaned up...");
@@ -255,61 +207,6 @@ namespace SIPSorcery
             }
 
             #endregion
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="audioOutProvider">The audio buffer for the default system audio output device.</param>
-        private static void PlaySample(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
-        {
-            var sample = rtpPacket.Payload;
-
-            for (int index = 0; index < sample.Length; index++)
-            {
-                short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);
-                byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
-                m_audioOutProvider.AddSamples(pcmSample, 0, 2);
-            }
-        }
-
-        /// <summary>
-        /// Get the audio output device, e.g. speaker.
-        /// Note that NAudio.Wave.WaveOut is not available for .Net Standard so no easy way to check if 
-        /// there's a speaker.
-        /// </summary>
-        private static (WaveOutEvent, BufferedWaveProvider) GetAudioOutputDevice()
-        {
-            WaveOutEvent waveOutEvent = new WaveOutEvent();
-            var waveProvider = new BufferedWaveProvider(_waveFormat);
-            waveProvider.DiscardOnBufferOverflow = true;
-            waveOutEvent.Init(waveProvider);
-            waveOutEvent.Play();
-
-            return (waveOutEvent, waveProvider);
-        }
-
-        /// <summary>
-        /// Get the audio input device, e.g. microphone. The input device that will provide 
-        /// audio samples that can be encoded, packaged into RTP and sent to the remote call party.
-        /// </summary>
-        private static WaveInEvent GetAudioInputDevice()
-        {
-            if (WaveInEvent.DeviceCount == 0)
-            {
-                throw new ApplicationException("No audio input devices available. No audio will be sent.");
-            }
-            else
-            {
-                WaveInEvent waveInEvent = new WaveInEvent();
-                WaveFormat waveFormat = _waveFormat;
-                waveInEvent.BufferMilliseconds = INPUT_SAMPLE_PERIOD_MILLISECONDS;
-                waveInEvent.NumberOfBuffers = 1;
-                waveInEvent.DeviceNumber = 0;
-                waveInEvent.WaveFormat = waveFormat;
-
-                return waveInEvent;
-            }
         }
 
         /// <summary>
