@@ -15,7 +15,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -26,7 +25,10 @@ namespace SIPSorcery.Register
 {
     class Program
     {
-        private const int SUCCESS_REGISTRATION_COUNT = 3;   // Number of successful registrations to attempt before exiting process.
+        private const string USERNAME = "softphonesample";
+        private const string PASSWORD = "password";
+        private const string DOMAIN = "sipsorcery.com";
+        private const int EXPIRY = 120;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -39,61 +41,38 @@ namespace SIPSorcery.Register
 
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
-            var sipChannel = new SIPUDPChannel(IPAddress.Any, 0);
-            sipTransport.AddSIPChannel(sipChannel);
 
             EnableTraceLogs(sipTransport);
 
             // Create a client user agent to maintain a periodic registration with a SIP server.
-            var regUserAgent = new SIPRegistrationUserAgent(
-                sipTransport,
-                "softphonesample",
-                "password",
-                "sipsorcery.com",
-                120);
-
-            int successCounter = 0;
-            ManualResetEvent taskCompleteMre = new ManualResetEvent(false);
+            var regUserAgent = new SIPRegistrationUserAgent(sipTransport, USERNAME, PASSWORD, DOMAIN, EXPIRY);
 
             // Event handlers for the different stages of the registration.
-            regUserAgent.RegistrationFailed += (uri, err) => SIPSorcery.Sys.Log.Logger.LogError($"{uri.ToString()}: {err}");
-            regUserAgent.RegistrationTemporaryFailure += (uri, msg) => SIPSorcery.Sys.Log.Logger.LogWarning($"{uri.ToString()}: {msg}");
-            regUserAgent.RegistrationRemoved += (uri) => SIPSorcery.Sys.Log.Logger.LogError($"{uri.ToString()} registration failed.");
-            regUserAgent.RegistrationSuccessful += (uri) =>
-            {
-                SIPSorcery.Sys.Log.Logger.LogInformation($"{uri.ToString()} registration succeeded.");
-                Interlocked.Increment(ref successCounter);
-                SIPSorcery.Sys.Log.Logger.LogInformation($"Successful registrations {successCounter} of {SUCCESS_REGISTRATION_COUNT}.");
-
-                if (successCounter == SUCCESS_REGISTRATION_COUNT)
-                {
-                    taskCompleteMre.Set();
-                }
-            };
-
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
-            {
-                e.Cancel = true;
-                SIPSorcery.Sys.Log.Logger.LogInformation("Exiting...");
-                taskCompleteMre.Set();
-            };
+            regUserAgent.RegistrationFailed += (uri, err) => Log.LogError($"{uri.ToString()}: {err}");
+            regUserAgent.RegistrationTemporaryFailure += (uri, msg) => Log.LogWarning($"{uri.ToString()}: {msg}");
+            regUserAgent.RegistrationRemoved += (uri) => Log.LogError($"{uri.ToString()} registration failed.");
+            regUserAgent.RegistrationSuccessful += (uri) => Log.LogInformation($"{uri.ToString()} registration succeeded.");
 
             // Start the thread to perform the initial registration and then periodically resend it.
             regUserAgent.Start();
 
-            taskCompleteMre.WaitOne();
+            ManualResetEvent exitMRE = new ManualResetEvent(false);
+            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
+            {
+                e.Cancel = true;
+                SIPSorcery.Sys.Log.Logger.LogInformation("Exiting...");
+                exitMRE.Set();
+            };
+
+            exitMRE.WaitOne();
 
             regUserAgent.Stop();
-            if (sipTransport != null)
-            {
-                SIPSorcery.Sys.Log.Logger.LogInformation("Shutting down SIP transport...");
-                sipTransport.Shutdown();
-            }
+            sipTransport.Shutdown();
             SIPSorcery.Net.DNSManager.Stop();
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static void AddConsoleLogger()
         {
