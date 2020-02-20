@@ -69,7 +69,49 @@
             <article class="content wrap" id="_content" data-uid="">
 <h2 id="how-to-place-a-call">How to Place a Call</h2>
 
-<p>The <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/UserAgentClient">UserAgentClient</a> contains an example of how to place a SIP call from a Console application.</p>
+<p>The <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/GetStarted/Program.cs">GetStarted</a> contains an example of how to place a SIP call from a Console application.</p>
+<p>The key snippet of the code is shown below with an explanation afterwards.</p>
+<pre><code class="lang-csharp">using System;
+using System.Net.Sockets;
+using System.Threading.Tasks;
+using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
+using SIPSorcery.Net;
+
+string DESTINATION = &quot;time@sipsorcery.com&quot;;
+
+var sipTransport = new SIPTransport();
+var userAgent = new SIPUserAgent(sipTransport, null);
+var rtpSession = new RtpAVSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
+
+// Place the call and wait for the result.
+bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
+
+if(callResult)
+{
+    // Start the audio capture and playback.
+    rtpSession.Start();
+    Console.WriteLine(&quot;Call attempt successful.&quot;);
+}
+else
+{
+    Console.WriteLine(&quot;Call attempt failed.&quot;);
+}
+</code></pre>
+<h3 id="explanation">Explanation</h3>
+<p>The first step is to create a <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> to allocate a transport layer that can be used to send and receive SIP requests and responses. The <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class supports a number of different protocols and is described in this <a href="transport.html">article</a></p>
+<pre><code class="lang-csharp">var sipTransport = new SIPTransport();
+</code></pre>
+<p>Once the SIP transport layer is available a <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> (which is capable of acting as both a client and server user agent) can be instantiated. It can be used to place and manage calls and is described further in this <a href="sipuseragent.html">article</a>.</p>
+<pre><code class="lang-csharp">var userAgent = new SIPUserAgent(sipTransport, null);
+</code></pre>
+<p>The <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> can handle the signalling to set up a call but it cannot deal with the RTP media packets. To deal with them an <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> is needed. The specific type of session created here is an <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/SIPSorcery.RtpAVSession/RtpAVSession.cs">RtpAVSession</a> which is a Windows specific example of how The <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class can be connected to audio and video devices.</p>
+<pre><code class="lang-csharp">var rtpSession = new RtpAVSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
+</code></pre>
+<p>Once the SIP and RTP instances are ready a call can be placed.</p>
+<pre><code class="lang-csharp">bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
+</code></pre>
+<p>If the call succeeds then a voice should announce the time on your default system speaker.</p>
 </article>
           </div>
           

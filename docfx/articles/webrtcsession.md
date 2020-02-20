@@ -2,6 +2,8 @@
 
 The [WebRtcSession](xref:SIPSorcery.Net.WebRtcSession) class is intended to be the equivalent of the [RTCPeerConnection](https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface) available in WebRTC supporting Browsers.
 
+**NOTE** the goal for [WebRtcSession](xref:SIPSorcery.Net.WebRtcSession) class' public interface is to make it as close as possible to the [RTCPeerConnection](https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface) interface. This is currently a work in progress.
+
 ### Usage
 
 The steps involved in getting a WebRTC session to a state where RTP media packets can be exchanged are:
@@ -9,11 +11,11 @@ The steps involved in getting a WebRTC session to a state where RTP media packet
  - Instantiate the [WebRtcSession](xref:SIPSorcery.Net.WebRtcSession) instance,
  - Add the audio and/or video tracks as required,
  - Call the `createOffer` method to acquire an SDP offer that can be sent to the remote peer,
- - Send the SDP offer and get the SDP answer from the remote peer (this exchange is not part of the SDP specification and can be done using any signalling layer, examples are SIP, web sockets etc),
- - Once the SDP exchange has occurred the ICE checks occur to establish the optimal network path between the two peers,
- - Once the connection has been established a DTLS handshake must occur,
- - The keying material from the DTLS handshake is used to initialise the SRTP contexts,
- - Once the SRTP contexts are ready media and RTCP packets can be exchanged in the normal manner.
+ - Send the SDP offer and get the SDP answer from the remote peer (this exchange is not part of the WebRTC specification and can be done using any signalling layer, examples are SIP, web sockets etc),
+ - Once the SDP exchange has occurred the ICE checks occur to establish the optimal network path between the two peers (this happens under the hood, no explicit methods need to be called),
+ - Once ICE has established a the DTLS handshake is initiated by calling `DtlsHandshake.DoHandshakeAsServer`,
+ - If the DTLS handshake is successful the keying material it produces is used to initialise the SRTP contexts,
+ - After the SRTP contexts are initialised the media and RTCP packets can be exchanged in the normal manner.
 
 ````csharp
 using System;
