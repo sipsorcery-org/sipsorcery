@@ -4,8 +4,6 @@ The [UserAgentRegister](https://github.com/sipsorcery/sipsorcery/tree/master/exa
 
 The key snippet of the code is shown below with an explanation afterwards.
 
-The key snippet of the code is shown below with an explanation afterwards.
-
 ````csharp
 using System;
 using SIPSorcery.SIP;

@@ -1,34 +1,6 @@
 ### YamlMime:XRefMap
 sorted: true
 references:
-- uid: Microsoft.Extensions.Logging
-  name: Microsoft.Extensions.Logging
-  href: api/Microsoft.Extensions.Logging.html
-  commentId: N:Microsoft.Extensions.Logging
-  fullName: Microsoft.Extensions.Logging
-  nameWithType: Microsoft.Extensions.Logging
-- uid: Microsoft.Extensions.Logging.LoggerExtensions
-  name: LoggerExtensions
-  href: api/Microsoft.Extensions.Logging.LoggerExtensions.html
-  commentId: T:Microsoft.Extensions.Logging.LoggerExtensions
-  fullName: Microsoft.Extensions.Logging.LoggerExtensions
-  nameWithType: LoggerExtensions
-- uid: Microsoft.Extensions.Logging.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger,System.Exception,System.String,System.Object[])
-  name: LogError(ILogger, Exception, String, Object[])
-  href: api/Microsoft.Extensions.Logging.LoggerExtensions.html#Microsoft_Extensions_Logging_LoggerExtensions_LogError_Microsoft_Extensions_Logging_ILogger_System_Exception_System_String_System_Object___
-  commentId: M:Microsoft.Extensions.Logging.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger,System.Exception,System.String,System.Object[])
-  name.vb: LogError(ILogger, Exception, String, Object())
-  fullName: Microsoft.Extensions.Logging.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger, System.Exception, System.String, System.Object[])
-  fullName.vb: Microsoft.Extensions.Logging.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger, System.Exception, System.String, System.Object())
-  nameWithType: LoggerExtensions.LogError(ILogger, Exception, String, Object[])
-  nameWithType.vb: LoggerExtensions.LogError(ILogger, Exception, String, Object())
-- uid: Microsoft.Extensions.Logging.LoggerExtensions.LogError*
-  name: LogError
-  href: api/Microsoft.Extensions.Logging.LoggerExtensions.html#Microsoft_Extensions_Logging_LoggerExtensions_LogError_
-  commentId: Overload:Microsoft.Extensions.Logging.LoggerExtensions.LogError
-  isSpec: "True"
-  fullName: Microsoft.Extensions.Logging.LoggerExtensions.LogError
-  nameWithType: LoggerExtensions.LogError
 - uid: SIPSorcery.Net
   name: SIPSorcery.Net
   href: api/SIPSorcery.Net.html

@@ -8,7 +8,7 @@ If you are new to the library here are some recommended starting points:
  - You want to place a SIP call [Getting Started](articles/intro.md).
  - You want to perform more advanced SIP operations like transfers, on/off hold etc. [SIPUserAgent](articles/sipuseragent.md).
  - You want to use the Real-Time Transport Protocol in your application [RTPSession](articles/rtpsession.md).
- - You want to use WebRTC in your application [RTPSession](articles/webrtcsession.md).
+ - You want to use WebRTC in your application [WebRtcSession](articles/webrtcsession.md).
 
 The API reference is available [here](api/index.md).
 
