@@ -23788,6 +23788,28 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.Log.LoggerFactory
   nameWithType: Log.LoggerFactory
+- uid: SIPSorcery.Sys.LoggerExtensions
+  name: LoggerExtensions
+  href: api/SIPSorcery.Sys.LoggerExtensions.html
+  commentId: T:SIPSorcery.Sys.LoggerExtensions
+  fullName: SIPSorcery.Sys.LoggerExtensions
+  nameWithType: LoggerExtensions
+- uid: SIPSorcery.Sys.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger,System.Exception,System.String,System.Object[])
+  name: LogError(ILogger, Exception, String, Object[])
+  href: api/SIPSorcery.Sys.LoggerExtensions.html#SIPSorcery_Sys_LoggerExtensions_LogError_Microsoft_Extensions_Logging_ILogger_System_Exception_System_String_System_Object___
+  commentId: M:SIPSorcery.Sys.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger,System.Exception,System.String,System.Object[])
+  name.vb: LogError(ILogger, Exception, String, Object())
+  fullName: SIPSorcery.Sys.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger, System.Exception, System.String, System.Object[])
+  fullName.vb: SIPSorcery.Sys.LoggerExtensions.LogError(Microsoft.Extensions.Logging.ILogger, System.Exception, System.String, System.Object())
+  nameWithType: LoggerExtensions.LogError(ILogger, Exception, String, Object[])
+  nameWithType.vb: LoggerExtensions.LogError(ILogger, Exception, String, Object())
+- uid: SIPSorcery.Sys.LoggerExtensions.LogError*
+  name: LogError
+  href: api/SIPSorcery.Sys.LoggerExtensions.html#SIPSorcery_Sys_LoggerExtensions_LogError_
+  commentId: Overload:SIPSorcery.Sys.LoggerExtensions.LogError
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.LoggerExtensions.LogError
+  nameWithType: LoggerExtensions.LogError
 - uid: SIPSorcery.Sys.NetConvert
   name: NetConvert
   href: api/SIPSorcery.Sys.NetConvert.html
