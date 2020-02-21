@@ -1,6 +1,7 @@
 using System;
+using Microsoft.Extensions.Logging;
 
-namespace Microsoft.Extensions.Logging
+namespace SIPSorcery.Sys
 {
     public static class LoggerExtensions
     {
