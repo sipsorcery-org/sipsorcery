@@ -168,7 +168,10 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
-        /// Attempts to place a new outgoing call.
+        /// Attempts to place a new outgoing call AND waits for the call to be answered or fail.
+        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IMediaSession)"/> to start a call without
+        /// waiting for it to complete and monitor <see cref="ClientCallAnsweredHandler"/> and
+        /// <see cref="ClientCallFailedHandler"/> to detect an answer or failure.
         /// </summary>
         /// <param name="dst">The destination SIP URI to call.</param>
         /// <param name="username">Optional Username if authentication is required.</param>
@@ -193,14 +196,20 @@ namespace SIPSorcery.SIP.App
                null,
                null);
 
-            await InitiateCall(callDescriptor, mediaSession);
+            await InitiateCallAsync(callDescriptor, mediaSession).ConfigureAwait(false);
 
-            TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            ClientCallAnswered += (uac, resp) => Task.Run(() => callResult.SetResult(true));
-            ClientCallFailed += (uac, errorMessage) => Task.Run(() => callResult.SetResult(false));
+            ClientCallAnswered += (uac, resp) =>
+            {
+                callResult.SetResult(true);
+            };
+            ClientCallFailed += (uac, errorMessage) =>
+            {
+                callResult.SetResult(false);
+            };
 
-            return await callResult.Task;
+            return callResult.Task.Result;
         }
 
         /// <summary>
@@ -209,7 +218,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="sipCallDescriptor">A call descriptor containing the information about how 
         /// and where to place the call.</param>
         /// <param name="mediaSession">The media session used for this call</param>
-        public async Task InitiateCall(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession)
+        public async Task InitiateCallAsync(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession)
         {
             m_uac = new SIPClientUserAgent(m_transport);
             m_uac.CallTrying += ClientCallTryingHandler;
@@ -217,17 +226,30 @@ namespace SIPSorcery.SIP.App
             m_uac.CallAnswered += ClientCallAnsweredHandler;
             m_uac.CallFailed += ClientCallFailedHandler;
 
-            SIPEndPoint serverEndPoint = m_uac.GetCallDestination(sipCallDescriptor);
+            // Can be DNS lookups involved in getting the call destination.
+            SIPEndPoint serverEndPoint = await Task.Run<SIPEndPoint>(() => { return m_uac.GetCallDestination(sipCallDescriptor); }).ConfigureAwait(false);
 
             if (serverEndPoint != null)
             {
                 MediaSession = mediaSession;
                 MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
 
-                var sdp = await MediaSession.CreateOffer(serverEndPoint.Address).ConfigureAwait(false);
-                sipCallDescriptor.Content = sdp;
+                RTCOfferOptions offerOptions = new RTCOfferOptions { RemoteSignallingAddress = serverEndPoint.Address };
 
-                m_uac.Call(sipCallDescriptor);
+                var sdp = await mediaSession.createOffer(offerOptions);
+                mediaSession.setLocalDescription(sdp);
+
+                if (mediaSession.localDescription == null)
+                {
+                    ClientCallFailed?.Invoke(m_uac, $"Could not create a local SDP offer.");
+                    CallEnded();
+                }
+                else
+                {
+                    sipCallDescriptor.Content = mediaSession.localDescription.ToString();
+                    // This initiates the call but does not wait for an answer.
+                    m_uac.Call(sipCallDescriptor);
+                }
             }
             else
             {
@@ -334,10 +356,13 @@ namespace SIPSorcery.SIP.App
             MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
             MediaSession.OnRtpClosed += (reason) => Hangup();
 
-            var sdpAnswer = await MediaSession.AnswerOffer(sipRequest.Body).ConfigureAwait(false);
+            SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
+            MediaSession.setRemoteDescription(remoteSdp);
+
+            var sdpAnswer = await MediaSession.createAnswer(null).ConfigureAwait(false);
 
             m_uas = uas;
-            m_uas.Answer(m_sdpContentType, sdpAnswer, null, SIPDialogueTransferModesEnum.Default, customHeaders);
+            m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default, customHeaders);
             Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
         }
 
@@ -388,7 +413,7 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
-        /// Processes a transfer once the REFER request has been determined.
+        /// Processes a transfer by sending to the remote party once the REFER request has been constructed.
         /// </summary>
         /// <param name="referRequest">The REFER request for the transfer.</param>
         /// <param name="timeout">Timeout for the transfer request to get accepted.</param>
@@ -404,25 +429,21 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                TaskCompletionSource<bool> transferAccepted = new TaskCompletionSource<bool>();
+                TaskCompletionSource<bool> transferAccepted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
                 SIPNonInviteTransaction referTx = new SIPNonInviteTransaction(m_transport, referRequest, null);
 
                 SIPTransactionResponseReceivedDelegate referTxStatusHandler = (localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse) =>
                 {
-                    // This handler has to go on a separate thread or the SIPTransport "ProcessInMessage" thread will be blocked.
-                    Task.Run(() =>
+                    if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
                     {
-                        if (sipResponse.Header.CSeqMethod == SIPMethodsEnum.REFER && sipResponse.Status == SIPResponseStatusCodesEnum.Accepted)
-                        {
-                            logger.LogInformation("Call transfer was accepted by remote server.");
-                            transferAccepted.SetResult(true);
-                        }
-                        else
-                        {
-                            transferAccepted.SetResult(false);
-                        }
-                    }, ct);
+                        logger.LogInformation("Call transfer was accepted by remote server.");
+                        transferAccepted.SetResult(true);
+                    }
+                    else
+                    {
+                        transferAccepted.SetResult(false);
+                    }
 
                     return Task.FromResult(SocketError.Success);
                 };
@@ -488,10 +509,11 @@ namespace SIPSorcery.SIP.App
 
                     try
                     {
-                        var answerSdp = await MediaSession.RemoteReInvite(sipRequest.Body).ConfigureAwait(false);
+                        MediaSession.setRemoteDescription(SDP.ParseSDPDescription(sipRequest.Body));
+                        var answerSdp = await MediaSession.createAnswer(null).ConfigureAwait(false);
 
                         Dialogue.RemoteSDP = sipRequest.Body;
-                        Dialogue.SDP = answerSdp;
+                        Dialogue.SDP = answerSdp.ToString();
                         Dialogue.RemoteCSeq = sipRequest.Header.CSeq;
 
                         var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, Dialogue.SDP);
@@ -642,7 +664,7 @@ namespace SIPSorcery.SIP.App
             {
                 // Update the remote party's SDP.
                 Dialogue.RemoteSDP = sipResponse.Body;
-                _ = MediaSession.OfferAnswered(sipResponse.Body);
+                MediaSession.setRemoteDescription(SDP.ParseSDPDescription(sipResponse.Body));
             }
             else
             {
@@ -720,20 +742,12 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="uac">The client user agent used to initiate the call.</param>
         /// <param name="sipResponse">The INVITE success response.</param>
-        private void ClientCallAnsweredHandler(ISIPClientUserAgent uac, SIPResponse sipResponse) =>
-            _ = ClientCallAnsweredHandlerAsync(uac, sipResponse);
-
-        /// <summary>
-        /// Event handler for a client call (one initiated by us) being answered.
-        /// </summary>
-        /// <param name="uac">The client user agent used to initiate the call.</param>
-        /// <param name="sipResponse">The INVITE success response.</param>
-        private async Task ClientCallAnsweredHandlerAsync(ISIPClientUserAgent uac, SIPResponse sipResponse)
+        private void ClientCallAnsweredHandler(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                await MediaSession.OfferAnswered(sipResponse.Body).ConfigureAwait(false);
+                MediaSession.setRemoteDescription(SDP.ParseSDPDescription(sipResponse.Body));
 
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 

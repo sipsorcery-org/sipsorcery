@@ -54,8 +54,6 @@ namespace SIPSorcery.Net
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
         private const string SETUP_OFFER_ATTRIBUTE = "a=setup:actpass"; // Indicates the media announcement DTLS negotiation state is active/passive.
         private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is passive.
-        private const string AUDIO_MEDIA_ID = "0";
-        private const string VIDEO_MEDIA_ID = "1";
         private const string MEDIA_GROUPING = "BUNDLE 0 1";
 
         private static ILogger logger = Log.Logger;
@@ -92,7 +90,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public IPEndPoint RemoteEndPoint { get; private set; }
 
-        RTPChannel _rtpChannel;
+        //RTPChannel _rtpChannel;
         private string _dtlsCertificateFingerprint;
         private IPEndPoint _turnServerEndPoint;
         private List<IPAddress> _offerAddresses;            // If set restricts which local IP addresses will be offered in ICE candidates.
@@ -131,10 +129,10 @@ namespace SIPSorcery.Net
 
             SessionID = Guid.NewGuid().ToString();
 
-            RtpSession = new RTPSession(addrFamily, true, true);
+            RtpSession = new RTPSession(addrFamily, true, true, true);
 
-            _rtpChannel = RtpSession.RtpChannel;
-            _rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
+            //_rtpChannel = RtpSession.RtpChannel;
+            //_rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
             RtpSession.OnRtpClosed += Close;
             RtpSession.OnRtcpBye += Close;
         }
@@ -145,29 +143,22 @@ namespace SIPSorcery.Net
         /// <param name="mediaType">The track's media type (audio or video).</param>
         /// <param name="capabilities">The codecs we support.</param>
         /// <returns>Returns the media stream track that was added or updated.</returns>
-        public MediaStreamTrack addTrack(SDPMediaTypesEnum mediaType, List<SDPMediaFormat> capabilities)
-        {
-            string mid;
-            MediaStreamTrack existingTrack = (mediaType == SDPMediaTypesEnum.audio) ? RtpSession.AudioTrack : RtpSession.VideoTrack;
-            if (existingTrack != null)
-            {
-                mid = existingTrack.Transceiver.MID;
-            }
-            else
-            {
-                mid = RtpSession.GetNextMediaID();
-            }
+        //public MediaStreamTrack addTrack(SDPMediaTypesEnum mediaType, List<SDPMediaFormat> capabilities)
+        //{
+        //    string mid;
+        //    MediaStreamTrack existingTrack = (mediaType == SDPMediaTypesEnum.audio) ? RtpSession.AudioTrack : RtpSession.VideoTrack;
+        //    if (existingTrack != null)
+        //    {
+        //        mid = existingTrack.Transceiver.MID;
+        //    }
+        //    else
+        //    {
+        //        mid = RtpSession.GetNextMediaID();
+        //    }
 
-            return RtpSession.AddTrack(mid, mediaType, false, capabilities);
-        }
+        //    return RtpSession.AddTrack(mid, mediaType, false, capabilities);
+        //}
 
-        /// <summary>
-        /// Creates an initial SDP offer to send to a remote peer.
-        /// </summary>
-        public Task<SDP> createOffer()
-        {
-            return getSdp(SETUP_OFFER_ATTRIBUTE);
-        }
 
         /// <summary>
         /// Creates an answer to an SDP offer from a remote peer.
@@ -180,7 +171,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                return getSdp(SETUP_ANSWER_ATTRIBUTE);
+                return createOffer(null);
             }
         }
 
@@ -191,6 +182,13 @@ namespace SIPSorcery.Net
         public void setLocalDescription(SDP sdp)
         {
             SDP = sdp;
+
+            var rtpChannel = RtpSession.GetRtpChannel(SDPMediaTypesEnum.audio);
+            
+            if (rtpChannel != null)
+            {
+                rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
+            }
         }
 
         /// <summary>
@@ -207,13 +205,15 @@ namespace SIPSorcery.Net
             var audioAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
             if (audioAnnounce != null)
             {
-                RtpSession.AddTrack(audioAnnounce.MediaID, SDPMediaTypesEnum.audio, true, audioAnnounce.MediaFormats);
+                var audioTrack = new MediaStreamTrack(audioAnnounce.MediaID, SDPMediaTypesEnum.audio, true, audioAnnounce.MediaFormats);
+                RtpSession.addTrack(audioTrack);
             }
 
             var videoAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
             if (videoAnnounce != null)
             {
-                RtpSession.AddTrack(videoAnnounce.MediaID, SDPMediaTypesEnum.video, true, videoAnnounce.MediaFormats);
+                var videoTrack = new MediaStreamTrack(videoAnnounce.MediaID, SDPMediaTypesEnum.video, true, videoAnnounce.MediaFormats);
+                RtpSession.addTrack(videoTrack);
             }
 
             SdpSessionID = remoteSdp.SessionId;
@@ -296,14 +296,12 @@ namespace SIPSorcery.Net
             {
                 if (mediaType == SDPMediaTypesEnum.video)
                 {
-                    //int vp8PayloadID = Convert.ToInt32(_supportedVideoFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).Single().FormatID);
-                    int vp8PayloadID = Convert.ToInt32(RtpSession.VideoTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
+                    int vp8PayloadID = Convert.ToInt32(RtpSession.VideoLocalTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
                     RtpSession.SendVp8Frame(sampleTimestamp, vp8PayloadID, sample);
                 }
                 else if (mediaType == SDPMediaTypesEnum.audio)
                 {
-                    //int pcmuPayloadID = Convert.ToInt32(_supportedAudioFormats.Where(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).Single().FormatID);
-                    int pcmuPayloadID = Convert.ToInt32(RtpSession.AudioTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).FormatID);
+                    int pcmuPayloadID = Convert.ToInt32(RtpSession.AudioLocalTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).FormatID);
                     RtpSession.SendAudioFrame(sampleTimestamp, pcmuPayloadID, sample);
                 }
             }
@@ -327,9 +325,9 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Generates the SDP for an offer or answer.
+        /// Generates the SDP for an offer that can be made to a remote peer.
         /// </summary>
-        private async Task<SDP> getSdp(string setupAttribute)
+        public async Task<SDP> createOffer(RTCOfferOptions options)
         {
             try
             {
@@ -368,18 +366,21 @@ namespace SIPSorcery.Net
 
                     // Add a bundle attribute. Indicates that audio and video sessions will be multiplexed
                     // on a single RTP socket.
-                    if (RtpSession.AudioTrack != null && RtpSession.VideoTrack != null)
+                    if (RtpSession.AudioLocalTrack != null && RtpSession.VideoLocalTrack != null)
                     {
                         offerSdp.Group = MEDIA_GROUPING;
                     }
 
+                    // The media is being multiplexed so the audio and video RTP channel is the same.
+                    var rtpChannel = RtpSession.GetRtpChannel(SDPMediaTypesEnum.audio);
+
                     // --- Audio announcement ---
-                    if (RtpSession.AudioTrack != null)
+                    if (RtpSession.AudioLocalTrack != null)
                     {
                         SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
                             SDPMediaTypesEnum.audio,
-                            _rtpChannel.RTPPort,
-                           RtpSession.AudioTrack.Capabilties);
+                            rtpChannel.RTPPort,
+                           RtpSession.AudioLocalTrack.Capabilties);
 
                         audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
                         if (!haveIceCandidatesBeenAdded)
@@ -393,20 +394,20 @@ namespace SIPSorcery.Net
                         audioAnnouncement.IcePwd = LocalIcePassword;
                         audioAnnouncement.DtlsFingerprint = _dtlsCertificateFingerprint;
                         audioAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
-                        audioAnnouncement.AddExtra(setupAttribute);
-                        audioAnnouncement.MediaStreamStatus = RtpSession.AudioTrack.Transceiver.Direction;
-                        audioAnnouncement.MediaID = RtpSession.AudioTrack.Transceiver.MID;
+                        audioAnnouncement.AddExtra(SETUP_OFFER_ATTRIBUTE);
+                        audioAnnouncement.MediaStreamStatus = RtpSession.AudioLocalTrack.Transceiver.Direction;
+                        audioAnnouncement.MediaID = RtpSession.AudioLocalTrack.Transceiver.MID;
 
                         offerSdp.Media.Add(audioAnnouncement);
                     }
 
                     // --- Video announcement ---
-                    if (RtpSession.VideoTrack != null)
+                    if (RtpSession.VideoLocalTrack != null)
                     {
                         SDPMediaAnnouncement videoAnnouncement = new SDPMediaAnnouncement(
                             SDPMediaTypesEnum.video,
-                            _rtpChannel.RTPPort,
-                           RtpSession.VideoTrack.Capabilties);
+                            rtpChannel.RTPPort,
+                           RtpSession.VideoLocalTrack.Capabilties);
 
                         videoAnnouncement.Transport = RTP_MEDIA_PROFILE;
                         if (!haveIceCandidatesBeenAdded)
@@ -420,9 +421,9 @@ namespace SIPSorcery.Net
                         videoAnnouncement.IcePwd = LocalIcePassword;
                         videoAnnouncement.DtlsFingerprint = _dtlsCertificateFingerprint;
                         videoAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
-                        videoAnnouncement.AddExtra(setupAttribute);
-                        videoAnnouncement.MediaStreamStatus = RtpSession.VideoTrack.Transceiver.Direction;
-                        videoAnnouncement.MediaID = RtpSession.VideoTrack.Transceiver.MID; ;
+                        videoAnnouncement.AddExtra(SETUP_OFFER_ATTRIBUTE);
+                        videoAnnouncement.MediaStreamStatus = RtpSession.VideoLocalTrack.Transceiver.Direction;
+                        videoAnnouncement.MediaID = RtpSession.VideoLocalTrack.Transceiver.MID; ;
 
                         offerSdp.Media.Add(videoAnnouncement);
                     }
@@ -431,25 +432,10 @@ namespace SIPSorcery.Net
 
                     return offerSdp;
                 }
-
-                // We may have received some remote candidates from the remote part SDP so perform an immediate STUN check.
-                // If there are no remote candidates this call will end up being a NOP.
-                //SendStunConnectivityChecks(null);
-
-                //if (_doDtlsHandshake != null)
-                //{
-                //    _ = Task.Run(() =>
-                //    {
-                //        int result = _doDtlsHandshake(this);
-                //        IsDtlsNegotiationComplete = (result == 0);
-                //    });
-                //}
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception getSdp. " + excp);
-                Close(excp.Message);
-
+                logger.LogError("Exception createOffer. " + excp);
                 throw;
             }
         }
@@ -466,7 +452,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="remoteEP"></param>
         /// <param name="buffer"></param>
-        private void OnRTPDataReceived(IPEndPoint remoteEP, byte[] buffer)
+        private void OnRTPDataReceived(IPEndPoint localEndPoint, IPEndPoint remoteEP, byte[] buffer)
         {
             //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
 
@@ -511,24 +497,34 @@ namespace SIPSorcery.Net
         /// </summary>
         private async Task GetIceCandidatesAsync()
         {
-            var localIPAddresses = _offerAddresses ?? NetServices.GetAllLocalIPAddresses();
-            IceNegotiationStartedAt = DateTime.Now;
-            LocalIceCandidates = new List<IceCandidate>();
+            // The media is being multiplexed so the audio and video RTP channel is the same.
+            var rtpChannel = RtpSession.GetRtpChannel(SDPMediaTypesEnum.audio);
 
-            foreach (var address in localIPAddresses.Where(x => x.AddressFamily == _rtpChannel.RTPLocalEndPoint.AddressFamily))
+            if (rtpChannel == null)
             {
-                var iceCandidate = new IceCandidate(address, _rtpChannel.RTPPort);
+                throw new ApplicationException("Cannot start gathering ICE candidates without an RTP channel.");
+            }
+            else
+            {
+                var localIPAddresses = _offerAddresses ?? NetServices.GetAllLocalIPAddresses();
+                IceNegotiationStartedAt = DateTime.Now;
+                LocalIceCandidates = new List<IceCandidate>();
 
-                if (_turnServerEndPoint != null)
+                foreach (var address in localIPAddresses.Where(x => x.AddressFamily == rtpChannel.RTPLocalEndPoint.AddressFamily))
                 {
-                    iceCandidate.TurnServer = new TurnServer() { ServerEndPoint = _turnServerEndPoint };
-                    iceCandidate.InitialStunBindingCheck = SendTurnServerBindingRequest(iceCandidate);
+                    var iceCandidate = new IceCandidate(address, rtpChannel.RTPPort);
+
+                    if (_turnServerEndPoint != null)
+                    {
+                        iceCandidate.TurnServer = new TurnServer() { ServerEndPoint = _turnServerEndPoint };
+                        iceCandidate.InitialStunBindingCheck = SendTurnServerBindingRequest(iceCandidate);
+                    }
+
+                    LocalIceCandidates.Add(iceCandidate);
                 }
 
-                LocalIceCandidates.Add(iceCandidate);
+                await Task.WhenAll(LocalIceCandidates.Where(x => x.InitialStunBindingCheck != null).Select(x => x.InitialStunBindingCheck));
             }
-
-            await Task.WhenAll(LocalIceCandidates.Where(x => x.InitialStunBindingCheck != null).Select(x => x.InitialStunBindingCheck));
         }
 
         /// <summary>
@@ -537,17 +533,19 @@ namespace SIPSorcery.Net
         /// <param name="iceCandidate">The ICE candidate to send the STUN binding request to.</param>
         private async Task SendTurnServerBindingRequest(IceCandidate iceCandidate)
         {
+            var rtpChannel = RtpSession.GetRtpChannel(SDPMediaTypesEnum.audio);
+
             int attempt = 1;
 
             while (attempt < INITIAL_STUN_BINDING_ATTEMPTS_LIMIT && !IsConnected && !IsClosed && !iceCandidate.IsGatheringComplete)
             {
-                logger.LogDebug($"Sending STUN binding request {attempt} from {_rtpChannel.RTPLocalEndPoint} to {iceCandidate.TurnServer.ServerEndPoint}.");
+                logger.LogDebug($"Sending STUN binding request {attempt} from {rtpChannel.RTPLocalEndPoint} to {iceCandidate.TurnServer.ServerEndPoint}.");
 
                 STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
                 stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
                 byte[] stunReqBytes = stunRequest.ToByteBuffer(null, false);
 
-                _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceCandidate.TurnServer.ServerEndPoint, stunReqBytes);
+                rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceCandidate.TurnServer.ServerEndPoint, stunReqBytes);
 
                 await Task.Delay(INITIAL_STUN_BINDING_PERIOD_MILLISECONDS);
 
@@ -565,6 +563,8 @@ namespace SIPSorcery.Net
         {
             try
             {
+                var rtpChannel = RtpSession.GetRtpChannel(SDPMediaTypesEnum.audio);
+
                 //logger.LogDebug($"Send STUN connectivity checks, local candidates {LocalIceCandidates.Count()}, remote candidates {_remoteIceCandidates.Count()}.");
 
                 // If one of the ICE candidates has the remote RTP socket set then the negotiation is complete and the STUN checks are to keep the connection alive.
@@ -586,7 +586,7 @@ namespace SIPSorcery.Net
                             stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));   // Must send this to get DTLS started.
                             byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
 
-                            _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, RemoteEndPoint, stunReqBytes);
+                            rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, RemoteEndPoint, stunReqBytes);
 
                             _lastStunSentAt = DateTime.Now;
                         }
@@ -619,7 +619,7 @@ namespace SIPSorcery.Net
                                     {
                                         IPAddress remoteAddress = IPAddress.Parse(remoteIceCandidate.NetworkAddress);
 
-                                        logger.LogDebug($"Sending authenticated STUN binding request {localIceCandidate.StunConnectionRequestAttempts} from {_rtpChannel.RTPLocalEndPoint} to WebRTC peer at {remoteIceCandidate.NetworkAddress}:{remoteIceCandidate.Port}.");
+                                        logger.LogDebug($"Sending authenticated STUN binding request {localIceCandidate.StunConnectionRequestAttempts} from {rtpChannel.RTPLocalEndPoint} to WebRTC peer at {remoteIceCandidate.NetworkAddress}:{remoteIceCandidate.Port}.");
 
                                         string localUser = LocalIceUser;
 
@@ -630,7 +630,7 @@ namespace SIPSorcery.Net
                                         stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));
                                         byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
 
-                                        _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.NetworkAddress), remoteIceCandidate.Port), stunReqBytes);
+                                        rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.NetworkAddress), remoteIceCandidate.Port), stunReqBytes);
 
                                         localIceCandidate.LastSTUNSendAt = DateTime.Now;
                                     }
@@ -673,6 +673,8 @@ namespace SIPSorcery.Net
         /// <param name="remoteEndPoint">The remote end point the message was received from.</param>
         private void ProcessStunMessage(STUNv2Message stunMessage, IPEndPoint remoteEndPoint)
         {
+            var rtpChannel = RtpSession.GetRtpChannel(SDPMediaTypesEnum.audio);
+
             //logger.LogDebug("STUN message received from remote " + remoteEndPoint + " " + stunMessage.Header.MessageType + ".");
 
             if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingRequest)
@@ -686,7 +688,7 @@ namespace SIPSorcery.Net
                 string localIcePassword = LocalIcePassword;
                 byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(localIcePassword, true);
                 //iceCandidate.LocalRtpSocket.SendTo(stunRespBytes, remoteEndPoint);
-                _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunRespBytes);
+                rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunRespBytes);
 
                 //iceCandidate.LastStunRequestReceivedAt = DateTime.Now;
                 //iceCandidate.IsStunRemoteExchangeComplete = true;
@@ -694,7 +696,7 @@ namespace SIPSorcery.Net
                 if (RemoteEndPoint == null)
                 {
                     RemoteEndPoint = remoteEndPoint;
-                    RtpSession.SetDestination(RemoteEndPoint, RemoteEndPoint);
+                    RtpSession.SetDestination(SDPMediaTypesEnum.audio, RemoteEndPoint, RemoteEndPoint);
                     //OnIceConnected?.Invoke(iceCandidate, remoteEndPoint);
                     IceConnectionState = IceConnectionStatesEnum.Connected;
                 }
@@ -777,6 +779,8 @@ namespace SIPSorcery.Net
         {
             try
             {
+                var rtpChannel = RtpSession.GetRtpChannel(SDPMediaTypesEnum.audio);
+
                 if (iceCandidate.TurnAllocateAttempts >= MAXIMUM_TURN_ALLOCATE_ATTEMPTS)
                 {
                     logger.LogDebug("TURN allocation for local socket " + iceCandidate.NetworkAddress + " failed after " + iceCandidate.TurnAllocateAttempts + " attempts.");
@@ -794,7 +798,7 @@ namespace SIPSorcery.Net
                     stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Lifetime, 3600));
                     stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.RequestedTransport, STUNv2AttributeConstants.UdpTransportType));   // UDP
                     byte[] stunReqBytes = stunRequest.ToByteBuffer(null, false);
-                    _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceCandidate.TurnServer.ServerEndPoint, stunReqBytes);
+                    rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceCandidate.TurnServer.ServerEndPoint, stunReqBytes);
                 }
             }
             catch (Exception excp)
@@ -807,6 +811,8 @@ namespace SIPSorcery.Net
         {
             try
             {
+                var rtpChannel = RtpSession.GetRtpChannel(SDPMediaTypesEnum.audio);
+
                 var localTurnIceCandidate = (from cand in LocalIceCandidates where cand.TurnRelayIPEndPoint != null select cand).First();
                 var remoteTurnCandidate = (from cand in RemoteIceCandidates where cand.CandidateType == IceCandidateTypesEnum.relay select cand).First();
 
@@ -824,7 +830,7 @@ namespace SIPSorcery.Net
 
                 byte[] turnPermissionReqBytes = turnPermissionRequest.ToByteBuffer(hmacKey, false);
                 //localTurnIceCandidate.LocalRtpSocket.SendTo(turnPermissionReqBytes, localTurnIceCandidate.TurnServer.ServerEndPoint);
-                _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, localTurnIceCandidate.TurnServer.ServerEndPoint, turnPermissionReqBytes);
+                rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, localTurnIceCandidate.TurnServer.ServerEndPoint, turnPermissionReqBytes);
             }
             catch (Exception excp)
             {

@@ -348,7 +348,7 @@ namespace SIPSorcery.SIP
                 logger.LogDebug($"Attempting TCP connection from {localEndPoint} to {dstEndPoint}.");
 
                 // Attempt to connect.
-                TaskCompletionSource<SocketError> connectTcs = new TaskCompletionSource<SocketError>();
+                TaskCompletionSource<SocketError> connectTcs = new TaskCompletionSource<SocketError>(TaskCreationOptions.RunContinuationsAsynchronously);
                 connectArgs.Completed += (sender, sockArgs) =>
                 {
                     if (sockArgs.LastOperation == SocketAsyncOperation.Connect)
