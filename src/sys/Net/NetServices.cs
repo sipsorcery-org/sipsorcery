@@ -66,7 +66,7 @@ namespace SIPSorcery.Sys
             rtpSocket = null;
             controlSocket = null;
 
-            int rtpPort = startPort;
+            int rtpPort = GetNextPortProspect(startPort, rangeStartPort, rangeEndPort);
 
             lock (_allocatePortsMutex)
             {

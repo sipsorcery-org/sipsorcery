@@ -16,6 +16,7 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using SIPSorcery.Net;
 
 namespace SIPSorcery.SIP.App
 {
@@ -29,13 +30,21 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public interface IMediaSession
     {
-        //NOTE: Methods return a Task for usage with third-party implementations 
+        //NOTE: Methods return a Task for usage with third-party implementations.
 
-        Task<string> CreateOffer(IPAddress destinationAddress = null);
-        Task OfferAnswered(string remoteSDP);
+        SDP localDescription { get; }
+        SDP remoteDescription { get; }
 
-        Task<string> AnswerOffer(string remoteSDP);
-        Task<string> RemoteReInvite(string remoteSDP);
+        Task<SDP> createOffer(RTCOfferOptions options);
+        void setLocalDescription(SDP sessionDescription);
+
+        Task<SDP> createAnswer(RTCAnswerOptions options);
+        void setRemoteDescription(SDP sessionDescription);
+
+        //Task OfferAnswered(string remoteSDP);
+
+        //Task<SDP> AnswerOffer(string remoteSDP);
+        //Task<SDP> RemoteReInvite(string remoteSDP);
 
         void Close();
 
