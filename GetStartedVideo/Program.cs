@@ -31,7 +31,7 @@ namespace demo
     class Program
     {
         private const string AUDIO_FILE_PCMU = @"media\Macroform_-_Simplicity.ulaw";
-        private static string DESTINATION = "aaron@172.19.16.1:7060";
+        private static string DESTINATION = "127.0.0.1:5060"; //"127.0.0.1:5060"; //"aaron@172.19.16.1:7060";
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -88,7 +88,7 @@ namespace demo
             else
             {
                 Log.LogWarning("Call attempt failed.");
-                exitMRE.Set();
+                Console.WriteLine("Press ctrl-c to exit.");
             }
 
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
