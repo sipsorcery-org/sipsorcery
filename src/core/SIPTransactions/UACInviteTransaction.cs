@@ -303,7 +303,9 @@ namespace SIPSorcery.SIP
             header.ProxySendFrom = base.TransactionRequest.Header.ProxySendFrom;
 
             ackRequest.Header = header;
-            ackRequest.Header.Vias.PushViaHeader(SIPViaHeader.GetDefaultSIPViaHeader());
+
+            SIPViaHeader viaHeader = new SIPViaHeader(sipResponse.LocalSIPEndPoint, sipResponse.Header.Vias.TopViaHeader.Branch);
+            ackRequest.Header.Vias.PushViaHeader(viaHeader);
 
             return ackRequest;
         }
