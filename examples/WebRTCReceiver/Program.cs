@@ -115,11 +115,11 @@ namespace TestConsole
                null,
                null);
 
-            webRtcSession.setRemoteDescription(SdpType.offer, offerSDP);
+            webRtcSession.setRemoteDescription(new RTCSessionDescription { sdp = offerSDP, type = RTCSdpType.offer });
 
-            webRtcSession.RtpSession.OnReceiveReport += RtpSession_OnReceiveReport;
-            webRtcSession.RtpSession.OnSendReport += RtpSession_OnSendReport;
-            webRtcSession.RtpSession.OnRtpPacketReceived += RtpSession_OnRtpPacketReceived;
+            webRtcSession.OnReceiveReport += RtpSession_OnReceiveReport;
+            webRtcSession.OnSendReport += RtpSession_OnSendReport;
+            webRtcSession.OnRtpPacketReceived += RtpSession_OnRtpPacketReceived;
             webRtcSession.OnClose += (reason) =>
             {
                 Console.WriteLine($"webrtc session closed: {reason}");
@@ -128,13 +128,15 @@ namespace TestConsole
 
             // Add local recvonly tracks. This ensures that the SDP answer includes only
             // the codecs we support.
-            var videoTrack = webRtcSession.addTrack(SDPMediaTypesEnum.video, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
-            videoTrack.Transceiver.SetStreamStatus(MediaStreamStatusEnum.RecvOnly);
-            var audioTrack = webRtcSession.addTrack(SDPMediaTypesEnum.audio, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             audioTrack.Transceiver.SetStreamStatus(MediaStreamStatusEnum.RecvOnly);
+            webRtcSession.addTrack(audioTrack);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            videoTrack.Transceiver.SetStreamStatus(MediaStreamStatusEnum.RecvOnly);
+            webRtcSession.addTrack(videoTrack);
 
             var answerSdp = await webRtcSession.createAnswer();
-            webRtcSession.setLocalDescription(answerSdp);
+            webRtcSession.setLocalDescription(new RTCSessionDescription { sdp = answerSdp, type = RTCSdpType.answer });
 
             Console.WriteLine($"answer sdp: {answerSdp}");
 
@@ -237,7 +239,7 @@ namespace TestConsole
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
             webRtcSession.OnClose += (reason) => dtls.Shutdown();
 
-            int res = dtls.DoHandshakeAsServer((ulong)webRtcSession.RtpSession.RtpChannel.RtpSocket.Handle);
+            int res = dtls.DoHandshakeAsServer((ulong)webRtcSession.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
 
             Console.WriteLine("DtlsContext initialisation result=" + res);
 
@@ -249,7 +251,7 @@ namespace TestConsole
                 var srtpSendContext = new Srtp(dtls, false);
                 var srtpReceiveContext = new Srtp(dtls, true);
 
-                webRtcSession.RtpSession.SetSecurityContext(
+                webRtcSession.SetSecurityContext(
                     srtpSendContext.ProtectRTP,
                     srtpReceiveContext.UnprotectRTP,
                     srtpSendContext.ProtectRTCP,

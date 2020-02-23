@@ -124,7 +124,7 @@ namespace SIPSorcery.SIP.App
             // The action we take to put a call on hold is to switch the media status
             // to sendonly and change the audio input from a capture device to on hold
             // music.
-            AdjustSdpForMediaState(localDescription);
+            AdjustSdpForMediaState(localDescription.sdp);
 
             SessionMediaChanged?.Invoke(localDescription.ToString());
         }
@@ -135,7 +135,7 @@ namespace SIPSorcery.SIP.App
         public void TakeOffHold()
         {
             LocalOnHold = false;
-            AdjustSdpForMediaState(localDescription);
+            AdjustSdpForMediaState(localDescription.sdp);
             SessionMediaChanged?.Invoke(localDescription.ToString());
         }
 
@@ -147,16 +147,16 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Sets relevant properties for this session based on the SDP from the remote party.
         /// </summary>
-        /// <param name="sdp">The SDP from the remote call party.</param>
-        public override void setRemoteDescription(SDP sdp)
+        /// <param name="sessionDescription">The session description from the remote call party.</param>
+        public override void setRemoteDescription(RTCSessionDescription sessionDescription)
         {
-            base.setRemoteDescription(sdp);
+            base.setRemoteDescription(sessionDescription);
 
-            var connAddr = IPAddress.Parse(sdp.Connection.ConnectionAddress);
+            var connAddr = IPAddress.Parse(sessionDescription.sdp.Connection.ConnectionAddress);
 
-            CheckRemotePartyHoldCondition(sdp);
+            CheckRemotePartyHoldCondition(sessionDescription.sdp);
 
-            foreach (var announcement in sdp.Media)
+            foreach (var announcement in sessionDescription.sdp.Media)
             {
                 var annAddr = connAddr;
                 if (announcement.Connection != null)

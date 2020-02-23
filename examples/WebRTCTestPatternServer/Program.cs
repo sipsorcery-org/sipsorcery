@@ -139,21 +139,22 @@ namespace WebRTCServer
                 null,
                 null);
 
-            webRtcSession.addTrack(SDPMediaTypesEnum.video, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            MediaStreamTrack videoTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            webRtcSession.addTrack(videoTrack);
 
-            webRtcSession.RtpSession.OnReceiveReport += RtpSession_OnReceiveReport;
-            webRtcSession.RtpSession.OnSendReport += RtpSession_OnSendReport;
+            webRtcSession.OnReceiveReport += RtpSession_OnReceiveReport;
+            webRtcSession.OnSendReport += RtpSession_OnSendReport;
 
             webRtcSession.OnClose += (reason) =>
             {
                 logger.LogDebug($"WebRtcSession was closed with reason {reason}");
                 OnTestPatternSampleReady -= webRtcSession.SendMedia;
-                webRtcSession.RtpSession.OnReceiveReport -= RtpSession_OnReceiveReport;
-                webRtcSession.RtpSession.OnSendReport -= RtpSession_OnSendReport;
+                webRtcSession.OnReceiveReport -= RtpSession_OnReceiveReport;
+                webRtcSession.OnSendReport -= RtpSession_OnSendReport;
             };
 
-            var offerSdp = await webRtcSession.createOffer();
-            webRtcSession.setLocalDescription(offerSdp);
+            var offerSdp = await webRtcSession.createOffer(null);
+            webRtcSession.setLocalDescription(new RTCSessionDescription { sdp = offerSdp, type = RTCSdpType.offer });
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
             logger.LogDebug(webRtcSession.SDP.ToString());
@@ -177,8 +178,8 @@ namespace WebRTCServer
             try
             {
                 logger.LogDebug("Answer SDP: " + sdpAnswer);
-                var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
-                webRtcSession.setRemoteDescription(SdpType.answer, answerSDP); 
+                var answerSdp = SDP.ParseSDPDescription(sdpAnswer);
+                webRtcSession.setRemoteDescription(new RTCSessionDescription { sdp = answerSdp, type = RTCSdpType.answer }); 
             }
             catch (Exception excp)
             {
@@ -206,7 +207,7 @@ namespace WebRTCServer
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
             webRtcSession.OnClose += (reason) => dtls.Shutdown();
             
-            int res = dtls.DoHandshakeAsServer((ulong)webRtcSession.RtpSession.RtpChannel.RtpSocket.Handle);
+            int res = dtls.DoHandshakeAsServer((ulong)webRtcSession.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
 
             logger.LogDebug("DtlsContext initialisation result=" + res);
 
@@ -217,7 +218,7 @@ namespace WebRTCServer
                 var srtpSendContext = new Srtp(dtls, false);
                 var srtpReceiveContext = new Srtp(dtls, true);
 
-                webRtcSession.RtpSession.SetSecurityContext(
+                webRtcSession.SetSecurityContext(
                     srtpSendContext.ProtectRTP,
                     srtpReceiveContext.UnprotectRTP,
                     srtpSendContext.ProtectRTCP,

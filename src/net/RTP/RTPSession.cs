@@ -31,6 +31,14 @@ namespace SIPSorcery.Net
 {
     public delegate int ProtectRtpPacket(byte[] payload, int length, out int outputBufferLength);
 
+    public enum RTCSdpType
+    {
+        answer = 0,
+        offer = 1,
+        pranswer = 2,
+        rollback = 3
+    }
+
     public class RTCOfferOptions
     {
         /// <summary>
@@ -44,6 +52,12 @@ namespace SIPSorcery.Net
     public class RTCAnswerOptions
     {
 
+    }
+
+    public class RTCSessionDescription
+    {
+        public RTCSdpType type;
+        public SDP sdp;
     }
 
     public class MediaStreamTrack
@@ -227,12 +241,12 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The SDP for our end of the call.
         /// </summary>
-        public SDP localDescription { get; private set; }
+        public RTCSessionDescription localDescription { get; protected set; }
 
         /// <summary>
         /// The SDP offered by the remote call party for this session.
         /// </summary>
-        public SDP remoteDescription { get; private set; }
+        public RTCSessionDescription remoteDescription { get; protected set; }
 
         /// <summary>
         /// Function pointer to an SRTP context that encrypts an RTP packet.
@@ -413,6 +427,10 @@ namespace SIPSorcery.Net
                 if (!m_isMediaMultiplexed && !m_rtpChannels.ContainsKey(SDPMediaTypesEnum.audio))
                 {
                     CreateRtpChannel(SDPMediaTypesEnum.audio);
+                }
+
+                if(m_audioRtcpSession == null)
+                {
                     m_audioRtcpSession = CreateRtcpSession(SDPMediaTypesEnum.audio);
                 }
 
@@ -447,6 +465,10 @@ namespace SIPSorcery.Net
                 if (!m_isMediaMultiplexed && !m_rtpChannels.ContainsKey(SDPMediaTypesEnum.video))
                 {
                     CreateRtpChannel(SDPMediaTypesEnum.video);
+                }
+
+                if(m_videoRtcpSession == null)
+                {
                     m_videoRtcpSession = CreateRtcpSession(SDPMediaTypesEnum.video);
                 }
 
@@ -562,7 +584,7 @@ namespace SIPSorcery.Net
         /// Sets the local SDP description for this session.
         /// </summary>
         /// <param name="sessionDescriptionn">The SDP that will be set as the local description.</param>
-        public virtual void setLocalDescription(SDP sessionDescription)
+        public virtual void setLocalDescription(RTCSessionDescription sessionDescription)
         {
             localDescription = sessionDescription;
         }
@@ -571,11 +593,11 @@ namespace SIPSorcery.Net
         /// Sets the remote SDP description for this session.
         /// </summary>
         /// <param name="sessionDescription">The SDP that will be set as the remote description.</param>
-        public virtual void setRemoteDescription(SDP sessionDescription)
+        public virtual void setRemoteDescription(RTCSessionDescription sessionDescription)
         {
             remoteDescription = sessionDescription;
 
-            var audioAnnounce = sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
+            var audioAnnounce = sessionDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
             if (audioAnnounce != null)
             {
                 if (!m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.audio && x.IsRemote))
@@ -592,7 +614,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            var videoAnnounce = sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
+            var videoAnnounce = sessionDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
             if (videoAnnounce != null)
             {
                 if (!m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.video && x.IsRemote))

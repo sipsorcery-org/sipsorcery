@@ -32,14 +32,14 @@ namespace SIPSorcery.SIP.App
     {
         //NOTE: Methods return a Task for usage with third-party implementations.
 
-        SDP localDescription { get; }
-        SDP remoteDescription { get; }
+        RTCSessionDescription localDescription { get; }
+        RTCSessionDescription remoteDescription { get; }
 
         Task<SDP> createOffer(RTCOfferOptions options);
-        void setLocalDescription(SDP sessionDescription);
+        void setLocalDescription(RTCSessionDescription sessionDescription);
 
         Task<SDP> createAnswer(RTCAnswerOptions options);
-        void setRemoteDescription(SDP sessionDescription);
+        void setRemoteDescription(RTCSessionDescription sessionDescription);
 
         //Task OfferAnswered(string remoteSDP);
 
