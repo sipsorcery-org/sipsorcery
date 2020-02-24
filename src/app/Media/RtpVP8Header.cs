@@ -2,7 +2,7 @@
 // Filename: RtpVP8Header.cs
 //
 // Description: Represents the RTP header to use for a VP8 encoded payload as per
-// http://tools.ietf.org/html/draft-ietf-payload-vp8-12.
+// https://tools.ietf.org/html/rfc7741.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -20,16 +20,14 @@ using System;
 namespace SIPSorcery.Media
 {
     /// <summary>
-    /// Examples of size Payload Header size calculations:
-    /// 
-    /// For length of first parition 54: S0 = 4, S1 = 0x32, S2 = 0.
-    /// For length of first parition 1777: S0 = 1, S1 = 0xde, S2 = 0.
+    /// Representation of the VP8 RTP header as specified in RFC7741
+    /// https://tools.ietf.org/html/rfc7741.
     /// </summary>
-    public class RTPVP8Header
+    public class RtpVP8Header
     {
         // Payload Descriptor Fields.
         public bool ExtendedControlBitsPresent;     // Indicated whether extended control bits are present.
-        public bool NonReferenceFrame;              // When set indicates the frame can be discarded wihtout affecting any other frames.
+        public bool NonReferenceFrame;              // When set indicates the frame can be discarded without affecting any other frames.
         public bool StartOfVP8Partition;            // Should be set when the first payload octet is the start of a new VP8 partition.
         public byte PartitionIndex;                 // Denotes the VP8 partition index that the first payload octet of the packet belongs to.
         public bool IsPictureIDPresent;
@@ -53,12 +51,12 @@ namespace SIPSorcery.Media
             get { return _payloadDescriptorLength; }
         }
 
-        public RTPVP8Header()
+        public RtpVP8Header()
         { }
 
-        public static RTPVP8Header GetVP8Header(byte[] rtpPayload)
+        public static RtpVP8Header GetVP8Header(byte[] rtpPayload)
         {
-            RTPVP8Header vp8Header = new RTPVP8Header();
+            RtpVP8Header vp8Header = new RtpVP8Header();
             int payloadHeaderStartIndex = 1;
 
             // First byte of payload descriptor.

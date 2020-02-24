@@ -21,6 +21,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Windows.Forms;
 using Serilog;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia;
@@ -163,11 +164,14 @@ namespace TestConsole
                 //Console.WriteLine($"rtp video, seqnum {rtpPacket.Header.SequenceNumber}, ts {rtpPacket.Header.Timestamp}, marker {rtpPacket.Header.MarkerBit}, payload {rtpPacket.Payload.Length}, payload[0-5] {rtpPacket.Payload.HexStr(5)}.");
 
                 // New frames must have the VP8 Payload Descriptor Start bit set.
+                // The tracking of the current video frame position is to deal with a VP8 frame being split across multiple RTP packets
+                // as per https://tools.ietf.org/html/rfc7741#section-4.4.
                 if (_currVideoFramePosn > 0 || (rtpPacket.Payload[0] & 0x10) > 0)
                 {
-                    // TODO: use the VP8 Payload descriptor to properly determine the VP8 header length (currently hard coded to 4).
-                    Buffer.BlockCopy(rtpPacket.Payload, 4, _currVideoFrame, _currVideoFramePosn, rtpPacket.Payload.Length - 4);
-                    _currVideoFramePosn += rtpPacket.Payload.Length - 4;
+                    RtpVP8Header vp8Header = RtpVP8Header.GetVP8Header(rtpPacket.Payload);
+
+                    Buffer.BlockCopy(rtpPacket.Payload, vp8Header.Length, _currVideoFrame, _currVideoFramePosn, rtpPacket.Payload.Length - vp8Header.Length);
+                    _currVideoFramePosn += rtpPacket.Payload.Length - vp8Header.Length;
 
                     if (rtpPacket.Header.MarkerBit == 1)
                     {

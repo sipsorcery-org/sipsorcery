@@ -48,8 +48,8 @@ namespace SIPSorcery.SIP.App
 
         private ushort m_remoteDtmfDuration;
 
-        public bool LocalOnHold { get; set; }
-        public bool RemoteOnHold { get; set; }
+        public bool IsOnLocalHold { get; private set; }
+        public bool IsOnRemoteHold { get; private set; }
 
         /// <summary>
         /// The media announcements from each of the streams multiplexed in this RTP session.
@@ -68,7 +68,7 @@ namespace SIPSorcery.SIP.App
         /// This event is invoked when the session media has changed
         /// and a new SDP is available.
         /// </summary>
-        public event Action<string> SessionMediaChanged;
+        public event Action<SDP> SessionMediaChanged;
 
         /// <summary>	
         /// The remote call party has put us on hold.	
@@ -119,14 +119,14 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void PutOnHold()
         {
-            LocalOnHold = true;
+            IsOnLocalHold = true;
 
             // The action we take to put a call on hold is to switch the media status
             // to sendonly and change the audio input from a capture device to on hold
             // music.
             AdjustSdpForMediaState(localDescription.sdp);
 
-            SessionMediaChanged?.Invoke(localDescription.ToString());
+            SessionMediaChanged?.Invoke(localDescription.sdp);
         }
 
         /// <summary>
@@ -134,9 +134,9 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void TakeOffHold()
         {
-            LocalOnHold = false;
+            IsOnLocalHold = false;
             AdjustSdpForMediaState(localDescription.sdp);
-            SessionMediaChanged?.Invoke(localDescription.ToString());
+            SessionMediaChanged?.Invoke(localDescription.sdp);
         }
 
         public virtual void Close()
@@ -206,18 +206,18 @@ namespace SIPSorcery.SIP.App
                 return;
             }
 
-            if (LocalOnHold && RemoteOnHold)
+            if (IsOnLocalHold && IsOnRemoteHold)
             {
                 mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.None;
             }
-            else if (!LocalOnHold && !RemoteOnHold)
+            else if (!IsOnLocalHold && !IsOnRemoteHold)
             {
                 mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
             }
             else
             {
                 mediaAnnouncement.MediaStreamStatus =
-                    LocalOnHold
+                    IsOnLocalHold
                         ? MediaStreamStatusEnum.SendOnly
                         : MediaStreamStatusEnum.RecvOnly;
             }
@@ -229,17 +229,17 @@ namespace SIPSorcery.SIP.App
 
             if (mediaStreamStatus == MediaStreamStatusEnum.SendOnly)
             {
-                if (!RemoteOnHold)
+                if (!IsOnRemoteHold)
                 {
-                    RemoteOnHold = true;
+                    IsOnRemoteHold = true;
                     RemotePutOnHold?.Invoke();
                 }
             }
-            else if (mediaStreamStatus == MediaStreamStatusEnum.SendRecv && RemoteOnHold)
+            else if (mediaStreamStatus == MediaStreamStatusEnum.SendRecv && IsOnRemoteHold)
             {
-                if (RemoteOnHold)
+                if (IsOnRemoteHold)
                 {
-                    RemoteOnHold = false;
+                    IsOnRemoteHold = false;
                     RemoteTookOffHold?.Invoke();
                 }
             }

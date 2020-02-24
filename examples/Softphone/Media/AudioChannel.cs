@@ -2,7 +2,7 @@
 // Filename: AudioChannel.cs
 //
 // Description: This class manages the coding and decoding of audio from physical
-// devices and playback from samples recevied from RTP packets. 
+// devices and playback from samples received from RTP packets. 
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)

@@ -14,7 +14,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
 
@@ -30,8 +29,18 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public interface IMediaSession
     {
-        //NOTE: Methods return a Task for usage with third-party implementations.
+        /// <summary>
+        /// Fired when the session description changes.
+        /// </summary>
+        event Action<SDP> SessionMediaChanged;
 
+        /// <summary>
+        /// Fired when the RTP channel is closed.
+        /// </summary>
+        event Action<string> OnRtpClosed;
+
+        bool IsOnLocalHold { get; }
+        bool IsOnRemoteHold { get; }
         RTCSessionDescription localDescription { get; }
         RTCSessionDescription remoteDescription { get; }
 
@@ -46,13 +55,9 @@ namespace SIPSorcery.SIP.App
         //Task<SDP> AnswerOffer(string remoteSDP);
         //Task<SDP> RemoteReInvite(string remoteSDP);
 
+        void PutOnHold();
+        void TakeOffHold();
+
         void Close();
-
-        event Action<string> SessionMediaChanged;
-
-        /// <summary>
-        /// Fired when the RTP channel is closed.
-        /// </summary>
-        event Action<string> OnRtpClosed;
     }
 }

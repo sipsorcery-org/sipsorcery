@@ -64,6 +64,14 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.IsCallActive; }
         }
 
+        /// <summary>
+        /// Returns true if this call is known to be on hold.
+        /// </summary>
+        public bool IsOnHold
+        {
+            get { return m_userAgent.MediaSession.IsOnLocalHold || m_userAgent.MediaSession.IsOnRemoteHold; }
+        }
+
         public SIPClient(SIPTransport sipTransport, RTPMediaSessionManager rtpMediaSessionManager)
         {
             m_sipTransport = sipTransport;
@@ -129,7 +137,7 @@ namespace SIPSorcery.SoftPhone
                 m_rtpMediaSessionManager.RTPMediaSession.RemotePutOnHold += OnRemotePutOnHold;
                 m_rtpMediaSessionManager.RTPMediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.InitiateCall(callDescriptor, m_rtpMediaSessionManager.RTPMediaSession);
+                await m_userAgent.InitiateCallAsync(callDescriptor, m_rtpMediaSessionManager.RTPMediaSession);
             }
         }
 
@@ -186,8 +194,9 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void PutOnHold()
         {
-            m_rtpMediaSessionManager.UseMusicOnHold(true);
-            m_rtpMediaSessionManager.RTPMediaSession.PutOnHold();
+            //m_rtpMediaSessionManager.UseMusicOnHold(true);
+            //m_rtpMediaSessionManager.RTPMediaSession.PutOnHold();
+            m_userAgent.PutOnHold();
             // At this point we could stop listening to the remote party's RTP and play something 
             // else and also stop sending our microphone output and play some music.
             StatusMessage(this, "Local party put on hold");
@@ -198,8 +207,9 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public void TakeOffHold()
         {
-            m_rtpMediaSessionManager.UseMusicOnHold(false);
-            m_rtpMediaSessionManager.RTPMediaSession.TakeOffHold();
+            //m_rtpMediaSessionManager.UseMusicOnHold(false);
+            //m_rtpMediaSessionManager.RTPMediaSession.TakeOffHold();
+            m_userAgent.TakeOffHold();
             // At this point we should reverse whatever changes we made to the media stream when we
             // put the remote call part on hold.
             StatusMessage(this, "Local party taken off on hold");

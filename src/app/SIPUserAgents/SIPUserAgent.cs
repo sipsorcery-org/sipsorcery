@@ -177,7 +177,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="username">Optional Username if authentication is required.</param>
         /// <param name="password">Optional. Password if authentication is required.</param>
         /// <param name="mediaSession">The RTP session for the call.</param>
-        public async Task<bool> Call(string dst, string username, string password, IMediaSession mediaSession)
+        public Task<bool> Call(string dst, string username, string password, IMediaSession mediaSession)
         {
             if (!SIPURI.TryParse(dst, out var dstUri))
             {
@@ -196,6 +196,20 @@ namespace SIPSorcery.SIP.App
                null,
                null);
 
+            return Call(callDescriptor, mediaSession);
+        }
+
+        /// <summary>
+        /// Attempts to place a new outgoing call AND waits for the call to be answered or fail.
+        /// Use <see cref="InitiateCallAsync(SIPCallDescriptor, IMediaSession)"/> to start a call without
+        /// waiting for it to complete and monitor <see cref="ClientCallAnsweredHandler"/> and
+        /// <see cref="ClientCallFailedHandler"/> to detect an answer or failure.
+        /// </summary>
+        /// <param name="callDescriptor">The full descriptor for the call destination. Allows customising
+        /// of additional options above the standard username, password and destination URI.</param>
+        /// <param name="mediaSession">The RTP session for the call.</param>
+        public async Task<bool> Call(SIPCallDescriptor callDescriptor, IMediaSession mediaSession)
+        {
             await InitiateCallAsync(callDescriptor, mediaSession).ConfigureAwait(false);
 
             TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -258,9 +272,9 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private void MediaSessionOnSessionMediaChanged(string sdpMessage)
+        private void MediaSessionOnSessionMediaChanged(SDP sdp)
         {
-            SendReInviteRequest(sdpMessage);
+            SendReInviteRequest(sdp);
         }
 
         /// <summary>
@@ -360,6 +374,7 @@ namespace SIPSorcery.SIP.App
             MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSdp, type = RTCSdpType.offer });
 
             var sdpAnswer = await MediaSession.createAnswer(null).ConfigureAwait(false);
+            MediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdpAnswer, type = RTCSdpType.answer });
 
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default, customHeaders);
@@ -410,6 +425,16 @@ namespace SIPSorcery.SIP.App
                 var referRequest = GetReferRequest(transferee);
                 return Transfer(referRequest, timeout, ct);
             }
+        }
+
+        public void PutOnHold()
+        {
+            MediaSession.PutOnHold();
+        }
+
+        public void TakeOffHold()
+        {
+            MediaSession.TakeOffHold();
         }
 
         /// <summary>
@@ -584,7 +609,7 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Sends a re-INVITE request to the remote call party with the supplied SDP.
         /// </summary>
-        private void SendReInviteRequest(string sdp)
+        private void SendReInviteRequest(SDP sdp)
         {
             if (Dialogue == null)
             {
@@ -592,12 +617,12 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                Dialogue.SDP = sdp;
+                Dialogue.SDP = sdp.ToString();
 
                 var reinviteRequest = Dialogue.GetInDialogRequest(SIPMethodsEnum.INVITE);
                 reinviteRequest.Header.UserAgent = m_userAgent;
                 reinviteRequest.Header.ContentType = m_sdpContentType;
-                reinviteRequest.Body = sdp;
+                reinviteRequest.Body = sdp.ToString();
                 reinviteRequest.Header.Supported = SIPExtensionHeaders.PRACK;
 
                 if (m_uac != null)

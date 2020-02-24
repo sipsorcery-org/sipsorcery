@@ -29,6 +29,7 @@ namespace SIPSorcery.SIP
     internal class SIPTransactionEngine
     {
         private const int MAX_TXCHECK_WAIT_MILLISECONDS = 200; // Time to wait between checking for new pending transactions.
+        private const int TXCHECK_WAIT_MILLISECONDS = 50;       // Time to wait between checking for actions on existing transactions.
         private static readonly int m_t1 = SIPTimings.T1;
         private static readonly int m_t2 = SIPTimings.T2;
         private static readonly int m_t6 = SIPTimings.T6;
@@ -303,7 +304,7 @@ namespace SIPSorcery.SIP
                 {
                     if (m_pendingTransactions.Count == 0)
                     {
-                        Thread.Sleep(MAX_TXCHECK_WAIT_MILLISECONDS);
+                        await Task.Delay(MAX_TXCHECK_WAIT_MILLISECONDS);
                     }
                     else
                     {
@@ -469,6 +470,8 @@ namespace SIPSorcery.SIP
                         }
 
                         RemoveExpiredTransactions();
+
+                        await Task.Delay(TXCHECK_WAIT_MILLISECONDS);
                     }
                 }
             }
