@@ -46,8 +46,6 @@ namespace SIPSorcery.SoftPhone
         private bool _useVideo;
         private Dispatcher _dispatcher;
         private bool _isAudioStarted;
-        private uint _audioTimestamp = 0;
-        private uint _audioMusicOnHoldTimestamp = 0;
 
         private IMediaSession _activeRtpSession;
         private IMediaSession _onHoldRtpSession;
@@ -269,11 +267,9 @@ namespace SIPSorcery.SoftPhone
         {
             if (_activeRtpSession != null)
             {
-                _activeRtpSession.SendMedia(SDPMediaTypesEnum.audio, _audioTimestamp, sample);
-                _audioTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
+                _activeRtpSession.SendMedia(SDPMediaTypesEnum.audio, (uint)sample.Length, sample);
             }
         }
-
 
         /// <summary>
         /// Event handler for a music on hold sample being ready.
@@ -283,8 +279,7 @@ namespace SIPSorcery.SoftPhone
         {
             if (_onHoldRtpSession != null)
             {
-                _onHoldRtpSession.SendMedia(SDPMediaTypesEnum.audio, _audioMusicOnHoldTimestamp, sample);
-                _audioMusicOnHoldTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
+                _onHoldRtpSession.SendMedia(SDPMediaTypesEnum.audio, (uint)sample.Length, sample);
             }
             else
             {
