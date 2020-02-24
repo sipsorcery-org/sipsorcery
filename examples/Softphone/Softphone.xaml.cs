@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -24,7 +23,6 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -759,21 +757,54 @@ namespace SIPSorcery.SoftPhone
         {
             Button keyButton = sender as Button;
             char keyPressed = (keyButton.Content as string).ToCharArray()[0];
-            SetStatusText(m_signallingStatus, $"Key pressed {keyPressed}.");
 
-            SIPClient client = _sipClients[0];
 
-            if (keyPressed >= 48 && keyPressed <= 57)
+            SIPClient client = GetActiveCall();
+
+            if (client == null)
             {
-                await client.SendDTMF((byte)(keyPressed - 48));
+                SetStatusText(m_signallingStatus, $"Key pressed {keyPressed} but no active SIP client to send DTMF to.");
             }
-            else if (keyPressed == '*')
+            else
             {
-                await client.SendDTMF((byte)10);
+                SetStatusText(m_signallingStatus, $"Key pressed {keyPressed}.");
+
+                if (keyPressed >= 48 && keyPressed <= 57)
+                {
+                    await client.SendDTMF((byte)(keyPressed - 48));
+                }
+                else if (keyPressed == '*')
+                {
+                    await client.SendDTMF((byte)10);
+                }
+                else if (keyPressed == '#')
+                {
+                    await client.SendDTMF((byte)11);
+                }
             }
-            else if (keyPressed == '#')
+        }
+
+        /// <summary>
+        /// Attempts to find the first active call not on hold.
+        /// </summary>
+        /// <returns>An active SIP call or null if one is not available.</returns>
+        private SIPClient GetActiveCall()
+        {
+            if(_sipClients == null || _sipClients.Count == 0)
             {
-                await client.SendDTMF((byte)11);
+                return null;
+            }
+            else
+            {
+                for (int i=0; i < _sipClients.Count; i++)
+                {
+                    if(_sipClients[i].IsCallActive && !_sipClients[i].IsOnHold)
+                    {
+                        return _sipClients[i];
+                    }
+                }
+
+                return null;
             }
         }
     }
