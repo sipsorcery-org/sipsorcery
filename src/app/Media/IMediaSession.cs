@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
 
@@ -39,6 +40,8 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         event Action<string> OnRtpClosed;
 
+        event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
+
         bool IsOnLocalHold { get; }
         bool IsOnRemoteHold { get; }
         RTCSessionDescription localDescription { get; }
@@ -50,13 +53,11 @@ namespace SIPSorcery.SIP.App
         Task<SDP> createAnswer(RTCAnswerOptions options);
         void setRemoteDescription(RTCSessionDescription sessionDescription);
 
-        //Task OfferAnswered(string remoteSDP);
-
-        //Task<SDP> AnswerOffer(string remoteSDP);
-        //Task<SDP> RemoteReInvite(string remoteSDP);
-
         void PutOnHold();
         void TakeOffHold();
+
+        Task SendDtmf(byte tone, CancellationToken token);
+        void SendAudioFrame(uint timestamp, int payloadTypeID, byte[] buffer);
 
         void Close();
     }

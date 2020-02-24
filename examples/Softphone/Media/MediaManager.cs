@@ -17,11 +17,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Net;
+using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 using SIPSorceryMedia;
 
@@ -31,6 +34,7 @@ namespace SIPSorcery.SoftPhone
     {
         private static ILogger logger = Log.Logger;
 
+        private readonly MusicOnHold _musicOnHold;
         private AudioChannel _audioChannel;
         private VpxEncoder _vpxDecoder;
         private ImageConvert _imageConverter;
@@ -42,12 +46,15 @@ namespace SIPSorcery.SoftPhone
         private bool _useVideo;
         private Dispatcher _dispatcher;
         private bool _isAudioStarted;
+        private uint _audioTimestamp = 0;
+
+        private IMediaSession _activeRtpSession;
 
         /// <summary>
-        /// Fires when an audio sample is available from the local input device (microphone).
-        /// [sample].
+        /// The default format supported by this application. Note that the format
+        /// can only be changed to one supported by the RTP session class.
         /// </summary>
-        public event Action<byte[]> OnLocalAudioSampleReady;
+        public static readonly SDPMediaFormatsEnum DefaultAudioFormat = SDPMediaFormatsEnum.PCMU;
 
         /// <summary>
         /// Fires when a local video sample has been received from a capture device (webcam) and 
@@ -75,6 +82,28 @@ namespace SIPSorcery.SoftPhone
         public event Action<string> OnLocalVideoError = delegate { };
 
         /// <summary>
+        /// Creates a new RTP media session with a default audio track (if video is required it needs to be explicitly
+        /// added).
+        /// </summary>
+        /// <param name="addressFamily">The address family (IPv4 or IPv6) to create the RTP socket on.</param>
+        /// <returns>A new RTP media session.</returns>
+        public static IMediaSession CreateRtpSession(AddressFamily addressFamily)
+        {
+            var rtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(DefaultAudioFormat), addressFamily);
+
+            //rtpMediaSession.OnRtpClosed += (reason) =>
+            //{
+            //    _mediaManager.OnLocalAudioSampleReady -= LocalAudioSampleReadyForSession;
+            //    _musicOnHold.OnAudioSampleReady -= LocalAudioSampleReadyForSession;
+            //};
+
+            //_mediaManager.OnLocalAudioSampleReady += LocalAudioSampleReadyForSession;
+            //rtpMediaSession.OnRtpPacketReceived += RemoteRtpPacketReceived;
+
+            return rtpMediaSession;
+        }
+
+        /// <summary>
         /// This class manages different media renderer's that can be included in a call, e.g. audio and video.
         /// </summary>
         /// <param name="dispatcher">Need a UI dispatcher so tasks can be executed on the UI thread. For example this object
@@ -86,6 +115,8 @@ namespace SIPSorcery.SoftPhone
             _dispatcher = dispatcher;
             _useVideo = useVideo;
 
+            _musicOnHold = new MusicOnHold();
+
             if (_useVideo)
             {
                 _vpxDecoder = new VpxEncoder();
@@ -93,6 +124,17 @@ namespace SIPSorcery.SoftPhone
 
                 _imageConverter = new ImageConvert();
             }
+        }
+
+        public void SetActiveRtpSession(IMediaSession rtpSession)
+        {
+            if(_activeRtpSession != null)
+            {
+                _activeRtpSession.OnRtpPacketReceived -= RtpPacketReceived;
+            }
+
+            _activeRtpSession = rtpSession;
+            _activeRtpSession.OnRtpPacketReceived += RtpPacketReceived;
         }
 
         public List<VideoMode> GetVideoDevices()
@@ -115,7 +157,7 @@ namespace SIPSorcery.SoftPhone
                 if (_audioChannel != null)
                 {
                     _audioChannel.StartRecording();
-                    _audioChannel.SampleReady += sample => OnLocalAudioSampleReady?.Invoke(sample);
+                    _audioChannel.SampleReady += OnLocalAudioSampleReady;
                 }
             }
         }
@@ -179,6 +221,36 @@ namespace SIPSorcery.SoftPhone
             //        }
             //    }
             //}, cancellationToken);
+        }
+
+        /// <summary>
+        /// Event handler for a default audio sample being ready from a local media source.
+        /// The RTP media session Forwards samples from the local audio input device to RTP session.
+        /// We leave it up to the RTP session to decide if it wants to transmit the sample or not.
+        /// For example an RTP session will know whether it's on hold and whether it needs to send
+        /// audio to the remote call party or not.
+        /// </summary>
+        /// <param name="sample">The audio sample</param>
+        private void OnLocalAudioSampleReady(byte[] sample)
+        {
+            if (_activeRtpSession != null)
+            {
+                int payloadID = 0; // Convert.ToInt32(RTPMediaSession.MediaAnnouncements.First(x => x.Media == SDPMediaTypesEnum.audio).MediaFormats.First().FormatID);
+                _activeRtpSession.SendAudioFrame(_audioTimestamp, payloadID, sample);
+                _audioTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
+            }
+        }
+
+        /// <summary>
+        /// Event handler for the availability of a new RTP packet from a remote party.
+        /// </summary>
+        /// <param name="rtpPacket">The RTP packet from the remote party.</param>
+        private void RtpPacketReceived(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                EncodedAudioSampleReceived(rtpPacket.Payload);
+            }
         }
 
         private void SampleWebCam(MediaSource videoSampler, VideoMode videoMode, CancellationTokenSource cts)

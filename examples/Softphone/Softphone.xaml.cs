@@ -50,7 +50,6 @@ namespace SIPSorcery.SoftPhone
         private SIPRegistrationUserAgent _sipRegistrationClient;    // Can be used to register with an external SIP provider if incoming calls are required.
 
         private MediaManager _mediaManager;                         // The media (audio and video) manager.
-        private MusicOnHold _musicOnHold;                           // Music on hold source. Used for supplying audio to on hold calls.
         private WriteableBitmap _localWriteableBitmap;
         private Int32Rect _localBitmapFullRectangle;
         private WriteableBitmap _remoteWriteableBitmap;
@@ -91,8 +90,6 @@ namespace SIPSorcery.SoftPhone
             _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
             _mediaManager.OnLocalVideoError += LocalVideoError;
 
-            _musicOnHold = new MusicOnHold();
-
             await Initialize();
 
             if (_localVideoDevices.Items.Count == 0)
@@ -107,8 +104,7 @@ namespace SIPSorcery.SoftPhone
 
             for (int i = 0; i < SIP_CLIENT_COUNT; i++)
             {
-                var mediaSessionFactory = new RTPMediaSessionManager(_mediaManager, _musicOnHold);
-                var sipClient = new SIPClient(_sipTransportManager.SIPTransport, mediaSessionFactory);
+                var sipClient = new SIPClient(_sipTransportManager.SIPTransport);
 
                 sipClient.CallAnswer += SIPCallAnswered;
                 sipClient.CallEnded += ResetToCallStartState;
@@ -300,6 +296,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void SIPCallAnswered(SIPClient client)
         {
+            _mediaManager.SetActiveRtpSession(client.MediaSession);
             _mediaManager.StartAudio();
 
             if (client == _sipClients[0])
@@ -439,11 +436,12 @@ namespace SIPSorcery.SoftPhone
         {
             await client.Answer();
 
+            _mediaManager.SetActiveRtpSession(client.MediaSession);
             _mediaManager.StartAudio();
 
             if (client == _sipClients[0])
             {
-                m_answerButton.Visibility = Visibility.Collapsed;
+                m_answerButton.Visibility = Visibility.Collapsed; 
                 m_rejectButton.Visibility = Visibility.Collapsed;
                 m_redirectButton.Visibility = Visibility.Collapsed;
                 m_byeButton.Visibility = Visibility.Visible;
@@ -757,7 +755,6 @@ namespace SIPSorcery.SoftPhone
         {
             Button keyButton = sender as Button;
             char keyPressed = (keyButton.Content as string).ToCharArray()[0];
-
 
             SIPClient client = GetActiveCall();
 
