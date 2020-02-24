@@ -44,6 +44,8 @@ namespace SIPSorcery.SIP.App
 
         private static ILogger logger = Log.Logger;
 
+        private CancellationTokenSource m_cts = new CancellationTokenSource();
+
         /// <summary>
         /// Client user agent for placing calls.
         /// </summary>
@@ -234,6 +236,8 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaSession">The media session used for this call</param>
         public async Task InitiateCallAsync(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession)
         {
+            m_cts = new CancellationTokenSource();
+
             m_uac = new SIPClientUserAgent(m_transport);
             m_uac.CallTrying += ClientCallTryingHandler;
             m_uac.CallRinging += ClientCallRingingHandler;
@@ -306,6 +310,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void Hangup()
         {
+            m_cts.Cancel();
             MediaSession?.Close();
             Dialogue?.Hangup(m_transport, m_outboundProxy);
             CallEnded();
@@ -364,6 +369,7 @@ namespace SIPSorcery.SIP.App
                 Hangup();
             }
 
+            m_cts = new CancellationTokenSource();
             var sipRequest = uas.ClientTransaction.TransactionRequest;
 
             MediaSession = mediaSession;
@@ -435,6 +441,11 @@ namespace SIPSorcery.SIP.App
         public void TakeOffHold()
         {
             MediaSession.TakeOffHold();
+        }
+
+        public Task SendDtmf(byte tone)
+        {
+            return MediaSession.SendDtmf(tone, m_cts.Token);
         }
 
         /// <summary>

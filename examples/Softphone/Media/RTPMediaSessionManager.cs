@@ -14,8 +14,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Linq;
 using System.Net.Sockets;
 using SIPSorcery.Net;
 using SIPSorcery.SIP.App;
@@ -35,7 +33,7 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// The RTP media session being managed.
         /// </summary>
-        public RTPMediaSession RTPMediaSession { get; private set; }
+        //public RTPMediaSession RTPMediaSession { get; private set; }
 
         /// <summary>
         /// The RTP timestamp to set on audio packets sent for the RTP session.
@@ -59,21 +57,21 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         /// <param name="addressFamily">The type of socket the RTP session should use, IPv4 or IPv6.</param>
         /// <returns>A new RTP media session object.</returns>
-        public virtual RTPMediaSession Create(AddressFamily addressFamily)
-        {
-            RTPMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(DefaultAudioFormat), addressFamily);
+        //public virtual RTPMediaSession Create(AddressFamily addressFamily)
+        //{
+        //    var rtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(DefaultAudioFormat), addressFamily);
 
-            RTPMediaSession.OnRtpClosed += (reason) =>
-            {
-                _mediaManager.OnLocalAudioSampleReady -= LocalAudioSampleReadyForSession;
-                _musicOnHold.OnAudioSampleReady -= LocalAudioSampleReadyForSession;
-            };
+        //    rtpMediaSession.OnRtpClosed += (reason) =>
+        //    {
+        //        _mediaManager.OnLocalAudioSampleReady -= LocalAudioSampleReadyForSession;
+        //        _musicOnHold.OnAudioSampleReady -= LocalAudioSampleReadyForSession;
+        //    };
 
-            _mediaManager.OnLocalAudioSampleReady += LocalAudioSampleReadyForSession;
-            RTPMediaSession.OnRtpPacketReceived += RemoteRtpPacketReceived;
+        //    _mediaManager.OnLocalAudioSampleReady += LocalAudioSampleReadyForSession;
+        //    rtpMediaSession.OnRtpPacketReceived += RemoteRtpPacketReceived;
 
-            return RTPMediaSession;
-        }
+        //    return rtpMediaSession;
+        //}
 
         /// <summary>
         /// Creates a new RTP media session object based on a remote Session Description 
@@ -81,15 +79,16 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         /// <param name="offerSdp">The SDP offer from the remote party.</param>
         /// <returns>A new RTP media session object.</returns>
-        public virtual RTPMediaSession Create(string offerSdp)
-        {
-            var remoteSDP = SDP.ParseSDPDescription(offerSdp);
-            var dstRtpEndPoint = remoteSDP.GetSDPRTPEndPoint();
+        //public virtual RTPMediaSession Create(string offerSdp)
+        //{
+        //    var remoteSDP = SDP.ParseSDPDescription(offerSdp);
+        //    var dstRtpEndPoint = remoteSDP.GetSDPRTPEndPoint();
 
-            RTPMediaSession = Create(dstRtpEndPoint.Address.AddressFamily);
+        //    var rtpMediaSession = Create(dstRtpEndPoint.Address.AddressFamily);
 
-            return RTPMediaSession;
-        }
+
+        //    return rtpMediaSession;
+        //}
 
         /// <summary>
         /// Sets whether the session should use music on hold as the audio source.
@@ -100,14 +99,14 @@ namespace SIPSorcery.SoftPhone
         {
             if (doUse)
             {
-                _mediaManager.OnLocalAudioSampleReady -= LocalAudioSampleReadyForSession;
-                _musicOnHold.OnAudioSampleReady += LocalAudioSampleReadyForSession;
-                _musicOnHold.Start();
+                //_mediaManager.OnLocalAudioSampleReady -= LocalAudioSampleReadyForSession;
+                //_musicOnHold.OnAudioSampleReady += LocalAudioSampleReadyForSession;
+                //_musicOnHold.Start();
             }
             else
             {
-                _musicOnHold.OnAudioSampleReady -= LocalAudioSampleReadyForSession;
-                _mediaManager.OnLocalAudioSampleReady += LocalAudioSampleReadyForSession;
+                //_musicOnHold.OnAudioSampleReady -= LocalAudioSampleReadyForSession;
+                //_mediaManager.OnLocalAudioSampleReady += LocalAudioSampleReadyForSession;
             }
         }
 
@@ -119,20 +118,23 @@ namespace SIPSorcery.SoftPhone
         /// audio to the remote call party or not.
         /// </summary>
         /// <param name="sample">The audio sample</param>
-        private void LocalAudioSampleReadyForSession(byte[] sample)
-        {
-            int payloadID = 0; // Convert.ToInt32(RTPMediaSession.MediaAnnouncements.First(x => x.Media == SDPMediaTypesEnum.audio).MediaFormats.First().FormatID);
-            RTPMediaSession.SendAudioFrame(_audioTimestamp, payloadID, sample);
-            _audioTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
-        }
+        //private void LocalAudioSampleReadyForSession(byte[] sample)
+        //{
+        //    int payloadID = 0; // Convert.ToInt32(RTPMediaSession.MediaAnnouncements.First(x => x.Media == SDPMediaTypesEnum.audio).MediaFormats.First().FormatID);
+        //    RTPMediaSession.SendAudioFrame(_audioTimestamp, payloadID, sample);
+        //    _audioTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
+        //}
 
         /// <summary>
         /// Event handler for the availability of a new RTP packet from a remote party.
         /// </summary>
         /// <param name="rtpPacket">The RTP packet from the remote party.</param>
-        private void RemoteRtpPacketReceived(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
-        {
-            _mediaManager.EncodedAudioSampleReceived(rtpPacket.Payload);
-        }
+        //private void RemoteRtpPacketReceived(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
+        //{
+        //    if (mediaType == SDPMediaTypesEnum.audio)
+        //    {
+        //        _mediaManager.EncodedAudioSampleReceived(rtpPacket.Payload);
+        //    }
+        //}
     }
 }

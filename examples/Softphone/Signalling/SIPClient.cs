@@ -36,7 +36,6 @@ namespace SIPSorcery.SoftPhone
         private string m_sipFromName = SIPSoftPhoneState.SIPFromName;
 
         private SIPTransport m_sipTransport;
-        private RTPMediaSessionManager m_rtpMediaSessionManager;
         private SIPUserAgent m_userAgent;
         private SIPServerUserAgent m_pendingIncomingCall;
         private CancellationTokenSource _cts = new CancellationTokenSource();
@@ -56,6 +55,11 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.Dialogue; }
         }
 
+        public IMediaSession MediaSession
+        {
+            get { return m_userAgent.MediaSession; }
+        }
+
         /// <summary>
         /// Returns true of this SIP client is on an active call.
         /// </summary>
@@ -72,10 +76,9 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.MediaSession.IsOnLocalHold || m_userAgent.MediaSession.IsOnRemoteHold; }
         }
 
-        public SIPClient(SIPTransport sipTransport, RTPMediaSessionManager rtpMediaSessionManager)
+        public SIPClient(SIPTransport sipTransport)
         {
             m_sipTransport = sipTransport;
-            m_rtpMediaSessionManager = rtpMediaSessionManager;
             m_userAgent = new SIPUserAgent(m_sipTransport, null);
             m_userAgent.ClientCallTrying += CallTrying;
             m_userAgent.ClientCallRinging += CallRinging;
@@ -133,11 +136,11 @@ namespace SIPSorcery.SoftPhone
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
-                m_rtpMediaSessionManager.Create(dstEndpoint.Address.AddressFamily);
-                m_rtpMediaSessionManager.RTPMediaSession.RemotePutOnHold += OnRemotePutOnHold;
-                m_rtpMediaSessionManager.RTPMediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
+                var rtpMediaSession = MediaManager.CreateRtpSession(dstEndpoint.Address.AddressFamily);
+                //rtpMediaSession.RemotePutOnHold += OnRemotePutOnHold;
+                //rtpMediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.InitiateCallAsync(callDescriptor, m_rtpMediaSessionManager.RTPMediaSession);
+                await m_userAgent.InitiateCallAsync(callDescriptor, rtpMediaSession);
             }
         }
 
@@ -172,11 +175,11 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
-                m_rtpMediaSessionManager.Create(sipRequest.RemoteSIPEndPoint.Address.AddressFamily);
-                m_rtpMediaSessionManager.RTPMediaSession.RemotePutOnHold += OnRemotePutOnHold;
-                m_rtpMediaSessionManager.RTPMediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
+                //m_rtpMediaSessionManager.RTPMediaSession.RemotePutOnHold += OnRemotePutOnHold;
+                //m_rtpMediaSessionManager.RTPMediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.Answer(m_pendingIncomingCall, m_rtpMediaSessionManager.RTPMediaSession);
+                var rtpMediaSession = MediaManager.CreateRtpSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily);
+                await m_userAgent.Answer(m_pendingIncomingCall, rtpMediaSession);
                 m_pendingIncomingCall = null;
             }
         }
@@ -400,9 +403,9 @@ namespace SIPSorcery.SoftPhone
 
         public Task SendDTMF(byte b)
         {
-            if (m_rtpMediaSessionManager.RTPMediaSession != null)
+            if (m_userAgent != null)
             {
-                return m_rtpMediaSessionManager.RTPMediaSession.SendDtmf(b, _cts.Token);
+                return m_userAgent.SendDtmf(b);
             }
             else
             {
