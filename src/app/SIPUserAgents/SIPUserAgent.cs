@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -82,6 +83,16 @@ namespace SIPSorcery.SIP.App
                 return Dialogue?.DialogueState == SIPDialogueStateEnum.Confirmed;
             }
         }
+
+        /// <summary>
+        /// True if we've put the remote party on hold.
+        /// </summary>
+        public bool IsOnLocalHold { get; private set; }
+
+        /// <summary>
+        /// True if the remote party has put us on hold.
+        /// </summary>
+        public bool IsOnRemoteHold { get; private set; }
 
         /// <summary>
         /// Once either the client or server call is answered this will hold the SIP
@@ -154,6 +165,16 @@ namespace SIPSorcery.SIP.App
         /// status of a transfer.
         /// </summary>
         public event Action<string> OnTransferNotify;
+
+        /// <summary>	
+        /// The remote call party has put us on hold.	
+        /// </summary>	
+        public event Action RemotePutOnHold;
+
+        /// <summary>	
+        /// The remote call party has taken us off hold.	
+        /// </summary>	
+        public event Action RemoteTookOffHold;
 
         /// <summary>
         /// Creates a new SIP client and server combination user agent.
@@ -250,7 +271,6 @@ namespace SIPSorcery.SIP.App
             if (serverEndPoint != null)
             {
                 MediaSession = mediaSession;
-                MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
 
                 RTCOfferOptions offerOptions = new RTCOfferOptions { RemoteSignallingAddress = serverEndPoint.Address };
 
@@ -276,11 +296,6 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        private void MediaSessionOnSessionMediaChanged(SDP sdp)
-        {
-            SendReInviteRequest(sdp);
-        }
-
         /// <summary>
         /// Cancel our call attempt prior to it being answered.
         /// </summary>
@@ -288,7 +303,6 @@ namespace SIPSorcery.SIP.App
         {
             if (MediaSession != null)
             {
-                MediaSession.SessionMediaChanged -= MediaSessionOnSessionMediaChanged;
                 MediaSession.Close();
             }
 
@@ -373,7 +387,6 @@ namespace SIPSorcery.SIP.App
             var sipRequest = uas.ClientTransaction.TransactionRequest;
 
             MediaSession = mediaSession;
-            MediaSession.SessionMediaChanged += MediaSessionOnSessionMediaChanged;
             MediaSession.OnRtpClosed += (reason) => Hangup();
 
             SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
@@ -433,19 +446,44 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public void PutOnHold()
-        {
-            MediaSession.PutOnHold();
-        }
-
-        public void TakeOffHold()
-        {
-            MediaSession.TakeOffHold();
-        }
-
+        /// <summary>
+        /// Requests the RTP session to transmit a DTMF tone using an RTP event.
+        /// </summary>
+        /// <param name="tone">The DTMF tone to transmit.</param>
         public Task SendDtmf(byte tone)
         {
             return MediaSession.SendDtmf(tone, m_cts.Token);
+        }
+
+        /// <summary>
+        /// Send a re-INVITE request to put the remote call party on hold.
+        /// </summary>
+        public async Task PutOnHold()
+        {
+            IsOnLocalHold = true;
+
+            // The action we take to put a call on hold is to switch the media status
+            // to send only and change the audio input from a capture device to on hold
+            // music.
+            var localSDP = await MediaSession.createOffer(null);
+            SetLocalSdpForOnHoldState(ref localSDP);
+            MediaSession.setLocalDescription(new RTCSessionDescription { sdp = localSDP, type = RTCSdpType.offer });
+
+            SendReInviteRequest(localSDP);
+        }
+
+        /// <summary>
+        /// Send a re-INVITE request to take the remote call party on hold.
+        /// </summary>
+        public async Task TakeOffHold()
+        {
+            IsOnLocalHold = false;
+
+            var localSDP = await MediaSession.createOffer(null);
+            SetLocalSdpForOnHoldState(ref localSDP);
+            MediaSession.setLocalDescription(new RTCSessionDescription { sdp = localSDP, type = RTCSdpType.offer });
+
+            SendReInviteRequest(localSDP);
         }
 
         /// <summary>
@@ -546,6 +584,9 @@ namespace SIPSorcery.SIP.App
                     try
                     {
                         MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = SDP.ParseSDPDescription(sipRequest.Body), type = RTCSdpType.offer });
+
+                        CheckRemotePartyHoldCondition(MediaSession.remoteDescription.sdp);
+
                         var answerSdp = await MediaSession.createAnswer(null).ConfigureAwait(false);
 
                         Dialogue.RemoteSDP = sipRequest.Body;
@@ -856,12 +897,69 @@ namespace SIPSorcery.SIP.App
 
             if (MediaSession != null)
             {
-                MediaSession.SessionMediaChanged -= MediaSessionOnSessionMediaChanged;
                 MediaSession.Close();
                 MediaSession = null;
             }
 
             OnCallHungup?.Invoke();
+        }
+
+        /// <summary>
+        /// Processes an in-dialog SDP offer from the remote party to check whether the 
+        /// call hold status has changed.
+        /// </summary>
+        /// <param name="remoteSDP">The in-dialog SDP received from he remote party.</param>
+        private void CheckRemotePartyHoldCondition(SDP remoteSDP)
+        {
+            var mediaStreamStatus = remoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
+
+            if (mediaStreamStatus == MediaStreamStatusEnum.SendOnly)
+            {
+                if (!IsOnRemoteHold)
+                {
+                    IsOnRemoteHold = true;
+                    RemotePutOnHold?.Invoke();
+                }
+            }
+            else if (mediaStreamStatus == MediaStreamStatusEnum.SendRecv && IsOnRemoteHold)
+            {
+                if (IsOnRemoteHold)
+                {
+                    IsOnRemoteHold = false;
+                    RemoteTookOffHold?.Invoke();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adjusts our SDP offer for a change to the local on hold state.
+        /// </summary>
+        /// <param name="localSDP">Our SDP prior to the on hold adjustment. The SDP object
+        /// will be updated in place for the on hold changes.</param>
+        private void SetLocalSdpForOnHoldState(ref SDP localSDP)
+        {
+            var mediaAnnouncement = localSDP.Media.FirstOrDefault(x => x.Media == SDPMediaTypesEnum.audio);
+
+            if (mediaAnnouncement == null)
+            {
+                return;
+            }
+
+            if (IsOnLocalHold && IsOnRemoteHold)
+            {
+                mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.None;
+            }
+            else if (!IsOnLocalHold && !IsOnRemoteHold)
+            {
+                mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
+            }
+            else
+            {
+                mediaAnnouncement.MediaStreamStatus =
+                    IsOnLocalHold
+                        ? MediaStreamStatusEnum.SendOnly
+                        : MediaStreamStatusEnum.RecvOnly;
+            }
         }
     }
 }

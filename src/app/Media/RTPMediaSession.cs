@@ -48,9 +48,6 @@ namespace SIPSorcery.SIP.App
 
         private ushort m_remoteDtmfDuration;
 
-        public bool IsOnLocalHold { get; private set; }
-        public bool IsOnRemoteHold { get; private set; }
-
         /// <summary>
         /// The media announcements from each of the streams multiplexed in this RTP session.
         /// <code>
@@ -63,22 +60,6 @@ namespace SIPSorcery.SIP.App
         /// </code>
         /// </summary>
         public List<SDPMediaAnnouncement> MediaAnnouncements { get; private set; } = new List<SDPMediaAnnouncement>();
-
-        /// <summary>
-        /// This event is invoked when the session media has changed
-        /// and a new SDP is available.
-        /// </summary>
-        public event Action<SDP> SessionMediaChanged;
-
-        /// <summary>	
-        /// The remote call party has put us on hold.	
-        /// </summary>	
-        public event Action RemotePutOnHold;
-
-        /// <summary>	
-        /// The remote call party has taken us off hold.	
-        /// </summary>	
-        public event Action RemoteTookOffHold;
 
         /// <summary>
         /// Gets fired when an RTP DTMF event is completed on the remote call party's RTP stream.
@@ -108,35 +89,30 @@ namespace SIPSorcery.SIP.App
             addTrack(track);
         }
 
+        /// <summary>
+        /// Send a media sample to the remote party.
+        /// </summary>
+        /// <param name="mediaType">Whether the sample is audio or video.</param>
+        /// <param name="sampleTimestamp">The RTP timestamp for the sample.</param>
+        /// <param name="sample">The sample payload.</param>
+        public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
+        {
+            if (mediaType == SDPMediaTypesEnum.video)
+            {
+                int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
+                SendVp8Frame(sampleTimestamp, vp8PayloadID, sample);
+            }
+            else if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                int pcmuPayloadID = Convert.ToInt32(AudioLocalTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).FormatID);
+                SendAudioFrame(sampleTimestamp, pcmuPayloadID, sample);
+            }
+        }
+
         public Task SendDtmf(byte key, CancellationToken cancellationToken = default)
         {
             var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, DTMF_EVENT_DURATION, DTMF_EVENT_PAYLOAD_ID);
             return SendDtmfEvent(dtmfEvent, cancellationToken);
-        }
-
-        /// <summary>
-        /// Send a re-INVITE request to put the remote call party on hold.
-        /// </summary>
-        public void PutOnHold()
-        {
-            IsOnLocalHold = true;
-
-            // The action we take to put a call on hold is to switch the media status
-            // to sendonly and change the audio input from a capture device to on hold
-            // music.
-            AdjustSdpForMediaState(localDescription.sdp);
-
-            SessionMediaChanged?.Invoke(localDescription.sdp);
-        }
-
-        /// <summary>
-        /// Send a re-INVITE request to take the remote call party on hold.
-        /// </summary>
-        public void TakeOffHold()
-        {
-            IsOnLocalHold = false;
-            AdjustSdpForMediaState(localDescription.sdp);
-            SessionMediaChanged?.Invoke(localDescription.sdp);
         }
 
         public virtual void Close()
@@ -154,7 +130,7 @@ namespace SIPSorcery.SIP.App
 
             var connAddr = IPAddress.Parse(sessionDescription.sdp.Connection.ConnectionAddress);
 
-            CheckRemotePartyHoldCondition(sessionDescription.sdp);
+            //CheckRemotePartyHoldCondition(sessionDescription.sdp);
 
             foreach (var announcement in sessionDescription.sdp.Media)
             {
@@ -187,60 +163,12 @@ namespace SIPSorcery.SIP.App
                         }
                     }
                 }
-                else if(announcement.Media == SDPMediaTypesEnum.video)
+                else if (announcement.Media == SDPMediaTypesEnum.video)
                 {
                     var connRtpEndPoint = new IPEndPoint(annAddr, announcement.Port);
                     var connRtcpEndPoint = new IPEndPoint(annAddr, announcement.Port + 1);
 
                     SetDestination(SDPMediaTypesEnum.video, connRtpEndPoint, connRtcpEndPoint);
-                }
-            }
-        }
-
-        private void AdjustSdpForMediaState(SDP localSDP)
-        {
-            var mediaAnnouncement = localSDP.Media.FirstOrDefault(x => x.Media == SDPMediaTypesEnum.audio);
-
-            if (mediaAnnouncement == null)
-            {
-                return;
-            }
-
-            if (IsOnLocalHold && IsOnRemoteHold)
-            {
-                mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.None;
-            }
-            else if (!IsOnLocalHold && !IsOnRemoteHold)
-            {
-                mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
-            }
-            else
-            {
-                mediaAnnouncement.MediaStreamStatus =
-                    IsOnLocalHold
-                        ? MediaStreamStatusEnum.SendOnly
-                        : MediaStreamStatusEnum.RecvOnly;
-            }
-        }
-
-        private void CheckRemotePartyHoldCondition(SDP remoteSDP)
-        {
-            var mediaStreamStatus = remoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
-
-            if (mediaStreamStatus == MediaStreamStatusEnum.SendOnly)
-            {
-                if (!IsOnRemoteHold)
-                {
-                    IsOnRemoteHold = true;
-                    RemotePutOnHold?.Invoke();
-                }
-            }
-            else if (mediaStreamStatus == MediaStreamStatusEnum.SendRecv && IsOnRemoteHold)
-            {
-                if (IsOnRemoteHold)
-                {
-                    IsOnRemoteHold = false;
-                    RemoteTookOffHold?.Invoke();
                 }
             }
         }
