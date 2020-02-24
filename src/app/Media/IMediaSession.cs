@@ -30,6 +30,9 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public interface IMediaSession
     {
+        uint AudioTimestamp { get; }
+        uint VideoTimestamp { get; }
+
         /// <summary>
         /// Fired when the RTP channel is closed.
         /// </summary>
@@ -47,7 +50,7 @@ namespace SIPSorcery.SIP.App
         void setRemoteDescription(RTCSessionDescription sessionDescription);
 
         Task SendDtmf(byte tone, CancellationToken token);
-        void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample);
+        void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample);
 
         void Close();
     }

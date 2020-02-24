@@ -48,18 +48,8 @@ namespace SIPSorcery.SIP.App
 
         private ushort m_remoteDtmfDuration;
 
-        /// <summary>
-        /// The media announcements from each of the streams multiplexed in this RTP session.
-        /// <code>
-        /// // Example:
-        /// m=audio 10000 RTP/AVP 0
-        /// a=rtpmap:0 PCMU/8000
-        /// a=rtpmap:101 telephone-event/8000
-        /// a=fmtp:101 0-15
-        /// a=sendrecv
-        /// </code>
-        /// </summary>
-        public List<SDPMediaAnnouncement> MediaAnnouncements { get; private set; } = new List<SDPMediaAnnouncement>();
+        public uint AudioTimestamp { get; private set; }
+        public uint VideoTimestamp { get; private set; }
 
         /// <summary>
         /// Gets fired when an RTP DTMF event is completed on the remote call party's RTP stream.
@@ -93,19 +83,22 @@ namespace SIPSorcery.SIP.App
         /// Send a media sample to the remote party.
         /// </summary>
         /// <param name="mediaType">Whether the sample is audio or video.</param>
-        /// <param name="sampleTimestamp">The RTP timestamp for the sample.</param>
+        /// <param name="samplePeriod">The period for the sample in the sampling units
+        /// (e.g. 8KHz for PCMU, 90KHz for VP8).</param>
         /// <param name="sample">The sample payload.</param>
-        public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
+        public void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample)
         {
             if (mediaType == SDPMediaTypesEnum.video)
             {
                 int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
-                SendVp8Frame(sampleTimestamp, vp8PayloadID, sample);
+                SendVp8Frame(VideoTimestamp, vp8PayloadID, sample);
+                VideoTimestamp += samplePeriod;
             }
             else if (mediaType == SDPMediaTypesEnum.audio)
             {
                 int pcmuPayloadID = Convert.ToInt32(AudioLocalTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).FormatID);
-                SendAudioFrame(sampleTimestamp, pcmuPayloadID, sample);
+                SendAudioFrame(AudioTimestamp, pcmuPayloadID, sample);
+                AudioTimestamp += samplePeriod;
             }
         }
 

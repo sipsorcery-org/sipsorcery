@@ -455,6 +455,7 @@ namespace SIPSorcery.SoftPhone
                 // Put the first call on hold.
                 if (_sipClients[0].IsCallActive)
                 {
+                    _mediaManager.SetOnHold(_sipClients[0].MediaSession);
                     _sipClients[0].PutOnHold();
                     m_holdButton.Visibility = Visibility.Collapsed;
                     m_offHoldButton.Visibility = Visibility.Visible;
@@ -598,7 +599,6 @@ namespace SIPSorcery.SoftPhone
             }
 
             _mediaManager.SetOnHold(client.MediaSession);
-
             client.PutOnHold();
         }
 
@@ -621,7 +621,6 @@ namespace SIPSorcery.SoftPhone
             }
 
             _mediaManager.SetActive(client.MediaSession);
-
             client.TakeOffHold();
         }
 
