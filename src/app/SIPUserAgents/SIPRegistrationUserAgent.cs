@@ -52,6 +52,7 @@ namespace SIPSorcery.SIP.App
         private string m_registrarHost;
         private SIPURI m_contactURI;
         private int m_expiry;
+        private int m_originalExpiry;
 
         private bool m_isRegistered;
         private int m_cseq;
@@ -95,6 +96,7 @@ namespace SIPSorcery.SIP.App
             m_password = password;
             m_registrarHost = server;
             m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
+            m_originalExpiry = m_expiry;
             m_callID = Guid.NewGuid().ToString();
 
             // Setting the contact to "0.0.0.0" tells the transport layer to populate it at send time.
@@ -143,6 +145,8 @@ namespace SIPSorcery.SIP.App
                 throw new ApplicationException("SIPRegistrationUserAgent is already running, try Stop() at first!");
             }
 
+            m_expiry = m_originalExpiry;
+            m_exit = false;
             int callbackPeriod = (m_expiry - REGISTRATION_HEAD_TIME) * 1000;
             logger.LogDebug($"Starting SIPRegistrationUserAgent for {m_sipAccountAOR.ToString()}, callback period {callbackPeriod}ms.");
 
@@ -172,15 +176,18 @@ namespace SIPSorcery.SIP.App
                         }
                     }
 
-                    if (!m_exit && m_isRegistered)
+                    if (!m_exit)
                     {
-                        logger.LogDebug("SIPRegistrationUserAgent was successful, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + (m_expiry - REGISTRATION_HEAD_TIME) + "s.");
-                        m_registrationTimer.Change((m_expiry - REGISTRATION_HEAD_TIME) * 1000, Timeout.Infinite);
-                    }
-                    else
-                    {
-                        logger.LogDebug("SIPRegistrationUserAgent temporarily failed, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + REGISTER_FAILURERETRY_INTERVAL + "s.");
-                        m_registrationTimer.Change((m_expiry - REGISTRATION_HEAD_TIME) * 1000, Timeout.Infinite);
+                        if (m_isRegistered)
+                        {
+                            logger.LogDebug("SIPRegistrationUserAgent was successful, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + (m_expiry - REGISTRATION_HEAD_TIME) + "s.");
+                            m_registrationTimer.Change((m_expiry - REGISTRATION_HEAD_TIME) * 1000, Timeout.Infinite);
+                        }
+                        else
+                        {
+                            logger.LogDebug("SIPRegistrationUserAgent temporarily failed, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + REGISTER_FAILURERETRY_INTERVAL + "s.");
+                            m_registrationTimer.Change((m_expiry - REGISTRATION_HEAD_TIME) * 1000, Timeout.Infinite);
+                        }
                     }
                 }
                 catch (Exception excp)
@@ -228,9 +235,11 @@ namespace SIPSorcery.SIP.App
                     {
                         m_attempts = 0;
                         m_expiry = 0;
-                        ThreadPool.QueueUserWorkItem(delegate
-                        { SendInitialRegister(); });
+                        ThreadPool.QueueUserWorkItem(delegate{ SendInitialRegister(); });
                     }
+
+                    m_registrationTimer.Dispose();
+                    m_registrationTimer = null;
                 }
             }
             catch (Exception excp)
