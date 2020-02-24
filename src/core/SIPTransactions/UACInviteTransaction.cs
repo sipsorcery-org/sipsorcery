@@ -110,7 +110,7 @@ namespace SIPSorcery.SIP
                     {
                         // Send a PRACK for this provisional response.
                         PRackRequest = GetPRackRequest(sipResponse);
-                        await SendRequestAsync(PRackRequest);
+                        await SendRequestAsync(PRackRequest).ConfigureAwait(false);
                     }
                 }
 
@@ -121,7 +121,14 @@ namespace SIPSorcery.SIP
                     CDR.Progress(sipResponse.Status, sipResponse.ReasonPhrase, localEP, remoteEP);
                 }
 
-                return await UACInviteTransactionInformationResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse); ;
+                if (UACInviteTransactionInformationResponseReceived != null)
+                {
+                    return await UACInviteTransactionInformationResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse).ConfigureAwait(false);
+                }
+                else
+                {
+                    return SocketError.Success;
+                }
             }
             catch (Exception excp)
             {
@@ -142,14 +149,14 @@ namespace SIPSorcery.SIP
                     if (_sendOkAckManually == false)
                     {
                         AckRequest = Get2xxAckRequest(null, null);
-                        await SendRequestAsync(AckRequest);
+                        await SendRequestAsync(AckRequest).ConfigureAwait(false);
                     }
                 }
                 else
                 {
                     // ACK for non 2xx response is part of the INVITE transaction and gets routed to the same endpoint as the INVITE.
                     AckRequest = GetInTransactionACKRequest(sipResponse, m_transactionRequest.URI);
-                    await SendRequestAsync(AckRequest);
+                    await SendRequestAsync(AckRequest).ConfigureAwait(false);
                 }
 
                 if (CDR != null)
@@ -159,7 +166,14 @@ namespace SIPSorcery.SIP
                     CDR.Answered(sipResponse.StatusCode, sipResponse.Status, sipResponse.ReasonPhrase, localEP, remoteEP);
                 }
 
-                return await UACInviteTransactionFinalResponseReceived?.Invoke(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse);
+                if (UACInviteTransactionFinalResponseReceived != null)
+                {
+                    return await UACInviteTransactionFinalResponseReceived(localSIPEndPoint, remoteEndPoint, sipTransaction, sipResponse).ConfigureAwait(false);
+                }
+                else
+                {
+                    return SocketError.Success;
+                }
             }
             catch (Exception excp)
             {
