@@ -380,34 +380,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Creates a new RTP session and adds a media track. The synchronisation source and sequence number
-        /// are initialised to pseudo random values. This constructor also adds a default stream to the session.
-        /// Typically this is suitable for sessions that only have a single stream per session such as a 
-        /// voice only SIP call.
-        /// </summary>
-        /// <param name="mediaType">The default media type for this RTP session. If media multiplexing
-        /// is being used additional streams can be added by calling AddStream.</param>
-        /// <param name="payloadTypeID">The payload type ID for this RTP stream. It's what gets set in the payload 
-        /// type ID field in the RTP header.</param>
-        /// <param name="addrFamily">Determines whether the RTP channel will use an IPv4 or IPv6 socket.</param>
-        /// <param name="isRtcpMultiplexed">If true RTCP reports will be multiplexed with RTP on a single channel.
-        /// If false (standard mode) then a separate socket is used to send and receive RTCP reports.</param>
-        /// <param name="isSecure">If true indicated this session is using SRTP to encrypt and authorise
-        /// RTP and RTCP packets. No communications or reporting will commence until the 
-        /// is explicitly set as complete.</param>
-        //public RTPSession(
-        //    SDPMediaTypesEnum mediaType,
-        //    SDPMediaFormat mediaFormat,
-        //    AddressFamily addrFamily,
-        //    bool isMediaMultiplexed,
-        //    bool isRtcpMultiplexed,
-        //    bool isSecure) : this(addrFamily, isMediaMultiplexed, isRtcpMultiplexed, isSecure)
-        //{
-        //    AddTrack(m_mediaID.ToString(), mediaType, false, new List<SDPMediaFormat> { mediaFormat });
-        //    m_mediaID++;
-        //}
-
-        /// <summary>
         /// Adds a media track to this session. A media track represents an audio or video
         /// stream and can be a local (which means we're sending) or remote (which means
         /// we're receiving).

@@ -1,7 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: UIHelper.cs
 //
-// Description: This class contains some helper and utility methods for WPF applications.
+// Description: This class contains some helper and utility methods for WPF 
+// applications.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)

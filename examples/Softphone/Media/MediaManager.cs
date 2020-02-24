@@ -47,8 +47,10 @@ namespace SIPSorcery.SoftPhone
         private Dispatcher _dispatcher;
         private bool _isAudioStarted;
         private uint _audioTimestamp = 0;
+        private uint _audioMusicOnHoldTimestamp = 0;
 
         private IMediaSession _activeRtpSession;
+        private IMediaSession _onHoldRtpSession;
 
         /// <summary>
         /// The default format supported by this application. Note that the format
@@ -116,6 +118,7 @@ namespace SIPSorcery.SoftPhone
             _useVideo = useVideo;
 
             _musicOnHold = new MusicOnHold();
+            _musicOnHold.OnAudioSampleReady += OnMusicOnHoldSampleReady;
 
             if (_useVideo)
             {
@@ -126,15 +129,46 @@ namespace SIPSorcery.SoftPhone
             }
         }
 
-        public void SetActiveRtpSession(IMediaSession rtpSession)
+        /// <summary>
+        /// When an RTP session is made active:
+        ///  - We accept and playback RTP packets from the remote call party.
+        ///  - We send media from our capture devices to the remote call party.
+        /// Only a single RTP session can be active at any point. It's up to 
+        /// the application to tell us if a previously active session should 
+        /// be put on hold.
+        /// </summary>
+        public void SetActive(IMediaSession rtpSession)
         {
             if(_activeRtpSession != null)
             {
                 _activeRtpSession.OnRtpPacketReceived -= RtpPacketReceived;
             }
 
+            if(rtpSession == _onHoldRtpSession)
+            {
+                _onHoldRtpSession = null;
+            }
+
             _activeRtpSession = rtpSession;
             _activeRtpSession.OnRtpPacketReceived += RtpPacketReceived;
+        }
+
+        /// <summary>
+        /// When an RTP session is on hold:
+        ///  - We ignore any RTP packets received on it.
+        ///  - We send music on hold as our RTP stream.
+        /// </summary>
+        /// <param name="rtpSession">The RTP session to set on hold.</param>
+        public void SetOnHold(IMediaSession rtpSession)
+        {
+            if (rtpSession == _activeRtpSession)
+            {
+                _activeRtpSession = null;
+            }
+
+            rtpSession.OnRtpPacketReceived -= RtpPacketReceived;
+            _onHoldRtpSession = rtpSession;
+            _musicOnHold.Start();
         }
 
         public List<VideoMode> GetVideoDevices()
@@ -235,9 +269,26 @@ namespace SIPSorcery.SoftPhone
         {
             if (_activeRtpSession != null)
             {
-                int payloadID = 0; // Convert.ToInt32(RTPMediaSession.MediaAnnouncements.First(x => x.Media == SDPMediaTypesEnum.audio).MediaFormats.First().FormatID);
-                _activeRtpSession.SendAudioFrame(_audioTimestamp, payloadID, sample);
+                _activeRtpSession.SendMedia(SDPMediaTypesEnum.audio, _audioTimestamp, sample);
                 _audioTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
+            }
+        }
+
+
+        /// <summary>
+        /// Event handler for a music on hold sample being ready.
+        /// </summary>
+        /// <param name="sample">The music on hold sample</param>
+        private void OnMusicOnHoldSampleReady(byte[] sample)
+        {
+            if (_onHoldRtpSession != null)
+            {
+                _onHoldRtpSession.SendMedia(SDPMediaTypesEnum.audio, _audioMusicOnHoldTimestamp, sample);
+                _audioMusicOnHoldTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
+            }
+            else
+            {
+                _musicOnHold.Stop();
             }
         }
 

@@ -31,19 +31,12 @@ namespace SIPSorcery.SIP.App
     public interface IMediaSession
     {
         /// <summary>
-        /// Fired when the session description changes.
-        /// </summary>
-        event Action<SDP> SessionMediaChanged;
-
-        /// <summary>
         /// Fired when the RTP channel is closed.
         /// </summary>
         event Action<string> OnRtpClosed;
 
         event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
 
-        bool IsOnLocalHold { get; }
-        bool IsOnRemoteHold { get; }
         RTCSessionDescription localDescription { get; }
         RTCSessionDescription remoteDescription { get; }
 
@@ -53,11 +46,8 @@ namespace SIPSorcery.SIP.App
         Task<SDP> createAnswer(RTCAnswerOptions options);
         void setRemoteDescription(RTCSessionDescription sessionDescription);
 
-        void PutOnHold();
-        void TakeOffHold();
-
         Task SendDtmf(byte tone, CancellationToken token);
-        void SendAudioFrame(uint timestamp, int payloadTypeID, byte[] buffer);
+        void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample);
 
         void Close();
     }

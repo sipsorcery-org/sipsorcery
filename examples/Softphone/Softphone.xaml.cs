@@ -296,7 +296,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void SIPCallAnswered(SIPClient client)
         {
-            _mediaManager.SetActiveRtpSession(client.MediaSession);
+            _mediaManager.SetActive(client.MediaSession);
             _mediaManager.StartAudio();
 
             if (client == _sipClients[0])
@@ -436,7 +436,7 @@ namespace SIPSorcery.SoftPhone
         {
             await client.Answer();
 
-            _mediaManager.SetActiveRtpSession(client.MediaSession);
+            _mediaManager.SetActive(client.MediaSession);
             _mediaManager.StartAudio();
 
             if (client == _sipClients[0])
@@ -584,7 +584,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void HoldButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            IVoIPClient client = (sender == m_holdButton) ? _sipClients[0] : _sipClients[1];
+            SIPClient client = (sender == m_holdButton) ? _sipClients[0] : _sipClients[1];
 
             if (client == _sipClients[0])
             {
@@ -597,6 +597,8 @@ namespace SIPSorcery.SoftPhone
                 m_offHold2Button.Visibility = Visibility.Visible;
             }
 
+            _mediaManager.SetOnHold(client.MediaSession);
+
             client.PutOnHold();
         }
 
@@ -605,7 +607,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void OffHoldButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            IVoIPClient client = (sender == m_offHoldButton) ? _sipClients[0] : _sipClients[1];
+            SIPClient client = (sender == m_offHoldButton) ? _sipClients[0] : _sipClients[1];
 
             if (client == _sipClients[0])
             {
@@ -617,6 +619,8 @@ namespace SIPSorcery.SoftPhone
                 m_hold2Button.Visibility = Visibility.Visible;
                 m_offHold2Button.Visibility = Visibility.Collapsed;
             }
+
+            _mediaManager.SetActive(client.MediaSession);
 
             client.TakeOffHold();
         }
