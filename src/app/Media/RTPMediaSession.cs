@@ -223,50 +223,6 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        //public Task OfferAnswered(string remoteSDP)
-        //{
-        //    SetRemoteSDP(remoteSDP);
-        //    return Task.FromResult(true);
-        //}
-
-        //public Task<SDP> createAnswer()
-        //{
-        //    //SetRemoteSDP(remoteSDP);
-            
-        //    // TODO: Need to generate an answer from the offer not generate a new offer.
-            
-        //    //IPAddress localAddress = null;
-        //    //if(AudioDestinationEndPoint != null)
-        //    //{
-        //    //    localAddress = NetServices.GetLocalAddressForRemote(AudioDestinationEndPoint.Address);
-        //    //}
-
-        //    //return createOffer(localAddress);
-        //}
-
-        //public Task<SDP> RemoteReInvite(string remoteSDP)
-        //{
-        //    SetRemoteSDP(remoteSDP);
-        //    // TODO: Need to generate an answer from the offer not generate a new offer.
-        //    return CreateOffer();
-        //}
-
-        //public override void setRemoteDescription(SDP sessionDescription)
-        //{
-        //    //var sdp = SDP.ParseSDPDescription(remoteSDP);
-        //    //SetRemoteSDP(sdp);
-        //    base.setRemoteDescription(sessionDescription);
-
-        //    CheckRemotePartyHoldCondition(sdp);
-
-        //    logger.LogDebug($"Remote RTP Audio socket {AudioDestinationEndPoint}.");
-
-        //    if(VideoDestinationEndPoint != null)
-        //    {
-        //        logger.LogDebug($"Remote RTP Audio socket {AudioDestinationEndPoint}.");
-        //    }
-        //}
-
         private void CheckRemotePartyHoldCondition(SDP remoteSDP)
         {
             var mediaStreamStatus = remoteSDP.GetMediaStreamStatus(SDPMediaTypesEnum.audio, 0);
