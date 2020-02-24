@@ -236,7 +236,7 @@ namespace SIPSorcery.SIP.App
 
                 RTCOfferOptions offerOptions = new RTCOfferOptions { RemoteSignallingAddress = serverEndPoint.Address };
 
-                var sdp = await mediaSession.createOffer(offerOptions);
+                var sdp = await mediaSession.createOffer(offerOptions).ConfigureAwait(false);
                 mediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdp, type = RTCSdpType.offer });
 
                 if (mediaSession.localDescription == null)
@@ -331,7 +331,7 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaSession">The media session used for this call</param>
         public async Task Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
         {
-            await Answer(uas, mediaSession, null);
+            await Answer(uas, mediaSession, null).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -483,7 +483,7 @@ namespace SIPSorcery.SIP.App
             if (Dialogue == null || sipRequest.Header.CallId != Dialogue.CallId)
             {
                 var noCallLegResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
-                var sendResult = await SendResponseAsync(noCallLegResponse);
+                var sendResult = await SendResponseAsync(noCallLegResponse).ConfigureAwait(false);
                 if (sendResult != SocketError.Success)
                 {
                     logger.LogWarning($"SIPUserAgent send response failed in DialogRequestReceivedAsync with {sendResult}.");
@@ -534,7 +534,7 @@ namespace SIPSorcery.SIP.App
                         {
                             // The application is going to handle the re-INVITE request. We'll send a Trying response as a precursor.
                             SIPResponse tryingResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null);
-                            await reInviteTransaction.SendProvisionalResponse(tryingResponse);
+                            await reInviteTransaction.SendProvisionalResponse(tryingResponse).ConfigureAwait(false);
                             OnReinviteRequest.Invoke(reInviteTransaction);
                         }
                     }
@@ -546,13 +546,13 @@ namespace SIPSorcery.SIP.App
                     okResponse.Body = Dialogue.RemoteSDP;
                     okResponse.Header.ContentLength = okResponse.Body.Length;
                     okResponse.Header.ContentType = m_sdpContentType;
-                    await SendResponseAsync(okResponse);
+                    await SendResponseAsync(okResponse).ConfigureAwait(false);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.MESSAGE)
                 {
                     //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "MESSAGE for call " + sipRequest.URI.ToString() + ": " + sipRequest.Body + ".", dialogue.Owner));
                     SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await m_transport.SendResponseAsync(okResponse);
+                    await m_transport.SendResponseAsync(okResponse).ConfigureAwait(false);
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.REFER)
                 {
@@ -561,7 +561,7 @@ namespace SIPSorcery.SIP.App
                         // A REFER request must have a Refer-To header.
                         //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Bad REFER request, no Refer-To header.", dialogue.Owner));
                         SIPResponse invalidResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, "Missing mandatory Refer-To header");
-                        await SendResponseAsync(invalidResponse);
+                        await SendResponseAsync(invalidResponse).ConfigureAwait(false);
                     }
                     else
                     {
@@ -571,7 +571,7 @@ namespace SIPSorcery.SIP.App
                 else if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
                 {
                     SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await SendResponseAsync(okResponse);
+                    await SendResponseAsync(okResponse).ConfigureAwait(false);
 
                     if (sipRequest.Body?.Length > 0 && sipRequest.Header.ContentType?.Contains(m_sipReferContentType) == true)
                     {
@@ -639,7 +639,7 @@ namespace SIPSorcery.SIP.App
                 {
                     try
                     {
-                        await DialogRequestReceivedAsync(sipRequest);
+                        await DialogRequestReceivedAsync(sipRequest).ConfigureAwait(false);
                     }
                     catch (Exception excp)
                     {

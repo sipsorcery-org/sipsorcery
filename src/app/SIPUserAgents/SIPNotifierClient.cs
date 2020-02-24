@@ -135,7 +135,7 @@ namespace SIPSorcery.SIP.App
                 logger.LogDebug("SIPNotifierClient GotNotificationRequest for " + sipRequest.Method + " " + sipRequest.URI.ToString() + " " + sipRequest.Header.CSeq + ".");
 
                 SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                await m_sipTransport.SendResponseAsync(okResponse);
+                await m_sipTransport.SendResponseAsync(okResponse).ConfigureAwait(false);
 
                 //logger.LogDebug(sipRequest.ToString());
 

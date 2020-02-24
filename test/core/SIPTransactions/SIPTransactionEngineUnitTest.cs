@@ -104,7 +104,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             try
             {
-                TaskCompletionSource<bool> uasConfirmedTask = new TaskCompletionSource<bool>();
+                TaskCompletionSource<bool> uasConfirmedTask = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
                 // Client side of the call.
                 clientTransport = new SIPTransport(false, SIPSorcery.UnitTests.MockSIPDNSManager.Resolve);

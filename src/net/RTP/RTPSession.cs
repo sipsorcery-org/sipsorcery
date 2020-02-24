@@ -1001,7 +1001,7 @@ namespace SIPSorcery.Net
                         audioTrack.SeqNum++;
                     }
 
-                    await Task.Delay(samplePeriod, cancellationToken);
+                    await Task.Delay(samplePeriod, cancellationToken).ConfigureAwait(false);
 
                     if (!rtpEvent.EndOfEvent)
                     {
@@ -1015,7 +1015,7 @@ namespace SIPSorcery.Net
 
                             audioTrack.SeqNum++;
 
-                            await Task.Delay(samplePeriod, cancellationToken);
+                            await Task.Delay(samplePeriod, cancellationToken).ConfigureAwait(false);
                         }
 
                         // Send the end of event packets.

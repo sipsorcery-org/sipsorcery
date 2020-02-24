@@ -347,7 +347,7 @@ namespace SIPSorcery.Net
 
             IceConnectionState = IceConnectionStatesEnum.Gathering;
 
-            await GetIceCandidatesAsync();
+            await GetIceCandidatesAsync().ConfigureAwait(false);
 
             logger.LogDebug($"ICE gathering completed for in {DateTime.Now.Subtract(startGatheringTime).TotalMilliseconds:#}ms, candidate count {LocalIceCandidates.Count}.");
 
@@ -523,7 +523,7 @@ namespace SIPSorcery.Net
                     LocalIceCandidates.Add(iceCandidate);
                 }
 
-                await Task.WhenAll(LocalIceCandidates.Where(x => x.InitialStunBindingCheck != null).Select(x => x.InitialStunBindingCheck));
+                await Task.WhenAll(LocalIceCandidates.Where(x => x.InitialStunBindingCheck != null).Select(x => x.InitialStunBindingCheck)).ConfigureAwait(false);
             }
         }
 
@@ -547,7 +547,7 @@ namespace SIPSorcery.Net
 
                 rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceCandidate.TurnServer.ServerEndPoint, stunReqBytes);
 
-                await Task.Delay(INITIAL_STUN_BINDING_PERIOD_MILLISECONDS);
+                await Task.Delay(INITIAL_STUN_BINDING_PERIOD_MILLISECONDS).ConfigureAwait(false);
 
                 attempt++;
             }

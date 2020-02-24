@@ -152,7 +152,7 @@ namespace SIPSorcery.SIP
                     logger.LogDebug($"Sending {buffer.Length} bytes on client web socket connection to {conn.ServerUri}.");
 
                     ArraySegment<byte> segmentBuffer = new ArraySegment<byte>(buffer);
-                    await conn.Client.SendAsync(segmentBuffer, WebSocketMessageType.Text, true, m_cts.Token);
+                    await conn.Client.SendAsync(segmentBuffer, WebSocketMessageType.Text, true, m_cts.Token).ConfigureAwait(false);
 
                     return SocketError.Success;
                 }
@@ -160,12 +160,12 @@ namespace SIPSorcery.SIP
                 {
                     // Attempt a new connection.
                     ClientWebSocket clientWebSocket = new ClientWebSocket();
-                    await clientWebSocket.ConnectAsync(serverUri, m_cts.Token);
+                    await clientWebSocket.ConnectAsync(serverUri, m_cts.Token).ConfigureAwait(false);
 
                     logger.LogDebug($"Successfully connected web socket client to {serverUri}.");
 
                     ArraySegment<byte> segmentBuffer = new ArraySegment<byte>(buffer);
-                    await clientWebSocket.SendAsync(segmentBuffer, WebSocketMessageType.Text, true, m_cts.Token);
+                    await clientWebSocket.SendAsync(segmentBuffer, WebSocketMessageType.Text, true, m_cts.Token).ConfigureAwait(false);
 
                     var recvBuffer = new ArraySegment<byte>(new byte[2 * SIPStreamConnection.MaxSIPTCPMessageSize]);
                     Task<WebSocketReceiveResult> receiveTask = clientWebSocket.ReceiveAsync(recvBuffer, m_cts.Token);
@@ -189,7 +189,7 @@ namespace SIPSorcery.SIP
                     if (!m_egressConnections.TryAdd(connectionID, newConn))
                     {
                         logger.LogError($"Could not add web socket client connected to {serverUri} to channel collection, closing.");
-                        await Close(connectionID, clientWebSocket);
+                        await Close(connectionID, clientWebSocket).ConfigureAwait(false);
                     }
                     else
                     {
@@ -345,13 +345,13 @@ namespace SIPSorcery.SIP
                 {
                     try
                     {
-                        Task<WebSocketReceiveResult> receiveTask = await Task.WhenAny(m_egressConnections.Select(x => x.Value.ReceiveTask));
+                        Task<WebSocketReceiveResult> receiveTask = await Task.WhenAny(m_egressConnections.Select(x => x.Value.ReceiveTask)).ConfigureAwait(false);
                         var conn = m_egressConnections.Where(x => x.Value.ReceiveTask.Id == receiveTask.Id).Single().Value;
 
                         if (receiveTask.IsCompleted)
                         {
                             logger.LogDebug($"Client web socket connection to {conn.ServerUri} received {receiveTask.Result.Count} bytes.");
-                            await SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray());
+                            await SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray()).ConfigureAwait(false);
                             conn.ReceiveTask = conn.Client.ReceiveAsync(conn.ReceiveBuffer, m_cts.Token);
                         }
                         else

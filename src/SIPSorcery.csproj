@@ -58,7 +58,7 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP WebRTC RTP SDP STUN SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version 4.0.14-pre - .NET framework min verion increased from net452 to net46 due to need for TaskCompletionSource overload.
+	<PackageReleaseNotes>- Version 4.0.14-pre - .NET framework min version increased from net452 to net46 due to need for TaskCompletionSource overload.
 - Version 4.0.13-pre - RTPSession and WebRTCSession enhancements.
 - Version 4.0.8 - Adds WebRTCSession and preliminary WebRTC support.
 - Version 4.0.7 - RTP support complete.

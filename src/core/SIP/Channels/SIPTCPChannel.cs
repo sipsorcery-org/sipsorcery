@@ -171,7 +171,7 @@ namespace SIPSorcery.SIP
             {
                 try
                 {
-                    Socket clientSocket = await m_tcpServerListener.AcceptSocketAsync();
+                    Socket clientSocket = await m_tcpServerListener.AcceptSocketAsync().ConfigureAwait(false);
 
                     if (!Closed)
                     {
@@ -185,7 +185,7 @@ namespace SIPSorcery.SIP
 
                         m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
 
-                        await OnAccept(sipStmConn);
+                        await OnAccept(sipStmConn).ConfigureAwait(false);
                     }
                 }
                 catch (ObjectDisposedException)
@@ -365,7 +365,7 @@ namespace SIPSorcery.SIP
                     }
                 }
 
-                var connectResult = await connectTcs.Task;
+                var connectResult = await connectTcs.Task.ConfigureAwait(false);
 
                 logger.LogDebug($"ConnectAsync SIP {ProtDescr} Channel connect completed result for {localEndPoint}->{dstEndPoint} {connectResult}.");
 
@@ -380,9 +380,9 @@ namespace SIPSorcery.SIP
 
                     m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
 
-                    await OnClientConnect(sipStmConn, serverCertificateName);
+                    await OnClientConnect(sipStmConn, serverCertificateName).ConfigureAwait(false);
 
-                    await SendOnConnected(sipStmConn, buffer);
+                    await SendOnConnected(sipStmConn, buffer).ConfigureAwait(false);
                 }
 
                 return connectResult;
