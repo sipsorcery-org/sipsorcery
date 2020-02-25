@@ -72,19 +72,13 @@ namespace demo
             Console.WriteLine("Waiting for form activation.");
             formMre.WaitOne();
 
-            Graphics visual = null;
-            _picBox.Invoke(new Action(() =>
-            {
-                visual = _picBox.CreateGraphics();
-            }));
-
             _sipTransport.SIPTransportRequestReceived += OnSIPTransportRequestReceived;
 
             var userAgent = new SIPUserAgent(_sipTransport, null);
             var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = AUDIO_FILE_PCMU };
             //var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
             var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern };
-            var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, audioSrcOpts, videoSrcOpts, visual);
+            var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, audioSrcOpts, videoSrcOpts);
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession).ConfigureAwait(false);
@@ -94,8 +88,22 @@ namespace demo
             if (callResult)
             {
                 // Start the audio capture and playback.
-                rtpSession.Start();
+                rtpSession.StartMedia();
                 Log.LogInformation("Call attempt successful.");
+                rtpSession.OnVideoSampleReady += (byte[] sample, uint width, uint height, int stride) =>
+                {
+                    _picBox.BeginInvoke(new Action(() =>
+                    {
+                        unsafe
+                        {
+                            fixed (byte* s = sample)
+                            {
+                                System.Drawing.Bitmap bmpImage = new System.Drawing.Bitmap((int)width, (int)height, stride, System.Drawing.Imaging.PixelFormat.Format24bppRgb, (IntPtr)s);
+                                _picBox.Image = bmpImage;
+                            }
+                        }
+                    }));
+                };
             }
             else
             {
@@ -123,6 +131,11 @@ namespace demo
             _form.BeginInvoke(new Action(() => _form.Close()));
             _sipTransport.Shutdown();
             SIPSorcery.Net.DNSManager.Stop();
+        }
+
+        private static void RtpSession_OnVideoSampleReady(byte[] arg1, uint arg2, uint arg3, int arg4)
+        {
+            throw new NotImplementedException();
         }
 
         private static Task OnSIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
