@@ -78,7 +78,7 @@ namespace SIPSorcery.SIP
 
             Receive();
 
-            Task.Run(ExpireFailedSends);
+            Task.Factory.StartNew(ExpireFailedSends, TaskCreationOptions.LongRunning);
         }
 
         public SIPUDPChannel(IPAddress listenAddress, int listenPort) : this(new IPEndPoint(listenAddress, listenPort))

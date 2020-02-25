@@ -179,7 +179,7 @@ namespace SIPSorcery.SIP
                 {
                     // Starts tasks to process queued SIP messages.
                     m_transportThreadStarted = true;
-                    Task.Run(ProcessReceiveQueue);
+                    Task.Factory.StartNew(ProcessReceiveQueue, TaskCreationOptions.LongRunning);
                 }
             }
             catch (Exception excp)

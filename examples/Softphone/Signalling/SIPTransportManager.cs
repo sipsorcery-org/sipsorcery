@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SIPTransportManager.cs
 //
-// Description: Manages the SIP tranpsort layer. For example
+// Description: Manages the SIP transport layer. For example
 // for incoming calls needs to manage which client can accept it. 
 //
 // Author(s):

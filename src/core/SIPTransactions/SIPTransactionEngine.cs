@@ -61,7 +61,7 @@ namespace SIPSorcery.SIP
         {
             m_sipTransport = sipTransport;
 
-            Task.Run(ProcessPendingTransactions);
+            Task.Factory.StartNew(ProcessPendingTransactions, TaskCreationOptions.LongRunning);
         }
 
         public void AddTransaction(SIPTransaction sipTransaction)

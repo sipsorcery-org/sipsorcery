@@ -196,7 +196,7 @@ namespace SIPSorcery.SIP
                         if (!m_isReceiveTaskRunning)
                         {
                             m_isReceiveTaskRunning = true;
-                            _ = Task.Run(MonitorReceiveTasks);
+                            await Task.Factory.StartNew(MonitorReceiveTasks, TaskCreationOptions.LongRunning);
                         }
                     }
 
@@ -337,7 +337,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Monitors the client web socket tasks for new receives.
         /// </summary>
-        private async Task MonitorReceiveTasks()
+        private void MonitorReceiveTasks()
         {
             try
             {
@@ -345,30 +345,32 @@ namespace SIPSorcery.SIP
                 {
                     try
                     {
-                        Task<WebSocketReceiveResult> receiveTask = await Task.WhenAny(m_egressConnections.Select(x => x.Value.ReceiveTask)).ConfigureAwait(false);
+                        var receiveTasks = m_egressConnections.Select(x => x.Value.ReceiveTask).ToArray();
+                        int completedTaskIndex = Task.WaitAny(receiveTasks);
+                        Task<WebSocketReceiveResult> receiveTask = receiveTasks[completedTaskIndex];
                         var conn = m_egressConnections.Where(x => x.Value.ReceiveTask.Id == receiveTask.Id).Single().Value;
 
                         if (receiveTask.IsCompleted)
                         {
                             logger.LogDebug($"Client web socket connection to {conn.ServerUri} received {receiveTask.Result.Count} bytes.");
-                            await SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray()).ConfigureAwait(false);
+                            SIPMessageReceived(this, conn.LocalEndPoint, conn.RemoteEndPoint, conn.ReceiveBuffer.Take(receiveTask.Result.Count).ToArray()).Wait();
                             conn.ReceiveTask = conn.Client.ReceiveAsync(conn.ReceiveBuffer, m_cts.Token);
                         }
                         else
                         {
                             logger.LogWarning($"Client web socket connection to {conn.ServerUri} returned without completing, closing.");
-                            _ = Close(conn.ConnectionID, conn.Client);
+                            Close(conn.ConnectionID, conn.Client);
                         }
                     }
                     catch (Exception excp)
                     {
-                        logger.LogError($"Exception SIPCLientWebSocketChannel processing receive tasks. {excp.Message}");
+                        logger.LogError($"Exception SIPClientWebSocketChannel processing receive tasks. {excp.Message}");
                     }
                 }
             }
             catch (Exception excp)
             {
-                logger.LogError($"Exception SIPCLientWebSocketChannel.MonitorReceiveTasks. {excp.Message}");
+                logger.LogError($"Exception SIPClientWebSocketChannel.MonitorReceiveTasks. {excp.Message}");
             }
             finally
             {
