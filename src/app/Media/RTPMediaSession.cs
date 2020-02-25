@@ -123,8 +123,6 @@ namespace SIPSorcery.SIP.App
 
             var connAddr = IPAddress.Parse(sessionDescription.sdp.Connection.ConnectionAddress);
 
-            //CheckRemotePartyHoldCondition(sessionDescription.sdp);
-
             foreach (var announcement in sessionDescription.sdp.Media)
             {
                 var annAddr = connAddr;

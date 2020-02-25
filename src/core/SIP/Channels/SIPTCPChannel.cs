@@ -148,8 +148,8 @@ namespace SIPSorcery.SIP
 
                 m_localTCPSockets.Add(ListeningEndPoint.ToString());
 
-                Task.Run(AcceptConnections);
-                Task.Run(PruneConnections);
+                Task.Factory.StartNew(AcceptConnections, TaskCreationOptions.LongRunning);
+                Task.Factory.StartNew(PruneConnections, TaskCreationOptions.LongRunning);
 
                 logger.LogInformation($"SIP {ProtDescr} Channel created for {ListeningEndPoint}.");
             }
