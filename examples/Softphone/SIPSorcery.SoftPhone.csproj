@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\sipsorcery-media\src\SIPSorcery.RtpAVSession\SIPSorcery.RtpAVSession.csproj" />
     <ProjectReference Include="..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
 

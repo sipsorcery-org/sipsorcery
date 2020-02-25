@@ -64,7 +64,19 @@ namespace demo
             _form.Controls.Add(_picBox);
 
             Application.EnableVisualStyles();
-            _ = Task.Run(() => Application.Run(_form));
+            _ = Task.Factory.StartNew(() => Application.Run(_form), TaskCreationOptions.LongRunning);
+
+            ManualResetEvent formMre = new ManualResetEvent(false);
+            _form.Activated += (object sender, EventArgs e) => formMre.Set();
+
+            Console.WriteLine("Waiting for form activation.");
+            formMre.WaitOne();
+
+            Graphics visual = null;
+            _picBox.Invoke(new Action(() =>
+            {
+                visual = _picBox.CreateGraphics();
+            }));
 
             _sipTransport.SIPTransportRequestReceived += OnSIPTransportRequestReceived;
 
@@ -72,7 +84,7 @@ namespace demo
             var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = AUDIO_FILE_PCMU };
             //var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
             var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern };
-            var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, audioSrcOpts, videoSrcOpts, _picBox);
+            var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, audioSrcOpts, videoSrcOpts, visual);
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession).ConfigureAwait(false);
@@ -115,7 +127,7 @@ namespace demo
 
         private static Task OnSIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            if(sipRequest.Method == SIPMethodsEnum.INFO)
+            if (sipRequest.Method == SIPMethodsEnum.INFO)
             {
                 var notImplResp = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotImplemented, null);
                 return _sipTransport.SendResponseAsync(notImplResp);
