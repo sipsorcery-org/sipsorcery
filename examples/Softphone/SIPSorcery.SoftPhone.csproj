@@ -4,8 +4,8 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
-	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	<AssemblyName>softphone</AssemblyName>
+	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	  <AssemblyName>softphone</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

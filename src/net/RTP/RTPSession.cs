@@ -488,7 +488,7 @@ namespace SIPSorcery.Net
                 {
                     localAddress = NetServices.GetLocalAddressForRemote(AudioDestinationEndPoint.Address);
                 }
-                else if (options.RemoteSignallingAddress != null)
+                else if (options != null && options.RemoteSignallingAddress != null)
                 {
                     localAddress = NetServices.GetLocalAddressForRemote(options.RemoteSignallingAddress);
                 }

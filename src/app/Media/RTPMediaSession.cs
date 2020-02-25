@@ -48,6 +48,8 @@ namespace SIPSorcery.SIP.App
         public uint AudioTimestamp { get; private set; }
         public uint VideoTimestamp { get; private set; }
 
+        public event Action<byte[], uint, uint, int> OnVideoSampleReady;
+
         public RTPMediaSession(AddressFamily addrFamily)
            : base(addrFamily, false, false, false)
         { }
@@ -99,6 +101,9 @@ namespace SIPSorcery.SIP.App
             var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, DTMF_EVENT_DURATION, DTMF_EVENT_PAYLOAD_ID);
             return SendDtmfEvent(dtmfEvent, cancellationToken);
         }
+
+        public void StartMedia()
+        { }
 
         public virtual void Close()
         {

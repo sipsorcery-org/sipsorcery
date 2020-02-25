@@ -18,6 +18,8 @@ using System;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -28,6 +30,7 @@ namespace SIPSorcery.SoftPhone
 {
     public class SIPClient
     {
+        private const string AUDIO_FILE_PCMU = @"content\Macroform_-_Simplicity.ulaw";
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
 
@@ -80,6 +83,7 @@ namespace SIPSorcery.SoftPhone
         public SIPClient(SIPTransport sipTransport)
         {
             m_sipTransport = sipTransport;
+
             m_userAgent = new SIPUserAgent(m_sipTransport, null);
             m_userAgent.ClientCallTrying += CallTrying;
             m_userAgent.ClientCallRinging += CallRinging;
@@ -139,9 +143,10 @@ namespace SIPSorcery.SoftPhone
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
                 //var rtpMediaSession = MediaManager.CreateRtpSession(dstEndpoint.Address.AddressFamily);
+                //var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = AUDIO_FILE_PCMU };
                 var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone };
                 var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern };
-                var rtpMediaSession = new RtpAVSession(dstEndpoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts, _picBox);
+                var rtpMediaSession = new RtpAVSession(dstEndpoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
@@ -182,7 +187,12 @@ namespace SIPSorcery.SoftPhone
             {
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
 
-                var rtpMediaSession = MediaManager.CreateRtpSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily);
+                //var rtpMediaSession = MediaManager.CreateRtpSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily);
+
+                var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone };
+                var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern };
+                var rtpMediaSession = new RtpAVSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
+
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
 
@@ -335,6 +345,7 @@ namespace SIPSorcery.SoftPhone
                 }
                 else
                 {
+                    MediaSession.StartMedia();
                     CallAnswer?.Invoke(this);
                 }
             }

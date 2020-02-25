@@ -134,7 +134,13 @@ namespace SIPSorcery.SoftPhone
         /// <param name="sipRequest">The SIP request received.</param>
         private Task SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            if (sipRequest.Header.From != null &&
+            if (sipRequest.Method == SIPMethodsEnum.INFO)
+            {
+                logger.LogDebug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
+                SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                return SIPTransport.SendResponseAsync(notAllowedResponse);
+            }
+            else if (sipRequest.Header.From != null &&
                 sipRequest.Header.From.FromTag != null &&
                 sipRequest.Header.To != null &&
                 sipRequest.Header.To.ToTag != null)

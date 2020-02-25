@@ -155,7 +155,7 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
-        /// Converts supplied screen coordinates into the correct WPF device-independant coordinates using an
+        /// Converts supplied screen coordinates into the correct WPF device-independent coordinates using an
         /// existing control or window
         /// </summary>
         /// <param name="visual">The control or window the screen point is in</param>
