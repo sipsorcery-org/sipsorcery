@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
@@ -30,10 +31,14 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public interface IMediaSession
     {
-        uint AudioTimestamp { get; }
-        uint VideoTimestamp { get; }
         RTCSessionDescription localDescription { get; }
         RTCSessionDescription remoteDescription { get; }
+
+        /// <summary>
+        /// Fired when a video sample is ready for rendering.
+        /// [sample, width, height, stride]
+        /// </summary>
+        event Action<byte[], uint, uint, int> OnVideoSampleReady;
 
         /// <summary>
         /// Fired when the RTP channel is closed.
@@ -59,6 +64,7 @@ namespace SIPSorcery.SIP.App
         Task SendDtmf(byte tone, CancellationToken token);
         void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample);
 
+        void StartMedia();
         void Close();
     }
 }

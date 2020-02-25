@@ -308,11 +308,6 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public void Cancel()
         {
-            if (MediaSession != null)
-            {
-                MediaSession.Close();
-            }
-
             if (m_uac != null)
             {
                 if (m_uac.IsUACAnswered == false)
@@ -323,6 +318,11 @@ namespace SIPSorcery.SIP.App
                 {
                     m_uac.Hangup();
                 }
+            }
+
+            if (MediaSession != null)
+            {
+                MediaSession.Close();
             }
         }
 
