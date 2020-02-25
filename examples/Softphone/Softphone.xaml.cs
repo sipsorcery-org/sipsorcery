@@ -49,7 +49,7 @@ namespace SIPSorcery.SoftPhone
         private SoftphoneSTUNClient _stunClient;                    // STUN client to periodically check the public IP address.
         private SIPRegistrationUserAgent _sipRegistrationClient;    // Can be used to register with an external SIP provider if incoming calls are required.
 
-        private MediaManager _mediaManager;                         // The media (audio and video) manager.
+        //private MediaManager _mediaManager;                         // The media (audio and video) manager.
         private WriteableBitmap _localWriteableBitmap;
         private Int32Rect _localBitmapFullRectangle;
         private WriteableBitmap _remoteWriteableBitmap;
@@ -84,11 +84,11 @@ namespace SIPSorcery.SoftPhone
 
         private async void OnWindowLoaded(object sender, RoutedEventArgs e)
         {
-            _mediaManager = new MediaManager(Dispatcher);
+            //_mediaManager = new MediaManager(Dispatcher);
             logger.LogDebug("Media Manager Initialized.");
-            _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
-            _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
-            _mediaManager.OnLocalVideoError += LocalVideoError;
+            //_mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
+            //_mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
+            //_mediaManager.OnLocalVideoError += LocalVideoError;
 
             await Initialize();
 
@@ -151,7 +151,7 @@ namespace SIPSorcery.SoftPhone
                 sipClient.Shutdown();
             }
 
-            _mediaManager.Close();
+            //_mediaManager.Close();
             _sipTransportManager.Shutdown();
 
             if (_stunClient != null)
@@ -165,7 +165,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void LoadVideoDevices()
         {
-            var videoDevices = _mediaManager.GetVideoDevices();
+            List<VideoMode> videoDevices = null;// _mediaManager.GetVideoDevices();
             var videoDeviceKeys = new List<KeyValuePair<string, VideoMode>>();
 
             if (videoDevices != null && videoDevices.Count > 0)
@@ -296,8 +296,8 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void SIPCallAnswered(SIPClient client)
         {
-            _mediaManager.SetActive(client.MediaSession);
-            _mediaManager.StartAudio();
+            //_mediaManager.SetActive(client.MediaSession);
+            //_mediaManager.StartAudio();
 
             if (client == _sipClients[0])
             {
@@ -355,7 +355,7 @@ namespace SIPSorcery.SoftPhone
                     m_cancelButton.Visibility = Visibility.Collapsed;
                     m_byeButton.Visibility = Visibility.Visible;
 
-                    _mediaManager.RunLoopbackTest();
+                    //_mediaManager.RunLoopbackTest();
                 }
             }
             else
@@ -436,8 +436,8 @@ namespace SIPSorcery.SoftPhone
         {
             await client.Answer();
 
-            _mediaManager.SetActive(client.MediaSession);
-            _mediaManager.StartAudio();
+            //_mediaManager.SetActive(client.MediaSession);
+            //_mediaManager.StartAudio();
 
             if (client == _sipClients[0])
             {
@@ -455,7 +455,7 @@ namespace SIPSorcery.SoftPhone
                 // Put the first call on hold.
                 if (_sipClients[0].IsCallActive)
                 {
-                    _mediaManager.SetOnHold(_sipClients[0].MediaSession);
+                    //_mediaManager.SetOnHold(_sipClients[0].MediaSession);
                     _sipClients[0].PutOnHold();
                     m_holdButton.Visibility = Visibility.Collapsed;
                     m_offHoldButton.Visibility = Visibility.Visible;
@@ -598,7 +598,7 @@ namespace SIPSorcery.SoftPhone
                 m_offHold2Button.Visibility = Visibility.Visible;
             }
 
-            _mediaManager.SetOnHold(client.MediaSession);
+            //_mediaManager.SetOnHold(client.MediaSession);
             client.PutOnHold();
         }
 
@@ -620,7 +620,7 @@ namespace SIPSorcery.SoftPhone
                 m_offHold2Button.Visibility = Visibility.Collapsed;
             }
 
-            _mediaManager.SetActive(client.MediaSession);
+            //_mediaManager.SetActive(client.MediaSession);
             client.TakeOffHold();
         }
 
@@ -734,13 +734,13 @@ namespace SIPSorcery.SoftPhone
                 _keypadGrid.Visibility = Visibility.Hidden;
                 _locaVIdeoBorder.Visibility = Visibility.Visible;
 
-                _mediaManager.StartVideo(_localVideoMode);
+                //_mediaManager.StartVideo(_localVideoMode);
             }
         }
 
         private void StopLocalVideo(object sender, System.Windows.RoutedEventArgs e)
         {
-            _mediaManager.StopVideo();
+            //_mediaManager.StopVideo();
             _startLocalVideoButton.IsEnabled = true;
             _stopLocalVideoButton.IsEnabled = false;
             _localVideoDevices.IsEnabled = true;

@@ -87,7 +87,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         /// <param name="addressFamily">The address family (IPv4 or IPv6) to create the RTP socket on.</param>
         /// <returns>A new RTP media session.</returns>
-        public static IMediaSession CreateRtpSession(AddressFamily addressFamily)
+        public static IMediaSession CreateRtpSessionX(AddressFamily addressFamily)
         {
             var rtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(DefaultAudioFormat), addressFamily);
 
