@@ -87,6 +87,7 @@ namespace SIPSorcery.SoftPhone
             m_userAgent.OnCallHungup += CallFinished;
             m_userAgent.ServerCallCancelled += IncomingCallCancelled;
             m_userAgent.OnTransferNotify += OnTransferNotify;
+            m_userAgent.OnDtmfTone += OnDtmfTone;
         }
 
         /// <summary>
@@ -384,9 +385,9 @@ namespace SIPSorcery.SoftPhone
         /// Event handler for DTMF events on the remote call party's RTP stream.
         /// </summary>
         /// <param name="dtmfKey">The DTMF key pressed.</param>
-        private void OnDtmfEvent(byte dtmfKey)
+        private void OnDtmfTone(byte dtmfKey, int duration)
         {
-            StatusMessage(this, $"DTMF event from remote call party {dtmfKey}.");
+            StatusMessage(this, $"DTMF event from remote call party {dtmfKey} duration {duration}.");
         }
 
         /// <summary>	
@@ -405,11 +406,16 @@ namespace SIPSorcery.SoftPhone
             RemoteTookOffHold?.Invoke(this);
         }
 
-        public Task SendDTMF(byte b)
+        /// <summary>
+        /// Requests the RTP session to send a RTP event representing a DTMF tone to the
+        /// remote party.
+        /// </summary>
+        /// <param name="tone">A byte representing the tone to send. Must be between 0 and 15.</param>
+        public Task SendDTMF(byte tone)
         {
             if (m_userAgent != null)
             {
-                return m_userAgent.SendDtmf(b);
+                return m_userAgent.SendDtmf(tone);
             }
             else
             {

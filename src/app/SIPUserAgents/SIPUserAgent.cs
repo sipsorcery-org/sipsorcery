@@ -177,6 +177,11 @@ namespace SIPSorcery.SIP.App
         public event Action RemoteTookOffHold;
 
         /// <summary>
+        /// Gets fired when an RTP DTMF event is detected as completed on the remote party's RTP stream.
+        /// </summary>
+        public event Action<byte, int> OnDtmfTone;
+
+        /// <summary>
         /// Creates a new SIP client and server combination user agent.
         /// </summary>
         /// <param name="transport">The transport layer to use for requests and responses.</param>
@@ -271,6 +276,8 @@ namespace SIPSorcery.SIP.App
             if (serverEndPoint != null)
             {
                 MediaSession = mediaSession;
+                MediaSession.OnRtpEvent += OnRemoteRtpEvent;
+                MediaSession.OnRtpClosed += (reason) => Hangup();
 
                 RTCOfferOptions offerOptions = new RTCOfferOptions { RemoteSignallingAddress = serverEndPoint.Address };
 
@@ -387,6 +394,7 @@ namespace SIPSorcery.SIP.App
             var sipRequest = uas.ClientTransaction.TransactionRequest;
 
             MediaSession = mediaSession;
+            MediaSession.OnRtpEvent += OnRemoteRtpEvent;
             MediaSession.OnRtpClosed += (reason) => Hangup();
 
             SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
@@ -959,6 +967,19 @@ namespace SIPSorcery.SIP.App
                     IsOnLocalHold
                         ? MediaStreamStatusEnum.SendOnly
                         : MediaStreamStatusEnum.RecvOnly;
+            }
+        }
+
+        /// <summary>
+        /// Event handler for RTP events from the remote call party. Fires
+        /// when the event is completed.
+        /// </summary>
+        /// <param name="rtpEvent">The received RTP event.</param>
+        private void OnRemoteRtpEvent(RTPEvent rtpEvent)
+        {
+            if (rtpEvent.EndOfEvent)
+            {
+                OnDtmfTone?.Invoke(rtpEvent.EventID, rtpEvent.Duration);
             }
         }
     }
