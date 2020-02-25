@@ -42,19 +42,11 @@ namespace SIPSorcery.SIP.App
         public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
         public const int DTMF_EVENT_DURATION = 1200;        // Default duration for a DTMF event.
         public const int DTMF_EVENT_PAYLOAD_ID = 101;
-        public const string SDP_SESSION_NAME = "sipsorcery";
 
         private static readonly ILogger logger = Log.Logger;
 
-        private ushort m_remoteDtmfDuration;
-
         public uint AudioTimestamp { get; private set; }
         public uint VideoTimestamp { get; private set; }
-
-        /// <summary>
-        /// Gets fired when an RTP DTMF event is completed on the remote call party's RTP stream.
-        /// </summary>
-        public event Action<byte> DtmfCompleted;
 
         public RTPMediaSession(AddressFamily addrFamily)
            : base(addrFamily, false, false, false)
@@ -161,23 +153,6 @@ namespace SIPSorcery.SIP.App
 
                     SetDestination(SDPMediaTypesEnum.video, connRtpEndPoint, connRtcpEndPoint);
                 }
-            }
-        }
-
-        /// <summary>
-        /// Event handler for RTP events from the remote call party.
-        /// </summary>
-        /// <param name="rtpEvent">The received RTP event.</param>
-        private void OnRemoteRtpEvent(RTPEvent rtpEvent)
-        {
-            if (rtpEvent.EndOfEvent)
-            {
-                m_remoteDtmfDuration = 0;
-            }
-            else if (m_remoteDtmfDuration == 0)
-            {
-                m_remoteDtmfDuration = rtpEvent.Duration;
-                DtmfCompleted?.Invoke(rtpEvent.EventID);
             }
         }
     }

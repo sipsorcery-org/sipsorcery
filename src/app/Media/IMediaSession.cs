@@ -32,20 +32,27 @@ namespace SIPSorcery.SIP.App
     {
         uint AudioTimestamp { get; }
         uint VideoTimestamp { get; }
+        RTCSessionDescription localDescription { get; }
+        RTCSessionDescription remoteDescription { get; }
 
         /// <summary>
         /// Fired when the RTP channel is closed.
         /// </summary>
         event Action<string> OnRtpClosed;
 
+        /// <summary>
+        /// Fired when a media RTP packet is received.
+        /// </summary>
         event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
 
-        RTCSessionDescription localDescription { get; }
-        RTCSessionDescription remoteDescription { get; }
+        /// <summary>
+        /// Fired when an RTP event (typically representing a DTMF tone) is
+        /// detected.
+        /// </summary>
+        event Action<RTPEvent> OnRtpEvent;
 
         Task<SDP> createOffer(RTCOfferOptions options);
         void setLocalDescription(RTCSessionDescription sessionDescription);
-
         Task<SDP> createAnswer(RTCAnswerOptions options);
         void setRemoteDescription(RTCSessionDescription sessionDescription);
 
