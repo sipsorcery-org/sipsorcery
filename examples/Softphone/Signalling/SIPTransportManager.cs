@@ -110,7 +110,18 @@ namespace SIPSorcery.SoftPhone
                             logger.LogWarning($"Socket exception attempting to bind UDP channel to port {SIP_DEFAULT_PORT}, will use random port. {bindExcp.Message}.");
                             udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0));
                         }
-                        var tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Any, udpChannel.Port));
+
+                        SIPTCPChannel tcpChannel = null;
+                        try
+                        {
+                            tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Any, udpChannel.Port));
+                        }
+                        catch (SocketException bindExcp)
+                        {
+                            logger.LogWarning($"Socket exception attempting to bind TCP channel to port {udpChannel.Port}, will use random port. {bindExcp.Message}.");
+                            tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Any, 0));
+                        }
+
                         SIPTransport.AddSIPChannel(new List<SIPChannel> { udpChannel, tcpChannel });
                     }
                 });
