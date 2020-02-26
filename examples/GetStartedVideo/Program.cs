@@ -16,6 +16,7 @@
 
 using System;
 using System.Drawing;
+using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,17 +31,18 @@ namespace demo
 {
     class Program
     {
-        private const string AUDIO_FILE_PCMU = @"media\Macroform_-_Simplicity.ulaw";
+        private const string AUDIO_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
+        private const string VIDEO_TEST_PATTERN_FILE = "media/testpattern.jpeg";
         private static string DESTINATION = "aaron@172.19.16.1:7060"; //"127.0.0.1:5060"; //"aaron@172.19.16.1:7060";
+        private static int CALL_IMTEOUT_SECONDS = 20;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
         private static SIPTransport _sipTransport;
-
         private static Form _form;
         private static PictureBox _picBox;
 
-        static async Task Main()
+        static void Main()
         {
             Console.WriteLine("SIPSorcery Getting Started Video Call Demo");
             Console.WriteLine("Press ctrl-c to exit.");
@@ -64,7 +66,7 @@ namespace demo
             _form.Controls.Add(_picBox);
 
             Application.EnableVisualStyles();
-            var uiTask = Task.Factory.StartNew(() => Application.Run(_form), TaskCreationOptions.LongRunning);
+            ThreadPool.QueueUserWorkItem(delegate { Application.Run(_form); });
 
             ManualResetEvent formMre = new ManualResetEvent(false);
             _form.Activated += (object sender, EventArgs e) => formMre.Set();
@@ -74,20 +76,21 @@ namespace demo
 
             _sipTransport.SIPTransportRequestReceived += OnSIPTransportRequestReceived;
 
+            string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
             var userAgent = new SIPUserAgent(_sipTransport, null);
-            var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = AUDIO_FILE_PCMU };
-              var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern };
+            var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = executableDir + "/" + AUDIO_FILE_PCMU };
+            var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
             var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, audioSrcOpts, videoSrcOpts);
 
             // Place the call and wait for the result.
-            bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession).ConfigureAwait(false);
+            Task<bool> callTask = userAgent.Call(DESTINATION, null, null, rtpSession);
+            callTask.Wait(CALL_IMTEOUT_SECONDS * 1000);
 
             ManualResetEvent exitMRE = new ManualResetEvent(false);
 
-            if (callResult)
+            if (callTask.Result)
             {
-                // Start the audio capture and playback.
-                rtpSession.Start();
                 Log.LogInformation("Call attempt successful.");
                 rtpSession.OnVideoSampleReady += (byte[] sample, uint width, uint height, int stride) =>
                 {
@@ -123,7 +126,7 @@ namespace demo
                 Log.LogInformation("Hanging up.");
                 userAgent.Hangup();
 
-                await Task.Delay(1000);
+                Task.Delay(1000).Wait();
             }
 
             // Clean up.
