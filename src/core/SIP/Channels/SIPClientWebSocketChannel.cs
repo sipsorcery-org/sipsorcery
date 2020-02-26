@@ -196,7 +196,7 @@ namespace SIPSorcery.SIP
                         if (!m_isReceiveTaskRunning)
                         {
                             m_isReceiveTaskRunning = true;
-                            await Task.Factory.StartNew(MonitorReceiveTasks, TaskCreationOptions.LongRunning);
+                            Task.Factory.StartNew(MonitorReceiveTasks, TaskCreationOptions.LongRunning);
                         }
                     }
 
@@ -362,6 +362,8 @@ namespace SIPSorcery.SIP
                             Close(conn.ConnectionID, conn.Client);
                         }
                     }
+                    catch (OperationCanceledException) { }
+                    catch (AggregateException) { } // This gets thrown if task is cancelled.
                     catch (Exception excp)
                     {
                         logger.LogError($"Exception SIPClientWebSocketChannel processing receive tasks. {excp.Message}");

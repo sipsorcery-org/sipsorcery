@@ -157,9 +157,9 @@ namespace WebRTCServer
             webRtcSession.setLocalDescription(new RTCSessionDescription { sdp = offerSdp, type = RTCSdpType.offer });
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
-            logger.LogDebug(webRtcSession.SDP.ToString());
+            logger.LogDebug(offerSdp.ToString());
 
-            context.WebSocket.Send(webRtcSession.SDP.ToString());
+            context.WebSocket.Send(offerSdp.ToString());
 
             if (DoDtlsHandshake(webRtcSession))
             {

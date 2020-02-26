@@ -170,7 +170,7 @@ namespace WebRTCServer
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
-            context.WebSocket.Send(webRtcSession.SDP.ToString());
+            context.WebSocket.Send(offerSdp.ToString());
 
             if (DoDtlsHandshake(webRtcSession))
             {
