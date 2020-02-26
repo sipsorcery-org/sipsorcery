@@ -1,8 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: A getting started program to demonstrate how to use the SIPSorcery
-// library to place a video call.
+// Description: A getting started program to demonstrate how to use the
+// SIPSorcery library to place a video call.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -64,7 +64,7 @@ namespace demo
             _form.Controls.Add(_picBox);
 
             Application.EnableVisualStyles();
-            _ = Task.Factory.StartNew(() => Application.Run(_form), TaskCreationOptions.LongRunning);
+            var uiTask = Task.Factory.StartNew(() => Application.Run(_form), TaskCreationOptions.LongRunning);
 
             ManualResetEvent formMre = new ManualResetEvent(false);
             _form.Activated += (object sender, EventArgs e) => formMre.Set();
@@ -76,8 +76,7 @@ namespace demo
 
             var userAgent = new SIPUserAgent(_sipTransport, null);
             var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = AUDIO_FILE_PCMU };
-            //var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
-            var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern };
+              var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern };
             var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, audioSrcOpts, videoSrcOpts);
 
             // Place the call and wait for the result.
@@ -88,7 +87,7 @@ namespace demo
             if (callResult)
             {
                 // Start the audio capture and playback.
-                rtpSession.StartMedia();
+                rtpSession.Start();
                 Log.LogInformation("Call attempt successful.");
                 rtpSession.OnVideoSampleReady += (byte[] sample, uint width, uint height, int stride) =>
                 {
@@ -131,11 +130,6 @@ namespace demo
             _form.BeginInvoke(new Action(() => _form.Close()));
             _sipTransport.Shutdown();
             SIPSorcery.Net.DNSManager.Stop();
-        }
-
-        private static void RtpSession_OnVideoSampleReady(byte[] arg1, uint arg2, uint arg3, int arg4)
-        {
-            throw new NotImplementedException();
         }
 
         private static Task OnSIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)

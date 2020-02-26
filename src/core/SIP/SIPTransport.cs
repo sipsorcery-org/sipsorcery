@@ -683,7 +683,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Dedicated loop to process queued received messages.
         /// </summary>
-        private async Task ProcessReceiveQueue()
+        private void ProcessReceiveQueue()
         {
             Thread.CurrentThread.Name = RECEIVE_THREAD_NAME;
 
@@ -696,7 +696,7 @@ namespace SIPSorcery.SIP
                         m_inMessageQueue.TryDequeue(out var incomingMessage);
                         if (incomingMessage != null)
                         {
-                            await SIPMessageReceived(incomingMessage.LocalSIPChannel, incomingMessage.LocalEndPoint, incomingMessage.RemoteEndPoint, incomingMessage.Buffer);
+                           SIPMessageReceived(incomingMessage.LocalSIPChannel, incomingMessage.LocalEndPoint, incomingMessage.RemoteEndPoint, incomingMessage.Buffer).Wait();
                         }
                     }
 

@@ -33,6 +33,7 @@ namespace SIPSorcery.SIP.App
     {
         RTCSessionDescription localDescription { get; }
         RTCSessionDescription remoteDescription { get; }
+        bool IsClosed { get; }
 
         /// <summary>
         /// Fired when a video sample is ready for rendering.
@@ -61,10 +62,10 @@ namespace SIPSorcery.SIP.App
         Task<SDP> createAnswer(RTCAnswerOptions options);
         void setRemoteDescription(RTCSessionDescription sessionDescription);
 
-        Task SendDtmf(byte tone, CancellationToken token);
+        Task SendDtmf(byte tone, CancellationToken ct);
         void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample);
 
-        void StartMedia();
-        void Close();
+        void Start();
+        void Close(string reason);
     }
 }

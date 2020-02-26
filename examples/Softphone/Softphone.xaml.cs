@@ -35,9 +35,6 @@ namespace SIPSorcery.SoftPhone
         private const int SIP_CLIENT_COUNT = 2;                             // The number of SIP clients (simultaneous calls) that the UI can handle.
         private const int ZINDEX_TOP = 10;
 
-        // Currently only supporting these mode(s) from local web cams. Extra work to convert other formats to bitmaps that can be displayed by WPF.
-        private static readonly List<VideoSubTypesEnum> _supportedVideoModes = new List<VideoSubTypesEnum>() { VideoSubTypesEnum.RGB24 };
-
         private static ILogger logger = Log.Logger;
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
@@ -51,8 +48,6 @@ namespace SIPSorcery.SoftPhone
 
         private WriteableBitmap _client0WriteableBitmap;
         private WriteableBitmap _client1WriteableBitmap;
-
-        private VideoMode _localVideoMode;
 
         public SoftPhone()
         {
@@ -82,13 +77,11 @@ namespace SIPSorcery.SoftPhone
         private async void OnWindowLoaded(object sender, RoutedEventArgs e)
         {
             await Initialize();
-
-            if (_localVideoDevices.Items.Count == 0)
-            {
-                await Task.Run(LoadVideoDevices);
-            }
         }
 
+        /// <summary>
+        /// Initialises the SIP clients and transport.
+        /// </summary>
         private async Task Initialize()
         {
             await _sipTransportManager.InitialiseSIP();
@@ -118,16 +111,16 @@ namespace SIPSorcery.SoftPhone
             listeningEndPoint.Content = $"Listening on: {listeningEndPoints}";
 
             _sipRegistrationClient = new SIPRegistrationUserAgent(
-            _sipTransportManager.SIPTransport,
-            null,
-            new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
-            m_sipUsername,
-            m_sipPassword,
-            null,
-            m_sipServer,
-            new SIPURI(m_sipUsername, IPAddress.Any.ToString(), null),
-            180,
-            (message) => { logger.LogDebug(message.ToString()); });
+                _sipTransportManager.SIPTransport,
+                null,
+                new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
+                m_sipUsername,
+                m_sipPassword,
+                null,
+                m_sipServer,
+                new SIPURI(m_sipUsername, IPAddress.Any.ToString(), null),
+                180,
+                (message) => { logger.LogDebug(message.ToString()); });
 
             _sipRegistrationClient.Start();
         }
@@ -142,54 +135,8 @@ namespace SIPSorcery.SoftPhone
                 sipClient.Shutdown();
             }
 
-            //_mediaManager.Close();
             _sipTransportManager.Shutdown();
-
-            if (_stunClient != null)
-            {
-                _stunClient.Stop();
-            }
-        }
-
-        /// <summary>
-        /// Retrieves a list of the available video devices, their resolutions and pixel formats.
-        /// </summary>
-        private void LoadVideoDevices()
-        {
-            List<VideoMode> videoDevices = null;// _mediaManager.GetVideoDevices();
-            var videoDeviceKeys = new List<KeyValuePair<string, VideoMode>>();
-
-            if (videoDevices != null && videoDevices.Count > 0)
-            {
-                for (int index = 0; index < videoDevices.Count; index++)
-                {
-                    if (_supportedVideoModes.Contains(videoDevices[index].VideoSubType))
-                    {
-                        var videoSubType = videoDevices[index].VideoSubType; // MFVideoSubTypes.FindVideoSubTypeForGuid(videoDevices[index].VideoSubType);
-                        string videoModeName = String.Format("{0} {1} x {2} {3}", videoDevices[index].DeviceFriendlyName, videoDevices[index].Width, videoDevices[index].Height, videoSubType.ToString());
-
-                        videoDeviceKeys.Add(new KeyValuePair<string, VideoMode>(videoModeName, videoDevices[index]));
-                        //_localVideoDevices.Items.Add();
-                    }
-                }
-            }
-
-            Dispatcher.DoOnUIThread(delegate
-            {
-                _localVideoDevices.ItemsSource = videoDeviceKeys;
-                _localVideoDevices.IsEnabled = true;
-            });
-        }
-
-        private void VideoDeviceChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (e.AddedItems != null && e.AddedItems.Count > 0)
-            {
-                var selection = (KeyValuePair<string, VideoMode>)e.AddedItems[0];
-                System.Diagnostics.Debug.WriteLine(selection.Key);
-                _localVideoMode = selection.Value;
-                _startLocalVideoButton.IsEnabled = true;
-            }
+            _stunClient?.Stop();
         }
 
         /// <summary>
@@ -665,43 +612,6 @@ namespace SIPSorcery.SoftPhone
             }
         }
 
-        private void LocalVideoError(string error)
-        {
-            Dispatcher.DoOnUIThread(() =>
-            {
-                if (error.NotNullOrBlank())
-                {
-                    SetStatusText(m_signallingStatus, error);
-                    _startLocalVideoButton.IsEnabled = true;
-                    _stopLocalVideoButton.IsEnabled = false;
-                    _localVideoDevices.IsEnabled = true;
-                }
-            });
-        }
-
-        private void StartLocalVideo(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (_localVideoMode == null)
-            {
-                LocalVideoError("Please select a video device and format.");
-            }
-            else
-            {
-                _startLocalVideoButton.IsEnabled = false;
-                _stopLocalVideoButton.IsEnabled = true;
-                _localVideoDevices.IsEnabled = false;
-                _keypadGrid.Visibility = Visibility.Hidden;
-            }
-        }
-
-        private void StopLocalVideo(object sender, System.Windows.RoutedEventArgs e)
-        {
-            _startLocalVideoButton.IsEnabled = true;
-            _stopLocalVideoButton.IsEnabled = false;
-            _localVideoDevices.IsEnabled = true;
-            _keypadGrid.Visibility = Visibility.Visible;
-        }
-
         /// <summary>
         /// When on a call key pad presses will send a DTMF RTP event to the remote
         /// call party.
@@ -762,9 +672,12 @@ namespace SIPSorcery.SoftPhone
             }
         }
 
+        /// <summary>
+        /// Clicking the video image will bring it to the front.
+        /// </summary>
         private void OnClickVideo(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if(sender == _client0Video)
+            if (sender == _client0Video)
             {
                 Panel.SetZIndex(_client0Video, ZINDEX_TOP);
                 Panel.SetZIndex(_client1Video, ZINDEX_TOP - 1);

@@ -43,6 +43,7 @@ namespace SIPSorcery.SoftPhone
         private SIPUserAgent m_userAgent;
         private SIPServerUserAgent m_pendingIncomingCall;
         private CancellationTokenSource _cts = new CancellationTokenSource();
+        private bool m_useVideo = false;
 
         public event Action<SIPClient> CallAnswer;                 // Fires when an outgoing SIP call is answered.
         public event Action<SIPClient> CallEnded;                  // Fires when an incoming or outgoing call is over.
@@ -145,7 +146,7 @@ namespace SIPSorcery.SoftPhone
                 //var rtpMediaSession = MediaManager.CreateRtpSession(dstEndpoint.Address.AddressFamily);
                 //var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = AUDIO_FILE_PCMU };
                 var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone };
-                var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern };
+                var videoSrcOpts = new VideoSourceOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None };
                 var rtpMediaSession = new RtpAVSession(dstEndpoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
@@ -190,7 +191,7 @@ namespace SIPSorcery.SoftPhone
                 //var rtpMediaSession = MediaManager.CreateRtpSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily);
 
                 var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone };
-                var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern };
+                var videoSrcOpts = new VideoSourceOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None };
                 var rtpMediaSession = new RtpAVSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
@@ -345,7 +346,7 @@ namespace SIPSorcery.SoftPhone
                 }
                 else
                 {
-                    MediaSession.StartMedia();
+                    MediaSession.Start();
                     CallAnswer?.Invoke(this);
                 }
             }

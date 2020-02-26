@@ -102,12 +102,12 @@ namespace SIPSorcery.SIP.App
             return SendDtmfEvent(dtmfEvent, cancellationToken);
         }
 
-        public void StartMedia()
+        public void Start()
         { }
 
-        public virtual void Close()
+        public virtual void Close(string reason)
         {
-            CloseSession(null);
+            CloseSession(reason);
         }
 
         /// <summary>

@@ -322,7 +322,7 @@ namespace SIPSorcery.SIP.App
 
             if (MediaSession != null)
             {
-                MediaSession.Close();
+                MediaSession.Close("call cancelled");
             }
         }
 
@@ -332,7 +332,7 @@ namespace SIPSorcery.SIP.App
         public void Hangup()
         {
             m_cts.Cancel();
-            MediaSession?.Close();
+            MediaSession?.Close("call hungup");
             Dialogue?.Hangup(m_transport, m_outboundProxy);
             CallEnded();
         }
@@ -903,9 +903,9 @@ namespace SIPSorcery.SIP.App
             m_uac = null;
             m_uas = null;
 
-            if (MediaSession != null)
+            if (MediaSession != null && !MediaSession.IsClosed) 
             {
-                MediaSession.Close();
+                MediaSession.Close("normal");
                 MediaSession = null;
             }
 
