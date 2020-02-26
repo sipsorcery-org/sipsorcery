@@ -475,7 +475,7 @@ namespace SIPSorcery.SIP.App
             // The action we take to put a call on hold is to switch the media status
             // to send only and change the audio input from a capture device to on hold
             // music.
-            var localSDP = await MediaSession.createOffer(null);
+            var localSDP = await MediaSession.createOffer(null).ConfigureAwait(false);
             SetLocalSdpForOnHoldState(ref localSDP);
             MediaSession.setLocalDescription(new RTCSessionDescription { sdp = localSDP, type = RTCSdpType.offer });
 
@@ -489,7 +489,7 @@ namespace SIPSorcery.SIP.App
         {
             IsOnLocalHold = false;
 
-            var localSDP = await MediaSession.createOffer(null);
+            var localSDP = await MediaSession.createOffer(null).ConfigureAwait(false);
             SetLocalSdpForOnHoldState(ref localSDP);
             MediaSession.setLocalDescription(new RTCSessionDescription { sdp = localSDP, type = RTCSdpType.offer });
 

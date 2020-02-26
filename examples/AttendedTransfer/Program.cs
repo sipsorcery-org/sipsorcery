@@ -35,6 +35,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -112,9 +113,7 @@ namespace SIPSorcery
                         Log.LogInformation($"{agentDesc}: Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = activeAgent.AcceptCall(sipRequest);
 
-                        var rtpAVSession = new RtpAVSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
-                        rtpAVSession.RemotePutOnHold += () => Log.LogInformation($"{agentDesc}: Remote call party has placed us on hold.");
-                        rtpAVSession.RemoteTookOffHold += () => Log.LogInformation($"{agentDesc}: Remote call party took us off hold.");
+                        var rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
 
                         await activeAgent.Answer(incomingCall, rtpAVSession)
                             .ContinueWith(task =>

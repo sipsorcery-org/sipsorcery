@@ -196,7 +196,7 @@ namespace SIPSorcery.SIP
                         if (!m_isReceiveTaskRunning)
                         {
                             m_isReceiveTaskRunning = true;
-                            Task.Factory.StartNew(MonitorReceiveTasks, TaskCreationOptions.LongRunning);
+                            _ = Task.Factory.StartNew(MonitorReceiveTasks, TaskCreationOptions.LongRunning);
                         }
                     }
 
