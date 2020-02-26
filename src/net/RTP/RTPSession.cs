@@ -309,6 +309,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public int RemoteRtpEventPayloadID { get; set; }
 
+        public bool IsClosed { get { return m_isClosed; } }
+
         /// <summary>
         /// Gets fired when the session detects that the remote end point 
         /// has changed. This is useful because the RTP socket advertised in an SDP

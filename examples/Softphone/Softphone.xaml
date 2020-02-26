@@ -86,12 +86,6 @@
                 <Button x:Name="m_keypadHashButton" Content="#" Click="KeyPadButton_Click" Grid.Row="3" Grid.Column="2" HorizontalAlignment="Center" Width="80" Margin="0,4,0,20"/>
             </Grid>
 
-            <StackPanel Margin="2" VerticalAlignment="Top" Orientation="Horizontal" Height="36" x:Name="_videoControlsGrid" Visibility="Hidden">
-                <Button x:Name="_startLocalVideoButton" Content="Start Video" HorizontalAlignment="Left" Height="30" Margin="4,0,0,0" VerticalAlignment="Center" Width="70" Click="StartLocalVideo" IsEnabled="False" />
-                <Button x:Name="_stopLocalVideoButton" Content="Stop Video" HorizontalAlignment="Left" Height="30" VerticalAlignment="Center" Width="70" IsEnabled="False" Click="StopLocalVideo" Margin="4,0,0,0" />
-                <ComboBox x:Name="_localVideoDevices" DisplayMemberPath="Key" SelectedValuePath="Value" HorizontalAlignment="Left" Height="30"  VerticalAlignment="Center"  Margin="4,0,0,0" Width="250" IsEnabled="False" SelectionChanged="VideoDeviceChanged" VerticalContentAlignment="Center"/>
-            </StackPanel>
-
             <StatusBar VerticalAlignment="Bottom" Margin="0,4,0,0">
                 <Label x:Name="listeningEndPoint" ToolTip="Listening On"></Label>
             </StatusBar>

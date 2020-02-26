@@ -290,7 +290,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Removed end points from the send failures list after the timeout period.
         /// </summary>
-        private async void ExpireFailedSends()
+        private void ExpireFailedSends()
         {
             try
             {
@@ -303,10 +303,11 @@ namespace SIPSorcery.SIP
                         m_sendFailures.TryRemove(expired, out _);
                     }
 
-                    await Task.Delay(EXPIRED_FAILED_PERIOD_SECONDS * 1000, m_cts.Token);
+                    Task.Delay(EXPIRED_FAILED_PERIOD_SECONDS * 1000, m_cts.Token).Wait();
                 }
             }
             catch (OperationCanceledException) { }
+            catch (AggregateException) { } // This gets thrown if task is cancelled.
             catch (Exception excp)
             {
                 logger.LogError($"Exception SIPUDPChannel.ExpireFailedSends. {excp.Message}");
