@@ -41,6 +41,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -65,7 +66,7 @@ namespace SIPSorcery
 
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RtpAVSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
+            var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DEFAULT_DESTINATION_SIP_URI, null, null, rtpSession);
@@ -81,24 +82,16 @@ namespace SIPSorcery
             {
                 Console.WriteLine("Call attempt successful.");
 
-                // Start the audio capture and playback.
-                rtpSession.Start();
-
                 // Give the call some time to answer.
-                Task.Delay(3000).Wait();
+                await Task.Delay(1000);
 
-                // Send some DTMF key presses via RTP events.
-                var dtmf5 = new RTPEvent(0x05, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPMediaSession.DTMF_EVENT_PAYLOAD_ID);
-                rtpSession.SendDtmfEvent(dtmf5, rtpCts.Token).Wait();
-                Task.Delay(2000, rtpCts.Token).Wait();
-
-                var dtmf9 = new RTPEvent(0x09, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPMediaSession.DTMF_EVENT_PAYLOAD_ID);
-                rtpSession.SendDtmfEvent(dtmf9, rtpCts.Token).Wait();
-                Task.Delay(2000, rtpCts.Token).Wait();
-
-                var dtmf2 = new RTPEvent(0x02, false, RTPEvent.DEFAULT_VOLUME, 1200, RTPMediaSession.DTMF_EVENT_PAYLOAD_ID);
-                rtpSession.SendDtmfEvent(dtmf2, rtpCts.Token).Wait();
-                Task.Delay(2000, rtpCts.Token).ContinueWith((task) => { }).Wait(); // Don't care about the exception if the cancellation token is set.
+                // Send the DTMF tones.
+                await userAgent.SendDtmf(0x05);
+                await Task.Delay(2000);
+                await userAgent.SendDtmf(0x09);
+                await Task.Delay(2000);
+                await userAgent.SendDtmf(0x02);
+                await Task.Delay(2000);
 
                 if (userAgent.IsCallActive)
                 {
