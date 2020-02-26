@@ -55,7 +55,7 @@ namespace SIPSorcery.Net
         private static ILogger logger = Log.Logger;
 
         public string SessionID { get; private set; }
-        public SDP SDP;
+        //public SDP SDP;
         public string SdpSessionID;
         public string LocalSdpSessionID;
         public string LocalIceUser;

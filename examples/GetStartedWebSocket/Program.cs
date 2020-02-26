@@ -69,7 +69,7 @@ namespace demo
         /// </summary>
         private static void EnableTraceLogs(SIPTransport sipTransport)
         {
-            // Logging configuration. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+            // Logging configuration. Can be omitted if internal SIPSorcery debug and warning messages are not required.
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
             var loggerConfig = new LoggerConfiguration()
                 .Enrich.FromLogContext()

@@ -37,6 +37,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -63,7 +64,7 @@ namespace SIPSorcery
             this.Close();
         }
 
-        protected override async void OnOpen()
+        protected override void OnOpen()
         {
             base.OnOpen();
             WebRtcSession = WebSocketOpened(this.Context);
@@ -81,12 +82,11 @@ namespace SIPSorcery
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        //public static readonly List<SDPMediaFormat> _supportedAudioFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) };
-
         private static WebSocketServer _webSocketServer;
+        private static WebRtcSession _webRtcSession;
 
-        private delegate void MediaSampleReadyDelegate(SDPMediaTypesEnum mediaType, uint timestamp, byte[] sample);
-        private static event MediaSampleReadyDelegate OnMediaSampleReady;
+        //private delegate void MediaSampleReadyDelegate(SDPMediaTypesEnum mediaType, uint duration, byte[] sample);
+        //private static event MediaSampleReadyDelegate OnMediaFromSIPSampleReady;
 
         static void Main(string[] args)
         {
@@ -119,7 +119,7 @@ namespace SIPSorcery
 
             //EnableTraceLogs(sipTransport);
 
-            RTPMediaSession RtpMediaSession = null;
+            RtpAVSession rtpAVSession = null;
 
             // Create a SIP user agent to receive a call from a remote SIP client.
             // Wire up event handlers for the different stages of the call.
@@ -157,9 +157,10 @@ namespace SIPSorcery
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
 
-                        RtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
-                        await userAgent.Answer(incomingCall, RtpMediaSession);
-                        RtpMediaSession.OnRtpPacketReceived += (mediaType, rtpPacket) => OnMediaSampleReady?.Invoke(mediaType, rtpPacket.Header.Timestamp, rtpPacket.Payload);
+                        rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+                        await userAgent.Answer(incomingCall, rtpAVSession);
+                        //rtpAVSession.OnRtpPacketReceived += (mediaType, rtpPacket) => OnMediaFromSIPSampleReady?.Invoke(mediaType, (uint)rtpPacket.Payload.Length, rtpPacket.Payload);
+                        rtpAVSession.OnRtpPacketReceived += (mediaType, rtpPacket) => ForwardMedia(mediaType, rtpPacket);
 
                         Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
@@ -186,7 +187,7 @@ namespace SIPSorcery
 
             Log.LogInformation("Exiting...");
 
-            RtpMediaSession?.Close();
+            rtpAVSession?.Close("app exit");
 
             if (userAgent != null)
             {
@@ -212,43 +213,51 @@ namespace SIPSorcery
             #endregion
         }
 
+        private static void RtpAVSession_OnRtpPacketReceived(SDPMediaTypesEnum arg1, RTPPacket arg2)
+        {
+            throw new NotImplementedException();
+        }
+
         private static WebRtcSession SendSDPOffer(WebSocketContext context)
         {
             Log.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            var webRtcSession = new WebRtcSession(
+            _webRtcSession = new WebRtcSession(
                 AddressFamily.InterNetwork,
                 DTLS_CERTIFICATE_FINGERPRINT,
                 null,
                 null);
 
-            //webRtcSession.AudioStreamStatus = MediaStreamStatusEnum.SendOnly;
-            //webRtcSession.VideoStreamStatus = MediaStreamStatusEnum.SendOnly;
-            webRtcSession.RtpSession.OnReceiveReport += RtpSession_OnReceiveReport;
-            webRtcSession.RtpSession.OnSendReport += RtpSession_OnSendReport;
+            _webRtcSession.OnReceiveReport += RtpSession_OnReceiveReport;
+            _webRtcSession.OnSendReport += RtpSession_OnSendReport;
 
             Log.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
-            webRtcSession.OnClose += (reason) =>
+            _webRtcSession.OnClose += (reason) =>
             {
                 Log.LogDebug($"WebRtcSession was closed with reason {reason}");
-                OnMediaSampleReady -= webRtcSession.SendMedia;
-                webRtcSession.RtpSession.OnReceiveReport -= RtpSession_OnReceiveReport;
-                webRtcSession.RtpSession.OnSendReport -= RtpSession_OnSendReport;
+                _webRtcSession.OnReceiveReport -= RtpSession_OnReceiveReport;
+                _webRtcSession.OnSendReport -= RtpSession_OnSendReport;
             };
 
-            webRtcSession.addTrack(SDPMediaTypesEnum.audio, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            _webRtcSession.addTrack(audioTrack);
 
-            if (DoDtlsHandshake(webRtcSession))
+            var offer = _webRtcSession.createOffer(null).Result;
+            _webRtcSession.setLocalDescription(new RTCSessionDescription { type = RTCSdpType.offer, sdp = offer });
+
+            context.WebSocket.Send(offer.ToString());
+
+            if (DoDtlsHandshake(_webRtcSession))
             {
-                context.WebSocket.Send(webRtcSession.SDP.ToString());
+                Log.LogInformation("DTLS handshake completed successfully.");
             }
             else
             {
-                webRtcSession.Close("dtls handshake failed.");
+                _webRtcSession.Close("dtls handshake failed.");
             }
 
-            return webRtcSession;
+            return _webRtcSession;
         }
 
         private static void SDPAnswerReceived(WebRtcSession webRtcSession, string sdpAnswer)
@@ -258,10 +267,10 @@ namespace SIPSorcery
                 Log.LogDebug("Answer SDP: " + sdpAnswer);
 
                 var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
+                webRtcSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.answer, sdp = answerSDP });
 
-                webRtcSession.setRemoteDescription(SdpType.answer, answerSDP);
-
-                OnMediaSampleReady += webRtcSession.SendMedia;
+                // Forward audio samples from the SIP session to the WebRTC session (one way).
+                //OnMediaFromSIPSampleReady += webRtcSession.SendMedia;
             }
             catch (Exception excp)
             {
@@ -289,7 +298,7 @@ namespace SIPSorcery
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
             webRtcSession.OnClose += (reason) => dtls.Shutdown();
 
-            int res = dtls.DoHandshakeAsServer((ulong)webRtcSession.RtpSession.RtpChannel.RtpSocket.Handle);
+            int res = dtls.DoHandshakeAsServer((ulong)webRtcSession.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
 
             Log.LogDebug("DtlsContext initialisation result=" + res);
 
@@ -300,17 +309,32 @@ namespace SIPSorcery
                 var srtpSendContext = new Srtp(dtls, false);
                 var srtpReceiveContext = new Srtp(dtls, true);
 
-                webRtcSession.RtpSession.SetSecurityContext(
+                webRtcSession.SetSecurityContext(
                     srtpSendContext.ProtectRTP,
                     srtpReceiveContext.UnprotectRTP,
                     srtpSendContext.ProtectRTCP,
                     srtpReceiveContext.UnprotectRTCP);
+
+                webRtcSession.IsDtlsNegotiationComplete = true;
 
                 return true;
             }
             else
             {
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Forwards media from the SIP session to the WebRTC session.
+        /// </summary>
+        /// <param name="mediaType">The type of media.</param>
+        /// <param name="rtpPacket">The RTP packet received on the SIP session.</param>
+        private static void ForwardMedia(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
+        {
+            if (_webRtcSession != null)
+            {
+                _webRtcSession.SendMedia(mediaType, (uint)rtpPacket.Payload.Length, rtpPacket.Payload);
             }
         }
 
@@ -329,14 +353,21 @@ namespace SIPSorcery
             loggerFactory.AddSerilog(loggerConfig);
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
         }
-
         /// <summary>
-        /// Diagnostic handler to print out our RTCP sender reports.
+        /// Diagnostic handler to print out our RTCP sender/receiver reports.
         /// </summary>
         private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
         {
-            var sr = sentRtcpReport.SenderReport;
-            Log.LogDebug($"RTCP {mediaType} Sender Report: SSRC {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+            if (sentRtcpReport.SenderReport != null)
+            {
+                var sr = sentRtcpReport.SenderReport;
+                Console.WriteLine($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+            }
+            else
+            {
+                var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
+                Console.WriteLine($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
+            }
         }
 
         /// <summary>
@@ -347,11 +378,11 @@ namespace SIPSorcery
             var rr = recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
             if (rr != null)
             {
-                Log.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
+                Console.WriteLine($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
             }
             else
             {
-                Log.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
+                Console.WriteLine($"RTCP {mediaType} Receiver Report: empty.");
             }
         }
 
