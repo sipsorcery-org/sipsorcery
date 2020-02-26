@@ -372,9 +372,6 @@ namespace SIPSorcery.SoftPhone
         {
             await client.Answer();
 
-            //_mediaManager.SetActive(client.MediaSession);
-            //_mediaManager.StartAudio();
-
             if (client == _sipClients[0])
             {
                 m_answerButton.Visibility = Visibility.Collapsed;
@@ -385,13 +382,15 @@ namespace SIPSorcery.SoftPhone
                 m_holdButton.Visibility = Visibility.Visible;
 
                 m_call2ActionsGrid.IsEnabled = true;
+
+                _sipClients[0].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client0WriteableBitmap, _client0Video);
+                _client0Video.Visibility = Visibility.Visible;
             }
             else if (client == _sipClients[1])
             {
                 // Put the first call on hold.
                 if (_sipClients[0].IsCallActive)
                 {
-                    //_mediaManager.SetOnHold(_sipClients[0].MediaSession);
                     _sipClients[0].PutOnHold();
                     m_holdButton.Visibility = Visibility.Collapsed;
                     m_offHoldButton.Visibility = Visibility.Visible;
@@ -404,6 +403,9 @@ namespace SIPSorcery.SoftPhone
                 m_transfer2Button.Visibility = Visibility.Visible;
                 m_hold2Button.Visibility = Visibility.Visible;
                 m_attendedTransferButton.Visibility = Visibility.Visible;
+
+                _sipClients[1].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client1WriteableBitmap, _client1Video);
+                _client1Video.Visibility = Visibility.Visible;
             }
         }
 

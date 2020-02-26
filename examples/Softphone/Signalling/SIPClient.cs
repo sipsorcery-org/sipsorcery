@@ -18,8 +18,6 @@ using System;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -30,7 +28,6 @@ namespace SIPSorcery.SoftPhone
 {
     public class SIPClient
     {
-        private const string AUDIO_FILE_PCMU = @"content\Macroform_-_Simplicity.ulaw";
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
 
@@ -43,7 +40,7 @@ namespace SIPSorcery.SoftPhone
         private SIPUserAgent m_userAgent;
         private SIPServerUserAgent m_pendingIncomingCall;
         private CancellationTokenSource _cts = new CancellationTokenSource();
-        private bool m_useVideo = false;
+        private bool m_useVideo = true;
 
         public event Action<SIPClient> CallAnswer;                 // Fires when an outgoing SIP call is answered.
         public event Action<SIPClient> CallEnded;                  // Fires when an incoming or outgoing call is over.
@@ -143,7 +140,6 @@ namespace SIPSorcery.SoftPhone
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
-                //var rtpMediaSession = MediaManager.CreateRtpSession(dstEndpoint.Address.AddressFamily);
                 //var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = AUDIO_FILE_PCMU };
                 var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone };
                 var videoSrcOpts = new VideoSourceOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None };
@@ -187,8 +183,6 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
-
-                //var rtpMediaSession = MediaManager.CreateRtpSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily);
 
                 var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone };
                 var videoSrcOpts = new VideoSourceOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None };
@@ -346,7 +340,6 @@ namespace SIPSorcery.SoftPhone
                 }
                 else
                 {
-                    MediaSession.Start();
                     CallAnswer?.Invoke(this);
                 }
             }
