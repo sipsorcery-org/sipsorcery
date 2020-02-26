@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Net;
+using SIPSorcery.Media;
 
 namespace demo
 {
@@ -38,15 +38,13 @@ namespace demo
 
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RtpAVSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
+            var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
 
             if(callResult)
             {
-                // Start the audio capture and playback.
-                rtpSession.Start();
                 Console.WriteLine("Call attempt successful.");
             }
             else

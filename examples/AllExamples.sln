@@ -35,10 +35,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCReceiver", "WebRTCRec
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetStartedVideo", "GetStartedVideo\GetStartedVideo.csproj", "{6CF674B7-DA02-47D9-BEB1-AAF2750756FA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery.RtpAVSession", "..\..\sipsorcery-media\src\SIPSorcery.RtpAVSession\SIPSorcery.RtpAVSession.csproj", "{A0F166F0-2EB4-48B5-828D-AE25B6CB4F6D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\src\SIPSorcery.csproj", "{D0A34A1F-1B56-4840-8540-19E573A3BA06}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -175,22 +171,6 @@ Global
 		{6CF674B7-DA02-47D9-BEB1-AAF2750756FA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6CF674B7-DA02-47D9-BEB1-AAF2750756FA}.Release|x64.ActiveCfg = Release|Any CPU
 		{6CF674B7-DA02-47D9-BEB1-AAF2750756FA}.Release|x64.Build.0 = Release|Any CPU
-		{A0F166F0-2EB4-48B5-828D-AE25B6CB4F6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A0F166F0-2EB4-48B5-828D-AE25B6CB4F6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A0F166F0-2EB4-48B5-828D-AE25B6CB4F6D}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{A0F166F0-2EB4-48B5-828D-AE25B6CB4F6D}.Debug|x64.Build.0 = Debug|Any CPU
-		{A0F166F0-2EB4-48B5-828D-AE25B6CB4F6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A0F166F0-2EB4-48B5-828D-AE25B6CB4F6D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A0F166F0-2EB4-48B5-828D-AE25B6CB4F6D}.Release|x64.ActiveCfg = Release|Any CPU
-		{A0F166F0-2EB4-48B5-828D-AE25B6CB4F6D}.Release|x64.Build.0 = Release|Any CPU
-		{D0A34A1F-1B56-4840-8540-19E573A3BA06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D0A34A1F-1B56-4840-8540-19E573A3BA06}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D0A34A1F-1B56-4840-8540-19E573A3BA06}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{D0A34A1F-1B56-4840-8540-19E573A3BA06}.Debug|x64.Build.0 = Debug|Any CPU
-		{D0A34A1F-1B56-4840-8540-19E573A3BA06}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D0A34A1F-1B56-4840-8540-19E573A3BA06}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D0A34A1F-1B56-4840-8540-19E573A3BA06}.Release|x64.ActiveCfg = Release|Any CPU
-		{D0A34A1F-1B56-4840-8540-19E573A3BA06}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

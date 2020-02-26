@@ -28,6 +28,7 @@ namespace SIPSorcery.SIP
 {
     internal class SIPTransactionEngine
     {
+        private const string TXENGINE_THREAD_NAME = "sip-txengine";
         private const int MAX_TXCHECK_WAIT_MILLISECONDS = 200; // Time to wait between checking for new pending transactions.
         private const int TXCHECK_WAIT_MILLISECONDS = 50;       // Time to wait between checking for actions on existing transactions.
         private static readonly int m_t1 = SIPTimings.T1;
@@ -298,6 +299,8 @@ namespace SIPSorcery.SIP
         /// </summary>
         private void ProcessPendingTransactions()
         {
+            Thread.CurrentThread.Name = TXENGINE_THREAD_NAME;
+
             try
             {
                 while (!m_isClosed)

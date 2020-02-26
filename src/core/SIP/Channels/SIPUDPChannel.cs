@@ -35,6 +35,7 @@ namespace SIPSorcery.SIP
 {
     public class SIPUDPChannel : SIPChannel
     {
+        private const string UDP_EXPIRE_THREAD_NAME = "sip-udpexpire";
         private const int FAILED_DESTINATION_PERIOD_SECONDS = 30;       // How long a failed send should prevent subsequent sends for.
         private const int EXPIRED_FAILED_PERIOD_SECONDS = 5;            // Period at which to check the failed send list and remove expired items.
 
@@ -292,6 +293,8 @@ namespace SIPSorcery.SIP
         /// </summary>
         private void ExpireFailedSends()
         {
+            Thread.CurrentThread.Name = UDP_EXPIRE_THREAD_NAME;
+
             try
             {
                 while (!Closed)

@@ -403,6 +403,8 @@ namespace SIPSorcery.SIP.App
             var sdpAnswer = await MediaSession.createAnswer(null).ConfigureAwait(false);
             MediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdpAnswer, type = RTCSdpType.answer });
 
+            MediaSession.Start();
+
             m_uas = uas;
             m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default, customHeaders);
             Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
@@ -833,6 +835,7 @@ namespace SIPSorcery.SIP.App
             {
                 // Only set the remote RTP end point if there hasn't already been a packet received on it.
                 MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = SDP.ParseSDPDescription(sipResponse.Body), type = RTCSdpType.answer });
+                MediaSession.Start();
 
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
 
