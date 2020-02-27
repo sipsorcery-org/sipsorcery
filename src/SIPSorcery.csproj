@@ -41,7 +41,7 @@
  
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.20-pre</Version>
+	<Version>4.0.22-pre</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -71,8 +71,8 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
 </PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
-	<AssemblyVersion>4.0.20.0</AssemblyVersion>
-	<FileVersion>4.0.20.0</FileVersion>
+	<AssemblyVersion>4.0.22.0</AssemblyVersion>
+	<FileVersion>4.0.22.0</FileVersion>
   </PropertyGroup>    
 
 </Project>

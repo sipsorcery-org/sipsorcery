@@ -30,6 +30,8 @@ namespace SIPSorcery.SoftPhone
     {
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
+        private static string VIDEO_TESTPATTERN = "media/testpattern.jpeg";
+        private static string VIDEO_ONHOLD_TESTPATTERN = "media/testpattern_inverted.jpeg";
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
@@ -140,9 +142,8 @@ namespace SIPSorcery.SoftPhone
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
-                //var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = AUDIO_FILE_PCMU };
-                var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone };
-                var videoSrcOpts = new VideoSourceOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None };
+                var audioSrcOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                var videoSrcOpts = new VideoOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None, SourceFile = VIDEO_TESTPATTERN };
                 var rtpMediaSession = new RtpAVSession(dstEndpoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
@@ -184,8 +185,8 @@ namespace SIPSorcery.SoftPhone
             {
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
 
-                var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone };
-                var videoSrcOpts = new VideoSourceOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None };
+                var audioSrcOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                var videoSrcOpts = new VideoOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None, SourceFile = VIDEO_TESTPATTERN };
                 var rtpMediaSession = new RtpAVSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
@@ -209,10 +210,15 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public async void PutOnHold()
         {
-            //m_rtpMediaSessionManager.UseMusicOnHold(true);
-            //m_rtpMediaSessionManager.RTPMediaSession.PutOnHold();
-            
             await m_userAgent.PutOnHold();
+
+            if(MediaSession is RtpAVSession)
+            {
+                //AudioSourceOptions audioOnHold = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = RtpAVSession.DEFAULT_AUDIO_SOURCE_FILE };
+                AudioOptions audioOnHold = new AudioOptions { AudioSource = AudioSourcesEnum.Music };
+                VideoOptions videoOnHold = new VideoOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None, SourceFile = VIDEO_ONHOLD_TESTPATTERN };
+                await (MediaSession as RtpAVSession).SetSources(audioOnHold, videoOnHold);
+            }
 
             // At this point we could stop listening to the remote party's RTP and play something 
             // else and also stop sending our microphone output and play some music.
@@ -224,9 +230,14 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public async void TakeOffHold()
         {
-            //m_rtpMediaSessionManager.UseMusicOnHold(false);
-            //m_rtpMediaSessionManager.RTPMediaSession.TakeOffHold();
             await m_userAgent.TakeOffHold();
+
+            if (MediaSession is RtpAVSession)
+            {
+                AudioOptions audioOnHold = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                VideoOptions videoOnHold = new VideoOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None, SourceFile = VIDEO_TESTPATTERN };
+                await (MediaSession as RtpAVSession).SetSources(audioOnHold, videoOnHold);
+            }
 
             // At this point we should reverse whatever changes we made to the media stream when we
             // put the remote call part on hold.

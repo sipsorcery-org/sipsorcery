@@ -245,6 +245,9 @@ namespace SIPSorcery.SoftPhone
 
                 Dispatcher.DoOnUIThread(() =>
                 {
+                    m_answerButton.Visibility = Visibility.Collapsed;
+                    m_rejectButton.Visibility = Visibility.Collapsed;
+                    m_redirectButton.Visibility = Visibility.Collapsed;
                     m_callButton.Visibility = Visibility.Collapsed;
                     m_cancelButton.Visibility = Visibility.Collapsed;
                     m_byeButton.Visibility = Visibility.Visible;
@@ -259,13 +262,11 @@ namespace SIPSorcery.SoftPhone
             }
             else if (client == _sipClients[1])
             {
-                if (_sipClients[0].IsCallActive && !_sipClients[0].IsOnHold)
-                {
-                    _sipClients[0].PutOnHold();
-                }
-
                 Dispatcher.DoOnUIThread(() =>
                 {
+                    m_answer2Button.Visibility = Visibility.Collapsed;
+                    m_reject2Button.Visibility = Visibility.Collapsed;
+                    m_redirect2Button.Visibility = Visibility.Collapsed;
                     m_call2Button.Visibility = Visibility.Collapsed;
                     m_cancel2Button.Visibility = Visibility.Collapsed;
                     m_bye2Button.Visibility = Visibility.Visible;
@@ -276,6 +277,21 @@ namespace SIPSorcery.SoftPhone
                     _sipClients[1].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client1WriteableBitmap, _client1Video);
                     _client1Video.Visibility = Visibility.Visible;
                 });
+
+                if (_sipClients[0].IsCallActive)
+                {
+                    if (!_sipClients[0].IsOnHold)
+                    {
+                        _sipClients[0].PutOnHold();
+                    }
+
+                    Dispatcher.DoOnUIThread(() =>
+                    {
+                        m_holdButton.Visibility = Visibility.Collapsed;
+                        m_offHoldButton.Visibility = Visibility.Visible;
+                        m_attendedTransferButton.Visibility = Visibility.Visible;
+                    });
+                }
             }
         }
 
@@ -371,42 +387,7 @@ namespace SIPSorcery.SoftPhone
         private async Task AnswerCallAsync(SIPClient client)
         {
             await client.Answer();
-
-            if (client == _sipClients[0])
-            {
-                m_answerButton.Visibility = Visibility.Collapsed;
-                m_rejectButton.Visibility = Visibility.Collapsed;
-                m_redirectButton.Visibility = Visibility.Collapsed;
-                m_byeButton.Visibility = Visibility.Visible;
-                m_transferButton.Visibility = Visibility.Visible;
-                m_holdButton.Visibility = Visibility.Visible;
-
-                m_call2ActionsGrid.IsEnabled = true;
-
-                _sipClients[0].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client0WriteableBitmap, _client0Video);
-                _client0Video.Visibility = Visibility.Visible;
-            }
-            else if (client == _sipClients[1])
-            {
-                // Put the first call on hold.
-                if (_sipClients[0].IsCallActive)
-                {
-                    _sipClients[0].PutOnHold();
-                    m_holdButton.Visibility = Visibility.Collapsed;
-                    m_offHoldButton.Visibility = Visibility.Visible;
-                }
-
-                m_answer2Button.Visibility = Visibility.Collapsed;
-                m_reject2Button.Visibility = Visibility.Collapsed;
-                m_redirect2Button.Visibility = Visibility.Collapsed;
-                m_bye2Button.Visibility = Visibility.Visible;
-                m_transfer2Button.Visibility = Visibility.Visible;
-                m_hold2Button.Visibility = Visibility.Visible;
-                m_attendedTransferButton.Visibility = Visibility.Visible;
-
-                _sipClients[1].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client1WriteableBitmap, _client1Video);
-                _client1Video.Visibility = Visibility.Visible;
-            }
+            SIPCallAnswered(client);
         }
 
         /// <summary>

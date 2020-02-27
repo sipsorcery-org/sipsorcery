@@ -48,6 +48,7 @@ namespace SIPSorcery
             Console.WriteLine("SIPSorcery Call Hold and Blind Transfer example.");
             Console.WriteLine("Press 'c' to initiate a call to the default destination.");
             Console.WriteLine("Press 'h' to place an established call on and off hold.");
+            Console.WriteLine("Press 'H' to hangup an established call.");
             Console.WriteLine("Press 't' to request a blind transfer on an established call.");
             Console.WriteLine("Press 'q' or ctrl-c to exit.");
 
@@ -125,15 +126,7 @@ namespace SIPSorcery
                                 rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
                                 bool callResult = await userAgent.Call(DEFAULT_DESTINATION_SIP_URI, SIP_USERNAME, SIP_PASSWORD, rtpAVSession);
 
-                                if (callResult)
-                                {
-                                    // Start the audio capture and playback.
-                                    Console.WriteLine("Call attempt successful.");
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Call attempt failed.");
-                                }
+                                Log.LogInformation($"Call attempt {((callResult) ? "successfull" : "failed")}.");
                             }
                             else
                             {
@@ -159,6 +152,14 @@ namespace SIPSorcery
                             else
                             {
                                 Log.LogWarning("There is no active call to put on hold.");
+                            }
+                        }
+                        else if (keyProps.KeyChar == 'H')
+                        {
+                            if (userAgent.IsCallActive)
+                            {
+                                Log.LogInformation("Hanging up call.");
+                                userAgent.Hangup();
                             }
                         }
                         else if (keyProps.KeyChar == 't')

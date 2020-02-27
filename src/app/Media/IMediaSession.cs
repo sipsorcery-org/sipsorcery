@@ -14,7 +14,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
@@ -65,7 +64,7 @@ namespace SIPSorcery.SIP.App
         Task SendDtmf(byte tone, CancellationToken ct);
         void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample);
 
-        void Start();
+        Task Start();
         void Close(string reason);
     }
 }
