@@ -72,7 +72,7 @@
 <p>The <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class provides the building blocks for dealing with the <a href="https://tools.ietf.org/html/rfc3550">Real-Time Transport Protocol</a>. It is used to transport audio and video packets between session participants.</p>
 <p>There are two higher level classes that wrap the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class for use in common scenarios:</p>
 <ul>
-<li>The <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a> which is the recommended implementation for SIP applications.</li>
+<li>The <a href="xref:SIPSorcery.SIP.App.RTPMediaSession">RTPMediaSession</a> which is the recommended implementation for SIP applications.</li>
 <li>The <a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> which needs to be used when creating a WebRTC peer connection.</li>
 </ul>
 <h3 id="features">Features</h3>
@@ -89,13 +89,13 @@
 <p>The <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class has been updated to support WebRTC sessions which behave differently to the original RTP used by most SIP devices. The main change is that WebRTC multiplexes all packets (STUN, RTP (audio and video) and RTCP) on a single connection. Standard RTP only supports a single packet type per connection and thus needs multiple sockets for RTP and RTCP.</p>
 <p>Higher level applications do not need to be concerned with these differences but do need to make sure they use the correct session class:</p>
 <ul>
-<li><a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a> for SIP applications.</li>
+<li><a href="xref:SIPSorcery.SIP.App.RTPMediaSession">RTPMediaSession</a> for SIP applications.</li>
 <li><a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> for WebRTC applications.</li>
 </ul>
 <h3 id="usage">Usage</h3>
-<p>This article describes how to use the <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a>. For WebRTC see the <a href="webrtcsession.html">webrtcsession article</a>.</p>
+<p>This article describes how to use the <a href="xref:SIPSorcery.SIP.App.RTPMediaSession">RTPMediaSession</a>. For WebRTC see the <a href="webrtcsession.html">webrtcsession article</a>.</p>
 <h4 id="creating-an-rtpmediasession">Creating an RTPMediaSession</h4>
-<p>The code snippet below shows how to instantiate an <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a> for a typical RTP connection that will transmit audio PCMU packets over IPv4.</p>
+<p>The code snippet below shows how to instantiate an <a href="xref:SIPSorcery.SIP.App.RTPMediaSession">RTPMediaSession</a> for a typical RTP connection that will transmit audio PCMU packets over IPv4.</p>
 <p>Two UDP sockets will be created:</p>
 <ul>
 <li>The RTP socket will be set to a random even port between 10000 and 20000.</li>
@@ -106,7 +106,7 @@
 var rtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
 </code></pre>
 <h4 id="controlling-an-rtpmediasession">Controlling an RTPMediaSession</h4>
-<p>If the <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a> is used with the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> class then normally the control functions can all be done via it. If it is used independently then there are methods to:</p>
+<p>If the <a href="xref:SIPSorcery.SIP.App.RTPMediaSession">RTPMediaSession</a> is used with the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> class then normally the control functions can all be done via it. If it is used independently then there are methods to:</p>
 <ul>
 <li>Create an SDP offer or answer.</li>
 <li>Set the remote SDP offer or answer.</li>
@@ -120,7 +120,7 @@ var rtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaF
 <li>For video the only known option is the companion <a href="https://github.com/sipsorcery/sipsorcery-media">SIPSorceryMedia library</a>. It has functions to decode VP8 packets to RGB frames which can be displayed in a Windows Forms or WPF application.</li>
 </ul>
 <h4 id="audio-capture">Audio Capture</h4>
-<p><a href="https://github.com/naudio/NAudio">NAudio</a> is used extensively in the example applications. The snippet below shows one approach to connecting its audio capture function to the <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a>. This snippet is taken from the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/GetStarted/Program.cs">Getting Started</a> example program.</p>
+<p><a href="https://github.com/naudio/NAudio">NAudio</a> is used extensively in the example applications. The snippet below shows one approach to connecting its audio capture function to the <a href="xref:SIPSorcery.SIP.App.RTPMediaSession">RTPMediaSession</a>. This snippet is taken from the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/GetStarted/Program.cs">Getting Started</a> example program.</p>
 <pre><code class="lang-csharp">using System;
 using System.Net.Sockets;
 using NAudio.Wave;
@@ -160,7 +160,7 @@ waveInEvent.DataAvailable += (object sender, WaveInEventArgs args) =&gt;
 waveInEvent.StartRecording();
 </code></pre>
 <h4 id="audio-rendering">Audio Rendering</h4>
-<p>The snippet below shows one approach to connecting <a href="https://github.com/naudio/NAudio">NAudio</a>'s audio rendering function to the <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a>. This snippet is taken from the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/GetStarted/Program.cs">Getting Started</a> example program.</p>
+<p>The snippet below shows one approach to connecting <a href="https://github.com/naudio/NAudio">NAudio</a>'s audio rendering function to the <a href="xref:SIPSorcery.SIP.App.RTPMediaSession">RTPMediaSession</a>. This snippet is taken from the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/GetStarted/Program.cs">Getting Started</a> example program.</p>
 <pre><code class="lang-csharp">using System;
 using System.Net.Sockets;
 using NAudio.Wave;
@@ -190,7 +190,7 @@ rtpSession.OnRtpPacketReceived += (mediaType, rtpPacket) =&gt;
 };
 </code></pre>
 <h4 id="video-capture">Video Capture</h4>
-<p>The snippet below uses the <a href="https://github.com/sipsorcery/sipsorcery-media">SIPSorceryMedia library</a> to sample a video capture device using the Windows Media Foundation, encode it as VP8 and hand it over to the <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a> for sending. This snippet is taken from the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/Softphone/Media/MediaManager.cs">Softphone</a> example program.</p>
+<p>The snippet below uses the <a href="https://github.com/sipsorcery/sipsorcery-media">SIPSorceryMedia library</a> to sample a video capture device using the Windows Media Foundation, encode it as VP8 and hand it over to the <a href="xref:SIPSorcery.SIP.App.RTPMediaSession">RTPMediaSession</a> for sending. This snippet is taken from the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/Softphone/Media/MediaManager.cs">Softphone</a> example program.</p>
 <pre><code class="lang-csharp">using System;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
