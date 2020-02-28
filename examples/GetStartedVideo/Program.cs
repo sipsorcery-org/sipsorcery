@@ -79,8 +79,8 @@ namespace demo
             string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
             var userAgent = new SIPUserAgent(_sipTransport, null);
-            var audioSrcOpts = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = executableDir + "/" + AUDIO_FILE_PCMU };
-            var videoSrcOpts = new VideoSourceOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
+            var audioSrcOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = executableDir + "/" + AUDIO_FILE_PCMU };
+            var videoSrcOpts = new VideoOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
             var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, audioSrcOpts, videoSrcOpts);
 
             // Place the call and wait for the result.

@@ -350,6 +350,9 @@ namespace SIPSorcery.SIP.App
                 Dialogue?.Hangup(m_transport, m_outboundProxy);
             }
 
+            IsOnLocalHold = false;
+            IsOnRemoteHold = false;
+
             CallEnded();
         }
 

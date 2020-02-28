@@ -67,7 +67,7 @@ namespace SIPSorcery
             var dstAddress = lookupResult.GetSIPEndPoint().Address;
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var rtpSession = new RtpAVSession(dstAddress.AddressFamily, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+            var rtpSession = new RtpAVSession(dstAddress.AddressFamily, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
             var offerSDP = await rtpSession.createOffer(new RTCOfferOptions { RemoteSignallingAddress = dstAddress });
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.

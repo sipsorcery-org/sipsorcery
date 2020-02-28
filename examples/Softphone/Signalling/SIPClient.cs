@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,8 +31,8 @@ namespace SIPSorcery.SoftPhone
     {
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
-        private static string VIDEO_TESTPATTERN = "media/testpattern.jpeg";
-        private static string VIDEO_ONHOLD_TESTPATTERN = "media/testpattern_inverted.jpeg";
+        private static int VIDEO_LIVE_FRAMES_PER_SECOND = 30;
+        private static int VIDEO_ONHOLD_FRAMES_PER_SECOND = 3;
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
@@ -42,7 +43,6 @@ namespace SIPSorcery.SoftPhone
         private SIPUserAgent m_userAgent;
         private SIPServerUserAgent m_pendingIncomingCall;
         private CancellationTokenSource _cts = new CancellationTokenSource();
-        private bool m_useVideo = true;
 
         public event Action<SIPClient> CallAnswer;                 // Fires when an outgoing SIP call is answered.
         public event Action<SIPClient> CallEnded;                  // Fires when an incoming or outgoing call is over.
@@ -143,7 +143,12 @@ namespace SIPSorcery.SoftPhone
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
                 var audioSrcOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
-                var videoSrcOpts = new VideoOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None, SourceFile = VIDEO_TESTPATTERN };
+                var videoSrcOpts = new VideoOptions 
+                { 
+                    VideoSource = VideoSourcesEnum.TestPattern, 
+                    SourceFile = RtpAVSession.VIDEO_TESTPATTERN,
+                    SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
+                };
                 var rtpMediaSession = new RtpAVSession(dstEndpoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
@@ -184,10 +189,29 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
+                
+                SDP offerSDP = SDP.ParseSDPDescription(sipRequest.Body);
+                bool hasAudio = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio);
+                bool hasVideo = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video);
 
-                var audioSrcOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
-                var videoSrcOpts = new VideoOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None, SourceFile = VIDEO_TESTPATTERN };
-                var rtpMediaSession = new RtpAVSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
+                AudioOptions audioOpts = new AudioOptions { AudioSource = AudioSourcesEnum.None };
+                if (hasAudio)
+                {
+                    audioOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                }
+
+                VideoOptions videoOpts = new VideoOptions { VideoSource = VideoSourcesEnum.None };
+                if(hasVideo)
+                {
+                    videoOpts = new VideoOptions 
+                    { 
+                        VideoSource = VideoSourcesEnum.TestPattern, 
+                        SourceFile = RtpAVSession.VIDEO_TESTPATTERN,
+                        SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
+                    };
+                }
+
+                var rtpMediaSession = new RtpAVSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily, audioOpts, videoOpts);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
@@ -214,9 +238,13 @@ namespace SIPSorcery.SoftPhone
 
             if(MediaSession is RtpAVSession)
             {
-                //AudioSourceOptions audioOnHold = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = RtpAVSession.DEFAULT_AUDIO_SOURCE_FILE };
-                AudioOptions audioOnHold = new AudioOptions { AudioSource = AudioSourcesEnum.Music };
-                VideoOptions videoOnHold = new VideoOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None, SourceFile = VIDEO_ONHOLD_TESTPATTERN };
+                AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Music };
+                VideoOptions videoOnHold = (!MediaSession.HasVideo) ? null : new VideoOptions 
+                { 
+                    VideoSource =  VideoSourcesEnum.TestPattern, 
+                    SourceFile = RtpAVSession.VIDEO_ONHOLD_TESTPATTERN,
+                    SourceFramesPerSecond = VIDEO_ONHOLD_FRAMES_PER_SECOND
+                };
                 await (MediaSession as RtpAVSession).SetSources(audioOnHold, videoOnHold);
             }
 
@@ -234,8 +262,13 @@ namespace SIPSorcery.SoftPhone
 
             if (MediaSession is RtpAVSession)
             {
-                AudioOptions audioOnHold = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
-                VideoOptions videoOnHold = new VideoOptions { VideoSource = (m_useVideo) ? VideoSourcesEnum.TestPattern : VideoSourcesEnum.None, SourceFile = VIDEO_TESTPATTERN };
+                AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                VideoOptions videoOnHold = (!MediaSession.HasVideo) ? null : new VideoOptions 
+                { 
+                    VideoSource = VideoSourcesEnum.TestPattern, 
+                    SourceFile = RtpAVSession.VIDEO_TESTPATTERN,
+                    SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
+                };
                 await (MediaSession as RtpAVSession).SetSources(audioOnHold, videoOnHold);
             }
 

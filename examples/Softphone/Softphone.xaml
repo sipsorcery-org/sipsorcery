@@ -7,7 +7,7 @@
     Title="SIPSorcery SoftPhone" Background="#FF808080" Closing="Window_Closing" Icon="favicon.ico" MinHeight="560" MinWidth="490" Loaded="OnWindowLoaded" Height="560" Width="490">
 
     <Grid>
-        <Border BorderBrush="#FF807FC3" BorderThickness="2" CornerRadius="2" Visibility="Visible" Margin="0,121,0,52">
+        <Border BorderBrush="#FF807FC3" BorderThickness="0" CornerRadius="2" Visibility="Visible" Margin="0,121,0,52">
             <Grid Margin="2" VerticalAlignment="Stretch" x:Name="m_callVideoGrid" HorizontalAlignment="Stretch">
                 <Image x:Name="_client0Video" MinWidth="128" MinHeight="96" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed" MaxWidth="490" MaxHeight="277" MouseLeftButtonUp="OnClickVideo"/>
                 <Image x:Name="_client1Video" MinWidth="128" MinHeight="96" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Collapsed" MaxWidth="490" MaxHeight="277" MouseLeftButtonUp="OnClickVideo"/>
@@ -16,7 +16,7 @@
 
         <StackPanel>
 
-            <Border x:Name="_statusBorder" BorderBrush="#FF807FC3" BorderThickness="2" Margin="2" CornerRadius="3" VerticalAlignment="Top" Height="32" Background="#FFCCD0EA">
+            <Border x:Name="_statusBorder" BorderBrush="#FF807FC3" Margin="2" CornerRadius="3" VerticalAlignment="Top" Height="32" Background="#FFCCD0EA">
                 <TextBlock x:Name="m_signallingStatus" TextWrapping="Wrap" Margin="2" Background="#FFCCD0EA" Text="Ready" VerticalAlignment="Center"/>
             </Border>
 
@@ -57,7 +57,7 @@
                 </StackPanel>
             </Border>
 
-            <Grid x:Name="_keypadGrid" Margin="8,8,8,8" MinHeight="300" HorizontalAlignment="Center" Width="300" Visibility="Hidden">
+            <Grid x:Name="_keypadGrid" Margin="8,8,8,8" MinHeight="300" HorizontalAlignment="Center" Width="300" Visibility="Hidden" Panel.ZIndex="11">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -86,10 +86,14 @@
                 <Button x:Name="m_keypadHashButton" Content="#" Click="KeyPadButton_Click" Grid.Row="3" Grid.Column="2" HorizontalAlignment="Center" Width="80" Margin="0,4,0,20"/>
             </Grid>
 
-            <StatusBar VerticalAlignment="Bottom" Margin="0,4,0,0">
-                <Label x:Name="listeningEndPoint" ToolTip="Listening On"></Label>
-            </StatusBar>
-
         </StackPanel>
+
+        <Grid>
+            <Button Width="60" Height="32" VerticalAlignment="Bottom" Margin="0,0,0,42" Click="ToggleKeyPad">Keypad</Button>
+        </Grid>
+
+        <StatusBar VerticalAlignment="Bottom" Height="40" Margin="0,0,0,0">
+            <Label x:Name="listeningEndPoint" ToolTip="Listening On"></Label>
+        </StatusBar>
     </Grid>
 </Window>

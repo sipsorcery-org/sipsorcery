@@ -189,7 +189,6 @@ namespace SIPSorcery.Net
         private AddressFamily m_addressFamily;
         private bool m_isMediaMultiplexed = false;      // Indicates whether audio and video are multiplexed on a single RTP channel or not.
         private bool m_isRtcpMultiplexed = false;       // Indicates whether the RTP channel is multiplexing RTP and RTCP packets on the same port.
-        //private IPEndPoint m_lastReceiveFromEndPoint;
         private bool m_rtpEventInProgress;               // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                 // The last timestamp used in an RTP packet.    
         private bool m_isClosed;
@@ -310,6 +309,22 @@ namespace SIPSorcery.Net
         public int RemoteRtpEventPayloadID { get; set; }
 
         public bool IsClosed { get { return m_isClosed; } }
+
+        /// <summary>
+        /// Indicates whether this session is using audio.
+        /// </summary>
+        public bool HasAudio
+        {
+            get { return m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.audio); }
+        }
+
+        /// <summary>
+        /// Indicates whether this session is using video.
+        /// </summary>
+        public bool HasVideo
+        {
+            get { return m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.video); }
+        }
 
         /// <summary>
         /// Gets fired when the session detects that the remote end point 

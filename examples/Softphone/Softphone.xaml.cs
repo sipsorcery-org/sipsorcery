@@ -256,8 +256,11 @@ namespace SIPSorcery.SoftPhone
 
                     m_call2ActionsGrid.IsEnabled = true;
 
-                    _sipClients[0].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client0WriteableBitmap, _client0Video);
-                    _client0Video.Visibility = Visibility.Visible;
+                    if (_sipClients[0].MediaSession.HasVideo)
+                    {
+                        _sipClients[0].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client0WriteableBitmap, _client0Video);
+                        _client0Video.Visibility = Visibility.Visible;
+                    }
                 });
             }
             else if (client == _sipClients[1])
@@ -274,8 +277,11 @@ namespace SIPSorcery.SoftPhone
                     m_hold2Button.Visibility = Visibility.Visible;
                     m_attendedTransferButton.Visibility = Visibility.Visible;
 
-                    _sipClients[1].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client1WriteableBitmap, _client1Video);
-                    _client1Video.Visibility = Visibility.Visible;
+                    if (_sipClients[1].MediaSession.HasVideo)
+                    {
+                        _sipClients[1].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client1WriteableBitmap, _client1Video);
+                        _client1Video.Visibility = Visibility.Visible;
+                    }
                 });
 
                 if (_sipClients[0].IsCallActive)
@@ -669,6 +675,21 @@ namespace SIPSorcery.SoftPhone
             {
                 Panel.SetZIndex(_client0Video, ZINDEX_TOP - 1);
                 Panel.SetZIndex(_client1Video, ZINDEX_TOP);
+            }
+        }
+
+        /// <summary>
+        /// Toggles the appearance of the keypad.
+        /// </summary>
+        private void ToggleKeyPad(object sender, RoutedEventArgs e)
+        {
+            if(_keypadGrid.Visibility == Visibility.Hidden)
+            {
+                _keypadGrid.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                _keypadGrid.Visibility = Visibility.Hidden;
             }
         }
     }
