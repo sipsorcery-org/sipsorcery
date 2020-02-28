@@ -19,6 +19,7 @@ using System.Configuration;
 using System.Net;
 using System.Xml;
 using Microsoft.Extensions.Logging;
+using Serilog;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone
@@ -29,7 +30,7 @@ namespace SIPSorcery.SoftPhone
         private const string SIPSOCKETS_CONFIGNODE_NAME = "sipsockets";
         private const string STUN_SERVER_KEY = "STUNServerHostname";
 
-        private static ILogger logger = Log.Logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static readonly XmlNode m_sipSoftPhoneConfigNode;
         public static readonly XmlNode SIPSocketsNode;
@@ -46,6 +47,8 @@ namespace SIPSorcery.SoftPhone
         {
             try
             {
+                AddDebugLogger();
+
                 if (ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME) != null)
                 {
                     m_sipSoftPhoneConfigNode = (XmlNode)ConfigurationManager.GetSection(SIPSOFTPHONE_CONFIGNODE_NAME);
@@ -71,6 +74,18 @@ namespace SIPSorcery.SoftPhone
         public object Create(object parent, object context, XmlNode configSection)
         {
             return configSection;
+        }
+
+        private static void AddDebugLogger()
+        {
+            var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
+            var loggerConfig = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
+                .WriteTo.Debug()
+                .CreateLogger();
+            loggerFactory.AddSerilog(loggerConfig);
+            SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
         }
     }
 }

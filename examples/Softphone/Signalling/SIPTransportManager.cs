@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SIPTransportManager.cs
 //
-// Description: Manages the SIP tranpsort layer. For example
+// Description: Manages the SIP transport layer. For example
 // for incoming calls needs to manage which client can accept it. 
 //
 // Author(s):
@@ -110,7 +110,18 @@ namespace SIPSorcery.SoftPhone
                             logger.LogWarning($"Socket exception attempting to bind UDP channel to port {SIP_DEFAULT_PORT}, will use random port. {bindExcp.Message}.");
                             udpChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, 0));
                         }
-                        var tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Any, udpChannel.Port));
+
+                        SIPTCPChannel tcpChannel = null;
+                        try
+                        {
+                            tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Any, udpChannel.Port));
+                        }
+                        catch (SocketException bindExcp)
+                        {
+                            logger.LogWarning($"Socket exception attempting to bind TCP channel to port {udpChannel.Port}, will use random port. {bindExcp.Message}.");
+                            tcpChannel = new SIPTCPChannel(new IPEndPoint(IPAddress.Any, 0));
+                        }
+
                         SIPTransport.AddSIPChannel(new List<SIPChannel> { udpChannel, tcpChannel });
                     }
                 });
@@ -134,7 +145,13 @@ namespace SIPSorcery.SoftPhone
         /// <param name="sipRequest">The SIP request received.</param>
         private Task SIPTransportRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
-            if (sipRequest.Header.From != null &&
+            if (sipRequest.Method == SIPMethodsEnum.INFO)
+            {
+                logger.LogDebug("SIP " + sipRequest.Method + " request received but no processing has been set up for it, rejecting.");
+                SIPResponse notAllowedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                return SIPTransport.SendResponseAsync(notAllowedResponse);
+            }
+            else if (sipRequest.Header.From != null &&
                 sipRequest.Header.From.FromTag != null &&
                 sipRequest.Header.To != null &&
                 sipRequest.Header.To.ToTag != null)

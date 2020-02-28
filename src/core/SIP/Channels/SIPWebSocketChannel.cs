@@ -237,7 +237,7 @@ namespace SIPSorcery.SIP
                 // And lastly if we now have a valid web socket then send.
                 if (ingressClient != null)
                 {
-                    await Task.Run(() => ingressClient.Send(buffer, 0, buffer.Length));
+                    await Task.Run(() => ingressClient.Send(buffer, 0, buffer.Length)).ConfigureAwait(false);
                     return SocketError.Success;
                 }
                 else

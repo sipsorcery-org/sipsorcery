@@ -14,8 +14,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
+using SIPSorcery.Net;
 
 namespace SIPSorcery.SIP.App
 {
@@ -29,21 +30,43 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public interface IMediaSession
     {
-        //NOTE: Methods return a Task for usage with third-party implementations 
+        RTCSessionDescription localDescription { get; }
+        RTCSessionDescription remoteDescription { get; }
+        bool IsClosed { get; }
+        bool HasAudio { get; }
+        bool HasVideo { get; }
 
-        Task<string> CreateOffer(IPAddress destinationAddress = null);
-        Task OfferAnswered(string remoteSDP);
-
-        Task<string> AnswerOffer(string remoteSDP);
-        Task<string> RemoteReInvite(string remoteSDP);
-
-        void Close();
-
-        event Action<string> SessionMediaChanged;
+        /// <summary>
+        /// Fired when a video sample is ready for rendering.
+        /// [sample, width, height, stride]
+        /// </summary>
+        event Action<byte[], uint, uint, int> OnVideoSampleReady;
 
         /// <summary>
         /// Fired when the RTP channel is closed.
         /// </summary>
         event Action<string> OnRtpClosed;
+
+        /// <summary>
+        /// Fired when a media RTP packet is received.
+        /// </summary>
+        event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
+
+        /// <summary>
+        /// Fired when an RTP event (typically representing a DTMF tone) is
+        /// detected.
+        /// </summary>
+        event Action<RTPEvent> OnRtpEvent;
+
+        Task<SDP> createOffer(RTCOfferOptions options);
+        void setLocalDescription(RTCSessionDescription sessionDescription);
+        Task<SDP> createAnswer(RTCAnswerOptions options);
+        void setRemoteDescription(RTCSessionDescription sessionDescription);
+
+        Task SendDtmf(byte tone, CancellationToken ct);
+        void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample);
+
+        Task Start();
+        void Close(string reason);
     }
 }

@@ -35,6 +35,7 @@ namespace SIPSorcery.SIP
 {
     public class SIPUDPChannel : SIPChannel
     {
+        private const string UDP_EXPIRE_THREAD_NAME = "sip-udpexpire";
         private const int FAILED_DESTINATION_PERIOD_SECONDS = 30;       // How long a failed send should prevent subsequent sends for.
         private const int EXPIRED_FAILED_PERIOD_SECONDS = 5;            // Period at which to check the failed send list and remove expired items.
 
@@ -78,7 +79,7 @@ namespace SIPSorcery.SIP
 
             Receive();
 
-            Task.Run(ExpireFailedSends);
+            Task.Factory.StartNew(ExpireFailedSends, TaskCreationOptions.LongRunning);
         }
 
         public SIPUDPChannel(IPAddress listenAddress, int listenPort) : this(new IPEndPoint(listenAddress, listenPort))
@@ -290,8 +291,10 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Removed end points from the send failures list after the timeout period.
         /// </summary>
-        private async void ExpireFailedSends()
+        private void ExpireFailedSends()
         {
+            Thread.CurrentThread.Name = UDP_EXPIRE_THREAD_NAME;
+
             try
             {
                 while (!Closed)
@@ -303,10 +306,11 @@ namespace SIPSorcery.SIP
                         m_sendFailures.TryRemove(expired, out _);
                     }
 
-                    await Task.Delay(EXPIRED_FAILED_PERIOD_SECONDS * 1000, m_cts.Token);
+                    Task.Delay(EXPIRED_FAILED_PERIOD_SECONDS * 1000, m_cts.Token).Wait();
                 }
             }
             catch (OperationCanceledException) { }
+            catch (AggregateException) { } // This gets thrown if task is cancelled.
             catch (Exception excp)
             {
                 logger.LogError($"Exception SIPUDPChannel.ExpireFailedSends. {excp.Message}");

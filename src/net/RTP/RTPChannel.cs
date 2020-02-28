@@ -220,8 +220,8 @@ namespace SIPSorcery.Net
             get { return m_isClosed; }
         }
 
-        public event Action<IPEndPoint, byte[]> OnRTPDataReceived;
-        public event Action<IPEndPoint, byte[]> OnControlDataReceived;
+        public event Action<IPEndPoint, IPEndPoint, byte[]> OnRTPDataReceived;
+        public event Action<IPEndPoint, IPEndPoint, byte[]> OnControlDataReceived;
         public event Action<string> OnClosed;
 
         /// <summary>
@@ -398,7 +398,7 @@ namespace SIPSorcery.Net
             if (packet?.Length > 0)
             {
                 LastRtpDestination = remoteEndPoint;
-                OnRTPDataReceived?.Invoke(remoteEndPoint, packet);
+                OnRTPDataReceived?.Invoke(localEndPoint, remoteEndPoint, packet);
             }
         }
 
@@ -412,7 +412,7 @@ namespace SIPSorcery.Net
         private void OnControlPacketRecived(UdpReceiver receiver, IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] packet)
         {
             LastControlDestination = remoteEndPoint;
-            OnControlDataReceived?.Invoke(remoteEndPoint, packet);
+            OnControlDataReceived?.Invoke(localEndPoint, remoteEndPoint, packet);
         }
 
         protected virtual void Dispose(bool disposing)

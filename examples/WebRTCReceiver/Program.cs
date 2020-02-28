@@ -21,6 +21,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Windows.Forms;
 using Serilog;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 using SIPSorceryMedia;
@@ -115,11 +116,11 @@ namespace TestConsole
                null,
                null);
 
-            webRtcSession.setRemoteDescription(SdpType.offer, offerSDP);
+            webRtcSession.setRemoteDescription(new RTCSessionDescription { sdp = offerSDP, type = RTCSdpType.offer });
 
-            webRtcSession.RtpSession.OnReceiveReport += RtpSession_OnReceiveReport;
-            webRtcSession.RtpSession.OnSendReport += RtpSession_OnSendReport;
-            webRtcSession.RtpSession.OnRtpPacketReceived += RtpSession_OnRtpPacketReceived;
+            webRtcSession.OnReceiveReport += RtpSession_OnReceiveReport;
+            webRtcSession.OnSendReport += RtpSession_OnSendReport;
+            webRtcSession.OnRtpPacketReceived += RtpSession_OnRtpPacketReceived;
             webRtcSession.OnClose += (reason) =>
             {
                 Console.WriteLine($"webrtc session closed: {reason}");
@@ -128,13 +129,15 @@ namespace TestConsole
 
             // Add local recvonly tracks. This ensures that the SDP answer includes only
             // the codecs we support.
-            var videoTrack = webRtcSession.addTrack(SDPMediaTypesEnum.video, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
-            videoTrack.Transceiver.SetStreamStatus(MediaStreamStatusEnum.RecvOnly);
-            var audioTrack = webRtcSession.addTrack(SDPMediaTypesEnum.audio, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             audioTrack.Transceiver.SetStreamStatus(MediaStreamStatusEnum.RecvOnly);
+            webRtcSession.addTrack(audioTrack);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            videoTrack.Transceiver.SetStreamStatus(MediaStreamStatusEnum.RecvOnly);
+            webRtcSession.addTrack(videoTrack);
 
             var answerSdp = await webRtcSession.createAnswer();
-            webRtcSession.setLocalDescription(answerSdp);
+            webRtcSession.setLocalDescription(new RTCSessionDescription { sdp = answerSdp, type = RTCSdpType.answer });
 
             Console.WriteLine($"answer sdp: {answerSdp}");
 
@@ -161,11 +164,14 @@ namespace TestConsole
                 //Console.WriteLine($"rtp video, seqnum {rtpPacket.Header.SequenceNumber}, ts {rtpPacket.Header.Timestamp}, marker {rtpPacket.Header.MarkerBit}, payload {rtpPacket.Payload.Length}, payload[0-5] {rtpPacket.Payload.HexStr(5)}.");
 
                 // New frames must have the VP8 Payload Descriptor Start bit set.
+                // The tracking of the current video frame position is to deal with a VP8 frame being split across multiple RTP packets
+                // as per https://tools.ietf.org/html/rfc7741#section-4.4.
                 if (_currVideoFramePosn > 0 || (rtpPacket.Payload[0] & 0x10) > 0)
                 {
-                    // TODO: use the VP8 Payload descriptor to properly determine the VP8 header length (currently hard coded to 4).
-                    Buffer.BlockCopy(rtpPacket.Payload, 4, _currVideoFrame, _currVideoFramePosn, rtpPacket.Payload.Length - 4);
-                    _currVideoFramePosn += rtpPacket.Payload.Length - 4;
+                    RtpVP8Header vp8Header = RtpVP8Header.GetVP8Header(rtpPacket.Payload);
+
+                    Buffer.BlockCopy(rtpPacket.Payload, vp8Header.Length, _currVideoFrame, _currVideoFramePosn, rtpPacket.Payload.Length - vp8Header.Length);
+                    _currVideoFramePosn += rtpPacket.Payload.Length - vp8Header.Length;
 
                     if (rtpPacket.Header.MarkerBit == 1)
                     {
@@ -237,7 +243,7 @@ namespace TestConsole
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
             webRtcSession.OnClose += (reason) => dtls.Shutdown();
 
-            int res = dtls.DoHandshakeAsServer((ulong)webRtcSession.RtpSession.RtpChannel.RtpSocket.Handle);
+            int res = dtls.DoHandshakeAsServer((ulong)webRtcSession.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
 
             Console.WriteLine("DtlsContext initialisation result=" + res);
 
@@ -249,7 +255,7 @@ namespace TestConsole
                 var srtpSendContext = new Srtp(dtls, false);
                 var srtpReceiveContext = new Srtp(dtls, true);
 
-                webRtcSession.RtpSession.SetSecurityContext(
+                webRtcSession.SetSecurityContext(
                     srtpSendContext.ProtectRTP,
                     srtpReceiveContext.UnprotectRTP,
                     srtpSendContext.ProtectRTCP,
