@@ -1,6 +1,6 @@
 | Target        | SIPSorcery    | Examples     | Softphone |
 | --------------| ------------- |:-------------|:--------- |
-| net452        | [![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | | |
+| net46        | [![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | | |
 | netstandard2.0 | ![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-std20/badge.svg) |  |  |
 | dotnetcore3.1 | ![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31/badge.svg) | ![](https://github.com/sipsorcery/sipsorcery/workflows/examples-core31/badge.svg) <br> [![Examples build status](https://ci.appveyor.com/api/projects/status/4myf11mda0p69ysm/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-mre1o/branch/master) | [![Softphone build status](https://ci.appveyor.com/api/projects/status/xx1bcttkk4gbrd3y/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-0p6s4/branch/master) |
 
@@ -15,7 +15,7 @@ Note unlike a lot of WebRTC libraries this one is not wrapping [Google's WebRTC 
 
 ## Installation
 
-The library is compliant with .NET Standard 2.0, .Net Core 3.1 and .NET Framework 4.5.2. It is available via NuGet.
+The library is compliant with .NET Standard 2.0, .Net Core 3.1 and .NET Framework 4.6. It is available via NuGet.
 
 For .NET Core:
 
