@@ -34,6 +34,7 @@ namespace SIPSorcery.SoftPhone
     {
         private const int SIP_CLIENT_COUNT = 2;                             // The number of SIP clients (simultaneous calls) that the UI can handle.
         private const int ZINDEX_TOP = 10;
+        private const int REGISTRATION_EXPIRY = 180;
 
         private static ILogger logger = Log.Logger;
 
@@ -112,17 +113,12 @@ namespace SIPSorcery.SoftPhone
 
             _sipRegistrationClient = new SIPRegistrationUserAgent(
                 _sipTransportManager.SIPTransport,
-                null,
-                new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
                 m_sipUsername,
                 m_sipPassword,
-                null,
                 m_sipServer,
-                new SIPURI(m_sipUsername, IPAddress.Any.ToString(), null),
-                180,
-                (message) => { logger.LogDebug(message.ToString()); });
+                REGISTRATION_EXPIRY);
 
-            //_sipRegistrationClient.Start();
+            _sipRegistrationClient.Start();
         }
 
         /// <summary>
