@@ -56,13 +56,13 @@ namespace SIPGetStarted
 {
     class Program
     {
-		 private static string DESTINATION = "time@sipsorcery.com";
-		
+         private static string DESTINATION = "time@sipsorcery.com";
+        
         static async Task Main(string[] args)
         {
             Console.WriteLine("SIP Get Started");
-			
-			var sipTransport = new SIPTransport();
+            
+            var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
             var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
 
@@ -74,7 +74,7 @@ namespace SIPGetStarted
 }
 ````
 
-The [GetStarted](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted) example contains the full source the example above.
+The [GetStarted](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted) example contains the full source and project file for the example above.
 
 The three key classes in the above example are described in dedicated articles:
 
@@ -106,7 +106,7 @@ The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examp
 
 ## Getting Started WebRTC
 
-The core of the code required to establish a WebRTC connection is demonstrated below. The code shown will build but will not establish a connection due to the lack of a way to exchange the SDP offers and answers between peers. A full working example with a web socket signalling mechanism is available in the [WebRTCTestPatternServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCTestPatternServer) example.
+The core of the code required to establish a WebRTC connection is demonstrated below. The code shown will build but will not establish a connection due to no mechanism to exchange the SDP offer and answer between peers. A full working example with a web socket signalling mechanism is available in the [WebRTCTestPatternServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCTestPatternServer) example.
 
 ````bash
 dotnet new console --name WebRTCGetStarted
@@ -129,14 +129,14 @@ namespace WebRTCGetStarted
 {
     class Program
     {
-		private const string DTLS_CERTIFICATE_PATH = "certs/localhost.pem";
+        private const string DTLS_CERTIFICATE_PATH = "certs/localhost.pem";
         private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
         private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
-		
+        
         static async Task Main(string[] args)
         {
             Console.WriteLine("Get Started WebRTC");
-			
+            
             var webRtcSession = new WebRtcSession(
                 AddressFamily.InterNetwork,
                 DTLS_CERTIFICATE_FINGERPRINT,
@@ -145,16 +145,16 @@ namespace WebRTCGetStarted
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
             webRtcSession.addTrack(videoTrack);
-			
-			var offerSdp = await webRtcSession.createOffer(null);
+            
+            var offerSdp = await webRtcSession.createOffer(null);
             webRtcSession.setLocalDescription(new RTCSessionDescription { sdp = offerSdp, type = RTCSdpType.offer });
-			
-			// At this point the SDP offer and answer need to be exchanged with the remote peer.
-			
-			var answerSdp = SDP.ParseSDPDescription(sdpAnswer);
+            
+            // At this point the SDP offer and answer need to be exchanged with the remote peer.
+            
+            var answerSdp = SDP.ParseSDPDescription(sdpAnswer);
             webRtcSession.setRemoteDescription(new RTCSessionDescription { sdp = answerSdp, type = RTCSdpType.answer }); 
-			
-			var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
+            
+            var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
             webRtcSession.OnClose += (reason) => dtls.Shutdown();
             
             dtls.DoHandshakeAsServer((ulong)webRtcSession.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
@@ -176,14 +176,14 @@ namespace WebRTCGetStarted
             {
                Console.WriteLine("DTLS handshake failed.");
             }
-			
-			// If the DTLS key exchange succeeded then secure RTP packets can now be exchanged between the peers.
+            
+            // If the DTLS key exchange succeeded then secure RTP packets can now be exchanged between the peers.
         }
     }
 }
 ````
 
-The key class for using WebRTC is described in an article:
+The key class for using WebRTC is described in this article:
  
   - [WebRTCSession](https://sipsorcery.github.io/sipsorcery/articles/webrtcsession.html)
 
