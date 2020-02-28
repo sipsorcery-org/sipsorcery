@@ -122,7 +122,7 @@ namespace SIPSorcery.SoftPhone
                 180,
                 (message) => { logger.LogDebug(message.ToString()); });
 
-            _sipRegistrationClient.Start();
+            //_sipRegistrationClient.Start();
         }
 
         /// <summary>
