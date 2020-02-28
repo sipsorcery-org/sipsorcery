@@ -17,6 +17,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -25,7 +26,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Media;
-using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -40,8 +40,11 @@ namespace SIPSorcery
         private static readonly string SIP_USERNAME = "7001";
         private static readonly string SIP_PASSWORD = "password";
         private static int TRANSFER_TIMEOUT_SECONDS = 10;                    // Give up on transfer if no response within this period.
+        private const string AUDIO_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+        
+        private static string _currentDir;
 
         static void Main()
         {
@@ -64,6 +67,8 @@ namespace SIPSorcery
             Console.WriteLine($"Listening for incoming calls on: {sipTransport.GetSIPChannels().First().ListeningEndPoint}.");
 
             //EnableTraceLogs(sipTransport);
+
+            _currentDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
             RtpAVSession rtpAVSession = null;
 
@@ -96,7 +101,7 @@ namespace SIPSorcery
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
 
-                        rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+                        rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
                         await userAgent.Answer(incomingCall, rtpAVSession);
 
                         Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
@@ -123,7 +128,7 @@ namespace SIPSorcery
                         {
                             if (!userAgent.IsCallActive)
                             {
-                                rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+                                rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
                                 bool callResult = await userAgent.Call(DEFAULT_DESTINATION_SIP_URI, SIP_USERNAME, SIP_PASSWORD, rtpAVSession);
 
                                 Log.LogInformation($"Call attempt {((callResult) ? "successfull" : "failed")}.");
@@ -142,11 +147,17 @@ namespace SIPSorcery
                                 {
                                     Log.LogInformation("Taking the remote call party off hold.");
                                     await userAgent.TakeOffHold();
+                                    await (userAgent.MediaSession as RtpAVSession).SetSources(new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
                                 }
                                 else
                                 {
                                     Log.LogInformation("Placing the remote call party on hold.");
                                     await userAgent.PutOnHold();
+                                    await (userAgent.MediaSession as RtpAVSession).SetSources(new AudioOptions
+                                    {
+                                        AudioSource = AudioSourcesEnum.Music,
+                                        SourceFile = _currentDir + "/" + AUDIO_FILE_PCMU
+                                    }, null);
                                 }
                             }
                             else

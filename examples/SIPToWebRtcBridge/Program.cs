@@ -157,7 +157,7 @@ namespace SIPSorcery
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
 
-                        rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+                        rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
                         await userAgent.Answer(incomingCall, rtpAVSession);
                         //rtpAVSession.OnRtpPacketReceived += (mediaType, rtpPacket) => OnMediaFromSIPSampleReady?.Invoke(mediaType, (uint)rtpPacket.Payload.Length, rtpPacket.Payload);
                         rtpAVSession.OnRtpPacketReceived += (mediaType, rtpPacket) => ForwardMedia(mediaType, rtpPacket);
@@ -314,8 +314,6 @@ namespace SIPSorcery
                     srtpReceiveContext.UnprotectRTP,
                     srtpSendContext.ProtectRTCP,
                     srtpReceiveContext.UnprotectRTCP);
-
-                webRtcSession.IsDtlsNegotiationComplete = true;
 
                 return true;
             }

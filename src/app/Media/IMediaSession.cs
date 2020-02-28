@@ -33,6 +33,8 @@ namespace SIPSorcery.SIP.App
         RTCSessionDescription localDescription { get; }
         RTCSessionDescription remoteDescription { get; }
         bool IsClosed { get; }
+        bool HasAudio { get; }
+        bool HasVideo { get; }
 
         /// <summary>
         /// Fired when a video sample is ready for rendering.

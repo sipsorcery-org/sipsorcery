@@ -18,9 +18,9 @@
 //-----------------------------------------------------------------------------
 // This example can be used with the automated SIP test tool [SIPp] (https://github.com/SIPp/sipp)
 // and its inbuilt User Agent Client scenario.
-// Note: IPp doesn't support IPv6.
+// Note: SIPp doesn't support IPv6.
 //
-// To isntall on WSL:
+// To install on WSL:
 // $ sudo apt install sip-tester
 //
 // Running tests (press the '+' key while test is running to increase the call rate):
@@ -47,7 +47,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -56,7 +55,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NAudio.Wave;
 using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
@@ -146,13 +144,12 @@ namespace SIPSorcery
                         // Check there's a codec we support in the INVITE offer.
                         var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
                         IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
-                        string audioFile = null;
 
                         if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
                         {
                             Log.LogDebug($"CLient offer contained PCMU audio codec.");
                             rtpSession = new RtpAVSession(dstRtpEndPoint.AddressFamily, 
-                                new AudioSourceOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = executableDir + "/" + AUDIO_FILE_PCMU }, null);
+                                new AudioOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = executableDir + "/" + AUDIO_FILE_PCMU }, null);
                             rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.offer, sdp = offerSdp });
                         }
 
@@ -187,7 +184,7 @@ namespace SIPSorcery
                             var answerSdp = await rtpSession.createAnswer(null);
                             uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
 
-                            rtpSession.Start();
+                            await rtpSession.Start();
                         }
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)

@@ -38,19 +38,11 @@ namespace demo
 
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioSourceOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+            var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
-
-            if(callResult)
-            {
-                Console.WriteLine("Call attempt successful.");
-            }
-            else
-            {
-                Console.WriteLine("Call attempt failed.");
-            }
+            Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
           
             Console.WriteLine("press any key to exit...");
             Console.Read();

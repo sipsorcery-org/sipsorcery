@@ -62,10 +62,8 @@ namespace SIPSorcery.Net
         public string LocalIcePassword;
         public string RemoteIceUser;
         public string RemoteIcePassword;
-        public bool IsDtlsNegotiationComplete;
         public DateTime IceNegotiationStartedAt;
         public List<IceCandidate> LocalIceCandidates;
-        public bool IsClosed;
         public IceConnectionStatesEnum IceConnectionState = IceConnectionStatesEnum.None;
 
         private List<IceCandidate> _remoteIceCandidates = new List<IceCandidate>();
@@ -77,6 +75,11 @@ namespace SIPSorcery.Net
         public bool IsConnected
         {
             get { return IceConnectionState == IceConnectionStatesEnum.Connected; }
+        }
+
+        public bool IsDtlsNegotiationComplete
+        {
+            get { return base.IsSecureContextReady; }
         }
 
         /// <summary>
@@ -269,7 +272,6 @@ namespace SIPSorcery.Net
         {
             if (!IsClosed)
             {
-                IsClosed = true;
                 IceConnectionState = IceConnectionStatesEnum.Closed;
                 m_stunChecksTimer.Dispose();
                 CloseSession(reason);

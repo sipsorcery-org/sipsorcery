@@ -224,8 +224,6 @@ namespace WebRTCServer
                     srtpSendContext.ProtectRTCP,
                     srtpReceiveContext.UnprotectRTCP);
 
-                webRtcSession.IsDtlsNegotiationComplete = true;
-
                 return true;
             }
             else
