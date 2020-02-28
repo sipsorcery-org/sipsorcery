@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class RTPChannel
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.49.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -568,7 +568,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public event Action&lt;IPEndPoint, byte[]&gt; OnControlDataReceived</code></pre>
+    <pre><code class="lang-csharp hljs">public event Action&lt;IPEndPoint, IPEndPoint, byte[]&gt; OnControlDataReceived</code></pre>
   </div>
   <h5 class="eventType">Event Type</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -580,7 +580,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -597,7 +597,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public event Action&lt;IPEndPoint, byte[]&gt; OnRTPDataReceived</code></pre>
+    <pre><code class="lang-csharp hljs">public event Action&lt;IPEndPoint, IPEndPoint, byte[]&gt; OnRTPDataReceived</code></pre>
   </div>
   <h5 class="eventType">Event Type</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -609,7 +609,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
         <td></td>
       </tr>
     </tbody>
