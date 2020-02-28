@@ -73,16 +73,19 @@
 <p>For non-server SIP applications the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> class will often be the main SIP related class that needs to be used.</p>
 <h3 id="usage">Usage</h3>
 <h4 id="initiating-a-call">Initiating a Call</h4>
-<p>To place a SIP call takes only a small amount of code. The code snippet below is capable of successfully completing a call but it will not do anything with the RTP audio packets it receives. Capturing or rendering media takes additional code an example of which can be seen in the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/GetStarted/Program.cs">Getting Started Example</a>.</p>
-<pre><code class="lang-csharp">using SIPSorcery.SIP;
+<p>To place a SIP call takes only a small amount of code. The code snippet below is capable of successfully completing a call (it requires the <a href="https://github.com/sipsorcery/sipsorcery-media">SIPSorceryMedia</a> nuget package for Windows audio/video support. The full example be found in <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/GetStarted/Program.cs">Getting Started Example</a>.</p>
+<pre><code class="lang-csharp">using System;
+using System.Net.Sockets;
+using System.Threading.Tasks;
+using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Net;
+using SIPSorcery.Media;
 
 string DESTINATION = &quot;time@sipsorcery.com&quot;;
 
 var sipTransport = new SIPTransport();
 var userAgent = new SIPUserAgent(sipTransport, null);
-var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) , AddressFamily.InterNetwork);
+var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
 
 bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
 </code></pre>
@@ -94,11 +97,13 @@ using SIPSorcery.Net;
 
 var sipTransport = new SIPTransport();
 var userAgent = new SIPUserAgent(sipTransport, null);
-var incomingCall = userAgent1.AcceptCall(inviteRequest);
+
+// The invite request needs to be obtained from the sipTransport.SIPTransportRequestReceived event.
+var incomingCall = userAgent.AcceptCall(inviteRequest);
 
 // To answer the call and start the RTP media.
-var rtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
-await userAgent1.Answer(incomingCall, rtpMediaSession);
+var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+await userAgent.Answer(incomingCall, rtpSession);
 
 // Or the incoming call request can be rejected.
 // incomingCall.Reject(SIPResponseStatusCodesEnum.BusyHere, null, null);
@@ -121,26 +126,25 @@ await userAgent1.Answer(incomingCall, rtpMediaSession);
 userAgent.Hangup()
 </code></pre>
 <h4 id="sending-dtmf-tones">Sending DTMF Tones</h4>
-<p>A DTMF tone can be sent to the remote call party using the <code>SendDTMF</code> method.</p>
+<p>A DTMF tone can be sent to the remote call party using the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_SendDtmf_System_Byte_">SendDtmf(Byte)</a> method.</p>
 <pre><code class="lang-csharp">bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
-userAgent.SendDTMF(1);
-userAgent.SendDTMF(2);
-userAgent.SendDTMF(3);
+await userAgent.SendDtmf(1);
+await userAgent.SendDtmf(2);
+await userAgent.SendDtmf(3);
 </code></pre>
 <h4 id="placing-on-and-off-hold">Placing on and Off Hold</h4>
 <p>There are typically two mechanisms that are used to place a remote call party on hold:</p>
 <ul>
-<li>Change the audio source from a capture device to music on hold. This approach does not require any SIP signalling,</li>
+<li>Change the audio source from a capture device to music on hold. This approach does not require any SIP signalling but has the weakness that full audio streams continue to flow,</li>
 <li>Use a SIP re-INVITE request to inform the remote call party that audio will no longer be sent by setting the media flow attribute from <code>sendrecv</code> to <code>sendonly</code> and then send a comfort noise or silence payload.</li>
 </ul>
-<p>If the music on hold approach is used the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> instance does not need to get involved, the audio source can simply be switched.</p>
-<p>To use the SIP re-INVITE approach the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> <code>PutOnHold</code> and <code>TakeOffHold</code> instance methods can be used.</p>
+<p>A 3rd mechanism is a combination of the two. A re-INVITE request is sent and the agent placing the call on hold streams music to the remote agent. This is the approach used in the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_PutOnHold">PutOnHold()</a> and <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_TakeOffHold">TakeOffHold()</a> methods.</p>
 <pre><code class="lang-csharp">bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
-userAgent.PutOnHold();
-userAgent.TakeOffHold();
+await userAgent.PutOnHold();
+await userAgent.TakeOffHold();
 </code></pre>
 <h4 id="blind-transfer">Blind Transfer</h4>
-<p>A Blind Transfer is where the callee is sent a SIP REFER request (see <a href="callholdtransfer.html#blind-transfer">call flow</a>) specifying a new destination for the call. The transferee does not interact with the transfer destination.</p>
+<p>A Blind Transfer is where the callee is sent a SIP REFER request (see <a href="callholdtransfer.html#blind-transfer">call flow</a>) specifying a new destination for the call. The call party initiating the transfer does not interact with the transfer destination. The <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_BlindTransfer_SIPSorcery_SIP_SIPURI_System_TimeSpan_System_Threading_CancellationToken_">BlindTransfer(SIPURI, TimeSpan, CancellationToken)</a> method is used to carry out a Blind Transfer on an established call.</p>
 <pre><code class="lang-csharp">bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
 
 var transferURI = SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI);
@@ -157,7 +161,7 @@ else
 }
 </code></pre>
 <h4 id="attended-transfer">Attended Transfer</h4>
-<p>An Attend Transfer is more complicated than a Blind Transfer and involves co-ordinating 3 call legs (see <a href="attendedtransfer.html#call-flow">call flow</a>).</p>
+<p>An Attended Transfer is more complicated than a Blind Transfer and involves co-ordinating 3 call legs (see <a href="attendedtransfer.html#call-flow">call flow</a>).</p>
 <p>An Attended Transfer proceeds as follows:</p>
 <ul>
 <li>The initial call is established,</li>
@@ -165,8 +169,9 @@ else
 <li>A second call to the transfer destination is established,</li>
 <li>The original callee and the transferee are bridged together. The transferring call party has their call leg terminated.</li>
 </ul>
+<p>The <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_AttendedTransfer_SIPSorcery_SIP_SIPDialogue_System_TimeSpan_System_Threading_CancellationToken_">AttendedTransfer(SIPDialogue, TimeSpan, CancellationToken)</a> method is used to carry out an Attended Transfer on two established calls.</p>
 <pre><code class="lang-csharp">bool callResult1 = await userAgent1.Call(DESTINATION, null, null, rtpSession);
-userAgent1.PutOnHold();
+await userAgent1.PutOnHold();
 
 bool callResult2 = await userAgent2.Call(DESTINATION, null, null, rtpSession);
 
