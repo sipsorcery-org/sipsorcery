@@ -126,6 +126,7 @@ namespace SIPSorcery.SIP.App
             m_registrarHost = registrarHost;
             m_contactURI = contactURI;
             m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
+            m_originalExpiry = m_expiry;
             m_callID = CallProperties.CreateNewCallId();
 
             if (logDelegate != null)
@@ -150,7 +151,14 @@ namespace SIPSorcery.SIP.App
             int callbackPeriod = (m_expiry - REGISTRATION_HEAD_TIME) * 1000;
             logger.LogDebug($"Starting SIPRegistrationUserAgent for {m_sipAccountAOR.ToString()}, callback period {callbackPeriod}ms.");
 
-            m_registrationTimer = new Timer(DoRegistration, null, 0, callbackPeriod);
+            if (callbackPeriod < REGISTER_MINIMUM_EXPIRY * 1000)
+            {
+                m_registrationTimer = new Timer(DoRegistration, null, 0, REGISTER_MINIMUM_EXPIRY * 1000);
+            }
+            else
+            {
+                m_registrationTimer = new Timer(DoRegistration, null, 0, callbackPeriod);
+            }
         }
 
         private void DoRegistration(object state)
