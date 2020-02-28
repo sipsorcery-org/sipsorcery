@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -24,7 +23,6 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -34,12 +32,10 @@ namespace SIPSorcery.SoftPhone
 {
     public partial class SoftPhone : Window
     {
-        private const string VIDEO_LOOPBACK_CALL_DESTINATION = "loop";    // If this destination is called a video loopback call will be attempted.
         private const int SIP_CLIENT_COUNT = 2;                             // The number of SIP clients (simultaneous calls) that the UI can handle.
+        private const int ZINDEX_TOP = 10;
+        private const int REGISTRATION_EXPIRY = 180;
 
-        // Currently only supporting these mode(s) from local web cams. Extra work to convert other formats to bitmaps that can be displayed by WPF.
-        private static readonly List<VideoSubTypesEnum> _supportedVideoModes = new List<VideoSubTypesEnum>() { VideoSubTypesEnum.RGB24 };
-        
         private static ILogger logger = Log.Logger;
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
@@ -51,14 +47,8 @@ namespace SIPSorcery.SoftPhone
         private SoftphoneSTUNClient _stunClient;                    // STUN client to periodically check the public IP address.
         private SIPRegistrationUserAgent _sipRegistrationClient;    // Can be used to register with an external SIP provider if incoming calls are required.
 
-        private MediaManager _mediaManager;                         // The media (audio and video) manager.
-        private MusicOnHold _musicOnHold;                           // Music on hold source. Used for supplying audio to on hold calls.
-        private WriteableBitmap _localWriteableBitmap;
-        private Int32Rect _localBitmapFullRectangle;
-        private WriteableBitmap _remoteWriteableBitmap;
-        private Int32Rect _remoteBitmapFullRectangle;
-
-        private VideoMode _localVideoMode;
+        private WriteableBitmap _client0WriteableBitmap;
+        private WriteableBitmap _client1WriteableBitmap;
 
         public SoftPhone()
         {
@@ -87,30 +77,19 @@ namespace SIPSorcery.SoftPhone
 
         private async void OnWindowLoaded(object sender, RoutedEventArgs e)
         {
-            _mediaManager = new MediaManager(Dispatcher);
-            logger.LogDebug("Media Manager Initialized.");
-            _mediaManager.OnLocalVideoSampleReady += LocalVideoSampleReady;
-            _mediaManager.OnRemoteVideoSampleReady += RemoteVideoSampleReady;
-            _mediaManager.OnLocalVideoError += LocalVideoError;
-
-            _musicOnHold = new MusicOnHold();
-
             await Initialize();
-
-            if (_localVideoDevices.Items.Count == 0)
-            {
-                await Task.Run(LoadVideoDevices);
-            }
         }
 
+        /// <summary>
+        /// Initialises the SIP clients and transport.
+        /// </summary>
         private async Task Initialize()
         {
             await _sipTransportManager.InitialiseSIP();
 
             for (int i = 0; i < SIP_CLIENT_COUNT; i++)
             {
-                var mediaSessionFactory = new RTPMediaSessionManager(_mediaManager, _musicOnHold);
-                var sipClient = new SIPClient(_sipTransportManager.SIPTransport, mediaSessionFactory);
+                var sipClient = new SIPClient(_sipTransportManager.SIPTransport);
 
                 sipClient.CallAnswer += SIPCallAnswered;
                 sipClient.CallEnded += ResetToCallStartState;
@@ -133,16 +112,11 @@ namespace SIPSorcery.SoftPhone
             listeningEndPoint.Content = $"Listening on: {listeningEndPoints}";
 
             _sipRegistrationClient = new SIPRegistrationUserAgent(
-            _sipTransportManager.SIPTransport,
-            null,
-            new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
-            m_sipUsername,
-            m_sipPassword,
-            null,
-            m_sipServer,
-            new SIPURI(m_sipUsername, IPAddress.Any.ToString(), null),
-            180,
-            (message) => { logger.LogDebug(message.ToString()); });
+                _sipTransportManager.SIPTransport,
+                m_sipUsername,
+                m_sipPassword,
+                m_sipServer,
+                REGISTRATION_EXPIRY);
 
             _sipRegistrationClient.Start();
         }
@@ -157,54 +131,8 @@ namespace SIPSorcery.SoftPhone
                 sipClient.Shutdown();
             }
 
-            _mediaManager.Close();
             _sipTransportManager.Shutdown();
-
-            if (_stunClient != null)
-            {
-                _stunClient.Stop();
-            }
-        }
-
-        /// <summary>
-        /// Retrieves a list of the available video devices, their resolutions and pixel formats.
-        /// </summary>
-        private void LoadVideoDevices()
-        {
-            var videoDevices = _mediaManager.GetVideoDevices();
-            var videoDeviceKeys = new List<KeyValuePair<string, VideoMode>>();
-
-            if (videoDevices != null && videoDevices.Count > 0)
-            {
-                for (int index = 0; index < videoDevices.Count; index++)
-                {
-                    if (_supportedVideoModes.Contains(videoDevices[index].VideoSubType))
-                    {
-                        var videoSubType = videoDevices[index].VideoSubType; // MFVideoSubTypes.FindVideoSubTypeForGuid(videoDevices[index].VideoSubType);
-                        string videoModeName = String.Format("{0} {1} x {2} {3}", videoDevices[index].DeviceFriendlyName, videoDevices[index].Width, videoDevices[index].Height, videoSubType.ToString());
-
-                        videoDeviceKeys.Add(new KeyValuePair<string, VideoMode>(videoModeName, videoDevices[index]));
-                        //_localVideoDevices.Items.Add();
-                    }
-                }
-            }
-
-            Dispatcher.DoOnUIThread(delegate
-            {
-                _localVideoDevices.ItemsSource = videoDeviceKeys;
-                _localVideoDevices.IsEnabled = true;
-            });
-        }
-
-        private void VideoDeviceChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (e.AddedItems != null && e.AddedItems.Count > 0)
-            {
-                var selection = (KeyValuePair<string, VideoMode>)e.AddedItems[0];
-                System.Diagnostics.Debug.WriteLine(selection.Key);
-                _localVideoMode = selection.Value;
-                _startLocalVideoButton.IsEnabled = true;
-            }
+            _stunClient?.Stop();
         }
 
         /// <summary>
@@ -225,6 +153,7 @@ namespace SIPSorcery.SoftPhone
                     m_transferButton.Visibility = Visibility.Collapsed;
                     m_holdButton.Visibility = Visibility.Collapsed;
                     m_offHoldButton.Visibility = Visibility.Collapsed;
+                    _client0Video.Visibility = Visibility.Collapsed;
                     SetStatusText(m_signallingStatus, "Ready");
                 });
             }
@@ -243,6 +172,7 @@ namespace SIPSorcery.SoftPhone
                     m_hold2Button.Visibility = Visibility.Collapsed;
                     m_offHold2Button.Visibility = Visibility.Collapsed;
                     m_attendedTransferButton.Visibility = Visibility.Collapsed;
+                    _client1Video.Visibility = Visibility.Collapsed;
                     SetStatusText(m_signallingStatus, "Ready");
                 });
             }
@@ -302,12 +232,18 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void SIPCallAnswered(SIPClient client)
         {
-            _mediaManager.StartAudio();
-
             if (client == _sipClients[0])
             {
+                if (_sipClients[1].IsCallActive && !_sipClients[1].IsOnHold)
+                {
+                    _sipClients[1].PutOnHold();
+                }
+
                 Dispatcher.DoOnUIThread(() =>
                 {
+                    m_answerButton.Visibility = Visibility.Collapsed;
+                    m_rejectButton.Visibility = Visibility.Collapsed;
+                    m_redirectButton.Visibility = Visibility.Collapsed;
                     m_callButton.Visibility = Visibility.Collapsed;
                     m_cancelButton.Visibility = Visibility.Collapsed;
                     m_byeButton.Visibility = Visibility.Visible;
@@ -315,26 +251,56 @@ namespace SIPSorcery.SoftPhone
                     m_holdButton.Visibility = Visibility.Visible;
 
                     m_call2ActionsGrid.IsEnabled = true;
+
+                    if (_sipClients[0].MediaSession.HasVideo)
+                    {
+                        _sipClients[0].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client0WriteableBitmap, _client0Video);
+                        _client0Video.Visibility = Visibility.Visible;
+                    }
                 });
             }
             else if (client == _sipClients[1])
             {
                 Dispatcher.DoOnUIThread(() =>
                 {
+                    m_answer2Button.Visibility = Visibility.Collapsed;
+                    m_reject2Button.Visibility = Visibility.Collapsed;
+                    m_redirect2Button.Visibility = Visibility.Collapsed;
                     m_call2Button.Visibility = Visibility.Collapsed;
                     m_cancel2Button.Visibility = Visibility.Collapsed;
                     m_bye2Button.Visibility = Visibility.Visible;
                     m_transfer2Button.Visibility = Visibility.Visible;
                     m_hold2Button.Visibility = Visibility.Visible;
                     m_attendedTransferButton.Visibility = Visibility.Visible;
+
+                    if (_sipClients[1].MediaSession.HasVideo)
+                    {
+                        _sipClients[1].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client1WriteableBitmap, _client1Video);
+                        _client1Video.Visibility = Visibility.Visible;
+                    }
                 });
+
+                if (_sipClients[0].IsCallActive)
+                {
+                    if (!_sipClients[0].IsOnHold)
+                    {
+                        _sipClients[0].PutOnHold();
+                    }
+
+                    Dispatcher.DoOnUIThread(() =>
+                    {
+                        m_holdButton.Visibility = Visibility.Collapsed;
+                        m_offHoldButton.Visibility = Visibility.Visible;
+                        m_attendedTransferButton.Visibility = Visibility.Visible;
+                    });
+                }
             }
         }
 
         /// <summary>
         /// The button to place an outgoing call.
         /// </summary>
-        private void CallButton_Click(object sender, RoutedEventArgs e)
+        private async void CallButton_Click(object sender, RoutedEventArgs e)
         {
             SIPClient client = (sender == m_callButton) ? _sipClients[0] : _sipClients[1];
 
@@ -345,23 +311,6 @@ namespace SIPSorcery.SoftPhone
             else if (client == _sipClients[1] && m_uriEntry2TextBox.Text.IsNullOrBlank())
             {
                 SetStatusText(m_signallingStatus, "No call destination was specified.");
-            }
-            else if (m_uriEntryTextBox.Text == VIDEO_LOOPBACK_CALL_DESTINATION)
-            {
-                if (_localVideoMode == null)
-                {
-                    LocalVideoError("Please start the local video and try again.");
-                }
-                else
-                {
-                    SetStatusText(m_signallingStatus, "Running video loopback test...");
-
-                    m_callButton.Visibility = Visibility.Collapsed;
-                    m_cancelButton.Visibility = Visibility.Collapsed;
-                    m_byeButton.Visibility = Visibility.Visible;
-
-                    _mediaManager.RunLoopbackTest();
-                }
             }
             else
             {
@@ -397,7 +346,7 @@ namespace SIPSorcery.SoftPhone
                 }
 
                 // Start SIP call.
-                Task.Run(() => client.Call(callDestination));
+                await client.Call(callDestination);
             }
         }
 
@@ -440,38 +389,7 @@ namespace SIPSorcery.SoftPhone
         private async Task AnswerCallAsync(SIPClient client)
         {
             await client.Answer();
-
-            _mediaManager.StartAudio();
-
-            if (client == _sipClients[0])
-            {
-                m_answerButton.Visibility = Visibility.Collapsed;
-                m_rejectButton.Visibility = Visibility.Collapsed;
-                m_redirectButton.Visibility = Visibility.Collapsed;
-                m_byeButton.Visibility = Visibility.Visible;
-                m_transferButton.Visibility = Visibility.Visible;
-                m_holdButton.Visibility = Visibility.Visible;
-
-                m_call2ActionsGrid.IsEnabled = true;
-            }
-            else if (client == _sipClients[1])
-            {
-                // Put the first call on hold.
-                if (_sipClients[0].IsCallActive)
-                {
-                    _sipClients[0].PutOnHold();
-                    m_holdButton.Visibility = Visibility.Collapsed;
-                    m_offHoldButton.Visibility = Visibility.Visible;
-                }
-
-                m_answer2Button.Visibility = Visibility.Collapsed;
-                m_reject2Button.Visibility = Visibility.Collapsed;
-                m_redirect2Button.Visibility = Visibility.Collapsed;
-                m_bye2Button.Visibility = Visibility.Visible;
-                m_transfer2Button.Visibility = Visibility.Visible;
-                m_hold2Button.Visibility = Visibility.Visible;
-                m_attendedTransferButton.Visibility = Visibility.Visible;
-            }
+            SIPCallAnswered(client);
         }
 
         /// <summary>
@@ -588,7 +506,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void HoldButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            IVoIPClient client = (sender == m_holdButton) ? _sipClients[0] : _sipClients[1];
+            SIPClient client = (sender == m_holdButton) ? _sipClients[0] : _sipClients[1];
 
             if (client == _sipClients[0])
             {
@@ -609,7 +527,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void OffHoldButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            IVoIPClient client = (sender == m_offHoldButton) ? _sipClients[0] : _sipClients[1];
+            SIPClient client = (sender == m_offHoldButton) ? _sipClients[0] : _sipClients[1];
 
             if (client == _sipClients[0])
             {
@@ -638,115 +556,45 @@ namespace SIPSorcery.SoftPhone
             });
         }
 
-        private void LocalVideoSampleReady(byte[] sample, int width, int height)
+        /// <summary>
+        /// Called when the active SIP client has a bitmap representing the remote video stream
+        /// ready.
+        /// </summary>
+        /// <param name="sample">The bitmap sample in pixel format BGR24.</param>
+        /// <param name="width">The bitmap width.</param>
+        /// <param name="height">The bitmap height.</param>
+        /// <param name="stride">The bitmap stride.</param>
+        private void VideoSampleReady(byte[] sample, uint width, uint height, int stride, WriteableBitmap wBmp, System.Windows.Controls.Image dst)
         {
             if (sample != null && sample.Length > 0)
             {
                 this.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    if (_localWriteableBitmap == null || _localWriteableBitmap.Width != width || _localWriteableBitmap.Height != height)
+                    if (wBmp == null || wBmp.Width != width || wBmp.Height != height)
                     {
-                        _localWriteableBitmap = new WriteableBitmap(
-                            width,
-                            height,
-                            96,
-                            96,
-                            PixelFormats.Rgb24, //PixelFormats.Bgr32,
-                            null);
-
-                        _localVideo.Source = _localWriteableBitmap;
-                        _localBitmapFullRectangle = new Int32Rect(0, 0, Convert.ToInt32(_localWriteableBitmap.Width), Convert.ToInt32(_localWriteableBitmap.Height));
-                    }
-
-                    // Reserve the back buffer for updates.
-                    _localWriteableBitmap.Lock();
-
-                    Marshal.Copy(sample, 0, _localWriteableBitmap.BackBuffer, sample.Length);
-
-                    // Specify the area of the bitmap that changed.
-                    _localWriteableBitmap.AddDirtyRect(_localBitmapFullRectangle);
-
-                    // Release the back buffer and make it available for display.
-                    _localWriteableBitmap.Unlock();
-
-                }), System.Windows.Threading.DispatcherPriority.Normal);
-            }
-        }
-
-        private void RemoteVideoSampleReady(byte[] sample, int width, int height)
-        {
-            if (sample != null && sample.Length > 0)
-            {
-                this.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    if (_remoteWriteableBitmap == null || _remoteWriteableBitmap.Width != width || _remoteWriteableBitmap.Height != height)
-                    {
-                        _remoteWriteableBitmap = new WriteableBitmap(
-                            width,
-                            height,
+                        wBmp = new WriteableBitmap(
+                            (int)width,
+                            (int)height,
                             96,
                             96,
                             PixelFormats.Bgr24,
                             null);
 
-                        _remoteVideo.Source = _remoteWriteableBitmap;
-                        _remoteBitmapFullRectangle = new Int32Rect(0, 0, Convert.ToInt32(_remoteWriteableBitmap.Width), Convert.ToInt32(_remoteWriteableBitmap.Height));
+                        dst.Source = wBmp;
                     }
 
                     // Reserve the back buffer for updates.
-                    _remoteWriteableBitmap.Lock();
+                    wBmp.Lock();
 
-                    Marshal.Copy(sample, 0, _remoteWriteableBitmap.BackBuffer, sample.Length);
+                    Marshal.Copy(sample, 0, wBmp.BackBuffer, sample.Length);
 
                     // Specify the area of the bitmap that changed.
-                    _remoteWriteableBitmap.AddDirtyRect(_remoteBitmapFullRectangle);
+                    wBmp.AddDirtyRect(new Int32Rect(0, 0, (int)width, (int)height));
 
                     // Release the back buffer and make it available for display.
-                    _remoteWriteableBitmap.Unlock();
+                    wBmp.Unlock();
                 }), System.Windows.Threading.DispatcherPriority.Normal);
             }
-        }
-
-        private void LocalVideoError(string error)
-        {
-            Dispatcher.DoOnUIThread(() =>
-            {
-                if (error.NotNullOrBlank())
-                {
-                    SetStatusText(m_signallingStatus, error);
-                    _startLocalVideoButton.IsEnabled = true;
-                    _stopLocalVideoButton.IsEnabled = false;
-                    _localVideoDevices.IsEnabled = true;
-                }
-            });
-        }
-
-        private void StartLocalVideo(object sender, System.Windows.RoutedEventArgs e)
-        {
-            if (_localVideoMode == null)
-            {
-                LocalVideoError("Please select a video device and format.");
-            }
-            else
-            {
-                _startLocalVideoButton.IsEnabled = false;
-                _stopLocalVideoButton.IsEnabled = true;
-                _localVideoDevices.IsEnabled = false;
-                _keypadGrid.Visibility = Visibility.Hidden;
-                _locaVIdeoBorder.Visibility = Visibility.Visible;
-
-                _mediaManager.StartVideo(_localVideoMode);
-            }
-        }
-
-        private void StopLocalVideo(object sender, System.Windows.RoutedEventArgs e)
-        {
-            _mediaManager.StopVideo();
-            _startLocalVideoButton.IsEnabled = true;
-            _stopLocalVideoButton.IsEnabled = false;
-            _localVideoDevices.IsEnabled = true;
-            _locaVIdeoBorder.Visibility = Visibility.Hidden;
-            _keypadGrid.Visibility = Visibility.Visible;
         }
 
         /// <summary>
@@ -759,21 +607,85 @@ namespace SIPSorcery.SoftPhone
         {
             Button keyButton = sender as Button;
             char keyPressed = (keyButton.Content as string).ToCharArray()[0];
-            SetStatusText(m_signallingStatus, $"Key pressed {keyPressed}.");
 
-            SIPClient client = _sipClients[0];
+            SIPClient client = GetActiveCall();
 
-            if (keyPressed >= 48 && keyPressed <= 57)
+            if (client == null)
             {
-                await client.SendDTMF((byte)(keyPressed - 48));
+                SetStatusText(m_signallingStatus, $"Key pressed {keyPressed} but no active SIP client to send DTMF to.");
             }
-            else if (keyPressed == '*')
+            else
             {
-                await client.SendDTMF((byte)10);
+                SetStatusText(m_signallingStatus, $"Key pressed {keyPressed}.");
+
+                if (keyPressed >= 48 && keyPressed <= 57)
+                {
+                    await client.SendDTMF((byte)(keyPressed - 48));
+                }
+                else if (keyPressed == '*')
+                {
+                    await client.SendDTMF((byte)10);
+                }
+                else if (keyPressed == '#')
+                {
+                    await client.SendDTMF((byte)11);
+                }
             }
-            else if (keyPressed == '#')
+        }
+
+        /// <summary>
+        /// Attempts to find the first active call not on hold.
+        /// </summary>
+        /// <returns>An active SIP call or null if one is not available.</returns>
+        private SIPClient GetActiveCall()
+        {
+            if (_sipClients == null || _sipClients.Count == 0)
             {
-                await client.SendDTMF((byte)11);
+                return null;
+            }
+            else
+            {
+                for (int i = 0; i < _sipClients.Count; i++)
+                {
+                    if (_sipClients[i].IsCallActive && !_sipClients[i].IsOnHold)
+                    {
+                        return _sipClients[i];
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Clicking the video image will bring it to the front.
+        /// </summary>
+        private void OnClickVideo(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (sender == _client0Video)
+            {
+                Panel.SetZIndex(_client0Video, ZINDEX_TOP);
+                Panel.SetZIndex(_client1Video, ZINDEX_TOP - 1);
+            }
+            else
+            {
+                Panel.SetZIndex(_client0Video, ZINDEX_TOP - 1);
+                Panel.SetZIndex(_client1Video, ZINDEX_TOP);
+            }
+        }
+
+        /// <summary>
+        /// Toggles the appearance of the keypad.
+        /// </summary>
+        private void ToggleKeyPad(object sender, RoutedEventArgs e)
+        {
+            if(_keypadGrid.Visibility == Visibility.Hidden)
+            {
+                _keypadGrid.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                _keypadGrid.Visibility = Visibility.Hidden;
             }
         }
     }

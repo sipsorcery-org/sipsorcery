@@ -371,14 +371,14 @@ namespace SIPSorcery.SIP.App
                         }
                         else
                         {
-                            return await Task.Run(() => DNSNameRecordLookup(hostOnly, port, false, sipURI, null, preferIPv6));
+                            return await Task.Run(() => DNSNameRecordLookup(hostOnly, port, false, sipURI, null, preferIPv6)).ConfigureAwait(false);
                         }
                     }
                     else if (explicitPort)
                     {
                         // If target is a hostname with an explicit port then SIP lookup rules state to use DNS lookup for A or AAAA record.
                         host = host.Substring(0, host.LastIndexOf(':'));
-                        return await Task.Run(() => DNSNameRecordLookup(host, port, false, sipURI, null, preferIPv6));
+                        return await Task.Run(() => DNSNameRecordLookup(host, port, false, sipURI, null, preferIPv6)).ConfigureAwait(false);
                     }
                     else
                     {
@@ -434,7 +434,7 @@ namespace SIPSorcery.SIP.App
 
                                 return DNSNameRecordLookup(host, lookupPort, false, sipLookupResult.URI, ref sipLookupResult, preferIPv6);
                             }
-                        });
+                        }).ConfigureAwait(false);
                     }
                 }
             }

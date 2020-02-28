@@ -50,7 +50,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
             CancellationTokenSource cancelServer = new CancellationTokenSource();
-            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             var serverChannel = new SIPUDPChannel(IPAddress.IPv6Loopback, 0);
             var clientChannel = new SIPUDPChannel(IPAddress.IPv6Loopback, 0);
@@ -91,7 +91,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
             CancellationTokenSource cancelServer = new CancellationTokenSource();
-            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             var serverChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
             var clientChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
@@ -134,7 +134,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
             CancellationTokenSource cancelServer = new CancellationTokenSource();
-            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             var serverChannel = new SIPTCPChannel(IPAddress.IPv6Loopback, 0);
             serverChannel.DisableLocalTCPSocketsCheck = true;
@@ -177,7 +177,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
             CancellationTokenSource cancelServer = new CancellationTokenSource();
-            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             var serverChannel = new SIPTCPChannel(IPAddress.Loopback, 0);
             serverChannel.DisableLocalTCPSocketsCheck = true;
@@ -236,7 +236,7 @@ namespace SIPSorcery.SIP.UnitTests
 
                 for (int i = 1; i < 3; i++)
                 {
-                    TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
+                    TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
                     var clientChannel = new SIPTCPChannel(IPAddress.Loopback, 0);
                     clientChannel.DisableLocalTCPSocketsCheck = true;
@@ -281,7 +281,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
             CancellationTokenSource cancelServer = new CancellationTokenSource();
-            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             Assert.True(File.Exists(@"certs/localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
@@ -330,7 +330,7 @@ namespace SIPSorcery.SIP.UnitTests
 
             ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
             CancellationTokenSource cancelServer = new CancellationTokenSource();
-            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             Assert.True(File.Exists(@"certs/localhost.pfx"), "The TLS transport channel test was missing the localhost.pfx certificate file.");
 
@@ -387,7 +387,7 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             // TCP server.
             TcpListener listener = new TcpListener(IPAddress.Loopback, 0);

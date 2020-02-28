@@ -9,6 +9,7 @@
 // 
 // History:
 // 09 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
+// 26 Feb 2020  Aaron Clauson   Switched RTP to use RtpAVSession.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -17,9 +18,9 @@
 //-----------------------------------------------------------------------------
 // This example can be used with the automated SIP test tool [SIPp] (https://github.com/SIPp/sipp)
 // and its inbuilt User Agent Client scenario.
-// Note: IPp doesn't support IPv6.
+// Note: SIPp doesn't support IPv6.
 //
-// To isntall on WSL:
+// To install on WSL:
 // $ sudo apt install sip-tester
 //
 // Running tests (press the '+' key while test is running to increase the call rate):
@@ -46,7 +47,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -55,8 +55,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NAudio.Wave;
 using Serilog;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -66,17 +66,11 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static readonly string AUDIO_FILE_PCMU = @"media\Macroform_-_Simplicity.ulaw";
-        //private static readonly string AUDIO_FILE_MP3 = @"media\Macroform_-_Simplicity.mp3";
-        private static readonly string AUDIO_FILE_G722 = @"media\Macroform_-_Simplicity.g722";
-
         private static int SIP_LISTEN_PORT = 5060;
         private static int SIPS_LISTEN_PORT = 5061;
         private static int SIP_WEBSOCKET_LISTEN_PORT = 80;
         private static int SIP_SECURE_WEBSOCKET_LISTEN_PORT = 443;
-
-        private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
-        private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 60;           // This sets the frequency of the RTP packets.
+        private const string AUDIO_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -130,11 +124,13 @@ namespace SIPSorcery
 
             EnableTraceLogs(sipTransport);
 
+            string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
             // To keep things a bit simpler this example only supports a single call at a time and the SIP server user agent
             // acts as a singleton
             SIPServerUserAgent uas = null;
             CancellationTokenSource rtpCts = null; // Cancellation token to stop the RTP stream.
-            RTPMediaSession rtpSession = null;
+            RtpAVSession rtpSession = null;
 
             // Because this is a server user agent the SIP transport must start listening for client user agents.
             sipTransport.SIPTransportRequestReceived += async (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -148,19 +144,13 @@ namespace SIPSorcery
                         // Check there's a codec we support in the INVITE offer.
                         var offerSdp = SDP.ParseSDPDescription(sipRequest.Body);
                         IPEndPoint dstRtpEndPoint = SDP.GetSDPRTPEndPoint(sipRequest.Body);
-                        string audioFile = null;
 
-                        if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.G722)))
+                        if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
                         {
-                            Log.LogDebug($"Using G722 RTP media type and audio file {AUDIO_FILE_G722}.");
-                            rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.G722), dstRtpEndPoint.AddressFamily);
-                            audioFile = AUDIO_FILE_G722;
-                        }
-                        else if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
-                        {
-                            Log.LogDebug($"Using PCMU RTP media type and audio file {AUDIO_FILE_PCMU}.");
-                            rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), dstRtpEndPoint.AddressFamily);
-                            audioFile = AUDIO_FILE_PCMU;
+                            Log.LogDebug($"CLient offer contained PCMU audio codec.");
+                            rtpSession = new RtpAVSession(dstRtpEndPoint.AddressFamily, 
+                                new AudioOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = executableDir + "/" + AUDIO_FILE_PCMU }, null);
+                            rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.offer, sdp = offerSdp });
                         }
 
                         if (rtpSession == null)
@@ -191,30 +181,10 @@ namespace SIPSorcery
                             uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
                             uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
-                            // The RTP socket is listening on IPAddress.Any but the IP address placed into the SDP needs to be one the caller can reach.
-                            //IPAddress rtpAddress = NetServices.GetLocalAddressForRemote(dstRtpEndPoint.Address);
-
-                            // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                            if (rtpSession.DestinationEndPoint == null)
-                            {
-                                rtpSession.SetRemoteSDP(SDP.ParseSDPDescription(sipRequest.Body));
-                                Log.LogDebug($"Remote RTP socket {rtpSession.DestinationEndPoint}.");
-                            }
-
-                            rtpSession.SetRemoteSDP(SDP.ParseSDPDescription(sipRequest.Body));
-
-                            _ = Task.Run(() => SendRtp(rtpSession, dstRtpEndPoint, audioFile, rtpCts))
-                                .ContinueWith(_ => 
-                                {
-                                    if (uas?.IsHungup == false)
-                                    {
-                                        uas?.Hangup(false);
-                                        rtpSession?.CloseSession(null);
-                                    }
-                                });
-
-                            var answerSdp = await rtpSession.CreateOffer(dstRtpEndPoint.Address);
+                            var answerSdp = await rtpSession.createAnswer(null);
                             uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
+
+                            await rtpSession.Start();
                         }
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)
@@ -305,130 +275,6 @@ namespace SIPSorcery
             });
 
             exitMre.WaitOne();
-        }
-
-        private static async Task SendRtp(RTPSession rtpSession, IPEndPoint dstRtpEndPoint, string audioFileName, CancellationTokenSource cts)
-        {
-            try
-            {
-                string audioFileExt = Path.GetExtension(audioFileName).ToLower();
-
-                switch (audioFileExt)
-                {
-                    case ".g722":
-                    case ".ulaw":
-                        {
-                            uint timestamp = 0;
-                            using (StreamReader sr = new StreamReader(audioFileName))
-                            {
-                                byte[] buffer = new byte[320];
-                                int bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
-
-                                while (bytesRead > 0 && !cts.IsCancellationRequested)
-                                {
-                                    if (!dstRtpEndPoint.Address.Equals(IPAddress.Any))
-                                    {
-                                        rtpSession.SendAudioFrame(timestamp, (int)SDPMediaFormatsEnum.PCMU, buffer);
-                                    }
-
-                                    timestamp += (uint)buffer.Length;
-
-                                    await Task.Delay(40, cts.Token);
-                                    bytesRead = sr.BaseStream.Read(buffer, 0, buffer.Length);
-                                }
-                            }
-                        }
-                        break;
-
-                    case ".mp3":
-                        {
-                            var pcmFormat = new WaveFormat(8000, 16, 1);
-                            var ulawFormat = WaveFormat.CreateMuLawFormat(8000, 1);
-
-                            uint timestamp = 0;
-
-                            using (WaveFormatConversionStream pcmStm = new WaveFormatConversionStream(pcmFormat, new Mp3FileReader(audioFileName)))
-                            {
-                                using (WaveFormatConversionStream ulawStm = new WaveFormatConversionStream(ulawFormat, pcmStm))
-                                {
-                                    byte[] buffer = new byte[320];
-                                    int bytesRead = ulawStm.Read(buffer, 0, buffer.Length);
-
-                                    while (bytesRead > 0 && !cts.IsCancellationRequested)
-                                    {
-                                        byte[] sample = new byte[bytesRead];
-                                        Array.Copy(buffer, sample, bytesRead);
-
-                                        if (dstRtpEndPoint.Address != IPAddress.Any)
-                                        {
-                                            rtpSession.SendAudioFrame(timestamp, (int)SDPMediaFormatsEnum.PCMU, buffer);
-                                        }
-
-                                        timestamp += (uint)buffer.Length;
-
-                                        await Task.Delay(40, cts.Token);
-                                        bytesRead = ulawStm.Read(buffer, 0, buffer.Length);
-                                    }
-                                }
-                            }
-                        }
-                        break;
-
-                    default:
-                        throw new NotImplementedException($"The {audioFileExt} file type is not understood by this example.");
-                }
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception excp)
-            {
-                SIPSorcery.Sys.Log.Logger.LogError($"Exception sending RTP. {excp.Message}");
-            }
-        }
-
-        private static SDP GetSDP(IPEndPoint rtpSocket)
-        {
-            var sdp = new SDP(rtpSocket.Address)
-            {
-                SessionId = Crypto.GetRandomInt(5).ToString(),
-                SessionName = "sipsorcery",
-                Timing = "0 0",
-                Connection = new SDPConnectionInformation(rtpSocket.Address),
-            };
-
-            var audioAnnouncement = new SDPMediaAnnouncement()
-            {
-                Media = SDPMediaTypesEnum.audio,
-                MediaFormats = new List<SDPMediaFormat>() { new SDPMediaFormat((int)SDPMediaFormatsEnum.PCMU, "PCMU", 8000),
-                                                            new SDPMediaFormat((int)SDPMediaFormatsEnum.G722, "G722", 8000) }
-            };
-            audioAnnouncement.Port = rtpSocket.Port;
-            audioAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
-            sdp.Media.Add(audioAnnouncement);
-
-            return sdp;
-        }
-
-        /// <summary>
-        /// Get the audio input device, e.g. microphone. The input device that will provide 
-        /// audio samples that can be encoded, packaged into RTP and sent to the remote call party.
-        /// </summary>
-        private static WaveInEvent GetAudioInputDevice()
-        {
-            if (WaveInEvent.DeviceCount == 0)
-            {
-                throw new ApplicationException("No audio input devices available. No audio will be sent.");
-            }
-            else
-            {
-                WaveInEvent waveInEvent = new WaveInEvent();
-                WaveFormat waveFormat = _waveFormat;
-                waveInEvent.BufferMilliseconds = INPUT_SAMPLE_PERIOD_MILLISECONDS;
-                waveInEvent.NumberOfBuffers = 1;
-                waveInEvent.DeviceNumber = 0;
-                waveInEvent.WaveFormat = waveFormat;
-
-                return waveInEvent;
-            }
         }
 
         /// <summary>

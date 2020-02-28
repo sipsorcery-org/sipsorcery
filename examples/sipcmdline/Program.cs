@@ -256,7 +256,7 @@ namespace SIPSorcery
         /// </summary>
         /// <param name="sipTransport">The transport object to use for the send.</param>
         /// <param name="dst">The destination end point to send the request to.</param>
-        /// <returns>True if the expected response was recevived, false otherwise.</returns>
+        /// <returns>True if the expected response was received, false otherwise.</returns>
         private static async Task<bool> SendOptionsTaskAsync(SIPTransport sipTransport, SIPURI dst)
         {
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
