@@ -7,9 +7,9 @@
 
 This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261) and the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550). 
 
-This library does NOT provide any media (audio and video) handling. For Windows the companion [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media) library provides audio & video functions for rendering & capture. This project can be used for SIP signalling and to send and receive RTP packets.
+**This library does NOT provide any media (audio and video) handling. For Windows the companion [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media) library provides audio & video functions for rendering & capture. This project can be used for SIP signalling and to send and receive RTP packets.**
 
-**NEW (Feb 2020)**: Pre-release support for Web Real-Time Communication [(WebRTC)](https://www.w3.org/TR/webrtc/) for early adopters. See [Getting Started WebRTC](#getting-started-webrtc).
+**NEW (Feb/Mar 2020)**: Pre-release support for Web Real-Time Communication [(WebRTC)](https://www.w3.org/TR/webrtc/) for early adopters. See [Getting Started WebRTC](#getting-started-webrtc).
 
 ## Installation
 
@@ -25,6 +25,28 @@ With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](
 
 ````ps1
 Install-Package SIPSorcery
+````
+
+#### SIPSorceryMedia Install
+
+.NET Core does not provide any audio or video capture capabilities nor any audio rendering function. A lot of the uses for SIP and WebRTC revolve around such capabilities and functions. A companion Windows specific library which fills this gap is maintained at [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media). For non-Windows applications there is no known .NET Core library that provides audio and video functions.
+
+The [RtpAVSession](https://github.com/sipsorcery/sipsorcery-media/blob/master/src/RtpAVSession/RtpAVSession.cs) class from the `SIPSorceryMedia` library wraps the audio and video functions and integrates with the [SIPUserAgent](https://sipsorcery.github.io/sipsorcery/api/SIPSorcery.SIP.App.SIPUserAgent.html) class for ease of use.
+
+**Note that the `RtpAVSession` class is only available as a pre-release in version 4.0.28-pre and greater.**
+
+The `SIPSorceryMedia` library is compliant with .NET Core 3.1. It is available via NuGet:
+
+For .NET Core:
+
+````bash
+dotnet add package SIPSorceryMedia -v 4.0.28-pre
+````
+
+With Visual Studio Package Manager Console (or search for [SIPSorceryMedia on NuGet](https://www.nuget.org/packages/SIPSorceryMedia/)):
+
+````ps1
+Install-Package SIPSorceryMedia -v 4.0.28-pre
 ````
 
 ## Documentation
