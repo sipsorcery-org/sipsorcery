@@ -27,7 +27,7 @@ With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](
 Install-Package SIPSorcery
 ````
 
-##### Working with Audio and Video - SIPSorceryMedia
+#### SIPSorceryMedia Install
 
 .NET Core does not provide any audio or video capture capabilities nor any audio rendering function. A lot of the uses for SIP and WebRTC revolve around such capabilities and functions. A companion Windows specific library which fills this gap is maintained at [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media). For non-Windows applications there is no known .NET Core library that provides audio and video functions.
 
