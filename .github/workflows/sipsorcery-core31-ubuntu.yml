@@ -5,7 +5,6 @@ on:
     branches:
       - master
       - fixtests
-      - ghamac
 
 jobs:
   build:
