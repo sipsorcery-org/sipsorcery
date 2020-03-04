@@ -1,15 +1,16 @@
-name: sipsorcery-core31
+name: sipsorcery-core31-mac
 
 on:
   push:
     branches:
       - master
       - fixtests
+      - ghamac
 
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v1
@@ -19,4 +20,4 @@ jobs:
         dotnet-version: 3.1.100
     - name: Unit tests
       #run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release --filter "Category!=IPv6&Category!=transport&Category!=txintegration"
-      run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release --filter "Category!=IPv6&Category!=txintegration"
+      run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release --filter "FullyQualifiedName!~IPv4TlsLoopbackSendReceiveTest&FullyQualifiedName!~LookupLocalHostnameTest&Category!=IPv6&Category!=txintegration"
