@@ -1,10 +1,11 @@
-name: sipsorcery-core31
+name: sipsorcery-core31-mac
 
 on:
   push:
     branches:
       - master
       - fixtests
+      - ghamac
 
 jobs:
   build:
