@@ -227,7 +227,7 @@ namespace SIPSorcery.Sys
             else
             {
                 UdpClient udpClient = new UdpClient(destination.AddressFamily);
-                udpClient.Connect(destination, 0);
+                udpClient.Connect(destination, 5060);
                 var localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
 
                 m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
