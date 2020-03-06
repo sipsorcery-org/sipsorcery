@@ -5,10 +5,13 @@
 | dotnetcore3.1 | ![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31/badge.svg) | ![](https://github.com/sipsorcery/sipsorcery/workflows/examples-core31/badge.svg) <br> [![Examples build status](https://ci.appveyor.com/api/projects/status/4myf11mda0p69ysm/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-mre1o/branch/master) | [![Softphone build status](https://ci.appveyor.com/api/projects/status/xx1bcttkk4gbrd3y/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-0p6s4/branch/master) |
 
 
-This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261) and the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550) including IPv6 support. In addition 
-there is some support for Web Real-Time Communication [(WebRTC)](https://en.wikipedia.org/wiki/WebRTC) and a number of related protocols such as RTSP.
+This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261) and the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550). 
 
-This library does NOT provide any media (audio and video) handling. There are some limited capabilities in the separate [SIPSorcery.Media](https://github.com/sipsorcery/sipsorcery-media) project but they are Windows specific and not suitable for production. This project can be used for SIP signalling and to send and receive RTP packets. To playback audio/video additional libraries such as [NAudio](https://github.com/naudio/NAudio) are required.
+This library does NOT provide any media (audio and video) handling. There are some limited capabilities in the separate [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media) project but they are Windows specific and not suitable for production. This project can be used for SIP signalling and to send and receive RTP packets. To playback audio/video additional libraries such as [NAudio](https://github.com/naudio/NAudio) are required.
+
+**NEW (Feb 2020)**: Pre-release support for Web Real-Time Communication [(WebRTC)](https://www.w3.org/TR/webrtc/) for early adopters. See [Getting Started WebRTC](#getting-started-webrtc).
+
+Note unlike a lot of WebRTC libraries this one is not wrapping [Google's WebRTC library](https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/index.md) and it is also currently missing large blocks of functionality compared to Google's. If you require a dotnet library that provides functionality equivalent to Google's take a look at [Microsoft's MixedReality-WebRTC project](https://github.com/microsoft/MixedReality-WebRTC) (despite the name it's not just for Hololens).
 
 ## Installation
 
@@ -29,6 +32,38 @@ Install-Package SIPSorcery
 ## Documentation
 
 Class reference documentation and articles explaining common usage are available at [https://sipsorcery.github.io/sipsorcery/](https://sipsorcery.github.io/sipsorcery/).
+
+## Getting Started WebRTC
+
+Install both the `SIPSorcery` and `SIPSorceryMedia` nuget packages. 
+
+````bash
+dotnet add package SIPSorcery --version "4.0.13-pre"
+dotnet add package SIPSorceryMedia --version "4.0.13-pre"
+````
+
+The `SIPSorceryMedia` package wraps access to a number of open source libraries to provide the underlying WebRTC infrastructure for `DTLS`, `SRTP`, `VPX Codecs` as well as the `Windows Media Foundation` for audio/video capture device access. 
+
+The `SIPSorcery.Net.WebRtcSession` class can be used to create and manage connections with a WebRTC peer which will typically be in the form of a Browser such as Chrome or Firefox.
+
+There are 3 example applications which demonstrate different use cases:
+
+* [WebRTCTestPatternServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCTestPatternServer): The simplest example. This program serves up a test pattern video stream to a WebRTC peer.
+
+![Test pattern example screenshot](https://github.com/sipsorcery/sipsorcery/blob/master/examples/img/webrtctestpattern_screenshot.png)
+
+* [WebRTCServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCServer): This example extends the test pattern example and can act as a media source for a peer. It has two source options:
+  - An mp4 file.
+  - Capture devices (webcam and microphone).
+The example includes an html file which runs in a Browser and will connect to a sample program running on the same machine.
+
+![MP4 server example screenshot](https://github.com/sipsorcery/sipsorcery/blob/master/examples/img/webrtcsvr_screenshot.png)
+
+* [WebRTCReceiver](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCReceiver): A receive only example. It attempts to connect to a WebRTC peer and display the video stream that it receives.
+
+![Receive example screenshot](https://github.com/sipsorcery/sipsorcery/blob/master/examples/img/webrtcrecv_screenshot.png)
+
+**The WebRtcSession class and all WebRTC functionality in this library are still under heavy development. There are large blocks of functionality still missing, particularly ICE and codec support. All issues and PR's are very welcome.**
 
 ## Getting Started
 
@@ -175,7 +210,7 @@ namespace demo
         }
 
         /// <summary>
-        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static void AddConsoleLogger()
         {

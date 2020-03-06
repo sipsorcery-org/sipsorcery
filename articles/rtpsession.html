@@ -1,0 +1,350 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>RTP Session </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="RTP Session ">
+    <meta name="generator" content="docfx 2.49.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h2 id="rtp-session">RTP Session</h2>
+
+<p>The <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class provides the building blocks for dealing with the <a href="https://tools.ietf.org/html/rfc3550">Real-Time Transport Protocol</a>. It is used to transport audio and video packets between session participants.</p>
+<p>There are two higher level classes that wrap the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class for use in common scenarios:</p>
+<ul>
+<li>The <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a> which is the recommended implementation for SIP applications.</li>
+<li>The <a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> which needs to be used when creating a WebRTC peer connection.</li>
+</ul>
+<h3 id="features">Features</h3>
+<p>As well as taking care of the plumbing required to send and receive media packets the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class does a number of additional functions that are required for correct operation of an RTP connection.</p>
+<ul>
+<li>Takes care of creating and monitoring the required UDP socket(s) (one for multiplexed RTP &amp; RTCP or two if not).</li>
+<li>Takes care of creating the required RTCP session(s) (one for a single media type or two if audio and video are multiplexed).</li>
+<li>Can generate an SDP offer based on the media types that have been added using the <code>AddTrack</code> method.</li>
+<li>Takes care of matching the local/remote SDP offer/answer and setting the payload types ID's.</li>
+<li>Provides <code>Send</code> methods for common payload encodings such as VPX, H264 and JPEG.</li>
+<li>Provides a <code>Send</code> method for an RTP event which is utilised to send DTMF tones.</li>
+<li>Provides hooks for setting Secure Real-time Protocol (SRTP) protect and unprotect functions.</li>
+</ul>
+<p>The <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class has been updated to support WebRTC sessions which behave differently to the original RTP used by most SIP devices. The main change is that WebRTC multiplexes all packets (STUN, RTP (audio and video) and RTCP) on a single connection. Standard RTP only supports a single packet type per connection and thus needs multiple sockets for RTP and RTCP.</p>
+<p>Higher level applications do not need to be concerned with these differences but do need to make sure they use the correct session class:</p>
+<ul>
+<li><a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a> for SIP applications.</li>
+<li><a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> for WebRTC applications.</li>
+</ul>
+<h3 id="usage">Usage</h3>
+<p>This article describes how to use the <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a>. For WebRTC see the <a href="webrtcsession.html">webrtcsession article</a>.</p>
+<h4 id="creating-an-rtpmediasession">Creating an RTPMediaSession</h4>
+<p>The code snippet below shows how to instantiate an <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a> for a typical RTP connection that will transmit audio PCMU packets over IPv4.</p>
+<p>Two UDP sockets will be created:</p>
+<ul>
+<li>The RTP socket will be set to a random even port between 10000 and 20000.</li>
+<li>The RTCP port will be set to the RTP port plus one.</li>
+</ul>
+<pre><code class="lang-csharp">using SIPSorcery.SIP.App;
+
+var rtpMediaSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
+</code></pre>
+<h4 id="controlling-an-rtpmediasession">Controlling an RTPMediaSession</h4>
+<p>If the <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a> is used with the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html">SIPUserAgent</a> class then normally the control functions can all be done via it. If it is used independently then there are methods to:</p>
+<ul>
+<li>Create an SDP offer or answer.</li>
+<li>Set the remote SDP offer or answer.</li>
+<li>Detect whether the remote SDP has put a session on or off hold.</li>
+<li>Send an RTP event for a DTMF tone.</li>
+</ul>
+<h4 id="media-handling">Media Handling</h4>
+<p>Rendering the audio or video packets is the hardest part of using any of the RTP Session classes. The .Net Framework and Core libraries do not provide any audio or video rendering capabilities. To render the media a 3rd party component is required.</p>
+<ul>
+<li>For audio the best option is <a href="https://github.com/naudio/NAudio">NAudio</a>.</li>
+<li>For video the only known option is the companion <a href="https://github.com/sipsorcery/sipsorcery-media">SIPSorceryMedia library</a>. It has functions to decode VP8 packets to RGB frames which can be displayed in a Windows Forms or WPF application.</li>
+</ul>
+<h4 id="audio-capture">Audio Capture</h4>
+<p><a href="https://github.com/naudio/NAudio">NAudio</a> is used extensively in the example applications. The snippet below shows one approach to connecting its audio capture function to the <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a>. This snippet is taken from the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/GetStarted/Program.cs">Getting Started</a> example program.</p>
+<pre><code class="lang-csharp">using System;
+using System.Net.Sockets;
+using NAudio.Wave;
+using SIPSorcery.Net;
+using SIPSorcery.SIP.App;
+
+WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
+int INPUT_SAMPLE_PERIOD_MILLISECONDS = 20;             // This sets the frequency of the RTP packets.
+
+var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
+
+// Get the default audio capture device.
+WaveInEvent waveInEvent = new WaveInEvent();
+WaveFormat waveFormat = _waveFormat;
+waveInEvent.BufferMilliseconds = INPUT_SAMPLE_PERIOD_MILLISECONDS;
+waveInEvent.NumberOfBuffers = 1;
+waveInEvent.DeviceNumber = 0;
+waveInEvent.WaveFormat = waveFormat;
+
+// Wire up the RTP media session to the audio input device.
+uint rtpSendTimestamp = 0;
+waveInEvent.DataAvailable += (object sender, WaveInEventArgs args) =&gt;
+{
+    byte[] sample = new byte[args.Buffer.Length / 2];
+    int sampleIndex = 0;
+
+    for (int index = 0; index &lt; args.BytesRecorded; index += 2)
+    {
+        var ulawByte = NAudio.Codecs.MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(args.Buffer, index));
+        sample[sampleIndex++] = ulawByte;
+    }
+
+    rtpSession.SendAudioFrame(rtpSendTimestamp, (int)SDPMediaFormatsEnum.PCMU, sample);
+    rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
+};
+
+waveInEvent.StartRecording();
+</code></pre>
+<h4 id="audio-rendering">Audio Rendering</h4>
+<p>The snippet below shows one approach to connecting <a href="https://github.com/naudio/NAudio">NAudio</a>'s audio rendering function to the <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a>. This snippet is taken from the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/GetStarted/Program.cs">Getting Started</a> example program.</p>
+<pre><code class="lang-csharp">using System;
+using System.Net.Sockets;
+using NAudio.Wave;
+using SIPSorcery.Net;
+using SIPSorcery.SIP.App;
+
+WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
+
+var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
+
+WaveOutEvent waveOutEvent = new WaveOutEvent();
+var waveProvider = new BufferedWaveProvider(_waveFormat);
+waveProvider.DiscardOnBufferOverflow = true;
+waveOutEvent.Init(waveProvider);
+waveOutEvent.Play();
+
+// Wire up the RTP media session to the audio output device.
+rtpSession.OnRtpPacketReceived += (mediaType, rtpPacket) =&gt;
+{
+    var sample = rtpPacket.Payload;
+    for (int index = 0; index &lt; sample.Length; index++)
+    {
+        short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);
+        byte[] pcmSample = new byte[] { (byte)(pcm &amp; 0xFF), (byte)(pcm &gt;&gt; 8) };
+        waveProvider.AddSamples(pcmSample, 0, 2);
+    }
+};
+</code></pre>
+<h4 id="video-capture">Video Capture</h4>
+<p>The snippet below uses the <a href="https://github.com/sipsorcery/sipsorcery-media">SIPSorceryMedia library</a> to sample a video capture device using the Windows Media Foundation, encode it as VP8 and hand it over to the <a class="xref" href="../api/SIPSorcery.SIP.App.RTPMediaSession.html">RTPMediaSession</a> for sending. This snippet is taken from the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/Softphone/Media/MediaManager.cs">Softphone</a> example program.</p>
+<pre><code class="lang-csharp">using System;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using SIPSorcery.Net;
+using SIPSorcery.SIP.App;
+using SIPSorceryMedia;
+
+const int VIDEO_WIDTH = 640;
+const int VIDEO_HEIGHT = 480;
+const int VIDEO_STRIDE = 1920;
+const int VP8_TIMESTAMP_SPACING = 3000;
+
+var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.video, new SDPMediaFormat(SDPMediaFormatsEnum.VP8), AddressFamily.InterNetwork);
+
+var vpxEncoder = new VpxEncoder();
+vpxEncoder.InitEncoder(VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_STRIDE);
+var imageConverter = new ImageConvert();
+var videoSampler = new MediaSource();
+videoSampler.Init(0, 0, VideoSubTypesEnum.RGB24, VIDEO_WIDTH, VIDEO_HEIGHT);
+
+Task.Run(() =&gt;
+{
+
+    int sampleCount = 0;
+    uint rtpTimestamp = 0;
+
+    while (true)
+    {
+        byte[] videoSample = null;
+        var sample = videoSampler.GetSample(ref videoSample);
+
+        if (sample != null &amp;&amp; sample.HasVideoSample)
+        {
+            // This event encodes the sample and forwards it to the RTP media session for network transmission.
+            IntPtr rawSamplePtr = Marshal.AllocHGlobal(videoSample.Length);
+            Marshal.Copy(videoSample, 0, rawSamplePtr, videoSample.Length);
+
+            byte[] yuv = null;
+
+            unsafe
+            {
+                imageConverter.ConvertRGBtoYUV((byte*)rawSamplePtr, VideoSubTypesEnum.RGB24, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_STRIDE, VideoSubTypesEnum.I420, ref yuv);
+            }
+
+            Marshal.FreeHGlobal(rawSamplePtr);
+
+            IntPtr yuvPtr = Marshal.AllocHGlobal(yuv.Length);
+            Marshal.Copy(yuv, 0, yuvPtr, yuv.Length);
+
+            byte[] encodedBuffer = null;
+
+            unsafe
+            {
+                vpxEncoder.Encode((byte*)yuvPtr, yuv.Length, sampleCount++, ref encodedBuffer);
+            }
+
+            Marshal.FreeHGlobal(yuvPtr);
+
+            rtpSession.SendVp8Frame(rtpTimestamp, (int)SDPMediaFormatsEnum.VP8, encodedBuffer);
+            rtpTimestamp += VP8_TIMESTAMP_SPACING;
+        }
+    }
+});
+
+</code></pre>
+<h4 id="video-rendering">Video Rendering</h4>
+<p>The snippet below uses the <a href="https://github.com/sipsorcery/sipsorcery-media">SIPSorceryMedia library</a> to decode a VP8 encoded sample and return an RGB bitmap. This snippet is taken from the <a href="https://github.com/sipsorcery/sipsorcery/blob/master/examples/Softphone/Media/MediaManager.cs">Softphone</a> example program.</p>
+<pre><code class="lang-csharp">using System;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
+using SIPSorcery.Net;
+using SIPSorcery.SIP.App;
+using SIPSorceryMedia;
+
+var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.video, new SDPMediaFormat(SDPMediaFormatsEnum.VP8), AddressFamily.InterNetwork);
+
+var vpxDecoder = new VpxEncoder();
+vpxDecoder.InitDecoder();
+var imageConverter = new ImageConvert();
+
+// Decode video packets received.
+rtpSession.OnRtpPacketReceived += (mediaType, rtpPacket) =&gt;
+{
+    IntPtr encodedBufferPtr = Marshal.AllocHGlobal(rtpPacket.Payload.Length);
+    Marshal.Copy(rtpPacket.Payload, 0, encodedBufferPtr, rtpPacket.Payload.Length);
+
+    byte[] decodedBuffer = null;
+    uint decodedImgWidth = 0;
+    uint decodedImgHeight = 0;
+
+    unsafe
+    {
+        vpxDecoder.Decode((byte*)encodedBufferPtr, rtpPacket.Payload.Length, ref decodedBuffer, ref decodedImgWidth, ref decodedImgHeight);
+    }
+
+    Marshal.FreeHGlobal(encodedBufferPtr);
+
+    if (decodedBuffer != null &amp;&amp; decodedBuffer.Length &gt; 0)
+    {
+        IntPtr decodedSamplePtr = Marshal.AllocHGlobal(decodedBuffer.Length);
+        Marshal.Copy(decodedBuffer, 0, decodedSamplePtr, decodedBuffer.Length);
+
+        byte[] bmp = null;
+        int stride = 0;
+
+        unsafe
+        {
+            imageConverter.ConvertYUVToRGB((byte*)decodedSamplePtr, VideoSubTypesEnum.I420, Convert.ToInt32(decodedImgWidth), Convert.ToInt32(decodedImgHeight), VideoSubTypesEnum.RGB24, ref bmp, ref stride);
+        }
+
+        Marshal.FreeHGlobal(decodedSamplePtr);
+
+        // Do something with the decoded bitmap data.
+        //OnRemoteVideoSampleReady?.Invoke(bmp, Convert.ToInt32(decodedImgWidth), Convert.ToInt32(decodedImgHeight));
+    }
+};
+</code></pre>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/docfx/articles/rtpsession.md/#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

@@ -160,6 +160,12 @@ namespace SIPSorcery.Net
         internal event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnReportReadyToSend;
 
         /// <summary>
+        /// Fires when the connection is classified as timed out due to not
+        /// receiving any RTP or RTCP packets within the given period.
+        /// </summary>
+        internal event Action<SDPMediaTypesEnum> OnTimeout;
+
+        /// <summary>
         /// Default constructor.
         /// </summary>
         /// <param name="mediaType">The media type this reporting session will be measuring.</param>
@@ -287,6 +293,8 @@ namespace SIPSorcery.Net
                         {
                             logger.LogWarning($"RTCP session for ssrc {Ssrc} has not had any activity for over {NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds.");
                             IsTimedOut = true;
+
+                            OnTimeout?.Invoke(MediaType);
                         }
                     }
 

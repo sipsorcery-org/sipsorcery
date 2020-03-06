@@ -2678,6 +2678,12 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnReceiveReport
   fullName: SIPSorcery.Net.RTPSession.OnReceiveReport
   nameWithType: RTPSession.OnReceiveReport
+- uid: SIPSorcery.Net.RTPSession.OnRtcpBye
+  name: OnRtcpBye
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtcpBye
+  commentId: E:SIPSorcery.Net.RTPSession.OnRtcpBye
+  fullName: SIPSorcery.Net.RTPSession.OnRtcpBye
+  nameWithType: RTPSession.OnRtcpBye
 - uid: SIPSorcery.Net.RTPSession.OnRtpClosed
   name: OnRtpClosed
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpClosed
@@ -2702,6 +2708,12 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnSendReport
   fullName: SIPSorcery.Net.RTPSession.OnSendReport
   nameWithType: RTPSession.OnSendReport
+- uid: SIPSorcery.Net.RTPSession.OnTimeout
+  name: OnTimeout
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnTimeout
+  commentId: E:SIPSorcery.Net.RTPSession.OnTimeout
+  fullName: SIPSorcery.Net.RTPSession.OnTimeout
+  nameWithType: RTPSession.OnTimeout
 - uid: SIPSorcery.Net.RTPSession.RemoteRtpEventPayloadID
   name: RemoteRtpEventPayloadID
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteRtpEventPayloadID
@@ -9014,19 +9026,6 @@ references:
   commentId: E:SIPSorcery.SIP.App.RTPMediaSession.DtmfCompleted
   fullName: SIPSorcery.SIP.App.RTPMediaSession.DtmfCompleted
   nameWithType: RTPMediaSession.DtmfCompleted
-- uid: SIPSorcery.SIP.App.RTPMediaSession.GetSDP(System.Net.IPAddress)
-  name: GetSDP(IPAddress)
-  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_GetSDP_System_Net_IPAddress_
-  commentId: M:SIPSorcery.SIP.App.RTPMediaSession.GetSDP(System.Net.IPAddress)
-  fullName: SIPSorcery.SIP.App.RTPMediaSession.GetSDP(System.Net.IPAddress)
-  nameWithType: RTPMediaSession.GetSDP(IPAddress)
-- uid: SIPSorcery.SIP.App.RTPMediaSession.GetSDP*
-  name: GetSDP
-  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_GetSDP_
-  commentId: Overload:SIPSorcery.SIP.App.RTPMediaSession.GetSDP
-  isSpec: "True"
-  fullName: SIPSorcery.SIP.App.RTPMediaSession.GetSDP
-  nameWithType: RTPMediaSession.GetSDP
 - uid: SIPSorcery.SIP.App.RTPMediaSession.LocalOnHold
   name: LocalOnHold
   href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_LocalOnHold
@@ -9040,6 +9039,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.RTPMediaSession.LocalOnHold
   nameWithType: RTPMediaSession.LocalOnHold
+- uid: SIPSorcery.SIP.App.RTPMediaSession.LocalSDP
+  name: LocalSDP
+  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_LocalSDP
+  commentId: P:SIPSorcery.SIP.App.RTPMediaSession.LocalSDP
+  fullName: SIPSorcery.SIP.App.RTPMediaSession.LocalSDP
+  nameWithType: RTPMediaSession.LocalSDP
+- uid: SIPSorcery.SIP.App.RTPMediaSession.LocalSDP*
+  name: LocalSDP
+  href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_LocalSDP_
+  commentId: Overload:SIPSorcery.SIP.App.RTPMediaSession.LocalSDP
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.RTPMediaSession.LocalSDP
+  nameWithType: RTPMediaSession.LocalSDP
 - uid: SIPSorcery.SIP.App.RTPMediaSession.MediaAnnouncements
   name: MediaAnnouncements
   href: api/SIPSorcery.SIP.App.RTPMediaSession.html#SIPSorcery_SIP_App_RTPMediaSession_MediaAnnouncements
