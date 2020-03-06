@@ -1947,19 +1947,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPSession.ReceptionReport
   nameWithType: RTCPSession.ReceptionReport
-- uid: SIPSorcery.Net.RTCPSession.RtcpProtect
-  name: RtcpProtect
-  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_RtcpProtect
-  commentId: P:SIPSorcery.Net.RTCPSession.RtcpProtect
-  fullName: SIPSorcery.Net.RTCPSession.RtcpProtect
-  nameWithType: RTCPSession.RtcpProtect
-- uid: SIPSorcery.Net.RTCPSession.RtcpProtect*
-  name: RtcpProtect
-  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_RtcpProtect_
-  commentId: Overload:SIPSorcery.Net.RTCPSession.RtcpProtect
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTCPSession.RtcpProtect
-  nameWithType: RTCPSession.RtcpProtect
 - uid: SIPSorcery.Net.RTCPSession.RTPLastActivityAt
   name: RTPLastActivityAt
   href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_RTPLastActivityAt
@@ -7817,12 +7804,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.WebRtcSession.AppendRemoteIceCandidate
   nameWithType: WebRtcSession.AppendRemoteIceCandidate
-- uid: SIPSorcery.Net.WebRtcSession.Close
-  name: Close()
-  href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession_Close
-  commentId: M:SIPSorcery.Net.WebRtcSession.Close
-  fullName: SIPSorcery.Net.WebRtcSession.Close()
-  nameWithType: WebRtcSession.Close()
+- uid: SIPSorcery.Net.WebRtcSession.Close(System.String)
+  name: Close(String)
+  href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession_Close_System_String_
+  commentId: M:SIPSorcery.Net.WebRtcSession.Close(System.String)
+  fullName: SIPSorcery.Net.WebRtcSession.Close(System.String)
+  nameWithType: WebRtcSession.Close(String)
 - uid: SIPSorcery.Net.WebRtcSession.Close*
   name: Close
   href: api/SIPSorcery.Net.WebRtcSession.html#SIPSorcery_Net_WebRtcSession_Close_

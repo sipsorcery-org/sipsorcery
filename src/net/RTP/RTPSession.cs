@@ -94,11 +94,6 @@ namespace SIPSorcery.Net
         internal ProtectRtpPacket SrtpProtect;
 
         /// <summary>
-        /// Function pointer to an SRTP context that encrypts an RTCP packet.
-        /// </summary>
-        internal ProtectRtpPacket SrtcpProtect;
-
-        /// <summary>
         /// Gets fired when the session detects that the remote end point 
         /// has changed. This is useful because the RTP socket advertised in an SDP
         /// payload will often be different to the one the packets arrive from due
@@ -196,7 +191,7 @@ namespace SIPSorcery.Net
 
         public void SendAudioFrame(uint timestamp, byte[] buffer, int streamID = 0)
         {
-            if (m_rtpEventInProgress || DestinationEndPoint == null)
+            if (m_isClosed || m_rtpEventInProgress || DestinationEndPoint == null)
             {
                 return;
             }
@@ -250,7 +245,7 @@ namespace SIPSorcery.Net
 
         public void SendVp8Frame(uint timestamp, byte[] buffer, int streamID = 0)
         {
-            if (m_rtpEventInProgress || DestinationEndPoint == null)
+            if (m_isClosed || m_rtpEventInProgress || DestinationEndPoint == null)
             {
                 return;
             }
@@ -314,7 +309,7 @@ namespace SIPSorcery.Net
         /// <param name="framesPerSecond">The rate at which the JPEG frames are being transmitted at. used to calculate the timestamp.</param>
         public void SendJpegFrame(uint timestamp, byte[] jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight, int streamID = 0)
         {
-            if (m_rtpEventInProgress || DestinationEndPoint == null)
+            if (m_isClosed || m_rtpEventInProgress || DestinationEndPoint == null)
             {
                 return;
             }
@@ -365,7 +360,7 @@ namespace SIPSorcery.Net
         /// <param name="payloadType">The payload type to set on the RTP packet.</param>
         public void SendH264Frame(uint timestamp, byte[] frame, uint frameSpacing, int payloadType, int streamID = 0)
         {
-            if (m_rtpEventInProgress || DestinationEndPoint == null)
+            if (m_isClosed || m_rtpEventInProgress || DestinationEndPoint == null)
             {
                 return;
             }
@@ -443,7 +438,7 @@ namespace SIPSorcery.Net
             int clockRate = DEFAULT_AUDIO_CLOCK_RATE,
             int streamID = 0)
         {
-            if (m_rtpEventInProgress == true || DestinationEndPoint == null)
+            if (m_isClosed || m_rtpEventInProgress == true || DestinationEndPoint == null)
             {
                 logger.LogWarning("SendDtmfEvent request ignored as an RTP event is already in progress.");
             }
