@@ -39,6 +39,7 @@ namespace SIPSorcery.Sys
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
         private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 10;  // The maximum number of re-attempts that will be made when trying to bind the RTP port.
         private const string INTERNET_IPADDRESS = "1.1.1.1";    // IP address to use when getting default IP address from OS. No connection is established.
+        private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on macos).
         private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;   // The amount of time to leave the result of a local IP address determination in the cache.
         private const int RECENT_PORTS_QUEUE_SIZE = 100;
 
@@ -227,7 +228,7 @@ namespace SIPSorcery.Sys
             else
             {
                 UdpClient udpClient = new UdpClient(destination.AddressFamily);
-                udpClient.Connect(destination, 0);
+                udpClient.Connect(destination, NETWORK_TEST_PORT);
                 var localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
 
                 m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));

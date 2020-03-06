@@ -1,15 +1,15 @@
-| Target        | SIPSorcery    | Examples     | Softphone |
+| Target        | SIPSorcery    | Examples <br/> (Windows Only)    | Softphone <br/> (Windows Only) |
 | --------------| ------------- |:-------------|:--------- |
 | net46        | [![Build status](https://ci.appveyor.com/api/projects/status/1prvhq7jyw0s5fb1/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery/branch/master) | | |
 | netstandard2.0 | ![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-std20/badge.svg) |  |  |
-| dotnetcore3.1 | ![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31/badge.svg) | ![](https://github.com/sipsorcery/sipsorcery/workflows/examples-core31/badge.svg) <br> [![Examples build status](https://ci.appveyor.com/api/projects/status/4myf11mda0p69ysm/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-mre1o/branch/master) | [![Softphone build status](https://ci.appveyor.com/api/projects/status/xx1bcttkk4gbrd3y/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-0p6s4/branch/master) |
+| dotnetcore3.1 | <table><tr><td>Windows</td><td>![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31-win/badge.svg)</td></tr><tr><td>MacOS</td><td>![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31-mac/badge.svg)</td></tr><tr><td>Ubuntu</td><td>![](https://github.com/sipsorcery/sipsorcery/workflows/sipsorcery-core31-ubuntu/badge.svg)</td></tr></table> | ![](https://github.com/sipsorcery/sipsorcery/workflows/examples-core31/badge.svg) <br> [![Examples build status](https://ci.appveyor.com/api/projects/status/4myf11mda0p69ysm/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-mre1o/branch/master) | [![Softphone build status](https://ci.appveyor.com/api/projects/status/xx1bcttkk4gbrd3y/branch/master?svg=true)](https://ci.appveyor.com/project/sipsorcery/sipsorcery-0p6s4/branch/master) |
 
 
 This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261) and the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550). 
 
-This library does NOT provide any media (audio and video) handling. For Windows the companion [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media) library provides audio & video functions for rendering & capture. This project can be used for SIP signalling and to send and receive RTP packets.
+**This library does NOT provide any media (audio and video) handling. For Windows the companion [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media) library provides audio & video functions for rendering & capture. This project can be used for SIP signalling and to send and receive RTP packets.**
 
-**NEW (Feb 2020)**: Pre-release support for Web Real-Time Communication [(WebRTC)](https://www.w3.org/TR/webrtc/) for early adopters. See [Getting Started WebRTC](#getting-started-webrtc).
+**NEW (Feb/Mar 2020)**: Pre-release support for Web Real-Time Communication [(WebRTC)](https://www.w3.org/TR/webrtc/) for early adopters. See [Getting Started WebRTC](#getting-started-webrtc).
 
 ## Installation
 
@@ -25,6 +25,28 @@ With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](
 
 ````ps1
 Install-Package SIPSorcery
+````
+
+#### SIPSorceryMedia Install
+
+.NET Core does not provide any audio or video capture capabilities nor any audio rendering function (UWP does and there are some [tricks](https://blogs.windows.com/windowsdeveloper/2017/01/25/calling-windows-10-apis-desktop-application/) to get at its API but it's fragile). A lot of the uses for SIP and WebRTC revolve around such capabilities and functions. A companion Windows specific library which fills this gap is maintained at [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media). For non-Windows applications there is no known .NET Core library that provides audio and video functions.
+
+The [RtpAVSession](https://github.com/sipsorcery/sipsorcery-media/blob/master/src/RtpAVSession/RtpAVSession.cs) class from the `SIPSorceryMedia` library wraps the audio and video functions and integrates with the [SIPUserAgent](https://sipsorcery.github.io/sipsorcery/api/SIPSorcery.SIP.App.SIPUserAgent.html) class for ease of use.
+
+**Note that the `RtpAVSession` class is only available as a pre-release in version 4.0.28-pre and greater.**
+
+The `SIPSorceryMedia` library is compliant with .NET Core 3.1. It is available via NuGet:
+
+For .NET Core:
+
+````bash
+dotnet add package SIPSorceryMedia -v 4.0.28-pre
+````
+
+With Visual Studio Package Manager Console (or search for [SIPSorceryMedia on NuGet](https://www.nuget.org/packages/SIPSorceryMedia/)):
+
+````ps1
+Install-Package SIPSorceryMedia -v 4.0.28-pre
 ````
 
 ## Documentation
@@ -191,8 +213,8 @@ The full list of WebRTC examples available is:
 
  - [WebRTCTestPatternServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCTestPatternServer): The simplest example. This program serves up a test pattern video stream to a WebRTC peer.
  - [WebRTCServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCServer): This example extends the test pattern example and can act as a media source for a peer. It has two source options:
-  - An mp4 file.
-  - Capture devices (webcam and microphone).
+   - An mp4 file.
+   - Capture devices (webcam and microphone).
  The example includes an html file which runs in a Browser and will connect to a sample program running on the same machine.
 - [WebRTCReceiver](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCReceiver): A receive only example. It attempts to connect to a WebRTC peer and display the video stream that it receives.
 
