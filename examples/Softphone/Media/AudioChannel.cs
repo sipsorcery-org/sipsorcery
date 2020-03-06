@@ -16,7 +16,7 @@
 
 using System;
 using System.Collections.Generic;
-using log4net;
+using Microsoft.Extensions.Logging;
 using NAudio.Codecs;
 using NAudio.Wave;
 using SIPSorcery.Net;
@@ -28,11 +28,11 @@ namespace SIPSorcery.SoftPhone
     {
         public const int AUDIO_INPUT_BUFFER_MILLISECONDS = 40;
 
-        private ILog logger = AppState.logger;
+        private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private BufferedWaveProvider m_waveProvider;
         private WaveInEvent m_waveInEvent;          // Device used to get audio sample from, e.g. microphone.
-        private WaveOut m_waveOut;                  // Device used to play audio samples, e.g. speaker.
+        private WaveOutEvent m_waveOut;                  // Device used to play audio samples, e.g. speaker.
         private WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);   // The format that both the input and output audio streams will use, i.e. PCMU.
         private bool _recordingStarted;            // When true indicates that the input device has been opened to start receiving samples.
 
@@ -43,7 +43,7 @@ namespace SIPSorcery.SoftPhone
         public AudioChannel()
         {
             // Set up the device that will play the audio from the RTP received from the remote end of the call.
-            m_waveOut = new WaveOut();
+            m_waveOut = new WaveOutEvent();
             m_waveProvider = new BufferedWaveProvider(_waveFormat);
             m_waveProvider.DiscardOnBufferOverflow = true; // See https://github.com/sipsorcery/sipsorcery/issues/53
             m_waveProvider.BufferLength = 100000;
@@ -52,9 +52,9 @@ namespace SIPSorcery.SoftPhone
 
             // Set up the input device that will provide audio samples that can be encoded, packaged into RTP and sent to
             // the remote end of the call.
-            if (WaveIn.DeviceCount == 0)
+            if (WaveInEvent.DeviceCount == 0)
             {
-                logger.Warn("No audio input devices available. No audio will be sent.");
+                logger.LogWarning("No audio input devices available. No audio will be sent.");
             }
             else
             {
@@ -135,14 +135,14 @@ namespace SIPSorcery.SoftPhone
         }
 
         /// <summary>
-        /// Called when the audo channel is no longer required, such as when the VoIP call using it has terminated, and all resources can be shutdown
+        /// Called when the audio channel is no longer required, such as when the VoIP call using it has terminated, and all resources can be shutdown
         /// and closed.
         /// </summary>
         public void Close()
         {
             try
             {
-                logger.Debug("Closing audio channel.");
+                logger.LogDebug("Closing audio channel.");
 
                 if (_recordingStarted)
                 {
@@ -159,7 +159,7 @@ namespace SIPSorcery.SoftPhone
             }
             catch (Exception excp)
             {
-                logger.Error("Exception AudioChannel Close. " + excp.Message);
+                logger.LogError("Exception AudioChannel Close. " + excp.Message);
             }
         }
     }

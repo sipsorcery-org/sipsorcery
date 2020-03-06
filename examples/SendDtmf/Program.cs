@@ -112,7 +112,7 @@ namespace SIPSorcery
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                    rtpSession.DestinationEndPoint = SDP.GetSDPRTPEndPoint(resp.Body);
+                    rtpSession.SetRemoteSDP(SDP.ParseSDPDescription(resp.Body));
                     Log.LogDebug($"Remote RTP socket {rtpSession.DestinationEndPoint}.");
                 }
                 else

@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using log4net;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using SIPSorceryMedia;
 
@@ -28,10 +28,10 @@ namespace SIPSorcery.SoftPhone
 {
     public class MediaManager
     {
-        private ILog logger = AppState.logger;
+        private static ILogger logger = Log.Logger;
 
         private AudioChannel _audioChannel;
-        private VPXEncoder _vpxDecoder;
+        private VpxEncoder _vpxDecoder;
         private ImageConvert _imageConverter;
 
         private Task _localVideoSamplingTask;
@@ -87,7 +87,7 @@ namespace SIPSorcery.SoftPhone
 
             if (_useVideo)
             {
-                _vpxDecoder = new VPXEncoder();
+                _vpxDecoder = new VpxEncoder();
                 _vpxDecoder.InitDecoder();
 
                 _imageConverter = new ImageConvert();
@@ -186,7 +186,7 @@ namespace SIPSorcery.SoftPhone
             {
                 Thread.CurrentThread.Name = "vidsampler_" + videoMode.DeviceIndex + "_" + videoMode.Width + "_" + videoMode.Height;
 
-                var vpxEncoder = new VPXEncoder();
+                var vpxEncoder = new VpxEncoder();
                 // TODO: The last parameter passed to the vpx encoder init needs to be the frame stride not the width.
                 vpxEncoder.InitEncoder(Convert.ToUInt32(videoMode.Width), Convert.ToUInt32(videoMode.Height), Convert.ToUInt32(videoMode.Width));
 
@@ -256,7 +256,7 @@ namespace SIPSorcery.SoftPhone
             }
             catch (Exception excp)
             {
-                logger.Error($"Exception SampleWebCam. {excp.Message}");
+                logger.LogError($"Exception SampleWebCam. {excp.Message}");
             }
         }
 
@@ -325,7 +325,7 @@ namespace SIPSorcery.SoftPhone
         {
             try
             {
-                logger.Debug("Media Manager closing.");
+                logger.LogDebug("Media Manager closing.");
 
                 _stop = true;
 
@@ -334,7 +334,7 @@ namespace SIPSorcery.SoftPhone
             }
             catch (Exception excp)
             {
-                logger.Error("Exception Media Manager Close. " + excp);
+                logger.LogError("Exception Media Manager Close. " + excp);
             }
         }
 

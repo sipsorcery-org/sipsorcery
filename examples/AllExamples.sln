@@ -25,6 +25,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AttendedTransfer", "Attende
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\src\SIPSorcery.csproj", "{783237BA-A4B7-4F7A-9B8F-F25DC42E2569}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPProxy", "SIPProxy\SIPProxy.csproj", "{E182AF8A-D1F0-4CB4-856B-47B735770BFD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,6 +123,14 @@ Global
 		{783237BA-A4B7-4F7A-9B8F-F25DC42E2569}.Release|Any CPU.Build.0 = Release|Any CPU
 		{783237BA-A4B7-4F7A-9B8F-F25DC42E2569}.Release|x64.ActiveCfg = Release|Any CPU
 		{783237BA-A4B7-4F7A-9B8F-F25DC42E2569}.Release|x64.Build.0 = Release|Any CPU
+		{E182AF8A-D1F0-4CB4-856B-47B735770BFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E182AF8A-D1F0-4CB4-856B-47B735770BFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E182AF8A-D1F0-4CB4-856B-47B735770BFD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E182AF8A-D1F0-4CB4-856B-47B735770BFD}.Debug|x64.Build.0 = Debug|Any CPU
+		{E182AF8A-D1F0-4CB4-856B-47B735770BFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E182AF8A-D1F0-4CB4-856B-47B735770BFD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E182AF8A-D1F0-4CB4-856B-47B735770BFD}.Release|x64.ActiveCfg = Release|Any CPU
+		{E182AF8A-D1F0-4CB4-856B-47B735770BFD}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

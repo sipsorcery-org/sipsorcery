@@ -18084,6 +18084,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPNonInviteTransaction.SendRequest
   nameWithType: SIPNonInviteTransaction.SendRequest
+- uid: SIPSorcery.SIP.SIPNonInviteTransaction.SendResponse(SIPSorcery.SIP.SIPResponse)
+  name: SendResponse(SIPResponse)
+  href: api/SIPSorcery.SIP.SIPNonInviteTransaction.html#SIPSorcery_SIP_SIPNonInviteTransaction_SendResponse_SIPSorcery_SIP_SIPResponse_
+  commentId: M:SIPSorcery.SIP.SIPNonInviteTransaction.SendResponse(SIPSorcery.SIP.SIPResponse)
+  fullName: SIPSorcery.SIP.SIPNonInviteTransaction.SendResponse(SIPSorcery.SIP.SIPResponse)
+  nameWithType: SIPNonInviteTransaction.SendResponse(SIPResponse)
+- uid: SIPSorcery.SIP.SIPNonInviteTransaction.SendResponse*
+  name: SendResponse
+  href: api/SIPSorcery.SIP.SIPNonInviteTransaction.html#SIPSorcery_SIP_SIPNonInviteTransaction_SendResponse_
+  commentId: Overload:SIPSorcery.SIP.SIPNonInviteTransaction.SendResponse
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPNonInviteTransaction.SendResponse
+  nameWithType: SIPNonInviteTransaction.SendResponse
 - uid: SIPSorcery.SIP.SIPParameterlessURI
   name: SIPParameterlessURI
   href: api/SIPSorcery.SIP.SIPParameterlessURI.html

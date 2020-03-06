@@ -17,7 +17,7 @@
 using System;
 using System.Net;
 using System.Threading;
-using log4net;
+using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
@@ -25,7 +25,7 @@ namespace SIPSorcery.SoftPhone
 {
     public class SoftphoneSTUNClient
     {
-        private ILog logger = AppState.logger;
+        private ILogger logger = Log.Logger;
 
         private Timer updateTimer;
 
@@ -62,7 +62,7 @@ namespace SIPSorcery.SoftPhone
                 }
             }, null, TimeSpan.Zero, updateIntervalNormal);
 
-            logger.Debug("STUN client started.");
+            logger.LogDebug("STUN client started.");
         }
 
         public void Stop()
@@ -70,7 +70,7 @@ namespace SIPSorcery.SoftPhone
             m_stop = true;
             updateTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
-            logger.Warn("STUN client stopped.");
+            logger.LogWarning("STUN client stopped.");
         }
 
         private IPAddress GetPublicIPAddress()
@@ -80,18 +80,18 @@ namespace SIPSorcery.SoftPhone
                 var publicIP = STUNClient.GetPublicIPAddress(m_stunServerHostname);
                 if (publicIP != null)
                 {
-                    logger.Debug($"The STUN client was able to determine the public IP address as {publicIP}");
+                    logger.LogDebug($"The STUN client was able to determine the public IP address as {publicIP}");
                 }
                 else
                 {
-                    logger.Debug("The STUN client could not determine the public IP address.");
+                    logger.LogDebug("The STUN client could not determine the public IP address.");
                 }
 
                 return publicIP;
             }
             catch (Exception getAddrExcp)
             {
-                logger.Error("Exception GetPublicIPAddress. " + getAddrExcp.Message);
+                logger.LogError("Exception GetPublicIPAddress. " + getAddrExcp.Message);
                 return null;
             }
         }
