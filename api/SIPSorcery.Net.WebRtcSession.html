@@ -115,19 +115,19 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession__ctor_System_String_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__System_Collections_Generic_List_System_Net_IPAddress__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.%23ctor(System.String%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.SDPMediaFormat%7D%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.SDPMediaFormat%7D%2CSystem.Collections.Generic.List%7BSystem.Net.IPAddress%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession__ctor_System_Net_Sockets_AddressFamily_System_String_System_Collections_Generic_List_System_Net_IPAddress__System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.%23ctor(System.Net.Sockets.AddressFamily%2CSystem.String%2CSystem.Collections.Generic.List%7BSystem.Net.IPAddress%7D%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L123">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L120">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRtcSession__ctor_" data-uid="SIPSorcery.Net.WebRtcSession.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_WebRtcSession__ctor_System_String_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__System_Collections_Generic_List_System_Net_IPAddress__" data-uid="SIPSorcery.Net.WebRtcSession.#ctor(System.String,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat},System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat},System.Collections.Generic.List{System.Net.IPAddress})">WebRtcSession(String, List&lt;SDPMediaFormat&gt;, List&lt;SDPMediaFormat&gt;, List&lt;IPAddress&gt;)</h4>
+  <h4 id="SIPSorcery_Net_WebRtcSession__ctor_System_Net_Sockets_AddressFamily_System_String_System_Collections_Generic_List_System_Net_IPAddress__System_Net_IPEndPoint_" data-uid="SIPSorcery.Net.WebRtcSession.#ctor(System.Net.Sockets.AddressFamily,System.String,System.Collections.Generic.List{System.Net.IPAddress},System.Net.IPEndPoint)">WebRtcSession(AddressFamily, String, List&lt;IPAddress&gt;, IPEndPoint)</h4>
   <div class="markdown level1 summary"><p>Default constructor.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public WebRtcSession(string dtlsFingerprint, List&lt;SDPMediaFormat&gt; supportedAudioFormats, List&lt;SDPMediaFormat&gt; supportedVideoFormats, List&lt;IPAddress&gt; offerAddresses)</code></pre>
+    <pre><code class="lang-csharp hljs">public WebRtcSession(AddressFamily addrFamily, string dtlsFingerprint, List&lt;IPAddress&gt; offerAddresses, IPEndPoint turnServerEndPoint)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -140,6 +140,11 @@
     </thead>
     <tbody>
       <tr>
+        <td><span class="xref">System.Net.Sockets.AddressFamily</span></td>
+        <td><span class="parametername">addrFamily</span></td>
+        <td></td>
+      </tr>
+      <tr>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">dtlsFingerprint</span></td>
         <td><p>The fingerprint of our DTLS certificate (we always act as the DTLS server).
@@ -147,24 +152,17 @@ It gets placed in the SDP offer sent to the remote party.</p>
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaFormat.html">SDPMediaFormat</a>&gt;</td>
-        <td><span class="parametername">supportedAudioFormats</span></td>
-        <td><p>List of audio codecs that we support. Can be null or empty if
-the session is not supporting audio.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaFormat.html">SDPMediaFormat</a>&gt;</td>
-        <td><span class="parametername">supportedVideoFormats</span></td>
-        <td><p>List of video codecs that we support. Can be null or empty if
-the session is not supporting video.</p>
-</td>
-      </tr>
-      <tr>
         <td><span class="xref">System.Collections.Generic.List</span>&lt;<span class="xref">System.Net.IPAddress</span>&gt;</td>
         <td><span class="parametername">offerAddresses</span></td>
         <td><p>Optional. A list of the IP addresses used as local ICE candidates.
 If null then all local IP addresses get used.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">turnServerEndPoint</span></td>
+        <td><p>Optional. A parameter that can be used include a TURN
+server in this session's ICE candidate gathering.</p>
 </td>
       </tr>
     </tbody>
@@ -176,7 +174,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_IceConnectionState.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.IceConnectionState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L68">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L74">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_IceConnectionState" data-uid="SIPSorcery.Net.WebRtcSession.IceConnectionState">IceConnectionState</h4>
   <div class="markdown level1 summary"></div>
@@ -205,7 +203,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_IceNegotiationStartedAt.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.IceNegotiationStartedAt%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L65">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L71">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_IceNegotiationStartedAt" data-uid="SIPSorcery.Net.WebRtcSession.IceNegotiationStartedAt">IceNegotiationStartedAt</h4>
   <div class="markdown level1 summary"></div>
@@ -234,7 +232,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_IsClosed.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.IsClosed%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L67">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L73">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_IsClosed" data-uid="SIPSorcery.Net.WebRtcSession.IsClosed">IsClosed</h4>
   <div class="markdown level1 summary"></div>
@@ -263,7 +261,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_IsDtlsNegotiationComplete.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.IsDtlsNegotiationComplete%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L64">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L70">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_IsDtlsNegotiationComplete" data-uid="SIPSorcery.Net.WebRtcSession.IsDtlsNegotiationComplete">IsDtlsNegotiationComplete</h4>
   <div class="markdown level1 summary"></div>
@@ -292,7 +290,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_LocalIceCandidates.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.LocalIceCandidates%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L66">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L72">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_LocalIceCandidates" data-uid="SIPSorcery.Net.WebRtcSession.LocalIceCandidates">LocalIceCandidates</h4>
   <div class="markdown level1 summary"></div>
@@ -321,7 +319,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_LocalIcePassword.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.LocalIcePassword%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L61">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L67">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_LocalIcePassword" data-uid="SIPSorcery.Net.WebRtcSession.LocalIcePassword">LocalIcePassword</h4>
   <div class="markdown level1 summary"></div>
@@ -350,7 +348,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_LocalIceUser.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.LocalIceUser%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L60">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L66">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_LocalIceUser" data-uid="SIPSorcery.Net.WebRtcSession.LocalIceUser">LocalIceUser</h4>
   <div class="markdown level1 summary"></div>
@@ -379,7 +377,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_RemoteIcePassword.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.RemoteIcePassword%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L63">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L69">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_RemoteIcePassword" data-uid="SIPSorcery.Net.WebRtcSession.RemoteIcePassword">RemoteIcePassword</h4>
   <div class="markdown level1 summary"></div>
@@ -408,7 +406,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_RemoteIceUser.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.RemoteIceUser%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L62">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L68">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_RemoteIceUser" data-uid="SIPSorcery.Net.WebRtcSession.RemoteIceUser">RemoteIceUser</h4>
   <div class="markdown level1 summary"></div>
@@ -437,7 +435,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_RtpSession.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.RtpSession%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L102">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L104">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_RtpSession" data-uid="SIPSorcery.Net.WebRtcSession.RtpSession">RtpSession</h4>
   <div class="markdown level1 summary"></div>
@@ -466,7 +464,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_SDP.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.SDP%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L58">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L64">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_SDP" data-uid="SIPSorcery.Net.WebRtcSession.SDP">SDP</h4>
   <div class="markdown level1 summary"></div>
@@ -495,7 +493,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_SdpSessionID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.SdpSessionID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L59">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L65">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_SdpSessionID" data-uid="SIPSorcery.Net.WebRtcSession.SdpSessionID">SdpSessionID</h4>
   <div class="markdown level1 summary"></div>
@@ -523,40 +521,10 @@ If null then all local IP addresses get used.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_AudioStreamStatus.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.AudioStreamStatus%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L104">View Source</a>
-  </span>
-  <a id="SIPSorcery_Net_WebRtcSession_AudioStreamStatus_" data-uid="SIPSorcery.Net.WebRtcSession.AudioStreamStatus*"></a>
-  <h4 id="SIPSorcery_Net_WebRtcSession_AudioStreamStatus" data-uid="SIPSorcery.Net.WebRtcSession.AudioStreamStatus">AudioStreamStatus</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public MediaStreamStatusEnum AudioStreamStatus { get; set; }</code></pre>
-  </div>
-  <h5 class="propertyValue">Property Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.Net.MediaStreamStatusEnum.html">MediaStreamStatusEnum</a></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_IsConnected.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.IsConnected%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L76">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L82">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRtcSession_IsConnected_" data-uid="SIPSorcery.Net.WebRtcSession.IsConnected*"></a>
   <h4 id="SIPSorcery_Net_WebRtcSession_IsConnected" data-uid="SIPSorcery.Net.WebRtcSession.IsConnected">IsConnected</h4>
@@ -586,7 +554,7 @@ If null then all local IP addresses get used.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_RemoteEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.RemoteEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L85">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L91">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRtcSession_RemoteEndPoint_" data-uid="SIPSorcery.Net.WebRtcSession.RemoteEndPoint*"></a>
   <h4 id="SIPSorcery_Net_WebRtcSession_RemoteEndPoint" data-uid="SIPSorcery.Net.WebRtcSession.RemoteEndPoint">RemoteEndPoint</h4>
@@ -618,7 +586,7 @@ that we were able to connect to for the WebRTC session.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_RemoteIceCandidates.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.RemoteIceCandidates%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L71">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L77">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRtcSession_RemoteIceCandidates_" data-uid="SIPSorcery.Net.WebRtcSession.RemoteIceCandidates*"></a>
   <h4 id="SIPSorcery_Net_WebRtcSession_RemoteIceCandidates" data-uid="SIPSorcery.Net.WebRtcSession.RemoteIceCandidates">RemoteIceCandidates</h4>
@@ -648,7 +616,7 @@ that we were able to connect to for the WebRTC session.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_SessionID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.SessionID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L57">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L63">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRtcSession_SessionID_" data-uid="SIPSorcery.Net.WebRtcSession.SessionID*"></a>
   <h4 id="SIPSorcery_Net_WebRtcSession_SessionID" data-uid="SIPSorcery.Net.WebRtcSession.SessionID">SessionID</h4>
@@ -673,22 +641,49 @@ that we were able to connect to for the WebRTC session.</p>
       </tr>
     </tbody>
   </table>
+  <h3 id="methods">Methods
+  </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_VideoStreamStatus.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.VideoStreamStatus%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_addTrack_SIPSorcery_Net_SDPMediaTypesEnum_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.addTrack(SIPSorcery.Net.SDPMediaTypesEnum%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.SDPMediaFormat%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L105">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L145">View Source</a>
   </span>
-  <a id="SIPSorcery_Net_WebRtcSession_VideoStreamStatus_" data-uid="SIPSorcery.Net.WebRtcSession.VideoStreamStatus*"></a>
-  <h4 id="SIPSorcery_Net_WebRtcSession_VideoStreamStatus" data-uid="SIPSorcery.Net.WebRtcSession.VideoStreamStatus">VideoStreamStatus</h4>
-  <div class="markdown level1 summary"></div>
+  <a id="SIPSorcery_Net_WebRtcSession_addTrack_" data-uid="SIPSorcery.Net.WebRtcSession.addTrack*"></a>
+  <h4 id="SIPSorcery_Net_WebRtcSession_addTrack_SIPSorcery_Net_SDPMediaTypesEnum_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__" data-uid="SIPSorcery.Net.WebRtcSession.addTrack(SIPSorcery.Net.SDPMediaTypesEnum,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat})">addTrack(SDPMediaTypesEnum, List&lt;SDPMediaFormat&gt;)</h4>
+  <div class="markdown level1 summary"><p>Adds a new audio or video track to the session. Tracks are sent from one peer to another.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public MediaStreamStatusEnum VideoStreamStatus { get; set; }</code></pre>
+    <pre><code class="lang-csharp hljs">public MediaStreamTrack addTrack(SDPMediaTypesEnum mediaType, List&lt;SDPMediaFormat&gt; capabilities)</code></pre>
   </div>
-  <h5 class="propertyValue">Property Value</h5>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></td>
+        <td><span class="parametername">mediaType</span></td>
+        <td><p>The track's media type (audio or video).</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaFormat.html">SDPMediaFormat</a>&gt;</td>
+        <td><span class="parametername">capabilities</span></td>
+        <td><p>The codecs we support.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
       <tr>
@@ -698,19 +693,18 @@ that we were able to connect to for the WebRTC session.</p>
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="SIPSorcery.Net.MediaStreamStatusEnum.html">MediaStreamStatusEnum</a></td>
-        <td></td>
+        <td><a class="xref" href="SIPSorcery.Net.MediaStreamTrack.html">MediaStreamTrack</a></td>
+        <td><p>Returns the media stream track that was added or updated.</p>
+</td>
       </tr>
     </tbody>
   </table>
-  <h3 id="methods">Methods
-  </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_AppendRemoteIceCandidate_SIPSorcery_Net_IceCandidate_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.AppendRemoteIceCandidate(SIPSorcery.Net.IceCandidate)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L370">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L239">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRtcSession_AppendRemoteIceCandidate_" data-uid="SIPSorcery.Net.WebRtcSession.AppendRemoteIceCandidate*"></a>
   <h4 id="SIPSorcery_Net_WebRtcSession_AppendRemoteIceCandidate_SIPSorcery_Net_IceCandidate_" data-uid="SIPSorcery.Net.WebRtcSession.AppendRemoteIceCandidate(SIPSorcery.Net.IceCandidate)">AppendRemoteIceCandidate(IceCandidate)</h4>
@@ -744,7 +738,7 @@ that we were able to connect to for the WebRTC session.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L431">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L304">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRtcSession_Close_" data-uid="SIPSorcery.Net.WebRtcSession.Close*"></a>
   <h4 id="SIPSorcery_Net_WebRtcSession_Close_System_String_" data-uid="SIPSorcery.Net.WebRtcSession.Close(System.String)">Close(String)</h4>
@@ -775,46 +769,20 @@ that we were able to connect to for the WebRTC session.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_Initialise_SIPSorcery_Net_DoDtlsHandshakeDelegate_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.Initialise(SIPSorcery.Net.DoDtlsHandshakeDelegate%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_createAnswer.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.createAnswer%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L170">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L172">View Source</a>
   </span>
-  <a id="SIPSorcery_Net_WebRtcSession_Initialise_" data-uid="SIPSorcery.Net.WebRtcSession.Initialise*"></a>
-  <h4 id="SIPSorcery_Net_WebRtcSession_Initialise_SIPSorcery_Net_DoDtlsHandshakeDelegate_System_Net_IPEndPoint_" data-uid="SIPSorcery.Net.WebRtcSession.Initialise(SIPSorcery.Net.DoDtlsHandshakeDelegate,System.Net.IPEndPoint)">Initialise(DoDtlsHandshakeDelegate, IPEndPoint)</h4>
-  <div class="markdown level1 summary"><p>Initialises the WebRTC session by carrying out the ICE connectivity steps and when complete
-handing the RTP socket off for the DTLS handshake. Once the handshake is complete the session
-is ready for to exchange encrypted RTP and RTCP packets.</p>
+  <a id="SIPSorcery_Net_WebRtcSession_createAnswer_" data-uid="SIPSorcery.Net.WebRtcSession.createAnswer*"></a>
+  <h4 id="SIPSorcery_Net_WebRtcSession_createAnswer" data-uid="SIPSorcery.Net.WebRtcSession.createAnswer">createAnswer()</h4>
+  <div class="markdown level1 summary"><p>Creates an answer to an SDP offer from a remote peer.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Task Initialise(DoDtlsHandshakeDelegate doDtlsHandshake, IPEndPoint turnServerEndPoint)</code></pre>
+    <pre><code class="lang-csharp hljs">public Task&lt;SDP&gt; createAnswer()</code></pre>
   </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.Net.DoDtlsHandshakeDelegate.html">DoDtlsHandshakeDelegate</a></td>
-        <td><span class="parametername">doDtlsHandshake</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
-        <td><span class="parametername">turnServerEndPoint</span></td>
-        <td><p>An optional parameter that can be used include a TURN
-server in this session's ICE candidate gathering.</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
@@ -825,48 +793,39 @@ server in this session's ICE candidate gathering.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_OnSdpAnswer_SIPSorcery_Net_SDP_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.OnSdpAnswer(SIPSorcery.Net.SDP)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_createOffer.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.createOffer%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L312">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L164">View Source</a>
   </span>
-  <a id="SIPSorcery_Net_WebRtcSession_OnSdpAnswer_" data-uid="SIPSorcery.Net.WebRtcSession.OnSdpAnswer*"></a>
-  <h4 id="SIPSorcery_Net_WebRtcSession_OnSdpAnswer_SIPSorcery_Net_SDP_" data-uid="SIPSorcery.Net.WebRtcSession.OnSdpAnswer(SIPSorcery.Net.SDP)">OnSdpAnswer(SDP)</h4>
-  <div class="markdown level1 summary"><p>Updates the session after receiving the remote SDP.
-At this point check that the codecs match. We currently only support:</p>
-<ul>
-<li>Audio: PCMU,</li>
-<li>Video: VP8.
-If they are not available there's no point carrying on.</li>
-</ul>
+  <a id="SIPSorcery_Net_WebRtcSession_createOffer_" data-uid="SIPSorcery.Net.WebRtcSession.createOffer*"></a>
+  <h4 id="SIPSorcery_Net_WebRtcSession_createOffer" data-uid="SIPSorcery.Net.WebRtcSession.createOffer">createOffer()</h4>
+  <div class="markdown level1 summary"><p>Creates an initial SDP offer to send to a remote peer.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void OnSdpAnswer(SDP remoteSdp)</code></pre>
+    <pre><code class="lang-csharp hljs">public Task&lt;SDP&gt; createOffer()</code></pre>
   </div>
-  <h5 class="parameters">Parameters</h5>
+  <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
       <tr>
         <th>Type</th>
-        <th>Name</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a></td>
-        <td><span class="parametername">remoteSdp</span></td>
-        <td><p>The answer/offer SDP from the remote party.</p>
-</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a>&gt;</td>
+        <td></td>
       </tr>
     </tbody>
   </table>
@@ -875,7 +834,7 @@ If they are not available there's no point carrying on.</li>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_SendMedia_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum%2CSystem.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L412">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L281">View Source</a>
   </span>
   <a id="SIPSorcery_Net_WebRtcSession_SendMedia_" data-uid="SIPSorcery.Net.WebRtcSession.SendMedia*"></a>
   <h4 id="SIPSorcery_Net_WebRtcSession_SendMedia_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_System_Byte___" data-uid="SIPSorcery.Net.WebRtcSession.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum,System.UInt32,System.Byte[])">SendMedia(SDPMediaTypesEnum, UInt32, Byte[])</h4>
@@ -916,6 +875,86 @@ If they are not available there's no point carrying on.</li>
       </tr>
     </tbody>
   </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_setLocalDescription_SIPSorcery_Net_SDP_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.setLocalDescription(SIPSorcery.Net.SDP)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L181">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_WebRtcSession_setLocalDescription_" data-uid="SIPSorcery.Net.WebRtcSession.setLocalDescription*"></a>
+  <h4 id="SIPSorcery_Net_WebRtcSession_setLocalDescription_SIPSorcery_Net_SDP_" data-uid="SIPSorcery.Net.WebRtcSession.setLocalDescription(SIPSorcery.Net.SDP)">setLocalDescription(SDP)</h4>
+  <div class="markdown level1 summary"><p>Sets the local SDP.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void setLocalDescription(SDP sdp)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a></td>
+        <td><span class="parametername">sdp</span></td>
+        <td><p>The SDP to set.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_setRemoteDescription_SIPSorcery_Net_SdpType_SIPSorcery_Net_SDP_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.setRemoteDescription(SIPSorcery.Net.SdpType%2CSIPSorcery.Net.SDP)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L195">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_WebRtcSession_setRemoteDescription_" data-uid="SIPSorcery.Net.WebRtcSession.setRemoteDescription*"></a>
+  <h4 id="SIPSorcery_Net_WebRtcSession_setRemoteDescription_SIPSorcery_Net_SdpType_SIPSorcery_Net_SDP_" data-uid="SIPSorcery.Net.WebRtcSession.setRemoteDescription(SIPSorcery.Net.SdpType,SIPSorcery.Net.SDP)">setRemoteDescription(SdpType, SDP)</h4>
+  <div class="markdown level1 summary"><p>Updates the session after receiving the remote SDP.
+At this point check that the codecs match. We currently only support:</p>
+<ul>
+<li>Audio: PCMU,</li>
+<li>Video: VP8.
+If they are not available there's no point carrying on.</li>
+</ul>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void setRemoteDescription(SdpType sdpType, SDP remoteSdp)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SdpType.html">SdpType</a></td>
+        <td><span class="parametername">sdpType</span></td>
+        <td><p>Whether the remote SDP is an offer or an answer.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a></td>
+        <td><span class="parametername">remoteSdp</span></td>
+        <td><p>The answer/offer SDP from the remote party.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="events">Events
   </h3>
   <span class="small pull-right mobile-hide">
@@ -923,7 +962,7 @@ If they are not available there's no point carrying on.</li>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_OnClose.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.OnClose%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L97">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L101">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_OnClose" data-uid="SIPSorcery.Net.WebRtcSession.OnClose">OnClose</h4>
   <div class="markdown level1 summary"></div>
@@ -952,7 +991,7 @@ If they are not available there's no point carrying on.</li>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession_OnSdpOfferReady.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession.OnSdpOfferReady%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L98">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L102">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_WebRtcSession_OnSdpOfferReady" data-uid="SIPSorcery.Net.WebRtcSession.OnSdpOfferReady">OnSdpOfferReady</h4>
   <div class="markdown level1 summary"></div>
@@ -987,7 +1026,7 @@ If they are not available there's no point carrying on.</li>
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_WebRtcSession.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.WebRtcSession%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L34" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/WebRtcSession.cs/#L40" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

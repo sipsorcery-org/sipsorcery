@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -212,10 +213,17 @@ namespace SIPSorcery.SoftPhone
                     //    break;
                     //}
                     //else 
-                    if (sample?.HasVideoSample == true)
+                    if (sample != null && sample.HasVideoSample)
                     {
                         // This event sends the raw bitmap to the WPF UI.
-                        OnLocalVideoSampleReady?.Invoke(videoSample, videoSampler.Width, videoSampler.Height);
+                        if (sample.Stride < 0)
+                        {
+                            OnLocalVideoSampleReady?.Invoke(videoSample.Reverse().ToArray(), videoSampler.Width, videoSampler.Height);
+                        }
+                        else
+                        {
+                            OnLocalVideoSampleReady?.Invoke(videoSample, videoSampler.Width, videoSampler.Height);
+                        }
 
                         // This event encodes the sample and forwards it to the RTP manager for network transmission.
                         if (OnLocalVideoEncodedSampleReady != null)
@@ -295,10 +303,11 @@ namespace SIPSorcery.SoftPhone
                 Marshal.Copy(decodedBuffer, 0, decodedSamplePtr, decodedBuffer.Length);
 
                 byte[] bmp = null;
+                int stride = 0;
 
                 unsafe
                 {
-                    _imageConverter.ConvertYUVToRGB((byte*)decodedSamplePtr, VideoSubTypesEnum.I420, Convert.ToInt32(decodedImgWidth), Convert.ToInt32(decodedImgHeight), VideoSubTypesEnum.RGB24, ref bmp);
+                    _imageConverter.ConvertYUVToRGB((byte*)decodedSamplePtr, VideoSubTypesEnum.I420, Convert.ToInt32(decodedImgWidth), Convert.ToInt32(decodedImgHeight), VideoSubTypesEnum.RGB24, ref bmp, ref stride);
                 }
 
                 Marshal.FreeHGlobal(decodedSamplePtr);

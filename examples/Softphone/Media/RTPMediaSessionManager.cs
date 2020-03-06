@@ -14,6 +14,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Linq;
 using System.Net.Sockets;
 using SIPSorcery.Net;
 using SIPSorcery.SIP.App;
@@ -119,7 +121,8 @@ namespace SIPSorcery.SoftPhone
         /// <param name="sample">The audio sample</param>
         private void LocalAudioSampleReadyForSession(byte[] sample)
         {
-            RTPMediaSession.SendAudioFrame(_audioTimestamp, sample);
+            int payloadID = 0; // Convert.ToInt32(RTPMediaSession.MediaAnnouncements.First(x => x.Media == SDPMediaTypesEnum.audio).MediaFormats.First().FormatID);
+            RTPMediaSession.SendAudioFrame(_audioTimestamp, payloadID, sample);
             _audioTimestamp += (uint)sample.Length; // This only works for cases where 1 sample is 1 byte.
         }
 
@@ -127,7 +130,7 @@ namespace SIPSorcery.SoftPhone
         /// Event handler for the availability of a new RTP packet from a remote party.
         /// </summary>
         /// <param name="rtpPacket">The RTP packet from the remote party.</param>
-        private void RemoteRtpPacketReceived(RTPPacket rtpPacket)
+        private void RemoteRtpPacketReceived(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
         {
             _mediaManager.EncodedAudioSampleReceived(rtpPacket.Payload);
         }

@@ -651,7 +651,7 @@ namespace SIPSorcery.SoftPhone
                             height,
                             96,
                             96,
-                            PixelFormats.Bgr24, //PixelFormats.Bgr32,
+                            PixelFormats.Rgb24, //PixelFormats.Bgr32,
                             null);
 
                         _localVideo.Source = _localWriteableBitmap;
@@ -732,6 +732,8 @@ namespace SIPSorcery.SoftPhone
                 _startLocalVideoButton.IsEnabled = false;
                 _stopLocalVideoButton.IsEnabled = true;
                 _localVideoDevices.IsEnabled = false;
+                _keypadGrid.Visibility = Visibility.Hidden;
+                _locaVIdeoBorder.Visibility = Visibility.Visible;
 
                 _mediaManager.StartVideo(_localVideoMode);
             }
@@ -743,6 +745,8 @@ namespace SIPSorcery.SoftPhone
             _startLocalVideoButton.IsEnabled = true;
             _stopLocalVideoButton.IsEnabled = false;
             _localVideoDevices.IsEnabled = true;
+            _locaVIdeoBorder.Visibility = Visibility.Hidden;
+            _keypadGrid.Visibility = Visibility.Visible;
         }
 
         /// <summary>

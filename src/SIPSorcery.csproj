@@ -41,13 +41,13 @@
  
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net452;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.8.0-rc</Version>
+	<Version>4.0.12-pre</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
 	<Title>SIPSorcery</Title>
-	<Summary>A cross platform C# .NET library for SIP and RTP.</Summary>
-	<Description>This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol (SIP) and the Real-time Transport Protocol (RTP) including IPv6 support. In addition there is some support for Web Real-Time Communication (WebRTC) and a number of related protocols such as RTSP.</Description>
+	<Summary>A cross platform C# .NET library for SIP and WebRTC.</Summary>
+	<Description>This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol (SIP) and partial support for WebRTC.</Description>
 	<Company>SIP Sorcery PTY LTD</Company>
 	<Product>SIPSorcery</Product>
 	<PackageId>SIPSorcery</PackageId>
@@ -61,7 +61,8 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP WebRTC RTP SDP STUN SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version 4.0.8 - Adds WebRTCSession and preliminary WebRTC support.
+	<PackageReleaseNotes>- Version 4.0.12-pre - Adjustments to WebRTCSession to support WebRTC receive.
+- Version 4.0.8 - Adds WebRTCSession and preliminary WebRTC support.
 - Version 4.0.7 - RTP support complete.
 - Version 4.0.4 - Added attended transfer capability to SIPUserAgent.
 - Version 4.0.3 - Refactor of RTPChannel and RTPSession. SIPUserAgent class incorporates RTPSession (much easier to use).
@@ -69,8 +70,8 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
   </PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
-	<AssemblyVersion>4.0.8.0</AssemblyVersion>
-	<FileVersion>4.0.8.0</FileVersion>
+	<AssemblyVersion>4.0.12.0</AssemblyVersion>
+	<FileVersion>4.0.12.0</FileVersion>
   </PropertyGroup>    
 
 </Project>

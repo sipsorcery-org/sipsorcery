@@ -40,7 +40,7 @@ namespace demo
 
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, (int)SDPMediaFormatsEnum.PCMU, AddressFamily.InterNetwork);
+            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
 
             // Connect audio devices to RTP session.
             WaveInEvent microphone = GetAudioInputDevice();
@@ -98,13 +98,13 @@ namespace demo
 
                 if (rtpSession.DestinationEndPoint != null)
                 {
-                    rtpSession.SendAudioFrame(rtpSendTimestamp, sample);
+                    rtpSession.SendAudioFrame(rtpSendTimestamp, (int)SDPMediaFormatsEnum.PCMU, sample);
                     rtpSendTimestamp += (uint)(8000 / microphone.BufferMilliseconds);
                 }
             };
 
             // Wire up the RTP receive session to the audio output device.
-            rtpSession.OnRtpPacketReceived += (rtpPacket) =>
+            rtpSession.OnRtpPacketReceived += (mediaType, rtpPacket) =>
             {
                 var sample = rtpPacket.Payload;
                 for (int index = 0; index < sample.Length; index++)

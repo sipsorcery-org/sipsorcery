@@ -185,6 +185,18 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.MediaStreamTrack.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.MediaStreamTrack.html",
+          "hash": "Z6NY0K5koXPLdHnoh6GqqQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.Mjpeg.Tags.yml",
       "output": {
         ".html": {
@@ -237,7 +249,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPCompoundPacket.html",
-          "hash": "nzfxv6nmzoGmOD3mtATINw=="
+          "hash": "uhjEBDDHgGyMKZFJzUjqyA=="
         }
       },
       "is_incremental": false,
@@ -261,7 +273,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPReceiverReport.html",
-          "hash": "pTk2rdVcGlad0l/vou23FA=="
+          "hash": "cUwjBkrwXrcgWVbR+DbZYg=="
         }
       },
       "is_incremental": false,
@@ -310,6 +322,18 @@
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPSenderReport.html",
           "hash": "TZpKDneIwoQBrwHFIy8d4g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.RTCRtpTransceiver.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.RTCRtpTransceiver.html",
+          "hash": "hr/Q9hL0++G4YNraf95Q7Q=="
         }
       },
       "is_incremental": false,
@@ -381,7 +405,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTPSession.html",
-          "hash": "Tbl1NKu9gA6J68tbvElK5g=="
+          "hash": "bH0OfKR7SO2d/ljqhOmRSQ=="
         }
       },
       "is_incremental": false,
@@ -1145,6 +1169,18 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.SdpType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.SdpType.html",
+          "hash": "EdLvqI4HIjtCsmI8PB+zUg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.TurnServer.yml",
       "output": {
         ".html": {
@@ -1173,7 +1209,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.WebRtcSession.html",
-          "hash": "kzn6ev9+wWnc/68Wz7Xtlw=="
+          "hash": "0gjHV9GwVDCRVQIys9rWgQ=="
         }
       },
       "is_incremental": false,
@@ -1185,7 +1221,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "kV7VJEppUu7kPMkXQROGyw=="
+          "hash": "zc9jDuMVbYirzmAiEqotuw=="
         }
       },
       "is_incremental": false,
@@ -1341,7 +1377,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.RTPMediaSession.html",
-          "hash": "V9W1RgvK/Nx8VUqWHgoiMQ=="
+          "hash": "Tm9uIo/osVvppbqNO4Go3Q=="
         }
       },
       "is_incremental": false,
@@ -2865,7 +2901,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPTransport.html",
-          "hash": "JYOfkNNbSYNZnKRpJQ9iow=="
+          "hash": "aFLZXVVEXGedk0hOZtiEXA=="
         }
       },
       "is_incremental": false,
@@ -3105,7 +3141,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.UASInviteTransaction.html",
-          "hash": "nzMgeuoucDStuF0CfBAvUg=="
+          "hash": "XXbtgQXq1Kd0mUmpZl3O1Q=="
         }
       },
       "is_incremental": false,
@@ -3381,7 +3417,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "sjwQFH9Db3FWwN1bDUrKBw=="
+          "hash": "Zq6crY04I/nIim14u7jVAQ=="
         }
       },
       "is_incremental": false,
@@ -3605,7 +3641,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 280,
+          "total_file_count": 283,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {

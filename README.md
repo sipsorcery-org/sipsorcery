@@ -12,7 +12,7 @@ This library does NOT provide any media (audio and video) handling. There are so
 
 ## Installation
 
-The library is compliant with .NET Standard 2.0, .Net Core 3.0 and .NET Framework 4.5.2. It is available via NuGet.
+The library is compliant with .NET Standard 2.0, .Net Core 3.1 and .NET Framework 4.5.2. It is available via NuGet.
 
 For .NET Core:
 
