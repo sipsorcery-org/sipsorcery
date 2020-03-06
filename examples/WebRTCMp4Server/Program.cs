@@ -17,8 +17,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -113,9 +113,9 @@ namespace WebRTCServer
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
-            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
-            _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
-            _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
+            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, false);
+            //_webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
+            //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
             //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
             _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
             {
@@ -152,6 +152,8 @@ namespace WebRTCServer
 
             webRtcSession.AudioStreamStatus = MediaStreamStatusEnum.SendOnly;
             webRtcSession.VideoStreamStatus = MediaStreamStatusEnum.SendOnly;
+            webRtcSession.RtpSession.OnReceiveReport += RtpSession_OnReceiveReport;
+            webRtcSession.RtpSession.OnSendReport += RtpSession_OnSendReport;
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
@@ -177,19 +179,6 @@ namespace WebRTCServer
                 var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
 
                 webRtcSession.OnSdpAnswer(answerSDP);
-                webRtcSession.SdpSessionID = answerSDP.SessionId;
-                webRtcSession.RemoteIceUser = answerSDP.IceUfrag;
-                webRtcSession.RemoteIcePassword = answerSDP.IcePwd;
-
-                // All browsers seem to have gone to trickling ICE candidates now but just
-                // in case one or more are given we can start the STUN dance immediately.
-                if (answerSDP.IceCandidates != null)
-                {
-                    foreach (var iceCandidate in answerSDP.IceCandidates)
-                    {
-                        webRtcSession.AppendRemoteIceCandidate(iceCandidate);
-                    }
-                }
 
                 OnMediaSampleReady += webRtcSession.SendMedia;
             }
@@ -202,21 +191,10 @@ namespace WebRTCServer
         /// <summary>
         /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
         /// </summary>
-        /// <param name="rtpSocket">The RTP socket being used for the WebRTC session.</param>
-        private static int DoDtlsHandshake(
-            WebRtcSession webRtcSession, 
-            Socket rtpSocket, 
-            out ProtectRtpPacket protectRtp,
-            out ProtectRtpPacket unprotectRtp,
-            out ProtectRtpPacket protectRtcp,
-            out ProtectRtpPacket unprotectRtcp)
+        /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
+        private static int DoDtlsHandshake(WebRtcSession webRtcSession)
         {
             logger.LogDebug("DoDtlsHandshake started.");
-
-            protectRtp = null;
-            unprotectRtp = null;
-            protectRtcp = null;
-            unprotectRtcp = null;
 
             if (!File.Exists(DTLS_CERTIFICATE_PATH))
             {
@@ -230,7 +208,7 @@ namespace WebRTCServer
             var dtls = new Dtls(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
             webRtcSession.OnClose += (reason) => dtls.Shutdown();
 
-            int res = dtls.DoHandshake((ulong)rtpSocket.Handle);
+            int res = dtls.DoHandshake((ulong)webRtcSession.RtpSession.RtpChannel.RtpSocket.Handle);
 
             logger.LogDebug("DtlsContext initialisation result=" + res);
 
@@ -239,12 +217,13 @@ namespace WebRTCServer
                 logger.LogDebug("DTLS negotiation complete.");
 
                 var srtpSendContext = new Srtp(dtls, false);
-                protectRtp = srtpSendContext.ProtectRTP;
-                protectRtcp = srtpSendContext.ProtectRTCP;
-
                 var srtpReceiveContext = new Srtp(dtls, true);
-                unprotectRtp = srtpReceiveContext.UnprotectRTP;
-                unprotectRtcp = srtpReceiveContext.UnprotectRTCP;
+
+                webRtcSession.RtpSession.SetSecurityContext(
+                    srtpSendContext.ProtectRTP,
+                    srtpReceiveContext.UnprotectRTP,
+                    srtpSendContext.ProtectRTCP,
+                    srtpReceiveContext.UnprotectRTCP);
 
                 if (_mfSampleGrabber.Paused)
                 {
@@ -352,6 +331,31 @@ namespace WebRTCServer
             catch (Exception excp)
             {
                 logger.LogWarning("Exception OnProcessSampleEvent. " + excp.Message);
+            }
+        }
+
+        /// <summary>
+        /// Diagnostic handler to print out our RTCP sender reports.
+        /// </summary>
+        private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
+        {
+            var sr = sentRtcpReport.SenderReport;
+            logger.LogDebug($"RTCP {mediaType} Sender Report: SSRC {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+        }
+
+        /// <summary>
+        /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
+        /// </summary>
+        private static void RtpSession_OnReceiveReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
+        {
+            var rr = recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
+            if (rr != null)
+            {
+                logger.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
+            }
+            else
+            {
+                logger.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
             }
         }
 

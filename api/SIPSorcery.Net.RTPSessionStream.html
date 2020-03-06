@@ -114,13 +114,13 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSessionStream__ctor_System_Int32_System_Int32_System_Collections_Generic_List_System_Int32__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSessionStream.%23ctor(System.Int32%2CSystem.Int32%2CSystem.Collections.Generic.List%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSessionStream__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_System_Collections_Generic_List_System_Int32__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSessionStream.%23ctor(SIPSorcery.Net.SDPMediaTypesEnum%2CSystem.Int32%2CSystem.Collections.Generic.List%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L65">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSessionStream__ctor_" data-uid="SIPSorcery.Net.RTPSessionStream.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_RTPSessionStream__ctor_System_Int32_System_Int32_System_Collections_Generic_List_System_Int32__" data-uid="SIPSorcery.Net.RTPSessionStream.#ctor(System.Int32,System.Int32,System.Collections.Generic.List{System.Int32})">RTPSessionStream(Int32, Int32, List&lt;Int32&gt;)</h4>
+  <h4 id="SIPSorcery_Net_RTPSessionStream__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_Int32_System_Collections_Generic_List_System_Int32__" data-uid="SIPSorcery.Net.RTPSessionStream.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.Int32,System.Collections.Generic.List{System.Int32})">RTPSessionStream(SDPMediaTypesEnum, Int32, List&lt;Int32&gt;)</h4>
   <div class="markdown level1 summary"><p>Creates a lightweight class to track an RTP stream within an RTP session. When
 supporting RFC3550 (the standard RTP specification) the relationship between
 an RTP stream and session is 1:1. For WebRTC and RFC8101 there can be multiple
@@ -129,7 +129,7 @@ streams per session.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public RTPSessionStream(int id, int payloadTypeID, List&lt;int&gt; remotePayloadIDs)</code></pre>
+    <pre><code class="lang-csharp hljs">public RTPSessionStream(SDPMediaTypesEnum mediaType, int payloadTypeID, List&lt;int&gt; remotePayloadIDs)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -142,10 +142,10 @@ streams per session.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td><span class="parametername">id</span></td>
-        <td><p>An internal monotonic ID to differentiate the streams belonging
-to a particular session.</p>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></td>
+        <td><span class="parametername">mediaType</span></td>
+        <td><p>The type of media for this stream. There can only be one
+stream per media type.</p>
 </td>
       </tr>
       <tr>
@@ -168,18 +168,18 @@ all streams in the same session.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSessionStream_ID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSessionStream.ID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSessionStream_MediaType.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSessionStream.MediaType%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L37">View Source</a>
   </span>
-  <a id="SIPSorcery_Net_RTPSessionStream_ID_" data-uid="SIPSorcery.Net.RTPSessionStream.ID*"></a>
-  <h4 id="SIPSorcery_Net_RTPSessionStream_ID" data-uid="SIPSorcery.Net.RTPSessionStream.ID">ID</h4>
+  <a id="SIPSorcery_Net_RTPSessionStream_MediaType_" data-uid="SIPSorcery.Net.RTPSessionStream.MediaType*"></a>
+  <h4 id="SIPSorcery_Net_RTPSessionStream_MediaType" data-uid="SIPSorcery.Net.RTPSessionStream.MediaType">MediaType</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public int ID { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public SDPMediaTypesEnum MediaType { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -191,7 +191,7 @@ all streams in the same session.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Int32</span></td>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></td>
         <td></td>
       </tr>
     </tbody>
@@ -336,6 +336,40 @@ is in this stream's list.</p>
       <tr>
         <td><span class="xref">System.Boolean</span></td>
         <td><p>True if the payload ID matches this stream. False if not.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSessionStream_UpdateRemotePayloadIDs_System_Collections_Generic_List_System_Int32__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSessionStream.UpdateRemotePayloadIDs(System.Collections.Generic.List%7BSystem.Int32%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L96">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSessionStream_UpdateRemotePayloadIDs_" data-uid="SIPSorcery.Net.RTPSessionStream.UpdateRemotePayloadIDs*"></a>
+  <h4 id="SIPSorcery_Net_RTPSessionStream_UpdateRemotePayloadIDs_System_Collections_Generic_List_System_Int32__" data-uid="SIPSorcery.Net.RTPSessionStream.UpdateRemotePayloadIDs(System.Collections.Generic.List{System.Int32})">UpdateRemotePayloadIDs(List&lt;Int32&gt;)</h4>
+  <div class="markdown level1 summary"><p>Updates the remote payload IDs for this session media type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void UpdateRemotePayloadIDs(List&lt;int&gt; remotePayloadIDs)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<span class="xref">System.Int32</span>&gt;</td>
+        <td><span class="parametername">remotePayloadIDs</span></td>
+        <td><p>The new list of remote payload IDs to match against.</p>
 </td>
       </tr>
     </tbody>

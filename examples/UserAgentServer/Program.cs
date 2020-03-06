@@ -153,13 +153,13 @@ namespace SIPSorcery
                         if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.G722)))
                         {
                             Log.LogDebug($"Using G722 RTP media type and audio file {AUDIO_FILE_G722}.");
-                            rtpSession = new RTPMediaSession((int)SDPMediaFormatsEnum.G722, dstRtpEndPoint.AddressFamily);
+                            rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, (int)SDPMediaFormatsEnum.G722, dstRtpEndPoint.AddressFamily);
                             audioFile = AUDIO_FILE_G722;
                         }
                         else if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
                         {
                             Log.LogDebug($"Using PCMU RTP media type and audio file {AUDIO_FILE_PCMU}.");
-                            rtpSession = new RTPMediaSession((int)SDPMediaFormatsEnum.PCMU, dstRtpEndPoint.AddressFamily);
+                            rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, (int)SDPMediaFormatsEnum.PCMU, dstRtpEndPoint.AddressFamily);
                             audioFile = AUDIO_FILE_PCMU;
                         }
 

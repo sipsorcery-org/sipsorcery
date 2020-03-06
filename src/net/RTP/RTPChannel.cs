@@ -131,7 +131,7 @@ namespace SIPSorcery.Net
             { }
             catch (Exception excp)
             {
-                logger.LogError($"Exception UdpReceiver.EndReceiveMessageFrom. {excp.Message}");
+                logger.LogError($"Exception UdpReceiver.EndReceiveMessageFrom. {excp}");
                 Close(excp.Message);
             }
             finally
@@ -176,7 +176,7 @@ namespace SIPSorcery.Net
 
         private static ILogger logger = Log.Logger;
 
-        public Socket m_rtpSocket;
+        public Socket RtpSocket { get; private set; }
         private UdpReceiver m_rtpReceiver;
         private Socket m_controlSocket;
         private UdpReceiver m_controlReceiver;
@@ -243,9 +243,10 @@ namespace SIPSorcery.Net
         {
             int startFrom = Crypto.GetRandomInt(RTP_PORT_START, RTP_PORT_END);
 
-            NetServices.CreateRtpSocket(localAddress, mediaStartPort, mediaEndPort, startFrom, createControlSocket, out m_rtpSocket, out m_controlSocket);
+            NetServices.CreateRtpSocket(localAddress, mediaStartPort, mediaEndPort, startFrom, createControlSocket, out var rtpSocket, out m_controlSocket);
 
-            RTPLocalEndPoint = m_rtpSocket.LocalEndPoint as IPEndPoint;
+            RtpSocket = rtpSocket;
+            RTPLocalEndPoint = RtpSocket.LocalEndPoint as IPEndPoint;
             RTPPort = RTPLocalEndPoint.Port;
             ControlLocalEndPoint = (m_controlSocket != null) ? m_controlSocket.LocalEndPoint as IPEndPoint : null;
             ControlPort = (m_controlSocket != null) ? ControlLocalEndPoint.Port : 0;
@@ -263,7 +264,7 @@ namespace SIPSorcery.Net
             {
                 m_started = true;
 
-                m_rtpReceiver = new UdpReceiver(m_rtpSocket);
+                m_rtpReceiver = new UdpReceiver(RtpSocket);
                 m_rtpReceiver.OnPacketReceived += OnRTPPacketRecived;
                 m_rtpReceiver.OnClosed += Close;
                 m_rtpReceiver.BeginReceive();
@@ -321,7 +322,7 @@ namespace SIPSorcery.Net
 
             try
             {
-                Socket sendSocket = m_rtpSocket;
+                Socket sendSocket = RtpSocket;
                 if (sendOn == RTPChannelSocketsEnum.Control)
                 {
                     LastControlDestination = dstEndPoint;
