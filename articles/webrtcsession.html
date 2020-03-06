@@ -70,9 +70,77 @@
 <h2 id="webrtc-session">WebRTC Session</h2>
 
 <p>The <a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> class is intended to be the equivalent of the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> available in WebRTC supporting Browsers.</p>
-<h3 id="using">Using</h3>
-<p>ToDo</p>
-<pre><code class="lang-csharp">
+<p><strong>NOTE</strong> the goal for <a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> class' public interface is to make it as close as possible to the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> interface. This is currently a work in progress.</p>
+<h3 id="usage">Usage</h3>
+<p>The steps involved in getting a WebRTC session to a state where RTP media packets can be exchanged are:</p>
+<ul>
+<li>Instantiate the <a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> instance,</li>
+<li>Add the audio and/or video tracks as required,</li>
+<li>Call the <code>createOffer</code> method to acquire an SDP offer that can be sent to the remote peer,</li>
+<li>Send the SDP offer and get the SDP answer from the remote peer (this exchange is not part of the WebRTC specification and can be done using any signalling layer, examples are SIP, web sockets etc),</li>
+<li>Once the SDP exchange has occurred the ICE checks occur to establish the optimal network path between the two peers (this happens under the hood, no explicit methods need to be called),</li>
+<li>Once ICE has established a the DTLS handshake is initiated by calling <code>DtlsHandshake.DoHandshakeAsServer</code>,</li>
+<li>If the DTLS handshake is successful the keying material it produces is used to initialise the SRTP contexts,</li>
+<li>After the SRTP contexts are initialised the media and RTCP packets can be exchanged in the normal manner.</li>
+</ul>
+<pre><code class="lang-csharp">using System;
+using System.Collections.Generic;
+using System.Net.Sockets;
+using System.Threading.Tasks;
+using SIPSorcery.Net;
+using SIPSorceryMedia;
+
+const string DTLS_CERTIFICATE_PATH = &quot;certs/localhost.pem&quot;;
+const string DTLS_KEY_PATH = &quot;certs/localhost_key.pem&quot;;
+const string DTLS_CERTIFICATE_FINGERPRINT = &quot;sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD&quot;;
+
+var webRtcSession = new WebRtcSession(
+        AddressFamily.InterNetwork,
+        DTLS_CERTIFICATE_FINGERPRINT,
+        null,
+        null);
+
+// Add the required media tracks to the session.
+webRtcSession.addTrack(SDPMediaTypesEnum.audio, new List&lt;SDPMediaFormat&gt; { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+webRtcSession.addTrack(SDPMediaTypesEnum.video, new List&lt;SDPMediaFormat&gt; { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+
+// Create our SDP offer.
+var offerSdp = await webRtcSession.createOffer();
+webRtcSession.setLocalDescription(offerSdp);
+            
+// Send our SDP offer to remote peer and get their SDP answer.
+//var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
+//webRtcSession.setRemoteDescription(SdpType.answer, answerSDP);
+
+// Once the SDP offer/answer exchange has happened the ICE negotiation can commence.
+// Once complete the DTLS handshake needs to occur to obtain the keying material to 
+// use to initialise the SRTP context.
+var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
+dtls.DoHandshakeAsServer((ulong)webRtcSession.RtpSession.RtpChannel.RtpSocket.Handle);
+
+if (dtls.IsHandshakeComplete())
+{
+    Console.WriteLine(&quot;DTLS handshake completed successfully.&quot;);
+
+    // The DTLS handshake completed successfully.
+    // Initialise the SRTP contexts for the RTP and RTCP sessions
+    // in this WebRTC session.
+    var srtpSendContext = new Srtp(dtls, false);
+    var srtpReceiveContext = new Srtp(dtls, true);
+
+    webRtcSession.RtpSession.SetSecurityContext(
+        srtpSendContext.ProtectRTP,
+        srtpReceiveContext.UnprotectRTP,
+        srtpSendContext.ProtectRTCP,
+        srtpReceiveContext.UnprotectRTCP);
+
+    webRtcSession.IsDtlsNegotiationComplete = true;
+}
+else
+{
+    Console.WriteLine(&quot;DTLS handshake failed.&quot;);
+    webRtcSession.Close(&quot;dtls failure&quot;);
+}
 </code></pre>
 </article>
           </div>

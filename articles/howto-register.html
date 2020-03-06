@@ -5,9 +5,9 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>How to Place a Call </title>
+    <title>How to Register </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="How to Place a Call ">
+    <meta name="title" content="How to Register ">
     <meta name="generator" content="docfx 2.49.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
@@ -67,9 +67,45 @@
         <div class="article row grid-right">
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
-<h2 id="how-to-place-a-call">How to Place a Call</h2>
+<h2 id="how-to-register">How to Register</h2>
 
 <p>The <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/UserAgentRegister">UserAgentRegister</a> contains an example of how to register a SIP account with a SIP Registrar.</p>
+<p>The key snippet of the code is shown below with an explanation afterwards.</p>
+<pre><code class="lang-csharp">using System;
+using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
+
+string USERNAME = &quot;softphonesample&quot;;
+string PASSWORD = &quot;password&quot;;
+string DOMAIN = &quot;sipsorcery.com&quot;;
+int EXPIRY = 120;
+
+var sipTransport = new SIPTransport();
+var regUserAgent = new SIPRegistrationUserAgent(sipTransport, USERNAME, PASSWORD, DOMAIN, EXPIRY);
+
+regUserAgent.RegistrationFailed += (uri, err) =&gt; Console.WriteLine($&quot;{uri.ToString()}: {err}&quot;);
+regUserAgent.RegistrationTemporaryFailure += (uri, msg) =&gt; Console.WriteLine($&quot;{uri.ToString()}: {msg}&quot;);
+regUserAgent.RegistrationRemoved += (uri) =&gt; Console.WriteLine($&quot;{uri.ToString()} registration failed.&quot;);
+regUserAgent.RegistrationSuccessful += (uri) =&gt; Console.WriteLine($&quot;{uri.ToString()} registration succeeded.&quot;);
+
+regUserAgent.Start();
+</code></pre>
+<h3 id="explanation">Explanation</h3>
+<p>The first step is to create a <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> to allocate a transport layer that can be used to send and receive SIP requests and responses. The <a class="xref" href="../api/SIPSorcery.SIP.SIPTransport.html">SIPTransport</a> class supports a number of different protocols and is described in this <a href="transport.html">article</a></p>
+<pre><code class="lang-csharp">var sipTransport = new SIPTransport();
+</code></pre>
+<p>Once the SIP transport is available a <a class="xref" href="../api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html">SIPRegistrationUserAgent</a> can be created.</p>
+<pre><code class="lang-csharp">var regUserAgent = new SIPRegistrationUserAgent(sipTransport, USERNAME, PASSWORD, DOMAIN, EXPIRY);
+</code></pre>
+<p>Various events for the <a class="xref" href="../api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html">SIPRegistrationUserAgent</a> can be subscribed to in order to track its operation.</p>
+<pre><code class="lang-csharp">regUserAgent.RegistrationFailed += (uri, err) =&gt; Console.WriteLine($&quot;{uri.ToString()}: {err}&quot;);
+regUserAgent.RegistrationTemporaryFailure += (uri, msg) =&gt; Console.WriteLine($&quot;{uri.ToString()}: {msg}&quot;);
+regUserAgent.RegistrationRemoved += (uri) =&gt; Console.WriteLine($&quot;{uri.ToString()} registration failed.&quot;);
+regUserAgent.RegistrationSuccessful += (uri) =&gt; Console.WriteLine($&quot;{uri.ToString()} registration succeeded.&quot;);
+</code></pre>
+<p>The last step is to start the registration agent. This will cause the first registration attempt to occur and depending on the outcome will also schedule subsequent retries.</p>
+<pre><code class="lang-csharp">regUserAgent.Start();
+</code></pre>
 </article>
           </div>
           

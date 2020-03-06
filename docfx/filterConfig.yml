@@ -1,4 +1,3 @@
 apiRules:
 - exclude:
-      uidRegex: ^Heijden\.*
-      
+      uidRegex: ^(Heijden|Microsoft)\.*
