@@ -36,7 +36,7 @@ namespace SIPSorcery.SIP
         public static int CONNECTION_ID_LENGTH = 7; // Length of the random numeric string to use for connection ID's.
 
         /// <summary>
-        /// The underlying TCP socket for the stream connection. To take adavantage of newer async TCP IO operations the
+        /// The underlying TCP socket for the stream connection. To take advantage of newer async TCP IO operations the
         /// RecvSocketArgs is used for TCP channel receives. 
         /// </summary>
         public Socket StreamSocket;
@@ -69,12 +69,12 @@ namespace SIPSorcery.SIP
         public DateTime LastTransmission;
 
         /// <summary>
-        /// The current start position of unprocessed data in the recceive buffer.
+        /// The current start position of unprocessed data in the receive buffer.
         /// </summary>
         public int RecvStartPosn { get; private set; }
 
         /// <summary>
-        /// The current end position of unprocessed data in the recceive buffer.
+        /// The current end position of unprocessed data in the receive buffer.
         /// </summary>
         public int RecvEndPosn { get; private set; }
 
@@ -90,7 +90,7 @@ namespace SIPSorcery.SIP
         public event SIPMessageReceivedAsyncDelegate SIPMessageReceived;
 
         /// <summary>
-        /// Records the crucial stream connection properties and initialises teh required buffers.
+        /// Records the crucial stream connection properties and initialises the required buffers.
         /// </summary>
         /// <param name="streamSocket">The local socket the stream is using.</param>
         /// <param name="remoteEndPoint">The remote network end point of this connection.</param>

@@ -34,7 +34,7 @@ namespace SIPSorcery.SoftPhone
         private WaveInEvent m_waveInEvent;          // Device used to get audio sample from, e.g. microphone.
         private WaveOut m_waveOut;                  // Device used to play audio samples, e.g. speaker.
         private WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);   // The format that both the input and output audio streams will use, i.e. PCMU.
-        private bool _recordingStarted;            // When true indicates that the input device has been opended to start receiving samples.
+        private bool _recordingStarted;            // When true indicates that the input device has been opened to start receiving samples.
 
         public readonly List<SDPMediaFormat> SupportedAudioTypes = new List<SDPMediaFormat>() { new SDPMediaFormat((int)SDPMediaFormatsEnum.PCMU) };
 

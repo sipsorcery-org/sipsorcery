@@ -1,0 +1,777 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class SIPResponse
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class SIPResponse
+   ">
+    <meta name="generator" content="docfx 2.48.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.SIP.SIPResponse">
+  
+  
+  <h1 id="SIPSorcery_SIP_SIPResponse" data-uid="SIPSorcery.SIP.SIPResponse" class="text-break">Class SIPResponse
+  </h1>
+  <div class="markdown level0 summary"><p>Represents a SIP Response.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html">SIPMessageBase</a></div>
+    <div class="level2"><span class="xref">SIPResponse</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_logger">SIPMessageBase.logger</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_m_CRLF">SIPMessageBase.m_CRLF</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_m_sipFullVersion">SIPMessageBase.m_sipFullVersion</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_m_allowedSIPMethods">SIPMessageBase.m_allowedSIPMethods</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Header">SIPMessageBase.Header</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Body">SIPMessageBase.Body</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_Created">SIPMessageBase.Created</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_RemoteSIPEndPoint">SIPMessageBase.RemoteSIPEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_LocalSIPEndPoint">SIPMessageBase.LocalSIPEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SendFromHintChannelID">SIPMessageBase.SendFromHintChannelID</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SendFromHintConnectionID">SIPMessageBase.SendFromHintConnectionID</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.html">SIPSorcery.SIP</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_SIP_SIPResponse_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class SIPResponse : SIPMessageBase</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse__ctor_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.%23ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L70">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPResponse__ctor_" data-uid="SIPSorcery.SIP.SIPResponse.#ctor*"></a>
+  <h4 id="SIPSorcery_SIP_SIPResponse__ctor_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_" data-uid="SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)">SIPResponse(SIPResponseStatusCodesEnum, String)</h4>
+  <div class="markdown level1 summary"><p>SIPResponse Constructor.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPResponse(SIPResponseStatusCodesEnum responseStatus, string reasonPhrase)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPResponseStatusCodesEnum.html">SIPResponseStatusCodesEnum</a></td>
+        <td><span class="parametername">responseStatus</span></td>
+        <td><p>The status code for the response.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">reasonPhrase</span></td>
+        <td><p>Optional description for the response. Should be kept short.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse__ctor_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.%23ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSystem.String%2CSIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L89">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPResponse__ctor_" data-uid="SIPSorcery.SIP.SIPResponse.#ctor*"></a>
+  <h4 id="SIPSorcery_SIP_SIPResponse__ctor_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.SIPResponse.#ctor(SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint)">SIPResponse(SIPResponseStatusCodesEnum, String, SIPEndPoint, SIPEndPoint)</h4>
+  <div class="markdown level1 summary"><p>SIPResponse Constructor.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;The local and remote SIP end points are now only for recording receiving sockets. Use the new send from hint proprties.&quot;, true)]
+public SIPResponse(SIPResponseStatusCodesEnum responseStatus, string reasonPhrase, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPResponseStatusCodesEnum.html">SIPResponseStatusCodesEnum</a></td>
+        <td><span class="parametername">responseStatus</span></td>
+        <td><p>The status code for the response.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">reasonPhrase</span></td>
+        <td><p>Optional description for the response. Should be kept short.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
+        <td><span class="parametername">localSIPEndPoint</span></td>
+        <td><p>The local SIP end point the response was received on or should be sent from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
+        <td><span class="parametername">remoteSIPEndPoint</span></td>
+        <td><p>Optional remote SIP end point the response came from or should be sent to.
+If set as null the SIP transport layer will attempt to resolve the remote end point using the response's headers.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_ReasonPhrase.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.ReasonPhrase%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L52">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_SIPResponse_ReasonPhrase" data-uid="SIPSorcery.SIP.SIPResponse.ReasonPhrase">ReasonPhrase</h4>
+  <div class="markdown level1 summary"><p>The optional reason phrase for the SIP response.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string ReasonPhrase</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_SIPVersion.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.SIPVersion%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L37">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_SIPResponse_SIPVersion" data-uid="SIPSorcery.SIP.SIPResponse.SIPVersion">SIPVersion</h4>
+  <div class="markdown level1 summary"><p>The version string for the SIP response.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string SIPVersion</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_Status.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.Status%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L42">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_SIPResponse_Status" data-uid="SIPSorcery.SIP.SIPResponse.Status">Status</h4>
+  <div class="markdown level1 summary"><p>The status of the SIP response, e.g OK or NotAuthorized.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPResponseStatusCodesEnum Status</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPResponseStatusCodesEnum.html">SIPResponseStatusCodesEnum</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_StatusCode.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.StatusCode%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L47">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_SIPResponse_StatusCode" data-uid="SIPSorcery.SIP.SIPResponse.StatusCode">StatusCode</h4>
+  <div class="markdown level1 summary"><p>The status code of the SIP response, e.g. 200 for an OK response.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int StatusCode</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_ShortDescription.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.ShortDescription%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L57">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPResponse_ShortDescription_" data-uid="SIPSorcery.SIP.SIPResponse.ShortDescription*"></a>
+  <h4 id="SIPSorcery_SIP_SIPResponse_ShortDescription" data-uid="SIPSorcery.SIP.SIPResponse.ShortDescription">ShortDescription</h4>
+  <div class="markdown level1 summary"><p>A short one line summary of the SIP response. Useful for logging or diagnostics.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string ShortDescription { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_Copy.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.Copy%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L196">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPResponse_Copy_" data-uid="SIPSorcery.SIP.SIPResponse.Copy*"></a>
+  <h4 id="SIPSorcery_SIP_SIPResponse_Copy" data-uid="SIPSorcery.SIP.SIPResponse.Copy">Copy()</h4>
+  <div class="markdown level1 summary"><p>Creates an identical copy of the SIP Response for the caller.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPResponse Copy()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a></td>
+        <td><p>New copy of the SIPResponse.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_GetResponse_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.GetResponse(SIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPEndPoint%2CSIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L289">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPResponse_GetResponse_" data-uid="SIPSorcery.SIP.SIPResponse.GetResponse*"></a>
+  <h4 id="SIPSorcery_SIP_SIPResponse_GetResponse_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPEndPoint_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_" data-uid="SIPSorcery.SIP.SIPResponse.GetResponse(SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPEndPoint,SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)">GetResponse(SIPEndPoint, SIPEndPoint, SIPResponseStatusCodesEnum, String)</h4>
+  <div class="markdown level1 summary"><p>Used to create a SIP response for a request when it was not possible to parse the incoming SIP request.
+The response generated by this method may or may not make it back to the requester. Because the SIP
+request could not be parsed there are no Via headers available and without those the return network
+path is missing. Instead a new Via header is generated that may get through if the requester is only
+one SIP hop away.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SIPResponse GetResponse(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint, SIPResponseStatusCodesEnum responseCode, string reasonPhrase)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
+        <td><span class="parametername">localSIPEndPoint</span></td>
+        <td><p>The local SIP end point the request was received on.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
+        <td><span class="parametername">remoteSIPEndPoint</span></td>
+        <td><p>The remote SIP end point the request was received on.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPResponseStatusCodesEnum.html">SIPResponseStatusCodesEnum</a></td>
+        <td><span class="parametername">responseCode</span></td>
+        <td><p>The response code to set on the response.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">reasonPhrase</span></td>
+        <td><p>Optional reason phrase to set on the response (keep short).</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_GetResponse_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.GetResponse(SIPSorcery.SIP.SIPRequest%2CSIPSorcery.SIP.SIPResponseStatusCodesEnum%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L236">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPResponse_GetResponse_" data-uid="SIPSorcery.SIP.SIPResponse.GetResponse*"></a>
+  <h4 id="SIPSorcery_SIP_SIPResponse_GetResponse_SIPSorcery_SIP_SIPRequest_SIPSorcery_SIP_SIPResponseStatusCodesEnum_System_String_" data-uid="SIPSorcery.SIP.SIPResponse.GetResponse(SIPSorcery.SIP.SIPRequest,SIPSorcery.SIP.SIPResponseStatusCodesEnum,System.String)">GetResponse(SIPRequest, SIPResponseStatusCodesEnum, String)</h4>
+  <div class="markdown level1 summary"><p>Helper method to create a SIP response for a SIP request. This method can be thought of as creating a
+vanilla (or no frills) response for a request. It's suitable for generating error responses. For requests that
+require an action such as creating a call or registering a contact the response will require additional
+information and this method will not be suitable.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SIPResponse GetResponse(SIPRequest sipRequest, SIPResponseStatusCodesEnum responseCode, string reasonPhrase)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPRequest.html">SIPRequest</a></td>
+        <td><span class="parametername">sipRequest</span></td>
+        <td><p>The SIP request to create the response for.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPResponseStatusCodesEnum.html">SIPResponseStatusCodesEnum</a></td>
+        <td><span class="parametername">responseCode</span></td>
+        <td><p>The response code.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">reasonPhrase</span></td>
+        <td><p>Optional reason phrase to set on the response (needs to be short).</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a></td>
+        <td><p>A SIP response object.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_ParseSIPResponse_SIPSorcery_SIP_SIPMessageBuffer_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessageBuffer)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L110">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPResponse_ParseSIPResponse_" data-uid="SIPSorcery.SIP.SIPResponse.ParseSIPResponse*"></a>
+  <h4 id="SIPSorcery_SIP_SIPResponse_ParseSIPResponse_SIPSorcery_SIP_SIPMessageBuffer_" data-uid="SIPSorcery.SIP.SIPResponse.ParseSIPResponse(SIPSorcery.SIP.SIPMessageBuffer)">ParseSIPResponse(SIPMessageBuffer)</h4>
+  <div class="markdown level1 summary"><p>Parses a SIP response from a SIP message object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SIPResponse ParseSIPResponse(SIPMessageBuffer sipMessageBuffer)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPMessageBuffer.html">SIPMessageBuffer</a></td>
+        <td><span class="parametername">sipMessageBuffer</span></td>
+        <td><p>The SIP message to parse a response from.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a></td>
+        <td><p>A new SIP response object.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_ParseSIPResponse_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.ParseSIPResponse(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L149">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPResponse_ParseSIPResponse_" data-uid="SIPSorcery.SIP.SIPResponse.ParseSIPResponse*"></a>
+  <h4 id="SIPSorcery_SIP_SIPResponse_ParseSIPResponse_System_String_" data-uid="SIPSorcery.SIP.SIPResponse.ParseSIPResponse(System.String)">ParseSIPResponse(String)</h4>
+  <div class="markdown level1 summary"><p>Parses a SIP response from a string.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static SIPResponse ParseSIPResponse(string sipMessageStr)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">sipMessageStr</span></td>
+        <td><p>The string to parse the SIP response from.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a></td>
+        <td><p>A new SIP response object.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_SetSendFromHints_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.SetSendFromHints(SIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L220">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPResponse_SetSendFromHints_" data-uid="SIPSorcery.SIP.SIPResponse.SetSendFromHints*"></a>
+  <h4 id="SIPSorcery_SIP_SIPResponse_SetSendFromHints_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.SIPResponse.SetSendFromHints(SIPSorcery.SIP.SIPEndPoint)">SetSendFromHints(SIPEndPoint)</h4>
+  <div class="markdown level1 summary"><p>Sets the send from hints for this response based on a local SIP end point.
+The local SIP end point should generally be the one a related request or response was
+received on.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetSendFromHints(SIPEndPoint localEndPoint)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
+        <td><span class="parametername">localEndPoint</span></td>
+        <td><p>The SIP end point to base the send from hints on.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse_ToString.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse.ToString%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L172">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPResponse_ToString_" data-uid="SIPSorcery.SIP.SIPResponse.ToString*"></a>
+  <h4 id="SIPSorcery_SIP_SIPResponse_ToString" data-uid="SIPSorcery.SIP.SIPResponse.ToString">ToString()</h4>
+  <div class="markdown level1 summary"><p>Returns a string representing the full SIP response.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override string ToString()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><p>A string representation of the SIP response.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.ToString()</span></div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPResponse.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPResponse%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPResponse.cs/#L32" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

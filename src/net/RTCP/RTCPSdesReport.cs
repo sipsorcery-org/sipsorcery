@@ -108,7 +108,7 @@ namespace SIPSorcery.Net
             }
             else if(packet[8] != CNAME_ID)
             {
-                throw new ApplicationException("The RTCP report packet did not have the requried CNAME type field set correctly.");
+                throw new ApplicationException("The RTCP report packet did not have the required CNAME type field set correctly.");
             }
 
             Header = new RTCPHeader(packet);

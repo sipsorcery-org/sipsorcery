@@ -80,5 +80,25 @@ namespace SIPSorcery.Sys
         {
             return GetStringPosition(buffer, startPosition, endPosition, find, end) != -1;
         }
+
+        public static string HexStr(byte[] buffer)
+        {
+            return HexStr(buffer, buffer.Length);
+        }
+
+        public static string HexStr(byte[] buffer, int length)
+        {
+            // Each byte requires 2 characters. Add one additional byte to hold the null termination char.
+            string hexStr = null;
+
+            char[] hexmap = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+
+            for (int i = 0; i < length; i++)
+            {
+                hexStr += buffer[i].ToString("X2");
+            }
+
+            return hexStr;
+        }
     }
 }

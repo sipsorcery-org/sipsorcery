@@ -8,7 +8,7 @@
 // Alphons van der Heijden
 //
 // History:
-// 28 Mar 2008	Aaron Clauson   Added to sipwitch code base.
+// 28 Mar 2008	Aaron Clauson   Added to sipswitch code base.
 // 14 Oct 2019  Aaron Clauson   Synchronised with latest version of source from at https://www.codeproject.com/Articles/23673/DNS-NET-Resolver-C.
 //
 // License:

@@ -29,13 +29,13 @@ namespace SIPSorcery.SIP.App
     /// This class represent a client for a SIP notifier server. The client can subscribe to notifications from the
     /// server as outlined in RFC3265. The generic parameter is used to set the type of notification the client will
     /// generate. Different SIP event packages have different ways of representing their data. For example RFC4235
-    /// uses XML to convey dialog notifications, RFC3842 uses plain text to convery message waiting indications.
+    /// uses XML to convey dialog notifications, RFC3842 uses plain text to convey message waiting indications.
     /// </summary>
     public class SIPNotifierClient<T> where T : SIPEvent, new()
     {
         private const int DEFAULT_SUBSCRIBE_EXPIRY = 300;       // The default value to request on subscription requests.
                                                                 //private const int RETRY_POST_FAILURE_INTERVAL = 300;    // The interval to retry the subscription after a failure response or timeout.
-        private const int RESCHEDULE_SUBSCRIBE_MARGIN = 10;     // Reschedule subsequent subscriptions with a small amrgin to try and ensure there is no gap.
+        private const int RESCHEDULE_SUBSCRIBE_MARGIN = 10;     // Reschedule subsequent subscriptions with a small margin to try and ensure there is no gap.
         private const int MAX_SUBSCRIBE_ATTEMPTS = 4;           // The maximum number of subscribe attempts that will be made without a failure condition before incurring a temporary failure.
 
         private static readonly string m_filterTextType = SIPMIMETypes.MWI_TEXT_TYPE;
@@ -230,7 +230,7 @@ namespace SIPSorcery.SIP.App
             {
                 if (m_attempts >= MAX_SUBSCRIBE_ATTEMPTS)
                 {
-                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.NotifierClient, SIPMonitorEventTypesEnum.SubscribeFailed, "Susbcription to " + subscribeURI.ToString() + " reached the maximum number of allowed attempts without a failure condition.", null));
+                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.NotifierClient, SIPMonitorEventTypesEnum.SubscribeFailed, "Subscription to " + subscribeURI.ToString() + " reached the maximum number of allowed attempts without a failure condition.", null));
                     m_subscribed = false;
                     SubscriptionFailed(subscribeURI, SIPResponseStatusCodesEnum.InternalServerError, "Subscription reached the maximum number of allowed attempts.");
                     m_waitForSubscribeResponse.Set();
@@ -305,14 +305,14 @@ namespace SIPSorcery.SIP.App
                 }
                 else if (sipResponse.Status == SIPResponseStatusCodesEnum.Forbidden)
                 {
-                    // The susbcription is never going to succeed so ccancel it.
+                    // The subscription is never going to succeed so cancel it.
                     SubscriptionFailed(m_resourceURI, sipResponse.Status, "A Forbidden response was received on a subscribe attempt to " + m_resourceURI.ToString() + " for user " + m_authUsername + ".");
                     m_exit = true;
                     m_waitForSubscribeResponse.Set();
                 }
                 else if (sipResponse.Status == SIPResponseStatusCodesEnum.BadEvent)
                 {
-                    // The susbcription is never going to succeed so ccancel it.
+                    // The subscription is never going to succeed so cancel it.
                     SubscriptionFailed(m_resourceURI, sipResponse.Status, "A BadEvent response was received on a subscribe attempt to " + m_resourceURI.ToString() + " for event package " + m_sipEventPackage.ToString() + ".");
                     m_exit = true;
                     m_waitForSubscribeResponse.Set();

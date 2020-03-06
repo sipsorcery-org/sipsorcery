@@ -1,0 +1,178 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Sending DTMF </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Sending DTMF ">
+    <meta name="generator" content="docfx 2.48.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="">
+<h2 id="sending-dtmf">Sending DTMF</h2>
+
+<p>The <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/SendDtmf">SendDtmf</a> contains an example of how to send DTMF tones using RTP events as specified in <a href="https://tools.ietf.org/html/rfc2833">RFC2833</a>.</p>
+<p>The send DTMF example is based on the <a href="https://github.com/sipsorcery/sipsorcery/tree/master/examples/UserAgentClient">UserAgentClient example</a>. The difference is that the RTP stream from is now hard coded to send silence with 3 DTMF tones interspersed. The mechanism used to send the DTMF tones is to add them to a queue which is monitored by the thread generating the RTP stream.</p>
+<p>The code that adds the DTMF events to the queue is shown below. The first byte in the <code>RTPEvent</code> constructor is the DTMF tone to send. The fourth parameter is the duration of the tone. The duration is not critical but is useful to allow multiple RTP event packets to be generated and minimise the likelihood of the event being lost on an unreliable transport such as UDP.</p>
+<pre><code class="lang-csharp">// Add some DTMF events to the queue. These will be transmitted by the SendRtp thread.
+_dtmfEvents.Enqueue(new RTPEvent(0x05, false, RTPEvent.DEFAULT_VOLUME, 1200, DTMF_EVENT_PAYLOAD_ID));
+Task.Delay(2000, rtpCts.Token).Wait();
+_dtmfEvents.Enqueue(new RTPEvent(0x09, false, RTPEvent.DEFAULT_VOLUME, 1200, DTMF_EVENT_PAYLOAD_ID));
+Task.Delay(2000, rtpCts.Token).Wait();
+_dtmfEvents.Enqueue(new RTPEvent(0x02, false, RTPEvent.DEFAULT_VOLUME, 1200, DTMF_EVENT_PAYLOAD_ID));
+Task.Delay(2000, rtpCts.Token).Wait();
+</code></pre>
+<p>The <code>SendRtp</code> method shown below is what takes the events off the queue and hands them over to the <code>RTPSession</code> for transmitting. It's important to note that for the duration of the event it's the only thing being sent. The original media stream is interrupted. In this example that's not noticeable since the original media stream is silence.</p>
+<pre><code class="lang-csharp">private static async void SendRtp(Socket rtpSocket, RTPSession rtpSendSession, CancellationTokenSource cts)
+{
+	int samplingFrequency = RTPPayloadTypes.GetSamplingFrequency(rtpSendSession.PayloadType);
+	uint rtpTimestampStep = (uint)(samplingFrequency * SILENCE_SAMPLE_PERIOD / 1000);
+	uint bufferSize = (uint)SILENCE_SAMPLE_PERIOD;
+	uint rtpSendTimestamp = 0;
+	uint packetSentCount = 0;
+	uint bytesSentCount = 0;
+
+	while (cts.IsCancellationRequested == false)
+	{
+		if (_remoteRtpEndPoint != null)
+		{
+			if (!_dtmfEvents.IsEmpty)
+			{
+				// Check if there are any DTMF events to send.
+				_dtmfEvents.TryDequeue(out var rtpEvent);
+				if(rtpEvent != null)
+				{
+					await rtpSendSession.SendDtmfEvent(rtpSocket, _remoteRtpEndPoint, rtpEvent, rtpSendTimestamp, (ushort)SILENCE_SAMPLE_PERIOD, (ushort)rtpTimestampStep, cts);
+				}
+				rtpSendTimestamp += rtpEvent.TotalDuration + rtpTimestampStep;
+			}
+			else
+			{
+				// If there are no DTMF events to send we'll send silence.
+
+				byte[] sample = new byte[bufferSize / 2];
+				int sampleIndex = 0;
+
+				for (int index = 0; index &lt; bufferSize; index += 2)
+				{
+					sample[sampleIndex] = PCMU_SILENCE_BYTE_ZERO;
+					sample[sampleIndex + 1] = PCMU_SILENCE_BYTE_ONE;
+				}
+
+				rtpSendSession.SendAudioFrame(rtpSocket, _remoteRtpEndPoint, rtpSendTimestamp, sample);
+				rtpSendTimestamp += rtpTimestampStep;
+				packetSentCount++;
+				bytesSentCount += (uint)sample.Length;
+			}
+		}
+
+		await Task.Delay(SILENCE_SAMPLE_PERIOD);
+	}
+}
+</code></pre>
+<p>If you have an <a href="https://www.asterisk.org/">Asterisk</a> server available a handy dialplan that has been tested with the send DTMF example program is shown below. If all goes well when you run the sample you should hear the DTMF digits read back to you.</p>
+<pre><code class="lang-bash">exten =&gt; *63,1(start),Gotoif($[ &quot;${LEN(${extensao})}&quot; &lt; &quot;5&quot;]?collect:bye)
+exten =&gt; *63,n(collect),Read(digito,,1)
+exten =&gt; *63,n,SayDigits(${digito})
+exten =&gt; *63,n,Set(extensao=${extensao}${digito})
+exten =&gt; *63,n,GoTo(start)
+exten =&gt; *63,n(bye),Playback(&quot;vm-goodbye&quot;)
+exten =&gt; *63,n,hangup()
+</code></pre>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/docfx/articles/senddtmf.md/#L1" class="contribution-link">Improve this Doc</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

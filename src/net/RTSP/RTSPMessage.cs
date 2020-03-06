@@ -60,7 +60,7 @@ namespace SIPSorcery.Net
                 }
                 else if (!ByteBufferInfo.HasString(buffer, 0, buffer.Length, RTSP_MESSAGE_IDENTIFIER, m_CRLF))
                 {
-                    // Message does not contain "RTSP" anywhrere on the first line, ignore.
+                    // Message does not contain "RTSP" anywhere on the first line, ignore.
                     return null;
                 }
                 else

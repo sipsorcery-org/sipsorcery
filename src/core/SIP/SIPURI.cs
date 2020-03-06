@@ -23,7 +23,7 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.SIP
 {
     /// <summary>
-    /// Implements the the SIP URI concept from the SIP RFC3261.
+    /// Implements the SIP URI concept from the SIP RFC3261.
     /// </summary>
     [DataContract]
     public class SIPURI
@@ -62,8 +62,8 @@ namespace SIPSorcery.SIP
         public SIPParameters Headers = new SIPParameters();
 
         /// <summary>
-        /// The protocol for a SIP URI is dicatated by the scheme of the URI and then by the transport parameter and finally by the 
-        /// use fo a default protocol. If the URI is a sips one then the protocol must be TLS. After that if there is a transport
+        /// The protocol for a SIP URI is dictated by the scheme of the URI and then by the transport parameter and finally by the 
+        /// use of a default protocol. If the URI is a sips one then the protocol must be TLS. After that if there is a transport
         /// parameter specified for the URI it dictates the protocol for the URI. Finally if there is no transport parameter for a sip
         /// URI then the default UDP transport is used.
         /// </summary>
@@ -135,7 +135,7 @@ namespace SIPSorcery.SIP
         {
             get
             {
-                //rj2: colon might be IPv6 delimeter, not port delimeter, check first against IPv6 with Port notation, and then the occurance of multiple colon
+                //rj2: colon might be IPv6 delimiter, not port delimiter, check first against IPv6 with Port notation, and then the occurrence of multiple colon
                 if (Host.IndexOf("]:") > 0)
                 {
                     return Host.Substring(0, Host.IndexOf("]:") + 1);
@@ -189,7 +189,7 @@ namespace SIPSorcery.SIP
         {
             get
             {
-                //rj2: colon might be IPv6 delimeter, not port delimeter, check first against IPv6 with Port notation, and then the occurance of multiple colon
+                //rj2: colon might be IPv6 delimiter, not port delimiter, check first against IPv6 with Port notation, and then the occurrence of multiple colon
                 if (Host.IndexOf("]:") > 0)
                 {
                     return Host.Substring(Host.IndexOf("]:") + 2);
@@ -350,7 +350,7 @@ namespace SIPSorcery.SIP
                             }
                             else if (sipURI.Host.IndexOf(':') != sipURI.Host.LastIndexOf(':'))
                             {
-                                // If the host contains multiple ':' characters then it must be an IPv6 address which require a start '[' and and end ']'.
+                                // If the host contains multiple ':' characters then it must be an IPv6 address which require a start '[' and an end ']'.
                                 if (sipURI.Host.ToCharArray()[0] != '[')
                                 {
                                     throw new SIPValidationException(SIPValidationFieldsEnum.URI, "The SIP URI host portion contained an IPv6 address that was missing the start '['.");
@@ -456,11 +456,11 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Returns a string representation of the URI with any parameter and headers ommitted except for the transport
-        /// parameter. The string returned by this function is used amonst other things to match Route headers set by this
+        /// Returns a string representation of the URI with any parameter and headers omitted except for the transport
+        /// parameter. The string returned by this function is used amongst other things to match Route headers set by this
         /// SIP agent.
         /// </summary>
-        /// <returns>A string represenation of the URI with headers and parameteres ommitted except for the trnaport parameter if it is required.</returns>
+        /// <returns>A string representation of the URI with headers and parameters omitted except for the transport parameter if it is required.</returns>
         public string ToParameterlessString()
         {
             try

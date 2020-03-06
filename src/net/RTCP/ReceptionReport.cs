@@ -85,8 +85,8 @@ namespace SIPSorcery.Net
         /// <param name="ssrc">The synchronisation source this reception report is for.</param>
         /// <param name="fractionLost">The fraction of RTP packets lost since the previous Sender or Receiver
         /// Report was sent.</param>
-        /// <param name="packetsLost">The total number of RTP pakcets that have been lost since the
-        /// begining of reception.</param>
+        /// <param name="packetsLost">The total number of RTP packets that have been lost since the
+        /// beginning of reception.</param>
         /// <param name="highestSeqNum">Extended highest sequence number received from source.</param>
         /// <param name="jitter">Interarrival jitter of the RTP packets received within the last reporting period.</param>
         /// <param name="lastSRTimestamp">The timestamp from the most recent RTCP Sender Report packet
@@ -263,7 +263,7 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Carries out the calcaulations required to measure properties related to the reception of 
+        /// Carries out the calculations required to measure properties related to the reception of 
         /// received RTP packets. The algorithms employed are:
         ///  - RFC3550 A.1 RTP Data Header Validity Checks (for sequence number calculations).
         ///  - RFC3550 A.3 Determining Number of Packets Expected and Lost.

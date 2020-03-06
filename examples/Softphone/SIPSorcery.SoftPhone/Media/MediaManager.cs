@@ -74,11 +74,11 @@ namespace SIPSorcery.SoftPhone
         public event Action<string> OnLocalVideoError = delegate { };
 
         /// <summary>
-        /// This class manages different media renderers that can be included in a call, e.g. audio and video.
+        /// This class manages different media renderer's that can be included in a call, e.g. audio and video.
         /// </summary>
         /// <param name="dispatcher">Need a UI dispatcher so tasks can be executed on the UI thread. For example this object
         /// gets created when a button is clicked on and is therefore owned by the UI thread. When a call transfer completes the
-        /// resources need to be closed without any UI interaction. In that case need to marshal cak to the UI thread.</param>
+        /// resources need to be closed without any UI interaction. In that case need to marshal back to the UI thread.</param>
         /// <param name="useVideo">Set to true if the current call is going to be using video.</param>
         public MediaManager(Dispatcher dispatcher, bool useVideo = false)
         {

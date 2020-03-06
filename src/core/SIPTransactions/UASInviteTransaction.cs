@@ -169,7 +169,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Cancels this transaction stopping any further processing or transmission of a preivously
+        /// Cancels this transaction stopping any further processing or transmission of a previously
         /// generated final response.
         /// </summary>
         /// <returns>A socket error with the result of the cancel.</returns>

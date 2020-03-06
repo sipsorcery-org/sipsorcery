@@ -375,7 +375,7 @@ namespace SIPSorcery.SIP.UnitTests
         /// - Create a SIP TCP channel to listen on a random end point.
         /// - Repeat N times:
         ///   - Initiate a connection from the SIP TCP channel to the listening server,
-        ///   - The server will acecpt the connection and create a new OPTIONS request and send it 
+        ///   - The server will accept the connection and create a new OPTIONS request and send it 
         ///     to the client socket.
         ///   - The connection is closed.
         /// - Keep track of the number of requests that are received from the SIP TCP channel initiated
@@ -539,7 +539,7 @@ namespace SIPSorcery.SIP.UnitTests
         }
 
         /// <summary>
-        /// Initialises a SIP tranpsort to act as the client in a single request/response exchange.
+        /// Initialises a SIP transport to act as the client in a single request/response exchange.
         /// </summary>
         /// <param name="testClientChannel">The client SIP channel to test.</param>
         /// <param name="serverUri">The URI of the server end point to test the client against.</param>

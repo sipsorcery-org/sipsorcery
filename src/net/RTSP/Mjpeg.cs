@@ -197,7 +197,7 @@ namespace SIPSorcery.Net
             result.Add(0x00);//No thumb
             result.Add(0x00);//Thumb Data
 
-            //Data Restart Invertval
+            //Data Restart Invert val
             if (dri > 0)
             {
                 result.AddRange(CreateDataRestartIntervalMarker(dri));
@@ -305,8 +305,8 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Creates a Jpeg QuantizationTableMarker for each table given in the tables
         /// </summary>
-        /// <param name="tables">The tables verbatim, either 1 or 2 (Lumiance and Chromiance)</param>
-        /// <returns>The table with marker and perfix/returns>
+        /// <param name="tables">The tables verbatim, either 1 or 2 (Luminance and Chrominance)</param>
+        /// <returns>The table with marker and prefix/returns>
         static byte[] CreateQuantizationTablesMarker(ArraySegment<byte> tables, byte precision)
         {
             //List<byte> result = new List<byte>();
@@ -330,7 +330,7 @@ namespace SIPSorcery.Net
             result[3] = (byte)(tableSize + 3);
             result[4] = (byte)(precision << 4 | 0); // Precision and TableId
 
-            //First table. Type - Lumiance usually when two
+            //First table. Type - Luminance usually when two
             System.Array.Copy(tables.Array, tables.Offset, result, 5, tableSize);
 
             if (tableCount > 1)
@@ -341,7 +341,7 @@ namespace SIPSorcery.Net
                 result[tableSize + 8] = (byte)(tableSize + 3);
                 result[tableSize + 9] = (byte)(precision << 4 | 1);//Precision 0, and table Id
 
-                //Second Table. Type - Chromiance usually when two
+                //Second Table. Type - Chrominance usually when two
                 System.Array.Copy(tables.Array, tables.Offset + tableSize, result, 10 + tableSize, tableSize);
             }
 
@@ -353,7 +353,7 @@ namespace SIPSorcery.Net
             List<byte> result = new List<byte>();
             result.Add(Tags.Prefix);
             result.Add(Tags.HuffmanTable);
-            result.Add(0x00); //Legnth
+            result.Add(0x00); //Length
             result.Add((byte)(3 + codeLens.Length + symbols.Length)); //Length
             result.Add((byte)((tableClass << 4) | tableNo)); //Id
             result.AddRange(codeLens);//Data

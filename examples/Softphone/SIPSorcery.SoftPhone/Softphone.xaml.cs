@@ -135,7 +135,6 @@ namespace SIPSorcery.SoftPhone
             _sipRegistrationClient = new SIPRegistrationUserAgent(
             _sipTransportManager.SIPTransport,
             null,
-            null,
             new SIPURI(m_sipUsername, m_sipServer, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp),
             m_sipUsername,
             m_sipPassword,
@@ -143,8 +142,6 @@ namespace SIPSorcery.SoftPhone
             m_sipServer,
             new SIPURI(m_sipUsername, IPAddress.Any.ToString(), null),
             180,
-            null,
-            null,
             (message) => { logger.Debug(message); });
 
             _sipRegistrationClient.Start();

@@ -1,0 +1,1038 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class SIPUserAgent
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class SIPUserAgent
+   ">
+    <meta name="generator" content="docfx 2.48.1.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.SIP.App.SIPUserAgent">
+  
+  
+  <h1 id="SIPSorcery_SIP_App_SIPUserAgent" data-uid="SIPSorcery.SIP.App.SIPUserAgent" class="text-break">Class SIPUserAgent
+  </h1>
+  <div class="markdown level0 summary"><p>A &quot;full&quot; SIP user agent that encompasses both client and server user agents.
+It is also able to manage in dialog operations after the call is established
+(the client and server user agents don't handle in dialog operations).</p>
+<p>Unlike other user agents this one also manages its own RTP session object
+which means it can handle things like call on and off hold, RTP end point
+changes and sending DTMF events.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">SIPUserAgent</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.App.html">SIPSorcery.SIP.App</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_SIP_App_SIPUserAgent_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class SIPUserAgent</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.%23ctor(SIPSorcery.SIP.SIPTransport%2CSIPSorcery.SIP.SIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L162">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent__ctor_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.#ctor*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent__ctor_SIPSorcery_SIP_SIPTransport_SIPSorcery_SIP_SIPEndPoint_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.#ctor(SIPSorcery.SIP.SIPTransport,SIPSorcery.SIP.SIPEndPoint)">SIPUserAgent(SIPTransport, SIPEndPoint)</h4>
+  <div class="markdown level1 summary"><p>Creates a new SIP client and server combination user agent.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPTransport.html">SIPTransport</a></td>
+        <td><span class="parametername">transport</span></td>
+        <td><p>The transport layer to use for requests and responses.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPEndPoint.html">SIPEndPoint</a></td>
+        <td><span class="parametername">outboundProxy</span></td>
+        <td><p>Optional. If set all requests and responses will be forwarded to this
+end point irrespective of their headers.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_CallDescriptor.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.CallDescriptor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L104">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_CallDescriptor_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.CallDescriptor*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_CallDescriptor" data-uid="SIPSorcery.SIP.App.SIPUserAgent.CallDescriptor">CallDescriptor</h4>
+  <div class="markdown level1 summary"><p>For a call initiated by us this is the call descriptor that was used.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPCallDescriptor CallDescriptor { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.SIPCallDescriptor.html">SIPCallDescriptor</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_Dialogue.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.Dialogue%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L88">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_Dialogue_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Dialogue*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_Dialogue" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Dialogue">Dialogue</h4>
+  <div class="markdown level1 summary"><p>Once either the client or server call is answered this will hold the SIP
+dialogue that was created by the call.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPDialogue Dialogue { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPDialogue.html">SIPDialogue</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_IsCallActive.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.IsCallActive%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L76">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_IsCallActive_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.IsCallActive*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_IsCallActive" data-uid="SIPSorcery.SIP.App.SIPUserAgent.IsCallActive">IsCallActive</h4>
+  <div class="markdown level1 summary"><p>Indicates whether there is an active call or not</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsCallActive { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_MediaSession.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.MediaSession%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L71">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_MediaSession_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.MediaSession*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_MediaSession" data-uid="SIPSorcery.SIP.App.SIPUserAgent.MediaSession">MediaSession</h4>
+  <div class="markdown level1 summary"><p>The media (RTP) session in use for the current call.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IMediaSession MediaSession { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_AcceptCall_SIPSorcery_SIP_SIPRequest_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.AcceptCall(SIPSorcery.SIP.SIPRequest)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L284">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_AcceptCall_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.AcceptCall*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_AcceptCall_SIPSorcery_SIP_SIPRequest_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.AcceptCall(SIPSorcery.SIP.SIPRequest)">AcceptCall(SIPRequest)</h4>
+  <div class="markdown level1 summary"><p>This method can be used to start the processing of a new incoming call request.
+The user agent will is acting as a server for this operation and it can be considered
+the opposite of the Call method. This is only the first step in answering an incoming
+call. It can still be rejected or answered after this point.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPServerUserAgent AcceptCall(SIPRequest inviteRequest)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPRequest.html">SIPRequest</a></td>
+        <td><span class="parametername">inviteRequest</span></td>
+        <td><p>The invite request representing the incoming call.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.SIPServerUserAgent.html">SIPServerUserAgent</a></td>
+        <td><p>An ID string that needs to be supplied when the call is answered or rejected
+(used to manage multiple pending incoming calls).</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_SIP_App_SIPServerUserAgent_SIPSorcery_SIP_App_IMediaSession_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent%2CSIPSorcery.SIP.App.IMediaSession)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L307">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_Answer_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Answer*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_SIP_App_SIPServerUserAgent_SIPSorcery_SIP_App_IMediaSession_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession)">Answer(SIPServerUserAgent, IMediaSession)</h4>
+  <div class="markdown level1 summary"><p>Answers the call request contained in the user agent server parameter. Note the
+<a class="xref" href="SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_AcceptCall_SIPSorcery_SIP_SIPRequest_">AcceptCall(SIPRequest)</a> method should be used to create the user agent server.
+Any existing call will be hungup.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task Answer(SIPServerUserAgent uas, IMediaSession mediaSession)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.SIPServerUserAgent.html">SIPServerUserAgent</a></td>
+        <td><span class="parametername">uas</span></td>
+        <td><p>The user agent server holding the pending call to answer.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a></td>
+        <td><span class="parametername">mediaSession</span></td>
+        <td><p>The media session used for this call</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_SIP_App_SIPServerUserAgent_SIPSorcery_SIP_App_IMediaSession_System_String___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent%2CSIPSorcery.SIP.App.IMediaSession%2CSystem.String%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L320">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_Answer_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Answer*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_Answer_SIPSorcery_SIP_App_SIPServerUserAgent_SIPSorcery_SIP_App_IMediaSession_System_String___" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Answer(SIPSorcery.SIP.App.SIPServerUserAgent,SIPSorcery.SIP.App.IMediaSession,System.String[])">Answer(SIPServerUserAgent, IMediaSession, String[])</h4>
+  <div class="markdown level1 summary"><p>Answers the call request contained in the user agent server parameter. Note the
+<a class="xref" href="SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_AcceptCall_SIPSorcery_SIP_SIPRequest_">AcceptCall(SIPRequest)</a> method should be used to create the user agent server.
+Any existing call will be hungup.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.SIPServerUserAgent.html">SIPServerUserAgent</a></td>
+        <td><span class="parametername">uas</span></td>
+        <td><p>The user agent server holding the pending call to answer.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a></td>
+        <td><span class="parametername">mediaSession</span></td>
+        <td><p>The media session used for this call</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span>[]</td>
+        <td><span class="parametername">customHeaders</span></td>
+        <td><p>Custom SIP-Headers to use in Answer.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_AttendedTransfer_SIPSorcery_SIP_SIPDialogue_System_TimeSpan_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.AttendedTransfer(SIPSorcery.SIP.SIPDialogue%2CSystem.TimeSpan%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L373">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_AttendedTransfer_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.AttendedTransfer*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_AttendedTransfer_SIPSorcery_SIP_SIPDialogue_System_TimeSpan_System_Threading_CancellationToken_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.AttendedTransfer(SIPSorcery.SIP.SIPDialogue,System.TimeSpan,System.Threading.CancellationToken)">AttendedTransfer(SIPDialogue, TimeSpan, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Initiates an attended transfer by asking the remote call party to call the specified destination.
+If the transfer is accepted the current call will be hungup.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task&lt;bool&gt; AttendedTransfer(SIPDialogue transferee, TimeSpan timeout, CancellationToken ct)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPDialogue.html">SIPDialogue</a></td>
+        <td><span class="parametername">transferee</span></td>
+        <td><p>The dialog that will be replaced on the initial call party.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.TimeSpan</span></td>
+        <td><span class="parametername">timeout</span></td>
+        <td><p>Timeout for the transfer request to get accepted.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">ct</span></td>
+        <td><p>Cancellation token. Can be set to cancel the transfer prior to it being
+accepted or timing out.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td><p>True if the transfer was accepted by the Transferee or false if not.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_BlindTransfer_SIPSorcery_SIP_SIPURI_System_TimeSpan_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.BlindTransfer(SIPSorcery.SIP.SIPURI%2CSystem.TimeSpan%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L350">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_BlindTransfer_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.BlindTransfer*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_BlindTransfer_SIPSorcery_SIP_SIPURI_System_TimeSpan_System_Threading_CancellationToken_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.BlindTransfer(SIPSorcery.SIP.SIPURI,System.TimeSpan,System.Threading.CancellationToken)">BlindTransfer(SIPURI, TimeSpan, CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Initiates a blind transfer by asking the remote call party to call the specified destination.
+If the transfer is accepted the current call will be hungup.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task&lt;bool&gt; BlindTransfer(SIPURI destination, TimeSpan timeout, CancellationToken ct)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a></td>
+        <td><span class="parametername">destination</span></td>
+        <td><p>The URI to transfer the call to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.TimeSpan</span></td>
+        <td><span class="parametername">timeout</span></td>
+        <td><p>Timeout for the transfer request to get accepted.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">ct</span></td>
+        <td><p>Cancellation token. Can be set to cancel the transfer prior to it being
+accepted or timing out.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td><p>True if the transfer was accepted by the Transferee or false if not.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_Call_System_String_System_String_System_String_SIPSorcery_SIP_App_IMediaSession_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.Call(System.String%2CSystem.String%2CSystem.String%2CSIPSorcery.SIP.App.IMediaSession)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L177">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_Call_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Call*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_Call_System_String_System_String_System_String_SIPSorcery_SIP_App_IMediaSession_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Call(System.String,System.String,System.String,SIPSorcery.SIP.App.IMediaSession)">Call(String, String, String, IMediaSession)</h4>
+  <div class="markdown level1 summary"><p>Attempts to place a new outgoing call.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task&lt;bool&gt; Call(string dst, string username, string password, IMediaSession mediaSession)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">dst</span></td>
+        <td><p>The destination SIP URI to call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">username</span></td>
+        <td><p>Optional Username if authentication is required.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">password</span></td>
+        <td><p>Optional. Password if authentication is required.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a></td>
+        <td><span class="parametername">mediaSession</span></td>
+        <td><p>The RTP session for the call.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_Cancel.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.Cancel%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L247">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_Cancel_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Cancel*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_Cancel" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Cancel">Cancel()</h4>
+  <div class="markdown level1 summary"><p>Cancel our call attempt prior to it being answered.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Cancel()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_Hangup.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.Hangup%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L268">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_Hangup_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Hangup*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_Hangup" data-uid="SIPSorcery.SIP.App.SIPUserAgent.Hangup">Hangup()</h4>
+  <div class="markdown level1 summary"><p>Hangup established call</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Hangup()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_InitiateCall_SIPSorcery_SIP_App_SIPCallDescriptor_SIPSorcery_SIP_App_IMediaSession_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.InitiateCall(SIPSorcery.SIP.App.SIPCallDescriptor%2CSIPSorcery.SIP.App.IMediaSession)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L212">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_SIPUserAgent_InitiateCall_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.InitiateCall*"></a>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_InitiateCall_SIPSorcery_SIP_App_SIPCallDescriptor_SIPSorcery_SIP_App_IMediaSession_" data-uid="SIPSorcery.SIP.App.SIPUserAgent.InitiateCall(SIPSorcery.SIP.App.SIPCallDescriptor,SIPSorcery.SIP.App.IMediaSession)">InitiateCall(SIPCallDescriptor, IMediaSession)</h4>
+  <div class="markdown level1 summary"><p>Attempts to place a new outgoing call.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task InitiateCall(SIPCallDescriptor sipCallDescriptor, IMediaSession mediaSession)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.SIPCallDescriptor.html">SIPCallDescriptor</a></td>
+        <td><span class="parametername">sipCallDescriptor</span></td>
+        <td><p>A call descriptor containing the information about how
+and where to place the call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a></td>
+        <td><span class="parametername">mediaSession</span></td>
+        <td><p>The media session used for this call</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="events">Events
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_ClientCallAnswered.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.ClientCallAnswered%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L122">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_ClientCallAnswered" data-uid="SIPSorcery.SIP.App.SIPUserAgent.ClientCallAnswered">ClientCallAnswered</h4>
+  <div class="markdown level1 summary"><p>The in progress call attempt was answered.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event SIPCallResponseDelegate ClientCallAnswered</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.SIPCallResponseDelegate.html">SIPCallResponseDelegate</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_ClientCallFailed.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.ClientCallFailed%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L127">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_ClientCallFailed" data-uid="SIPSorcery.SIP.App.SIPUserAgent.ClientCallFailed">ClientCallFailed</h4>
+  <div class="markdown level1 summary"><p>The in progress call attempt failed.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event SIPCallFailedDelegate ClientCallFailed</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.SIPCallFailedDelegate.html">SIPCallFailedDelegate</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_ClientCallRinging.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.ClientCallRinging%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L117">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_ClientCallRinging" data-uid="SIPSorcery.SIP.App.SIPUserAgent.ClientCallRinging">ClientCallRinging</h4>
+  <div class="markdown level1 summary"><p>The remote party has progressed our call request to ringing/in progress.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event SIPCallResponseDelegate ClientCallRinging</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.SIPCallResponseDelegate.html">SIPCallResponseDelegate</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_ClientCallTrying.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.ClientCallTrying%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L112">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_ClientCallTrying" data-uid="SIPSorcery.SIP.App.SIPUserAgent.ClientCallTrying">ClientCallTrying</h4>
+  <div class="markdown level1 summary"><p>The remote party has received our call request and is working on it.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event SIPCallResponseDelegate ClientCallTrying</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.SIPCallResponseDelegate.html">SIPCallResponseDelegate</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_OnCallHungup.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.OnCallHungup%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L148">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_OnCallHungup" data-uid="SIPSorcery.SIP.App.SIPUserAgent.OnCallHungup">OnCallHungup</h4>
+  <div class="markdown level1 summary"><p>Call was hungup by the remote party. Applies to calls initiated by us and calls received
+by us. An example of when this user agent will initiate a hang up is when a transfer is
+accepted by the remote calling party.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action OnCallHungup</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_OnReinviteRequest.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L141">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_OnReinviteRequest" data-uid="SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest">OnReinviteRequest</h4>
+  <div class="markdown level1 summary"><p>The remote call party has sent us a new re-INVITE request that this
+class didn't know how to or couldn't handle. Things we can
+handle are on and off hold. Common examples of what we can't handle
+are changing RTP end points, changing codecs etc.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;UASInviteTransaction&gt; OnReinviteRequest</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.SIP.UASInviteTransaction.html">UASInviteTransaction</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_OnTransferNotify.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.OnTransferNotify%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L154">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_OnTransferNotify" data-uid="SIPSorcery.SIP.App.SIPUserAgent.OnTransferNotify">OnTransferNotify</h4>
+  <div class="markdown level1 summary"><p>Fires when a NOTIFY request is received that contains an update about the
+status of a transfer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;string&gt; OnTransferNotify</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent_ServerCallCancelled.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent.ServerCallCancelled%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L133">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_SIPUserAgent_ServerCallCancelled" data-uid="SIPSorcery.SIP.App.SIPUserAgent.ServerCallCancelled">ServerCallCancelled</h4>
+  <div class="markdown level1 summary"><p>For calls accepted by this user agent this event will be fired if the call
+is cancelled before it gets answered.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event SIPUASDelegate ServerCallCancelled</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.App.SIPUASDelegate.html">SIPUASDelegate</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_SIPUserAgent.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.SIPUserAgent%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/SIPUserAgents/SIPUserAgent.cs/#L39" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
