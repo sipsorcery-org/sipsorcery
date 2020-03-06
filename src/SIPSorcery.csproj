@@ -40,8 +40,8 @@
   </ItemGroup>
  
   <PropertyGroup>
-  <TargetFrameworks>netstandard2.0;net452;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.13-pre</Version>
+  <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
+	<Version>4.0.28-pre</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -61,17 +61,19 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP WebRTC RTP SDP STUN SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version 4.0.13-pre - RTPSession and WebRTCSession enhancements.
+	<PackageReleaseNotes>- Version 4.0.16-4.0.28-pre: Big rework of RTP and Audio/Video integration.
+- Version 4.0.15-pre - .NET framework min version increased from net452 to net46 due to need for TaskCompletionSource overload.
+- Version 4.0.13-pre - RTPSession and WebRTCSession enhancements.
 - Version 4.0.8 - Adds WebRTCSession and preliminary WebRTC support.
 - Version 4.0.7 - RTP support complete.
 - Version 4.0.4 - Added attended transfer capability to SIPUserAgent.
 - Version 4.0.3 - Refactor of RTPChannel and RTPSession. SIPUserAgent class incorporates RTPSession (much easier to use).
 - Version 4.0.2 - New SIPUserAgent class, combination of client and server user agents. Support for HOMER logging.
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
-  </PackageReleaseNotes>
+</PackageReleaseNotes>
 	<NeutralLanguage>en-US</NeutralLanguage>
-	<AssemblyVersion>4.0.13.0</AssemblyVersion>
-	<FileVersion>4.0.13.0</FileVersion>
+	<AssemblyVersion>4.0.28.0</AssemblyVersion>
+	<FileVersion>4.0.28.0</FileVersion>
   </PropertyGroup>    
 
 </Project>

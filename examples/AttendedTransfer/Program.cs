@@ -35,6 +35,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -45,6 +46,7 @@ namespace SIPSorcery
     {
         private static int SIP_LISTEN_PORT = 5060;
         private static int TRANSFER_TIMEOUT_SECONDS = 2;    // Give up on transfer if no response within this period.
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:127.0.0.1:50803"; //"sip:1@172.19.16.1:7060";
 
         // If set will mirror SIP packets to a Homer (sipcapture.org) logging and analysis server.
         private static string HOMER_SERVER_ADDRESS = null; //"192.168.11.49";
@@ -55,6 +57,7 @@ namespace SIPSorcery
         static void Main()
         {
             Console.WriteLine("SIPSorcery Attended Transfer example.");
+            Console.WriteLine("Press 'c' to place a call to the default destination.");
             Console.WriteLine("Place two simultaneous SIP calls to this program and then press 't'.");
             Console.WriteLine("Press 'q' or ctrl-c to exit.");
 
@@ -112,16 +115,10 @@ namespace SIPSorcery
                         Log.LogInformation($"{agentDesc}: Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = activeAgent.AcceptCall(sipRequest);
 
-                        var rtpAVSession = new RtpAVSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), AddressFamily.InterNetwork);
-                        rtpAVSession.RemotePutOnHold += () => Log.LogInformation($"{agentDesc}: Remote call party has placed us on hold.");
-                        rtpAVSession.RemoteTookOffHold += () => Log.LogInformation($"{agentDesc}: Remote call party took us off hold.");
+                        var rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
 
-                        await activeAgent.Answer(incomingCall, rtpAVSession)
-                            .ContinueWith(task =>
-                            {
-                                rtpAVSession.Start();
-                                Log.LogInformation($"{agentDesc}: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
-                            }, exitCts.Token);
+                        await activeAgent.Answer(incomingCall, rtpAVSession);
+                        Log.LogInformation($"{agentDesc}: Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
                     }
                     else
                     {
@@ -149,8 +146,25 @@ namespace SIPSorcery
                     {
                         var keyProps = Console.ReadKey();
 
+                        if (keyProps.KeyChar == 'c')
+                        {
+                            // Place an outgoing call using the first free user agent.
+                            SIPUserAgent freeAgent = (!userAgent1.IsCallActive) ? userAgent1 : (!userAgent2.IsCallActive) ? userAgent2 : null;
+                            if (freeAgent != null)
+                            {
+                                var rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+                                bool callResult = await freeAgent.Call(DEFAULT_DESTINATION_SIP_URI, null, null, rtpAVSession);
+
+                                Log.LogInformation($"Call attempt {((callResult) ? "successfull" : "failed")}.");
+                            }
+                            else
+                            {
+                                Log.LogWarning("Both user agents are already on calls.");
+                            }
+                        }
                         if (keyProps.KeyChar == 't')
                         {
+                            // Initiate the attended transfer.
                             if (userAgent1.IsCallActive && userAgent2.IsCallActive)
                             {
                                 bool result = await userAgent2.AttendedTransfer(userAgent1.Dialogue, TimeSpan.FromSeconds(TRANSFER_TIMEOUT_SECONDS), exitCts.Token);

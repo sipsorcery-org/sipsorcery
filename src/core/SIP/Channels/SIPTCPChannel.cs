@@ -148,8 +148,8 @@ namespace SIPSorcery.SIP
 
                 m_localTCPSockets.Add(ListeningEndPoint.ToString());
 
-                Task.Run(AcceptConnections);
-                Task.Run(PruneConnections);
+                Task.Factory.StartNew(AcceptConnections, TaskCreationOptions.LongRunning);
+                Task.Factory.StartNew(PruneConnections, TaskCreationOptions.LongRunning);
 
                 logger.LogInformation($"SIP {ProtDescr} Channel created for {ListeningEndPoint}.");
             }
@@ -163,7 +163,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Processes the socket accepts from the channel's socket listener.
         /// </summary>
-        private async Task AcceptConnections()
+        private void AcceptConnections()
         {
             logger.LogDebug($"SIP {ProtDescr} Channel socket on {m_tcpServerListener.Server.LocalEndPoint} accept connections thread started.");
 
@@ -171,7 +171,7 @@ namespace SIPSorcery.SIP
             {
                 try
                 {
-                    Socket clientSocket = await m_tcpServerListener.AcceptSocketAsync();
+                    Socket clientSocket = m_tcpServerListener.AcceptSocketAsync().Result;
 
                     if (!Closed)
                     {
@@ -185,7 +185,7 @@ namespace SIPSorcery.SIP
 
                         m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
 
-                        await OnAccept(sipStmConn);
+                        OnAccept(sipStmConn).Wait();
                     }
                 }
                 catch (ObjectDisposedException)
@@ -348,7 +348,7 @@ namespace SIPSorcery.SIP
                 logger.LogDebug($"Attempting TCP connection from {localEndPoint} to {dstEndPoint}.");
 
                 // Attempt to connect.
-                TaskCompletionSource<SocketError> connectTcs = new TaskCompletionSource<SocketError>();
+                TaskCompletionSource<SocketError> connectTcs = new TaskCompletionSource<SocketError>(TaskCreationOptions.RunContinuationsAsynchronously);
                 connectArgs.Completed += (sender, sockArgs) =>
                 {
                     if (sockArgs.LastOperation == SocketAsyncOperation.Connect)
@@ -365,7 +365,7 @@ namespace SIPSorcery.SIP
                     }
                 }
 
-                var connectResult = await connectTcs.Task;
+                var connectResult = await connectTcs.Task.ConfigureAwait(false);
 
                 logger.LogDebug($"ConnectAsync SIP {ProtDescr} Channel connect completed result for {localEndPoint}->{dstEndPoint} {connectResult}.");
 
@@ -380,9 +380,9 @@ namespace SIPSorcery.SIP
 
                     m_connections.TryAdd(sipStmConn.ConnectionID, sipStmConn);
 
-                    await OnClientConnect(sipStmConn, serverCertificateName);
+                    await OnClientConnect(sipStmConn, serverCertificateName).ConfigureAwait(false);
 
-                    await SendOnConnected(sipStmConn, buffer);
+                    await SendOnConnected(sipStmConn, buffer).ConfigureAwait(false);
                 }
 
                 return connectResult;
@@ -686,11 +686,11 @@ namespace SIPSorcery.SIP
         /// Periodically checks the established connections and closes any that have not had a transmission for a specified 
         /// period or where the number of connections allowed per IP address has been exceeded.
         /// </summary>
-        private async Task PruneConnections()
+        private void PruneConnections()
         {
             try
             {
-                await Task.Delay(PRUNE_CONNECTIONS_INTERVAL, m_cts.Token);
+                Task.Delay(PRUNE_CONNECTIONS_INTERVAL, m_cts.Token).Wait();
 
                 while (!Closed)
                 {
@@ -737,13 +737,14 @@ namespace SIPSorcery.SIP
                         }
                     }
 
-                    await Task.Delay(PRUNE_CONNECTIONS_INTERVAL, m_cts.Token);
+                    Task.Delay(PRUNE_CONNECTIONS_INTERVAL, m_cts.Token).Wait();
                     checkComplete = false;
                 }
 
                 logger.LogDebug($"SIP {ProtDescr} Channel socket on {ListeningEndPoint} pruning connections halted.");
             }
             catch (OperationCanceledException) { }
+            catch (AggregateException) { } // This gets thrown if task is cancelled.
             catch (Exception excp)
             {
                 logger.LogError($"Exception SIP {ProtDescr} Channel PruneConnections. " + excp.Message);

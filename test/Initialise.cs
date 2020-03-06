@@ -14,11 +14,15 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
+using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.UnitTests
@@ -33,7 +37,7 @@ namespace SIPSorcery.UnitTests
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
             var loggerConfig = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
-                .Enrich.WithProperty("ThreadId",System.Threading.Thread.CurrentThread.ManagedThreadId)
+                .Enrich.WithProperty("ThreadId", System.Threading.Thread.CurrentThread.ManagedThreadId)
                 .WriteTo.TestOutput(output, outputTemplate: template)
                 .WriteTo.Console(outputTemplate: template)
                 .CreateLogger();
@@ -112,6 +116,91 @@ namespace SIPSorcery.UnitTests
             // This assumes the input SIP URI has an IP address as the host!
             IPSocket.TryParseIPEndPoint(sipURI.Host, out var ipEndPoint);
             return new SIPDNSLookupResult(sipURI, new SIPEndPoint(ipEndPoint));
+        }
+    }
+
+    public class MockMediaSession : IMediaSession
+    {
+        private const string RTP_MEDIA_PROFILE = "RTP/AVP";
+
+        public RTCSessionDescription localDescription { get; private set; }
+        public RTCSessionDescription remoteDescription { get; private set; }
+
+        public bool IsClosed { get; private set; }
+        public bool HasAudio => true;
+        public bool HasVideo => false;
+
+        public event Action<byte[], uint, uint, int> OnVideoSampleReady;
+        public event Action<string> OnRtpClosed;
+        public event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
+        public event Action<RTPEvent> OnRtpEvent;
+
+        public void Close(string reason)
+        {
+            IsClosed = true;
+        }
+
+        public Task<SDP> createAnswer(RTCAnswerOptions options)
+        {
+            SDP answerSdp = new SDP(IPAddress.Loopback);
+            answerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
+
+            answerSdp.Connection = new SDPConnectionInformation(IPAddress.Loopback);
+
+            SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
+                SDPMediaTypesEnum.audio,
+               1234,
+               new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+
+            audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
+
+            answerSdp.Media.Add(audioAnnouncement);
+
+            return Task.FromResult(answerSdp);
+        }
+
+        public Task<SDP> createOffer(RTCOfferOptions options)
+        {
+            SDP offerSdp = new SDP(IPAddress.Loopback);
+            offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
+
+            offerSdp.Connection = new SDPConnectionInformation(IPAddress.Loopback);
+
+            SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
+                SDPMediaTypesEnum.audio,
+               1234,
+               new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+
+            audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
+
+            offerSdp.Media.Add(audioAnnouncement);
+
+            return Task.FromResult(offerSdp);
+        }
+
+        public Task SendDtmf(byte tone, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void setLocalDescription(RTCSessionDescription sessionDescription)
+        {
+            localDescription = sessionDescription;
+        }
+
+        public void setRemoteDescription(RTCSessionDescription sessionDescription)
+        {
+            remoteDescription = sessionDescription;
+        }
+
+        public Task Start()
+        {
+            return Task.CompletedTask;
         }
     }
 }

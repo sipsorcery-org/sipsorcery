@@ -10,18 +10,18 @@
 // 
 // History:
 // 26 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
+// 26 Feb 2020  Aaron Clauson   Switched RTP to use RtpAVSession.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NAudio.Wave;
 using Serilog;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -30,15 +30,9 @@ namespace SIPSorcery
 {
     class Program
     {
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:127.0.0.1;transport=ws";
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:127.0.0.1";
         private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:time@sipsorcery.com";  // Talking Clock.
-        //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:echo@sipsorcery.com"; // Echo Test.
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
-
-        private static WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);  // PCMU format used by both input and output streams.
-        private static int INPUT_SAMPLE_PERIOD_MILLISECONDS = 20;           // This sets the frequency of the RTP packets.
 
         static async Task Main(string[] args)
         {
@@ -67,18 +61,14 @@ namespace SIPSorcery
             EnableTraceLogs(sipTransport);
 
             // Get the IP address the RTP will be sent from. While we can listen on IPAddress.Any | IPv6Any
-            // we can't put 0.0.0.0 or [::0] in the SDP or the callee will ignore us.
+            // we can't put 0.0.0.0 or [::0] in the SDP or the callee will treat our RTP stream as inactive.
             var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
             Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
             var dstAddress = lookupResult.GetSIPEndPoint().Address;
-            //IPAddress localIPAddress = NetServices.GetLocalAddressForRemote(dstAddress);
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var rtpSession = new RTPMediaSession(SDPMediaTypesEnum.audio, new SDPMediaFormat(SDPMediaFormatsEnum.PCMU), dstAddress.AddressFamily);
-            var offerSDP = await rtpSession.CreateOffer(dstAddress);
-
-            // Get the audio input device.
-            WaveInEvent waveInEvent = GetAudioInputDevice();
+            var rtpSession = new RtpAVSession(dstAddress.AddressFamily, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+            var offerSDP = await rtpSession.createOffer(new RTCOfferOptions { RemoteSignallingAddress = dstAddress });
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var uac = new SIPClientUserAgent(sipTransport);
@@ -95,15 +85,8 @@ namespace SIPSorcery
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                    // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                    if (rtpSession.DestinationEndPoint == null)
-                    {
-                        rtpSession.SetRemoteSDP(SDP.ParseSDPDescription(resp.Body));
-                        Log.LogDebug($"Remote RTP socket {rtpSession.DestinationEndPoint}.");
-                    }
-
-                    rtpSession.SetRemoteSDP(SDP.ParseSDPDescription(resp.Body));
-                    waveInEvent.StartRecording();
+                    rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.answer, sdp = SDP.ParseSDPDescription(resp.Body) } );
+                    rtpSession.Start();
                 }
                 else
                 {
@@ -125,39 +108,6 @@ namespace SIPSorcery
                         isCallHungup = true;
                         exitMre.Set();
                     }
-                }
-            };
-
-            // Wire up the RTP receive session to the audio output device.
-            var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
-            rtpSession.OnRtpPacketReceived += (mediaType, rtpPacket) =>
-            {
-                var sample = rtpPacket.Payload;
-                for (int index = 0; index < sample.Length; index++)
-                {
-                    short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);
-                    byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
-                    audioOutProvider.AddSamples(pcmSample, 0, 2);
-                }
-            };
-
-            // Wire up the RTP send session to the audio input device.
-            uint rtpSendTimestamp = 0;
-            waveInEvent.DataAvailable += (object sender, WaveInEventArgs args) =>
-            {
-                byte[] sample = new byte[args.Buffer.Length / 2];
-                int sampleIndex = 0;
-
-                for (int index = 0; index < args.BytesRecorded; index += 2)
-                {
-                    var ulawByte = NAudio.Codecs.MuLawEncoder.LinearToMuLawSample(BitConverter.ToInt16(args.Buffer, index));
-                    sample[sampleIndex++] = ulawByte;
-                }
-
-                if (rtpSession.DestinationEndPoint != null)
-                {
-                    rtpSession.SendAudioFrame(rtpSendTimestamp, (int)SDPMediaFormatsEnum.PCMU, sample);
-                    rtpSendTimestamp += (uint)(8000 / waveInEvent.BufferMilliseconds);
                 }
             };
 
@@ -189,8 +139,6 @@ namespace SIPSorcery
 
             Log.LogInformation("Exiting...");
 
-            waveInEvent?.StopRecording();
-            audioOutEvent?.Stop();
             rtpSession.CloseSession(null);
 
             if (!isCallHungup && uac != null)
@@ -221,46 +169,7 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        /// Get the audio output device, e.g. speaker.
-        /// Note that NAudio.Wave.WaveOut is not available for .Net Standard so no easy way to check if 
-        /// there's a speaker.
-        /// </summary>
-        private static (WaveOutEvent, BufferedWaveProvider) GetAudioOutputDevice()
-        {
-            WaveOutEvent waveOutEvent = new WaveOutEvent();
-            var waveProvider = new BufferedWaveProvider(_waveFormat);
-            waveProvider.DiscardOnBufferOverflow = true;
-            waveOutEvent.Init(waveProvider);
-            waveOutEvent.Play();
-
-            return (waveOutEvent, waveProvider);
-        }
-
-        /// <summary>
-        /// Get the audio input device, e.g. microphone. The input device that will provide 
-        /// audio samples that can be encoded, packaged into RTP and sent to the remote call party.
-        /// </summary>
-        private static WaveInEvent GetAudioInputDevice()
-        {
-            if (WaveInEvent.DeviceCount == 0)
-            {
-                throw new ApplicationException("No audio input devices available. No audio will be sent.");
-            }
-            else
-            {
-                WaveInEvent waveInEvent = new WaveInEvent();
-                WaveFormat waveFormat = _waveFormat;
-                waveInEvent.BufferMilliseconds = INPUT_SAMPLE_PERIOD_MILLISECONDS; 
-                waveInEvent.NumberOfBuffers = 1;
-                waveInEvent.DeviceNumber = 0;
-                waveInEvent.WaveFormat = waveFormat;
-
-                return waveInEvent;
-            }
-        }
-
-        /// <summary>
-        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static void AddConsoleLogger()
         {

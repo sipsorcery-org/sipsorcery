@@ -28,7 +28,9 @@ namespace SIPSorcery.SIP
 {
     internal class SIPTransactionEngine
     {
+        private const string TXENGINE_THREAD_NAME = "sip-txengine";
         private const int MAX_TXCHECK_WAIT_MILLISECONDS = 200; // Time to wait between checking for new pending transactions.
+        private const int TXCHECK_WAIT_MILLISECONDS = 50;       // Time to wait between checking for actions on existing transactions.
         private static readonly int m_t1 = SIPTimings.T1;
         private static readonly int m_t2 = SIPTimings.T2;
         private static readonly int m_t6 = SIPTimings.T6;
@@ -60,7 +62,7 @@ namespace SIPSorcery.SIP
         {
             m_sipTransport = sipTransport;
 
-            Task.Run(ProcessPendingTransactions);
+            Task.Factory.StartNew(ProcessPendingTransactions, TaskCreationOptions.LongRunning);
         }
 
         public void AddTransaction(SIPTransaction sipTransaction)
@@ -123,7 +125,7 @@ namespace SIPSorcery.SIP
 
             SIPMethodsEnum transactionMethod = (sipRequest.Method != SIPMethodsEnum.ACK) ? sipRequest.Method : SIPMethodsEnum.INVITE;
             string transactionId = SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, transactionMethod);
-            string contactAddress = (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0) ? sipRequest.Header.Contact[0].ToString() : "no contact";
+            //string contactAddress = (sipRequest.Header.Contact != null && sipRequest.Header.Contact.Count > 0) ? sipRequest.Header.Contact[0].ToString() : "no contact";
 
             lock (m_pendingTransactions)
             {
@@ -295,15 +297,17 @@ namespace SIPSorcery.SIP
         /// A long running method that monitors and processes a list of transactions that need to send a reliable
         /// request or response.
         /// </summary>
-        private async Task ProcessPendingTransactions()
+        private void ProcessPendingTransactions()
         {
+            Thread.CurrentThread.Name = TXENGINE_THREAD_NAME;
+
             try
             {
                 while (!m_isClosed)
                 {
                     if (m_pendingTransactions.Count == 0)
                     {
-                        Thread.Sleep(MAX_TXCHECK_WAIT_MILLISECONDS);
+                        Task.Delay(MAX_TXCHECK_WAIT_MILLISECONDS).Wait();
                     }
                     else
                     {
@@ -352,12 +356,12 @@ namespace SIPSorcery.SIP
                                                     case SIPTransactionStatesEnum.Proceeding:
                                                         if (transaction.ReliableProvisionalResponse != null)
                                                         {
-                                                            sendResult = await SendTransactionProvisionalResponse(transaction);
+                                                            sendResult = SendTransactionProvisionalResponse(transaction).Result;
                                                         }
                                                         break;
 
                                                     case SIPTransactionStatesEnum.Completed:
-                                                        sendResult = await SendTransactionFinalResponse(transaction);
+                                                        sendResult = SendTransactionFinalResponse(transaction).Result;
                                                         break;
 
                                                     case SIPTransactionStatesEnum.Confirmed:
@@ -365,7 +369,7 @@ namespace SIPSorcery.SIP
                                                         break;
 
                                                     case SIPTransactionStatesEnum.Cancelled:
-                                                        sendResult = await SendTransactionFinalResponse(transaction);
+                                                        sendResult = SendTransactionFinalResponse(transaction).Result;
                                                         break;
 
                                                     default:
@@ -380,7 +384,7 @@ namespace SIPSorcery.SIP
                                                 switch (transaction.TransactionState)
                                                 {
                                                     case SIPTransactionStatesEnum.Calling:
-                                                        sendResult = await SendTransactionRequest(transaction);
+                                                        sendResult = SendTransactionRequest(transaction).Result;
                                                         break;
 
                                                     case SIPTransactionStatesEnum.Trying:
@@ -415,7 +419,7 @@ namespace SIPSorcery.SIP
                                                 switch (transaction.TransactionState)
                                                 {
                                                     case SIPTransactionStatesEnum.Calling:
-                                                        sendResult = await SendTransactionRequest(transaction);
+                                                        sendResult = SendTransactionRequest(transaction).Result;
                                                         break;
 
                                                     case SIPTransactionStatesEnum.Trying:
@@ -429,7 +433,7 @@ namespace SIPSorcery.SIP
                                                         {
                                                             // Sending a single final response on a non-INVITE tx. The same response
                                                             // will be automatically resent if the same request is received.
-                                                            sendResult = await m_sipTransport.SendResponseAsync(transaction.TransactionFinalResponse);
+                                                            sendResult = m_sipTransport.SendResponseAsync(transaction.TransactionFinalResponse).Result;
                                                             transaction.DeliveryPending = false;
                                                         }
                                                         break;
@@ -469,6 +473,8 @@ namespace SIPSorcery.SIP
                         }
 
                         RemoveExpiredTransactions();
+
+                       Task.Delay(TXCHECK_WAIT_MILLISECONDS).Wait();
                     }
                 }
             }

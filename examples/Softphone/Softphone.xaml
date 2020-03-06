@@ -2,21 +2,21 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"    
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     x:Class="SIPSorcery.SoftPhone.SoftPhone"
     Title="SIPSorcery SoftPhone" Background="#FF808080" Closing="Window_Closing" Icon="favicon.ico" MinHeight="560" MinWidth="490" Loaded="OnWindowLoaded" Height="560" Width="490">
 
     <Grid>
-        <Border BorderBrush="#FF807FC3" BorderThickness="2" CornerRadius="2" Visibility="Hidden" x:Name="_locaVIdeoBorder">
-            <Image x:Name="_localVideo" MinWidth="160" MinHeight="300" Source="favicon.ico" Opacity="0.8"/>
-        </Border>
-        <Border BorderBrush="#FF807FC3" BorderThickness="2" CornerRadius="2" Visibility="Collapsed">
-            <Image x:Name="_remoteVideo" MinWidth="160" MinHeight="300"/>
+        <Border BorderBrush="#FF807FC3" BorderThickness="0" CornerRadius="2" Visibility="Visible" Margin="0,121,0,52">
+            <Grid Margin="2" VerticalAlignment="Stretch" x:Name="m_callVideoGrid" HorizontalAlignment="Stretch">
+                <Image x:Name="_client0Video" MinWidth="128" MinHeight="96" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed" MaxWidth="490" MaxHeight="277" MouseLeftButtonUp="OnClickVideo"/>
+                <Image x:Name="_client1Video" MinWidth="128" MinHeight="96" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Collapsed" MaxWidth="490" MaxHeight="277" MouseLeftButtonUp="OnClickVideo"/>
+            </Grid>
         </Border>
 
         <StackPanel>
 
-            <Border x:Name="_statusBorder" BorderBrush="#FF807FC3" BorderThickness="2" Margin="2" CornerRadius="3" VerticalAlignment="Top" Height="32" Background="#FFCCD0EA">
+            <Border x:Name="_statusBorder" BorderBrush="#FF807FC3" Margin="2" CornerRadius="3" VerticalAlignment="Top" Height="32" Background="#FFCCD0EA">
                 <TextBlock x:Name="m_signallingStatus" TextWrapping="Wrap" Margin="2" Background="#FFCCD0EA" Text="Ready" VerticalAlignment="Center"/>
             </Border>
 
@@ -57,7 +57,7 @@
                 </StackPanel>
             </Border>
 
-            <Grid x:Name="_keypadGrid" Margin="8,8,8,8" MinHeight="300" HorizontalAlignment="Center" Width="300">
+            <Grid x:Name="_keypadGrid" Margin="8,8,8,8" MinHeight="300" HorizontalAlignment="Center" Width="300" Visibility="Hidden" Panel.ZIndex="11">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -86,16 +86,14 @@
                 <Button x:Name="m_keypadHashButton" Content="#" Click="KeyPadButton_Click" Grid.Row="3" Grid.Column="2" HorizontalAlignment="Center" Width="80" Margin="0,4,0,20"/>
             </Grid>
 
-            <StackPanel Margin="2" VerticalAlignment="Top" Orientation="Horizontal" Height="36" x:Name="_videoControlsGrid" >
-                <Button x:Name="_startLocalVideoButton" Content="Start Video" HorizontalAlignment="Left" Height="30" Margin="4,0,0,0" VerticalAlignment="Center" Width="70" Click="StartLocalVideo" IsEnabled="False" />
-                <Button x:Name="_stopLocalVideoButton" Content="Stop Video" HorizontalAlignment="Left" Height="30" VerticalAlignment="Center" Width="70" IsEnabled="False" Click="StopLocalVideo" Margin="4,0,0,0" />
-                <ComboBox x:Name="_localVideoDevices" DisplayMemberPath="Key" SelectedValuePath="Value" HorizontalAlignment="Left" Height="30"  VerticalAlignment="Center"  Margin="4,0,0,0" Width="250" IsEnabled="False" SelectionChanged="VideoDeviceChanged" VerticalContentAlignment="Center"/>
-            </StackPanel>
-
-            <StatusBar VerticalAlignment="Bottom" Margin="0,4,0,0">
-                <Label x:Name="listeningEndPoint" ToolTip="Listening On"></Label>
-            </StatusBar>
-
         </StackPanel>
+
+        <Grid>
+            <Button Width="60" Height="32" VerticalAlignment="Bottom" Margin="0,0,0,42" Click="ToggleKeyPad">Keypad</Button>
+        </Grid>
+
+        <StatusBar VerticalAlignment="Bottom" Height="40" Margin="0,0,0,0">
+            <Label x:Name="listeningEndPoint" ToolTip="Listening On"></Label>
+        </StatusBar>
     </Grid>
 </Window>

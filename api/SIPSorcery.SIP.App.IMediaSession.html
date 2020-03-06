@@ -86,41 +86,54 @@ the RTP streams and processing the audio and video.</p>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public interface IMediaSession</code></pre>
   </div>
-  <h3 id="methods">Methods
+  <h3 id="properties">Properties
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_AnswerOffer_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.AnswerOffer(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_HasAudio.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.HasAudio%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L36">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_IMediaSession_HasAudio_" data-uid="SIPSorcery.SIP.App.IMediaSession.HasAudio*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_HasAudio" data-uid="SIPSorcery.SIP.App.IMediaSession.HasAudio">HasAudio</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">bool HasAudio { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_HasVideo.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.HasVideo%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L37">View Source</a>
   </span>
-  <a id="SIPSorcery_SIP_App_IMediaSession_AnswerOffer_" data-uid="SIPSorcery.SIP.App.IMediaSession.AnswerOffer*"></a>
-  <h4 id="SIPSorcery_SIP_App_IMediaSession_AnswerOffer_System_String_" data-uid="SIPSorcery.SIP.App.IMediaSession.AnswerOffer(System.String)">AnswerOffer(String)</h4>
+  <a id="SIPSorcery_SIP_App_IMediaSession_HasVideo_" data-uid="SIPSorcery.SIP.App.IMediaSession.HasVideo*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_HasVideo" data-uid="SIPSorcery.SIP.App.IMediaSession.HasVideo">HasVideo</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;string&gt; AnswerOffer(string remoteSDP)</code></pre>
+    <pre><code class="lang-csharp hljs">bool HasVideo { get; }</code></pre>
   </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">remoteSDP</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="returns">Returns</h5>
+  <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
       <tr>
@@ -130,87 +143,117 @@ the RTP streams and processing the audio and video.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">System.Boolean</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_Close.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.Close%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L40">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_App_IMediaSession_Close_" data-uid="SIPSorcery.SIP.App.IMediaSession.Close*"></a>
-  <h4 id="SIPSorcery_SIP_App_IMediaSession_Close" data-uid="SIPSorcery.SIP.App.IMediaSession.Close">Close()</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">void Close()</code></pre>
-  </div>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_CreateOffer_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.CreateOffer(System.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L34">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_App_IMediaSession_CreateOffer_" data-uid="SIPSorcery.SIP.App.IMediaSession.CreateOffer*"></a>
-  <h4 id="SIPSorcery_SIP_App_IMediaSession_CreateOffer_System_Net_IPAddress_" data-uid="SIPSorcery.SIP.App.IMediaSession.CreateOffer(System.Net.IPAddress)">CreateOffer(IPAddress)</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;string&gt; CreateOffer(IPAddress destinationAddress = null)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Net.IPAddress</span></td>
-        <td><span class="parametername">destinationAddress</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.String</span>&gt;</td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_OfferAnswered_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.OfferAnswered(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_IsClosed.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.IsClosed%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L35">View Source</a>
   </span>
-  <a id="SIPSorcery_SIP_App_IMediaSession_OfferAnswered_" data-uid="SIPSorcery.SIP.App.IMediaSession.OfferAnswered*"></a>
-  <h4 id="SIPSorcery_SIP_App_IMediaSession_OfferAnswered_System_String_" data-uid="SIPSorcery.SIP.App.IMediaSession.OfferAnswered(System.String)">OfferAnswered(String)</h4>
+  <a id="SIPSorcery_SIP_App_IMediaSession_IsClosed_" data-uid="SIPSorcery.SIP.App.IMediaSession.IsClosed*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_IsClosed" data-uid="SIPSorcery.SIP.App.IMediaSession.IsClosed">IsClosed</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task OfferAnswered(string remoteSDP)</code></pre>
+    <pre><code class="lang-csharp hljs">bool IsClosed { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_localDescription.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.localDescription%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L33">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_IMediaSession_localDescription_" data-uid="SIPSorcery.SIP.App.IMediaSession.localDescription*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_localDescription" data-uid="SIPSorcery.SIP.App.IMediaSession.localDescription">localDescription</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">RTCSessionDescription localDescription { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_remoteDescription.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.remoteDescription%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L34">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_IMediaSession_remoteDescription_" data-uid="SIPSorcery.SIP.App.IMediaSession.remoteDescription*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_remoteDescription" data-uid="SIPSorcery.SIP.App.IMediaSession.remoteDescription">remoteDescription</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">RTCSessionDescription remoteDescription { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L70">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_IMediaSession_Close_" data-uid="SIPSorcery.SIP.App.IMediaSession.Close*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_Close_System_String_" data-uid="SIPSorcery.SIP.App.IMediaSession.Close(System.String)">Close(String)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">void Close(string reason)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -224,7 +267,138 @@ the RTP streams and processing the audio and video.</p>
     <tbody>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">remoteSDP</span></td>
+        <td><span class="parametername">reason</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_createAnswer_SIPSorcery_Net_RTCAnswerOptions_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.createAnswer(SIPSorcery.Net.RTCAnswerOptions)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L63">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_IMediaSession_createAnswer_" data-uid="SIPSorcery.SIP.App.IMediaSession.createAnswer*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_createAnswer_SIPSorcery_Net_RTCAnswerOptions_" data-uid="SIPSorcery.SIP.App.IMediaSession.createAnswer(SIPSorcery.Net.RTCAnswerOptions)">createAnswer(RTCAnswerOptions)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">Task&lt;SDP&gt; createAnswer(RTCAnswerOptions options)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCAnswerOptions.html">RTCAnswerOptions</a></td>
+        <td><span class="parametername">options</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_createOffer_SIPSorcery_Net_RTCOfferOptions_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.createOffer(SIPSorcery.Net.RTCOfferOptions)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L61">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_IMediaSession_createOffer_" data-uid="SIPSorcery.SIP.App.IMediaSession.createOffer*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_createOffer_SIPSorcery_Net_RTCOfferOptions_" data-uid="SIPSorcery.SIP.App.IMediaSession.createOffer(SIPSorcery.Net.RTCOfferOptions)">createOffer(RTCOfferOptions)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">Task&lt;SDP&gt; createOffer(RTCOfferOptions options)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCOfferOptions.html">RTCOfferOptions</a></td>
+        <td><span class="parametername">options</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="SIPSorcery.Net.SDP.html">SDP</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_SendDtmf_System_Byte_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.SendDtmf(System.Byte%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L66">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_IMediaSession_SendDtmf_" data-uid="SIPSorcery.SIP.App.IMediaSession.SendDtmf*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_SendDtmf_System_Byte_System_Threading_CancellationToken_" data-uid="SIPSorcery.SIP.App.IMediaSession.SendDtmf(System.Byte,System.Threading.CancellationToken)">SendDtmf(Byte, CancellationToken)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">Task SendDtmf(byte tone, CancellationToken ct)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span></td>
+        <td><span class="parametername">tone</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">ct</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -246,18 +420,18 @@ the RTP streams and processing the audio and video.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_RemoteReInvite_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.RemoteReInvite(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_SendMedia_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum%2CSystem.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L38">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L67">View Source</a>
   </span>
-  <a id="SIPSorcery_SIP_App_IMediaSession_RemoteReInvite_" data-uid="SIPSorcery.SIP.App.IMediaSession.RemoteReInvite*"></a>
-  <h4 id="SIPSorcery_SIP_App_IMediaSession_RemoteReInvite_System_String_" data-uid="SIPSorcery.SIP.App.IMediaSession.RemoteReInvite(System.String)">RemoteReInvite(String)</h4>
+  <a id="SIPSorcery_SIP_App_IMediaSession_SendMedia_" data-uid="SIPSorcery.SIP.App.IMediaSession.SendMedia*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_SendMedia_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_System_Byte___" data-uid="SIPSorcery.SIP.App.IMediaSession.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum,System.UInt32,System.Byte[])">SendMedia(SDPMediaTypesEnum, UInt32, Byte[])</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task&lt;string&gt; RemoteReInvite(string remoteSDP)</code></pre>
+    <pre><code class="lang-csharp hljs">void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -270,12 +444,101 @@ the RTP streams and processing the audio and video.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">remoteSDP</span></td>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></td>
+        <td><span class="parametername">mediaType</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">samplePeriod</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">sample</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_setLocalDescription_SIPSorcery_Net_RTCSessionDescription_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.setLocalDescription(SIPSorcery.Net.RTCSessionDescription)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L62">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_IMediaSession_setLocalDescription_" data-uid="SIPSorcery.SIP.App.IMediaSession.setLocalDescription*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_setLocalDescription_SIPSorcery_Net_RTCSessionDescription_" data-uid="SIPSorcery.SIP.App.IMediaSession.setLocalDescription(SIPSorcery.Net.RTCSessionDescription)">setLocalDescription(RTCSessionDescription)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">void setLocalDescription(RTCSessionDescription sessionDescription)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></td>
+        <td><span class="parametername">sessionDescription</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_setRemoteDescription_SIPSorcery_Net_RTCSessionDescription_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.setRemoteDescription(SIPSorcery.Net.RTCSessionDescription)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L64">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_IMediaSession_setRemoteDescription_" data-uid="SIPSorcery.SIP.App.IMediaSession.setRemoteDescription*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_setRemoteDescription_SIPSorcery_Net_RTCSessionDescription_" data-uid="SIPSorcery.SIP.App.IMediaSession.setRemoteDescription(SIPSorcery.Net.RTCSessionDescription)">setRemoteDescription(RTCSessionDescription)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">void setRemoteDescription(RTCSessionDescription sessionDescription)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></td>
+        <td><span class="parametername">sessionDescription</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_Start.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.Start%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L69">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_App_IMediaSession_Start_" data-uid="SIPSorcery.SIP.App.IMediaSession.Start*"></a>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_Start" data-uid="SIPSorcery.SIP.App.IMediaSession.Start">Start()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">Task Start()</code></pre>
+  </div>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
@@ -286,7 +549,7 @@ the RTP streams and processing the audio and video.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -298,7 +561,7 @@ the RTP streams and processing the audio and video.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_OnRtpClosed.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.OnRtpClosed%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L47">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L48">View Source</a>
   </span>
   <h4 id="SIPSorcery_SIP_App_IMediaSession_OnRtpClosed" data-uid="SIPSorcery.SIP.App.IMediaSession.OnRtpClosed">OnRtpClosed</h4>
   <div class="markdown level1 summary"><p>Fired when the RTP channel is closed.</p>
@@ -325,17 +588,19 @@ the RTP streams and processing the audio and video.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_SessionMediaChanged.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.SessionMediaChanged%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_OnRtpEvent.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.OnRtpEvent%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L42">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L59">View Source</a>
   </span>
-  <h4 id="SIPSorcery_SIP_App_IMediaSession_SessionMediaChanged" data-uid="SIPSorcery.SIP.App.IMediaSession.SessionMediaChanged">SessionMediaChanged</h4>
-  <div class="markdown level1 summary"></div>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_OnRtpEvent" data-uid="SIPSorcery.SIP.App.IMediaSession.OnRtpEvent">OnRtpEvent</h4>
+  <div class="markdown level1 summary"><p>Fired when an RTP event (typically representing a DTMF tone) is
+detected.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">event Action&lt;string&gt; SessionMediaChanged</code></pre>
+    <pre><code class="lang-csharp hljs">event Action&lt;RTPEvent&gt; OnRtpEvent</code></pre>
   </div>
   <h5 class="eventType">Event Type</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -347,7 +612,68 @@ the RTP streams and processing the audio and video.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTPEvent.html">RTPEvent</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_OnRtpPacketReceived.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.OnRtpPacketReceived%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L53">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_OnRtpPacketReceived" data-uid="SIPSorcery.SIP.App.IMediaSession.OnRtpPacketReceived">OnRtpPacketReceived</h4>
+  <div class="markdown level1 summary"><p>Fired when a media RTP packet is received.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">event Action&lt;SDPMediaTypesEnum, RTPPacket&gt; OnRtpPacketReceived</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>, <a class="xref" href="SIPSorcery.Net.RTPPacket.html">RTPPacket</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession_OnVideoSampleReady.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession.OnVideoSampleReady%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L43">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_SIP_App_IMediaSession_OnVideoSampleReady" data-uid="SIPSorcery.SIP.App.IMediaSession.OnVideoSampleReady">OnVideoSampleReady</h4>
+  <div class="markdown level1 summary"><p>Fired when a video sample is ready for rendering.
+[sample, width, height, stride]</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">event Action&lt;byte[], uint, uint, int&gt; OnVideoSampleReady</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Byte</span>[], <span class="xref">System.UInt32</span>, <span class="xref">System.UInt32</span>, <span class="xref">System.Int32</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -363,7 +689,7 @@ the RTP streams and processing the audio and video.</p>
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_App_IMediaSession.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.App.IMediaSession%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L30" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/IMediaSession.cs/#L31" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

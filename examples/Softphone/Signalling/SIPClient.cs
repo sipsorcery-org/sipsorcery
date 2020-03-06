@@ -15,9 +15,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -25,10 +27,12 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone
 {
-    public class SIPClient : IVoIPClient
+    public class SIPClient
     {
         private static string _sdpMimeContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
+        private static int VIDEO_LIVE_FRAMES_PER_SECOND = 30;
+        private static int VIDEO_ONHOLD_FRAMES_PER_SECOND = 3;
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
@@ -36,7 +40,6 @@ namespace SIPSorcery.SoftPhone
         private string m_sipFromName = SIPSoftPhoneState.SIPFromName;
 
         private SIPTransport m_sipTransport;
-        private RTPMediaSessionManager m_rtpMediaSessionManager;
         private SIPUserAgent m_userAgent;
         private SIPServerUserAgent m_pendingIncomingCall;
         private CancellationTokenSource _cts = new CancellationTokenSource();
@@ -56,6 +59,11 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.Dialogue; }
         }
 
+        public IMediaSession MediaSession
+        {
+            get { return m_userAgent.MediaSession; }
+        }
+
         /// <summary>
         /// Returns true of this SIP client is on an active call.
         /// </summary>
@@ -64,10 +72,18 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.IsCallActive; }
         }
 
-        public SIPClient(SIPTransport sipTransport, RTPMediaSessionManager rtpMediaSessionManager)
+        /// <summary>
+        /// Returns true if this call is known to be on hold.
+        /// </summary>
+        public bool IsOnHold
+        {
+            get { return m_userAgent.IsOnLocalHold || m_userAgent.IsOnRemoteHold; }
+        }
+
+        public SIPClient(SIPTransport sipTransport)
         {
             m_sipTransport = sipTransport;
-            m_rtpMediaSessionManager = rtpMediaSessionManager;
+
             m_userAgent = new SIPUserAgent(m_sipTransport, null);
             m_userAgent.ClientCallTrying += CallTrying;
             m_userAgent.ClientCallRinging += CallRinging;
@@ -76,6 +92,7 @@ namespace SIPSorcery.SoftPhone
             m_userAgent.OnCallHungup += CallFinished;
             m_userAgent.ServerCallCancelled += IncomingCallCancelled;
             m_userAgent.OnTransferNotify += OnTransferNotify;
+            m_userAgent.OnDtmfTone += OnDtmfTone;
         }
 
         /// <summary>
@@ -125,11 +142,19 @@ namespace SIPSorcery.SoftPhone
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
-                m_rtpMediaSessionManager.Create(dstEndpoint.Address.AddressFamily);
-                m_rtpMediaSessionManager.RTPMediaSession.RemotePutOnHold += OnRemotePutOnHold;
-                m_rtpMediaSessionManager.RTPMediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
+                var audioSrcOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                var videoSrcOpts = new VideoOptions 
+                { 
+                    VideoSource = VideoSourcesEnum.TestPattern, 
+                    SourceFile = RtpAVSession.VIDEO_TESTPATTERN,
+                    SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
+                };
+                var rtpMediaSession = new RtpAVSession(dstEndpoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
 
-                await m_userAgent.InitiateCall(callDescriptor, m_rtpMediaSessionManager.RTPMediaSession);
+                m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
+                m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
+
+                await m_userAgent.InitiateCallAsync(callDescriptor, rtpMediaSession);
             }
         }
 
@@ -164,11 +189,34 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
-                m_rtpMediaSessionManager.Create(sipRequest.RemoteSIPEndPoint.Address.AddressFamily);
-                m_rtpMediaSessionManager.RTPMediaSession.RemotePutOnHold += OnRemotePutOnHold;
-                m_rtpMediaSessionManager.RTPMediaSession.RemoteTookOffHold += OnRemoteTookOffHold;
+                
+                SDP offerSDP = SDP.ParseSDPDescription(sipRequest.Body);
+                bool hasAudio = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio);
+                bool hasVideo = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video);
 
-                await m_userAgent.Answer(m_pendingIncomingCall, m_rtpMediaSessionManager.RTPMediaSession);
+                AudioOptions audioOpts = new AudioOptions { AudioSource = AudioSourcesEnum.None };
+                if (hasAudio)
+                {
+                    audioOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                }
+
+                VideoOptions videoOpts = new VideoOptions { VideoSource = VideoSourcesEnum.None };
+                if(hasVideo)
+                {
+                    videoOpts = new VideoOptions 
+                    { 
+                        VideoSource = VideoSourcesEnum.TestPattern, 
+                        SourceFile = RtpAVSession.VIDEO_TESTPATTERN,
+                        SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
+                    };
+                }
+
+                var rtpMediaSession = new RtpAVSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily, audioOpts, videoOpts);
+
+                m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
+                m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
+
+                await m_userAgent.Answer(m_pendingIncomingCall, rtpMediaSession);
                 m_pendingIncomingCall = null;
             }
         }
@@ -184,10 +232,22 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Puts the remote call party on hold.
         /// </summary>
-        public void PutOnHold()
+        public async void PutOnHold()
         {
-            m_rtpMediaSessionManager.UseMusicOnHold(true);
-            m_rtpMediaSessionManager.RTPMediaSession.PutOnHold();
+            await m_userAgent.PutOnHold();
+
+            if(MediaSession is RtpAVSession)
+            {
+                AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Music };
+                VideoOptions videoOnHold = (!MediaSession.HasVideo) ? null : new VideoOptions 
+                { 
+                    VideoSource =  VideoSourcesEnum.TestPattern, 
+                    SourceFile = RtpAVSession.VIDEO_ONHOLD_TESTPATTERN,
+                    SourceFramesPerSecond = VIDEO_ONHOLD_FRAMES_PER_SECOND
+                };
+                await (MediaSession as RtpAVSession).SetSources(audioOnHold, videoOnHold);
+            }
+
             // At this point we could stop listening to the remote party's RTP and play something 
             // else and also stop sending our microphone output and play some music.
             StatusMessage(this, "Local party put on hold");
@@ -196,10 +256,22 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Takes the remote call party off hold.
         /// </summary>
-        public void TakeOffHold()
+        public async void TakeOffHold()
         {
-            m_rtpMediaSessionManager.UseMusicOnHold(false);
-            m_rtpMediaSessionManager.RTPMediaSession.TakeOffHold();
+            await m_userAgent.TakeOffHold();
+
+            if (MediaSession is RtpAVSession)
+            {
+                AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                VideoOptions videoOnHold = (!MediaSession.HasVideo) ? null : new VideoOptions 
+                { 
+                    VideoSource = VideoSourcesEnum.TestPattern, 
+                    SourceFile = RtpAVSession.VIDEO_TESTPATTERN,
+                    SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
+                };
+                await (MediaSession as RtpAVSession).SetSources(audioOnHold, videoOnHold);
+            }
+
             // At this point we should reverse whatever changes we made to the media stream when we
             // put the remote call part on hold.
             StatusMessage(this, "Local party taken off on hold");
@@ -367,9 +439,9 @@ namespace SIPSorcery.SoftPhone
         /// Event handler for DTMF events on the remote call party's RTP stream.
         /// </summary>
         /// <param name="dtmfKey">The DTMF key pressed.</param>
-        private void OnDtmfEvent(byte dtmfKey)
+        private void OnDtmfTone(byte dtmfKey, int duration)
         {
-            StatusMessage(this, $"DTMF event from remote call party {dtmfKey}.");
+            StatusMessage(this, $"DTMF event from remote call party {dtmfKey} duration {duration}.");
         }
 
         /// <summary>	
@@ -388,11 +460,16 @@ namespace SIPSorcery.SoftPhone
             RemoteTookOffHold?.Invoke(this);
         }
 
-        public Task SendDTMF(byte b)
+        /// <summary>
+        /// Requests the RTP session to send a RTP event representing a DTMF tone to the
+        /// remote party.
+        /// </summary>
+        /// <param name="tone">A byte representing the tone to send. Must be between 0 and 15.</param>
+        public Task SendDTMF(byte tone)
         {
-            if (m_rtpMediaSessionManager.RTPMediaSession != null)
+            if (m_userAgent != null)
             {
-                return m_rtpMediaSessionManager.RTPMediaSession.SendDtmf(b, _cts.Token);
+                return m_userAgent.SendDtmf(tone);
             }
             else
             {
