@@ -33,21 +33,16 @@ namespace SIPSorcery.Net
 
         JPEG = 26,  // Video
         H263 = 34,  // Video.
-    }
 
-    /// <summary>
-    /// A list of standard media types that do not have a a recognised ID but still do have
-    /// recognised properties.
-    /// <code>
-    /// // Example
-    /// m=video 49170 RTP/AVPF 98   // "98" is not a standard ID for VP8 and could be anything.
-    /// a=rtpmap:98 VP8/90000
-    /// a=fmtp:98 max-fr=30; max-fs=3600;
-    /// </code>
-    /// </summary>
-    public enum SDPNonStandardMediaFormatsEnum
-    {
-        VP8 = 0,  // Video. Clock rate 90000.
+        // Payload identifiers 96–127 are used for payloads defined dynamically 
+        // during a session.
+        // The types following are standard media types that do not have a 
+        // recognised ID but still do have recognised properties. The ID
+        // assigned is arbitrary and should not necessarily be used in SDP.
+        VP8 = 100,  // Video.
+        Event = 101,
+
+        Unknown = 999,
     }
 
     public class SDPMediaFormatInfo
@@ -67,6 +62,8 @@ namespace SIPSorcery.Net
                     return 8000;
                 case SDPMediaFormatsEnum.G722:
                     return 16000;
+                case SDPMediaFormatsEnum.VP8:
+                    return 90000;
                 default:
                     return 0;
             }
@@ -81,6 +78,8 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SDPMediaFormat
     {
+        private const int DYNAMIC_ATTRIBUTES_START = 96;
+
         /// <summary>
         /// The mandatory ID for the media format. Warning, even though some ID's are normally used to represent
         /// a standard media type, e.g "0" for "PCMU" etc, there is no guarantee that's the case. "0" can be used
@@ -98,6 +97,11 @@ namespace SIPSorcery.Net
         /// </code>
         /// </summary>
         public string FormatID;
+
+        /// <summary>
+        /// The codec in use for this media format.
+        /// </summary>
+        public SDPMediaFormatsEnum FormatCodec;
         
         /// <summary>
         /// The optional format attribute for the media format. For standard media types this is not necessary.
@@ -108,7 +112,7 @@ namespace SIPSorcery.Net
         /// a=fmtp:101 0-16
         /// </code>
         /// </summary>
-        public string FormatAttribute { get; private set; }
+        public string FormatAttribute { get; set; }
 
         /// <summary>
         /// The optional format parameter attribute for the media format. For standard media types this is not necessary.
@@ -119,7 +123,7 @@ namespace SIPSorcery.Net
         /// a=fmtp:101 0-16                     // This is the format parameter attribute.
         /// </code>
         /// </summary>
-        public string FormatParameterAttribute { get; private set; }
+        public string FormatParameterAttribute { get; set; }
 
         /// <summary>
         /// The standard name of the media format.
@@ -130,19 +134,19 @@ namespace SIPSorcery.Net
         /// a=fmtp:101 0-16
         /// </code>
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// The clock rate set on the SDP media format attribute. This will typically not be set for well known media
         /// types and will have a default value of 0.
         /// </summary>
-        public int ClockRate { get; private set; } = 0;
+        public int ClockRate { get; set; } = 0;
         
         /// <summary>
         /// For well known media types this will contain the default clock rate. Warning, if the format is not known or
         /// is dynamic this can be 0.
         /// </summary>
-        public int DefaultClockRate { get; private set; }
+        public int DefaultClockRate { get; set; }
 
         /// <summary>
         ///  If true this is a standard media format and the attribute line is not required.
@@ -154,9 +158,10 @@ namespace SIPSorcery.Net
             FormatID = formatID.ToString();
             if (Enum.IsDefined(typeof(SDPMediaFormatsEnum), formatID))
             {
-                Name = Enum.Parse(typeof(SDPMediaFormatsEnum), formatID.ToString(), true).ToString();
-                DefaultClockRate = SDPMediaFormatInfo.GetClockRate((SDPMediaFormatsEnum)formatID);
-                IsStandardAttribute = true;
+                FormatCodec = (SDPMediaFormatsEnum)Enum.Parse(typeof(SDPMediaFormatsEnum), formatID.ToString(), true);
+                Name = FormatCodec.ToString();
+                ClockRate = SDPMediaFormatInfo.GetClockRate(FormatCodec);
+                IsStandardAttribute = (formatID < DYNAMIC_ATTRIBUTES_START);
             }
             FormatAttribute = (ClockRate == 0) ? Name : Name + "/" + ClockRate;
         }
@@ -164,23 +169,28 @@ namespace SIPSorcery.Net
         public SDPMediaFormat(string formatID)
         {
             Name = FormatID = formatID;
+            FormatCodec = GetFormatCodec(Name);
         }
 
         public SDPMediaFormat(int formatID, string name) : this(formatID)
         {
             Name = name;
+            FormatCodec = GetFormatCodec(Name);
             FormatAttribute = (ClockRate == 0) ? Name : Name + "/" + ClockRate;
         }
 
         public SDPMediaFormat(int formatID, string name, int clockRate) : this(formatID)
         {
             Name = name;
+            FormatCodec = GetFormatCodec(Name);
             ClockRate = clockRate;
             FormatAttribute = (ClockRate == 0) ? Name : Name + "/" + ClockRate;
         }
 
         public SDPMediaFormat(SDPMediaFormatsEnum format) : this((int)format)
-        { }
+        {
+            FormatCodec = format;
+        }
 
         public void SetFormatAttribute(string attribute)
         {
@@ -190,6 +200,7 @@ namespace SIPSorcery.Net
             if (attributeMatch.Success)
             {
                 Name = attributeMatch.Result("${name}");
+                FormatCodec = GetFormatCodec(Name);
                 int clockRate;
                 if (Int32.TryParse(attributeMatch.Result("${clockrate}"), out clockRate))
                 {
@@ -218,6 +229,30 @@ namespace SIPSorcery.Net
             {
                 return DefaultClockRate;
             }
+        }
+
+        /// <summary>
+        /// Attempts to get the codec matching a media format name.
+        /// </summary>
+        /// <param name="name">The name of the media format to match.</param>
+        /// <returns>The media format matching the name. If no match then the unknown format
+        /// is returned.</returns>
+        public SDPMediaFormatsEnum GetFormatCodec(string name)
+        {
+            foreach (SDPMediaFormatsEnum format in Enum.GetValues(typeof(SDPMediaFormatsEnum)))
+            {
+                if(name.ToLower() == format.ToString().ToLower())
+                {
+                    return format;
+                }
+            }
+
+            return SDPMediaFormatsEnum.Unknown;
+        }
+
+        public override string ToString()
+        {
+            return FormatAttribute;
         }
     }
 }

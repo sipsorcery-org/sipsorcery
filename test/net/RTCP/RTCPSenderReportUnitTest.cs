@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -75,6 +76,23 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(jitter, parsedSR.ReceptionReports.First().Jitter);
             Assert.Equal(lastSRTimestamp, parsedSR.ReceptionReports.First().LastSenderReportTimestamp);
             Assert.Equal(delaySinceLastSR, parsedSR.ReceptionReports.First().DelaySinceLastSenderReport);
+        }
+
+        /// <summary>
+        /// Tests parsing a Sender Report from a byte array works correctly.
+        /// </summary>
+        [Fact]
+        public void ParseSenderReportUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var buffer = TypeExtensions.ParseHexStr("80C8000641446122E1D2B0EA004B650C0000D556000001310003BA5A");
+
+            RTCPSenderReport sr = new RTCPSenderReport(buffer);
+
+            Assert.NotNull(sr);
+            Assert.Equal(1095000354U, sr.SSRC);
         }
     }
 }

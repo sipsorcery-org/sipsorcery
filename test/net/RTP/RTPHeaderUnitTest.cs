@@ -9,8 +9,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -173,6 +173,22 @@ namespace SIPSorcery.Net.UnitTests
             Assert.True(3739283087 == rtpPacket.Header.SyncSource, "SyncSource was mismatched.");
             Assert.True(1U == rtpPacket.Header.ExtensionLength, "Extension Length was mismatched.");
             Assert.True(rtpPacket.Header.ExtensionPayload.Length == rtpPacket.Header.ExtensionLength * 4, "Extension length and payload were mismatched.");
+        }
+
+        [Fact]
+        public void ParseChromeRtpPacketUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var buffer = TypeExtensions.ParseHexStr("800000099D5904B4838FCECF7F1E");
+
+            RTPPacket rtp = new RTPPacket(buffer);
+
+            logger.LogDebug($"RTP SSRC: {rtp.Header.SyncSource}");
+            logger.LogDebug($"RTP length: {rtp.Header.Length}");
+
+            Assert.NotNull(rtp);
         }
     }
 }

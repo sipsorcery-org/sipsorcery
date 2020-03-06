@@ -18,6 +18,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -29,7 +30,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public delegate int ProtectRtpPacket(byte[] payload, int length);
+    public delegate int ProtectRtpPacket(byte[] payload, int length, out int outputBufferLength);
 
     public class RTPSessionStream
     {
@@ -42,30 +43,100 @@ namespace SIPSorcery.Net
         /// </summary>
         public int PayloadTypeID { get; private set; }
 
-        public RTPSessionStream(int id, int payloadTypeID)
+        /// <summary>
+        /// Required when multiple RTP streams are being multiplexed. The initial stream
+        /// can leave this as null and it will be matched to any incoming RTP payload ID
+        /// that does not match another stream.
+        /// </summary>
+        private List<int> m_remotePayloadIDs;
+
+        /// <summary>
+        /// Creates a lightweight class to track an RTP stream within an RTP session. When 
+        /// supporting RFC3550 (the standard RTP specification) the relationship between
+        /// an RTP stream and session is 1:1. For WebRTC and RFC8101 there can be multiple
+        /// streams per session.
+        /// </summary>
+        /// <param name="id">An internal monotonic ID to differentiate the streams belonging
+        /// to a particular session.</param>
+        /// <param name="payloadTypeID">The payload type ID set in RTP packets sent by us.</param>
+        /// <param name="remotePayloadIDs">The list of potential payload ID's that the
+        /// remote party may use in RTP packets sent to us. Must be mutually exclusive across
+        /// all streams in the same session.</param>
+        public RTPSessionStream(int id, int payloadTypeID, List<int> remotePayloadIDs)
         {
             ID = id;
             PayloadTypeID = payloadTypeID;
             Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
             SeqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+            m_remotePayloadIDs = remotePayloadIDs;
+        }
+
+        /// <summary>
+        /// Checks whether the payload ID in an RTP packet received from the remote call party
+        /// is in this stream's list.
+        /// </summary>
+        /// <param name="remotePayloadID">The payload ID set in the remote party's RTP header.</param>
+        /// <returns>True if the payload ID matches this stream. False if not.</returns>
+        public bool IsRemotePayloadIDMatch(int remotePayloadID)
+        {
+            if(m_remotePayloadIDs?.Count() == 0)
+            {
+                return false;
+            }
+            else
+            {
+                return m_remotePayloadIDs.Any(x => x == remotePayloadID);
+            }
         }
     }
 
     public class RTPSession : IDisposable
     {
         private const int RTP_MAX_PAYLOAD = 1400;
-        public const int SRTP_AUTH_KEY_LENGTH = 10;
+
+        /// <summary>
+        /// From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer
+        /// (authentication tag and MKI) supported by libSRTP.This value is
+        /// the maximum number of octets that will be added to an RTP packet by
+        /// srtp_protect().
+        /// 
+        /// srtp_protect():
+        /// @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN
+        /// into the location in memory immediately following the RTP packet.
+        /// Callers MUST ensure that this much writable memory is available in
+        /// the buffer that holds the RTP packet.
+        /// 
+        /// srtp_protect_rtcp():
+        /// @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN+4
+        /// to the location in memory immediately following the RTCP packet.
+        /// Callers MUST ensure that this much writable memory is available in
+        /// the buffer that holds the RTCP packet.
+        /// </summary>
+        public const int SRTP_MAX_PREFIX_LENGTH = 148;
         private const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
         public const int H264_RTP_HEADER_LENGTH = 2;
         public const int RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS = 50; // Default sample period for an RTP event as specified by RFC2833.
 
         private static ILogger logger = Log.Logger;
 
+        private bool m_isRtcpMultiplexed = false;       // Indicates whether the RTP channel is multiplexing RTP and RTCP packets on the same port.
         private IPEndPoint m_lastReceiveFromEndPoint;
         private bool m_rtpEventInProgress;               // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                 // The last timestamp used in an RTP packet.    
         private bool m_isClosed;
+        private RTCPSession m_defaultRtcpSession;       // RTCP session for the first session stream.
+
+        /// <summary>
+        /// A session stream represents values for RTP header fields that differentiate
+        /// which RTP session a packet belongs to. A single RTP session can be sending
+        /// multiple RTP streams (e.g. audio and video).
+        /// </summary>
         private List<RTPSessionStream> m_sessionStreams = new List<RTPSessionStream>();
+
+        /// <summary>
+        /// The RTCP session(s) to manage RTCP reporting requirements for this session.
+        /// </summary>
+        private ConcurrentDictionary<uint, RTCPSession> m_rtcpSessions = new ConcurrentDictionary<uint, RTCPSession>();
 
         /// <summary>
         /// The RTP communications channel this session is sending and receiving on.
@@ -73,18 +144,18 @@ namespace SIPSorcery.Net
         public RTPChannel RtpChannel { get; private set; }
 
         /// <summary>
-        /// The RTCP session to manage RTCP reporting requirements for this session.
-        /// </summary>
-        public RTCPSession RtcpSession { get; private set; }
-
-        /// <summary>
         /// The remote RTP end point this session is sending to.
         /// </summary>
-        public IPEndPoint DestinationEndPoint;
+        public IPEndPoint DestinationEndPoint { get; private set; }
+
+        /// <summary>
+        /// The remote RTP control end point this session is sending to RTCP reports to.
+        /// </summary>
+        public IPEndPoint ControlDestinationEndPoint { get; private set; }
 
         /// <summary>
         /// In order to detect RTP events from the remote party this property needs to 
-        /// be set to tge payload ID they are using.
+        /// be set to the payload ID they are using.
         /// </summary>
         public int RemoteRtpEventPayloadID { get; set; }
 
@@ -92,6 +163,21 @@ namespace SIPSorcery.Net
         /// Function pointer to an SRTP context that encrypts an RTP packet.
         /// </summary>
         internal ProtectRtpPacket SrtpProtect;
+
+        /// <summary>
+        /// Function pointer to an SRTP context that decrypts an RTP packet.
+        /// </summary>
+        internal ProtectRtpPacket SrtpUnprotect;
+
+        /// <summary>
+        /// Function pointer to an SRTCP context that encrypts an RTP packet.
+        /// </summary>
+        internal ProtectRtpPacket SrtcpControlProtect;
+
+        /// <summary>
+        /// Function pointer to an SRTP context that decrypts an RTP packet.
+        /// </summary>
+        internal ProtectRtpPacket SrtcpControlUnprotect;
 
         /// <summary>
         /// Gets fired when the session detects that the remote end point 
@@ -121,16 +207,6 @@ namespace SIPSorcery.Net
         public event Action<string> OnRtpClosed;
 
         /// <summary>
-        /// Used to notify the RTCP session of an RTP packet receive.
-        /// </summary>
-        internal event Action<RTPPacket> OnRtpPacketReceived;
-
-        /// <summary>
-        /// Used to notify the RTCP session of an RTP packet send.
-        /// </summary
-        internal event Action<RTPPacket> OnRtpPacketSent;
-
-        /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
         /// pseudo random values.
         /// </summary>
@@ -144,33 +220,19 @@ namespace SIPSorcery.Net
             AddressFamily addrFamily,
             bool isRtcpMultiplexed)
         {
-            var sessionStream = new RTPSessionStream(0, payloadTypeID);
-            m_sessionStreams.Add(sessionStream);
-            InitialiseRtpChannel(addrFamily, isRtcpMultiplexed);
-        }
+            m_isRtcpMultiplexed = isRtcpMultiplexed;
 
-        /// <summary>
-        /// Initialises the RTP session state and starts the RTP channel UDP sockets.
-        /// </summary>
-        /// <param name="addrFamily">Whether the RTP channel should use IPv4 or IPv6.</param>
-        /// <param name="isRtcpMultiplexed">If true RTCP reports will be multiplexed with RTP on a single channel.
-        /// If false (standard mode) then a separate socket is used to send and receive RTCP reports.</param>
-        private void InitialiseRtpChannel(AddressFamily addrFamily, bool isRtcpMultiplexed)
-        {
             var channelAddress = (addrFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
             RtpChannel = new RTPChannel(channelAddress, !isRtcpMultiplexed);
 
             RtpChannel.OnRTPDataReceived += RtpPacketReceived;
+            RtpChannel.OnControlDataReceived += RtpPacketReceived; // RTCP packets could come on RTP or control socket.
             RtpChannel.OnClosed += OnRTPChannelClosed;
 
-            RtcpSession = new RTCPSession(m_sessionStreams.First().Ssrc, RtpChannel, isRtcpMultiplexed);
-            OnRtpPacketReceived += RtcpSession.RtpPacketReceived;
-            RtpChannel.OnControlDataReceived += RtcpSession.ControlDataReceived;
-            OnRtpPacketSent += RtcpSession.RtpPacketSent;
-
-            // Start the RTP and Control socket receivers and the RTCP session.
+            // Start the RTP, and if required the Control, socket receivers and the RTCP session.
             RtpChannel.Start();
-            RtcpSession.Start();
+
+            AddStream(payloadTypeID, null);
         }
 
         /// <summary>
@@ -179,14 +241,43 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="payloadTypeID">The payload type ID for this RTP stream. It's what gets set in the payload 
         /// type ID field in the RTP header.</param>
+        /// <param name="remotePayloadIDs">A list of the payload IDs the remote party can set in their RTP headers.</param>
         /// <returns>The ID of the stream of this media type. It must be supplied when
         /// doing a send for this stream.</returns>
-        public int AddStream(int payloadTypeID, SDPMediaAnnouncement mediaAnnouncement)
+        public int AddStream(int payloadTypeID, List<int> remotePayloadIDs)
         {
-            int nextID = m_sessionStreams.OrderByDescending(x => x.ID).First().ID + 1;
-            var sessionStream = new RTPSessionStream(nextID, payloadTypeID);
+            if(m_sessionStreams.Count() > 0 && remotePayloadIDs?.Count() == 0)
+            {
+                throw new ApplicationException("The remote party payload ID's need to be provided for RTP stream multiplexing.");
+            }
+
+            int nextID = (m_sessionStreams.Count()) == 0 ? 0 : m_sessionStreams.OrderByDescending(x => x.ID).First().ID + 1;
+            var sessionStream = new RTPSessionStream(nextID, payloadTypeID, remotePayloadIDs);
             m_sessionStreams.Add(sessionStream);
+
+            var rtcpSession = new RTCPSession(sessionStream.Ssrc);
+            if (m_rtcpSessions.TryAdd(sessionStream.Ssrc, rtcpSession))
+            {
+                rtcpSession.OnReportReadyToSend += SendRtcpReport;
+                rtcpSession.Start();
+            }
+            else
+            {
+                logger.LogWarning($"Failed to add RTCP session for RTP SSRC {sessionStream.Ssrc}.");
+            }
+
+            if(nextID == 0)
+            {
+                m_defaultRtcpSession = rtcpSession;
+            }
+
             return sessionStream.ID;
+        }
+
+        public void SetDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
+        {
+            DestinationEndPoint = rtpEndPoint;
+            ControlDestinationEndPoint = rtcpEndPoint;
         }
 
         public void SendAudioFrame(uint timestamp, byte[] buffer, int streamID = 0)
@@ -199,6 +290,7 @@ namespace SIPSorcery.Net
             try
             {
                 RTPSessionStream sessionStream = m_sessionStreams.Where(x => x.ID == streamID).Single();
+                RTCPSession rtcpSession = (m_rtcpSessions.ContainsKey(sessionStream.Ssrc)) ? m_rtcpSessions[sessionStream.Ssrc] : null;
 
                 for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
                 {
@@ -206,35 +298,16 @@ namespace SIPSorcery.Net
 
                     int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
                     int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
-                    int srtpProtectionLength = (SrtpProtect != null) ? SRTP_AUTH_KEY_LENGTH : 0;
+                    byte[] payload = new byte[payloadLength];
 
-                    RTPPacket rtpPacket = new RTPPacket(payloadLength + srtpProtectionLength);
-                    rtpPacket.Header.SyncSource = sessionStream.Ssrc;
-                    rtpPacket.Header.SequenceNumber = sessionStream.SeqNum++;
-                    rtpPacket.Header.Timestamp = timestamp;
+                    Buffer.BlockCopy(buffer, offset, payload, 0, payloadLength);
+
                     // RFC3551 specifies that for audio the marker bit should always be 0 except for when returning
                     // from silence suppression. For video the marker bit DOES get set to 1 for the last packet
                     // in a frame.
-                    rtpPacket.Header.MarkerBit = 0;
-                    rtpPacket.Header.PayloadType = sessionStream.PayloadTypeID;
+                    int markerBit = 0;
 
-                    Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, 0, payloadLength);
-
-                    OnRtpPacketSent?.Invoke(rtpPacket);
-
-                    var rtpBuffer = rtpPacket.GetBytes();
-
-                    int rtperr = SrtpProtect == null ? 0 : SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength);
-                    if (rtperr != 0)
-                    {
-                        logger.LogError("SendAudioFrame SRTP packet protection failed, result " + rtperr + ".");
-                    }
-                    else
-                    {
-                        RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
-                    }
-
-                    m_lastRtpTimestamp = timestamp;
+                    SendRtpPacket(RtpChannel, DestinationEndPoint, payload, timestamp, markerBit, sessionStream.PayloadTypeID, sessionStream.Ssrc, sessionStream.SeqNum++, rtcpSession);
                 }
             }
             catch (SocketException sockExcp)
@@ -253,42 +326,23 @@ namespace SIPSorcery.Net
             try
             {
                 RTPSessionStream sessionStream = m_sessionStreams.Where(x => x.ID == streamID).Single();
+                RTCPSession rtcpSession = (m_rtcpSessions.ContainsKey(sessionStream.Ssrc)) ? m_rtcpSessions[sessionStream.Ssrc] : null;
 
                 for (int index = 0; index * RTP_MAX_PAYLOAD < buffer.Length; index++)
                 {
                     sessionStream.SeqNum = (ushort)(sessionStream.SeqNum % UInt16.MaxValue);
 
-                    int offset = (index == 0) ? 0 : (index * RTP_MAX_PAYLOAD);
+                    int offset = index * RTP_MAX_PAYLOAD;
                     int payloadLength = (offset + RTP_MAX_PAYLOAD < buffer.Length) ? RTP_MAX_PAYLOAD : buffer.Length - offset;
-                    int srtpProtectionLength = (SrtpProtect != null) ? SRTP_AUTH_KEY_LENGTH : 0;
 
                     byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
+                    byte[] payload = new byte[payloadLength + vp8HeaderBytes.Length];
+                    Buffer.BlockCopy(vp8HeaderBytes, 0, payload, 0, vp8HeaderBytes.Length);
+                    Buffer.BlockCopy(buffer, offset, payload, vp8HeaderBytes.Length, payloadLength);
 
-                    RTPPacket rtpPacket = new RTPPacket(payloadLength + vp8HeaderBytes.Length + srtpProtectionLength);
-                    rtpPacket.Header.SyncSource = sessionStream.Ssrc;
-                    rtpPacket.Header.SequenceNumber = sessionStream.SeqNum++;
-                    rtpPacket.Header.Timestamp = timestamp;
-                    rtpPacket.Header.MarkerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
-                    rtpPacket.Header.PayloadType = sessionStream.PayloadTypeID;
+                    int markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
 
-                    Buffer.BlockCopy(vp8HeaderBytes, 0, rtpPacket.Payload, 0, vp8HeaderBytes.Length);
-                    Buffer.BlockCopy(buffer, offset, rtpPacket.Payload, vp8HeaderBytes.Length, payloadLength);
-
-                    OnRtpPacketSent?.Invoke(rtpPacket);
-
-                    var rtpBuffer = rtpPacket.GetBytes();
-
-                    int rtperr = SrtpProtect == null ? 0 : SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength);
-                    if (rtperr != 0)
-                    {
-                        logger.LogError("SendVp8Frame SRTP packet protection failed, result " + rtperr + ".");
-                    }
-                    else
-                    {
-                        RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
-                    }
-
-                    m_lastRtpTimestamp = timestamp;
+                    SendRtpPacket(RtpChannel, DestinationEndPoint, payload, timestamp, markerBit, sessionStream.PayloadTypeID, sessionStream.Ssrc, sessionStream.SeqNum++, rtcpSession);
                 }
             }
             catch (SocketException sockExcp)
@@ -319,31 +373,20 @@ namespace SIPSorcery.Net
                 //System.Diagnostics.Debug.WriteLine("Sending " + jpegBytes.Length + " encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ", image dimensions " + jpegWidth + " x " + jpegHeight + ".");
 
                 RTPSessionStream sessionStream = m_sessionStreams.Where(x => x.ID == streamID).Single();
+                RTCPSession rtcpSession = (m_rtcpSessions.ContainsKey(sessionStream.Ssrc)) ? m_rtcpSessions[sessionStream.Ssrc] : null;
 
                 for (int index = 0; index * RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
                 {
                     uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
                     int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? RTP_MAX_PAYLOAD : jpegBytes.Length - index * RTP_MAX_PAYLOAD;
-
                     byte[] jpegHeader = CreateLowQualityRtpJpegHeader(offset, jpegQuality, jpegWidth, jpegHeight);
 
                     List<byte> packetPayload = new List<byte>();
                     packetPayload.AddRange(jpegHeader);
                     packetPayload.AddRange(jpegBytes.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength));
 
-                    RTPPacket rtpPacket = new RTPPacket(packetPayload.Count);
-                    rtpPacket.Header.SyncSource = sessionStream.Ssrc;
-                    rtpPacket.Header.SequenceNumber = sessionStream.SeqNum++;
-                    rtpPacket.Header.Timestamp = timestamp;
-                    rtpPacket.Header.MarkerBit = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1;
-                    rtpPacket.Header.PayloadType = (int)SDPMediaFormatsEnum.JPEG;
-                    rtpPacket.Payload = packetPayload.ToArray();
-
-                    OnRtpPacketSent?.Invoke(rtpPacket);
-
-                    byte[] rtpBytes = rtpPacket.GetBytes();
-
-                    RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBytes);
+                    int markerBit = ((index + 1) * RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1; ;
+                    SendRtpPacket(RtpChannel, DestinationEndPoint, packetPayload.ToArray(), timestamp, markerBit, sessionStream.PayloadTypeID, sessionStream.Ssrc, sessionStream.SeqNum++, rtcpSession);
                 }
             }
             catch (SocketException sockExcp)
@@ -358,7 +401,7 @@ namespace SIPSorcery.Net
         /// <param name="frame">The H264 encoded frame to transmit.</param>
         /// <param name="frameSpacing">The increment to add to the RTP timestamp for each new frame.</param>
         /// <param name="payloadType">The payload type to set on the RTP packet.</param>
-        public void SendH264Frame(uint timestamp, byte[] frame, uint frameSpacing, int payloadType, int streamID = 0)
+        public void SendH264Frame(uint timestamp, byte[] frame, int payloadType, int streamID = 0)
         {
             if (m_isClosed || m_rtpEventInProgress || DestinationEndPoint == null)
             {
@@ -370,30 +413,26 @@ namespace SIPSorcery.Net
                 //System.Diagnostics.Debug.WriteLine("Sending " + frame.Length + " H264 encoded bytes to client, timestamp " + _timestamp + ", starting sequence number " + _sequenceNumber + ".");
 
                 RTPSessionStream sessionStream = m_sessionStreams.Where(x => x.ID == streamID).Single();
+                RTCPSession rtcpSession = (m_rtcpSessions.ContainsKey(sessionStream.Ssrc)) ? m_rtcpSessions[sessionStream.Ssrc] : null;
 
                 for (int index = 0; index * RTP_MAX_PAYLOAD < frame.Length; index++)
                 {
-                    uint offset = Convert.ToUInt32(index * RTP_MAX_PAYLOAD);
+                    int offset = index * RTP_MAX_PAYLOAD;
                     int payloadLength = ((index + 1) * RTP_MAX_PAYLOAD < frame.Length) ? RTP_MAX_PAYLOAD : frame.Length - index * RTP_MAX_PAYLOAD;
-
-                    RTPPacket rtpPacket = new RTPPacket(payloadLength + H264_RTP_HEADER_LENGTH);
-                    rtpPacket.Header.SyncSource = sessionStream.Ssrc;
-                    rtpPacket.Header.SequenceNumber = sessionStream.SeqNum++;
-                    rtpPacket.Header.Timestamp = timestamp;
-                    rtpPacket.Header.MarkerBit = 0;
-                    rtpPacket.Header.PayloadType = payloadType;
+                    byte[] payload = new byte[payloadLength + H264_RTP_HEADER_LENGTH];
 
                     // Start RTP packet in frame 0x1c 0x89
                     // Middle RTP packet in frame 0x1c 0x09
                     // Last RTP packet in frame 0x1c 0x49
 
+                    int markerBit = 0;
                     byte[] h264Header = new byte[] { 0x1c, 0x09 };
 
                     if (index == 0 && frame.Length < RTP_MAX_PAYLOAD)
                     {
                         // First and last RTP packet in the frame.
                         h264Header = new byte[] { 0x1c, 0x49 };
-                        rtpPacket.Header.MarkerBit = 1;
+                        markerBit = 1;
                     }
                     else if (index == 0)
                     {
@@ -402,18 +441,16 @@ namespace SIPSorcery.Net
                     else if ((index + 1) * RTP_MAX_PAYLOAD > frame.Length)
                     {
                         h264Header = new byte[] { 0x1c, 0x49 };
-                        rtpPacket.Header.MarkerBit = 1;
+                        markerBit = 1;
                     }
 
                     var h264Stream = frame.Skip(index * RTP_MAX_PAYLOAD).Take(payloadLength).ToList();
                     h264Stream.InsertRange(0, h264Header);
-                    rtpPacket.Payload = h264Stream.ToArray();
 
-                    OnRtpPacketSent?.Invoke(rtpPacket);
+                    Buffer.BlockCopy(h264Header, 0, payload, 0, H264_RTP_HEADER_LENGTH);
+                    Buffer.BlockCopy(frame, offset, payload, H264_RTP_HEADER_LENGTH, payloadLength);
 
-                    byte[] rtpBytes = rtpPacket.GetBytes();
-
-                    RtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBytes);
+                    SendRtpPacket(RtpChannel, DestinationEndPoint, payload, timestamp, markerBit, sessionStream.PayloadTypeID, sessionStream.Ssrc, sessionStream.SeqNum++, rtcpSession);
                 }
             }
             catch (SocketException sockExcp)
@@ -446,6 +483,7 @@ namespace SIPSorcery.Net
             try
             {
                 RTPSessionStream sessionStream = m_sessionStreams.Where(x => x.ID == streamID).Single();
+                RTCPSession rtcpSession = (m_rtcpSessions.ContainsKey(sessionStream.Ssrc)) ? m_rtcpSessions[sessionStream.Ssrc] : null;
 
                 m_rtpEventInProgress = true;
                 uint startTimestamp = m_lastRtpTimestamp;
@@ -471,7 +509,7 @@ namespace SIPSorcery.Net
                     byte[] buffer = rtpEvent.GetEventPayload();
 
                     int markerBit = (i == 0) ? 1 : 0;  // Set marker bit for the first packet in the event.
-                    SendRtpPacket(RtpChannel, DestinationEndPoint, buffer, startTimestamp, markerBit, rtpEvent.PayloadTypeID, sessionStream.Ssrc, sessionStream.SeqNum);
+                    SendRtpPacket(RtpChannel, DestinationEndPoint, buffer, startTimestamp, markerBit, rtpEvent.PayloadTypeID, sessionStream.Ssrc, sessionStream.SeqNum, rtcpSession);
 
                     sessionStream.SeqNum++;
                 }
@@ -486,7 +524,7 @@ namespace SIPSorcery.Net
                         rtpEvent.Duration += rtpTimestampStep;
                         byte[] buffer = rtpEvent.GetEventPayload();
 
-                        SendRtpPacket(RtpChannel, DestinationEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, sessionStream.Ssrc, sessionStream.SeqNum);
+                        SendRtpPacket(RtpChannel, DestinationEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, sessionStream.Ssrc, sessionStream.SeqNum, rtcpSession);
 
                         sessionStream.SeqNum++;
 
@@ -500,7 +538,7 @@ namespace SIPSorcery.Net
                         rtpEvent.Duration = rtpEvent.TotalDuration;
                         byte[] buffer = rtpEvent.GetEventPayload();
 
-                        SendRtpPacket(RtpChannel, DestinationEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, sessionStream.Ssrc, sessionStream.SeqNum);
+                        SendRtpPacket(RtpChannel, DestinationEndPoint, buffer, startTimestamp, 0, rtpEvent.PayloadTypeID, sessionStream.Ssrc, sessionStream.SeqNum, rtcpSession);
 
                         sessionStream.SeqNum++;
                     }
@@ -529,15 +567,15 @@ namespace SIPSorcery.Net
             {
                 m_isClosed = true;
 
-                OnRtpPacketReceived -= RtcpSession.RtpPacketReceived;
-                OnRtpPacketSent -= RtcpSession.RtpPacketSent;
-                RtcpSession.Close(reason);
+                foreach (var rtcpSession in m_rtcpSessions.Values)
+                {
+                    rtcpSession.Close(reason);
+                }
 
                 if (RtpChannel != null)
                 {
                     RtpChannel.OnRTPDataReceived -= RtpPacketReceived;
                     RtpChannel.OnClosed -= OnRTPChannelClosed;
-                    RtpChannel.OnControlDataReceived -= RtcpSession.ControlDataReceived;
                     RtpChannel.Close(reason);
                 }
 
@@ -561,18 +599,127 @@ namespace SIPSorcery.Net
             // Quick sanity check on whether this is not an RTP or RTCP packet.
             if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {
-                var rtpPacket = new RTPPacket(buffer);
-
-                OnRtpPacketReceived?.Invoke(rtpPacket);
-
-                if (RemoteRtpEventPayloadID != 0 && rtpPacket.Header.PayloadType == RemoteRtpEventPayloadID)
+                if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
                 {
-                    RTPEvent rtpEvent = new RTPEvent(rtpPacket.Payload);
-                    OnRtpEvent?.Invoke(rtpEvent);
+                    //logger.LogDebug($"RTCP packet received from {remoteEndPoint} before: {buffer.HexStr()}");
+
+                    // RTCP packet.
+                    if (SrtcpControlUnprotect != null)
+                    {
+                        int outBufLen = 0;
+                        int res = SrtcpControlUnprotect(buffer, buffer.Length, out outBufLen);
+
+                        if (res != 0)
+                        {
+                            logger.LogWarning($"SRTCP unprotect failed, result {res}.");
+                            return;
+                        }
+                        else
+                        {
+                            buffer = buffer.Take(outBufLen).ToArray();
+                        }
+                    }
+
+                    //logger.LogDebug($"RTCP packet received from {remoteEndPoint} after: {buffer.HexStr()}");
+
+                    // There are multiple RTCP sessions, find the correct RTCP session and hand it over.
+                    if (m_rtcpSessions.Count == 1)
+                    {
+                        m_rtcpSessions.First().Value.ControlDataReceived(remoteEndPoint, buffer);
+                    }
+                    else
+                    {
+                        // Need to identify the matching RTCP session.
+                        bool wasMatched = false;
+                        uint ssrc = 0;
+                        if (buffer[1] == 0xC8)
+                        {
+                            try
+                            {
+                                var sr = new RTCPSenderReport(buffer);
+                                ssrc = sr.ReceptionReports.FirstOrDefault().SSRC;
+                                if (ssrc != 0 && m_rtcpSessions.ContainsKey(ssrc))
+                                {
+                                    m_rtcpSessions[ssrc].ControlDataReceived(remoteEndPoint, buffer);
+                                    wasMatched = true;
+                                }
+                            }
+                            catch (Exception sr)
+                            {
+                                logger.LogError($"Exception parsing SR. {sr.Message}");
+                            }
+                        }
+                        else
+                        {
+                            try
+                            {
+                                var rr = new RTCPReceiverReport(buffer);
+                                //logger.LogDebug($"RR SSRC {rr.SSRC}");
+                                //foreach (var rep in rr.ReceptionReports)
+                                //{
+                                //    logger.LogDebug($" RR reception report sources SSRC: {rep.SSRC}");
+                                //}
+
+                                ssrc = rr.ReceptionReports.Count() >0 ? rr.ReceptionReports.First().SSRC : 0;
+                                if (ssrc != 0 && m_rtcpSessions.ContainsKey(ssrc))
+                                {
+                                    m_rtcpSessions[ssrc].ControlDataReceived(remoteEndPoint, buffer);
+                                    wasMatched = true;
+                                }
+                            }
+                            catch (Exception rr)
+                            {
+                                logger.LogError($"Exception parsing RR. {rr.Message}");
+                            }
+                        }
+
+                        if (!wasMatched)
+                        {
+                            logger.LogWarning($"An RTCP report was received for a non-existent ssrc {ssrc}.");
+                        }
+                    }
                 }
                 else
                 {
-                    OnReceivedSampleReady?.Invoke(rtpPacket.Payload);
+                    // RTP packet.
+                    if (SrtpUnprotect != null)
+                    {
+                        int outBufLen = 0;
+                        int res = SrtpUnprotect(buffer, buffer.Length, out outBufLen);
+
+                        if (res != 0)
+                        {
+                            logger.LogWarning($"SRTP unprotect failed, result {res}.");
+                            return;
+                        }
+                        else
+                        {
+                            buffer = buffer.Take(outBufLen).ToArray();
+                        }
+                    }
+
+                    var rtpPacket = new RTPPacket(buffer);
+
+                    if (RemoteRtpEventPayloadID != 0 && rtpPacket.Header.PayloadType == RemoteRtpEventPayloadID)
+                    {
+                        RTPEvent rtpEvent = new RTPEvent(rtpPacket.Payload);
+                        OnRtpEvent?.Invoke(rtpEvent);
+                    }
+                    else
+                    {
+                        OnReceivedSampleReady?.Invoke(rtpPacket.Payload);
+                    }
+
+                    // Used for reporting purposes.
+                    var sessionStream = m_sessionStreams.Where(x => x.IsRemotePayloadIDMatch(rtpPacket.Header.PayloadType)).FirstOrDefault();
+                    if (sessionStream != null && m_rtcpSessions.ContainsKey(sessionStream.Ssrc))
+                    {
+                        m_rtcpSessions[sessionStream.Ssrc].RecordRtpPacketReceived(rtpPacket);
+                    }
+                    else
+                    {
+                        m_defaultRtcpSession.RecordRtpPacketReceived(rtpPacket);
+                    }
                 }
             }
         }
@@ -586,9 +733,9 @@ namespace SIPSorcery.Net
         /// <param name="timestamp">The RTP header timestamp.</param>
         /// <param name="markerBit">The RTP header marker bit.</param>
         /// <param name="payloadType">The RTP header payload type.</param>
-        private void SendRtpPacket(RTPChannel rtpChannel, IPEndPoint dstRtpSocket, byte[] data, uint timestamp, int markerBit, int payloadType, uint ssrc, ushort seqNum)
+        private void SendRtpPacket(RTPChannel rtpChannel, IPEndPoint dstRtpSocket, byte[] data, uint timestamp, int markerBit, int payloadType, uint ssrc, ushort seqNum, RTCPSession rtcpSession)
         {
-            int srtpProtectionLength = (SrtpProtect != null) ? SRTP_AUTH_KEY_LENGTH : 0;
+            int srtpProtectionLength = (SrtpProtect != null) ? SRTP_MAX_PREFIX_LENGTH : 0;
 
             RTPPacket rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
             rtpPacket.Header.SyncSource = ssrc;
@@ -599,18 +746,64 @@ namespace SIPSorcery.Net
 
             Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
 
-            OnRtpPacketSent?.Invoke(rtpPacket);
-
             var rtpBuffer = rtpPacket.GetBytes();
-
-            int rtperr = SrtpProtect == null ? 0 : SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength);
-            if (rtperr != 0)
+            
+            if (SrtpProtect == null)
             {
-                logger.LogError("SendDtmfEvent SRTP packet protection failed, result " + rtperr + ".");
+                rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer);
             }
             else
             {
-                rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer);
+                int outBufLen = 0;
+                int rtperr = SrtpProtect(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
+                if (rtperr != 0)
+                {
+                    logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
+                }
+                else
+                {
+                    rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, dstRtpSocket, rtpBuffer.Take(outBufLen).ToArray());
+                }
+            }
+            m_lastRtpTimestamp = timestamp;
+
+            rtcpSession?.RecordRtpPacketSend(rtpPacket);
+        }
+
+        /// <summary>
+        /// Sends the RTCP report to the remote call party.
+        /// </summary>
+        /// <param name="report">RTCP report to send.</param>
+        private void SendRtcpReport(RTCPCompoundPacket report)
+        {
+            if (ControlDestinationEndPoint != null)
+            {
+                var reportBytes = report.GetBytes();
+
+                //logger.LogDebug($"SendRtcpReport: {reportBytes.HexStr()}");
+
+                var sendOnSocket = (m_isRtcpMultiplexed) ? RTPChannelSocketsEnum.RTP : RTPChannelSocketsEnum.Control;
+
+                if (SrtcpControlProtect == null)
+                {
+                    RtpChannel.SendAsync(sendOnSocket, ControlDestinationEndPoint, reportBytes);
+                }
+                else
+                {
+                    byte[] sendBuffer = new byte[reportBytes.Length + SRTP_MAX_PREFIX_LENGTH];
+                    Buffer.BlockCopy(reportBytes, 0, sendBuffer, 0, reportBytes.Length);
+
+                    int outBufLen = 0;
+                    int rtperr = SrtcpControlProtect(sendBuffer, sendBuffer.Length - SRTP_MAX_PREFIX_LENGTH, out outBufLen);
+                    if (rtperr != 0)
+                    {
+                        logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
+                    }
+                    else
+                    {
+                        RtpChannel.SendAsync(sendOnSocket, ControlDestinationEndPoint, sendBuffer.Take(outBufLen).ToArray());
+                    }
+                }
             }
         }
 

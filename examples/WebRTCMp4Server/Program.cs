@@ -15,10 +15,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -63,10 +63,13 @@ namespace WebRTCServer
         private const string WEBSOCKET_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const string DTLS_CERTIFICATE_PATH = "certs/localhost.pem";
         private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
-        private const string DTLS_CERTIFICATE_FINGERPRINT = "C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
+        private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
         private const int WEBSOCKET_PORT = 8081;
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
+
+        public static readonly List<SDPMediaFormat> _supportedAudioFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) };
+        public static readonly List<SDPMediaFormat> _supportedVideoFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) };
 
         private static WebSocketServer _webSocketServer;
         private static MFSampleGrabber _mfSampleGrabber;
@@ -101,16 +104,12 @@ namespace WebRTCServer
 
             // Initialise the Media Foundation library that will pull the samples from the mp4 file.
             _mfSampleGrabber = new SIPSorceryMedia.MFSampleGrabber();
-            _mfSampleGrabber.OnClockStartEvent += OnClockStartEvent;
             _mfSampleGrabber.OnVideoResolutionChangedEvent += OnVideoResolutionChangedEvent;
             unsafe
             {
                 _mfSampleGrabber.OnProcessSampleEvent += OnProcessSampleEvent;
             }
             Task.Run(() => _mfSampleGrabber.Run(MP4_FILE_PATH, true));
-
-            // Hook up event handlers to send the media samples to the network.
-            //InitMediaToWebRtcClients();
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -145,7 +144,14 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            var webRtcSession = new WebRtcSession(DTLS_CERTIFICATE_FINGERPRINT, null);
+            var webRtcSession = new WebRtcSession(
+                DTLS_CERTIFICATE_FINGERPRINT,
+                _supportedAudioFormats,
+                _supportedVideoFormats,
+                null);
+
+            webRtcSession.AudioStreamStatus = MediaStreamStatusEnum.SendOnly;
+            webRtcSession.VideoStreamStatus = MediaStreamStatusEnum.SendOnly;
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
@@ -157,7 +163,7 @@ namespace WebRTCServer
 
             await webRtcSession.Initialise(DoDtlsHandshake, null);
 
-            context.WebSocket.Send(webRtcSession.SDP);
+            context.WebSocket.Send(webRtcSession.SDP.ToString());
 
             return webRtcSession;
         }
@@ -170,6 +176,7 @@ namespace WebRTCServer
 
                 var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
 
+                webRtcSession.OnSdpAnswer(answerSDP);
                 webRtcSession.SdpSessionID = answerSDP.SessionId;
                 webRtcSession.RemoteIceUser = answerSDP.IceUfrag;
                 webRtcSession.RemoteIcePassword = answerSDP.IcePwd;
@@ -185,11 +192,6 @@ namespace WebRTCServer
                 }
 
                 OnMediaSampleReady += webRtcSession.SendMedia;
-
-                if (_mfSampleGrabber.Paused)
-                {
-                    _mfSampleGrabber.Start();
-                }
             }
             catch (Exception excp)
             {
@@ -201,12 +203,20 @@ namespace WebRTCServer
         /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
         /// </summary>
         /// <param name="rtpSocket">The RTP socket being used for the WebRTC session.</param>
-        private static int DoDtlsHandshake(WebRtcSession webRtcSession, Socket rtpSocket, out ProtectRtpPacket protectRtp, out ProtectRtpPacket protectRtcp)
+        private static int DoDtlsHandshake(
+            WebRtcSession webRtcSession, 
+            Socket rtpSocket, 
+            out ProtectRtpPacket protectRtp,
+            out ProtectRtpPacket unprotectRtp,
+            out ProtectRtpPacket protectRtcp,
+            out ProtectRtpPacket unprotectRtcp)
         {
             logger.LogDebug("DoDtlsHandshake started.");
 
             protectRtp = null;
+            unprotectRtp = null;
             protectRtcp = null;
+            unprotectRtcp = null;
 
             if (!File.Exists(DTLS_CERTIFICATE_PATH))
             {
@@ -228,9 +238,18 @@ namespace WebRTCServer
             {
                 logger.LogDebug("DTLS negotiation complete.");
 
-                var srtpContext = new Srtp(dtls, false);
-                protectRtp = srtpContext.ProtectRTP;
-                protectRtcp = srtpContext.ProtectRTCP;
+                var srtpSendContext = new Srtp(dtls, false);
+                protectRtp = srtpSendContext.ProtectRTP;
+                protectRtcp = srtpSendContext.ProtectRTCP;
+
+                var srtpReceiveContext = new Srtp(dtls, true);
+                unprotectRtp = srtpReceiveContext.UnprotectRTP;
+                unprotectRtcp = srtpReceiveContext.UnprotectRTCP;
+
+                if (_mfSampleGrabber.Paused)
+                {
+                    _mfSampleGrabber.Start();
+                }
             }
 
             return res;
@@ -260,7 +279,7 @@ namespace WebRTCServer
             }
             catch (Exception excp)
             {
-                logger.LogWarning("Exception MfSampleGrabber_OnVideoResolutionChangedEvent. " + excp.Message);
+                logger.LogWarning("Exception OnVideoResolutionChangedEvent. " + excp.Message);
             }
         }
 
@@ -332,54 +351,9 @@ namespace WebRTCServer
             }
             catch (Exception excp)
             {
-                logger.LogWarning("Exception MfSampleGrabber_OnProcessSampleEvent. " + excp.Message);
+                logger.LogWarning("Exception OnProcessSampleEvent. " + excp.Message);
             }
         }
-
-        public static void OnClockStartEvent(long hnsSystemTime, long llClockStartOffset)
-        {
-            //Console.WriteLine($"C# OnClockStart {hnsSystemTime}, {llClockStartOffset}.");
-        }
-
-        /// <summary>
-        /// This method sets up the streaming of the first audio and video stream from an mp4 file to a WebRtc browser 
-        /// (tested predominantly with Chrome). This method deals only with the media, the signaling and WebRtc session
-        /// needs to have already been set up by the respective WebRtc classes.
-        /// </summary>
-        //private static void InitMediaToWebRtcClients()
-        //{
-        //    OnMediaSampleReady += (mediaType, timestamp, sample) =>
-        //    {
-        //        if (String.IsNullOrEmpty(_rawRtpBaseEndPoint) && _webRtcSessions.Count() == 0)
-        //        {
-        //            if (_mfSampleGrabber.Paused == false)
-        //            {
-        //                logger.LogInformation("No active clients, pausing media sampling.");
-        //                _mfSampleGrabber.Pause();
-        //            }
-        //        }
-        //        else
-        //        {
-        //            lock (_webRtcSessions)
-        //            {
-        //                foreach (var session in _webRtcSessions.Where(x => (x.Value.IsDtlsNegotiationComplete == true || x.Value.IsEncryptionDisabled == true) &&
-        //                   x.Value.IsConnected && x.Value.MediaSource == MediaSourceEnum.Max &&
-        //                   x.Value.IsClosed == false))
-        //                {
-        //                    try
-        //                    {
-        //                        session.Value.SendMedia(mediaType, timestamp, sample);
-        //                    }
-        //                    catch (Exception sendExcp)
-        //                    {
-        //                        logger.LogWarning("Exception OnMediaSampleReady.SendMedia. " + sendExcp.Message);
-        //                        session.Value.Close();
-        //                    }
-        //                }
-        //            }
-        //        }
-        //    };
-        //}
 
         /// <summary>
         ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.

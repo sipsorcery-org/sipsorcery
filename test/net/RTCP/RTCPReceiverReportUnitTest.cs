@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -80,6 +81,40 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.True(receiverReport.ReceptionReports.Count == 0);
             Assert.Equal((uint)59132601, receiverReport.SSRC);
+        }
+
+        /// <summary>
+        /// Tests parsing a Receiver Report from a byte array works correctly.
+        /// </summary>
+        [Fact]
+        public void ParseReceiverReportUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var buffer = TypeExtensions.ParseHexStr("81C9000700000001679915EA000000000000212E000004B40000000000000000");
+
+            RTCPReceiverReport rr = new RTCPReceiverReport(buffer);
+
+            Assert.NotNull(rr);
+            Assert.Equal(1738085866U, rr.ReceptionReports.First().SSRC);
+        }
+
+        /// <summary>
+        /// Tests parsing a Receiver Report received from the Chrome browser as part of a WebRTC session works correctly.
+        /// </summary>
+        [Fact]
+        public void ParseReceiverReportChromeUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var buffer = TypeExtensions.ParseHexStr("81C90007FA17FA1709CF4FFA000000000000496C00000021000000000000000080000003315A25AFFAF8545434C7");
+
+            RTCPReceiverReport rr = new RTCPReceiverReport(buffer);
+
+            Assert.NotNull(rr);
+            Assert.Equal(4195875351U, rr.SSRC);
         }
     }
 }
