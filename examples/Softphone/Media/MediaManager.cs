@@ -98,7 +98,7 @@ namespace SIPSorcery.SoftPhone
         {
             List<VideoMode> videoDevices = null;
 
-            var videoSampler = new MFVideoSampler();
+            var videoSampler = new MediaSource();
             videoSampler.GetVideoDevices(ref videoDevices);
 
             return videoDevices;
@@ -138,8 +138,8 @@ namespace SIPSorcery.SoftPhone
                 _localVideoSamplingCancelTokenSource.Cancel();
             }
 
-            var videoSampler = new MFVideoSampler();
-            videoSampler.Init(videoMode.DeviceIndex, VideoSubTypesEnum.RGB24, videoMode.Width, videoMode.Height);
+            var videoSampler = new MediaSource();
+            videoSampler.Init(0, videoMode.DeviceIndex, VideoSubTypesEnum.RGB24, videoMode.Width, videoMode.Height);
             //videoSampler.InitFromFile();
             //_audioChannel = new AudioChannel();
 
@@ -180,7 +180,7 @@ namespace SIPSorcery.SoftPhone
             //}, cancellationToken);
         }
 
-        private void SampleWebCam(MFVideoSampler videoSampler, VideoMode videoMode, CancellationTokenSource cts)
+        private void SampleWebCam(MediaSource videoSampler, VideoMode videoMode, CancellationTokenSource cts)
         {
             try
             {
@@ -251,7 +251,7 @@ namespace SIPSorcery.SoftPhone
                     }
                 }
 
-                videoSampler.Stop();
+                videoSampler.Shutdown();
                 vpxEncoder.Dispose();
             }
             catch (Exception excp)

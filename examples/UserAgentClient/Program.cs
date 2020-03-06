@@ -131,8 +131,9 @@ namespace SIPSorcery
 
             // Wire up the RTP receive session to the audio output device.
             var (audioOutEvent, audioOutProvider) = GetAudioOutputDevice();
-            rtpSession.OnReceivedSampleReady += (sample) =>
+            rtpSession.OnRtpPacketReceived += (rtpPacket) =>
             {
+                var sample = rtpPacket.Payload;
                 for (int index = 0; index < sample.Length; index++)
                 {
                     short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);

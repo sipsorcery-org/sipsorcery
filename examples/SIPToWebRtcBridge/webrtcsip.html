@@ -11,7 +11,7 @@
 		
 			closePeer();
 
-			videoControl = document.querySelector('#videoCtl');
+			audioControl = document.querySelector('#audioCtl');
 
             var ws = new WebSocket(url, []);
 
@@ -25,12 +25,12 @@
                     console.log(event);
 
                     if (event.streams && event.streams[0]) {
-                        videoControl.srcObject = event.streams[0];
+                        audioControl.srcObject = event.streams[0];
                     }
                     else {
                         if (!inboundStream) {
                             inboundStream = new MediaStream();
-                            videoControl.srcObject = inboundStream;
+                            audioControl.srcObject = inboundStream;
                         }
                         inboundStream.addTrack(event.track);
                     }
@@ -64,7 +64,9 @@
 </head>
 <body>
 
-    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+	<div>
+		<audio controls autoplay="autoplay" id="audioCtl"/>
+	</div>
 	
     <div>
         <button type="button" class="btn btn-success" onclick="start();">Start</button>

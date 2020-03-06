@@ -28,10 +28,11 @@ namespace SIPSorcery.Net
 {
     public delegate int DoDtlsHandshakeDelegate(WebRtcSession session);
 
+    /// <summary>
+    /// Represents a WebRTC session with a remote peer.
+    /// </summary>
     public class WebRtcSession
     {
-        private const int PAYLOAD_TYPE_ID = 100;
-        private const int ICE_GATHERING_TIMEOUT_MILLISECONDS = 5000;
         private const int INITIAL_STUN_BINDING_PERIOD_MILLISECONDS = 1000;       // The period to send the initial STUN requests used to get an ICE candidates public IP address.
         private const int INITIAL_STUN_BINDING_ATTEMPTS_LIMIT = 3;              // The maximum number of binding attempts to determine a local socket's public IP address before giving up.
         private const int ICE_CONNECTED_NO_COMMUNICATIONS_TIMEOUT_SECONDS = 35;  // If there are no messages received (STUN/RTP/RTCP) within this period the session will be closed.
@@ -136,6 +137,8 @@ namespace SIPSorcery.Net
 
             SessionID = Guid.NewGuid().ToString();
 
+            // Pick one of the supported media types to use as the default. If there is an additional media type
+            // it will be added to the RTP session as an additional stream.
             if (_supportedAudioFormats != null && supportedAudioFormats.Count > 0)
             {
                 RtpSession = new RTPSession(SDPMediaTypesEnum.audio, (int)supportedAudioFormats.First().FormatCodec, AddressFamily.InterNetwork, true, true);
@@ -360,6 +363,10 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Adds an ICE candidate to the list of remote party candidates.
+        /// </summary>
+        /// <param name="remoteIceCandidate">The remote party candidate to add.</param>
         public void AppendRemoteIceCandidate(IceCandidate remoteIceCandidate)
         {
             IPAddress candidateIPAddress = null;
@@ -377,10 +384,10 @@ namespace SIPSorcery.Net
             {
                 logger.LogDebug("Omitting ICE candidate with unrecognised IP Address. " + remoteIceCandidate.RawString + ".");
             }
-            else if (candidateIPAddress.AddressFamily == AddressFamily.InterNetworkV6)
-            {
-                logger.LogDebug("Omitting IPv6 ICE candidate. " + remoteIceCandidate.RawString + ".");
-            }
+            //else if (candidateIPAddress.AddressFamily == AddressFamily.InterNetworkV6)
+            //{
+            //    logger.LogDebug("Omitting IPv6 ICE candidate. " + remoteIceCandidate.RawString + ".");
+            //}
             else
             {
                 // ToDo: Add srflx and relay endpoints as hosts as well.
@@ -396,6 +403,12 @@ namespace SIPSorcery.Net
             SendStunConnectivityChecks(null);
         }
 
+        /// <summary>
+        /// Send a media sample to the remote party.
+        /// </summary>
+        /// <param name="mediaType">Whether the sample is audio or video.</param>
+        /// <param name="sampleTimestamp">The RTP timestamp for the sample.</param>
+        /// <param name="sample">The sample payload.</param>
         public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
         {
             if (RemoteEndPoint != null && IsDtlsNegotiationComplete)
@@ -411,6 +424,10 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Close the session including the underlying RTP session and channels.
+        /// </summary>
+        /// <param name="reason">An optional descriptive reason for the closure.</param>
         public void Close(string reason)
         {
             if (!IsClosed)
@@ -476,6 +493,9 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Attempts to get a list of local ICE candidates.
+        /// </summary>
         private async Task GetIceCandidatesAsync()
         {
             var localIPAddresses = _offerAddresses ?? NetServices.GetAllLocalIPAddresses();
@@ -498,6 +518,10 @@ namespace SIPSorcery.Net
             await Task.WhenAll(LocalIceCandidates.Where(x => x.InitialStunBindingCheck != null).Select(x => x.InitialStunBindingCheck));
         }
 
+        /// <summary>
+        /// Sends a STUN binding request to the a remote ICE candidate.
+        /// </summary>
+        /// <param name="iceCandidate">The ICE candidate to send the STUN binding request to.</param>
         private async Task SendTurnServerBindingRequest(IceCandidate iceCandidate)
         {
             int attempt = 1;
@@ -629,6 +653,11 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Processes a STUN message received from a remote party.
+        /// </summary>
+        /// <param name="stunMessage">The received STUN message.</param>
+        /// <param name="remoteEndPoint">The remote end point the message was received from.</param>
         private void ProcessStunMessage(STUNv2Message stunMessage, IPEndPoint remoteEndPoint)
         {
             //logger.LogDebug("STUN message received from remote " + remoteEndPoint + " " + stunMessage.Header.MessageType + ".");

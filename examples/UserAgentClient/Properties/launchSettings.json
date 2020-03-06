@@ -1,8 +1,7 @@
 {
   "profiles": {
     "UserAgentClient": {
-      "commandName": "Project",
-      "commandLineArgs": "sip:[::1]"
+      "commandName": "Project"
     }
   }
 }
