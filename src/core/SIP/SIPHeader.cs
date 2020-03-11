@@ -2211,5 +2211,45 @@ namespace SIPSorcery.SIP
                 return null;
             }
         }
+
+        public List<string> GetUnknownHeaderValues(string unknownHeaderName)
+        {
+            if (unknownHeaderName.IsNullOrBlank())
+            {
+                return null;
+            }
+            else if (UnknownHeaders == null || UnknownHeaders.Count == 0)
+            {
+                return null;
+            }
+            else
+            {
+                List<string> lst = null;
+                foreach (string unknonwHeader in UnknownHeaders)
+                {
+                    string trimmedHeader = unknonwHeader.Trim();
+                    int delimiterIndex = trimmedHeader.IndexOf(SIPConstants.HEADER_DELIMITER_CHAR);
+
+                    if (delimiterIndex == -1)
+                    {
+                        logger.LogWarning("Invalid SIP header, ignoring, " + unknonwHeader + ".");
+                        continue;
+                    }
+
+                    string headerName = trimmedHeader.Substring(0, delimiterIndex).Trim();
+
+                    if (headerName.ToLower() == unknownHeaderName.ToLower())
+                    {
+                        if(lst == null)
+                        {
+                            lst = new List<string>();
+                        }
+                        lst.Add( trimmedHeader.Substring(delimiterIndex + 1).Trim());
+                    }
+                }
+
+                return lst;
+            }
+        }
     }
 }
