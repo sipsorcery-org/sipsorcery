@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
@@ -41,6 +42,23 @@ namespace SIPSorcery.SIP.App
         /// [sample, width, height, stride]
         /// </summary>
         event Action<byte[], uint, uint, int> OnVideoSampleReady;
+
+        /// <summary>
+        /// Fired when an audio sample is ready for the audio scope (which serves
+        /// as a visual representation of the audio). Note the audio signal should
+        /// already have been played. This event is for an optional visual representation
+        /// of the same signal.
+        /// [sample in IEEE float format].
+        /// </summary>
+        event Action<Complex[]> OnAudioScopeSampleReady;
+
+        /// <summary>
+        /// Fired when an audio sample generated from the on hold music is ready for 
+        /// the audio scope (which serves as a visual representation of the audio).
+        /// This audio scope is used to send an on hold video to the remote call party.
+        /// [sample in IEEE float format].
+        /// </summary>
+        event Action<Complex[]> OnHoldAudioScopeSampleReady;
 
         /// <summary>
         /// Fired when the RTP channel is closed.

@@ -15,10 +15,12 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using AudioScope;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -232,19 +234,36 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Puts the remote call party on hold.
         /// </summary>
-        public async void PutOnHold()
+        public async void PutOnHold(IBitmapSource bmpSource)
         {
             await m_userAgent.PutOnHold();
 
             if(MediaSession is RtpAVSession)
             {
                 AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Music };
-                VideoOptions videoOnHold = (!MediaSession.HasVideo) ? null : new VideoOptions 
-                { 
-                    VideoSource =  VideoSourcesEnum.TestPattern, 
-                    SourceFile = RtpAVSession.VIDEO_ONHOLD_TESTPATTERN,
-                    SourceFramesPerSecond = VIDEO_ONHOLD_FRAMES_PER_SECOND
-                };
+                VideoOptions videoOnHold = null;
+
+                if (MediaSession.HasVideo)
+                {
+                    if (bmpSource != null)
+                    {
+                        videoOnHold = new VideoOptions
+                        {
+                            VideoSource = VideoSourcesEnum.ExternalBitmap,
+                            BitmapSource = bmpSource
+                        };
+                    }
+                    else
+                    {
+                        videoOnHold = new VideoOptions
+                        {
+                            VideoSource = VideoSourcesEnum.TestPattern,
+                            SourceFile = RtpAVSession.VIDEO_ONHOLD_TESTPATTERN,
+                            SourceFramesPerSecond = VIDEO_ONHOLD_FRAMES_PER_SECOND
+                        };
+                    }
+                }
+                
                 await (MediaSession as RtpAVSession).SetSources(audioOnHold, videoOnHold);
             }
 
