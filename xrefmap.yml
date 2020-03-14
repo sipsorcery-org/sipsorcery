@@ -8617,6 +8617,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.IMediaSession.localDescription
   nameWithType: IMediaSession.localDescription
+- uid: SIPSorcery.SIP.App.IMediaSession.OnAudioScopeSampleReady
+  name: OnAudioScopeSampleReady
+  href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_OnAudioScopeSampleReady
+  commentId: E:SIPSorcery.SIP.App.IMediaSession.OnAudioScopeSampleReady
+  fullName: SIPSorcery.SIP.App.IMediaSession.OnAudioScopeSampleReady
+  nameWithType: IMediaSession.OnAudioScopeSampleReady
+- uid: SIPSorcery.SIP.App.IMediaSession.OnHoldAudioScopeSampleReady
+  name: OnHoldAudioScopeSampleReady
+  href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_OnHoldAudioScopeSampleReady
+  commentId: E:SIPSorcery.SIP.App.IMediaSession.OnHoldAudioScopeSampleReady
+  fullName: SIPSorcery.SIP.App.IMediaSession.OnHoldAudioScopeSampleReady
+  nameWithType: IMediaSession.OnHoldAudioScopeSampleReady
 - uid: SIPSorcery.SIP.App.IMediaSession.OnRtpClosed
   name: OnRtpClosed
   href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_OnRtpClosed
