@@ -26,7 +26,7 @@
                                 </VisualBrush.Visual>
                             </VisualBrush>
                         </Border.OpacityMask>
-                        <!--<sharpGL:OpenGLControl x:Name="AudioScope0" Width="42" Height="42" OpenGLDraw="AudioScopeDraw0" OpenGLInitialized="AudioScopeInitialized0" RenderContextType="FBO" />-->
+                        <sharpGL:OpenGLControl x:Name="AudioScope0" Width="42" Height="42" OpenGLDraw="AudioScopeDraw0" OpenGLInitialized="AudioScopeInitialized0" RenderContextType="FBO" />
                     </Border>
                 </Grid>
                 <Grid Visibility="Hidden">
@@ -118,7 +118,6 @@
             <Label x:Name="listeningEndPoint" ToolTip="Listening On"></Label>
         </StatusBar>
 
-        <sharpGL:OpenGLControl x:Name="_onHoldAudioScopeControl" Visibility="Visible" Width="640" Height="480" OpenGLDraw="OnHoldAudioScopeDraw" OpenGLInitialized="OnHoldAudioScopeInitialized" RenderContextType="FBO" />
-        <sharpGL:OpenGLControl x:Name="AudioScope0" Width="42" Height="42" OpenGLDraw="AudioScopeDraw0" OpenGLInitialized="AudioScopeInitialized0" RenderContextType="FBO" />
+        <!--<sharpGL:OpenGLControl x:Name="_onHoldAudioScopeControl" Visibility="Visible" IsEnabled="false" Width="640" Height="480" OpenGLDraw="OnHoldAudioScopeDraw" OpenGLInitialized="OnHoldAudioScopeInitialized" RenderContextType="FBO" />-->
     </Grid>
 </Window>

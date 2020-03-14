@@ -61,10 +61,7 @@ namespace SIPSorcery.SoftPhone
             get { return m_userAgent.Dialogue; }
         }
 
-        public IMediaSession MediaSession
-        {
-            get { return m_userAgent.MediaSession; }
-        }
+        public RtpAVSession MediaSession { get; private set; }
 
         /// <summary>
         /// Returns true of this SIP client is on an active call.
@@ -145,18 +142,18 @@ namespace SIPSorcery.SoftPhone
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
                 var audioSrcOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
-                var videoSrcOpts = new VideoOptions 
-                { 
-                    VideoSource = VideoSourcesEnum.TestPattern, 
+                var videoSrcOpts = new VideoOptions
+                {
+                    VideoSource = VideoSourcesEnum.TestPattern,
                     SourceFile = RtpAVSession.VIDEO_TESTPATTERN,
                     SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
                 };
-                var rtpMediaSession = new RtpAVSession(dstEndpoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
+                MediaSession = new RtpAVSession(dstEndpoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.InitiateCallAsync(callDescriptor, rtpMediaSession);
+                await m_userAgent.InitiateCallAsync(callDescriptor, MediaSession);
             }
         }
 
@@ -191,7 +188,7 @@ namespace SIPSorcery.SoftPhone
             else
             {
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
-                
+
                 SDP offerSDP = SDP.ParseSDPDescription(sipRequest.Body);
                 bool hasAudio = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio);
                 bool hasVideo = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video);
@@ -203,22 +200,22 @@ namespace SIPSorcery.SoftPhone
                 }
 
                 VideoOptions videoOpts = new VideoOptions { VideoSource = VideoSourcesEnum.None };
-                if(hasVideo)
+                if (hasVideo)
                 {
-                    videoOpts = new VideoOptions 
-                    { 
-                        VideoSource = VideoSourcesEnum.TestPattern, 
+                    videoOpts = new VideoOptions
+                    {
+                        VideoSource = VideoSourcesEnum.TestPattern,
                         SourceFile = RtpAVSession.VIDEO_TESTPATTERN,
                         SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
                     };
                 }
 
-                var rtpMediaSession = new RtpAVSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily, audioOpts, videoOpts);
+                MediaSession = new RtpAVSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily, audioOpts, videoOpts);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.Answer(m_pendingIncomingCall, rtpMediaSession);
+                await m_userAgent.Answer(m_pendingIncomingCall, MediaSession);
                 m_pendingIncomingCall = null;
             }
         }
@@ -238,34 +235,31 @@ namespace SIPSorcery.SoftPhone
         {
             await m_userAgent.PutOnHold();
 
-            if(MediaSession is RtpAVSession)
-            {
-                AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Music };
-                VideoOptions videoOnHold = null;
+            AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Music };
+            VideoOptions videoOnHold = null;
 
-                if (MediaSession.HasVideo)
+            if (MediaSession.HasVideo)
+            {
+                if (bmpSource != null)
                 {
-                    if (bmpSource != null)
+                    videoOnHold = new VideoOptions
                     {
-                        videoOnHold = new VideoOptions
-                        {
-                            VideoSource = VideoSourcesEnum.ExternalBitmap,
-                            BitmapSource = bmpSource
-                        };
-                    }
-                    else
-                    {
-                        videoOnHold = new VideoOptions
-                        {
-                            VideoSource = VideoSourcesEnum.TestPattern,
-                            SourceFile = RtpAVSession.VIDEO_ONHOLD_TESTPATTERN,
-                            SourceFramesPerSecond = VIDEO_ONHOLD_FRAMES_PER_SECOND
-                        };
-                    }
+                        VideoSource = VideoSourcesEnum.ExternalBitmap,
+                        BitmapSource = bmpSource
+                    };
                 }
-                
-                await (MediaSession as RtpAVSession).SetSources(audioOnHold, videoOnHold);
+                else
+                {
+                    videoOnHold = new VideoOptions
+                    {
+                        VideoSource = VideoSourcesEnum.TestPattern,
+                        SourceFile = RtpAVSession.VIDEO_ONHOLD_TESTPATTERN,
+                        SourceFramesPerSecond = VIDEO_ONHOLD_FRAMES_PER_SECOND
+                    };
+                }
             }
+
+            await MediaSession.SetSources(audioOnHold, videoOnHold);
 
             // At this point we could stop listening to the remote party's RTP and play something 
             // else and also stop sending our microphone output and play some music.
@@ -279,17 +273,14 @@ namespace SIPSorcery.SoftPhone
         {
             await m_userAgent.TakeOffHold();
 
-            if (MediaSession is RtpAVSession)
+            AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+            VideoOptions videoOnHold = (!MediaSession.HasVideo) ? null : new VideoOptions
             {
-                AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
-                VideoOptions videoOnHold = (!MediaSession.HasVideo) ? null : new VideoOptions 
-                { 
-                    VideoSource = VideoSourcesEnum.TestPattern, 
-                    SourceFile = RtpAVSession.VIDEO_TESTPATTERN,
-                    SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
-                };
-                await (MediaSession as RtpAVSession).SetSources(audioOnHold, videoOnHold);
-            }
+                VideoSource = VideoSourcesEnum.TestPattern,
+                SourceFile = RtpAVSession.VIDEO_TESTPATTERN,
+                SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
+            };
+            await MediaSession.SetSources(audioOnHold, videoOnHold);
 
             // At this point we should reverse whatever changes we made to the media stream when we
             // put the remote call part on hold.
@@ -383,33 +374,15 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         /// <param name="uac">The local SIP user agent client that initiated the call.</param>
         /// <param name="sipResponse">The SIP answer response received from the remote party.</param>
-        private void CallAnswered(ISIPClientUserAgent uac, SIPResponse sipResponse)
+        private async void CallAnswered(ISIPClientUserAgent uac, SIPResponse sipResponse)
         {
             StatusMessage(this, "Call answered: " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + ".");
 
-            if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
-            {
-                if (sipResponse.Header.ContentType != _sdpMimeContentType)
-                {
-                    // Payload not SDP, I don't understand :(.
-                    StatusMessage(this, "Call was hungup as the answer response content type was not recognized: " + sipResponse.Header.ContentType + ". :(");
-                    Hangup();
-                }
-                else if (sipResponse.Body.IsNullOrBlank())
-                {
-                    // They said SDP but didn't give us any :(.
-                    StatusMessage(this, "Call was hungup as the answer response had an empty SDP payload. :(");
-                    Hangup();
-                }
-                else
-                {
-                    CallAnswer?.Invoke(this);
-                }
-            }
-            else
-            {
-                CallFinished();
-            }
+            // This call will allow the session source to be adjusted depending on whether the underlying
+            // session has support for audio or video.
+            await MediaSession.SetSources(null, null).ConfigureAwait(false);
+
+            CallAnswer?.Invoke(this);
         }
 
         /// <summary>
@@ -467,7 +440,7 @@ namespace SIPSorcery.SoftPhone
         /// Event handler that notifies us the remote party has put us on hold.	
         /// </summary>	
         private void OnRemotePutOnHold()
-        {	
+        {
             RemotePutOnHold?.Invoke(this);
         }
 

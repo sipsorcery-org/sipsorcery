@@ -80,7 +80,7 @@ namespace SIPSorcery.Net
             catch(SocketException sockExcp)
             {
                 //logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceive. {sockExcp.Message}");
-                Close(sockExcp.Message);
+                //Close(sockExcp.Message);
             }
             catch (Exception excp)
             {
@@ -125,7 +125,9 @@ namespace SIPSorcery.Net
                 // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
                 //   or new socket during the transition.
                 // It also seems that once a UDP socket pair have exchanged packets and the remote party closes the socket exception will occur
-                // in the BeginReceive method (very handy).
+                // in the BeginReceive method (very handy). Follow-up, this doesn't seem to be the case, the socket exception can occur in 
+                // BeginReceive before any packets have been exchanged. This means it's not safe to close if BeginReceive gets an ICMP 
+                // error since the remote party may not have initialised their socket yet.
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
