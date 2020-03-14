@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
@@ -134,6 +135,8 @@ namespace SIPSorcery.UnitTests
         public event Action<string> OnRtpClosed;
         public event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
         public event Action<RTPEvent> OnRtpEvent;
+        public event Action<Complex[]> OnAudioScopeSampleReady;
+        public event Action<Complex[]> OnHoldAudioScopeSampleReady;
 
         public void Close(string reason)
         {

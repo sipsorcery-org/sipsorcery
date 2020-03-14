@@ -3,14 +3,36 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:sharpGL="clr-namespace:SharpGL.WPF;assembly=SharpGL.WPF"
     x:Class="SIPSorcery.SoftPhone.SoftPhone"
     Title="SIPSorcery SoftPhone" Background="#FF808080" Closing="Window_Closing" Icon="favicon.ico" MinHeight="560" MinWidth="490" Loaded="OnWindowLoaded" Height="560" Width="490">
 
     <Grid>
         <Border BorderBrush="#FF807FC3" BorderThickness="0" CornerRadius="2" Visibility="Visible" Margin="0,121,0,52">
             <Grid Margin="2" VerticalAlignment="Stretch" x:Name="m_callVideoGrid" HorizontalAlignment="Stretch">
-                <Image x:Name="_client0Video" MinWidth="128" MinHeight="96" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed" MaxWidth="490" MaxHeight="277" MouseLeftButtonUp="OnClickVideo"/>
-                <Image x:Name="_client1Video" MinWidth="128" MinHeight="96" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Collapsed" MaxWidth="490" MaxHeight="277" MouseLeftButtonUp="OnClickVideo"/>
+                <Grid x:Name="_client0VideoCanvas" MouseLeftButtonUp="OnClickVideo">
+                    <Image x:Name="_client0Video" MinWidth="128" MinHeight="96" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed" MaxWidth="490" MaxHeight="277"/>
+                    <Border x:Name="circularBorder" CornerRadius="40" Width="42" Height="42" Margin="10,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                        <Border.OpacityMask>
+                            <VisualBrush>
+                                <VisualBrush.Visual>
+                                    <Border 
+                                    Background="Black"
+                                    SnapsToDevicePixels="True"
+                                    CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource AncestorType=Border}}"
+                                    Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Border}}"
+                                    Height="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Border}}"
+                                    />
+                                </VisualBrush.Visual>
+                            </VisualBrush>
+                        </Border.OpacityMask>
+                        <sharpGL:OpenGLControl x:Name="AudioScope0" Width="42" Height="42" OpenGLDraw="AudioScopeDraw0" OpenGLInitialized="AudioScopeInitialized0" RenderContextType="FBO" />
+                    </Border>
+                </Grid>
+                <Grid Visibility="Hidden">
+                    <Image x:Name="_client1Video" MinWidth="128" MinHeight="96" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Collapsed" MaxWidth="490" MaxHeight="277" MouseLeftButtonUp="OnClickVideo"/>
+                    <!--<sharpGL:OpenGLControl x:Name="AudioScope1" Width="85" Height="64" Margin="10,0,0,10" VerticalAlignment="Bottom" OpenGLDraw="AudioScopeDraw1" OpenGLInitialized="AudioScopeInitialized1" RenderContextType="FBO" HorizontalAlignment="Left" />-->
+                </Grid>
             </Grid>
         </Border>
 
@@ -95,5 +117,7 @@
         <StatusBar VerticalAlignment="Bottom" Height="40" Margin="0,0,0,0">
             <Label x:Name="listeningEndPoint" ToolTip="Listening On"></Label>
         </StatusBar>
+
+        <!--<sharpGL:OpenGLControl x:Name="_onHoldAudioScopeControl" Visibility="Visible" IsEnabled="false" Width="640" Height="480" OpenGLDraw="OnHoldAudioScopeDraw" OpenGLInitialized="OnHoldAudioScopeInitialized" RenderContextType="FBO" />-->
     </Grid>
 </Window>

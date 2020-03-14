@@ -18,7 +18,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -424,7 +423,7 @@ namespace SIPSorcery.SIP.App
             };
 
             SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
-            MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSdp, type = RTCSdpType.offer });
+            MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSdp, type = RTCSdpType.offer }); ;
 
             var sdpAnswer = await MediaSession.createAnswer(null).ConfigureAwait(false);
             MediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdpAnswer, type = RTCSdpType.answer });

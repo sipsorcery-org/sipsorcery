@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -26,7 +25,8 @@ using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
-using SIPSorceryMedia;
+using SharpGL;
+using SharpGL.SceneGraph;
 
 namespace SIPSorcery.SoftPhone
 {
@@ -49,6 +49,12 @@ namespace SIPSorcery.SoftPhone
 
         private WriteableBitmap _client0WriteableBitmap;
         private WriteableBitmap _client1WriteableBitmap;
+        private AudioScope.AudioScope _audioScope0;
+        private AudioScope.AudioScopeOpenGL _audioScopeGL0;
+        //private AudioScope.AudioScope _audioScope1;
+        //private AudioScope.AudioScopeOpenGL _audioScopeGL1;
+        //private AudioScope.AudioScope _onHoldAudioScope;
+        //private AudioScope.AudioScopeOpenGL _onHoldAudioScopeGL;
 
         public SoftPhone()
         {
@@ -155,6 +161,11 @@ namespace SIPSorcery.SoftPhone
                     m_offHoldButton.Visibility = Visibility.Collapsed;
                     _client0Video.Visibility = Visibility.Collapsed;
                     SetStatusText(m_signallingStatus, "Ready");
+
+                    if (_sipClients?.Count > 0 && sipClient == _sipClients[0])
+                    {
+                        sipClient.MediaSession.OnAudioScopeSampleReady -= _audioScope0.ProcessSample;
+                    }
                 });
             }
 
@@ -236,7 +247,8 @@ namespace SIPSorcery.SoftPhone
             {
                 if (_sipClients[1].IsCallActive && !_sipClients[1].IsOnHold)
                 {
-                    _sipClients[1].PutOnHold();
+                    //_sipClients[1].PutOnHold(_onHoldAudioScopeGL);
+                    _sipClients[1].PutOnHold(null);
                 }
 
                 Dispatcher.DoOnUIThread(() =>
@@ -257,6 +269,8 @@ namespace SIPSorcery.SoftPhone
                         _sipClients[0].MediaSession.OnVideoSampleReady += (sample, width, height, stride) => VideoSampleReady(sample, width, height, stride, _client0WriteableBitmap, _client0Video);
                         _client0Video.Visibility = Visibility.Visible;
                     }
+
+                    _sipClients[0].MediaSession.OnAudioScopeSampleReady += _audioScope0.ProcessSample;
                 });
             }
             else if (client == _sipClients[1])
@@ -284,7 +298,8 @@ namespace SIPSorcery.SoftPhone
                 {
                     if (!_sipClients[0].IsOnHold)
                     {
-                        _sipClients[0].PutOnHold();
+                        //_sipClients[0].PutOnHold(_onHoldAudioScopeGL);
+                        _sipClients[0].PutOnHold(null);
                     }
 
                     Dispatcher.DoOnUIThread(() =>
@@ -331,7 +346,8 @@ namespace SIPSorcery.SoftPhone
                     // Put the first call on hold.
                     if (_sipClients[0].IsCallActive)
                     {
-                        _sipClients[0].PutOnHold();
+                        //_sipClients[0].PutOnHold(_onHoldAudioScopeGL);
+                        _sipClients[0].PutOnHold(null);
                         m_holdButton.Visibility = Visibility.Collapsed;
                         m_offHoldButton.Visibility = Visibility.Visible;
                     }
@@ -512,14 +528,17 @@ namespace SIPSorcery.SoftPhone
             {
                 m_holdButton.Visibility = Visibility.Collapsed;
                 m_offHoldButton.Visibility = Visibility.Visible;
+                //client.PutOnHold(_onHoldAudioScopeGL);
+                client.PutOnHold(null);
+                //_sipClients[0].MediaSession.OnHoldAudioScopeSampleReady += _onHoldAudioScope.ProcessSample;
             }
             else if (client == _sipClients[1])
             {
                 m_hold2Button.Visibility = Visibility.Collapsed;
                 m_offHold2Button.Visibility = Visibility.Visible;
+                //client.PutOnHold(_onHoldAudioScopeGL);
+                client.PutOnHold(null);
             }
-
-            client.PutOnHold();
         }
 
         /// <summary>
@@ -533,6 +552,7 @@ namespace SIPSorcery.SoftPhone
             {
                 m_holdButton.Visibility = Visibility.Visible;
                 m_offHoldButton.Visibility = Visibility.Collapsed;
+                //_sipClients[0].MediaSession.OnHoldAudioScopeSampleReady -= _onHoldAudioScope.ProcessSample;
             }
             else if (client == _sipClients[1])
             {
@@ -679,7 +699,7 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         private void ToggleKeyPad(object sender, RoutedEventArgs e)
         {
-            if(_keypadGrid.Visibility == Visibility.Hidden)
+            if (_keypadGrid.Visibility == Visibility.Hidden)
             {
                 _keypadGrid.Visibility = Visibility.Visible;
             }
@@ -688,5 +708,53 @@ namespace SIPSorcery.SoftPhone
                 _keypadGrid.Visibility = Visibility.Hidden;
             }
         }
+
+        private void AudioScopeInitialized0(object sender, OpenGLEventArgs args)
+        {
+            _audioScope0 = new AudioScope.AudioScope();
+            _audioScope0.InitAudio(AudioScope.AudioSourceEnum.External);
+            _audioScopeGL0 = new AudioScope.AudioScopeOpenGL(_audioScope0);
+            _audioScopeGL0.Initialise(args.OpenGL);
+        }
+
+        private void AudioScopeInitialized1(object sender, OpenGLEventArgs args)
+        { }
+
+        private void AudioScopeDraw0(object sender, OpenGLEventArgs args)
+        {
+            if (_sipClients?.Count > 0 && _sipClients[0].IsCallActive)
+            {
+                int width = Convert.ToInt32(this.AudioScope0.Width);
+                int height = Convert.ToInt32(this.AudioScope0.Height);
+
+                OpenGL gl = args.OpenGL;
+                _audioScopeGL0.Draw(gl, width, height);
+            }
+        }
+
+        private void AudioScopeDraw1(object sender, OpenGLEventArgs args)
+        { }
+
+        //private void OnHoldAudioScopeInitialized(object sender, OpenGLEventArgs args)
+        //{
+        //    _onHoldAudioScope = new AudioScope.AudioScope();
+        //    _onHoldAudioScope.InitAudio(AudioScope.AudioSourceEnum.External);
+        //    //_onHoldAudioScope.InitAudio("media/Macroform_-_Simplicity.ulaw");
+        //    _onHoldAudioScopeGL = new AudioScope.AudioScopeOpenGL(_onHoldAudioScope);
+        //    _onHoldAudioScopeGL.Initialise(args.OpenGL);
+        //    _onHoldAudioScope.Start();
+        //}
+
+        //private void OnHoldAudioScopeDraw(object sender, OpenGLEventArgs args)
+        //{
+        //    //if (_sipClients?.Count > 0 && _sipClients[0].IsOnHold)
+        //    //{
+        //    int width = Convert.ToInt32(this._onHoldAudioScopeControl.Width);
+        //    int height = Convert.ToInt32(this._onHoldAudioScopeControl.Height);
+
+        //    OpenGL gl = args.OpenGL;
+        //    _onHoldAudioScopeGL.Draw(gl, width, height);
+        //    //}
+        //}
     }
 }
