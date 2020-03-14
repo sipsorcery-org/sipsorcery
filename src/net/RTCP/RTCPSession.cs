@@ -313,7 +313,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        m_rtcpReportTimer.Change(interval, Timeout.Infinite);
+                        m_rtcpReportTimer?.Change(interval, Timeout.Infinite);
                     }
                 }
             }

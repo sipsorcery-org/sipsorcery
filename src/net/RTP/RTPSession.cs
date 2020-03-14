@@ -588,7 +588,7 @@ namespace SIPSorcery.Net
             remoteDescription = sessionDescription;
 
             var audioAnnounce = sessionDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
-            if (audioAnnounce != null)
+            if (audioAnnounce != null && audioAnnounce.Port != 0)
             {
                 if (!m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.audio && x.IsRemote))
                 {
@@ -603,9 +603,17 @@ namespace SIPSorcery.Net
                     // TODO check if we need to make adjustments to the remote audio track.
                 }
             }
+            else
+            {
+                // No remote audio track. Remove any local one.
+                if (m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.audio))
+                {
+                    m_tracks.Remove(m_tracks.Where(x => x.Kind == SDPMediaTypesEnum.audio).Single());
+                }
+            }
 
             var videoAnnounce = sessionDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
-            if (videoAnnounce != null)
+            if (videoAnnounce != null && videoAnnounce.Port != 0)
             {
                 if (!m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.video && x.IsRemote))
                 {
@@ -618,6 +626,14 @@ namespace SIPSorcery.Net
                 else
                 {
                     // TODO check if we need to make adjustments to the remote video track.
+                }
+            }
+            else
+            {
+                // No remote video track. Remove any local one.
+                if (m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.video))
+                {
+                    m_tracks.Remove(m_tracks.Where(x => x.Kind == SDPMediaTypesEnum.video).Single());
                 }
             }
         }
