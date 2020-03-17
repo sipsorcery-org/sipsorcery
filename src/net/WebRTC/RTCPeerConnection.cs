@@ -38,7 +38,7 @@ namespace SIPSorcery.Net
     /// https://tools.ietf.org/html/draft-ietf-rtcweb-jsep-26 (or later if the
     /// draft has been updated).
     /// </remarks>
-    public class RTCPeerConnection : RTPSession
+    public class RTCPeerConnection : RTPSession //, IRTCPeerConnection
     {
         private const int INITIAL_STUN_BINDING_PERIOD_MILLISECONDS = 1000;       // The period to send the initial STUN requests used to get an ICE candidates public IP address.
         private const int INITIAL_STUN_BINDING_ATTEMPTS_LIMIT = 3;                // The maximum number of binding attempts to determine a local socket's public IP address before giving up.
@@ -71,7 +71,7 @@ namespace SIPSorcery.Net
         public string RemoteIcePassword;
         public DateTime IceNegotiationStartedAt;
         public List<IceCandidate> LocalIceCandidates;
-        public IceConnectionState IceConnectionState = IceConnectionState.New;
+        public RTCIceConnectionState IceConnectionState = RTCIceConnectionState.@new;
 
         private List<IceCandidate> _remoteIceCandidates = new List<IceCandidate>();
         public List<IceCandidate> RemoteIceCandidates
@@ -81,7 +81,7 @@ namespace SIPSorcery.Net
 
         public bool IsConnected
         {
-            get { return IceConnectionState == IceConnectionState.Connected; }
+            get { return IceConnectionState == RTCIceConnectionState.connected; }
         }
 
         public bool IsDtlsNegotiationComplete
@@ -142,12 +142,7 @@ namespace SIPSorcery.Net
         /// </param>
         public async override Task setLocalDescription(RTCSessionDescriptionInit description)
         {
-            if(description == null)
-            {
-                description = await createOffer(null);
-            }
-
-            base.setLocalDescription(sessionDescription);
+            await base.setLocalDescription(description).ConfigureAwait(false);
 
             var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
 
@@ -165,11 +160,11 @@ namespace SIPSorcery.Net
         /// If they are not available there's no point carrying on.
         /// </summary>
         /// <param name="sessionDescription">The answer/offer SDP from the remote party.</param>
-        public override void setRemoteDescription(RTCSessionDescription sessionDescription)
+        public async override Task setRemoteDescription(RTCSessionDescriptionInit description)
         {
-            remoteDescription = sessionDescription;
+            await base.setRemoteDescription(description).ConfigureAwait(false);
 
-            SDP remoteSdp = SDP.ParseSDPDescription(sessionDescription.sdp);
+            SDP remoteSdp = SDP.ParseSDPDescription(remoteDescription.sdp);
 
             var audioAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
             if (audioAnnounce != null)
@@ -282,7 +277,7 @@ namespace SIPSorcery.Net
         {
             if (!IsClosed)
             {
-                IceConnectionState = IceConnectionState.Closed;
+                IceConnectionState = RTCIceConnectionState.closed;
                 m_stunChecksTimer.Dispose();
                 CloseSession(reason);
 
@@ -316,7 +311,13 @@ namespace SIPSorcery.Net
                     videoAnnouncement.AddExtra(SETUP_OFFER_ATTRIBUTE);
                 }
 
-                return offerSdp;
+                RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
+                {
+                    type = RTCSdpType.offer,
+                    sdp = offerSdp.ToString()
+                };
+
+                return initDescription;
             }
             catch (Exception excp)
             {
@@ -333,7 +334,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be used to apply additional
         /// controls over the generated answer SDP.</param>
-        public async Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
+        public override async Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
         {
             if (remoteDescription == null)
             {
@@ -355,7 +356,13 @@ namespace SIPSorcery.Net
                     videoAnnouncement.AddExtra(SETUP_ANSWER_ATTRIBUTE);
                 }
 
-                return answerSdp;
+                RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
+                {
+                    type = RTCSdpType.answer,
+                    sdp = answerSdp.ToString()
+                };
+
+                return initDescription;
             }
         }
 
@@ -363,11 +370,11 @@ namespace SIPSorcery.Net
         /// Generates the base SDP for an offer or answer. The SDP will then be tailored depending
         /// on whether it's being used in an offer or an answer.
         /// </summary>
-        private async Task<SDP> createBaseSdp()
+        private Task<SDP> createBaseSdp()
         {
             DateTime startGatheringTime = DateTime.Now;
 
-            IceConnectionState = IceConnectionState.New;
+            IceConnectionState = RTCIceConnectionState.@new;
 
             //await GetIceCandidatesAsync().ConfigureAwait(false);
 
@@ -452,7 +459,7 @@ namespace SIPSorcery.Net
                 offerSdp.Media.Add(videoAnnouncement);
             }
 
-            return offerSdp;
+            return Task.FromResult(offerSdp);
         }
 
         /// <summary>
@@ -713,7 +720,7 @@ namespace SIPSorcery.Net
                     RemoteEndPoint = remoteEndPoint;
                     SetDestination(SDPMediaTypesEnum.audio, RemoteEndPoint, RemoteEndPoint);
                     //OnIceConnected?.Invoke(iceCandidate, remoteEndPoint);
-                    IceConnectionState = IceConnectionState.Connected;
+                    IceConnectionState = RTCIceConnectionState.connected;
                 }
 
                 if (_remoteIceCandidates != null && !_remoteIceCandidates.Any(x =>

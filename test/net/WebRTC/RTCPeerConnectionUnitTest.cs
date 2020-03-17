@@ -10,11 +10,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -76,9 +72,13 @@ namespace SIPSorcery.Net.UnitTests
             pc.addTrack(audioTrack);
             var offer = await pc.createOffer(new RTCOfferOptions());
 
+            SDP offerSDP = SDP.ParseSDPDescription(offer.sdp);
+
             Assert.NotNull(offer);
-            Assert.Single(offer.Media);
-            Assert.Contains(offer.Media, x => x.Media == SDPMediaTypesEnum.audio);
+            Assert.NotNull(offer.sdp);
+            Assert.Equal(RTCSdpType.offer, offer.type);
+            Assert.Single(offerSDP.Media);
+            Assert.Contains(offerSDP.Media, x => x.Media == SDPMediaTypesEnum.audio);
 
             logger.LogDebug(offer.ToString());
         }

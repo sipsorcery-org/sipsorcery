@@ -115,6 +115,19 @@ namespace SIPSorcery.Net
         /// A string representation of the Session Description.
         /// </summary>
         public string sdp;
+
+        /// <summary>
+        /// Creates a new session description instance.
+        /// </summary>
+        /// <param name="init">Optional. Initialisation properties to control the creation of the session object.</param>
+        public RTCSessionDescription(RTCSessionDescriptionInit init)
+        {
+            if(init != null)
+            {
+                type = init.type;
+                sdp = init.sdp;
+            }
+        }
     }
 
     public class MediaStreamTrack
@@ -552,7 +565,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="options">Optional. Options to customise the offer.</param>
         /// <returns>A task that when complete contains the SDP offer.</returns>
-        public virtual Task<SDP> createOffer(RTCOfferOptions options)
+        public virtual Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options)
         {
             try
             {
@@ -600,7 +613,13 @@ namespace SIPSorcery.Net
                     offerSdp.Media.Add(videoAnnouncement);
                 }
 
-                return Task.FromResult(offerSdp);
+                RTCSessionDescriptionInit descriptionInit = new RTCSessionDescriptionInit
+                {
+                    type = RTCSdpType.offer,
+                    sdp = offerSdp.ToString()
+                };
+
+                return Task.FromResult(descriptionInit);
             }
             catch (Exception excp)
             {
@@ -614,7 +633,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="options">Optional. Options to customise the answer.</param>
         /// <returns>A task that when complete contains the SDP answer.</returns>
-        public virtual Task<SDP> createAnswer(RTCAnswerOptions options)
+        public virtual Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
         {
             if(remoteDescription == null)
             {
@@ -631,18 +650,23 @@ namespace SIPSorcery.Net
         /// Sets the local SDP description for this session.
         /// </summary>
         /// <param name="sessionDescriptionn">The SDP that will be set as the local description.</param>
-        public virtual void setLocalDescription(RTCSessionDescription sessionDescription)
+        public virtual async Task setLocalDescription(RTCSessionDescriptionInit description)
         {
-            localDescription = sessionDescription;
+            if (description == null)
+            {
+                description = await createOffer(null).ConfigureAwait(false);
+            }
+
+            localDescription = new RTCSessionDescription(description);
         }
 
         /// <summary>
         /// Sets the remote SDP description for this session.
         /// </summary>
         /// <param name="sessionDescription">The SDP that will be set as the remote description.</param>
-        public virtual void setRemoteDescription(RTCSessionDescription sessionDescription)
+        public virtual Task setRemoteDescription(RTCSessionDescriptionInit description)
         {
-            remoteDescription = sessionDescription;
+            remoteDescription = new RTCSessionDescription(description);
 
             var remoteSdp = SDP.ParseSDPDescription(remoteDescription.sdp);
 
@@ -695,6 +719,8 @@ namespace SIPSorcery.Net
                     m_tracks.Remove(m_tracks.Where(x => x.Kind == SDPMediaTypesEnum.video).Single());
                 }
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>

@@ -5,7 +5,6 @@
 // Establishment (ICE) negotiation to set up a usable network connection 
 // between two peers as per RFC8445 https://tools.ietf.org/html/rfc8445
 // (previously implemented for RFC5245 https://tools.ietf.org/html/rfc5245).
-
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -26,16 +25,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public enum IceCandidateTypesEnum
-    {
-        Unknown = 0,
-        host = 1,       // Host, locally gathered.
-        srflx = 2,      // Server-reflexive, obtained from STUN and/or TURN (non-relay TURN).
-        prlx = 3,       // Peer-reflexive, obtained as a result of a connectivity check (e.g. STUN request from a previously unknown address).
-        relay = 4       // Relay, TURN (relay).
-    }
-
-    public class IceCandidate
+    public class IceCandidate : IRTCIceCandidate
     {
         public const string m_CRLF = "\r\n";
         public const string REMOTE_ADDRESS_KEY = "raddr";
@@ -66,6 +56,50 @@ namespace SIPSorcery.Net
 
 
 
+        public string candidate { get; private set; }
+
+        public string sdpMid { get; private set; }
+
+        public ushort sdpMLineIndex { get; private set; }
+
+        public string foundation { get; private set; }
+
+        public RTCIceComponent component { get; private set; }
+
+        public ulong priority { get; private set; }
+
+        /// <summary>
+        /// The local address for the candidate.
+        /// </summary>
+        public string address { get; private set; }
+
+        /// <summary>
+        /// The transport protocol for the candidate, supported options are UDP and TCP.
+        /// </summary>
+        public RTCIceProtocol protocol { get; private set; }
+
+        /// <summary>
+        /// The local port the candidate is listening on.
+        /// </summary>
+        public ushort port { get; private set; }
+
+        /// <summary>
+        /// The typ of ICE candidate, host, srflx etc.
+        /// </summary>
+        public RTCIceCandidateType type { get; private set; }
+
+        /// <summary>
+        /// For TCP candidates the role they are fulfilling (client, server or both).
+        /// </summary>
+        public RTCIceTcpCandidateType tcpType { get; private set; }
+
+        public string relatedAddress { get; private set; }
+
+        public ushort relatedPort { get; private set; }
+
+        public string usernameFragment { get; private set; }
+
+
         public TurnServer TurnServer;
         public bool IsGatheringComplete;
         public int TurnAllocateAttempts;
@@ -85,8 +119,8 @@ namespace SIPSorcery.Net
 
         public string Transport;
         public string NetworkAddress;
-        public int Port;
-        public IceCandidateTypesEnum CandidateType;
+        //public int Port;
+        //public RTCIceCandidateType CandidateType;
         public string RemoteAddress;
         public int RemotePort;
         public string RawString;
@@ -101,20 +135,27 @@ namespace SIPSorcery.Net
         private IceCandidate()
         { }
 
-        public IceCandidate(IPAddress localAddress, int port)
+        public IceCandidate(RTCIceCandidateInit init)
         {
-            //LocalAddress = localAddress;
-            NetworkAddress = localAddress.ToString();
-            Port = port;
+            candidate = init.candidate;
+            sdpMid = init.sdpMid;
+            sdpMLineIndex = init.sdpMLineIndex;
+            usernameFragment = init.usernameFragment;
         }
 
-        public IceCandidate(string transport, IPAddress remoteAddress, int port, IceCandidateTypesEnum candidateType)
-        {
-            Transport = transport;
-            NetworkAddress = remoteAddress.ToString();
-            Port = port;
-            CandidateType = candidateType;
-        }
+        //public IceCandidate(IPAddress localAddress, int port)
+        //{
+        //    NetworkAddress = localAddress.ToString();
+        //    port = port;
+        //}
+
+        //public IceCandidate(string transport, IPAddress remoteAddress, ushort localPort, RTCIceCandidateType candidateType)
+        //{
+        //    Transport = transport;
+        //    NetworkAddress = remoteAddress.ToString();
+        //    port = port;
+        //    type = candidateType;
+        //}
 
         public static IceCandidate Parse(string candidateLine)
         {
@@ -125,8 +166,8 @@ namespace SIPSorcery.Net
             string[] candidateFields = candidateLine.Trim().Split(' ');
             candidate.Transport = candidateFields[2];
             candidate.NetworkAddress = candidateFields[4];
-            candidate.Port = Convert.ToInt32(candidateFields[5]);
-            Enum.TryParse(candidateFields[7], out candidate.CandidateType);
+            candidate.port = Convert.ToUInt16(candidateFields[5]);
+            Enum.TryParse(candidateFields[7], out candidate.type);
 
             if (candidateFields.Length > 8 && candidateFields[8] == REMOTE_ADDRESS_KEY)
             {
@@ -148,7 +189,7 @@ namespace SIPSorcery.Net
                 "1", 
                 Crypto.GetRandomInt(10).ToString(),
                NetworkAddress, 
-                Port);
+                port);
 
             if (StunRflxIPEndPoint != null)
             {
@@ -159,7 +200,7 @@ namespace SIPSorcery.Net
                     StunRflxIPEndPoint.Address, 
                     StunRflxIPEndPoint.Port,
                     NetworkAddress, 
-                    Port);
+                    port);
 
                 //logger.LogDebug(" " + srflxCandidateStr);
                 //iceCandidateString += srflxCandidateStr;
@@ -180,7 +221,7 @@ namespace SIPSorcery.Net
         {
             string stunOrTurnAddress = !String.IsNullOrEmpty(StunServerAddress) ? StunServerAddress : TurnServerAddress;
 
-            return CandidateType + BaseAddress.ToString() + stunOrTurnAddress  + TransportProtocol.ToString();
+            return type + BaseAddress.ToString() + stunOrTurnAddress  + TransportProtocol.ToString();
         }
 
         /// <summary>
@@ -195,5 +236,9 @@ namespace SIPSorcery.Net
             return 0;
         }
 
+        public RTCIceCandidateInit toJSON()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
