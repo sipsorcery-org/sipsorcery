@@ -191,14 +191,14 @@ namespace SIPSorcery.UnitTests
             throw new NotImplementedException();
         }
 
-        public void setLocalDescription(RTCSessionDescription sessionDescription)
+        public void setLocalDescription(RTCSessionDescriptionInit sessionDescription)
         {
-            localDescription = sessionDescription;
+            localDescription = new RTCSessionDescription(sessionDescription);
         }
 
-        public void setRemoteDescription(RTCSessionDescription sessionDescription)
+        public void setRemoteDescription(RTCSessionDescriptionInit sessionDescription)
         {
-            remoteDescription = sessionDescription;
+            remoteDescription = new RTCSessionDescription(sessionDescription);
         }
 
         public Task Start()

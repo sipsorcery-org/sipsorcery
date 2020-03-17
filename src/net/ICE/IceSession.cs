@@ -25,51 +25,6 @@ using System.Collections.Generic;
 
 namespace SIPSorcery.Net
 {
-    /// <summary>
-    /// The gathering states an ICE session transitions through.
-    /// </summary>
-    /// <remarks>
-    /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcicegatheringstate.
-    /// </remarks>
-    public enum RTCIceGatheringState
-    {
-        @new,
-        gathering,
-        complete
-    }
-
-
-    /// <summary>
-    /// The states an ICE session transitions through.
-    /// </summary>
-    /// <remarks>
-    /// As specified in https://www.w3.org/TR/webrtc/#rtciceconnectionstate-enum.
-    /// </remarks>
-    public enum RTCIceConnectionState
-    {
-        closed,
-        failed,
-        disconnected,
-        @new,
-        checking,
-        completed,
-        connected
-    }
-
-    /// <summary>
-    /// Properties to influence the initialisation of an ICE candidate.
-    /// </summary>
-    /// <remarks>
-    /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcicecandidateinit.
-    /// </remarks>
-    public class RTCIceCandidateInit
-    {
-        public string candidate;
-        public string sdpMid;
-        public ushort sdpMLineIndex;
-        public string usernameFragment;
-    }
-
     public class IceSession
     {
         public RTCIceGatheringState GatheringState { get; private set; }

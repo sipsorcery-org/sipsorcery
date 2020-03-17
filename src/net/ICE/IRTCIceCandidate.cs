@@ -16,6 +16,50 @@
 namespace SIPSorcery.Net
 {
     /// <summary>
+    /// The gathering states an ICE session transitions through.
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcicegatheringstate.
+    /// </remarks>
+    public enum RTCIceGatheringState
+    {
+        @new,
+        gathering,
+        complete
+    }
+
+    /// <summary>
+    /// The states an ICE session transitions through.
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#rtciceconnectionstate-enum.
+    /// </remarks>
+    public enum RTCIceConnectionState
+    {
+        closed,
+        failed,
+        disconnected,
+        @new,
+        checking,
+        completed,
+        connected
+    }
+
+    /// <summary>
+    /// Properties to influence the initialisation of an ICE candidate.
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcicecandidateinit.
+    /// </remarks>
+    public class RTCIceCandidateInit
+    {
+        public string candidate;
+        public string sdpMid;
+        public ushort sdpMLineIndex;
+        public string usernameFragment;
+    }
+
+    /// <summary>
     /// 
     /// </summary>
     /// <remarks>
@@ -75,22 +119,23 @@ namespace SIPSorcery.Net
     public enum RTCIceCandidateType
     {
         /// <summary>
-        /// A host candidate.
+        /// A host candidate, locally gathered.
         /// </summary>
         host,
 
         /// <summary>
-        /// A server reflexive candidate.
+        /// A server reflexive candidate, obtained from STUN and/or TURN (non-relay TURN).
         /// </summary>
         srflx,
 
         /// <summary>
-        /// A peer reflexive candidate.
+        /// A peer reflexive candidate, obtained as a result of a connectivity check 
+        /// (e.g. STUN request from a previously unknown address).
         /// </summary>
         prflx,
 
         /// <summary>
-        /// A relay candidate.
+        /// A relay candidate, TURN (relay).
         /// </summary>
         relay
     }
