@@ -58,11 +58,19 @@ namespace SIPSorcery.UnitTests
             Port = channelEndPoint.Port;
             SIPProtocol = SIPProtocolsEnum.udp;
             ID = Crypto.GetRandomInt(5).ToString();
+
+            SIPMessageSent = new AutoResetEvent(false);
         }
+
+        public string LastSIPMessageSent { get; private set; }
+
+        public AutoResetEvent SIPMessageSent { get; }
 
         public override Task<SocketError> SendAsync(SIPEndPoint destinationEndPoint, byte[] buffer, string connectionIDHint)
         {
-            throw new NotImplementedException();
+            LastSIPMessageSent = System.Text.Encoding.UTF8.GetString(buffer);
+            SIPMessageSent.Set();
+            return Task.FromResult(SocketError.Success);
         }
 
         public override Task<SocketError> SendSecureAsync(SIPEndPoint destinationEndPoint, byte[] buffer, string serverCertificate, string connectionIDHint)

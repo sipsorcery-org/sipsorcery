@@ -57,6 +57,7 @@ namespace SIPSorcery.SIP.App
         private bool m_isRegistered;
         private int m_cseq;
         private string m_callID;
+        private string[] m_customHeaders;
         private bool m_exit;
         private int m_attempts;
         private ManualResetEvent m_waitForRegistrationMRE = new ManualResetEvent(false);
@@ -115,7 +116,8 @@ namespace SIPSorcery.SIP.App
             string registrarHost,
             SIPURI contactURI,
             int expiry,
-            SIPMonitorLogDelegate logDelegate)
+            SIPMonitorLogDelegate logDelegate,
+            string[] customHeaders)
         {
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
@@ -127,6 +129,7 @@ namespace SIPSorcery.SIP.App
             m_contactURI = contactURI;
             m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
             m_originalExpiry = m_expiry;
+            m_customHeaders = customHeaders;
             m_callID = CallProperties.CreateNewCallId();
 
             if (logDelegate != null)
@@ -580,6 +583,14 @@ namespace SIPSorcery.SIP.App
                 registerRequest.Header.CallId = m_callID;
                 registerRequest.Header.UserAgent = (!UserAgent.IsNullOrBlank()) ? UserAgent : m_userAgent;
                 registerRequest.Header.Expires = m_expiry;
+
+                if (m_customHeaders != null && m_customHeaders.Length > 0)
+                {
+                    foreach (var header in m_customHeaders)
+                    {
+                        registerRequest.Header.UnknownHeaders.Add(header);
+                    }
+                }
 
                 return registerRequest;
             }
