@@ -3,13 +3,16 @@
 //
 // Description: Represents a candidate used in the Interactive Connectivity 
 // Establishment (ICE) negotiation to set up a usable network connection 
-// between two peers as per RFC5245 https://tools.ietf.org/html/rfc5245.
+// between two peers as per RFC8445 https://tools.ietf.org/html/rfc8445
+// (previously implemented for RFC5245 https://tools.ietf.org/html/rfc5245).
+
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
 // 26 Feb 2016	Aaron Clauson	Created, Hobart, Australia.
+// 15 Mar 2020  Aaron Clauson   Updated for RFC8445.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -17,6 +20,7 @@
 
 using System;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using SIPSorcery.Sys;
 
@@ -25,19 +29,10 @@ namespace SIPSorcery.Net
     public enum IceCandidateTypesEnum
     {
         Unknown = 0,
-        host = 1,
-        srflx = 2,
-        relay = 3
-    }
-
-    public enum IceConnectionStatesEnum
-    {
-        None = 0,
-        Gathering = 1,
-        GatheringComplete = 2,
-        Connecting = 3,
-        Connected = 4,
-        Closed = 5
+        host = 1,       // Host, locally gathered.
+        srflx = 2,      // Server-reflexive, obtained from STUN and/or TURN (non-relay TURN).
+        prlx = 3,       // Peer-reflexive, obtained as a result of a connectivity check (e.g. STUN request from a previously unknown address).
+        relay = 4       // Relay, TURN (relay).
     }
 
     public class IceCandidate
@@ -45,6 +40,31 @@ namespace SIPSorcery.Net
         public const string m_CRLF = "\r\n";
         public const string REMOTE_ADDRESS_KEY = "raddr";
         public const string REMOTE_PORT_KEY = "rport";
+        public const int RTP_COMPONENT_ID = 1;
+        public const int RTCP_COMPONENTID = 2;
+
+        /// <summary>
+        /// This implementation does not support separate RTP and RTCP sessions.
+        /// It assumes RTP and RTCP will always be multiplexed.
+        /// </summary>
+        public readonly int ComponentID = RTP_COMPONENT_ID;
+
+        /// <summary>
+        /// The base address is the local address on this host for the candidate. The 
+        /// candidate address could be different depending on the ICE candidate type.
+        /// </summary>
+        public IPAddress BaseAddress { get; private set; }
+
+        /// <summary>
+        /// Whether the candidate is UDP or TCP.
+        /// </summary>
+        public ProtocolType TransportProtocol { get; private set; }
+
+        public string StunServerAddress { get; private set; }
+
+        public string TurnServerAddress { get; private set; }
+
+
 
         public TurnServer TurnServer;
         public bool IsGatheringComplete;
@@ -147,5 +167,33 @@ namespace SIPSorcery.Net
 
             return candidateStr;
         }
+
+        /// <summary>
+        /// Calculates the foundation string for an ICE candidate. It can be used to determine whether two ICE candidates are 
+        /// equivalent.
+        /// </summary>
+        /// <remarks>
+        /// See https://tools.ietf.org/html/rfc8445#section-5.1.1.3.
+        /// </remarks>
+        /// <returns>A string capturing the attributes that are used in determining the foundation value.</returns>
+        public string GetFoundation()
+        {
+            string stunOrTurnAddress = !String.IsNullOrEmpty(StunServerAddress) ? StunServerAddress : TurnServerAddress;
+
+            return CandidateType + BaseAddress.ToString() + stunOrTurnAddress  + TransportProtocol.ToString();
+        }
+
+        /// <summary>
+        /// Determines the unique priority value for an ICE candidate.
+        /// </summary>
+        /// <remarks>
+        /// See https://tools.ietf.org/html/rfc8445#section-5.1.2.
+        /// </remarks>
+        /// <returns></returns>
+        public int GetPriority()
+        {
+            return 0;
+        }
+
     }
 }

@@ -12,6 +12,7 @@
 // 12 Nov 2019  Aaron Clauson   Added send event method.
 // 07 Dec 2019  Aaron Clauson   Big refactor. Brought in a lot of functions previously
 //                              in the RTPChannel class.
+// 16 Mar 2020  Aaron Clauson   Adjustments to make consistent with WebRTC specification.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -31,6 +32,12 @@ namespace SIPSorcery.Net
 {
     public delegate int ProtectRtpPacket(byte[] payload, int length, out int outputBufferLength);
 
+    /// <summary>
+    /// The type of a Session Description.
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#rtcsdptype.
+    /// </remarks>
     public enum RTCSdpType
     {
         answer = 0,
@@ -39,25 +46,75 @@ namespace SIPSorcery.Net
         rollback = 3
     }
 
+    /// <summary>
+    /// Options for creating the SDP offer.
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#dictionary-rtcofferoptions-members.
+    /// </remarks>
     public class RTCOfferOptions
     {
         /// <summary>
-        /// Optional. The remote address that was used for signalling during the conenction
-        /// set up. For non-ICE RTP sessions this can be sued to determine the best local
+        /// Optional. The remote address that was used for signalling during the connection
+        /// set up. For non-ICE RTP sessions this can be used to determine the best local
         /// IP address to use in an SDP offer/answer.
         /// </summary>
-        public IPAddress RemoteSignallingAddress;
+        //public IPAddress RemoteSignallingAddress;
+
+        /// <summary>
+        /// If true then a new set of ICE credentials will be generated otherwise any
+        /// existing set of credentials will be used.
+        /// </summary>
+        public bool iceRestart;
     }
 
+    /// <summary>
+    /// Initialiser for the RTCSessionDescription instance.
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#rtcsessiondescription-class.
+    /// </remarks>
+    public class RTCSessionDescriptionInit
+    {
+        /// <summary>
+        /// The type of the Session Description.
+        /// </summary>
+        public RTCSdpType type;
+
+        /// <summary>
+        /// A string representation of the Session Description.
+        /// </summary>
+        public string sdp;
+    }
+
+    /// <summary>
+    /// Options for creating an SDP answer.
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#dictionary-rtcofferansweroptions-members.
+    /// </remarks>
     public class RTCAnswerOptions
     {
-
+        // Note: At the time of writing there are no answer options in the WebRTC specification.
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#rtcsessiondescription-class.
+    /// </remarks>
     public class RTCSessionDescription
     {
+        /// <summary>
+        /// The type of the Session Description.
+        /// </summary>
         public RTCSdpType type;
-        public SDP sdp;
+
+        /// <summary>
+        /// A string representation of the Session Description.
+        /// </summary>
+        public string sdp;
     }
 
     public class MediaStreamTrack
@@ -505,10 +562,10 @@ namespace SIPSorcery.Net
                 {
                     localAddress = NetServices.GetLocalAddressForRemote(AudioDestinationEndPoint.Address);
                 }
-                else if (options != null && options.RemoteSignallingAddress != null)
-                {
-                    localAddress = NetServices.GetLocalAddressForRemote(options.RemoteSignallingAddress);
-                }
+                //else if (options != null && options.RemoteSignallingAddress != null)
+                //{
+                //    localAddress = NetServices.GetLocalAddressForRemote(options.RemoteSignallingAddress);
+                //}
 
                 SDP offerSdp = new SDP(IPAddress.Loopback);
                 offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
@@ -587,7 +644,9 @@ namespace SIPSorcery.Net
         {
             remoteDescription = sessionDescription;
 
-            var audioAnnounce = sessionDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
+            var remoteSdp = SDP.ParseSDPDescription(remoteDescription.sdp);
+
+            var audioAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
             if (audioAnnounce != null && audioAnnounce.Port != 0)
             {
                 if (!m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.audio && x.IsRemote))
@@ -612,7 +671,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            var videoAnnounce = sessionDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
+            var videoAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
             if (videoAnnounce != null && videoAnnounce.Port != 0)
             {
                 if (!m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.video && x.IsRemote))
