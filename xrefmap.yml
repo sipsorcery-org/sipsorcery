@@ -13650,12 +13650,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.SIPChannel.SIPChannel
   nameWithType: SIPChannel.SIPChannel
-- uid: SIPSorcery.SIP.SIPChannel.CHANNEL_ID_LENGTH
-  name: CHANNEL_ID_LENGTH
-  href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_CHANNEL_ID_LENGTH
-  commentId: F:SIPSorcery.SIP.SIPChannel.CHANNEL_ID_LENGTH
-  fullName: SIPSorcery.SIP.SIPChannel.CHANNEL_ID_LENGTH
-  nameWithType: SIPChannel.CHANNEL_ID_LENGTH
 - uid: SIPSorcery.SIP.SIPChannel.Close
   name: Close()
   href: api/SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_Close
