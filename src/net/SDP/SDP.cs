@@ -155,7 +155,7 @@ namespace SIPSorcery.Net
         public string IceUfrag;                     // If ICE is being used the username for the STUN requests.
         public string IcePwd;                       // If ICE is being used the password for the STUN requests.
         public string DtlsFingerprint;              // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
-        public List<IceCandidate> IceCandidates;
+        public List<string> IceCandidates;
 
         /// <summary>
         /// Indicates multiple media offers will be bundled on a single RTP connection.
@@ -369,17 +369,17 @@ namespace SIPSorcery.Net
                             {
                                 if (activeAnnouncement.IceCandidates == null)
                                 {
-                                    activeAnnouncement.IceCandidates = new List<IceCandidate>();
+                                    activeAnnouncement.IceCandidates = new List<string>();
                                 }
-                                activeAnnouncement.IceCandidates.Add(IceCandidate.Parse(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1)));
+                                activeAnnouncement.IceCandidates.Add(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1));
                             }
                             else
                             {
                                 if (sdp.IceCandidates == null)
                                 {
-                                    sdp.IceCandidates = new List<IceCandidate>();
+                                    sdp.IceCandidates = new List<string>();
                                 }
-                                sdp.IceCandidates.Add(IceCandidate.Parse(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1)));
+                                sdp.IceCandidates.Add(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1));
                             }
                         }
                         //2018-12-21 rj2: add a=crypto

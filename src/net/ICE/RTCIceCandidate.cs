@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: IceCandidate.cs
+// Filename: RTCIceCandidate.cs
 //
 // Description: Represents a candidate used in the Interactive Connectivity 
 // Establishment (ICE) negotiation to set up a usable network connection 
@@ -12,6 +12,7 @@
 // History:
 // 26 Feb 2016	Aaron Clauson	Created, Hobart, Australia.
 // 15 Mar 2020  Aaron Clauson   Updated for RFC8445.
+// 17 Mar 2020  Aaron Clauson   Renamed from IceCandidate to RTCIceCandidate.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -25,7 +26,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class IceCandidate : IRTCIceCandidate
+    public class RTCIceCandidate : IRTCIceCandidate
     {
         public const string m_CRLF = "\r\n";
         public const string REMOTE_ADDRESS_KEY = "raddr";
@@ -117,7 +118,7 @@ namespace SIPSorcery.Net
         public DateTime LastCommunicationAt;
         public bool HasConnectionError;
 
-        public string Transport;
+        //public string Transport;
         public string NetworkAddress;
         //public int Port;
         //public RTCIceCandidateType CandidateType;
@@ -132,10 +133,10 @@ namespace SIPSorcery.Net
         //    get { return IsStunLocalExchangeComplete == true && IsStunRemoteExchangeComplete && !IsDisconnected; }
         //}
 
-        private IceCandidate()
+        private RTCIceCandidate()
         { }
 
-        public IceCandidate(RTCIceCandidateInit init)
+        public RTCIceCandidate(RTCIceCandidateInit init)
         {
             candidate = init.candidate;
             sdpMid = init.sdpMid;
@@ -143,31 +144,41 @@ namespace SIPSorcery.Net
             usernameFragment = init.usernameFragment;
         }
 
-        //public IceCandidate(IPAddress localAddress, int port)
-        //{
-        //    NetworkAddress = localAddress.ToString();
-        //    port = port;
-        //}
-
-        //public IceCandidate(string transport, IPAddress remoteAddress, ushort localPort, RTCIceCandidateType candidateType)
-        //{
-        //    Transport = transport;
-        //    NetworkAddress = remoteAddress.ToString();
-        //    port = port;
-        //    type = candidateType;
-        //}
-
-        public static IceCandidate Parse(string candidateLine)
+        public RTCIceCandidate(IPAddress localAddress, ushort localPort)
         {
-            IceCandidate candidate = new IceCandidate();
+            NetworkAddress = localAddress.ToString();
+            port = localPort;
+        }
+
+        public RTCIceCandidate(RTCIceProtocol candidateProtocol, IPAddress remoteAddress, ushort localPort, RTCIceCandidateType candidateType)
+        {
+            //Transport = transport;
+            protocol = candidateProtocol;
+            NetworkAddress = remoteAddress.ToString();
+            port = localPort;
+            type = candidateType;
+        }
+
+        public static RTCIceCandidate Parse(string candidateLine)
+        {
+            RTCIceCandidate candidate = new RTCIceCandidate();
 
             candidate.RawString = candidateLine;
 
             string[] candidateFields = candidateLine.Trim().Split(' ');
-            candidate.Transport = candidateFields[2];
+
+            if (Enum.TryParse<RTCIceProtocol>(candidateFields[2], out var candidateProtocol))
+            {
+                candidate.protocol = candidateProtocol;
+            }
+
             candidate.NetworkAddress = candidateFields[4];
             candidate.port = Convert.ToUInt16(candidateFields[5]);
-            Enum.TryParse(candidateFields[7], out candidate.type);
+            
+            if(Enum.TryParse<RTCIceCandidateType>(candidateFields[7], out var candidateType))
+            {
+                candidate.type = candidateType;
+            }
 
             if (candidateFields.Length > 8 && candidateFields[8] == REMOTE_ADDRESS_KEY)
             {
@@ -184,7 +195,7 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            var candidateStr = String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ host generation 0\r\n", 
+            var candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ host generation 0", 
                 Crypto.GetRandomInt(10).ToString(), 
                 "1", 
                 Crypto.GetRandomInt(10).ToString(),
@@ -193,7 +204,7 @@ namespace SIPSorcery.Net
 
             if (StunRflxIPEndPoint != null)
             {
-                candidateStr += String.Format("a=candidate:{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0\r\n", 
+                candidateStr += String.Format("{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0", 
                     Crypto.GetRandomInt(10).ToString(), 
                     "1", 
                     Crypto.GetRandomInt(10).ToString(), 
@@ -201,9 +212,6 @@ namespace SIPSorcery.Net
                     StunRflxIPEndPoint.Port,
                     NetworkAddress, 
                     port);
-
-                //logger.LogDebug(" " + srflxCandidateStr);
-                //iceCandidateString += srflxCandidateStr;
             }
 
             return candidateStr;

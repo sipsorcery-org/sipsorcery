@@ -48,7 +48,7 @@ namespace SIPSorcery.Net
         public List<SDPMediaFormat> MediaFormats = new List<SDPMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
         public List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
         public List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
-        public List<IceCandidate> IceCandidates;
+        public List<string> IceCandidates;
 
         /// <summary>
         /// The stream status of this media announcement. Note that None means no explicit value has been set
@@ -167,7 +167,7 @@ namespace SIPSorcery.Net
             {
                 foreach (var candidate in IceCandidates)
                 {
-                    announcement += candidate.ToString();
+                    announcement += $"a={SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX}:{candidate}{m_CRLF}";
                 }
                 announcement += $"a={SDP.END_ICE_CANDIDATES_ATTRIBUTE}" + m_CRLF;
             }
