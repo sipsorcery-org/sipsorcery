@@ -37,6 +37,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetStartedVideo", "GetStart
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserAgentClientLoad", "UserAgentClientLoad\UserAgentClientLoad.csproj", "{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\src\SIPSorcery.csproj", "{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -251,6 +253,18 @@ Global
 		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Release|x64.Build.0 = Release|Any CPU
 		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Release|x86.ActiveCfg = Release|Any CPU
 		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Release|x86.Build.0 = Release|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Debug|x64.Build.0 = Debug|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Debug|x86.Build.0 = Debug|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Release|x64.ActiveCfg = Release|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Release|x64.Build.0 = Release|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Release|x86.ActiveCfg = Release|Any CPU
+		{8E52FB50-71B5-4F88-9AAC-74A8BB7DCB7A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
