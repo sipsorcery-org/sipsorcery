@@ -35,6 +35,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCReceiver", "WebRTCRec
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetStartedVideo", "GetStartedVideo\GetStartedVideo.csproj", "{6CF674B7-DA02-47D9-BEB1-AAF2750756FA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserAgentClientLoad", "UserAgentClientLoad\UserAgentClientLoad.csproj", "{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -237,6 +239,18 @@ Global
 		{6CF674B7-DA02-47D9-BEB1-AAF2750756FA}.Release|x64.Build.0 = Release|Any CPU
 		{6CF674B7-DA02-47D9-BEB1-AAF2750756FA}.Release|x86.ActiveCfg = Release|Any CPU
 		{6CF674B7-DA02-47D9-BEB1-AAF2750756FA}.Release|x86.Build.0 = Release|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Debug|x64.Build.0 = Debug|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Debug|x86.Build.0 = Debug|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Release|x64.ActiveCfg = Release|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Release|x64.Build.0 = Release|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Release|x86.ActiveCfg = Release|Any CPU
+		{9F1B4F61-2BE7-4511-BA6A-9BD6AEEEA4C2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

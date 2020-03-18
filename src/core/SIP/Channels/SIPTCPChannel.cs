@@ -191,12 +191,16 @@ namespace SIPSorcery.SIP
                 catch (ObjectDisposedException)
                 {
                     // This is a result of the transport channel being closed. Safe to ignore.
-                    logger.LogDebug($"SIP {ProtDescr} Channel accepts for {ListeningEndPoint} cancelled.");
+                    //logger.LogDebug($"SIP {ProtDescr} Channel accepts for {ListeningEndPoint} cancelled.");
                 }
                 catch (SocketException acceptSockExcp) when (acceptSockExcp.SocketErrorCode == SocketError.Interrupted)
                 {
                     // This is a result of the transport channel being closed and WSACancelBlockingCall being called in WinSock2. Safe to ignore.
-                    logger.LogDebug($"SIP {ProtDescr} Channel accepts for {ListeningEndPoint} cancelled.");
+                    //logger.LogDebug($"SIP {ProtDescr} Channel accepts for {ListeningEndPoint} cancelled.");
+                }
+                catch(System.AggregateException)
+                {
+                    // This is a result of the transport channel being closed. Safe to ignore.
                 }
                 catch (Exception acceptExcp)
                 {
