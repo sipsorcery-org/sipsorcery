@@ -37,7 +37,7 @@ namespace SIPSorcery.Sys
         public const int UDP_PORT_END = 65535;
         private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
-        private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 10;  // The maximum number of re-attempts that will be made when trying to bind the RTP port.
+        private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 25;  // The maximum number of re-attempts that will be made when trying to bind the RTP port.
         private const string INTERNET_IPADDRESS = "1.1.1.1";    // IP address to use when getting default IP address from OS. No connection is established.
         private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on macos).
         private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;   // The amount of time to leave the result of a local IP address determination in the cache.
@@ -132,18 +132,20 @@ namespace SIPSorcery.Sys
 
                 if (!bindSuccess)
                 {
-                    throw new ApplicationException($"RTP socket allocation failure, start {startPort}, range{rangeStartPort}:{rangeEndPort}.");
+                    throw new ApplicationException($"RTP socket allocation failure, start {startPort}, range {rangeStartPort}:{rangeEndPort}.");
                 }
             }
         }
 
         private static int GetNextPortProspect(int previousProspect, int rangeStart, int rangeEnd)
         {
-            int nextPort = previousProspect + 2;
+            int nextPort = previousProspect;
             int safety = 0;
 
             do
             {
+                nextPort += 2;
+
                 // Make the RTP port start on an even port as the specification mandates. 
                 // Some legacy systems require the RTP port to be an even port number.
                 if (nextPort % 2 != 0)

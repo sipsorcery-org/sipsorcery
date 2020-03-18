@@ -175,6 +175,9 @@ namespace SIPSorcery
                     }, cts.Token);
 
                     tasks.Add(task);
+
+                    // Spread the concurrent tasks out a tiny bit.
+                    await Task.Delay(50);
                 }
 
                 // Wait for all the concurrent tasks to complete.
@@ -438,6 +441,9 @@ namespace SIPSorcery
 
                         //rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.answer, sdp = SDP.ParseSDPDescription(resp.Body) });
                         //rtpSession.Start();
+
+                        // Let the call stay up for 1s.
+                        //await Task.Delay(1000);
 
                         uac.Hangup();
 
