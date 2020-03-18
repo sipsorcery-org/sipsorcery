@@ -60,10 +60,10 @@ using CommandLine.Text;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
-using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
@@ -177,7 +177,7 @@ namespace SIPSorcery
                     tasks.Add(task);
 
                     // Spread the concurrent tasks out a tiny bit.
-                    await Task.Delay(50);
+                    await Task.Delay(Crypto.GetRandomInt(500, 2000));
                 }
 
                 // Wait for all the concurrent tasks to complete.
@@ -391,8 +391,6 @@ namespace SIPSorcery
         /// <returns>True if the expected response was received, false otherwise.</returns>
         private static async Task<bool> InitiateCallTaskAsync(SIPTransport sipTransport, SIPURI dst)
         {
-            TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
-
             //UdpClient hepClient = new UdpClient(0, AddressFamily.InterNetwork);
 
             try
@@ -415,71 +413,25 @@ namespace SIPSorcery
                 //    //hepClient.SendAsync(hepBuffer, hepBuffer.Length, "192.168.11.49", 9060);
                 //};
 
-                // Get the IP address the RTP will be sent from. While we can listen on IPAddress.Any | IPv6Any
-                // we can't put 0.0.0.0 or [::0] in the SDP or the callee will treat our RTP stream as inactive.
-                var lookupResult = SIPDNSManager.ResolveSIPService(dst, false);
-                logger.LogDebug($"DNS lookup result for {dst}: {lookupResult?.GetSIPEndPoint()}.");
-                var dstAddress = lookupResult.GetSIPEndPoint().Address;
+                var ua = new SIPUserAgent(sipTransport, null);
+                ua.ClientCallTrying += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
+                ua.ClientCallRinging += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
+                ua.ClientCallFailed += (uac, err) => logger.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
+                ua.ClientCallAnswered += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-                var rtpSession = new RtpAVSession(dstAddress.AddressFamily, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
-                var offerSDP = await rtpSession.createOffer(new RTCOfferOptions { RemoteSignallingAddress = dstAddress });
+                var result = await ua.Call(dst.ToString(), null, null, new RtpSessionLight());
 
-                var uac = new SIPClientUserAgent(sipTransport);
-                uac.CallTrying += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
-                uac.CallRinging += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
-                uac.CallFailed += (uac, err) =>
-                {
-                    logger.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
-                    tcs.SetResult(false);
-                };
-                uac.CallAnswered += async (iuac, resp) =>
-                {
-                    if (resp.Status == SIPResponseStatusCodesEnum.Ok)
-                    {
-                        logger.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
+                ua.Hangup();
 
-                        //rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.answer, sdp = SDP.ParseSDPDescription(resp.Body) });
-                        //rtpSession.Start();
+                await Task.Delay(200);
 
-                        // Let the call stay up for 1s.
-                        //await Task.Delay(1000);
-
-                        rtpSession.Close("normal");
-                        uac.Hangup();
-
-                        await Task.Delay(200);
-
-                        tcs.SetResult(true);
-                    }
-                    else
-                    {
-                        logger.LogWarning($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                    }
-                };
-
-                // Start the thread that places the call.
-                SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
-                    SIPConstants.SIP_DEFAULT_USERNAME,
-                    null,
-                    dst.ToString(),
-                    SIPConstants.SIP_DEFAULT_FROMURI,
-                    dst.CanonicalAddress,
-                    null, null, null,
-                    SIPCallDirection.Out,
-                    SDP.SDP_MIME_CONTENTTYPE,
-                    offerSDP.ToString(),
-                    null);
-
-                uac.Call(callDescriptor);
+                return result;
             }
             catch (Exception excp)
             {
                 logger.LogError($"Exception InitiateCallTaskAsync. {excp.Message}");
-                tcs.SetResult(false);
+                return false;
             }
-
-            return await tcs.Task;
         }
     }
 }

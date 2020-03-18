@@ -237,9 +237,9 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaSession">The RTP session for the call.</param>
         public async Task<bool> Call(SIPCallDescriptor callDescriptor, IMediaSession mediaSession)
         {
-            await InitiateCallAsync(callDescriptor, mediaSession).ConfigureAwait(false);
-
             TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            await InitiateCallAsync(callDescriptor, mediaSession).ConfigureAwait(false);
 
             ClientCallAnswered += (uac, resp) =>
             {
