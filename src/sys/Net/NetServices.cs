@@ -64,105 +64,72 @@ namespace SIPSorcery.Sys
 
         public static void CreateRtpSocket(IPAddress localAddress, int rangeStartPort, int rangeEndPort, int startPort, bool createControlSocket, out Socket rtpSocket, out Socket controlSocket)
         {
+            logger.LogDebug($"CreateRtpSocket start port {startPort}, range {rangeStartPort}:{rangeEndPort}.");
+
             rtpSocket = null;
             controlSocket = null;
 
-            int rtpPort = GetNextPortProspect(startPort, rangeStartPort, rangeEndPort);
+            bool bindSuccess = false;
 
-            lock (_allocatePortsMutex)
+            for (int bindAttempts = 0; bindAttempts <= MAXIMUM_RTP_PORT_BIND_ATTEMPTS; bindAttempts++)
             {
-                bool bindSuccess = false;
+                IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+                var udpListeners = ipGlobalProperties.GetActiveUdpListeners();
 
-                for (int bindAttempts = 0; bindAttempts <= MAXIMUM_RTP_PORT_BIND_ATTEMPTS; bindAttempts++)
+                var portRange = Enumerable.Range(rangeStartPort, rangeEndPort - rangeStartPort).OrderBy(x => (x > startPort) ? x : x + rangeEndPort);
+                var inUsePorts = udpListeners.Where(x => x.Port >= rangeStartPort && x.Port <= rangeEndPort).Select(x => x.Port); //.OrderBy(x => x);
+
+                logger.LogDebug($"In use UDP ports count {inUsePorts.Count()}.");
+
+                int rtpPort = portRange.Except(inUsePorts).Where(x => x % 2 == 0).FirstOrDefault();
+
+                int controlPort = (createControlSocket == true) ? rtpPort + 1 : 0;
+
+                try
                 {
-                    int controlPort = (createControlSocket == true) ? rtpPort + 1 : 0;
+                    // The potential ports have been found now try and use them.
+                    rtpSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                    rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+                    rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
 
-                    try
+                    rtpSocket.Bind(new IPEndPoint(localAddress, rtpPort));
+
+                    if (controlPort != 0)
                     {
-                        // The potential ports have been found now try and use them.
-                        rtpSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                        rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
-                        rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+                        controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                        controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
 
-                        rtpSocket.Bind(new IPEndPoint(localAddress, rtpPort));
+                        logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort} and control socket {localAddress}:{controlPort}.");
+                    }
+                    else
+                    {
+                        logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort}.");
+                    }
 
+                    bindSuccess = true;
+
+                    break;
+                }
+                catch (System.Net.Sockets.SocketException sockExcp)
+                {
+                    if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
+                    {
                         if (controlPort != 0)
                         {
-                            controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                            controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
-
-                            logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort} and control socket {localAddress}:{controlPort}.");
+                            logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort} and/or control port of {controlPort}, attempt {bindAttempts}.");
                         }
                         else
                         {
-                            logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort}.");
-                        }
-
-                        int safety = 0;
-                        while(_recentlyAllocatedPorts.Count >= RECENT_PORTS_QUEUE_SIZE && safety < RECENT_PORTS_QUEUE_SIZE)
-                        {
-                            _recentlyAllocatedPorts.TryDequeue(out _);
-                            safety++;
-                        }
-
-                        _recentlyAllocatedPorts.Enqueue(rtpPort);
-
-                        bindSuccess = true;
-
-                        break;
-                    }
-                    catch (System.Net.Sockets.SocketException sockExcp)
-                    {
-                        if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
-                        {
-                            if (controlPort != 0)
-                            {
-                                logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort} and/or control port of {controlPort}, attempt {bindAttempts}.");
-                            }
-                            else
-                            {
-                                logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort}, attempt {bindAttempts}.");
-                            }
+                            logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort}, attempt {bindAttempts}.");
                         }
                     }
-
-                    // Binding attempt failed. Get the next port prospect.
-                    rtpPort = GetNextPortProspect(startPort, rangeStartPort, rangeEndPort);
-                }
-
-                if (!bindSuccess)
-                {
-                    throw new ApplicationException($"RTP socket allocation failure, start {startPort}, range {rangeStartPort}:{rangeEndPort}.");
                 }
             }
-        }
 
-        private static int GetNextPortProspect(int previousProspect, int rangeStart, int rangeEnd)
-        {
-            int nextPort = previousProspect;
-            int safety = 0;
-
-            do
+            if (!bindSuccess)
             {
-                nextPort += 2;
-
-                // Make the RTP port start on an even port as the specification mandates. 
-                // Some legacy systems require the RTP port to be an even port number.
-                if (nextPort % 2 != 0)
-                {
-                    nextPort += 1;
-                }
-
-                // If the chosen port is outside the allowed range roll around to the start.
-                if (nextPort >= rangeEnd)
-                {
-                    nextPort = rangeStart;
-                }
-                safety++;
+                throw new ApplicationException($"RTP socket allocation failure range {rangeStartPort}:{rangeEndPort}.");
             }
-            while (_recentlyAllocatedPorts.Any(x => x == nextPort) && safety < RECENT_PORTS_QUEUE_SIZE);
-
-            return nextPort;
         }
 
         public static UdpClient CreateRandomUDPListener(IPAddress localAddress, int start, int end, ArrayList inUsePorts, out IPEndPoint localEndPoint)
