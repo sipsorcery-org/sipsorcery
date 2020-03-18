@@ -445,6 +445,7 @@ namespace SIPSorcery
                         // Let the call stay up for 1s.
                         //await Task.Delay(1000);
 
+                        rtpSession.Close("normal");
                         uac.Hangup();
 
                         await Task.Delay(200);

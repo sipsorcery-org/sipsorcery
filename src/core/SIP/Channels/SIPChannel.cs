@@ -14,11 +14,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -74,10 +74,7 @@ namespace SIPSorcery.SIP
     /// </summary>
     public abstract class SIPChannel : IDisposable
     {
-        protected static int CHANNEL_ID_LENGTH = 3;         // Length of the random numeric string to use for channel ID's.
-        private static int CREATE_CHANNELID_ATTEMPTS = 10; // Number of attempts to make at creating a random channel ID.
-
-        private static ConcurrentDictionary<int, int> _inUseChannelIDs = new ConcurrentDictionary<int, int>(); // Make sure we don't create duplicate channel ID's.
+        private static int _lastUsedChannelID = 0;
 
         protected ILogger logger = Log.Logger;
 
@@ -167,21 +164,8 @@ namespace SIPSorcery.SIP
 
         public SIPChannel()
         {
-            for (int i = 0; i < CREATE_CHANNELID_ATTEMPTS; i++)
-            {
-                int id = Crypto.GetRandomInt(CHANNEL_ID_LENGTH);
-                if (!_inUseChannelIDs.ContainsKey(id))
-                {
-                    _inUseChannelIDs.TryAdd(id, 0);
-                    ID = id.ToString();
-                    break;
-                }
-            }
-
-            if (ID == null)
-            {
-                throw new ApplicationException("Failed to create a random channel ID in SIPChannel constructor.");
-            }
+            int id = Interlocked.Increment(ref _lastUsedChannelID);
+            ID = id.ToString();
         }
 
         /// <summary>
