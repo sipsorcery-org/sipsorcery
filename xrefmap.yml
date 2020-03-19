@@ -13,6 +13,19 @@ references:
   commentId: T:SIPSorcery.Media.RtpAudioSession
   fullName: SIPSorcery.Media.RtpAudioSession
   nameWithType: RtpAudioSession
+- uid: SIPSorcery.Media.RtpAudioSession.#ctor(System.Net.Sockets.AddressFamily)
+  name: RtpAudioSession(AddressFamily)
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession__ctor_System_Net_Sockets_AddressFamily_
+  commentId: M:SIPSorcery.Media.RtpAudioSession.#ctor(System.Net.Sockets.AddressFamily)
+  fullName: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(System.Net.Sockets.AddressFamily)
+  nameWithType: RtpAudioSession.RtpAudioSession(AddressFamily)
+- uid: SIPSorcery.Media.RtpAudioSession.#ctor*
+  name: RtpAudioSession
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession__ctor_
+  commentId: Overload:SIPSorcery.Media.RtpAudioSession.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Media.RtpAudioSession.RtpAudioSession
+  nameWithType: RtpAudioSession.RtpAudioSession
 - uid: SIPSorcery.Media.RtpAudioSession.Close(System.String)
   name: Close(String)
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_Close_System_String_
@@ -26,84 +39,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.RtpAudioSession.Close
   nameWithType: RtpAudioSession.Close
-- uid: SIPSorcery.Media.RtpAudioSession.createAnswer(SIPSorcery.Net.RTCAnswerOptions)
-  name: createAnswer(RTCAnswerOptions)
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_createAnswer_SIPSorcery_Net_RTCAnswerOptions_
-  commentId: M:SIPSorcery.Media.RtpAudioSession.createAnswer(SIPSorcery.Net.RTCAnswerOptions)
-  fullName: SIPSorcery.Media.RtpAudioSession.createAnswer(SIPSorcery.Net.RTCAnswerOptions)
-  nameWithType: RtpAudioSession.createAnswer(RTCAnswerOptions)
-- uid: SIPSorcery.Media.RtpAudioSession.createAnswer*
-  name: createAnswer
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_createAnswer_
-  commentId: Overload:SIPSorcery.Media.RtpAudioSession.createAnswer
-  isSpec: "True"
-  fullName: SIPSorcery.Media.RtpAudioSession.createAnswer
-  nameWithType: RtpAudioSession.createAnswer
-- uid: SIPSorcery.Media.RtpAudioSession.createOffer(SIPSorcery.Net.RTCOfferOptions)
-  name: createOffer(RTCOfferOptions)
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_createOffer_SIPSorcery_Net_RTCOfferOptions_
-  commentId: M:SIPSorcery.Media.RtpAudioSession.createOffer(SIPSorcery.Net.RTCOfferOptions)
-  fullName: SIPSorcery.Media.RtpAudioSession.createOffer(SIPSorcery.Net.RTCOfferOptions)
-  nameWithType: RtpAudioSession.createOffer(RTCOfferOptions)
-- uid: SIPSorcery.Media.RtpAudioSession.createOffer*
-  name: createOffer
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_createOffer_
-  commentId: Overload:SIPSorcery.Media.RtpAudioSession.createOffer
-  isSpec: "True"
-  fullName: SIPSorcery.Media.RtpAudioSession.createOffer
-  nameWithType: RtpAudioSession.createOffer
-- uid: SIPSorcery.Media.RtpAudioSession.HasAudio
-  name: HasAudio
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_HasAudio
-  commentId: P:SIPSorcery.Media.RtpAudioSession.HasAudio
-  fullName: SIPSorcery.Media.RtpAudioSession.HasAudio
-  nameWithType: RtpAudioSession.HasAudio
-- uid: SIPSorcery.Media.RtpAudioSession.HasAudio*
-  name: HasAudio
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_HasAudio_
-  commentId: Overload:SIPSorcery.Media.RtpAudioSession.HasAudio
-  isSpec: "True"
-  fullName: SIPSorcery.Media.RtpAudioSession.HasAudio
-  nameWithType: RtpAudioSession.HasAudio
-- uid: SIPSorcery.Media.RtpAudioSession.HasVideo
-  name: HasVideo
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_HasVideo
-  commentId: P:SIPSorcery.Media.RtpAudioSession.HasVideo
-  fullName: SIPSorcery.Media.RtpAudioSession.HasVideo
-  nameWithType: RtpAudioSession.HasVideo
-- uid: SIPSorcery.Media.RtpAudioSession.HasVideo*
-  name: HasVideo
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_HasVideo_
-  commentId: Overload:SIPSorcery.Media.RtpAudioSession.HasVideo
-  isSpec: "True"
-  fullName: SIPSorcery.Media.RtpAudioSession.HasVideo
-  nameWithType: RtpAudioSession.HasVideo
-- uid: SIPSorcery.Media.RtpAudioSession.IsClosed
-  name: IsClosed
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_IsClosed
-  commentId: P:SIPSorcery.Media.RtpAudioSession.IsClosed
-  fullName: SIPSorcery.Media.RtpAudioSession.IsClosed
-  nameWithType: RtpAudioSession.IsClosed
-- uid: SIPSorcery.Media.RtpAudioSession.IsClosed*
-  name: IsClosed
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_IsClosed_
-  commentId: Overload:SIPSorcery.Media.RtpAudioSession.IsClosed
-  isSpec: "True"
-  fullName: SIPSorcery.Media.RtpAudioSession.IsClosed
-  nameWithType: RtpAudioSession.IsClosed
-- uid: SIPSorcery.Media.RtpAudioSession.localDescription
-  name: localDescription
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_localDescription
-  commentId: P:SIPSorcery.Media.RtpAudioSession.localDescription
-  fullName: SIPSorcery.Media.RtpAudioSession.localDescription
-  nameWithType: RtpAudioSession.localDescription
-- uid: SIPSorcery.Media.RtpAudioSession.localDescription*
-  name: localDescription
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_localDescription_
-  commentId: Overload:SIPSorcery.Media.RtpAudioSession.localDescription
-  isSpec: "True"
-  fullName: SIPSorcery.Media.RtpAudioSession.localDescription
-  nameWithType: RtpAudioSession.localDescription
+- uid: SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_DURATION
+  name: DTMF_EVENT_DURATION
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_DTMF_EVENT_DURATION
+  commentId: F:SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_DURATION
+  fullName: SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_DURATION
+  nameWithType: RtpAudioSession.DTMF_EVENT_DURATION
+- uid: SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_PAYLOAD_ID
+  name: DTMF_EVENT_PAYLOAD_ID
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_DTMF_EVENT_PAYLOAD_ID
+  commentId: F:SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_PAYLOAD_ID
+  fullName: SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_PAYLOAD_ID
+  nameWithType: RtpAudioSession.DTMF_EVENT_PAYLOAD_ID
 - uid: SIPSorcery.Media.RtpAudioSession.OnAudioScopeSampleReady
   name: OnAudioScopeSampleReady
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_OnAudioScopeSampleReady
@@ -116,43 +63,12 @@ references:
   commentId: E:SIPSorcery.Media.RtpAudioSession.OnHoldAudioScopeSampleReady
   fullName: SIPSorcery.Media.RtpAudioSession.OnHoldAudioScopeSampleReady
   nameWithType: RtpAudioSession.OnHoldAudioScopeSampleReady
-- uid: SIPSorcery.Media.RtpAudioSession.OnRtpClosed
-  name: OnRtpClosed
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_OnRtpClosed
-  commentId: E:SIPSorcery.Media.RtpAudioSession.OnRtpClosed
-  fullName: SIPSorcery.Media.RtpAudioSession.OnRtpClosed
-  nameWithType: RtpAudioSession.OnRtpClosed
-- uid: SIPSorcery.Media.RtpAudioSession.OnRtpEvent
-  name: OnRtpEvent
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_OnRtpEvent
-  commentId: E:SIPSorcery.Media.RtpAudioSession.OnRtpEvent
-  fullName: SIPSorcery.Media.RtpAudioSession.OnRtpEvent
-  nameWithType: RtpAudioSession.OnRtpEvent
-- uid: SIPSorcery.Media.RtpAudioSession.OnRtpPacketReceived
-  name: OnRtpPacketReceived
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_OnRtpPacketReceived
-  commentId: E:SIPSorcery.Media.RtpAudioSession.OnRtpPacketReceived
-  fullName: SIPSorcery.Media.RtpAudioSession.OnRtpPacketReceived
-  nameWithType: RtpAudioSession.OnRtpPacketReceived
 - uid: SIPSorcery.Media.RtpAudioSession.OnVideoSampleReady
   name: OnVideoSampleReady
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_OnVideoSampleReady
   commentId: E:SIPSorcery.Media.RtpAudioSession.OnVideoSampleReady
   fullName: SIPSorcery.Media.RtpAudioSession.OnVideoSampleReady
   nameWithType: RtpAudioSession.OnVideoSampleReady
-- uid: SIPSorcery.Media.RtpAudioSession.remoteDescription
-  name: remoteDescription
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_remoteDescription
-  commentId: P:SIPSorcery.Media.RtpAudioSession.remoteDescription
-  fullName: SIPSorcery.Media.RtpAudioSession.remoteDescription
-  nameWithType: RtpAudioSession.remoteDescription
-- uid: SIPSorcery.Media.RtpAudioSession.remoteDescription*
-  name: remoteDescription
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_remoteDescription_
-  commentId: Overload:SIPSorcery.Media.RtpAudioSession.remoteDescription
-  isSpec: "True"
-  fullName: SIPSorcery.Media.RtpAudioSession.remoteDescription
-  nameWithType: RtpAudioSession.remoteDescription
 - uid: SIPSorcery.Media.RtpAudioSession.SendDtmf(System.Byte,System.Threading.CancellationToken)
   name: SendDtmf(Byte, CancellationToken)
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendDtmf_System_Byte_System_Threading_CancellationToken_
@@ -182,32 +98,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.RtpAudioSession.SendMedia
   nameWithType: RtpAudioSession.SendMedia
-- uid: SIPSorcery.Media.RtpAudioSession.setLocalDescription(SIPSorcery.Net.RTCSessionDescription)
-  name: setLocalDescription(RTCSessionDescription)
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_setLocalDescription_SIPSorcery_Net_RTCSessionDescription_
-  commentId: M:SIPSorcery.Media.RtpAudioSession.setLocalDescription(SIPSorcery.Net.RTCSessionDescription)
-  fullName: SIPSorcery.Media.RtpAudioSession.setLocalDescription(SIPSorcery.Net.RTCSessionDescription)
-  nameWithType: RtpAudioSession.setLocalDescription(RTCSessionDescription)
-- uid: SIPSorcery.Media.RtpAudioSession.setLocalDescription*
-  name: setLocalDescription
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_setLocalDescription_
-  commentId: Overload:SIPSorcery.Media.RtpAudioSession.setLocalDescription
-  isSpec: "True"
-  fullName: SIPSorcery.Media.RtpAudioSession.setLocalDescription
-  nameWithType: RtpAudioSession.setLocalDescription
-- uid: SIPSorcery.Media.RtpAudioSession.setRemoteDescription(SIPSorcery.Net.RTCSessionDescription)
-  name: setRemoteDescription(RTCSessionDescription)
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_setRemoteDescription_SIPSorcery_Net_RTCSessionDescription_
-  commentId: M:SIPSorcery.Media.RtpAudioSession.setRemoteDescription(SIPSorcery.Net.RTCSessionDescription)
-  fullName: SIPSorcery.Media.RtpAudioSession.setRemoteDescription(SIPSorcery.Net.RTCSessionDescription)
-  nameWithType: RtpAudioSession.setRemoteDescription(RTCSessionDescription)
-- uid: SIPSorcery.Media.RtpAudioSession.setRemoteDescription*
-  name: setRemoteDescription
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_setRemoteDescription_
-  commentId: Overload:SIPSorcery.Media.RtpAudioSession.setRemoteDescription
-  isSpec: "True"
-  fullName: SIPSorcery.Media.RtpAudioSession.setRemoteDescription
-  nameWithType: RtpAudioSession.setRemoteDescription
 - uid: SIPSorcery.Media.RtpAudioSession.Start
   name: Start()
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_Start
@@ -3329,6 +3219,12 @@ references:
   commentId: F:SIPSorcery.Net.RTPSession.SRTP_MAX_PREFIX_LENGTH
   fullName: SIPSorcery.Net.RTPSession.SRTP_MAX_PREFIX_LENGTH
   nameWithType: RTPSession.SRTP_MAX_PREFIX_LENGTH
+- uid: SIPSorcery.Net.RTPSession.TELEPHONE_EVENT_ATTRIBUTE
+  name: TELEPHONE_EVENT_ATTRIBUTE
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_TELEPHONE_EVENT_ATTRIBUTE
+  commentId: F:SIPSorcery.Net.RTPSession.TELEPHONE_EVENT_ATTRIBUTE
+  fullName: SIPSorcery.Net.RTPSession.TELEPHONE_EVENT_ATTRIBUTE
+  nameWithType: RTPSession.TELEPHONE_EVENT_ATTRIBUTE
 - uid: SIPSorcery.Net.RTPSession.VideoControlDestinationEndPoint
   name: VideoControlDestinationEndPoint
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoControlDestinationEndPoint
