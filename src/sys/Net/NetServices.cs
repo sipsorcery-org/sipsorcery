@@ -37,7 +37,7 @@ namespace SIPSorcery.Sys
         public const int UDP_PORT_END = 65535;
         private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
-        private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 10;  // The maximum number of re-attempts that will be made when trying to bind the RTP port.
+        private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 25;  // The maximum number of re-attempts that will be made when trying to bind the RTP port.
         private const string INTERNET_IPADDRESS = "1.1.1.1";    // IP address to use when getting default IP address from OS. No connection is established.
         private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on macos).
         private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;   // The amount of time to leave the result of a local IP address determination in the cache.
@@ -64,17 +64,27 @@ namespace SIPSorcery.Sys
 
         public static void CreateRtpSocket(IPAddress localAddress, int rangeStartPort, int rangeEndPort, int startPort, bool createControlSocket, out Socket rtpSocket, out Socket controlSocket)
         {
+            logger.LogDebug($"CreateRtpSocket start port {startPort}, range {rangeStartPort}:{rangeEndPort}.");
+
             rtpSocket = null;
             controlSocket = null;
 
-            int rtpPort = GetNextPortProspect(startPort, rangeStartPort, rangeEndPort);
+            bool bindSuccess = false;
 
-            lock (_allocatePortsMutex)
+            for (int bindAttempts = 0; bindAttempts <= MAXIMUM_RTP_PORT_BIND_ATTEMPTS; bindAttempts++)
             {
-                bool bindSuccess = false;
-
-                for (int bindAttempts = 0; bindAttempts <= MAXIMUM_RTP_PORT_BIND_ATTEMPTS; bindAttempts++)
+                lock (_allocatePortsMutex)
                 {
+                    IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+                    var udpListeners = ipGlobalProperties.GetActiveUdpListeners();
+
+                    var portRange = Enumerable.Range(rangeStartPort, rangeEndPort - rangeStartPort).OrderBy(x => (x > startPort) ? x : x + rangeEndPort);
+                    var inUsePorts = udpListeners.Where(x => x.Port >= rangeStartPort && x.Port <= rangeEndPort).Select(x => x.Port); //.OrderBy(x => x);
+
+                    logger.LogDebug($"In use UDP ports count {inUsePorts.Count()}.");
+
+                    int rtpPort = portRange.Except(inUsePorts).Where(x => x % 2 == 0).FirstOrDefault();
+
                     int controlPort = (createControlSocket == true) ? rtpPort + 1 : 0;
 
                     try
@@ -98,15 +108,6 @@ namespace SIPSorcery.Sys
                             logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort}.");
                         }
 
-                        int safety = 0;
-                        while(_recentlyAllocatedPorts.Count >= RECENT_PORTS_QUEUE_SIZE && safety < RECENT_PORTS_QUEUE_SIZE)
-                        {
-                            _recentlyAllocatedPorts.TryDequeue(out _);
-                            safety++;
-                        }
-
-                        _recentlyAllocatedPorts.Enqueue(rtpPort);
-
                         bindSuccess = true;
 
                         break;
@@ -125,42 +126,13 @@ namespace SIPSorcery.Sys
                             }
                         }
                     }
-
-                    // Binding attempt failed. Get the next port prospect.
-                    rtpPort = GetNextPortProspect(startPort, rangeStartPort, rangeEndPort);
-                }
-
-                if (!bindSuccess)
-                {
-                    throw new ApplicationException($"RTP socket allocation failure, start {startPort}, range{rangeStartPort}:{rangeEndPort}.");
                 }
             }
-        }
 
-        private static int GetNextPortProspect(int previousProspect, int rangeStart, int rangeEnd)
-        {
-            int nextPort = previousProspect + 2;
-            int safety = 0;
-
-            do
+            if (!bindSuccess)
             {
-                // Make the RTP port start on an even port as the specification mandates. 
-                // Some legacy systems require the RTP port to be an even port number.
-                if (nextPort % 2 != 0)
-                {
-                    nextPort += 1;
-                }
-
-                // If the chosen port is outside the allowed range roll around to the start.
-                if (nextPort >= rangeEnd)
-                {
-                    nextPort = rangeStart;
-                }
-                safety++;
+                throw new ApplicationException($"RTP socket allocation failure range {rangeStartPort}:{rangeEndPort}.");
             }
-            while (_recentlyAllocatedPorts.Any(x => x == nextPort) && safety < RECENT_PORTS_QUEUE_SIZE);
-
-            return nextPort;
         }
 
         public static UdpClient CreateRandomUDPListener(IPAddress localAddress, int start, int end, ArrayList inUsePorts, out IPEndPoint localEndPoint)

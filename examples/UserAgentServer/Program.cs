@@ -147,7 +147,7 @@ namespace SIPSorcery
 
                         if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
                         {
-                            Log.LogDebug($"CLient offer contained PCMU audio codec.");
+                            Log.LogDebug($"Client offer contained PCMU audio codec.");
                             rtpSession = new RtpAVSession(dstRtpEndPoint.AddressFamily, 
                                 new AudioOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = executableDir + "/" + AUDIO_FILE_PCMU }, null);
                             rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.offer, sdp = offerSdp });

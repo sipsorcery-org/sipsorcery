@@ -36,7 +36,7 @@ namespace SIPSorcery.SIP.App
 
         private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
         private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
-        private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
+        //private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
 
         private SIPTransport m_sipTransport;
         private SIPMonitorLogDelegate Log_External;
@@ -254,61 +254,12 @@ namespace SIPSorcery.SIP.App
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Body on UAC call was empty.", Owner));
                         }
-                        else if (m_sipCallDescriptor.ContentType == m_sdpContentType)
-                        {
-                            if (!m_sipCallDescriptor.MangleResponseSDP)
-                            {
-                                IPEndPoint sdpEndPoint = SDP.GetSDPRTPEndPoint(content);
-                                if (sdpEndPoint != null)
-                                {
-                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on UAC call was set to NOT mangle, RTP socket " + sdpEndPoint.ToString() + ".", Owner));
-                                }
-                                else
-                                {
-                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on UAC call was set to NOT mangle, RTP socket could not be determined.", Owner));
-                                }
-                            }
-                            else
-                            {
-                                IPEndPoint sdpEndPoint = SDP.GetSDPRTPEndPoint(content);
-                                if (sdpEndPoint != null)
-                                {
-                                    if (!IPSocket.IsPrivateAddress(sdpEndPoint.Address.ToString()))
-                                    {
-                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on UAC call had public IP not mangled, RTP socket " + sdpEndPoint.ToString() + ".", Owner));
-                                    }
-                                    else
-                                    {
-                                        bool wasSDPMangled = false;
-                                        if (sipCallDescriptor.MangleIPAddress != null)
-                                        {
-                                            if (sdpEndPoint != null)
-                                            {
-                                                content = SIPPacketMangler.MangleSDP(content, sipCallDescriptor.MangleIPAddress.ToString(), out wasSDPMangled);
-                                            }
-                                        }
-
-                                        if (wasSDPMangled)
-                                        {
-                                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on UAC call had RTP socket mangled from " + sdpEndPoint.ToString() + " to " + sipCallDescriptor.MangleIPAddress.ToString() + ":" + sdpEndPoint.Port + ".", Owner));
-                                        }
-                                        else if (sdpEndPoint != null)
-                                        {
-                                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on UAC could not be mangled, using original RTP socket of " + sdpEndPoint.ToString() + ".", Owner));
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP RTP socket on UAC call could not be determined.", Owner));
-                                }
-                            }
-                        }
 
                         if (this.m_sipCallDescriptor.BranchId.IsNullOrBlank())
                         {
                             this.m_sipCallDescriptor.BranchId = CallProperties.CreateBranchId();
                         }
+
                         if (this.m_sipCallDescriptor.CallId.IsNullOrBlank())
                         {
                             this.m_sipCallDescriptor.CallId = CallProperties.CreateNewCallId();
@@ -672,80 +623,6 @@ namespace SIPSorcery.SIP.App
                         if (sipResponse.Body.IsNullOrBlank())
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "Body on UAC response was empty.", Owner));
-                        }
-                        else if (m_sipCallDescriptor.ContentType == m_sdpContentType)
-                        {
-                            if (!m_sipCallDescriptor.MangleResponseSDP)
-                            {
-                                IPEndPoint sdpEndPoint = SDP.GetSDPRTPEndPoint(sipResponse.Body);
-                                string sdpSocket = (sdpEndPoint != null) ? sdpEndPoint.ToString() : "could not determine";
-                                Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on UAC response was set to NOT mangle, RTP socket " + sdpEndPoint.ToString() + ".", Owner));
-                            }
-                            else
-                            {
-                                //m_callInProgress = false; // the call is now established
-                                //logger.LogDebug("Final response " + sipResponse.StatusCode + " " + sipResponse.ReasonPhrase + " for " + ForwardedTransaction.TransactionRequest.URI.ToString() + ".");
-                                // Determine of response SDP should be mangled.
-
-                                IPEndPoint sdpEndPoint = SDP.GetSDPRTPEndPoint(sipResponse.Body);
-                                //Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "UAC response SDP was mangled from sdp=" + sdpEndPoint.Address.ToString() + ", proxyfrom=" + sipResponse.Header.ProxyReceivedFrom + ", mangle=" + m_sipCallDescriptor.MangleResponseSDP + ".", null));
-                                if (sdpEndPoint != null)
-                                {
-                                    if (!IPSocket.IsPrivateAddress(sdpEndPoint.Address.ToString()))
-                                    {
-                                        Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on UAC response had public IP not mangled, RTP socket " + sdpEndPoint.ToString() + ".", Owner));
-                                    }
-                                    else
-                                    {
-                                        bool wasSDPMangled = false;
-                                        string publicIPAddress = null;
-
-                                        if (!sipResponse.Header.ProxyReceivedFrom.IsNullOrBlank())
-                                        {
-                                            IPAddress remoteUASAddress = SIPEndPoint.ParseSIPEndPoint(sipResponse.Header.ProxyReceivedFrom).Address;
-                                            if (IPSocket.IsPrivateAddress(remoteUASAddress.ToString()) && m_sipCallDescriptor.MangleIPAddress != null)
-                                            {
-                                                // If the response has arrived here on a private IP address then it must be
-                                                // for a local version install and an incoming call that needs it's response mangled.
-                                                if (!IPSocket.IsPrivateAddress(m_sipCallDescriptor.MangleIPAddress.ToString()))
-                                                {
-                                                    publicIPAddress = m_sipCallDescriptor.MangleIPAddress.ToString();
-                                                }
-                                            }
-                                            else
-                                            {
-                                                publicIPAddress = remoteUASAddress.ToString();
-                                            }
-                                        }
-                                        else if (!IPSocket.IsPrivateAddress(remoteEndPoint.Address.ToString()) && remoteEndPoint.Address != IPAddress.Any)
-                                        {
-                                            publicIPAddress = remoteEndPoint.Address.ToString();
-                                        }
-                                        else if (m_sipCallDescriptor.MangleIPAddress != null)
-                                        {
-                                            publicIPAddress = m_sipCallDescriptor.MangleIPAddress.ToString();
-                                        }
-
-                                        if (publicIPAddress != null)
-                                        {
-                                            sipResponse.Body = SIPPacketMangler.MangleSDP(sipResponse.Body, publicIPAddress, out wasSDPMangled);
-                                        }
-
-                                        if (wasSDPMangled)
-                                        {
-                                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on UAC response had RTP socket mangled from " + sdpEndPoint.ToString() + " to " + publicIPAddress + ":" + sdpEndPoint.Port + ".", Owner));
-                                        }
-                                        else if (sdpEndPoint != null)
-                                        {
-                                            Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP on UAC response could not be mangled, RTP socket " + sdpEndPoint.ToString() + ".", Owner));
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "SDP RTP socket on UAC response could not be determined.", Owner));
-                                }
-                            }
                         }
 
                         m_sipDialogue = new SIPDialogue(m_serverTransaction, Owner, AdminMemberId);

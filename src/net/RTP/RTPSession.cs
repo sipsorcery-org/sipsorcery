@@ -249,6 +249,7 @@ namespace SIPSorcery.Net
         private const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
         public const int H264_RTP_HEADER_LENGTH = 2;
         public const int RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS = 50; // Default sample period for an RTP event as specified by RFC2833.
+        public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
         public const SDPMediaTypesEnum DEFAULT_MEDIA_TYPE = SDPMediaTypesEnum.audio; // If we can't match an RTP payload ID assume it's audio.
         private const string RTP_MEDIA_PROFILE = "RTP/AVP";
 
@@ -489,7 +490,7 @@ namespace SIPSorcery.Net
                     CreateRtpChannel(SDPMediaTypesEnum.audio);
                 }
 
-                if(m_audioRtcpSession == null)
+                if (m_audioRtcpSession == null)
                 {
                     m_audioRtcpSession = CreateRtcpSession(SDPMediaTypesEnum.audio);
                 }
@@ -527,7 +528,7 @@ namespace SIPSorcery.Net
                     CreateRtpChannel(SDPMediaTypesEnum.video);
                 }
 
-                if(m_videoRtcpSession == null)
+                if (m_videoRtcpSession == null)
                 {
                     m_videoRtcpSession = CreateRtcpSession(SDPMediaTypesEnum.video);
                 }
@@ -570,8 +571,8 @@ namespace SIPSorcery.Net
             try
             {
                 IPAddress localAddress = IPAddress.Any;
-                
-                if(AudioDestinationEndPoint != null)
+
+                if (AudioDestinationEndPoint != null)
                 {
                     localAddress = NetServices.GetLocalAddressForRemote(AudioDestinationEndPoint.Address);
                 }
@@ -635,7 +636,7 @@ namespace SIPSorcery.Net
         /// <returns>A task that when complete contains the SDP answer.</returns>
         public virtual Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
         {
-            if(remoteDescription == null)
+            if (remoteDescription == null)
             {
                 throw new ApplicationException("The remote SDP description is not set, cannot create SDP answer.");
             }
@@ -669,8 +670,9 @@ namespace SIPSorcery.Net
             remoteDescription = new RTCSessionDescription(description);
 
             var remoteSdp = SDP.ParseSDPDescription(remoteDescription.sdp);
-
             var audioAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
+            var connAddr = IPAddress.Parse(remoteSdp.Connection.ConnectionAddress);
+
             if (audioAnnounce != null && audioAnnounce.Port != 0)
             {
                 if (!m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.audio && x.IsRemote))
@@ -680,6 +682,23 @@ namespace SIPSorcery.Net
 
                     var remoteAudioTrack = new MediaStreamTrack(audioAnnounce.MediaID, SDPMediaTypesEnum.audio, true, audioAnnounce.MediaFormats);
                     addTrack(remoteAudioTrack);
+
+                    var audioAddr = (audioAnnounce.Connection != null) ? IPAddress.Parse(audioAnnounce.Connection.ConnectionAddress) : connAddr;
+                    AudioDestinationEndPoint = new IPEndPoint(audioAddr, audioAnnounce.Port);
+                    AudioControlDestinationEndPoint = new IPEndPoint(audioAddr, audioAnnounce.Port + 1);
+
+                    foreach (var mediaFormat in audioAnnounce.MediaFormats)
+                    {
+                        if (mediaFormat.FormatAttribute?.StartsWith(TELEPHONE_EVENT_ATTRIBUTE) == true)
+                        {
+                            if (int.TryParse(mediaFormat.FormatID, out var remoteRtpEventPayloadID))
+                            {
+                                RemoteRtpEventPayloadID = remoteRtpEventPayloadID;
+                            }
+                            break;
+                        }
+                    }
+
                 }
                 else
                 {
@@ -705,6 +724,10 @@ namespace SIPSorcery.Net
 
                     var remoteVideoTrack = new MediaStreamTrack(videoAnnounce.MediaID, SDPMediaTypesEnum.video, true, videoAnnounce.MediaFormats);
                     addTrack(remoteVideoTrack);
+
+                    var videoAddr = (videoAnnounce.Connection != null) ? IPAddress.Parse(videoAnnounce.Connection.ConnectionAddress) : connAddr;
+                    VideoDestinationEndPoint = new IPEndPoint(videoAddr, audioAnnounce.Port);
+                    VideoControlDestinationEndPoint = new IPEndPoint(videoAddr, audioAnnounce.Port + 1);
                 }
                 else
                 {
@@ -1270,15 +1293,7 @@ namespace SIPSorcery.Net
 
                         SDPMediaTypesEnum? rtpMediaType = null;
 
-                        if (m_isMediaMultiplexed)
-                        {
-                            rtpMediaType = GetMediaTypeForRtpPacket(rtpPacket.Header);
-                        }
-                        else
-                        {
-                            rtpMediaType = GetMediaTypeForLocalEndPoint(localEndPoint);
-                        }
-
+                        // Check whether this is an RTP event.
                         if (RemoteRtpEventPayloadID != 0 && rtpPacket.Header.PayloadType == RemoteRtpEventPayloadID)
                         {
                             RTPEvent rtpEvent = new RTPEvent(rtpPacket.Payload);
@@ -1286,18 +1301,40 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
+                            // Attempt to determine the media type for the RTP packet.
+                            if (m_isMediaMultiplexed)
+                            {
+                                rtpMediaType = GetMediaTypeForRtpPacket(rtpPacket.Header);
+                            }
+                            else
+                            {
+                                rtpMediaType = GetMediaTypeForLocalEndPoint(localEndPoint);
+                            }
+
+                            // Set the remote track SSRC so that RTCP reports can match the media type.
+                            if (rtpMediaType == SDPMediaTypesEnum.audio && AudioRemoteTrack?.Ssrc == 0)
+                            {
+                                logger.LogDebug($"Set remote audio track SSRC to {rtpPacket.Header.SyncSource}.");
+                                AudioRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
+                            }
+                            else if (rtpMediaType == SDPMediaTypesEnum.video && VideoRemoteTrack?.Ssrc == 0)
+                            {
+                                logger.LogDebug($"Set remote video track SSRC to {rtpPacket.Header.SyncSource}.");
+                                VideoRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
+                            }
+
                             SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
                             OnRtpPacketReceived?.Invoke(mediaType, rtpPacket);
-                        }
 
-                        // Used for reporting purposes.
-                        if (rtpMediaType == SDPMediaTypesEnum.audio && m_audioRtcpSession != null)
-                        {
-                            m_audioRtcpSession.RecordRtpPacketReceived(rtpPacket);
-                        }
-                        else if (rtpMediaType == SDPMediaTypesEnum.video && m_videoRtcpSession != null)
-                        {
-                            m_videoRtcpSession.RecordRtpPacketReceived(rtpPacket);
+                            // Used for reporting purposes.
+                            if (rtpMediaType == SDPMediaTypesEnum.audio && m_audioRtcpSession != null)
+                            {
+                                m_audioRtcpSession.RecordRtpPacketReceived(rtpPacket);
+                            }
+                            else if (rtpMediaType == SDPMediaTypesEnum.video && m_videoRtcpSession != null)
+                            {
+                                m_videoRtcpSession.RecordRtpPacketReceived(rtpPacket);
+                            }
                         }
                     }
 
@@ -1314,7 +1351,7 @@ namespace SIPSorcery.Net
         /// <returns>The media type for the received packet or null if it could not be determined.</returns>
         private SDPMediaTypesEnum? GetMediaTypeForLocalEndPoint(IPEndPoint localEndPoint)
         {
-            if(m_rtpChannels.ContainsKey(SDPMediaTypesEnum.audio) && m_rtpChannels[SDPMediaTypesEnum.audio].RTPPort == localEndPoint.Port)
+            if (m_rtpChannels.ContainsKey(SDPMediaTypesEnum.audio) && m_rtpChannels[SDPMediaTypesEnum.audio].RTPPort == localEndPoint.Port)
             {
                 return SDPMediaTypesEnum.audio;
             }
@@ -1345,21 +1382,11 @@ namespace SIPSorcery.Net
             }
             else if (AudioRemoteTrack != null && AudioRemoteTrack.IsPayloadIDMatch(header.PayloadType))
             {
-                if (AudioRemoteTrack.Ssrc == 0)
-                {
-                    logger.LogDebug($"Set remote audio track SSRC to {header.SyncSource}.");
-                    AudioRemoteTrack.Ssrc = header.SyncSource;
-                    return SDPMediaTypesEnum.audio;
-                }
+                return SDPMediaTypesEnum.audio;
             }
             else if (VideoRemoteTrack != null && VideoRemoteTrack.IsPayloadIDMatch(header.PayloadType))
             {
-                if (VideoRemoteTrack.Ssrc == 0)
-                {
-                    logger.LogDebug($"Set remote video track SSRC to {header.SyncSource}.");
-                    VideoRemoteTrack.Ssrc = header.SyncSource;
-                    return SDPMediaTypesEnum.video;
-                }
+                return SDPMediaTypesEnum.video;
             }
 
             logger.LogWarning($"An RTP packet with payload ID {header.PayloadType} was received that could not be matched to an audio or video stream.");
@@ -1486,11 +1513,11 @@ namespace SIPSorcery.Net
         private void SendRtcpReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket report)
         {
             IPEndPoint controlDstEndPoint = null;
-            if(m_isMediaMultiplexed || mediaType == SDPMediaTypesEnum.audio)
+            if (m_isMediaMultiplexed || mediaType == SDPMediaTypesEnum.audio)
             {
                 controlDstEndPoint = AudioControlDestinationEndPoint;
             }
-            else if(mediaType == SDPMediaTypesEnum.video)
+            else if (mediaType == SDPMediaTypesEnum.video)
             {
                 controlDstEndPoint = VideoControlDestinationEndPoint;
             }

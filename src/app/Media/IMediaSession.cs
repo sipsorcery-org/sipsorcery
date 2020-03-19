@@ -76,10 +76,10 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         event Action<RTPEvent> OnRtpEvent;
 
-        Task<SDP> createOffer(RTCOfferOptions options);
-        void setLocalDescription(RTCSessionDescriptionInit sessionDescription);
-        Task<SDP> createAnswer(RTCAnswerOptions options);
-        void setRemoteDescription(RTCSessionDescriptionInit sessionDescription);
+        Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options);
+        Task setLocalDescription(RTCSessionDescriptionInit sessionDescription);
+        Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options);
+        Task setRemoteDescription(RTCSessionDescriptionInit sessionDescription);
 
         Task SendDtmf(byte tone, CancellationToken ct);
         void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample);

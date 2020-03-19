@@ -151,7 +151,7 @@ namespace SIPSorcery.UnitTests
             IsClosed = true;
         }
 
-        public Task<SDP> createAnswer(RTCAnswerOptions options)
+        public Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
         {
             SDP answerSdp = new SDP(IPAddress.Loopback);
             answerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
@@ -167,10 +167,16 @@ namespace SIPSorcery.UnitTests
 
             answerSdp.Media.Add(audioAnnouncement);
 
-            return Task.FromResult(answerSdp);
+            var descriptionInit = new RTCSessionDescriptionInit
+            {
+                type = RTCSdpType.answer,
+                sdp = answerSdp.ToString()
+            };
+
+            return Task.FromResult(descriptionInit);
         }
 
-        public Task<SDP> createOffer(RTCOfferOptions options)
+        public Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
@@ -186,7 +192,13 @@ namespace SIPSorcery.UnitTests
 
             offerSdp.Media.Add(audioAnnouncement);
 
-            return Task.FromResult(offerSdp);
+            var descriptionInit = new RTCSessionDescriptionInit
+            {
+                type = RTCSdpType.offer,
+                sdp = offerSdp.ToString()
+            };
+
+            return Task.FromResult(descriptionInit);
         }
 
         public Task SendDtmf(byte tone, CancellationToken ct)
@@ -199,14 +211,16 @@ namespace SIPSorcery.UnitTests
             throw new NotImplementedException();
         }
 
-        public void setLocalDescription(RTCSessionDescriptionInit sessionDescription)
+        public Task setLocalDescription(RTCSessionDescriptionInit sessionDescription)
         {
             localDescription = new RTCSessionDescription(sessionDescription);
+            return Task.CompletedTask;
         }
 
-        public void setRemoteDescription(RTCSessionDescriptionInit sessionDescription)
+        public Task setRemoteDescription(RTCSessionDescriptionInit sessionDescription)
         {
             remoteDescription = new RTCSessionDescription(sessionDescription);
+            return Task.CompletedTask;
         }
 
         public Task Start()

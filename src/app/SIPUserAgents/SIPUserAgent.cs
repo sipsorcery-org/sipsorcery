@@ -73,7 +73,7 @@ namespace SIPSorcery.SIP.App
         public IMediaSession MediaSession { get; private set; }
 
         /// <summary>
-        /// Indicates whether there is an active call or not
+        /// Indicates whether there is an active call or not.
         /// </summary>
         public bool IsCallActive
         {
@@ -157,7 +157,7 @@ namespace SIPSorcery.SIP.App
         /// by us. An example of when this user agent will initiate a hang up is when a transfer is
         /// accepted by the remote calling party.
         /// </summary>
-        public event Action OnCallHungup;
+        public event Action<SIPDialogue> OnCallHungup;
 
         /// <summary>
         /// Fires when a NOTIFY request is received that contains an update about the 
@@ -237,9 +237,9 @@ namespace SIPSorcery.SIP.App
         /// <param name="mediaSession">The RTP session for the call.</param>
         public async Task<bool> Call(SIPCallDescriptor callDescriptor, IMediaSession mediaSession)
         {
-            await InitiateCallAsync(callDescriptor, mediaSession).ConfigureAwait(false);
-
             TaskCompletionSource<bool> callResult = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            await InitiateCallAsync(callDescriptor, mediaSession).ConfigureAwait(false);
 
             ClientCallAnswered += (uac, resp) =>
             {
@@ -408,32 +408,39 @@ namespace SIPSorcery.SIP.App
             {
                 Hangup();
             }
-
-            m_cts = new CancellationTokenSource();
-            var sipRequest = uas.ClientTransaction.TransactionRequest;
-
-            MediaSession = mediaSession;
-            MediaSession.OnRtpEvent += OnRemoteRtpEvent;
-            //MediaSession.OnRtpClosed += (reason) => Hangup();
-            MediaSession.OnRtpClosed += (reason) =>
+            else if (uas.IsCancelled)
             {
-                if (!MediaSession.IsClosed)
+                logger.LogDebug("The incoming call has been cancelled.");
+                mediaSession?.Close("call cancelled");
+            }
+            else
+            {
+                m_cts = new CancellationTokenSource();
+                var sipRequest = uas.ClientTransaction.TransactionRequest;
+
+                MediaSession = mediaSession;
+                MediaSession.OnRtpEvent += OnRemoteRtpEvent;
+                //MediaSession.OnRtpClosed += (reason) => Hangup();
+                MediaSession.OnRtpClosed += (reason) =>
                 {
-                    logger.LogWarning($"RTP channel was closed with reason {reason}.");
-                }
-            };
+                    if (!MediaSession.IsClosed)
+                    {
+                        logger.LogWarning($"RTP channel was closed with reason {reason}.");
+                    }
+                };
 
-            SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
-            MediaSession.setRemoteDescription(new RTCSessionDescriptionInit { sdp = remoteSdp.ToString(), type = RTCSdpType.offer }); ;
+                SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
+                await MediaSession.setRemoteDescription(new RTCSessionDescriptionInit { sdp = remoteSdp.ToString(), type = RTCSdpType.offer }).ConfigureAwait(false);
 
-            var sdpAnswer = await MediaSession.createAnswer(null).ConfigureAwait(false);
-            MediaSession.setLocalDescription(new RTCSessionDescriptionInit { sdp = sdpAnswer.ToString(), type = RTCSdpType.answer });
+                var sdpAnswer = await MediaSession.createAnswer(null).ConfigureAwait(false);
+                await MediaSession.setLocalDescription(new RTCSessionDescriptionInit { sdp = sdpAnswer.ToString(), type = RTCSdpType.answer }).ConfigureAwait(false);
 
-            await MediaSession.Start().ConfigureAwait(false);
+                await MediaSession.Start().ConfigureAwait(false);
 
-            m_uas = uas;
-            m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default, customHeaders);
-            Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+                m_uas = uas;
+                m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default, customHeaders);
+                Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+            }
         }
 
         /// <summary>
@@ -501,11 +508,12 @@ namespace SIPSorcery.SIP.App
             // The action we take to put a call on hold is to switch the media status
             // to send only and change the audio input from a capture device to on hold
             // music.
-            var localSDP = await MediaSession.createOffer(null).ConfigureAwait(false);
-            SetLocalSdpForOnHoldState(ref localSDP);
-            MediaSession.setLocalDescription(new RTCSessionDescriptionInit { sdp = localSDP.ToString(), type = RTCSdpType.offer });
+            var localSdpInit = await MediaSession.createOffer(null).ConfigureAwait(false);
+            SDP localSdp = SDP.ParseSDPDescription(localSdpInit.sdp);
+            SetLocalSdpForOnHoldState(ref localSdp);
+            await MediaSession.setLocalDescription(new RTCSessionDescriptionInit { sdp = localSdp.ToString(), type = RTCSdpType.offer }).ConfigureAwait(false);
 
-            SendReInviteRequest(localSDP);
+            SendReInviteRequest(localSdp);
         }
 
         /// <summary>
@@ -515,11 +523,12 @@ namespace SIPSorcery.SIP.App
         {
             IsOnLocalHold = false;
 
-            var localSDP = await MediaSession.createOffer(null).ConfigureAwait(false);
-            SetLocalSdpForOnHoldState(ref localSDP);
-            MediaSession.setLocalDescription(new RTCSessionDescriptionInit { sdp = localSDP.ToString(), type = RTCSdpType.offer });
+            var localSdpInit = await MediaSession.createOffer(null).ConfigureAwait(false);
+            SDP localSdp = SDP.ParseSDPDescription(localSdpInit.sdp);
+            SetLocalSdpForOnHoldState(ref localSdp);
+            await MediaSession.setLocalDescription(new RTCSessionDescriptionInit { sdp = localSdp.ToString(), type = RTCSdpType.offer }).ConfigureAwait(false);
 
-            SendReInviteRequest(localSDP);
+            SendReInviteRequest(localSdp);
         }
 
         /// <summary>
@@ -914,6 +923,8 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         private void CallEnded()
         {
+            var dialogue = Dialogue;
+
             m_uac = null;
             m_uas = null;
 
@@ -923,7 +934,7 @@ namespace SIPSorcery.SIP.App
                 MediaSession = null;
             }
 
-            OnCallHungup?.Invoke();
+            OnCallHungup?.Invoke(dialogue);
         }
 
         /// <summary>

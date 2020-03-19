@@ -1,8 +1,9 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: Main program for the sipcmdline application. The aim of this application is to be able
-// to perform certain SIP operations from a command line.
+// Description: Main program for the sipcmdline application. The aim of this 
+// application is to be able to perform certain SIP operations from a command 
+// line.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -52,14 +53,17 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
 using CommandLine.Text;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
@@ -71,10 +75,16 @@ namespace SIPSorcery
 
         private static Microsoft.Extensions.Logging.ILogger logger;
 
+        public enum Scenarios
+        {
+            opt,    // Send OPTIONS requests.
+            uac,    // Initiate a SIP call.
+        }
+
         public class Options
         {
             [Option('d', "destination", Required = true,
-                HelpText = "The destination SIP end point in the form [(udp|tcp|tls|sip|sips):]<host|ipaddress>[:port] e.g. udp:67.222.131.147:5060.")]
+                HelpText = "The destination SIP end point in the form [(udp|tcp|tls|sip|sips|ws|wss):]<host|ipaddress>[:port] e.g. udp:67.222.131.147:5060.")]
             public string Destination { get; set; }
 
             [Option('t', "timeout", Required = false, Default = DEFAULT_RESPONSE_TIMEOUT_SECONDS, HelpText = "The timeout in seconds for the SIP command to complete.")]
@@ -83,8 +93,17 @@ namespace SIPSorcery
             [Option('c', "count", Required = false, Default = 1, HelpText = "The number of requests to send.")]
             public int Count { get; set; }
 
-            [Option('p', "period", Required = false, Default = 1, HelpText = "The period between sending multiple requests.")]
+            [Option('p', "period", Required = false, Default = 1, HelpText = "The period in seconds between sending multiple requests.")]
             public int Period { get; set; }
+
+            [Option('s', "scenario", Required = false, Default = Scenarios.opt, HelpText = "The command scenario to run.")]
+            public Scenarios Scenario { get; set; }
+
+            [Option('x', "concurrent", Required = false, Default = 1, HelpText = "The number of concurrent tasks to run.")]
+            public int Concurrent { get; set; }
+
+            [Option('b', "breakonfail", Required = false, Default = false, HelpText = "Cancel the run if a single test fails.")]
+            public bool BreakOnFail { get; set; }
 
             [Usage(ApplicationAlias = "sipcmdline")]
             public static IEnumerable<Example> Examples
@@ -102,9 +121,9 @@ namespace SIPSorcery
         {
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
             var loggerConfig = new LoggerConfiguration()
-                .Enrich.FromLogContext()
+                //.Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console()
+                .WriteTo.Console(theme: AnsiConsoleTheme.Code)
                 .CreateLogger();
             loggerFactory.AddSerilog(loggerConfig);
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
@@ -122,90 +141,54 @@ namespace SIPSorcery
         {
             try
             {
-                logger.LogDebug($"RunCommand {options.Destination}");
+                logger.LogDebug($"RunCommand scenario {options.Scenario}, destination {options.Destination}");
 
-                (var dstEp, var dstUri) = ParseDestination(options.Destination);
+                CancellationTokenSource cts = new CancellationTokenSource();
+                int taskCount = 0;
+                int successCount = 0;
 
-                logger.LogDebug($"Destination IP end point {dstEp} and SIP URI {dstUri}");
+                List<Task> tasks = new List<Task>();
 
-                int sendCount = 0;
-                bool success = true;
-
-                do
+                for (int i = 0; i < options.Concurrent; i++)
                 {
-                    IPAddress localAddress = (dstEp.Address.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
-                    SIPChannel sipChannel = null;
-
-                    switch (dstEp.Protocol)
+                    var task = Task.Run(async () =>
                     {
-                        case SIPProtocolsEnum.tcp:
-                            sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
-                            (sipChannel as SIPTCPChannel).DisableLocalTCPSocketsCheck = true; // Allow sends to listeners on this host.
-                            break;
-                        case SIPProtocolsEnum.tls:
-                            var certificate = new X509Certificate2(@"localhost.pfx", "");
-                            sipChannel = new SIPTLSChannel(certificate, new IPEndPoint(localAddress, DEFAULT_SIPS_CLIENT_PORT));
-                            break;
-                        case SIPProtocolsEnum.udp:
-                            sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
-                            break;
-                        case SIPProtocolsEnum.ws:
-                            sipChannel = new SIPClientWebSocketChannel();
-                            break;
-                        case SIPProtocolsEnum.wss:
-                            sipChannel = new SIPClientWebSocketChannel();
-                            break;
-                        default:
-                            throw new ApplicationException($"Don't know how to create SIP channel for transport {dstEp.Protocol}.");
-                    }
+                        while (taskCount < options.Count && !cts.IsCancellationRequested)
+                        {
+                            int taskNum = Interlocked.Increment(ref taskCount);
+                            bool success = await RunTask(options, taskNum);
 
-                    SIPTransport sipTransport = new SIPTransport();
-                    sipTransport.AddSIPChannel(sipChannel);
+                            if(success)
+                            {
+                                Interlocked.Increment(ref successCount);
+                            }
+                            else if(options.BreakOnFail)
+                            {
+                                cts.Cancel();
+                                break;
+                            }
+                            else if (options.Period > 0)
+                            {
+                                await Task.Delay(options.Period * 1000);
+                            }
+                        }
+                    }, cts.Token);
 
-                    if (sendCount > 0 && options.Period > 0)
-                    {
-                        await Task.Delay(options.Period * 1000);
-                    }
+                    tasks.Add(task);
 
-                    sendCount++;
-
-                    DateTime sendTime = DateTime.Now;
-                    var sendTask = SendOptionsTaskAsync(sipTransport, dstUri);
-                    var result = await Task.WhenAny(sendTask, Task.Delay(options.Timeout * 1000));
-
-                    TimeSpan duration = DateTime.Now.Subtract(sendTime);
-
-                    if (!sendTask.IsCompleted)
-                    {
-                        logger.LogWarning($"=> Request to {dstEp} did not get a response on send {sendCount} of {options.Count} after {duration.TotalMilliseconds.ToString("0")}ms.");
-                        success = false;
-                    }
-                    else if (!sendTask.Result)
-                    {
-                        logger.LogWarning($"=> Request to {dstEp} did not get the expected response on request {sendCount} of {options.Count} after {duration.TotalMilliseconds.ToString("0")}ms.");
-                        success = false;
-                    }
-                    else
-                    {
-                        logger.LogInformation($"=> Got correct response on send {sendCount} of {options.Count} in {duration.TotalMilliseconds.ToString("0")}ms.");
-                    }
-
-                    logger.LogDebug("Shutting down the SIP transport...");
-                    sipTransport.Shutdown();
-
-                    if (success == false)
-                    {
-                        break;
-                    }
+                    // Spread the concurrent tasks out a tiny bit.
+                    await Task.Delay(Crypto.GetRandomInt(500, 2000));
                 }
-                while (sendCount < options.Count);
+
+                // Wait for all the concurrent tasks to complete.
+                await Task.WhenAll(tasks.ToArray());
 
                 DNSManager.Stop();
 
                 // Give the transport half a second to shutdown (puts the log messages in a better sequence).
                 await Task.Delay(500);
 
-                logger.LogInformation($"=> Command completed {((success) ? "successfully" : "with failure")}.");
+                logger.LogInformation($"=> Command completed task count {taskCount} success count {successCount}.");
             }
             catch (Exception excp)
             {
@@ -214,11 +197,99 @@ namespace SIPSorcery
         }
 
         /// <summary>
+        /// Runs a single task as part of the overall job.
+        /// </summary>
+        /// <param name="options">The options that dictate the type of task to run.</param>
+        /// <param name="taskNumber">The number assigned to this task.</param>
+        /// <returns>A boolean indicating whether this single task succeeded or not.</returns>
+        private static async Task<bool> RunTask(Options options, int taskNumber)
+        {
+            SIPTransport sipTransport = new SIPTransport();
+
+            try
+            {
+                DateTime startTime = DateTime.Now;
+
+                (var dstEp, var dstUri) = ParseDestination(options.Destination);
+
+                logger.LogDebug($"Destination IP end point {dstEp} and SIP URI {dstUri}");
+
+                IPAddress localAddress = (dstEp.Address.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
+                SIPChannel sipChannel = null;
+
+                switch (dstEp.Protocol)
+                {
+                    case SIPProtocolsEnum.tcp:
+                        sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
+                        (sipChannel as SIPTCPChannel).DisableLocalTCPSocketsCheck = true; // Allow sends to listeners on this host.
+                        break;
+                    case SIPProtocolsEnum.tls:
+                        var certificate = new X509Certificate2(@"localhost.pfx", "");
+                        sipChannel = new SIPTLSChannel(certificate, new IPEndPoint(localAddress, DEFAULT_SIPS_CLIENT_PORT));
+                        break;
+                    case SIPProtocolsEnum.udp:
+                        sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
+                        break;
+                    case SIPProtocolsEnum.ws:
+                        sipChannel = new SIPClientWebSocketChannel();
+                        break;
+                    case SIPProtocolsEnum.wss:
+                        sipChannel = new SIPClientWebSocketChannel();
+                        break;
+                    default:
+                        throw new ApplicationException($"Don't know how to create SIP channel for transport {dstEp.Protocol}.");
+                }
+
+                sipTransport.AddSIPChannel(sipChannel);
+
+                Task<bool> task = null;
+
+                switch (options.Scenario)
+                {
+                    case Scenarios.uac:
+                        task = InitiateCallTaskAsync(sipTransport, dstUri);
+                        break;
+                    case Scenarios.opt:
+                    default:
+                        task = SendOptionsTaskAsync(sipTransport, dstUri);
+                        break;
+                }
+
+                var result = await Task.WhenAny(task, Task.Delay(options.Timeout * 1000));
+
+                TimeSpan duration = DateTime.Now.Subtract(startTime);
+                bool failed = false;
+
+                if (!task.IsCompleted)
+                {
+                    logger.LogWarning($"=> Request to {dstEp} did not get a response on task {taskNumber} after {duration.TotalMilliseconds.ToString("0")}ms.");
+                    failed = true;
+                }
+                else if (!task.Result)
+                {
+                    logger.LogWarning($"=> Request to {dstEp} did not get the expected response on task {taskNumber} after {duration.TotalMilliseconds.ToString("0")}ms.");
+                    failed = true;
+                }
+                else
+                {
+                    logger.LogInformation($"=> Got correct response on send {taskNumber} in {duration.TotalMilliseconds.ToString("0")}ms.");
+                }
+
+                return !failed;
+            }
+            finally
+            {
+                logger.LogDebug("Shutting down the SIP transport...");
+                sipTransport.Shutdown();
+            }
+        }
+
+        /// <summary>
         /// Parses the destination command line option into:
         ///  - A SIPEndPoint, which is an IP end point and transport (udp, tcp or tls),
         ///  - A SIP URI.
         ///  The SIPEndPoint determines the remote network destination to send the request to.
-        ///  The SIP URI is whe URI that will be set on the request.
+        ///  The SIP URI is the URI that will be set on the request.
         /// </summary>
         /// <param name="dstn">The destination string to parse.</param>
         /// <returns>The SIPEndPoint and SIPURI parsed from the destination string.</returns>
@@ -310,6 +381,57 @@ namespace SIPSorcery
             }
 
             return await tcs.Task;
+        }
+
+        /// <summary>
+        /// An asynchronous task that attempts to initiate a new call to a listening UAS.
+        /// </summary>
+        /// <param name="sipTransport">The transport object to use for the send.</param>
+        /// <param name="dst">The destination end point to send the request to.</param>
+        /// <returns>True if the expected response was received, false otherwise.</returns>
+        private static async Task<bool> InitiateCallTaskAsync(SIPTransport sipTransport, SIPURI dst)
+        {
+            //UdpClient hepClient = new UdpClient(0, AddressFamily.InterNetwork);
+
+            try
+            {
+                //sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
+                //{
+                //    logger.LogDebug($"Request sent: {localEP}->{remoteEP}");
+                //    logger.LogDebug(req.ToString());
+
+                //    //var hepBuffer = HepPacket.GetBytes(localEP, remoteEP, DateTimeOffset.Now, 333, "myHep", req.ToString());
+                //    //hepClient.SendAsync(hepBuffer, hepBuffer.Length, "192.168.11.49", 9060);
+                //};
+
+                //sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
+                //{
+                //    logger.LogDebug($"Response received: {localEP}<-{remoteEP}");
+                //    logger.LogDebug(resp.ToString());
+
+                //    //var hepBuffer = HepPacket.GetBytes(remoteEP, localEP, DateTimeOffset.Now, 333, "myHep", resp.ToString());
+                //    //hepClient.SendAsync(hepBuffer, hepBuffer.Length, "192.168.11.49", 9060);
+                //};
+
+                var ua = new SIPUserAgent(sipTransport, null);
+                ua.ClientCallTrying += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
+                ua.ClientCallRinging += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
+                ua.ClientCallFailed += (uac, err) => logger.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
+                ua.ClientCallAnswered += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
+
+                var result = await ua.Call(dst.ToString(), null, null, new RtpSessionLight());
+
+                ua.Hangup();
+
+                await Task.Delay(200);
+
+                return result;
+            }
+            catch (Exception excp)
+            {
+                logger.LogError($"Exception InitiateCallTaskAsync. {excp.Message}");
+                return false;
+            }
         }
     }
 }

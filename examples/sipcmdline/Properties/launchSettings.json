@@ -2,7 +2,7 @@
   "profiles": {
     "sipcmdline": {
       "commandName": "Project",
-      "commandLineArgs": "-d ws:127.0.0.1:80"
+      "commandLineArgs": "-d 127.0.0.1 -s uac -c 1 -x 1 -p 1 -b true"
     },
     "Docker": {
       "commandName": "Docker"

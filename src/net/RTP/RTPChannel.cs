@@ -77,7 +77,10 @@ namespace SIPSorcery.Net
                 m_udpSocket.BeginReceiveMessageFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveMessageFrom, null);
             }
             catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
-            catch(SocketException sockExcp)
+            // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
+            // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
+            // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
+            catch (SocketException) 
             {
                 //logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceive. {sockExcp.Message}");
                 //Close(sockExcp.Message);
@@ -244,7 +247,6 @@ namespace SIPSorcery.Net
                           int mediaEndPort = RTP_PORT_END)
         {
             int startFrom = Crypto.GetRandomInt(RTP_PORT_START, RTP_PORT_END);
-
             NetServices.CreateRtpSocket(localAddress, mediaStartPort, mediaEndPort, startFrom, createControlSocket, out var rtpSocket, out m_controlSocket);
 
             RtpSocket = rtpSocket;
