@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -28,6 +29,22 @@ using SIPSorcery.SIP.App;
 
 namespace SIPSorcery
 {
+    struct SIPRegisterAccount
+    {
+        public string Username;
+        public string Password;
+        public string Domain;
+        public int Expiry;
+
+        public SIPRegisterAccount(string username, string password, string domain, int expiry)
+        {
+            Username = username;
+            Password = password;
+            Domain = domain;
+            Expiry = expiry;
+        }
+    }
+
     class Program
     {
         private static string DEFAULT_CALL_DESTINATION = "sip:*61@192.168.11.48";
@@ -35,8 +52,25 @@ namespace SIPSorcery
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
+        /// <summary>
+        /// The set of SIP accounts available for registering and/or authenticating calls.
+        /// </summary>
+        private static readonly List<SIPRegisterAccount> _sipAccounts = new List<SIPRegisterAccount>
+        {
+            new SIPRegisterAccount( "softphonesample", "password", "sipsorcery.com", 120)
+        };
+
         private static SIPTransport _sipTransport;
+
+        /// <summary>
+        /// Keeps track of the current active calls. It includes both received and placed calls.
+        /// </summary>
         private static ConcurrentDictionary<string, SIPUserAgent> _calls = new ConcurrentDictionary<string, SIPUserAgent>();
+
+        /// <summary>
+        /// Keeps track of the SIP account registrations.
+        /// </summary>
+        private static ConcurrentDictionary<string, SIPRegistrationUserAgent> _registrations = new ConcurrentDictionary<string, SIPRegistrationUserAgent>();
 
         static async Task Main(string[] args)
         {
@@ -44,6 +78,7 @@ namespace SIPSorcery
             Console.WriteLine("Press 'c' to place a call to the default destination.");
             Console.WriteLine("Press 'h' to hangup the oldest call.");
             Console.WriteLine("Press 'l' to list current calls.");
+            Console.WriteLine("Press 'r' to list current registrations.");
             Console.WriteLine("Press 'q' to quit.");
 
             AddConsoleLogger();
@@ -54,6 +89,8 @@ namespace SIPSorcery
             EnableTraceLogs(_sipTransport);
 
             _sipTransport.SIPTransportRequestReceived += OnRequest;
+
+            StartRegistrations(_sipTransport, _sipAccounts);
 
             CancellationTokenSource exitCts = new CancellationTokenSource();
             await Task.Run(() => OnKeyPress(exitCts.Token));
@@ -69,6 +106,10 @@ namespace SIPSorcery
             }
         }
 
+        /// <summary>
+        /// Process user key presses.
+        /// </summary>
+        /// <param name="exit">The cancellation token to set if the user requests to quit the application.</param>
         private static async Task OnKeyPress(CancellationToken exit)
         {
             try
@@ -119,6 +160,21 @@ namespace SIPSorcery
                             foreach (var call in _calls)
                             {
                                 Log.LogInformation($"{call.Key}: {call.Value.Dialogue.RemoteTarget}");
+                            }
+                        }
+                    }
+                    else if (keyProps.KeyChar == 'r')
+                    {
+                        if (_registrations.Count == 0)
+                        {
+                            Log.LogInformation("There are no active registrations.");
+                        }
+                        else
+                        {
+                            Log.LogInformation("Current registration list:");
+                            foreach (var registration in _registrations)
+                            {
+                                Log.LogInformation($"{registration.Key}: is registered {registration.Value.IsRegistered}, last attempt at {registration.Value.LastRegisterAttemptAt}");
                             }
                         }
                     }
@@ -194,6 +250,30 @@ namespace SIPSorcery
                 {
                     _calls.TryRemove(callID, out _);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Starts a registration agent for each of the supplied SIP accounts.
+        /// </summary>
+        /// <param name="sipTransport">The SIP transport to use for the registrations.</param>
+        /// <param name="sipAccounts">The list of SIP accounts to create a registration for.</param>
+        private static void StartRegistrations(SIPTransport sipTransport, List<SIPRegisterAccount> sipAccounts)
+        {
+            foreach(var sipAccount in sipAccounts)
+            {
+                var regUserAgent = new SIPRegistrationUserAgent(sipTransport, sipAccount.Username, sipAccount.Password, sipAccount.Domain, sipAccount.Expiry);
+
+                // Event handlers for the different stages of the registration.
+                regUserAgent.RegistrationFailed += (uri, err) => Log.LogError($"{uri.ToString()}: {err}");
+                regUserAgent.RegistrationTemporaryFailure += (uri, msg) => Log.LogWarning($"{uri.ToString()}: {msg}");
+                regUserAgent.RegistrationRemoved += (uri) => Log.LogError($"{uri.ToString()} registration failed.");
+                regUserAgent.RegistrationSuccessful += (uri) => Log.LogInformation($"{uri.ToString()} registration succeeded.");
+
+                // Start the thread to perform the initial registration and then periodically resend it.
+                regUserAgent.Start();
+
+                _registrations.TryAdd($"{sipAccount.Username}@{sipAccount.Domain}", regUserAgent);
             }
         }
 
