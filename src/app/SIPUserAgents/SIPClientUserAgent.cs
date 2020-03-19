@@ -36,7 +36,7 @@ namespace SIPSorcery.SIP.App
 
         private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
         private static readonly int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
-        private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
+        //private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
 
         private SIPTransport m_sipTransport;
         private SIPMonitorLogDelegate Log_External;

@@ -162,7 +162,7 @@ namespace SIPSorcery.SoftPhone
                     _client0Video.Visibility = Visibility.Collapsed;
                     SetStatusText(m_signallingStatus, "Ready");
 
-                    if (_sipClients?.Count > 0 && sipClient == _sipClients[0])
+                    if (_sipClients?.Count > 0 && sipClient == _sipClients[0] && sipClient.MediaSession != null)
                     {
                         sipClient.MediaSession.OnAudioScopeSampleReady -= _audioScope0.ProcessSample;
                     }
