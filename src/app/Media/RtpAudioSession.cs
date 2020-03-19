@@ -16,95 +16,55 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net;
+using System.Net.Sockets;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Media
 {
-    public class RtpAudioSession : IMediaSession
+    public class RtpAudioSession : RTPSession, IMediaSession
     {
-        private const string RTP_MEDIA_PROFILE = "RTP/AVP";
-
-        public RTCSessionDescription localDescription { get; private set; }
-        public RTCSessionDescription remoteDescription { get; private set; }
-
-        public bool IsClosed { get; private set; }
-        public bool HasAudio => true;
-        public bool HasVideo => false;
-
+        public const int DTMF_EVENT_DURATION = 1200;        // Default duration for a DTMF event.
+        public const int DTMF_EVENT_PAYLOAD_ID = 101;
+        
         public event Action<byte[], uint, uint, int> OnVideoSampleReady;
-        public event Action<string> OnRtpClosed;
-        public event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
-        public event Action<RTPEvent> OnRtpEvent;
         public event Action<Complex[]> OnAudioScopeSampleReady;
         public event Action<Complex[]> OnHoldAudioScopeSampleReady;
 
+        public RtpAudioSession(AddressFamily addressFamily) :
+            base(addressFamily, false, false, false)
+        {
+            var pcmu = new SDPMediaFormat(SDPMediaFormatsEnum.PCMU);
+
+            // RTP event support.
+            int clockRate = pcmu.GetClockRate();
+            SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
+            rtpEventFormat.SetFormatAttribute($"{TELEPHONE_EVENT_ATTRIBUTE}/{clockRate}");
+            rtpEventFormat.SetFormatParameterAttribute("0-16");
+
+            var audioCapabilities = new List<SDPMediaFormat> { pcmu, rtpEventFormat };
+
+            MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, audioCapabilities);
+            addTrack(audioTrack);
+        }
+
         public void Close(string reason)
         {
-            IsClosed = true;
+            base.CloseSession(reason);
         }
 
-        public Task<SDP> createAnswer(RTCAnswerOptions options)
+        public Task SendDtmf(byte key, CancellationToken ct)
         {
-            SDP answerSdp = new SDP(IPAddress.Loopback);
-            answerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
-
-            answerSdp.Connection = new SDPConnectionInformation(IPAddress.Loopback);
-
-            SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
-                SDPMediaTypesEnum.audio,
-               1234,
-               new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
-
-            audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
-
-            answerSdp.Media.Add(audioAnnouncement);
-
-            return Task.FromResult(answerSdp);
-        }
-
-        public Task<SDP> createOffer(RTCOfferOptions options)
-        {
-            SDP offerSdp = new SDP(IPAddress.Loopback);
-            offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
-
-            offerSdp.Connection = new SDPConnectionInformation(IPAddress.Loopback);
-
-            SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
-                SDPMediaTypesEnum.audio,
-               1234,
-               new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
-
-            audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
-
-            offerSdp.Media.Add(audioAnnouncement);
-
-            return Task.FromResult(offerSdp);
-        }
-
-        public Task SendDtmf(byte tone, CancellationToken ct)
-        {
-            throw new NotImplementedException();
+            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, DTMF_EVENT_DURATION, DTMF_EVENT_PAYLOAD_ID);
+            return SendDtmfEvent(dtmfEvent, ct);
         }
 
         public void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample)
         {
             throw new NotImplementedException();
-        }
-
-        public void setLocalDescription(RTCSessionDescription sessionDescription)
-        {
-            localDescription = sessionDescription;
-        }
-
-        public void setRemoteDescription(RTCSessionDescription sessionDescription)
-        {
-            remoteDescription = sessionDescription;
         }
 
         public Task Start()

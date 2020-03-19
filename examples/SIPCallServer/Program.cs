@@ -18,6 +18,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
@@ -76,6 +78,7 @@ namespace SIPSorcery
         {
             Console.WriteLine("SIPSorcery SIP Call Server example.");
             Console.WriteLine("Press 'c' to place a call to the default destination.");
+            Console.WriteLine("Press 'd' to send a random DTMF tone to the newest call.");
             Console.WriteLine("Press 'h' to hangup the oldest call.");
             Console.WriteLine("Press 'l' to list current calls.");
             Console.WriteLine("Press 'r' to list current registrations.");
@@ -90,7 +93,8 @@ namespace SIPSorcery
 
             _sipTransport.SIPTransportRequestReceived += OnRequest;
 
-            StartRegistrations(_sipTransport, _sipAccounts);
+            // Uncomment to enable registrations.
+            //StartRegistrations(_sipTransport, _sipAccounts);
 
             CancellationTokenSource exitCts = new CancellationTokenSource();
             await Task.Run(() => OnKeyPress(exitCts.Token));
@@ -126,12 +130,27 @@ namespace SIPSorcery
                         ua.ClientCallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
                         ua.ClientCallFailed += (uac, err) => Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                         ua.ClientCallAnswered += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                        ua.OnCallHungup += () => OnHangup(ua);
+                        ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
+                        ua.OnCallHungup += OnHangup;
 
-                        var callResult = await ua.Call(DEFAULT_CALL_DESTINATION, null, null, new RtpAudioSession());
+                        var callResult = await ua.Call(DEFAULT_CALL_DESTINATION, null, null, new RtpAudioSession(AddressFamily.InterNetwork));
                         if (callResult)
                         {
                             _calls.TryAdd(ua.Dialogue.CallId, ua);
+                        }
+                    }
+                    else if (keyProps.KeyChar == 'd')
+                    {
+                        if (_calls.Count == 0)
+                        {
+                            Log.LogWarning("There are no active calls.");
+                        }
+                        else
+                        {
+                            var newestCall = _calls.OrderByDescending(x => x.Value.Dialogue.Inserted).First();
+                            byte randomDtmf = (byte)Crypto.GetRandomInt(0, 15);
+                            Log.LogInformation($"Sending DTMF {randomDtmf} to {newestCall.Key}.");
+                            await newestCall.Value.SendDtmf(randomDtmf);
                         }
                     }
                     else if (keyProps.KeyChar == 'h')
@@ -143,7 +162,8 @@ namespace SIPSorcery
                         else
                         {
                             var oldestCall = _calls.OrderBy(x => x.Value.Dialogue.Inserted).First();
-                            Log.LogInformation($"Hanging up call {oldestCall.Key}");
+                            Log.LogInformation($"Hanging up call {oldestCall.Key}.");
+                            oldestCall.Value.OnCallHungup -= OnHangup;
                             oldestCall.Value.Hangup();
                             _calls.TryRemove(oldestCall.Key, out _);
                         }
@@ -188,8 +208,20 @@ namespace SIPSorcery
             }
             catch (Exception excp)
             {
-                SIPSorcery.Sys.Log.Logger.LogError($"Exception OnKeyPress. {excp.Message}.");
+                Log.LogError($"Exception OnKeyPress. {excp.Message}.");
             }
+        }
+
+        /// <summary>
+        /// Event handler for receiving a DTMF tone.
+        /// </summary>
+        /// <param name="ua">The user agent that received the DTMF tone.</param>
+        /// <param name="key">The DTMF tone.</param>
+        /// <param name="duration">The duration in milliseconds of the tone.</param>
+        private static void OnDtmfTone(SIPUserAgent ua, byte key, int duration)
+        {
+            string callID = ua.Dialogue.CallId;
+            Log.LogInformation($"Call {callID} received DTMF tone {key}, duration {duration}ms.");
         }
 
         // Because this is a server user agent the SIP transport must start listening for client user agents.
@@ -202,10 +234,12 @@ namespace SIPSorcery
                     Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
 
                     SIPUserAgent ua = new SIPUserAgent(_sipTransport, null);
-                    ua.OnCallHungup += () => OnHangup(ua);
-                    ua.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");                    
+                    ua.OnCallHungup += OnHangup;
+                    ua.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
+                    ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
+
                     var uas = ua.AcceptCall(sipRequest);
-                    RtpAudioSession rtpAudio = new RtpAudioSession();
+                    RtpAudioSession rtpAudio = new RtpAudioSession(AddressFamily.InterNetwork);
                     await ua.Answer(uas, rtpAudio);
 
                     if(ua.IsCallActive)
@@ -238,13 +272,13 @@ namespace SIPSorcery
         /// <summary>
         /// Remove call from the active calls list.
         /// </summary>
-        /// <param name="ua">The SIP user agent representing the active call to remove.</param>
-        private static void OnHangup(SIPUserAgent ua)
+        /// <param name="dialogue">The dialogue that was hungup.</param>
+        private static void OnHangup(SIPDialogue dialogue)
         {
             // If the dialogue is null it means the hangup was initiated from our end.
-            if (ua.Dialogue != null)
+            if (dialogue != null)
             {
-                string callID = ua.Dialogue.CallId;
+                string callID = dialogue.CallId;
                 Log.LogInformation($"Call hungup by remote party {callID}.");
                 if (_calls.ContainsKey(callID))
                 {
