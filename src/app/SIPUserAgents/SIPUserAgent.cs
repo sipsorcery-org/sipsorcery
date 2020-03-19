@@ -157,7 +157,7 @@ namespace SIPSorcery.SIP.App
         /// by us. An example of when this user agent will initiate a hang up is when a transfer is
         /// accepted by the remote calling party.
         /// </summary>
-        public event Action OnCallHungup;
+        public event Action<SIPDialogue> OnCallHungup;
 
         /// <summary>
         /// Fires when a NOTIFY request is received that contains an update about the 
@@ -920,6 +920,8 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         private void CallEnded()
         {
+            var dialogue = Dialogue;
+
             m_uac = null;
             m_uas = null;
 
@@ -929,7 +931,7 @@ namespace SIPSorcery.SIP.App
                 MediaSession = null;
             }
 
-            OnCallHungup?.Invoke();
+            OnCallHungup?.Invoke(dialogue);
         }
 
         /// <summary>
