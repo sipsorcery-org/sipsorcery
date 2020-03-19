@@ -73,7 +73,7 @@ namespace SIPSorcery.SIP.App
         public IMediaSession MediaSession { get; private set; }
 
         /// <summary>
-        /// Indicates whether there is an active call or not
+        /// Indicates whether there is an active call or not.
         /// </summary>
         public bool IsCallActive
         {
@@ -407,32 +407,39 @@ namespace SIPSorcery.SIP.App
             {
                 Hangup();
             }
-
-            m_cts = new CancellationTokenSource();
-            var sipRequest = uas.ClientTransaction.TransactionRequest;
-
-            MediaSession = mediaSession;
-            MediaSession.OnRtpEvent += OnRemoteRtpEvent;
-            //MediaSession.OnRtpClosed += (reason) => Hangup();
-            MediaSession.OnRtpClosed += (reason) =>
+            else if (uas.IsCancelled)
             {
-                if (!MediaSession.IsClosed)
+                logger.LogDebug("The incoming call has been cancelled.");
+                mediaSession?.Close("call cancelled");
+            }
+            else
+            {
+                m_cts = new CancellationTokenSource();
+                var sipRequest = uas.ClientTransaction.TransactionRequest;
+
+                MediaSession = mediaSession;
+                MediaSession.OnRtpEvent += OnRemoteRtpEvent;
+                //MediaSession.OnRtpClosed += (reason) => Hangup();
+                MediaSession.OnRtpClosed += (reason) =>
                 {
-                    logger.LogWarning($"RTP channel was closed with reason {reason}.");
-                }
-            };
+                    if (!MediaSession.IsClosed)
+                    {
+                        logger.LogWarning($"RTP channel was closed with reason {reason}.");
+                    }
+                };
 
-            SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
-            MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSdp, type = RTCSdpType.offer }); ;
+                SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
+                MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSdp, type = RTCSdpType.offer }); ;
 
-            var sdpAnswer = await MediaSession.createAnswer(null).ConfigureAwait(false);
-            MediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdpAnswer, type = RTCSdpType.answer });
+                var sdpAnswer = await MediaSession.createAnswer(null).ConfigureAwait(false);
+                MediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdpAnswer, type = RTCSdpType.answer });
 
-            await MediaSession.Start().ConfigureAwait(false);
+                await MediaSession.Start().ConfigureAwait(false);
 
-            m_uas = uas;
-            m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default, customHeaders);
-            Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+                m_uas = uas;
+                m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default, customHeaders);
+                Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+            }
         }
 
         /// <summary>

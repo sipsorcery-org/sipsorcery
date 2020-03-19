@@ -123,7 +123,7 @@ namespace SIPSorcery
             var loggerConfig = new LoggerConfiguration()
                 //.Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
-                .WriteTo.Console(theme: AnsiConsoleTheme.Literate)
+                .WriteTo.Console(theme: AnsiConsoleTheme.Code)
                 .CreateLogger();
             loggerFactory.AddSerilog(loggerConfig);
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
