@@ -66,6 +66,19 @@ namespace SIPSorcery.SIP.App
         public string UserAgent;                // If not null this value will replace the default user agent value in the REGISTER request.
         public string UserDisplayName;			//rj2: if not null, used in fromheader and contactheader
 
+        /// <summary>
+        /// True if the last registration attempt was successful or false if not.
+        /// </summary>
+        public bool IsRegistered
+        {
+            get { return m_isRegistered; }
+        }
+
+        /// <summary>
+        /// The last time at which an attempt was made to register this account.
+        /// </summary>
+        public DateTime LastRegisterAttemptAt { get; private set; }
+
         public event Action<SIPURI, string> RegistrationFailed;
         public event Action<SIPURI, string> RegistrationTemporaryFailure;
         public event Action<SIPURI> RegistrationSuccessful;
@@ -172,6 +185,7 @@ namespace SIPSorcery.SIP.App
                 {
                     logger.LogDebug("DoRegistration for " + m_sipAccountAOR.ToString() + ".");
 
+                    LastRegisterAttemptAt = DateTime.Now;
                     m_waitForRegistrationMRE.Reset();
                     m_attempts = 0;
 
