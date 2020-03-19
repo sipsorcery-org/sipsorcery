@@ -50,6 +50,7 @@ namespace SIPSorcery
     class Program
     {
         private static string DEFAULT_CALL_DESTINATION = "sip:*61@192.168.11.48";
+        private static string DEFAULT_TRANSFER_DESTINATION = "sip:*61@192.168.11.48";
         private static int SIP_LISTEN_PORT = 5060;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
@@ -82,6 +83,7 @@ namespace SIPSorcery
             Console.WriteLine("Press 'h' to hangup the oldest call.");
             Console.WriteLine("Press 'l' to list current calls.");
             Console.WriteLine("Press 'r' to list current registrations.");
+            Console.WriteLine("Press 't' to transfer the newest call to the default destination.");
             Console.WriteLine("Press 'q' to quit.");
 
             AddConsoleLogger();
@@ -195,6 +197,35 @@ namespace SIPSorcery
                             foreach (var registration in _registrations)
                             {
                                 Log.LogInformation($"{registration.Key}: is registered {registration.Value.IsRegistered}, last attempt at {registration.Value.LastRegisterAttemptAt}");
+                            }
+                        }
+                    }
+                    else if (keyProps.KeyChar == 't')
+                    {
+                        if (_calls.Count == 0)
+                        {
+                            Log.LogWarning("There are no active calls.");
+                        }
+                        else
+                        {
+                            var newestCall = _calls.OrderByDescending(x => x.Value.Dialogue.Inserted).First();
+                            Log.LogInformation($"Transferring call {newestCall.Key} to {DEFAULT_TRANSFER_DESTINATION}.");
+                            bool transferResult = await newestCall.Value.BlindTransfer(SIPURI.ParseSIPURI(DEFAULT_TRANSFER_DESTINATION), TimeSpan.FromSeconds(3), exit);
+
+                            if(transferResult)
+                            {
+                                Log.LogInformation($"Transferring succeeded.");
+
+                                newestCall.Value.OnCallHungup -= OnHangup;
+                                newestCall.Value.Hangup();
+                                if(!_calls.TryRemove(newestCall.Key, out _))
+                                {
+                                    Log.LogError("Failed to remove hungup call.");
+                                }
+                            }
+                            else
+                            {
+                                Log.LogWarning($"Transfer attempt failed.");
                             }
                         }
                     }
