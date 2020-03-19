@@ -39,18 +39,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.RtpAudioSession.Close
   nameWithType: RtpAudioSession.Close
-- uid: SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_DURATION
-  name: DTMF_EVENT_DURATION
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_DTMF_EVENT_DURATION
-  commentId: F:SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_DURATION
-  fullName: SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_DURATION
-  nameWithType: RtpAudioSession.DTMF_EVENT_DURATION
-- uid: SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_PAYLOAD_ID
-  name: DTMF_EVENT_PAYLOAD_ID
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_DTMF_EVENT_PAYLOAD_ID
-  commentId: F:SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_PAYLOAD_ID
-  fullName: SIPSorcery.Media.RtpAudioSession.DTMF_EVENT_PAYLOAD_ID
-  nameWithType: RtpAudioSession.DTMF_EVENT_PAYLOAD_ID
 - uid: SIPSorcery.Media.RtpAudioSession.OnAudioScopeSampleReady
   name: OnAudioScopeSampleReady
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_OnAudioScopeSampleReady
