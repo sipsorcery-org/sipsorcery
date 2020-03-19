@@ -27,29 +27,16 @@ namespace SIPSorcery.Media
 {
     public class RtpAudioSession : RTPSession, IMediaSession
     {
-        public const int DTMF_EVENT_DURATION = 1200;        // Default duration for a DTMF event.
-        public const int DTMF_EVENT_PAYLOAD_ID = 101;
-        
+        private const int DTMF_EVENT_DURATION = 1200;        // Default duration for a DTMF event.
+        private const int DTMF_EVENT_PAYLOAD_ID = 101;
+
         public event Action<byte[], uint, uint, int> OnVideoSampleReady;
         public event Action<Complex[]> OnAudioScopeSampleReady;
         public event Action<Complex[]> OnHoldAudioScopeSampleReady;
 
         public RtpAudioSession(AddressFamily addressFamily) :
             base(addressFamily, false, false, false)
-        {
-            var pcmu = new SDPMediaFormat(SDPMediaFormatsEnum.PCMU);
-
-            // RTP event support.
-            int clockRate = pcmu.GetClockRate();
-            SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
-            rtpEventFormat.SetFormatAttribute($"{TELEPHONE_EVENT_ATTRIBUTE}/{clockRate}");
-            rtpEventFormat.SetFormatParameterAttribute("0-16");
-
-            var audioCapabilities = new List<SDPMediaFormat> { pcmu, rtpEventFormat };
-
-            MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, audioCapabilities);
-            addTrack(audioTrack);
-        }
+        {  }
 
         public void Close(string reason)
         {
