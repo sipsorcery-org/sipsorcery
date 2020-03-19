@@ -5,6 +5,18 @@
   "files": [
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.RtpAudioSession.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.RtpAudioSession.html",
+          "hash": "SCqhMevVo802ggphmHQcXw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Media.RtpVP8Header.yml",
       "output": {
         ".html": {
@@ -21,7 +33,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.html",
-          "hash": "r6BVwSUAQBFR8HKSsZpNGw=="
+          "hash": "FatFdwST10D3766Nq8wZ4A=="
         }
       },
       "is_incremental": false,
@@ -1869,7 +1881,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPUserAgent.html",
-          "hash": "b7LITOwJD5bdnQgi1QmtiQ=="
+          "hash": "TXjL3Y4oKpDneEd7KSDwMg=="
         }
       },
       "is_incremental": false,
@@ -3453,7 +3465,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "BZGOKp7F3LjEEGVnR0adpg=="
+          "hash": "5V28xpKJyw6fCGpcAtNMJw=="
         }
       },
       "is_incremental": false,
@@ -3706,7 +3718,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 286,
+          "total_file_count": 287,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
