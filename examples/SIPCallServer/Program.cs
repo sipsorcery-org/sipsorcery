@@ -48,12 +48,27 @@ namespace SIPSorcery
         }
     }
 
+    struct SendSilenceJob
+    {
+        public Timer SendSilenceTimer;
+        public SIPUserAgent UserAgent;
+
+        public SendSilenceJob(Timer timer, SIPUserAgent ua)
+        {
+            SendSilenceTimer = timer;
+            UserAgent = ua;
+        }
+    }
+
     class Program
     {
         private static string DEFAULT_CALL_DESTINATION = "sip:*61@192.168.11.48";
         private static string DEFAULT_TRANSFER_DESTINATION = "sip:*61@192.168.11.48";
         private static int SIP_LISTEN_PORT = 5060;
         private const int DTMF_EVENT_PAYLOAD_ID = 101;
+        private const int SEND_SILENCE_PERIOD_MS = 20;      // Period in milliseconds to send silence packets.
+        private static readonly byte PCMA_SILENCE_BYTE_ZERO = 0x55;
+        private static readonly byte PCMA_SILENCE_BYTE_ONE = 0xD5;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -77,12 +92,15 @@ namespace SIPSorcery
         /// </summary>
         private static ConcurrentDictionary<string, SIPRegistrationUserAgent> _registrations = new ConcurrentDictionary<string, SIPRegistrationUserAgent>();
 
-        static async Task Main(string[] args)
+        private static Timer _sendSilenceTimer = null;
+
+        static async Task Main()
         {
             Console.WriteLine("SIPSorcery SIP Call Server example.");
             Console.WriteLine("Press 'c' to place a call to the default destination.");
             Console.WriteLine("Press 'd' to send a random DTMF tone to the newest call.");
             Console.WriteLine("Press 'h' to hangup the oldest call.");
+            Console.WriteLine("Press 'H' to hangup all calls.");
             Console.WriteLine("Press 'l' to list current calls.");
             Console.WriteLine("Press 'r' to list current registrations.");
             Console.WriteLine("Press 't' to transfer the newest call to the default destination.");
@@ -144,7 +162,7 @@ namespace SIPSorcery
 
                         if (callResult)
                         {
-                            _calls.TryAdd(ua.Dialogue.CallId, ua);
+                            _calls.TryAdd(ua.Dialogue.CallId, ua);                           
                         }
                     }
                     else if (keyProps.KeyChar == 'd')
@@ -174,6 +192,22 @@ namespace SIPSorcery
                             oldestCall.Value.OnCallHungup -= OnHangup;
                             oldestCall.Value.Hangup();
                             _calls.TryRemove(oldestCall.Key, out _);
+                        }
+                    }
+                    else if (keyProps.KeyChar == 'H')
+                    {
+                        if (_calls.Count == 0)
+                        {
+                            Log.LogWarning("There are no active calls.");
+                        }
+                        else
+                        {
+                            foreach(var call in _calls)
+                            {
+                                Log.LogInformation($"Hanging up call {call.Key}.");
+                                call.Value.Hangup();
+                            }
+                            _calls.Clear();
                         }
                     }
                     else if (keyProps.KeyChar == 'l')
@@ -276,7 +310,31 @@ namespace SIPSorcery
             // Wire up the event handler for RTP packets received from the remote party.
             rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(ua, type, rtp);
 
+            if(_sendSilenceTimer == null)
+            {
+                _sendSilenceTimer = new Timer(SendSilence, null, 0, SEND_SILENCE_PERIOD_MS);
+            }
+
             return rtpAudioSession;
+        }
+
+        private static void SendSilence(object state)
+        {
+            uint bufferSize = (uint)SEND_SILENCE_PERIOD_MS;
+
+            byte[] sample = new byte[bufferSize / 2];
+            int sampleIndex = 0;
+
+            for (int index = 0; index < bufferSize; index += 2)
+            {
+                sample[sampleIndex] = PCMA_SILENCE_BYTE_ZERO;
+                sample[sampleIndex + 1] = PCMA_SILENCE_BYTE_ONE;
+            }
+
+            foreach (var ua in _calls.Values)
+            {
+                ua.MediaSession.SendMedia(SDPMediaTypesEnum.audio, bufferSize, sample);
+            }
         }
 
         /// <summary>
@@ -302,7 +360,9 @@ namespace SIPSorcery
             Log.LogInformation($"Call {callID} received DTMF tone {key}, duration {duration}ms.");
         }
 
-        // Because this is a server user agent the SIP transport must start listening for client user agents.
+        /// <summary>
+        /// Because this is a server user agent the SIP transport must start listening for client user agents.
+        /// </summary>
         private static async Task OnRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             try
@@ -323,6 +383,7 @@ namespace SIPSorcery
                     if(ua.IsCallActive)
                     {
                         _calls.TryAdd(ua.Dialogue.CallId, ua);
+                        Timer sendSilenceTimer = new Timer(SendSilence, ua, 0, SEND_SILENCE_PERIOD_MS);
                     }
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.BYE)
@@ -362,6 +423,11 @@ namespace SIPSorcery
                 {
                     _calls.TryRemove(callID, out _);
                 }
+            }
+
+            if(_calls.Count() == 0)
+            {
+                _sendSilenceTimer.Dispose();
             }
         }
 

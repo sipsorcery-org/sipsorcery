@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using System.Numerics;
 using System.Threading;
@@ -51,7 +51,15 @@ namespace SIPSorcery.Media
 
         public void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample)
         {
-            throw new NotImplementedException();
+            if(mediaType == SDPMediaTypesEnum.audio)
+            {
+                int payloadID = Convert.ToInt32(localDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).First().MediaFormats.First().FormatID);
+                base.SendAudioFrame(samplePeriod, payloadID, sample);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
 
         public Task Start()
