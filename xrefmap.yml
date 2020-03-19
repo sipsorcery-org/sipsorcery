@@ -11989,6 +11989,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.SIPRegistrationUserAgent
   nameWithType: SIPRegistrationUserAgent.SIPRegistrationUserAgent
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.IsRegistered
+  name: IsRegistered
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_IsRegistered
+  commentId: P:SIPSorcery.SIP.App.SIPRegistrationUserAgent.IsRegistered
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.IsRegistered
+  nameWithType: SIPRegistrationUserAgent.IsRegistered
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.IsRegistered*
+  name: IsRegistered
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_IsRegistered_
+  commentId: Overload:SIPSorcery.SIP.App.SIPRegistrationUserAgent.IsRegistered
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.IsRegistered
+  nameWithType: SIPRegistrationUserAgent.IsRegistered
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.LastRegisterAttemptAt
+  name: LastRegisterAttemptAt
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_LastRegisterAttemptAt
+  commentId: P:SIPSorcery.SIP.App.SIPRegistrationUserAgent.LastRegisterAttemptAt
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.LastRegisterAttemptAt
+  nameWithType: SIPRegistrationUserAgent.LastRegisterAttemptAt
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.LastRegisterAttemptAt*
+  name: LastRegisterAttemptAt
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_LastRegisterAttemptAt_
+  commentId: Overload:SIPSorcery.SIP.App.SIPRegistrationUserAgent.LastRegisterAttemptAt
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.LastRegisterAttemptAt
+  nameWithType: SIPRegistrationUserAgent.LastRegisterAttemptAt
 - uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.RegistrationFailed
   name: RegistrationFailed
   href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_RegistrationFailed
