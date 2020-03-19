@@ -216,12 +216,12 @@ namespace SIPSorcery
                             {
                                 Log.LogInformation($"Transferring succeeded.");
 
+                                // The remote party will often put us on hold after the transfer.
+                                await Task.Delay(1000);
+
                                 newestCall.Value.OnCallHungup -= OnHangup;
                                 newestCall.Value.Hangup();
-                                if(!_calls.TryRemove(newestCall.Key, out _))
-                                {
-                                    Log.LogError("Failed to remove hungup call.");
-                                }
+                                _calls.TryRemove(newestCall.Key, out _);
                             }
                             else
                             {
