@@ -27,6 +27,7 @@ using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
@@ -77,6 +78,7 @@ namespace SIPSorcery
         {
             Console.WriteLine("SIPSorcery SIP Call Server example.");
             Console.WriteLine("Press 'c' to place a call to the default destination.");
+            Console.WriteLine("Press 'd' to send a random DTMF tone to the newest call.");
             Console.WriteLine("Press 'h' to hangup the oldest call.");
             Console.WriteLine("Press 'l' to list current calls.");
             Console.WriteLine("Press 'r' to list current registrations.");
@@ -137,6 +139,20 @@ namespace SIPSorcery
                             _calls.TryAdd(ua.Dialogue.CallId, ua);
                         }
                     }
+                    else if (keyProps.KeyChar == 'd')
+                    {
+                        if (_calls.Count == 0)
+                        {
+                            Log.LogWarning("There are no active calls.");
+                        }
+                        else
+                        {
+                            var newestCall = _calls.OrderByDescending(x => x.Value.Dialogue.Inserted).First();
+                            byte randomDtmf = (byte)Crypto.GetRandomInt(0, 15);
+                            Log.LogInformation($"Sending DTMF {randomDtmf} to {newestCall.Key}.");
+                            await newestCall.Value.SendDtmf(randomDtmf);
+                        }
+                    }
                     else if (keyProps.KeyChar == 'h')
                     {
                         if (_calls.Count == 0)
@@ -146,7 +162,7 @@ namespace SIPSorcery
                         else
                         {
                             var oldestCall = _calls.OrderBy(x => x.Value.Dialogue.Inserted).First();
-                            Log.LogInformation($"Hanging up call {oldestCall.Key}");
+                            Log.LogInformation($"Hanging up call {oldestCall.Key}.");
                             oldestCall.Value.OnCallHungup -= OnHangup;
                             oldestCall.Value.Hangup();
                             _calls.TryRemove(oldestCall.Key, out _);

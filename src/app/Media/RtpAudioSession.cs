@@ -27,8 +27,6 @@ namespace SIPSorcery.Media
 {
     public class RtpAudioSession : RTPSession, IMediaSession
     {
-        private const string RTP_MEDIA_PROFILE = "RTP/AVP";
-        public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
         public const int DTMF_EVENT_DURATION = 1200;        // Default duration for a DTMF event.
         public const int DTMF_EVENT_PAYLOAD_ID = 101;
         
