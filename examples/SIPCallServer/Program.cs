@@ -25,6 +25,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
@@ -52,6 +53,7 @@ namespace SIPSorcery
         private static string DEFAULT_CALL_DESTINATION = "sip:*61@192.168.11.48";
         private static string DEFAULT_TRANSFER_DESTINATION = "sip:*61@192.168.11.48";
         private static int SIP_LISTEN_PORT = 5060;
+        private const int DTMF_EVENT_PAYLOAD_ID = 101;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -91,6 +93,8 @@ namespace SIPSorcery
             // Set up a default SIP transport.
             _sipTransport = new SIPTransport();
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
+            // If it's desired to listen on a single IP address use the equivalent of:
+            //_sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Parse("192.168.11.50"), SIP_LISTEN_PORT)));
             EnableTraceLogs(_sipTransport);
 
             _sipTransport.SIPTransportRequestReceived += OnRequest;
@@ -135,7 +139,9 @@ namespace SIPSorcery
                         ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
                         ua.OnCallHungup += OnHangup;
 
-                        var callResult = await ua.Call(DEFAULT_CALL_DESTINATION, null, null, new RtpAudioSession(AddressFamily.InterNetwork));
+                        var rtpSession = CreateRtpSession(ua);
+                        var callResult = await ua.Call(DEFAULT_CALL_DESTINATION, null, null, rtpSession);
+
                         if (callResult)
                         {
                             _calls.TryAdd(ua.Dialogue.CallId, ua);
@@ -244,6 +250,47 @@ namespace SIPSorcery
         }
 
         /// <summary>
+        /// Example of how to create a basic RTP session object and hook up the event handlers.
+        /// </summary>
+        /// <param name="ua">The suer agent the RTP session is being created for.</param>
+        /// <returns>A new RTP session object.</returns>
+        private static RtpAudioSession CreateRtpSession(SIPUserAgent ua)
+        {
+            var rtpAudioSession = new RtpAudioSession(AddressFamily.InterNetwork);
+
+            // Add the required audio capabilities to the RTP session. These will 
+            // automatically get used when creating SDP offers/answers.
+            var pcma = new SDPMediaFormat(SDPMediaFormatsEnum.PCMA);
+
+            // RTP event support.
+            int clockRate = pcma.GetClockRate();
+            SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
+            rtpEventFormat.SetFormatAttribute($"{RTPSession.TELEPHONE_EVENT_ATTRIBUTE}/{clockRate}");
+            rtpEventFormat.SetFormatParameterAttribute("0-16");
+
+            var audioCapabilities = new List<SDPMediaFormat> { pcma, rtpEventFormat };
+
+            MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, audioCapabilities);
+            rtpAudioSession.addTrack(audioTrack);
+
+            // Wire up the event handler for RTP packets received from the remote party.
+            rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(ua, type, rtp);
+
+            return rtpAudioSession;
+        }
+
+        /// <summary>
+        /// Event handler for receiving RTP packets.
+        /// </summary>
+        /// <param name="ua">The SIP user agent associated with the RTP session.</param>
+        /// <param name="type">The media type of the RTP packet (audio or video).</param>
+        /// <param name="rtpPacket">The RTP packet received from the remote party.</param>
+        private static void  OnRtpPacketReceived(SIPUserAgent ua, SDPMediaTypesEnum type, RTPPacket rtpPacket)
+        {
+            // The raw audio data is available in rtpPacket.Payload.
+        }
+
+        /// <summary>
         /// Event handler for receiving a DTMF tone.
         /// </summary>
         /// <param name="ua">The user agent that received the DTMF tone.</param>
@@ -270,8 +317,8 @@ namespace SIPSorcery
                     ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
 
                     var uas = ua.AcceptCall(sipRequest);
-                    RtpAudioSession rtpAudio = new RtpAudioSession(AddressFamily.InterNetwork);
-                    await ua.Answer(uas, rtpAudio);
+                    var rtpSession = CreateRtpSession(ua);
+                    await ua.Answer(uas, rtpSession);
 
                     if(ua.IsCallActive)
                     {
