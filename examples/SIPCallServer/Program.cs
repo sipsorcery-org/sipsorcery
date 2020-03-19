@@ -14,6 +14,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,7 +23,6 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.Media;
-using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -29,16 +30,20 @@ namespace SIPSorcery
 {
     class Program
     {
+        private static string DEFAULT_CALL_DESTINATION = "sip:*61@192.168.11.48";
         private static int SIP_LISTEN_PORT = 5060;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
         private static SIPTransport _sipTransport;
+        private static ConcurrentDictionary<string, SIPUserAgent> _calls = new ConcurrentDictionary<string, SIPUserAgent>();
 
         static async Task Main(string[] args)
         {
             Console.WriteLine("SIPSorcery SIP Call Server example.");
             Console.WriteLine("Press 'c' to place a call to the default destination.");
+            Console.WriteLine("Press 'h' to hangup the oldest call.");
+            Console.WriteLine("Press 'l' to list current calls.");
             Console.WriteLine("Press 'q' to quit.");
 
             AddConsoleLogger();
@@ -74,19 +79,48 @@ namespace SIPSorcery
 
                     if (keyProps.KeyChar == 'c')
                     {
-                        // Place an outgoing call using the first free user agent.
-                        //SIPUserAgent freeAgent = (!userAgent1.IsCallActive) ? userAgent1 : (!userAgent2.IsCallActive) ? userAgent2 : null;
-                        //if (freeAgent != null)
-                        //{
-                        //    var rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
-                        //    bool callResult = await freeAgent.Call(DEFAULT_DESTINATION_SIP_URI, null, null, rtpAVSession);
+                        // Place an outgoing call.
+                        var ua = new SIPUserAgent(_sipTransport, null);
+                        ua.ClientCallTrying += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
+                        ua.ClientCallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
+                        ua.ClientCallFailed += (uac, err) => Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
+                        ua.ClientCallAnswered += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
+                        ua.OnCallHungup += () => OnHangup(ua);
 
-                        //    Log.LogInformation($"Call attempt {((callResult) ? "successfull" : "failed")}.");
-                        //}
-                        //else
-                        //{
-                        //    Log.LogWarning("Both user agents are already on calls.");
-                        //}
+                        var callResult = await ua.Call(DEFAULT_CALL_DESTINATION, null, null, new RtpAudioSession());
+                        if (callResult)
+                        {
+                            _calls.TryAdd(ua.Dialogue.CallId, ua);
+                        }
+                    }
+                    else if (keyProps.KeyChar == 'h')
+                    {
+                        if (_calls.Count == 0)
+                        {
+                            Log.LogWarning("There are no active calls.");
+                        }
+                        else
+                        {
+                            var oldestCall = _calls.OrderBy(x => x.Value.Dialogue.Inserted).First();
+                            Log.LogInformation($"Hanging up call {oldestCall.Key}");
+                            oldestCall.Value.Hangup();
+                            _calls.TryRemove(oldestCall.Key, out _);
+                        }
+                    }
+                    else if (keyProps.KeyChar == 'l')
+                    {
+                        if (_calls.Count == 0)
+                        {
+                            Log.LogInformation("There are no active calls.");
+                        }
+                        else
+                        {
+                            Log.LogInformation("Current call list:");
+                            foreach (var call in _calls)
+                            {
+                                Log.LogInformation($"{call.Key}: {call.Value.Dialogue.RemoteTarget}");
+                            }
+                        }
                     }
                     else if (keyProps.KeyChar == 'q')
                     {
@@ -112,11 +146,16 @@ namespace SIPSorcery
                     Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
 
                     SIPUserAgent ua = new SIPUserAgent(_sipTransport, null);
-                    ua.OnCallHungup += () => Log.LogDebug("Call hungup by remote party.");
+                    ua.OnCallHungup += () => OnHangup(ua);
                     ua.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");                    
                     var uas = ua.AcceptCall(sipRequest);
                     RtpAudioSession rtpAudio = new RtpAudioSession();
                     await ua.Answer(uas, rtpAudio);
+
+                    if(ua.IsCallActive)
+                    {
+                        _calls.TryAdd(ua.Dialogue.CallId, ua);
+                    }
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.BYE)
                 {
@@ -137,6 +176,24 @@ namespace SIPSorcery
             catch (Exception reqExcp)
             {
                 Log.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Remove call from the active calls list.
+        /// </summary>
+        /// <param name="ua">The SIP user agent representing the active call to remove.</param>
+        private static void OnHangup(SIPUserAgent ua)
+        {
+            // If the dialogue is null it means the hangup was initiated from our end.
+            if (ua.Dialogue != null)
+            {
+                string callID = ua.Dialogue.CallId;
+                Log.LogInformation($"Call hungup by remote party {callID}.");
+                if (_calls.ContainsKey(callID))
+                {
+                    _calls.TryRemove(callID, out _);
+                }
             }
         }
 
