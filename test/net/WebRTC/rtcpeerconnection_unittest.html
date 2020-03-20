@@ -14,6 +14,8 @@
 			const constraints = {'audio': true }	
 			let pc = new RTCPeerConnection();
 			
+			pc.onsignalingstatechange = ({ev}) => console.log("onsignalingstatechange: " + pc.signalingState + ", "+ ev);
+			
 			pc.onicecandidate = ({candidate}) => console.log(candidate);
 
 			pc.onnegotiationneeded = async () => {

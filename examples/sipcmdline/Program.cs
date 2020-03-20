@@ -45,6 +45,10 @@
 // sipcmdline -d 127.0.0.1;transport=tcp   # scheme: sip  & transport: TCP
 // sipcmdline -d 127.0.0.1;transport=tls   # scheme: sip  & transport: TLS
 // sipcmdline -d sips:100@127.0.0.1        # scheme: sips & transport: TLS
+//
+// Generate client call load:
+// Server: sipp -sn uas
+// Client: dotnet run -- -d 127.0.0.1 -c 1000 -x 10 -s uac -b true # Test attempts 10 concurrent calls and a total of 1000.
 //-----------------------------------------------------------------------------
 
 using System;
@@ -60,6 +64,7 @@ using CommandLine.Text;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
+using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -143,6 +148,40 @@ namespace SIPSorcery
             {
                 logger.LogDebug($"RunCommand scenario {options.Scenario}, destination {options.Destination}");
 
+                SIPTransport sipTransport = new SIPTransport();
+
+                (var dstEp, var dstUri) = ParseDestination(options.Destination);
+
+                logger.LogDebug($"Destination IP end point {dstEp} and SIP URI {dstUri}");
+
+                IPAddress localAddress = (dstEp.Address.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
+                SIPChannel sipChannel = null;
+
+                switch (dstEp.Protocol)
+                {
+                    case SIPProtocolsEnum.tcp:
+                        sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
+                        (sipChannel as SIPTCPChannel).DisableLocalTCPSocketsCheck = true; // Allow sends to listeners on this host.
+                        break;
+                    case SIPProtocolsEnum.tls:
+                        var certificate = new X509Certificate2(@"localhost.pfx", "");
+                        sipChannel = new SIPTLSChannel(certificate, new IPEndPoint(localAddress, DEFAULT_SIPS_CLIENT_PORT));
+                        break;
+                    case SIPProtocolsEnum.udp:
+                        sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
+                        break;
+                    case SIPProtocolsEnum.ws:
+                        sipChannel = new SIPClientWebSocketChannel();
+                        break;
+                    case SIPProtocolsEnum.wss:
+                        sipChannel = new SIPClientWebSocketChannel();
+                        break;
+                    default:
+                        throw new ApplicationException($"Don't know how to create SIP channel for transport {dstEp.Protocol}.");
+                }
+
+                sipTransport.AddSIPChannel(sipChannel);
+
                 CancellationTokenSource cts = new CancellationTokenSource();
                 int taskCount = 0;
                 int successCount = 0;
@@ -156,7 +195,7 @@ namespace SIPSorcery
                         while (taskCount < options.Count && !cts.IsCancellationRequested)
                         {
                             int taskNum = Interlocked.Increment(ref taskCount);
-                            bool success = await RunTask(options, taskNum);
+                            bool success = await RunTask(options, taskNum, sipTransport, dstUri, dstEp);
 
                             if(success)
                             {
@@ -202,45 +241,45 @@ namespace SIPSorcery
         /// <param name="options">The options that dictate the type of task to run.</param>
         /// <param name="taskNumber">The number assigned to this task.</param>
         /// <returns>A boolean indicating whether this single task succeeded or not.</returns>
-        private static async Task<bool> RunTask(Options options, int taskNumber)
+        private static async Task<bool> RunTask(Options options, int taskNumber, SIPTransport sipTransport, SIPURI dstUri, SIPEndPoint dstEp)
         {
-            SIPTransport sipTransport = new SIPTransport();
+            //SIPTransport sipTransport = new SIPTransport();
 
             try
             {
                 DateTime startTime = DateTime.Now;
 
-                (var dstEp, var dstUri) = ParseDestination(options.Destination);
+                //(var dstEp, var dstUri) = ParseDestination(options.Destination);
 
-                logger.LogDebug($"Destination IP end point {dstEp} and SIP URI {dstUri}");
+                //logger.LogDebug($"Destination IP end point {dstEp} and SIP URI {dstUri}");
 
-                IPAddress localAddress = (dstEp.Address.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
-                SIPChannel sipChannel = null;
+                //IPAddress localAddress = (dstEp.Address.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
+                //SIPChannel sipChannel = null;
 
-                switch (dstEp.Protocol)
-                {
-                    case SIPProtocolsEnum.tcp:
-                        sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
-                        (sipChannel as SIPTCPChannel).DisableLocalTCPSocketsCheck = true; // Allow sends to listeners on this host.
-                        break;
-                    case SIPProtocolsEnum.tls:
-                        var certificate = new X509Certificate2(@"localhost.pfx", "");
-                        sipChannel = new SIPTLSChannel(certificate, new IPEndPoint(localAddress, DEFAULT_SIPS_CLIENT_PORT));
-                        break;
-                    case SIPProtocolsEnum.udp:
-                        sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
-                        break;
-                    case SIPProtocolsEnum.ws:
-                        sipChannel = new SIPClientWebSocketChannel();
-                        break;
-                    case SIPProtocolsEnum.wss:
-                        sipChannel = new SIPClientWebSocketChannel();
-                        break;
-                    default:
-                        throw new ApplicationException($"Don't know how to create SIP channel for transport {dstEp.Protocol}.");
-                }
+                //switch (dstEp.Protocol)
+                //{
+                //    case SIPProtocolsEnum.tcp:
+                //        sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
+                //        (sipChannel as SIPTCPChannel).DisableLocalTCPSocketsCheck = true; // Allow sends to listeners on this host.
+                //        break;
+                //    case SIPProtocolsEnum.tls:
+                //        var certificate = new X509Certificate2(@"localhost.pfx", "");
+                //        sipChannel = new SIPTLSChannel(certificate, new IPEndPoint(localAddress, DEFAULT_SIPS_CLIENT_PORT));
+                //        break;
+                //    case SIPProtocolsEnum.udp:
+                //        sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
+                //        break;
+                //    case SIPProtocolsEnum.ws:
+                //        sipChannel = new SIPClientWebSocketChannel();
+                //        break;
+                //    case SIPProtocolsEnum.wss:
+                //        sipChannel = new SIPClientWebSocketChannel();
+                //        break;
+                //    default:
+                //        throw new ApplicationException($"Don't know how to create SIP channel for transport {dstEp.Protocol}.");
+                //}
 
-                sipTransport.AddSIPChannel(sipChannel);
+                //sipTransport.AddSIPChannel(sipChannel);
 
                 Task<bool> task = null;
 
@@ -280,7 +319,7 @@ namespace SIPSorcery
             finally
             {
                 logger.LogDebug("Shutting down the SIP transport...");
-                sipTransport.Shutdown();
+                //sipTransport.Shutdown();
             }
         }
 
@@ -419,7 +458,11 @@ namespace SIPSorcery
                 ua.ClientCallFailed += (uac, err) => logger.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                 ua.ClientCallAnswered += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                var result = await ua.Call(dst.ToString(), null, null, new RtpSessionLight());
+                var audioOptions = new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.Silence };
+                var rtpAudioSession = new RtpAudioSession(AddressFamily.InterNetwork, audioOptions, SDPMediaFormatsEnum.PCMU);
+
+                var result = await ua.Call(dst.ToString(), null, null, rtpAudioSession);
+                await rtpAudioSession.Start();
 
                 ua.Hangup();
 

@@ -277,7 +277,7 @@ namespace SIPSorcery.Net
         private bool m_isRtcpMultiplexed = false;       // Indicates whether the RTP channel is multiplexing RTP and RTCP packets on the same port.
         private bool m_rtpEventInProgress;               // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                 // The last timestamp used in an RTP packet.    
-        private bool m_isClosed;
+        protected bool m_isClosed;
 
         internal List<MediaStreamTrack> m_tracks = new List<MediaStreamTrack>();
         internal Dictionary<SDPMediaTypesEnum, RTPChannel> m_rtpChannels = new Dictionary<SDPMediaTypesEnum, RTPChannel>();

@@ -80,7 +80,7 @@ namespace SIPSorcery.Net
             // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
             // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
             // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
-            catch (SocketException) 
+            catch (SocketException)
             {
                 //logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceive. {sockExcp.Message}");
                 //Close(sockExcp.Message);
@@ -299,7 +299,7 @@ namespace SIPSorcery.Net
                     m_isClosed = true;
                     m_rtpReceiver?.Close(null);
                     m_controlReceiver?.Close(null);
-                    
+
                     OnClosed?.Invoke(closeReason);
                 }
                 catch (Exception excp)
@@ -311,7 +311,7 @@ namespace SIPSorcery.Net
 
         public SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
-            if(m_isClosed)
+            if (m_isClosed)
             {
                 return SocketError.Disconnecting;
             }

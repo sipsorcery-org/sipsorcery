@@ -288,8 +288,8 @@ namespace SIPSorcery.SIP.App
                 //RTCOfferOptions offerOptions = new RTCOfferOptions { RemoteSignallingAddress = serverEndPoint.Address };
                 RTCOfferOptions offerOptions = new RTCOfferOptions();
 
-                var sdp = await mediaSession.createOffer(offerOptions).ConfigureAwait(false);
-                mediaSession.setLocalDescription(new RTCSessionDescriptionInit { sdp = sdp.ToString(), type = RTCSdpType.offer });
+                var descriptionInit = await mediaSession.createOffer(offerOptions).ConfigureAwait(false);
+                await mediaSession.setLocalDescription(descriptionInit).ConfigureAwait(false);
 
                 if (mediaSession.localDescription == null)
                 {
@@ -298,7 +298,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    sipCallDescriptor.Content = mediaSession.localDescription.sdp.ToString();
+                    sipCallDescriptor.Content = mediaSession.localDescription.sdp;
                     // This initiates the call but does not wait for an answer.
                     m_uac.Call(sipCallDescriptor);
                 }
@@ -432,13 +432,13 @@ namespace SIPSorcery.SIP.App
                 SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
                 await MediaSession.setRemoteDescription(new RTCSessionDescriptionInit { sdp = remoteSdp.ToString(), type = RTCSdpType.offer }).ConfigureAwait(false);
 
-                var sdpAnswer = await MediaSession.createAnswer(null).ConfigureAwait(false);
-                await MediaSession.setLocalDescription(new RTCSessionDescriptionInit { sdp = sdpAnswer.ToString(), type = RTCSdpType.answer }).ConfigureAwait(false);
-
+                var sdpAnswerInit = await MediaSession.createAnswer(null).ConfigureAwait(false);
+                await MediaSession.setLocalDescription(sdpAnswerInit).ConfigureAwait(false);
+                 
                 await MediaSession.Start().ConfigureAwait(false);
 
                 m_uas = uas;
-                m_uas.Answer(m_sdpContentType, sdpAnswer.ToString(), null, SIPDialogueTransferModesEnum.Default, customHeaders);
+                m_uas.Answer(m_sdpContentType, sdpAnswerInit.sdp, null, SIPDialogueTransferModesEnum.Default, customHeaders);
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
             }
         }
