@@ -223,6 +223,23 @@ namespace SIPSorcery.Net
         }
     }
 
+    /// <summary>
+    /// The RTPSession class is the key class for sending, receiving and organising RTP packets.
+    /// The companion RTCPSession class does the same thing for RTCP packets.
+    /// An RTPSession can manage either just audio or video OR both audio and video in a single session.
+    /// If the session is managing both audio and video then a choice needs to be made as to whether
+    /// they are multiplexed on a single socket or whether they are transmitted on separate sockets.
+    /// In addition a decision needs to be made regarding whether the RTCP packets, which contain
+    /// statistics and control messages about the RTP packets, are multiplexed with the media or
+    /// whether they use a separate socket. The general rule of thumb is:
+    ///  - For legacy VoIP applications don't use any multiplexing which will result in up to 4 
+    ///    separate sockets for:
+    ///    - RTP audio,
+    ///    - RTCP audio,
+    ///    - RTP video
+    ///    - RTCP video.
+    ///  - For WebRTC applications all RTP and RTCP packets are multiplexed on a single socket.
+    /// </summary>
     public class RTPSession : IDisposable
     {
         private const int RTP_MAX_PAYLOAD = 1400;
@@ -254,8 +271,6 @@ namespace SIPSorcery.Net
         private const string RTP_MEDIA_PROFILE = "RTP/AVP";
 
         private static ILogger logger = Log.Logger;
-
-        //private int m_mediaID = 0;
 
         private AddressFamily m_addressFamily;
         private bool m_isMediaMultiplexed = false;      // Indicates whether audio and video are multiplexed on a single RTP channel or not.
@@ -766,6 +781,12 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Creates a new RTP channel (which manages the UDP socket sending and receiving RTP
+        /// packets) for use with this session.
+        /// </summary>
+        /// <param name="mediaType">The type of media the RTP channel is for. Must be audio or video.</param>
+        /// <returns>A new RTPChannel instance.</returns>
         private RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
         {
             var channelAddress = (m_addressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
@@ -782,6 +803,13 @@ namespace SIPSorcery.Net
             return rtpChannel;
         }
 
+        /// <summary>
+        /// Creates a new RTCP session. There should be an RTCPSession for each media type this
+        /// RTPSession is managing.
+        /// </summary>
+        /// <param name="mediaType">The media type to create the RTCPSesssion for. Must be audio
+        /// or video.</param>
+        /// <returns>A new RTCPSession instance.</returns>
         private RTCPSession CreateRtcpSession(SDPMediaTypesEnum mediaType)
         {
             var rtcpSession = new RTCPSession(mediaType, 0);
@@ -822,6 +850,13 @@ namespace SIPSorcery.Net
             logger.LogDebug("Secure context successfully set on RTPSession.");
         }
 
+        /// <summary>
+        /// Sets the socket being used by the remote party for audio or video.
+        /// </summary>
+        /// <param name="mediaType">The media type of the end point being set. Must be either 
+        /// audio or video.</param>
+        /// <param name="rtpEndPoint">The remote party end point for RTP packets.</param>
+        /// <param name="rtcpEndPoint">The remote party end point for RTCP packets.</param>
         public void SetDestination(SDPMediaTypesEnum mediaType, IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
         {
             if (mediaType == SDPMediaTypesEnum.audio)
@@ -836,6 +871,13 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Packages and sends an audio payload to the remote call party.
+        /// </summary>
+        /// <param name="duration">The duration of the audio frame.</param>
+        /// <param name="payloadTypeID">The RTP payload ID of the audio frame. This must match the 
+        /// codec set in the session description.</param>
+        /// <param name="buffer">The raw bytes of the audio sample.</param>
         public void SendAudioFrame(uint duration, int payloadTypeID, byte[] buffer)
         {
             if (m_isClosed || m_rtpEventInProgress || AudioDestinationEndPoint == null)
