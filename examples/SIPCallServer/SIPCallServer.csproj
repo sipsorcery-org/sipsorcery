@@ -16,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="media\Macroform_-_Simplicity.g722">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="media\Macroform_-_Simplicity.ulaw">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

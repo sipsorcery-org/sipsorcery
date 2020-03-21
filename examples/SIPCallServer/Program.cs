@@ -66,6 +66,7 @@ namespace SIPSorcery
         private static string DEFAULT_TRANSFER_DESTINATION = "sip:*61@192.168.11.48";
         private static int SIP_LISTEN_PORT = 5060;
         private const string MUSIC_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
+        private const string MUSIC_FILE_G722 = "media/Macroform_-_Simplicity.g722";
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -152,7 +153,7 @@ namespace SIPSorcery
                         ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
                         ua.OnCallHungup += OnHangup;
 
-                        var rtpSession = CreateRtpSession(ua);
+                        var rtpSession = CreateRtpSession(ua, null);
                         var callResult = await ua.Call(DEFAULT_CALL_DESTINATION, null, null, rtpSession);
 
                         if (callResult)
@@ -284,15 +285,33 @@ namespace SIPSorcery
         /// </summary>
         /// <param name="ua">The suer agent the RTP session is being created for.</param>
         /// <returns>A new RTP session object.</returns>
-        private static RtpAudioSession CreateRtpSession(SIPUserAgent ua)
+        private static RtpAudioSession CreateRtpSession(SIPUserAgent ua, string dst)
         {
-            var audioOptions = new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.Noise };
-            //var audioOptions = new DummyAudioOptions
-            //{
-            //    AudioSource = DummyAudioSourcesEnum.Music,
-            //    SourceFile = MUSIC_FILE_PCMU
-            //};
-            var rtpAudioSession = new RtpAudioSession(AddressFamily.InterNetwork, audioOptions, SDPMediaFormatsEnum.PCMU);
+            SDPMediaFormatsEnum codec = SDPMediaFormatsEnum.PCMU;
+
+            int audioChoice = 0;
+            int.TryParse(dst, out audioChoice);
+
+
+            if(audioChoice >= 10)
+            {
+                codec = SDPMediaFormatsEnum.G722;
+                audioChoice = audioChoice - 10;
+            }
+
+            var audioSource = DummyAudioSourcesEnum.Silence;
+            if (!Enum.TryParse<DummyAudioSourcesEnum>(dst, out audioSource))
+            {
+                audioSource = DummyAudioSourcesEnum.Silence;
+            }
+
+            var audioOptions = new DummyAudioOptions { AudioSource = audioSource };
+            if(audioSource == DummyAudioSourcesEnum.Music)
+            {
+                audioOptions.SourceFile = (codec == SDPMediaFormatsEnum.PCMU) ? MUSIC_FILE_PCMU : MUSIC_FILE_G722;
+            };
+
+            var rtpAudioSession = new RtpAudioSession(AddressFamily.InterNetwork, audioOptions, codec);
 
             // Wire up the event handler for RTP packets received from the remote party.
             rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(ua, type, rtp);
@@ -340,7 +359,7 @@ namespace SIPSorcery
                     ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
 
                     var uas = ua.AcceptCall(sipRequest);
-                    var rtpSession = CreateRtpSession(ua);
+                    var rtpSession = CreateRtpSession(ua, sipRequest.URI.User);
                     await ua.Answer(uas, rtpSession);
 
                     if (ua.IsCallActive)

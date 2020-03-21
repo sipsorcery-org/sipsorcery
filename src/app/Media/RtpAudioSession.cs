@@ -34,8 +34,16 @@ namespace SIPSorcery.Media
         None = 0,
         Music = 2,
         Silence = 3,
-        Noise = 4,
+        WhiteNoise = 4,
+        SineWave = 5,
+        PinkNoise = 6
     }
+
+    //public enum SampleRatesEnum
+    //{
+    //    Rate_8000 = 0,
+    //    Rate_16000 = 1
+    //}
 
     public class DummyAudioOptions
     {
@@ -48,14 +56,20 @@ namespace SIPSorcery.Media
         /// If using a pre-recorded audio source this is the audio source file.
         /// </summary>
         public string SourceFile;
+
+        /// <summary>
+        /// Supports selecting the audio sample rate for codecs that support it.
+        /// PCMU and PCMA only support 8KHz. G722 supports 8 or 16KHz.
+        /// </summary>
+        //public SampleRatesEnum SampleRate;
     }
 
     public class RtpAudioSession : RTPSession, IMediaSession
     {
         private const int DTMF_EVENT_DURATION = 1200;        // Default duration for a DTMF event.
         private const int DTMF_EVENT_PAYLOAD_ID = 101;
-        private const int AUDIO_SAMPLE_RATE = 8000;
-        private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 50;
+        private const int SAMPLE_RATE = 8000;                 // G711 and G722 (mistakenly) use an 8LHz clock.
+        private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 20;
         private static readonly byte PCMU_SILENCE_BYTE_ZERO = 0x7F;
         private static readonly byte PCMU_SILENCE_BYTE_ONE = 0xFF;
         private static readonly byte PCMA_SILENCE_BYTE_ZERO = 0x55;
@@ -68,6 +82,10 @@ namespace SIPSorcery.Media
         private Timer _audioStreamTimer;
         private DummyAudioOptions _audioOpts;
         private SDPMediaFormatsEnum _audioCodec;
+        private int _sampleRate = SAMPLE_RATE;
+
+        private G722Codec _g722Codec;
+        private G722CodecState _g722CodecState;
 
         public event Action<byte[], uint, uint, int> OnVideoSampleReady;
         public event Action<Complex[]> OnAudioScopeSampleReady;
@@ -76,20 +94,26 @@ namespace SIPSorcery.Media
         public RtpAudioSession(AddressFamily addressFamily, DummyAudioOptions audioOptions, SDPMediaFormatsEnum codec) :
             base(addressFamily, false, false, false)
         {
-            if (!(codec == SDPMediaFormatsEnum.PCMA || codec == SDPMediaFormatsEnum.PCMU))
+            if (!(codec == SDPMediaFormatsEnum.PCMA || codec == SDPMediaFormatsEnum.PCMU || codec == SDPMediaFormatsEnum.G722))
             {
-                throw new ApplicationException("The codec must be PCAM or PCMU.");
+                throw new ApplicationException("The codec must be PCMA, PCMU or G722.");
             }
 
             _audioOpts = audioOptions;
             _audioCodec = codec;
+            //_sampleRate = 8000; // (audioOptions.SampleRate == SampleRatesEnum.Rate_8000) ? 8000 : 16000;
 
-            var audioFormat = new SDPMediaFormat(codec);
+            var audioFormat = new SDPMediaFormat((int)codec, codec.ToString(), _sampleRate);
+
+            if (codec == SDPMediaFormatsEnum.G722)
+            {
+                _g722Codec = new G722Codec();
+                _g722CodecState = new G722CodecState(64000, G722Flags.None);
+            }
 
             // RTP event support.
-            int clockRate = audioFormat.GetClockRate();
             SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
-            rtpEventFormat.SetFormatAttribute($"{RTPSession.TELEPHONE_EVENT_ATTRIBUTE}/{clockRate}");
+            rtpEventFormat.SetFormatAttribute($"{RTPSession.TELEPHONE_EVENT_ATTRIBUTE}/{_sampleRate}");
             rtpEventFormat.SetFormatParameterAttribute("0-16");
 
             var audioCapabilities = new List<SDPMediaFormat> { audioFormat, rtpEventFormat };
@@ -134,13 +158,29 @@ namespace SIPSorcery.Media
             {
                 if (_audioOpts.AudioSource == DummyAudioSourcesEnum.Silence)
                 {
-                    _audioStreamTimer = new Timer(SendSilenceSample, null, 0, Timeout.Infinite);
+                    _audioStreamTimer = new Timer(SendSilenceSample, null, 0, AUDIO_SAMPLE_PERIOD_MILLISECONDS);
                 }
-                else if (_audioOpts.AudioSource == DummyAudioSourcesEnum.Noise)
+                else if (_audioOpts.AudioSource == DummyAudioSourcesEnum.PinkNoise ||
+                    _audioOpts.AudioSource == DummyAudioSourcesEnum.WhiteNoise ||
+                     _audioOpts.AudioSource == DummyAudioSourcesEnum.SineWave)
                 {
-                    _signalGenerator = new SignalGenerator(AUDIO_SAMPLE_RATE, 1);
-                    _signalGenerator.Type = SignalGeneratorType.White;
-                    _audioStreamTimer = new Timer(SendNoiseSample, null, 0, Timeout.Infinite);
+                    _signalGenerator = new SignalGenerator(_sampleRate, 1);
+
+                    switch (_audioOpts.AudioSource)
+                    {
+                        case DummyAudioSourcesEnum.PinkNoise:
+                            _signalGenerator.Type = SignalGeneratorType.Pink;
+                            break;
+                        case DummyAudioSourcesEnum.SineWave:
+                            _signalGenerator.Type = SignalGeneratorType.Sin;
+                            break;
+                        case DummyAudioSourcesEnum.WhiteNoise:
+                        default:
+                            _signalGenerator.Type = SignalGeneratorType.White;
+                            break;
+                    }
+
+                    _audioStreamTimer = new Timer(SendNoiseSample, null, 0, AUDIO_SAMPLE_PERIOD_MILLISECONDS);
                 }
                 else if (_audioOpts.AudioSource == DummyAudioSourcesEnum.Music)
                 {
@@ -151,7 +191,7 @@ namespace SIPSorcery.Media
                     else
                     {
                         _audioStreamReader = new StreamReader(_audioOpts.SourceFile);
-                        _audioStreamTimer = new Timer(SendMusicSample, null, 0, Timeout.Infinite);
+                        _audioStreamTimer = new Timer(SendMusicSample, null, 0, AUDIO_SAMPLE_PERIOD_MILLISECONDS);
                     }
                 }
             }
@@ -164,26 +204,29 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendMusicSample(object state)
         {
-            int sampleSize = (SDPMediaFormatInfo.GetClockRate(_audioCodec) / 1000) * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
-            byte[] sample = new byte[sampleSize];
-
-            int bytesRead = _audioStreamReader.BaseStream.Read(sample, 0, sample.Length);
-
-            if (bytesRead > 0)
+            lock (_audioStreamTimer)
             {
-                //SendAudioFrame((uint)sampleSize, (int)_audioCodec, sample.Take(bytesRead).ToArray());
-                SendAudioFrame((uint)sampleSize, (int)_audioCodec, sample);
+                int sampleSize = (_sampleRate / 1000) * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+                byte[] sample = new byte[sampleSize];
+
+                int bytesRead = _audioStreamReader.BaseStream.Read(sample, 0, sample.Length);
+
+                if (bytesRead > 0)
+                {
+                    //SendAudioFrame((uint)sampleSize, (int)_audioCodec, sample.Take(bytesRead).ToArray());
+                    SendAudioFrame((uint)sampleSize, (int)_audioCodec, sample);
+                }
+
+                if (bytesRead == 0 || _audioStreamReader.EndOfStream)
+                {
+                    _audioStreamReader.BaseStream.Position = 0;
+                }
             }
 
-            if (bytesRead == 0 || _audioStreamReader.EndOfStream)
-            {
-                _audioStreamReader.BaseStream.Position = 0;
-            }
-
-            if (!m_isClosed)
-            {
-                _audioStreamTimer.Change(AUDIO_SAMPLE_PERIOD_MILLISECONDS, Timeout.Infinite);
-            }
+            //if (!m_isClosed)
+            //{
+            //    _audioStreamTimer.Change(AUDIO_SAMPLE_PERIOD_MILLISECONDS, Timeout.Infinite);
+            //}
         }
 
         /// <summary>
@@ -212,10 +255,10 @@ namespace SIPSorcery.Media
 
             SendAudioFrame(bufferSize, (int)_audioCodec, sample);
 
-            if (!m_isClosed)
-            {
-                _audioStreamTimer.Change(AUDIO_SAMPLE_PERIOD_MILLISECONDS, Timeout.Infinite);
-            }
+            //if (!m_isClosed)
+            //{
+            //    _audioStreamTimer.Change(AUDIO_SAMPLE_PERIOD_MILLISECONDS, Timeout.Infinite);
+            //}
         }
 
         /// <summary>
@@ -223,34 +266,45 @@ namespace SIPSorcery.Media
         /// </summary>
         private void SendNoiseSample(object state)
         {
-            int bufferSize = AUDIO_SAMPLE_RATE / AUDIO_SAMPLE_PERIOD_MILLISECONDS;
+            int bufferSize = _sampleRate / AUDIO_SAMPLE_PERIOD_MILLISECONDS;
             float[] linear = new float[bufferSize];
             _signalGenerator.Read(linear, 0, bufferSize);
 
             byte[] encodedSample = new byte[bufferSize];
 
-            for (int index = 0; index < bufferSize; index++)
-            {
-                encodedSample[index] = MuLawEncoder.LinearToMuLawSample((short)(linear[index] * 32767f));
+            short[] pcm = linear.Select(x => (short)(x * 32767f)).ToArray();
 
-                //if (_audioCodec == SDPMediaFormatsEnum.PCMA)
-                //{
-                //    sample[sampleIndex] = (byte)Crypto.GetRandomInt(0xd5, 0xff);
-                //    sample[sampleIndex + 1] = (byte)Crypto.GetRandomInt(0x00, 0x55);
-                //}
-                //else
-                //{
-                //    sample[sampleIndex] = (byte)Crypto.GetRandomInt(0x80, 0xff);
-                //    sample[sampleIndex + 1] = (byte)Crypto.GetRandomInt(0x00, 0x7f);
-                //}
+            if (_audioCodec == SDPMediaFormatsEnum.G722)
+            {
+                _g722Codec.Encode(_g722CodecState, encodedSample, pcm, bufferSize);
+            }
+            else
+            {
+                for (int index = 0; index < bufferSize; index++)
+                {
+                    if (_audioCodec == SDPMediaFormatsEnum.PCMU)
+                    {
+                        encodedSample[index] = MuLawEncoder.LinearToMuLawSample(pcm[index]);
+                    }
+                    //if (_audioCodec == SDPMediaFormatsEnum.PCMA)
+                    //{
+                    //    sample[sampleIndex] = (byte)Crypto.GetRandomInt(0xd5, 0xff);
+                    //    sample[sampleIndex + 1] = (byte)Crypto.GetRandomInt(0x00, 0x55);
+                    //}
+                    //else
+                    //{
+                    //    sample[sampleIndex] = (byte)Crypto.GetRandomInt(0x80, 0xff);
+                    //    sample[sampleIndex + 1] = (byte)Crypto.GetRandomInt(0x00, 0x7f);
+                    //}
+                }
             }
 
             SendAudioFrame((uint)bufferSize, (int)_audioCodec, encodedSample);
 
-            if (!m_isClosed)
-            {
-                _audioStreamTimer.Change(AUDIO_SAMPLE_PERIOD_MILLISECONDS, Timeout.Infinite);
-            }
+            //if (!m_isClosed)
+            //{
+            //    _audioStreamTimer.Change(AUDIO_SAMPLE_PERIOD_MILLISECONDS, Timeout.Infinite);
+            //}
         }
     }
 
