@@ -75,15 +75,24 @@ namespace SIPSorcery.Sys
             {
                 lock (_allocatePortsMutex)
                 {
-                    IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
-                    var udpListeners = ipGlobalProperties.GetActiveUdpListeners();
+                    int rtpPort = startPort;
 
-                    var portRange = Enumerable.Range(rangeStartPort, rangeEndPort - rangeStartPort).OrderBy(x => (x > startPort) ? x : x + rangeEndPort);
-                    var inUsePorts = udpListeners.Where(x => x.Port >= rangeStartPort && x.Port <= rangeEndPort).Select(x => x.Port); //.OrderBy(x => x);
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    {
+                        IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+                        var udpListeners = ipGlobalProperties.GetActiveUdpListeners();
 
-                    logger.LogDebug($"In use UDP ports count {inUsePorts.Count()}.");
+                        var portRange = Enumerable.Range(rangeStartPort, rangeEndPort - rangeStartPort).OrderBy(x => (x > startPort) ? x : x + rangeEndPort);
+                        var inUsePorts = udpListeners.Where(x => x.Port >= rangeStartPort && x.Port <= rangeEndPort).Select(x => x.Port); //.OrderBy(x => x);
 
-                    int rtpPort = portRange.Except(inUsePorts).Where(x => x % 2 == 0).FirstOrDefault();
+                        logger.LogDebug($"In use UDP ports count {inUsePorts.Count()}.");
+
+                        rtpPort = portRange.Except(inUsePorts).Where(x => x % 2 == 0).FirstOrDefault();
+                    }
+                    else
+                    {
+                        rtpPort = (rtpPort % 2 != 0) ? rtpPort + 1 : rtpPort;
+                    }
 
                     int controlPort = (createControlSocket == true) ? rtpPort + 1 : 0;
 
