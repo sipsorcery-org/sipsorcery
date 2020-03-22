@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -52,6 +53,11 @@ namespace SIPSorcery.Net
         {
             LocalIceUser = Crypto.GetRandomString(ICE_UFRAG_LENGTH);
             LocalIcePassword = Crypto.GetRandomString(ICE_PASSWORD_LENGTH);
+
+            Task.Run(() =>
+            {
+                var hostCandidates = GetHostCandidates();
+            });
         }
 
         public void Close()

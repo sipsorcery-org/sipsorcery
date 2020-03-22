@@ -55,13 +55,6 @@ namespace SIPSorcery.Net
     public class RTCOfferOptions
     {
         /// <summary>
-        /// Optional. The remote address that was used for signalling during the connection
-        /// set up. For non-ICE RTP sessions this can be used to determine the best local
-        /// IP address to use in an SDP offer/answer.
-        /// </summary>
-        //public IPAddress RemoteSignallingAddress;
-
-        /// <summary>
         /// If true then a new set of ICE credentials will be generated otherwise any
         /// existing set of credentials will be used.
         /// </summary>

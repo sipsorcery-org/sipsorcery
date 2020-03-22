@@ -46,7 +46,6 @@ namespace SIPSorcery.Net
         private const int MAXIMUM_TURN_ALLOCATE_ATTEMPTS = 4;
         private const int MAXIMUM_STUN_CONNECTION_ATTEMPTS = 5;
 
-
         private const int STUN_CHECK_BASE_PERIOD_MILLISECONDS = 5000;
         private const float STUN_CHECK_LOW_RANDOMISATION_FACTOR = 0.5F;
         private const float STUN_CHECK_HIGH_RANDOMISATION_FACTOR = 1.5F;
@@ -124,6 +123,8 @@ namespace SIPSorcery.Net
 
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
+
+            IceSession = new IceSession();
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
