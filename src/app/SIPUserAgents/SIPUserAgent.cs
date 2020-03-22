@@ -614,7 +614,7 @@ namespace SIPSorcery.SIP.App
 
                 try
                 {
-                    MediaSession.setRemoteDescription(new RTCSessionDescriptionInit { sdp = sipRequest.Body, type = RTCSdpType.offer });
+                    await MediaSession.setRemoteDescription(new RTCSessionDescriptionInit { sdp = sipRequest.Body, type = RTCSdpType.offer }).ConfigureAwait(false);
 
                     CheckRemotePartyHoldCondition(SDP.ParseSDPDescription(MediaSession.remoteDescription.sdp));
 

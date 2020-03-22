@@ -148,9 +148,10 @@ namespace SIPSorcery
                         if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.HasMediaFormat((int)SDPMediaFormatsEnum.PCMU)))
                         {
                             Log.LogDebug($"Client offer contained PCMU audio codec.");
-                            rtpSession = new RtpAVSession(dstRtpEndPoint.AddressFamily, 
+                            rtpSession = new RtpAVSession(dstRtpEndPoint.AddressFamily,
                                 new AudioOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = executableDir + "/" + AUDIO_FILE_PCMU }, null);
-                            rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.offer, sdp = offerSdp });
+                            RTCSessionDescriptionInit sdpInit = new RTCSessionDescriptionInit { type = RTCSdpType.offer, sdp = offerSdp.ToString() };
+                            await rtpSession.setRemoteDescription(sdpInit);
                         }
 
                         if (rtpSession == null)
@@ -182,7 +183,8 @@ namespace SIPSorcery
                             uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
                             var answerSdp = await rtpSession.createAnswer(null);
-                            uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
+                            await rtpSession.setLocalDescription(answerSdp);
+                            uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp.sdp, null, SIPDialogueTransferModesEnum.NotAllowed);
 
                             await rtpSession.Start();
                         }

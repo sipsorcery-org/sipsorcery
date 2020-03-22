@@ -39,9 +39,9 @@ namespace SIPSorcery.Sys
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
         private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 25;  // The maximum number of re-attempts that will be made when trying to bind the RTP port.
         private const string INTERNET_IPADDRESS = "1.1.1.1";    // IP address to use when getting default IP address from OS. No connection is established.
-        private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on macos).
+        private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on MacOS).
         private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;   // The amount of time to leave the result of a local IP address determination in the cache.
-        private const int RECENT_PORTS_QUEUE_SIZE = 100;
+        //private const int RECENT_PORTS_QUEUE_SIZE = 100;
 
         private static ILogger logger = Log.Logger;
 
@@ -62,6 +62,19 @@ namespace SIPSorcery.Sys
             return CreateRandomUDPListener(localAddress, UDP_PORT_START, UDP_PORT_END, null, out localEndPoint);
         }
 
+        /// <summary>
+        /// Attempts to create and bind a new RTP, and optionally an control (RTCP), socket(s) within a specified port range.
+        /// </summary>
+        /// <param name="localAddress">The local address to create the RTP and optionally control listeners on.</param>
+        /// <param name="rangeStartPort">The start of the port range that the sockets should be created within.</param>
+        /// <param name="rangeEndPort">The end of the port range that the sockets should be created within.</param>
+        /// <param name="startPort">A port within the range indicated by the start and end ports to attempt to
+        /// bind the new socket(s) on. The main purpose of this parameter is to provide a pseudo-random way to allocate
+        /// the port for a new RTP socket.</param>
+        /// <param name="createControlSocket">True if a control (RTCP) socket should be created. Set to false if RTP
+        /// and RTCP are being multiplexed on the same connection.</param>
+        /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
+        /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
         public static void CreateRtpSocket(IPAddress localAddress, int rangeStartPort, int rangeEndPort, int startPort, bool createControlSocket, out Socket rtpSocket, out Socket controlSocket)
         {
             logger.LogDebug($"CreateRtpSocket start port {startPort}, range {rangeStartPort}:{rangeEndPort}.");
@@ -99,16 +112,20 @@ namespace SIPSorcery.Sys
                     try
                     {
                         // The potential ports have been found now try and use them.
-                        rtpSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                        //rtpSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                        rtpSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
                         rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                         rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
 
-                        rtpSocket.Bind(new IPEndPoint(localAddress, rtpPort));
+                        //rtpSocket.Bind(new IPEndPoint(localAddress, rtpPort));
+                        rtpSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, rtpPort));
 
                         if (controlPort != 0)
                         {
-                            controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                            controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
+                            //controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                            controlSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                            //controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
+                            controlSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, controlPort));
 
                             logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort} and control socket {localAddress}:{controlPort}.");
                         }
@@ -121,7 +138,7 @@ namespace SIPSorcery.Sys
 
                         break;
                     }
-                    catch (System.Net.Sockets.SocketException sockExcp)
+                    catch (SocketException sockExcp)
                     {
                         if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
                         {
@@ -208,9 +225,20 @@ namespace SIPSorcery.Sys
             }
             else
             {
-                UdpClient udpClient = new UdpClient(destination.AddressFamily);
-                udpClient.Connect(destination, NETWORK_TEST_PORT);
-                var localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+                IPAddress localAddress = null;
+
+                if (destination.AddressFamily == AddressFamily.InterNetwork || destination.IsIPv4MappedToIPv6)
+                {
+                    UdpClient udpClient = new UdpClient();
+                    udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
+                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+                }
+                else
+                {
+                    UdpClient udpClient = new UdpClient(AddressFamily.InterNetworkV6);
+                    udpClient.Connect(destination, NETWORK_TEST_PORT);
+                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+                }
 
                 m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
 

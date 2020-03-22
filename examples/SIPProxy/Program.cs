@@ -40,6 +40,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -86,6 +87,9 @@ namespace SIPSorcery.SIPProxy
                 // Use default options to set up a SIP channel.
                 var sipChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.Any, _listenPort));
                 _sipTransport.AddSIPChannel(sipChannel);
+
+                var ipv6SipChannel = new SIPUDPChannel(new IPEndPoint(IPAddress.IPv6Any, _listenPort));
+                _sipTransport.AddSIPChannel(ipv6SipChannel);
 
                 // Wire up the transport layer so SIP requests and responses have somewhere to go.
                 _sipTransport.SIPTransportRequestReceived += SIPTransportRequestReceived;
@@ -201,6 +205,7 @@ namespace SIPSorcery.SIPProxy
         {
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
             var loggerConfig = new LoggerConfiguration()
+                .WriteTo.Console(theme: AnsiConsoleTheme.Code)
                 .Enrich.FromLogContext()
                 .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()

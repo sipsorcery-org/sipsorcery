@@ -323,42 +323,49 @@ namespace SIPSorcery.Net
             {
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for SendAsync in RTPChannel.");
             }
-
-            try
+            else if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
             {
-                Socket sendSocket = RtpSocket;
-                if (sendOn == RTPChannelSocketsEnum.Control)
+                logger.LogWarning($"The destination address for SendAsync in RTPChannel cannot be {dstEndPoint.Address}.");
+                return SocketError.DestinationAddressRequired;
+            }
+            else
+            {
+                try
                 {
-                    LastControlDestination = dstEndPoint;
-                    if (m_controlSocket == null)
+                    Socket sendSocket = RtpSocket;
+                    if (sendOn == RTPChannelSocketsEnum.Control)
                     {
-                        throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
+                        LastControlDestination = dstEndPoint;
+                        if (m_controlSocket == null)
+                        {
+                            throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
+                        }
+                        else
+                        {
+                            sendSocket = m_controlSocket;
+                        }
                     }
                     else
                     {
-                        sendSocket = m_controlSocket;
+                        LastRtpDestination = dstEndPoint;
                     }
-                }
-                else
-                {
-                    LastRtpDestination = dstEndPoint;
-                }
 
-                sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
-                return SocketError.Success;
-            }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            {
-                return SocketError.Disconnecting;
-            }
-            catch (SocketException sockExcp)
-            {
-                return sockExcp.SocketErrorCode;
-            }
-            catch (Exception excp)
-            {
-                logger.LogError($"Exception RTPChannel.SendAsync. {excp}");
-                return SocketError.Fault;
+                    sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
+                    return SocketError.Success;
+                }
+                catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
+                {
+                    return SocketError.Disconnecting;
+                }
+                catch (SocketException sockExcp)
+                {
+                    return sockExcp.SocketErrorCode;
+                }
+                catch (Exception excp)
+                {
+                    logger.LogError($"Exception RTPChannel.SendAsync. {excp}");
+                    return SocketError.Fault;
+                }
             }
         }
 

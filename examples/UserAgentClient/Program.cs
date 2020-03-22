@@ -68,7 +68,7 @@ namespace SIPSorcery
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
             var rtpSession = new RtpAVSession(dstAddress.AddressFamily, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
-            var offerSDP = await rtpSession.createOffer(new RTCOfferOptions { RemoteSignallingAddress = dstAddress });
+            var offerSDP = await rtpSession.createOffer(null);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var uac = new SIPClientUserAgent(sipTransport);
@@ -79,14 +79,15 @@ namespace SIPSorcery
                 Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                 hasCallFailed = true;
             };
-            uac.CallAnswered += (uac, resp) =>
+            uac.CallAnswered += async (uac, resp) =>
             {
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                    rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.answer, sdp = SDP.ParseSDPDescription(resp.Body) } );
-                    rtpSession.Start();
+                    RTCSessionDescriptionInit sdpInit = new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = resp.Body };
+                    await rtpSession.setRemoteDescription(sdpInit);
+                    await rtpSession.Start();
                 }
                 else
                 {
@@ -121,7 +122,7 @@ namespace SIPSorcery
                 null, null, null,
                 SIPCallDirection.Out,
                 SDP.SDP_MIME_CONTENTTYPE,
-                offerSDP.ToString(),
+                offerSDP.sdp,
                 null);
 
             uac.Call(callDescriptor);

@@ -578,7 +578,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                IPAddress localAddress = IPAddress.Any;
+                IPAddress localAddress = IPAddress.Loopback;
 
                 if (AudioDestinationEndPoint != null)
                 {
@@ -592,7 +592,7 @@ namespace SIPSorcery.Net
                 SDP offerSdp = new SDP(IPAddress.Loopback);
                 offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
 
-                offerSdp.Connection = new SDPConnectionInformation(localAddress);
+                offerSdp.Connection = new SDPConnectionInformation(localAddress ?? IPAddress.Loopback);
 
                 // --- Audio announcement ---
                 if (AudioLocalTrack != null)
@@ -706,7 +706,6 @@ namespace SIPSorcery.Net
                             break;
                         }
                     }
-
                 }
                 else
                 {
