@@ -194,6 +194,12 @@ namespace SIPSorcery.SIP
         protected event SIPTransactionResponseReceivedDelegate TransactionFinalResponseReceived;
         protected event SIPTransactionTimedOutDelegate TransactionTimedOut;
 
+        /// <summary>
+        /// The UAS transaction needs the ACK request if the original INVITE did not have an SDP offer.
+        /// In that case the ACK request contains the SDP answer.
+        /// </summary>
+        protected event SIPTransactionRequestReceivedDelegate OnAckRequestReceived;
+
         // These events are normally only used for housekeeping such as retransmits on ACK's.
         protected event SIPTransactionResponseReceivedDelegate TransactionDuplicateResponse;
         protected event SIPTransactionRequestRetransmitDelegate TransactionRequestRetransmit;
@@ -456,6 +462,11 @@ namespace SIPSorcery.SIP
         public void ACKReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
         {
             UpdateTransactionState(SIPTransactionStatesEnum.Confirmed);
+
+            // Need the ACK request in case it contains a body with an SDP answer.
+            AckRequest = sipRequest;
+
+            OnAckRequestReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipRequest);
         }
 
         /// <summary>

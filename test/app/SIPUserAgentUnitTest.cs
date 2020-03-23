@@ -15,12 +15,10 @@
 
 using System;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using Xunit;
 using SIPSorcery.UnitTests;
 
@@ -218,6 +216,109 @@ namespace SIPSorcery.SIP.App.UnitTests
 "";
 
             mockChannel.FireMessageReceived(dummySipEndPoint, dummySipEndPoint, Encoding.UTF8.GetBytes(inviteReqStr2));
+        }
+
+        /// <summary>
+        /// Tests that an incoming call without an SDP body gets processed correctly.
+        /// </summary>
+        [Fact]
+        public async Task IncomingCallNoSdpUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport transport = new SIPTransport();
+            transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
+
+            SIPUserAgent userAgent = new SIPUserAgent(transport, null);
+
+            string inviteReqStr = "INVITE sip:192.168.11.50:5060 SIP/2.0" + m_CRLF +
+"Via: SIP/2.0/UDP 192.168.11.50:60163;rport;branch=z9hG4bKPj869f70960bdd4204b1352eaf242a3691" + m_CRLF +
+"To: <sip:2@192.168.11.50>;tag=ZUJSXRRGXQ" + m_CRLF +
+"From: <sip:aaron@192.168.11.50>;tag=4a60ce364b774258873ff199e5e39938" + m_CRLF +
+"Call-ID: 17324d6df8744d978008c8997bfd208d" + m_CRLF +
+"CSeq: 3532 INVITE" + m_CRLF +
+"Contact: <sip:aaron@192.168.11.50:60163;ob>" + m_CRLF +
+"Max-Forwards: 70" + m_CRLF +
+"Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, INFO, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS" + m_CRLF +
+"Supported: replaces, 100rel, timer, norefersub" + m_CRLF +
+"Content-Length: 0" + m_CRLF +
+"Content-Type: application/sdp" + m_CRLF +
+"Session-Expires: 1800" + m_CRLF + m_CRLF;
+
+            var uas = userAgent.AcceptCall(SIPRequest.ParseSIPRequest(inviteReqStr));
+            var mediaSession = CreateMediaSession();
+            await userAgent.Answer(uas, mediaSession);
+
+            // The call attempt should timeout while waiting for the ACK request with the SDP answer.
+            Assert.False(userAgent.IsCallActive);
+        }
+
+        /// <summary>
+        /// Tests that an incoming call without an SDP body and that receives an ACK with an SDP answer
+        /// gets processed correctly.
+        /// </summary>
+        [Fact]
+        public async Task IncomingCallNoSdpWithACKUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport transport = new SIPTransport();
+            transport.AddSIPChannel(new MockSIPChannel(new System.Net.IPEndPoint(IPAddress.Any, 0)));
+            var dummySep = SIPEndPoint.ParseSIPEndPoint("udp:127.0.0.1:5060");
+
+            SIPUserAgent userAgent = new SIPUserAgent(transport, null);
+
+            string inviteReqStr = @"INVITE sip:1@127.0.0.1 SIP/2.0
+Via: SIP/2.0/UDP 127.0.0.1:51200;branch=z9hG4bKbeed9b0cde8d43cc8a2aae91526b6a1d;rport
+To: <sip:1@127.0.0.1>
+From: <sip:thisis@anonymous.invalid>;tag=GCLNRILCDU
+Call-ID: 7265e19f53a146a1bacdf4f4f8ea70b2
+CSeq: 1 INVITE
+Contact: <sip:127.0.0.1:51200>
+Max-Forwards: 70
+User-Agent: www.sipsorcery.com
+Content-Length: 0
+Content-Type: application/sdp" + m_CRLF + m_CRLF;
+
+            SIPEndPoint dummySipEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 0));
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummySipEndPoint, dummySipEndPoint);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+
+            var uas = userAgent.AcceptCall(inviteReq);
+            var mediaSession = CreateMediaSession();
+
+            _ = Task.Run(() =>
+            {
+                Task.Delay(2000).Wait();
+
+                string ackReqStr = @"ACK sip:127.0.0.1:5060 SIP/2.0
+Via: SIP/2.0/UDP 127.0.0.1:51200;branch=z9hG4bK76dfb1480ea14f778bd24afed1c8ded0;rport
+To: <sip:1@127.0.0.1>;tag=YWPNZPMLPB
+From: <sip:thisis@anonymous.invalid>;tag=GCLNRILCDU
+Call-ID: 7265e19f53a146a1bacdf4f4f8ea70b2
+CSeq: 1 ACK
+Max-Forwards: 70
+Content-Length: 160
+
+v=0
+o=- 67424 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 16976 RTP/AVP 8 101
+a=rtpmap:101 telephone-event/8000
+a=fmtp:101 0-16
+a=sendrecv" + m_CRLF + m_CRLF;
+
+                
+                uas.ClientTransaction.ACKReceived(dummySep, dummySep, SIPRequest.ParseSIPRequest(ackReqStr));
+            });
+
+            await userAgent.Answer(uas, mediaSession);
+
+            Assert.True(userAgent.IsCallActive);
         }
 
         private IMediaSession CreateMediaSession()

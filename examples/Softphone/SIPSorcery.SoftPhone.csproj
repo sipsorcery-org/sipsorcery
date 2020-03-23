@@ -22,7 +22,6 @@
     <PackageReference Include="SharpGL.WPF" Version="2.4.1.2" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
     <PackageReference Include="System.Drawing.Primitives" Version="4.3.0" />
-    <PackageReference Include="SIPSorcery" Version="4.0.29-pre" />
     <PackageReference Include="SIPSorceryMedia" Version="4.0.29-pre" />
   </ItemGroup>
 
@@ -30,6 +29,10 @@
     <Content Include="favicon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
 
 </Project>
