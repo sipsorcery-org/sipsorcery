@@ -115,7 +115,7 @@ namespace SIPSorcery.Net
         /// <param name="init">Optional. Initialisation properties to control the creation of the session object.</param>
         public RTCSessionDescription(RTCSessionDescriptionInit init)
         {
-            if(init != null)
+            if (init != null)
             {
                 type = init.type;
                 sdp = init.sdp;
@@ -781,8 +781,7 @@ namespace SIPSorcery.Net
         /// <returns>A new RTPChannel instance.</returns>
         private RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
         {
-            var channelAddress = (m_addressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
-            var rtpChannel = new RTPChannel(channelAddress, !m_isRtcpMultiplexed);
+            var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed);
             m_rtpChannels.Add(mediaType, rtpChannel);
 
             rtpChannel.OnRTPDataReceived += OnReceive;

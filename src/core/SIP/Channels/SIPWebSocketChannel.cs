@@ -233,7 +233,7 @@ namespace SIPSorcery.SIP
             try
             {
                 var ingressClient = GetIngressConnection(destinationEndPoint.GetIPEndPoint(), connectionIDHint);
-                
+
                 // And lastly if we now have a valid web socket then send.
                 if (ingressClient != null)
                 {
@@ -304,7 +304,7 @@ namespace SIPSorcery.SIP
         /// <returns>True if supported, false if not.</returns>
         public override bool IsProtocolSupported(SIPProtocolsEnum protocol)
         {
-            if(IsSecure)
+            if (IsSecure)
             {
                 return protocol == SIPProtocolsEnum.wss;
             }

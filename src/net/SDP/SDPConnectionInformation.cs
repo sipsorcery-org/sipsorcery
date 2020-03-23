@@ -29,7 +29,7 @@ namespace SIPSorcery.Net
         /// Type of network, IN = Internet.
         /// </summary>
         public string ConnectionNetworkType = "IN";
-        
+
         /// <summary>
         /// Session level address family.
         /// </summary>

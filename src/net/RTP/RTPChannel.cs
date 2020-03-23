@@ -239,15 +239,14 @@ namespace SIPSorcery.Net
         /// <param name="controlEndPoint">The remote end point that the RTCP control socket is sending to.</param>
         /// <param name="mediaStartPort">The media start port.</param>
         /// <param name="mediaEndPort">The media end port.</param>
-        public RTPChannel(IPAddress localAddress,
-                          bool createControlSocket,
+        public RTPChannel(bool createControlSocket,
                           IPEndPoint rtpRemoteEndPoint = null,
                           IPEndPoint controlEndPoint = null,
                           int mediaStartPort = RTP_PORT_START,
                           int mediaEndPort = RTP_PORT_END)
         {
             int startFrom = Crypto.GetRandomInt(RTP_PORT_START, RTP_PORT_END);
-            NetServices.CreateRtpSocket(localAddress, mediaStartPort, mediaEndPort, startFrom, createControlSocket, out var rtpSocket, out m_controlSocket);
+            NetServices.CreateRtpSocket(mediaStartPort, mediaEndPort, startFrom, createControlSocket, null, out var rtpSocket, out m_controlSocket);
 
             RtpSocket = rtpSocket;
             RTPLocalEndPoint = RtpSocket.LocalEndPoint as IPEndPoint;

@@ -23,7 +23,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
@@ -733,7 +732,7 @@ namespace SIPSorcery.SIP.App
             {
                 inviteHeader.ProxySendFrom = sipCallDescriptor.ProxySendFrom;
             }
-            
+
             SIPViaHeader viaHeader = new SIPViaHeader(new IPEndPoint(IPAddress.Any, 0), branchId);
             inviteRequest.Header.Vias.PushViaHeader(viaHeader);
 

@@ -434,7 +434,7 @@ namespace SIPSorcery.SIP.App
 
                 var sdpAnswerInit = await MediaSession.createAnswer(null).ConfigureAwait(false);
                 await MediaSession.setLocalDescription(sdpAnswerInit).ConfigureAwait(false);
-                 
+
                 await MediaSession.Start().ConfigureAwait(false);
 
                 m_uas = uas;

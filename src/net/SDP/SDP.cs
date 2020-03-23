@@ -305,7 +305,7 @@ namespace SIPSorcery.Net
                                 sdp.DtlsFingerprint = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
                             }
                         }
-                        else if(sdpLineTrimmed.StartsWith($"a={END_ICE_CANDIDATES_ATTRIBUTE}"))
+                        else if (sdpLineTrimmed.StartsWith($"a={END_ICE_CANDIDATES_ATTRIBUTE}"))
                         {
                             // Do nothing.
                         }
@@ -499,7 +499,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            sdp += (Group == null) ? null : $"a={GROUP_ATRIBUTE_PREFIX}:{Group}" + CRLF; 
+            sdp += (Group == null) ? null : $"a={GROUP_ATRIBUTE_PREFIX}:{Group}" + CRLF;
 
             foreach (string extra in ExtraSessionAttributes)
             {

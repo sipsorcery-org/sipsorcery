@@ -15,14 +15,12 @@
 
 using System;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
-using Xunit;
 using SIPSorcery.UnitTests;
+using Xunit;
 
 namespace SIPSorcery.SIP.App.UnitTests
 {

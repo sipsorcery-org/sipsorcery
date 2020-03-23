@@ -80,7 +80,7 @@ namespace SIPSorcery.Net
         /// length is 255 bytes (note bytes not characters).</param>
         public RTCPSDesReport(uint ssrc, string cname)
         {
-            if(String.IsNullOrEmpty(cname))
+            if (String.IsNullOrEmpty(cname))
             {
                 throw new ArgumentNullException("cname");
             }
@@ -90,7 +90,7 @@ namespace SIPSorcery.Net
             CNAME = (cname.Length > MAX_CNAME_BYTES) ? cname.Substring(0, MAX_CNAME_BYTES) : cname;
 
             // Need to take account of multi-byte characters.
-            while(Encoding.UTF8.GetBytes(CNAME).Length > MAX_CNAME_BYTES)
+            while (Encoding.UTF8.GetBytes(CNAME).Length > MAX_CNAME_BYTES)
             {
                 CNAME = CNAME.Substring(0, CNAME.Length - 1);
             }
@@ -106,7 +106,7 @@ namespace SIPSorcery.Net
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP SDES packet.");
             }
-            else if(packet[8] != CNAME_ID)
+            else if (packet[8] != CNAME_ID)
             {
                 throw new ApplicationException("The RTCP report packet did not have the required CNAME type field set correctly.");
             }

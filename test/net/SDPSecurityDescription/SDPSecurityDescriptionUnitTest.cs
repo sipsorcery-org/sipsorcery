@@ -1,9 +1,8 @@
 ﻿using System;
-using SIPSorcery.Net;
-using Microsoft.Extensions.Logging;
-using Xunit;
-using SIPSorcery.SIP;
 using System.Text;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.SIP;
+using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {

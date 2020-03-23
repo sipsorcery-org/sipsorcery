@@ -174,8 +174,8 @@ namespace SIPSorcery.Net
 
             candidate.NetworkAddress = candidateFields[4];
             candidate.port = Convert.ToUInt16(candidateFields[5]);
-            
-            if(Enum.TryParse<RTCIceCandidateType>(candidateFields[7], out var candidateType))
+
+            if (Enum.TryParse<RTCIceCandidateType>(candidateFields[7], out var candidateType))
             {
                 candidate.type = candidateType;
             }
@@ -195,22 +195,22 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            var candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ host generation 0", 
-                Crypto.GetRandomInt(10).ToString(), 
-                "1", 
+            var candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ host generation 0",
                 Crypto.GetRandomInt(10).ToString(),
-               NetworkAddress, 
+                "1",
+                Crypto.GetRandomInt(10).ToString(),
+               NetworkAddress,
                 port);
 
             if (StunRflxIPEndPoint != null)
             {
-                candidateStr += String.Format("{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0", 
-                    Crypto.GetRandomInt(10).ToString(), 
-                    "1", 
-                    Crypto.GetRandomInt(10).ToString(), 
-                    StunRflxIPEndPoint.Address, 
+                candidateStr += String.Format("{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0",
+                    Crypto.GetRandomInt(10).ToString(),
+                    "1",
+                    Crypto.GetRandomInt(10).ToString(),
+                    StunRflxIPEndPoint.Address,
                     StunRflxIPEndPoint.Port,
-                    NetworkAddress, 
+                    NetworkAddress,
                     port);
             }
 
@@ -229,7 +229,7 @@ namespace SIPSorcery.Net
         {
             string stunOrTurnAddress = !String.IsNullOrEmpty(StunServerAddress) ? StunServerAddress : TurnServerAddress;
 
-            return type + BaseAddress.ToString() + stunOrTurnAddress  + TransportProtocol.ToString();
+            return type + BaseAddress.ToString() + stunOrTurnAddress + TransportProtocol.ToString();
         }
 
         /// <summary>

@@ -172,7 +172,7 @@ namespace SIPSorcery.SIP
 
             try
             {
-               return sipStreamConn.SslStream.WriteAsync(buffer, 0, buffer.Length);
+                return sipStreamConn.SslStream.WriteAsync(buffer, 0, buffer.Length);
             }
             catch (SocketException sockExcp)
             {

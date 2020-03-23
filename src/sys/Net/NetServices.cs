@@ -64,8 +64,9 @@ namespace SIPSorcery.Sys
 
         /// <summary>
         /// Attempts to create and bind a new RTP, and optionally an control (RTCP), socket(s) within a specified port range.
+        /// The RTP and control sockets created are IPv4 and IPv6 dual mode sockets which means they can send and receive
+        /// either IPv4 or IPv6 packets.
         /// </summary>
-        /// <param name="localAddress">The local address to create the RTP and optionally control listeners on.</param>
         /// <param name="rangeStartPort">The start of the port range that the sockets should be created within.</param>
         /// <param name="rangeEndPort">The end of the port range that the sockets should be created within.</param>
         /// <param name="startPort">A port within the range indicated by the start and end ports to attempt to
@@ -73,9 +74,12 @@ namespace SIPSorcery.Sys
         /// the port for a new RTP socket.</param>
         /// <param name="createControlSocket">True if a control (RTCP) socket should be created. Set to false if RTP
         /// and RTCP are being multiplexed on the same connection.</param>
+        /// <param name="localAddress">Optional. If null The RTP and control sockets will be created as IPv4 and IPv6 dual mode 
+        /// sockets which means they can send and receive either IPv4 or IPv6 packets. If the local address is specified an attempt
+        /// will be made to bind the RTP and optionally control listeners on it.</param>
         /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
-        public static void CreateRtpSocket(IPAddress localAddress, int rangeStartPort, int rangeEndPort, int startPort, bool createControlSocket, out Socket rtpSocket, out Socket controlSocket)
+        public static void CreateRtpSocket(int rangeStartPort, int rangeEndPort, int startPort, bool createControlSocket, IPAddress localAddress, out Socket rtpSocket, out Socket controlSocket)
         {
             logger.LogDebug($"CreateRtpSocket start port {startPort}, range {rangeStartPort}:{rangeEndPort}.");
 
@@ -92,11 +96,12 @@ namespace SIPSorcery.Sys
 
                     if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
+                        // On Windows we can get a list of in use UDP ports and avoid attempting to bind to them.
                         IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
                         var udpListeners = ipGlobalProperties.GetActiveUdpListeners();
 
                         var portRange = Enumerable.Range(rangeStartPort, rangeEndPort - rangeStartPort).OrderBy(x => (x > startPort) ? x : x + rangeEndPort);
-                        var inUsePorts = udpListeners.Where(x => x.Port >= rangeStartPort && x.Port <= rangeEndPort).Select(x => x.Port); //.OrderBy(x => x);
+                        var inUsePorts = udpListeners.Where(x => x.Port >= rangeStartPort && x.Port <= rangeEndPort).Select(x => x.Port);
 
                         logger.LogDebug($"In use UDP ports count {inUsePorts.Count()}.");
 
@@ -112,26 +117,43 @@ namespace SIPSorcery.Sys
                     try
                     {
                         // The potential ports have been found now try and use them.
-                        //rtpSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                        rtpSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
-                        rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
-                        rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
-
-                        //rtpSocket.Bind(new IPEndPoint(localAddress, rtpPort));
-                        rtpSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, rtpPort));
-
-                        if (controlPort != 0)
+                        if (localAddress != null)
                         {
-                            //controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                            controlSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
-                            //controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
-                            controlSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, controlPort));
-
-                            logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort} and control socket {localAddress}:{controlPort}.");
+                            rtpSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                            rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+                            rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+                            rtpSocket.Bind(new IPEndPoint(localAddress, rtpPort));
                         }
                         else
                         {
-                            logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort}.");
+                            // Create a dual mode IPv4/IPv6 socket.
+                            rtpSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                            rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+                            rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+                            var bindAddress = (Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
+                            rtpSocket.Bind(new IPEndPoint(bindAddress, rtpPort));
+                        }
+
+                        if (controlPort != 0)
+                        {
+                            if (localAddress != null)
+                            {
+                                controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                                controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
+                            }
+                            else
+                            {
+                                // Create a dual mode IPv4/IPv6 socket.
+                                controlSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                                var bindAddress = (Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
+                                controlSocket.Bind(new IPEndPoint(bindAddress, controlPort));
+                            }
+
+                            logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint} and control socket {controlSocket.LocalEndPoint}.");
+                        }
+                        else
+                        {
+                            logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint}.");
                         }
 
                         bindSuccess = true;

@@ -102,7 +102,7 @@ namespace SIPSorcery.Net
         /// The codec in use for this media format.
         /// </summary>
         public SDPMediaFormatsEnum FormatCodec;
-        
+
         /// <summary>
         /// The optional format attribute for the media format. For standard media types this is not necessary.
         /// <code>
@@ -141,7 +141,7 @@ namespace SIPSorcery.Net
         /// types and will have a default value of 0.
         /// </summary>
         public int ClockRate { get; set; } = 0;
-        
+
         /// <summary>
         /// For well known media types this will contain the default clock rate. Warning, if the format is not known or
         /// is dynamic this can be 0.
@@ -221,7 +221,7 @@ namespace SIPSorcery.Net
         /// standard media format.</returns>
         public int GetClockRate()
         {
-            if(ClockRate != 0)
+            if (ClockRate != 0)
             {
                 return ClockRate;
             }
@@ -241,7 +241,7 @@ namespace SIPSorcery.Net
         {
             foreach (SDPMediaFormatsEnum format in Enum.GetValues(typeof(SDPMediaFormatsEnum)))
             {
-                if(name.ToLower() == format.ToString().ToLower())
+                if (name.ToLower() == format.ToString().ToLower())
                 {
                     return format;
                 }

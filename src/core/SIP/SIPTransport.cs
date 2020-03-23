@@ -139,7 +139,7 @@ namespace SIPSorcery.SIP
                 ResolveSIPEndPoint_External = sipResolver;
             }
 
-            if(stateless)
+            if (stateless)
             {
                 m_queueIncoming = false;
             }
@@ -696,7 +696,7 @@ namespace SIPSorcery.SIP
                         m_inMessageQueue.TryDequeue(out var incomingMessage);
                         if (incomingMessage != null)
                         {
-                           SIPMessageReceived(incomingMessage.LocalSIPChannel, incomingMessage.LocalEndPoint, incomingMessage.RemoteEndPoint, incomingMessage.Buffer).Wait();
+                            SIPMessageReceived(incomingMessage.LocalSIPChannel, incomingMessage.LocalEndPoint, incomingMessage.RemoteEndPoint, incomingMessage.Buffer).Wait();
                         }
                     }
 
@@ -759,7 +759,7 @@ namespace SIPSorcery.SIP
                             }
                             else if (!rawSIPMessage.Contains("SIP"))
                             {
-                               SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, "Missing SIP string.", SIPValidationFieldsEnum.NoSIPString, rawSIPMessage);
+                                SIPBadRequestInTraceEvent?.Invoke(localEndPoint, remoteEndPoint, "Missing SIP string.", SIPValidationFieldsEnum.NoSIPString, rawSIPMessage);
                                 return Task.FromResult(SocketError.InvalidArgument);
                             }
 
@@ -1087,8 +1087,8 @@ namespace SIPSorcery.SIP
                     sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, 0));
                     break;
                 //case SIPProtocolsEnum.tls:
-                    // TODO: Workout how to generate a random certificate.
-                    //sipChannel = new SIPTLSChannel(randomCertificate, new IPEndPoint(localAddress, 0));
+                // TODO: Workout how to generate a random certificate.
+                //sipChannel = new SIPTLSChannel(randomCertificate, new IPEndPoint(localAddress, 0));
                 //    break;
                 case SIPProtocolsEnum.udp:
                     sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, 0));

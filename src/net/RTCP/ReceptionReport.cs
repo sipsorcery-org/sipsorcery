@@ -276,7 +276,7 @@ namespace SIPSorcery.Net
         internal bool RtpPacketReceived(ushort seq, uint rtpTimestamp, uint arrivalTimestamp)
         {
             // Sequence number calculations and cycles as per RFC3550 Appendix A.1.
-            if(m_received == 0)
+            if (m_received == 0)
             {
                 init_seq(seq);
                 m_max_seq = (ushort)(seq - 1);
@@ -319,7 +319,7 @@ namespace SIPSorcery.Net
             uint jitter = m_jitter >> 4;
 
             uint delay = 0;
-            if(m_lastSenderReportReceivedAt != DateTime.MinValue)
+            if (m_lastSenderReportReceivedAt != DateTime.MinValue)
             {
                 delay = ntpTimestampNow - m_lastSenderReportTimestamp;
             }
@@ -418,4 +418,3 @@ namespace SIPSorcery.Net
         }
     }
 }
- 

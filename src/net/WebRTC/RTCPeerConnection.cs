@@ -18,8 +18,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -82,7 +80,7 @@ namespace SIPSorcery.Net
         //    get { return IceConnectionState == RTCIceConnectionState.connected; }
         //}
 
-        public IceSession IceSession { get; private set;}
+        public IceSession IceSession { get; private set; }
 
         public bool IsDtlsNegotiationComplete
         {
