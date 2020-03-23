@@ -41,11 +41,9 @@ namespace SIPSorcery.Sys
         private const string INTERNET_IPADDRESS = "1.1.1.1";    // IP address to use when getting default IP address from OS. No connection is established.
         private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on MacOS).
         private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;   // The amount of time to leave the result of a local IP address determination in the cache.
-        //private const int RECENT_PORTS_QUEUE_SIZE = 100;
 
         private static ILogger logger = Log.Logger;
 
-        private static ConcurrentQueue<int> _recentlyAllocatedPorts = new ConcurrentQueue<int>();
         private static Mutex _allocatePortsMutex = new Mutex();
 
         /// <summary>
@@ -56,6 +54,42 @@ namespace SIPSorcery.Sys
         /// TODO:  Clear this cache if the state of the local network interfaces change.
         /// </summary>
         private static ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>> m_localAddressTable = new ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>>();
+
+        /// <summary>
+        /// The list of IP addresses that this machine can use.
+        /// </summary>
+        public static List<IPAddress> LocalIPAddresses 
+        { 
+            get
+            {
+                // TODO: Reset if the local network interfaces change.
+                if (_localIPAddresses == null)
+                {
+                    _localIPAddresses = NetServices.GetAllLocalIPAddresses();
+                }
+
+                return _localIPAddresses;
+            }
+        }
+        private static List<IPAddress> _localIPAddresses = null;
+
+        /// <summary>
+        /// The local IP address this machine uses to communicate with the Internet.
+        /// </summary>
+        public static IPAddress InternetDefaultAddress 
+        { 
+            get
+            {
+                // TODO: Reset if the local network interfaces change.
+                if(_internetDefaultAddress == null)
+                {
+                    _internetDefaultAddress = GetLocalAddressForInternet();
+                }
+
+                return _internetDefaultAddress;
+            }
+        }
+        private static IPAddress _internetDefaultAddress = null;
 
         public static UdpClient CreateRandomUDPListener(IPAddress localAddress, out IPEndPoint localEndPoint)
         {
@@ -272,7 +306,7 @@ namespace SIPSorcery.Sys
         /// Gets the default local address for this machine for communicating with the Internet.
         /// </summary>
         /// <returns>The local address this machine should use for communicating with the Internet.</returns>
-        public static IPAddress GetLocalAddressForInternet()
+        private static IPAddress GetLocalAddressForInternet()
         {
             var internetAddress = IPAddress.Parse(INTERNET_IPADDRESS);
             return GetLocalAddressForRemote(internetAddress);
@@ -282,7 +316,7 @@ namespace SIPSorcery.Sys
         /// Gets all the IP addresses for all active interfaces on the machine.
         /// </summary>
         /// <returns>A list of all local IP addresses.</returns>
-        public static List<IPAddress> GetAllLocalIPAddresses()
+        private static List<IPAddress> GetAllLocalIPAddresses()
         {
             List<IPAddress> localAddresses = new List<IPAddress>();
 

@@ -578,21 +578,18 @@ namespace SIPSorcery.Net
         {
             try
             {
-                IPAddress localAddress = IPAddress.Loopback;
+                IPAddress localAddress = null;
 
                 if (AudioDestinationEndPoint != null)
                 {
                     localAddress = NetServices.GetLocalAddressForRemote(AudioDestinationEndPoint.Address);
                 }
-                //else if (options != null && options.RemoteSignallingAddress != null)
-                //{
-                //    localAddress = NetServices.GetLocalAddressForRemote(options.RemoteSignallingAddress);
-                //}
+                localAddress = localAddress ?? NetServices.InternetDefaultAddress;
 
                 SDP offerSdp = new SDP(IPAddress.Loopback);
                 offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
 
-                offerSdp.Connection = new SDPConnectionInformation(localAddress ?? IPAddress.Loopback);
+                offerSdp.Connection = new SDPConnectionInformation(localAddress);
 
                 // --- Audio announcement ---
                 if (AudioLocalTrack != null)
