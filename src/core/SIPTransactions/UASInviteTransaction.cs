@@ -42,6 +42,13 @@ namespace SIPSorcery.SIP
         public event SIPTransactionRequestReceivedDelegate NewCallReceived;
         public event SIPTransactionTimedOutDelegate UASInviteTransactionTimedOut;
 
+        /// <summary>
+        /// An application will be interested in getting a notification about the ACK request if it
+        /// is being used to carry the SDP answer. This occurs if the original INVITE did not contain an
+        /// SDP offer.
+        /// </summary>
+        public event SIPTransactionRequestReceivedDelegate OnAckReceived;
+
         public UASInviteTransaction(
             SIPTransport sipTransport,
             SIPRequest sipRequest,
@@ -77,8 +84,14 @@ namespace SIPSorcery.SIP
             TransactionFinalResponseReceived += UASInviteTransaction_TransactionResponseReceived;
             TransactionTimedOut += UASInviteTransaction_TransactionTimedOut;
             TransactionRemoved += UASInviteTransaction_TransactionRemoved;
+            OnAckRequestReceived += UASInviteTransaction_OnAckRequestReceived;
 
             sipTransport.AddTransaction(this);
+        }
+
+        private Task<SocketError> UASInviteTransaction_OnAckRequestReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
+        {
+            return OnAckReceived?.Invoke(localSIPEndPoint, remoteEndPoint, this, sipRequest);
         }
 
         private void UASInviteTransaction_TransactionRemoved(SIPTransaction transaction)
