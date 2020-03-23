@@ -90,8 +90,8 @@ namespace SIPSorcery.Media
         public event Action<Complex[]> OnAudioScopeSampleReady;
         public event Action<Complex[]> OnHoldAudioScopeSampleReady;
 
-        public RtpAudioSession(AddressFamily addressFamily, DummyAudioOptions audioOptions, SDPMediaFormatsEnum codec) :
-            base(addressFamily, false, false, false)
+        public RtpAudioSession(DummyAudioOptions audioOptions, SDPMediaFormatsEnum codec) :
+            base(false, false, false)
         {
             if (!(codec == SDPMediaFormatsEnum.PCMA || codec == SDPMediaFormatsEnum.PCMU || codec == SDPMediaFormatsEnum.G722))
             {

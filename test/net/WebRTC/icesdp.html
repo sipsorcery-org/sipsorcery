@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+	
+	var offerSDP = 
+`v=0
+o=- 0 0 IN IP4 127.0.0.1
+s=-
+t=0 0
+m=video 8888 RTP/SAVPF 100
+c=IN IP4 127.0.0.1
+a=candidate:1251003584 1 udp 1038230912 127.0.0.1 8888 typ host generation 0
+a=end-of-candidates
+a=ice-ufrag:EJYWWCUDJQLTXTNQRXEJ
+a=ice-pwd:SKYKPPYLTZOAVCLTGHDUODANRKSPOVQVKXJULOGG
+a=fingerprint:sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD
+a=setup:actpass
+a=sendonly
+a=rtcp-mux
+a=mid:video
+a=rtpmap:100 VP8/90000
+`;
+
+		function start() {
+		
+			console.log(offerSDP);
+	
+			videoControl = document.querySelector('#videoCtl');
+			
+			var pc = new RTCPeerConnection(null, null);
+
+			pc.ontrack = function (event) {
+				console.log('Remote track added.');
+				console.log(event);
+
+				if (event.streams && event.streams[0]) {
+					videoControl.srcObject = event.streams[0];
+				}
+				else {
+					if (!inboundStream) {
+						inboundStream = new MediaStream();
+						videoControl.srcObject = inboundStream;
+					}
+					inboundStream.addTrack(event.track);
+				}
+			}
+			
+			pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: offerSDP }));
+
+			// Create the answer SDP.
+			pc.createAnswer().then(function (answer) {
+				console.log("answer SDP: " + answer.sdp)
+				pc.setLocalDescription(answer);
+			});	
+		};			
+
+    </script>
+</head>
+<body>
+
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+	
+    <div>
+        <button type="button" class="btn btn-success" onclick="start();">Start</button>
+    </div>
+
+</body>

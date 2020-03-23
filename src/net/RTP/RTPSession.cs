@@ -265,7 +265,6 @@ namespace SIPSorcery.Net
 
         private static ILogger logger = Log.Logger;
 
-        private AddressFamily m_addressFamily;
         private bool m_isMediaMultiplexed = false;      // Indicates whether audio and video are multiplexed on a single RTP channel or not.
         private bool m_isRtcpMultiplexed = false;       // Indicates whether the RTP channel is multiplexing RTP and RTCP packets on the same port.
         private bool m_rtpEventInProgress;               // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
@@ -465,12 +464,10 @@ namespace SIPSorcery.Net
         /// RTP and RTCP packets. No communications or reporting will commence until the 
         /// is explicitly set as complete.</param>
         public RTPSession(
-            AddressFamily addrFamily,
             bool isMediaMultiplexed,
             bool isRtcpMultiplexed,
             bool isSecure)
         {
-            m_addressFamily = addrFamily;
             m_isMediaMultiplexed = isMediaMultiplexed;
             m_isRtcpMultiplexed = isRtcpMultiplexed;
             IsSecure = isSecure;

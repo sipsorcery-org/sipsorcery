@@ -22,15 +22,42 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
+    /// <summary>
+    /// An ICE session carries out connectivity checks with a remote peer in an
+    /// attempt to determine the best destination end point to communicate with the
+    /// remote party.
+    /// </summary>
+    /// <remarks>
+    /// From https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-4.2.5:
+    ///   "The transport address from the peer for the default destination
+    ///   is set to IPv4/IPv6 address values "0.0.0.0"/"::" and port value
+    ///   of "9".  This MUST NOT be considered as a ICE failure by the peer
+    ///   agent and the ICE processing MUST continue as usual."
+    /// </remarks>
     public class IceSession
     {
         private const int ICE_UFRAG_LENGTH = 4;
         private const int ICE_PASSWORD_LENGTH = 24;
+
+        private const int INITIAL_STUN_BINDING_PERIOD_MILLISECONDS = 1000;       // The period to send the initial STUN requests used to get an ICE candidates public IP address.
+        private const int INITIAL_STUN_BINDING_ATTEMPTS_LIMIT = 3;                // The maximum number of binding attempts to determine a local socket's public IP address before giving up.
+        private const int ICE_CONNECTED_NO_COMMUNICATIONS_TIMEOUT_SECONDS = 35; // If there are no messages received (STUN/RTP/RTCP) within this period the session will be closed.
+        private const int MAXIMUM_TURN_ALLOCATE_ATTEMPTS = 4;
+        private const int MAXIMUM_STUN_CONNECTION_ATTEMPTS = 5;
+
+        private const int STUN_CHECK_BASE_PERIOD_MILLISECONDS = 5000;
+        private const float STUN_CHECK_LOW_RANDOMISATION_FACTOR = 0.5F;
+        private const float STUN_CHECK_HIGH_RANDOMISATION_FACTOR = 1.5F;
+
+        //a=ice-options:trickle
+        //a=ice-options:ice2
+        //a=setup:actpass // ICE role
+
+        private RTPChannel _rtpChannel;
 
         public RTCIceGatheringState GatheringState { get; private set; }
 
@@ -39,7 +66,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// THe list of ICE candidates that have been gathered for this peer.
         /// </summary>
-        public List<RTCIceCandidate> Candidates { get; private set; }
+        public List<RTCIceCandidate> HostCandidates { get; private set; }
 
         /// <summary>
         /// The list of ICE candidates from the remote peer.
@@ -49,15 +76,17 @@ namespace SIPSorcery.Net
         public string LocalIceUser;
         public string LocalIcePassword;
 
-        public IceSession()
+        /// <summary>
+        /// Creates a new instance of an ICE session.
+        /// </summary>
+        /// <param name="rtpChannel">The RTP channel is the object managing the socket
+        /// doing the media sending and receiving. Its the same socket the ICE session
+        /// will need to initiate all the connectivity checks on.</param>
+        public IceSession(RTPChannel rtpChannel)
         {
             LocalIceUser = Crypto.GetRandomString(ICE_UFRAG_LENGTH);
             LocalIcePassword = Crypto.GetRandomString(ICE_PASSWORD_LENGTH);
-
-            Task.Run(() =>
-            {
-                var hostCandidates = GetHostCandidates();
-            });
+            GetHostCandidates();
         }
 
         public void Close()
@@ -76,9 +105,13 @@ namespace SIPSorcery.Net
         /// <returns>A list of "host" ICE candidates for the local machine.</returns>
         private List<RTCIceCandidate> GetHostCandidates()
         {
-            List<RTCIceCandidate> hostCandidates = new List<RTCIceCandidate>();
+            foreach(var localAddress in NetServices.LocalIPAddresses)
+            {
+                var hostCandidate = new RTCIceCandidate(localAddress, (ushort)_rtpChannel.RTPPort);
+                HostCandidates.Add(hostCandidate);
+            }
 
-            return hostCandidates;
+            return HostCandidates;
         }
 
         /// <summary>

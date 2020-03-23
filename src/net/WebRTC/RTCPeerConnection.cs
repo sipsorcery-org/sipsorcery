@@ -2,6 +2,12 @@
 // Filename: RTCPeerConnection.cs
 //
 // Description: Represents a WebRTC RTCPeerConnection.
+// Specification for including ICE candidates with a
+// Session Description:
+// -  "Session Description Protocol (SDP) Offer/Answer procedures for
+//    Interactive Connectivity Establishment(ICE)"
+//    https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39
+//
 //
 // History:
 // 04 Mar 2016	Aaron Clauson	Created.
@@ -17,7 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -38,16 +43,6 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTCPeerConnection : RTPSession //, IRTCPeerConnection
     {
-        private const int INITIAL_STUN_BINDING_PERIOD_MILLISECONDS = 1000;       // The period to send the initial STUN requests used to get an ICE candidates public IP address.
-        private const int INITIAL_STUN_BINDING_ATTEMPTS_LIMIT = 3;                // The maximum number of binding attempts to determine a local socket's public IP address before giving up.
-        private const int ICE_CONNECTED_NO_COMMUNICATIONS_TIMEOUT_SECONDS = 35; // If there are no messages received (STUN/RTP/RTCP) within this period the session will be closed.
-        private const int MAXIMUM_TURN_ALLOCATE_ATTEMPTS = 4;
-        private const int MAXIMUM_STUN_CONNECTION_ATTEMPTS = 5;
-
-        private const int STUN_CHECK_BASE_PERIOD_MILLISECONDS = 5000;
-        private const float STUN_CHECK_LOW_RANDOMISATION_FACTOR = 0.5F;
-        private const float STUN_CHECK_HIGH_RANDOMISATION_FACTOR = 1.5F;
-
         // SDP constants.
         private const string RTP_MEDIA_PROFILE = "RTP/SAVP";
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
@@ -58,7 +53,6 @@ namespace SIPSorcery.Net
         private static ILogger logger = Log.Logger;
 
         public string SessionID { get; private set; }
-        //public SDP SDP;
         public string SdpSessionID;
         public string LocalSdpSessionID;
         //public string LocalIceUser;
@@ -93,7 +87,6 @@ namespace SIPSorcery.Net
         /// </summary>
         public IPEndPoint RemoteEndPoint { get; private set; }
 
-        //RTPChannel _rtpChannel;
         private string _dtlsCertificateFingerprint;
         private IPEndPoint _turnServerEndPoint;
         private List<IPAddress> _offerAddresses;            // If set restricts which local IP addresses will be offered in ICE candidates.
@@ -113,7 +106,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="configuration">Optional. </param>
         public RTCPeerConnection(RTCConfiguration configuration) :
-            base(AddressFamily.InterNetwork, true, true, true)
+            base(true, true, true)
         {
             //_dtlsCertificateFingerprint = dtlsFingerprint;
             //_offerAddresses = offerAddresses;
@@ -121,8 +114,7 @@ namespace SIPSorcery.Net
 
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
-
-            IceSession = new IceSession();
+            IceSession = new IceSession(GetRtpChannel(SDPMediaTypesEnum.audio));
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
