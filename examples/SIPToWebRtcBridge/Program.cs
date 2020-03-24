@@ -126,7 +126,7 @@ namespace SIPSorcery
             var userAgent = new SIPUserAgent(sipTransport, null);
 
             // We're only answering SIP calls, not placing them.
-            userAgent.OnCallHungup += () =>
+            userAgent.OnCallHungup += (dialog) =>
             {
                 Log.LogInformation($"Call hungup by remote party.");
                 exitCts.Cancel();
