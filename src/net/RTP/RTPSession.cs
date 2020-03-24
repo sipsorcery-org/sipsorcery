@@ -474,6 +474,17 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Used for child classes that require a single RTP channel for all RTP (audio and video)
+        /// and RTCP communications.
+        /// </summary>
+        protected void addSingleTrack()
+        {
+            // We use audio as the media type when multiplexing.
+            CreateRtpChannel(SDPMediaTypesEnum.audio);
+            m_audioRtcpSession = CreateRtcpSession(SDPMediaTypesEnum.audio);
+        }
+
+        /// <summary>
         /// Adds a media track to this session. A media track represents an audio or video
         /// stream and can be a local (which means we're sending) or remote (which means
         /// we're receiving).

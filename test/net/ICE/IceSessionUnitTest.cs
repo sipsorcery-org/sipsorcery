@@ -10,6 +10,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -26,18 +27,49 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that creating a new IceSession instance works correctly. An IceSession
-        /// instance will immediately attempt to get some or all candidates.
+        /// Tests that creating a new IceSession instance works correctly.
         /// </summary>
-        [Fact(Skip ="WIP")]
+        [Fact]
         public void CreateInstanceUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var iceSession = new IceSession(null);
+            RTPSession rtpSession = new RTPSession(true, true, true);
+            
+            // Add a track to the session in order to initialise the RTPChannel.
+            MediaStreamTrack dummyTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            rtpSession.addTrack(dummyTrack);
+
+            var iceSession = new IceSession(rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio));
 
             Assert.NotNull(iceSession);
+        }
+
+        /// <summary>
+        /// Tests that creating a new IceSession instance and requesting the host candidates works correctly.
+        /// </summary>
+        [Fact]
+        public void GetHostCandidatesUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            RTPSession rtpSession = new RTPSession(true, true, true);
+
+            // Add a track to the session in order to initialise the RTPChannel.
+            MediaStreamTrack dummyTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            rtpSession.addTrack(dummyTrack);
+
+            var iceSession = new IceSession(rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio));
+
+            Assert.NotNull(iceSession);
+            Assert.NotEmpty(iceSession.HostCandidates);
+
+            foreach(var hostCandidate in iceSession.HostCandidates)
+            {
+                logger.LogDebug(hostCandidate.ToString());
+            }
         }
     }
 }

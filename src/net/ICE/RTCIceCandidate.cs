@@ -63,10 +63,30 @@ namespace SIPSorcery.Net
 
         public ushort sdpMLineIndex { get; private set; }
 
+        /// <summary>
+        /// Composed of 1 to 32 chars.  It is an
+        /// identifier that is equivalent for two candidates that are of the
+        /// same type, share the same base, and come from the same STUN
+        /// server.
+        /// </summary>
         public string foundation { get; private set; }
 
+        /// <summary>
+        ///  Is a positive integer between 1 and 256 (inclusive)
+        /// that identifies the specific component of the data stream for
+        /// which this is a candidate.
+        /// </summary>
         public RTCIceComponent component { get; private set; }
 
+        /// <summary>
+        /// A positive integer between 1 and (2**31 - 1) inclusive.
+        /// This priority will be used by ICE to determine the order of the
+        /// connectivity checks and the relative preference for candidates.
+        /// Higher-priority values give more priority over lower values.
+        /// </summary>
+        /// <remarks>
+        /// See specification at https://tools.ietf.org/html/rfc8445#section-5.1.2.
+        /// </remarks>
         public ulong priority { get; private set; }
 
         /// <summary>
@@ -134,9 +154,12 @@ namespace SIPSorcery.Net
         //}
 
         private RTCIceCandidate()
-        { }
+        {
+            component = RTCIceComponent.rtp;
+            foundation = Crypto.GetRandomInt(10).ToString();
+        }
 
-        public RTCIceCandidate(RTCIceCandidateInit init)
+        public RTCIceCandidate(RTCIceCandidateInit init) : this()
         {
             candidate = init.candidate;
             sdpMid = init.sdpMid;
@@ -144,13 +167,14 @@ namespace SIPSorcery.Net
             usernameFragment = init.usernameFragment;
         }
 
-        public RTCIceCandidate(IPAddress localAddress, ushort localPort)
+        public RTCIceCandidate(IPAddress localAddress, ushort localPort) : this()
         {
             NetworkAddress = localAddress.ToString();
             port = localPort;
         }
 
         public RTCIceCandidate(RTCIceProtocol candidateProtocol, IPAddress remoteAddress, ushort localPort, RTCIceCandidateType candidateType)
+             : this()
         {
             //Transport = transport;
             protocol = candidateProtocol;
@@ -192,22 +216,29 @@ namespace SIPSorcery.Net
 
             return candidate;
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// The specification regarding how an ICE candidate should be serialised in SDP is at
+        /// https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-5.1.   
+        /// </remarks>
+        /// <returns></returns>
         public override string ToString()
         {
             var candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ host generation 0",
-                Crypto.GetRandomInt(10).ToString(),
-                "1",
-                Crypto.GetRandomInt(10).ToString(),
-               NetworkAddress,
+                foundation,
+                component,
+                priority,
+                NetworkAddress,
                 port);
 
             if (StunRflxIPEndPoint != null)
             {
                 candidateStr += String.Format("{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0",
-                    Crypto.GetRandomInt(10).ToString(),
-                    "1",
-                    Crypto.GetRandomInt(10).ToString(),
+                    foundation,
+                    component,
+                    priority,
                     StunRflxIPEndPoint.Address,
                     StunRflxIPEndPoint.Port,
                     NetworkAddress,

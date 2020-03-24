@@ -22,6 +22,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -64,9 +67,21 @@ namespace SIPSorcery.Net
         public RTCPeerConnectionState ConnectionState { get; private set; }
 
         /// <summary>
-        /// THe list of ICE candidates that have been gathered for this peer.
+        /// The list of host ICE candidates that have been gathered for this peer.
         /// </summary>
-        public List<RTCIceCandidate> HostCandidates { get; private set; }
+        public List<RTCIceCandidate> HostCandidates 
+        { 
+            get
+            {
+                if(_hostCandidates == null)
+                {
+                    _hostCandidates = GetHostCandidates();
+                }
+
+                return _hostCandidates;
+            }
+        }
+        private List<RTCIceCandidate> _hostCandidates;
 
         /// <summary>
         /// The list of ICE candidates from the remote peer.
@@ -84,9 +99,10 @@ namespace SIPSorcery.Net
         /// will need to initiate all the connectivity checks on.</param>
         public IceSession(RTPChannel rtpChannel)
         {
+            _rtpChannel = rtpChannel;
+
             LocalIceUser = Crypto.GetRandomString(ICE_UFRAG_LENGTH);
             LocalIcePassword = Crypto.GetRandomString(ICE_PASSWORD_LENGTH);
-            GetHostCandidates();
         }
 
         public void Close()
@@ -105,13 +121,16 @@ namespace SIPSorcery.Net
         /// <returns>A list of "host" ICE candidates for the local machine.</returns>
         private List<RTCIceCandidate> GetHostCandidates()
         {
-            foreach(var localAddress in NetServices.LocalIPAddresses)
+            List<RTCIceCandidate> hostCandidates = new List<RTCIceCandidate>();
+
+            foreach(var localAddress in NetServices.LocalIPAddresses.Where(x => 
+                !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal))
             {
                 var hostCandidate = new RTCIceCandidate(localAddress, (ushort)_rtpChannel.RTPPort);
-                HostCandidates.Add(hostCandidate);
+                hostCandidates.Add(hostCandidate);
             }
 
-            return HostCandidates;
+            return hostCandidates;
         }
 
         /// <summary>

@@ -114,6 +114,10 @@ namespace SIPSorcery.Net
 
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
+
+            // Request the underlying RTP session to create the RTP channel.
+            addSingleTrack();
+
             IceSession = new IceSession(GetRtpChannel(SDPMediaTypesEnum.audio));
 
             OnRtpClosed += Close;
