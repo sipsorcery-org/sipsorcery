@@ -367,7 +367,14 @@ namespace SIPSorcery
         {
             try
             {
-                if (sipRequest.Method == SIPMethodsEnum.INVITE)
+                if (sipRequest.Header.From != null &&
+                sipRequest.Header.From.FromTag != null &&
+                sipRequest.Header.To != null &&
+                sipRequest.Header.To.ToTag != null)
+                {
+                    // This is an in-dialog request that will be handled directly by a user agent instance.
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
                     Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
 
@@ -378,6 +385,7 @@ namespace SIPSorcery
 
                     var uas = ua.AcceptCall(sipRequest);
                     var rtpSession = CreateRtpSession(ua);
+                    rtpSession.SetDestination(SDPMediaTypesEnum.audio, remoteEndPoint.GetIPEndPoint(), null);    
                     await ua.Answer(uas, rtpSession);
 
                     if(ua.IsCallActive)
