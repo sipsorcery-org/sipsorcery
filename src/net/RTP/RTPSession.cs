@@ -500,7 +500,7 @@ namespace SIPSorcery.Net
         {
             try
             {
-                IPAddress localAddress = IPAddress.Any;
+                IPAddress localAddress = NetServices.GetLocalAddressForInternet();
 
                 if (AudioDestinationEndPoint != null)
                 {
