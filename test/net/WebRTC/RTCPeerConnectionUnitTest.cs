@@ -35,7 +35,7 @@ namespace SIPSorcery.Net.UnitTests
         /// const offer = await pc.createOffer();
         /// console.log(offer);
         /// </code>
-        [Fact]
+        [Fact(Skip ="WIP")]
         public async void GenerateLocalOfferUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -61,7 +61,7 @@ namespace SIPSorcery.Net.UnitTests
         /// const offer = await pc.createOffer();
         /// console.log(offer);
         /// </code>
-        [Fact]
+        [Fact(Skip = "WIP")]
         public async void GenerateLocalOfferWithAudioTrackUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);

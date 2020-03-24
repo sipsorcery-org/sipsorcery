@@ -38,24 +38,24 @@ namespace WebRTCServer
 {
     public class SDPExchange : WebSocketBehavior
     {
-        public WebRtcSession WebRtcSession;
+        public RTCPeerConnection PeerConnection;
 
-        public event Func<WebSocketContext, Task<WebRtcSession>> WebSocketOpened;
-        public event Action<WebRtcSession, string> SDPAnswerReceived;
+        public event Func<WebSocketContext, Task<RTCPeerConnection>> WebSocketOpened;
+        public event Func<RTCPeerConnection, string, Task> SDPAnswerReceived;
 
         public SDPExchange()
         { }
 
-        protected override void OnMessage(MessageEventArgs e)
+        protected override async void OnMessage(MessageEventArgs e)
         {
-            SDPAnswerReceived(WebRtcSession, e.Data);
+            await SDPAnswerReceived(PeerConnection, e.Data);
             this.Close();
         }
 
         protected override async void OnOpen()
         {
             base.OnOpen();
-            WebRtcSession = await WebSocketOpened(this.Context);
+            PeerConnection = await WebSocketOpened(this.Context);
         }
     }
 
@@ -129,57 +129,57 @@ namespace WebRTCServer
             exitMre.WaitOne();
         }
 
-        private static async Task<WebRtcSession> SendSDPOffer(WebSocketContext context)
+        private static async Task<RTCPeerConnection> SendSDPOffer(WebSocketContext context)
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            var webRtcSession = new WebRtcSession(
-                AddressFamily.InterNetwork,
-                DTLS_CERTIFICATE_FINGERPRINT,
-                null,
-                null);
+            var peerConnection = new RTCPeerConnection(null);
+                //AddressFamily.InterNetwork,
+                //DTLS_CERTIFICATE_FINGERPRINT,
+                //null,
+                //null);
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
-            webRtcSession.addTrack(videoTrack);
+            peerConnection.addTrack(videoTrack);
 
-            webRtcSession.OnReceiveReport += RtpSession_OnReceiveReport;
-            webRtcSession.OnSendReport += RtpSession_OnSendReport;
+            peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
+            peerConnection.OnSendReport += RtpSession_OnSendReport;
 
-            webRtcSession.OnClose += (reason) =>
+            peerConnection.OnClose += (reason) =>
             {
                 logger.LogDebug($"WebRtcSession was closed with reason {reason}");
-                OnTestPatternSampleReady -= webRtcSession.SendMedia;
-                webRtcSession.OnReceiveReport -= RtpSession_OnReceiveReport;
-                webRtcSession.OnSendReport -= RtpSession_OnSendReport;
+                OnTestPatternSampleReady -= peerConnection.SendMedia;
+                peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
+                peerConnection.OnSendReport -= RtpSession_OnSendReport;
             };
 
-            var offerSdp = await webRtcSession.createOffer(null);
-            webRtcSession.setLocalDescription(new RTCSessionDescription { sdp = offerSdp, type = RTCSdpType.offer });
+            var offerSdp = await peerConnection.createOffer(null);
+            await peerConnection.setLocalDescription(offerSdp);
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
             logger.LogDebug(offerSdp.ToString());
 
             context.WebSocket.Send(offerSdp.ToString());
 
-            if (DoDtlsHandshake(webRtcSession))
+            if (DoDtlsHandshake(peerConnection))
             {
-                OnTestPatternSampleReady += webRtcSession.SendMedia;
+                OnTestPatternSampleReady += peerConnection.SendMedia;
             }
             else
             {
-                webRtcSession.Close("dtls handshake failed.");
+                peerConnection.Close("dtls handshake failed.");
             }
 
-            return webRtcSession;
+            return peerConnection;
         }
 
-        private static void SDPAnswerReceived(WebRtcSession webRtcSession, string sdpAnswer)
+        private static async Task SDPAnswerReceived(RTCPeerConnection peerConnection, string sdpAnswer)
         {
             try
             {
                 logger.LogDebug("Answer SDP: " + sdpAnswer);
-                var answerSdp = SDP.ParseSDPDescription(sdpAnswer);
-                webRtcSession.setRemoteDescription(new RTCSessionDescription { sdp = answerSdp, type = RTCSdpType.answer }); 
+                //var answerSdp = SDP.ParseSDPDescription(sdpAnswer);
+                await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = sdpAnswer, type = RTCSdpType.answer }); 
             }
             catch (Exception excp)
             {
@@ -191,7 +191,7 @@ namespace WebRTCServer
         /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
         /// </summary>
         /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
-        private static bool DoDtlsHandshake(WebRtcSession webRtcSession)
+        private static bool DoDtlsHandshake(RTCPeerConnection peerConnection)
         {
             logger.LogDebug("DoDtlsHandshake started.");
 
@@ -205,9 +205,9 @@ namespace WebRTCServer
             }
 
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-            webRtcSession.OnClose += (reason) => dtls.Shutdown();
+            peerConnection.OnClose += (reason) => dtls.Shutdown();
             
-            int res = dtls.DoHandshakeAsServer((ulong)webRtcSession.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
+            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
 
             logger.LogDebug("DtlsContext initialisation result=" + res);
 
@@ -218,7 +218,7 @@ namespace WebRTCServer
                 var srtpSendContext = new Srtp(dtls, false);
                 var srtpReceiveContext = new Srtp(dtls, true);
 
-                webRtcSession.SetSecurityContext(
+                peerConnection.SetSecurityContext(
                     srtpSendContext.ProtectRTP,
                     srtpReceiveContext.UnprotectRTP,
                     srtpSendContext.ProtectRTCP,

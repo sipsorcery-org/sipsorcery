@@ -459,7 +459,7 @@ namespace SIPSorcery
                 ua.ClientCallAnswered += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
                 var audioOptions = new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.Silence };
-                var rtpAudioSession = new RtpAudioSession(AddressFamily.InterNetwork, audioOptions, SDPMediaFormatsEnum.PCMU);
+                var rtpAudioSession = new RtpAudioSession(audioOptions, SDPMediaFormatsEnum.PCMU);
 
                 var result = await ua.Call(dst.ToString(), null, null, rtpAudioSession);
                 await rtpAudioSession.Start();

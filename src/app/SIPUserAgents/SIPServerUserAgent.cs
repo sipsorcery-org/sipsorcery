@@ -45,6 +45,7 @@ namespace SIPSorcery.SIP.App
         private string m_adminMemberId;
         private string m_sipUsername;
         private string m_sipDomain;
+        private SIPDialogueTransferModesEnum m_transferMode;
 
         public bool IsB2B { get { return false; } }
         public bool IsInvite
@@ -111,7 +112,17 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public SDP OfferSDP
         {
-            get { return SDP.ParseSDPDescription(m_uasTransaction.TransactionRequest.Body); }
+            get 
+            {
+                if (!String.IsNullOrEmpty(m_uasTransaction.TransactionRequest.Body))
+                {
+                    return SDP.ParseSDPDescription(m_uasTransaction.TransactionRequest.Body);
+                }
+                else
+                {
+                    return null;
+                }
+            }
         }
 
         /// <summary>
@@ -135,6 +146,14 @@ namespace SIPSorcery.SIP.App
         /// The underlying invite transaction has changed state.
         /// </summary>
         public event SIPUASStateChangedDelegate UASStateChanged;
+
+        /// <summary>
+        /// Gets fired when the call successfully negotiates an SDP offer/answer and creates a new dialog.
+        /// Typically this can occur at the same time as the transaction final response is sent. But in cases
+        /// where the initial INVITE does not contain an SDP offer the dialog will not be created until the 
+        /// ACK is received.
+        /// </summary>
+        public event Action<SIPDialogue> OnDialogueCreated;
 
         public SIPServerUserAgent(
             SIPTransport sipTransport,
@@ -358,25 +377,27 @@ namespace SIPSorcery.SIP.App
             }
         }
 
-        public SIPDialogue Answer(string contentType, string body, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode)
+        public SIPDialogue Answer(string contentType, string body, SIPDialogueTransferModesEnum transferMode)
         {
-            return Answer(contentType, body, null, answeredDialogue, transferMode);
+            return Answer(contentType, body, null, transferMode);
         }
 
-        public SIPDialogue Answer(string contentType, string body, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode, string[] customHeaders)
+        public SIPDialogue Answer(string contentType, string body, SIPDialogueTransferModesEnum transferMode, string[] customHeaders)
         {
-            return Answer(contentType, body, null, answeredDialogue, transferMode, customHeaders);
+            return Answer(contentType, body, null, transferMode, customHeaders);
         }
 
-        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode)
+        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogueTransferModesEnum transferMode)
         {
-            return Answer(contentType, body, toTag, answeredDialogue, transferMode, null);
+            return Answer(contentType, body, toTag, transferMode, null);
         }
 
-        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogue answeredDialogue, SIPDialogueTransferModesEnum transferMode, string[] customHeaders)
+        public SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogueTransferModesEnum transferMode, string[] customHeaders)
         {
             try
             {
+                m_transferMode = transferMode;
+
                 if (m_uasTransaction.TransactionFinalResponse != null)
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.AppServer, SIPMonitorEventTypesEnum.DialPlan, "UAS Answer was called on an already answered call, ignoring.", m_owner));
@@ -407,12 +428,29 @@ namespace SIPSorcery.SIP.App
                         }
                     }
 
+                    if(OfferSDP == null)
+                    {
+                        // The INVITE request did not contain an SDP offer. We need to send the offer in the response and
+                        // then get the answer from the ACK.
+                        m_uasTransaction.OnAckReceived += OnAckAnswerReceived;
+                    }
+                   
                     m_uasTransaction.SendFinalResponse(okResponse);
 
-                    SIPDialogue = new SIPDialogue(m_uasTransaction, m_owner, m_adminMemberId);
-                    SIPDialogue.TransferMode = transferMode;
+                    if (OfferSDP != null)
+                    {
+                        SIPDialogue = new SIPDialogue(m_uasTransaction, m_owner, m_adminMemberId);
+                        SIPDialogue.TransferMode = transferMode;
 
-                    return SIPDialogue;
+                        OnDialogueCreated?.Invoke(SIPDialogue);
+
+                        return SIPDialogue;
+                    }
+                    else
+                    {
+                        // The dialogue cannot be created until the ACK is received.
+                        return null;
+                    }
                 }
             }
             catch (Exception excp)
@@ -420,6 +458,16 @@ namespace SIPSorcery.SIP.App
                 logger.LogError("Exception SIPServerUserAgent Answer. " + excp.Message);
                 throw;
             }
+        }
+
+        private Task<SocketError> OnAckAnswerReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
+        { 
+            SIPDialogue = new SIPDialogue(m_uasTransaction, m_owner, m_adminMemberId);
+            SIPDialogue.TransferMode = m_transferMode;
+
+            OnDialogueCreated?.Invoke(SIPDialogue);
+
+            return Task.FromResult(SocketError.Success);
         }
 
         public void AnswerNonInvite(SIPResponseStatusCodesEnum answerStatus, string reasonPhrase, string[] customHeaders, string contentType, string body)

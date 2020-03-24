@@ -311,7 +311,7 @@ namespace SIPSorcery
                 audioOptions.SourceFile = (codec == SDPMediaFormatsEnum.PCMU) ? MUSIC_FILE_PCMU : MUSIC_FILE_G722;
             };
 
-            var rtpAudioSession = new RtpAudioSession(AddressFamily.InterNetwork, audioOptions, codec);
+            var rtpAudioSession = new RtpAudioSession(audioOptions, codec);
 
             // Wire up the event handler for RTP packets received from the remote party.
             rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(ua, type, rtp);

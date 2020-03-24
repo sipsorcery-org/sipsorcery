@@ -29,13 +29,13 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that creating a new IceSession instance works correctly. An IceSession
         /// instance will immediately attempt to get some or all candidates.
         /// </summary>
-        [Fact]
+        [Fact(Skip ="WIP")]
         public void CreateInstanceUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var iceSession = new IceSession();
+            var iceSession = new IceSession(null);
 
             Assert.NotNull(iceSession);
         }

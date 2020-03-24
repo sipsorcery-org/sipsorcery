@@ -178,12 +178,12 @@ namespace SIPSorcery.SIP
             RemoteUserField = uasInviteTransaction.TransactionFinalResponse.Header.From.FromUserField;
             RemoteTag = uasInviteTransaction.TransactionFinalResponse.Header.From.FromTag;
             CSeq = uasInviteTransaction.TransactionRequest.Header.CSeq;
-            CDRId = uasInviteTransaction.CDR.CDRId;
+            CDRId = uasInviteTransaction.CDR != null ? uasInviteTransaction.CDR.CDRId : Guid.Empty;
             Owner = owner;
             AdminMemberId = adminMemberId;
             ContentType = uasInviteTransaction.TransactionFinalResponse.Header.ContentType;
             SDP = uasInviteTransaction.TransactionFinalResponse.Body;
-            RemoteSDP = uasInviteTransaction.TransactionRequest.Body;
+            RemoteSDP = uasInviteTransaction.TransactionRequest.Body ?? uasInviteTransaction.AckRequest.Body;
             Inserted = DateTimeOffset.UtcNow;
             Direction = SIPCallDirection.In;
 
@@ -224,7 +224,7 @@ namespace SIPSorcery.SIP
             RemoteUserField = uacInviteTransaction.TransactionFinalResponse.Header.To.ToUserField;
             RemoteTag = uacInviteTransaction.TransactionFinalResponse.Header.To.ToTag;
             CSeq = uacInviteTransaction.TransactionRequest.Header.CSeq;
-            CDRId = uacInviteTransaction.CDR.CDRId;
+            CDRId = (uacInviteTransaction.CDR != null) ? uacInviteTransaction.CDR.CDRId : Guid.Empty;
             Owner = owner;
             AdminMemberId = adminMemberId;
             ContentType = uacInviteTransaction.TransactionRequest.Header.ContentType;

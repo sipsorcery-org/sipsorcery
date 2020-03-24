@@ -41,6 +41,7 @@ namespace SIPSorcery.SIP.App
         private static readonly string m_sdpContentType = SDP.SDP_MIME_CONTENTTYPE;
         private static readonly string m_sipReferContentType = SIPMIMETypes.REFER_CONTENT_TYPE;
         private static string m_userAgent = SIPConstants.SIP_USERAGENT_STRING;
+        private static int WAIT_DIALOG_TIMEOUT = SIPTimings.T2;
 
         private static ILogger logger = Log.Logger;
 
@@ -429,17 +430,49 @@ namespace SIPSorcery.SIP.App
                     }
                 };
 
-                SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
-                await MediaSession.setRemoteDescription(new RTCSessionDescriptionInit { sdp = remoteSdp.ToString(), type = RTCSdpType.offer }).ConfigureAwait(false);
+                string sdp = null;
 
-                var sdpAnswerInit = await MediaSession.createAnswer(null).ConfigureAwait(false);
-                await MediaSession.setLocalDescription(sdpAnswerInit).ConfigureAwait(false);
+                if (!String.IsNullOrEmpty(sipRequest.Body))
+                {
+                    SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
+                    await MediaSession.setRemoteDescription(new RTCSessionDescriptionInit { sdp = remoteSdp.ToString(), type = RTCSdpType.offer }).ConfigureAwait(false);
+
+                    var sdpAnswerInit = await MediaSession.createAnswer(null).ConfigureAwait(false);
+                    await MediaSession.setLocalDescription(sdpAnswerInit).ConfigureAwait(false);
+
+                    sdp = sdpAnswerInit.sdp;
+                }
+                else
+                {
+                    // No SDP offer was included in the INVITE request need to wait for the ACK.
+                    var sdpOfferInit = await MediaSession.createOffer(null).ConfigureAwait(false);
+                    await MediaSession.setLocalDescription(sdpOfferInit).ConfigureAwait(false);
+
+                    sdp = sdpOfferInit.sdp;
+                }
 
                 await MediaSession.Start().ConfigureAwait(false);
 
+                TaskCompletionSource<SIPDialogue> dialogueCreatedTcs = new TaskCompletionSource<SIPDialogue>(TaskCreationOptions.RunContinuationsAsynchronously);
+
                 m_uas = uas;
-                m_uas.Answer(m_sdpContentType, sdpAnswerInit.sdp, null, SIPDialogueTransferModesEnum.Default, customHeaders);
-                Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+                m_uas.OnDialogueCreated += (dialogue) => dialogueCreatedTcs.TrySetResult(dialogue);
+                m_uas.Answer(m_sdpContentType, sdp, null, SIPDialogueTransferModesEnum.Default, customHeaders);
+
+                await Task.WhenAny(dialogueCreatedTcs.Task, Task.Delay(WAIT_DIALOG_TIMEOUT)).ConfigureAwait(false);
+
+                if (Dialogue != null)
+                {
+                    Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+                }
+                else
+                {
+                    logger.LogWarning("The attempt to answer a call failed as the dialog was not created. The likely cause is the ACK not being received in time.");
+
+                    MediaSession.Close("dialog creation failed");
+                    Hangup();
+                }
+
             }
         }
 
@@ -854,7 +887,7 @@ namespace SIPSorcery.SIP.App
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                MediaSession.setRemoteDescription(new RTCSessionDescriptionInit { sdp = sipResponse.Body, type = RTCSdpType.answer });
+                await MediaSession.setRemoteDescription(new RTCSessionDescriptionInit { sdp = sipResponse.Body, type = RTCSdpType.answer }).ConfigureAwait(false);
                 await MediaSession.Start().ConfigureAwait(false);
 
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;

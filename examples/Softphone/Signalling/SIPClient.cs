@@ -303,7 +303,7 @@ namespace SIPSorcery.SoftPhone
             if (m_userAgent.IsCallActive)
             {
                 m_userAgent.Hangup();
-                CallFinished();
+                CallFinished(null);
             }
         }
 
@@ -366,7 +366,7 @@ namespace SIPSorcery.SoftPhone
         private void CallFailed(ISIPClientUserAgent uac, string errorMessage)
         {
             StatusMessage(this, "Call failed: " + errorMessage + ".");
-            CallFinished();
+            CallFinished(null);
         }
 
         /// <summary>
@@ -388,7 +388,7 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Cleans up after a SIP call has completely finished.
         /// </summary>
-        private void CallFinished()
+        private void CallFinished(SIPDialogue dialogue)
         {
             m_pendingIncomingCall = null;
             CallEnded(this);
@@ -400,7 +400,7 @@ namespace SIPSorcery.SoftPhone
         private void IncomingCallCancelled(ISIPServerUserAgent uas)
         {
             //SetText(m_signallingStatus, "incoming call cancelled for: " + uas.CallDestination + ".");
-            CallFinished();
+            CallFinished(null);
         }
 
         /// <summary>
