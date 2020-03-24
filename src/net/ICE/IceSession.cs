@@ -62,9 +62,9 @@ namespace SIPSorcery.Net
 
         private RTPChannel _rtpChannel;
 
-        public RTCIceGatheringState GatheringState { get; private set; }
+        public RTCIceGatheringState GatheringState { get; private set; } = RTCIceGatheringState.@new;
 
-        public RTCPeerConnectionState ConnectionState { get; private set; }
+        public RTCPeerConnectionState ConnectionState { get; private set; } = RTCPeerConnectionState.@new;
 
         /// <summary>
         /// The list of host ICE candidates that have been gathered for this peer.
