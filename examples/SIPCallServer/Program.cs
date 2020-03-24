@@ -292,7 +292,6 @@ namespace SIPSorcery
             int audioChoice = 0;
             int.TryParse(dst, out audioChoice);
 
-
             if(audioChoice >= 10)
             {
                 codec = SDPMediaFormatsEnum.G722;

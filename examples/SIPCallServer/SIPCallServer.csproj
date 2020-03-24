@@ -19,6 +19,7 @@
     <None Update="media\Macroform_-_Simplicity.ulaw">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+
   </ItemGroup>
 
 </Project>

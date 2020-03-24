@@ -61,7 +61,7 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP WebRTC RTP SDP STUN SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version 4.0.31-pre: WIP for ICE.
+	<PackageReleaseNotes>- Version: 4.0.31-pre: Bug fix setting inactive address when call request with no SDP offer.
 - Version 4.0.30-pre: Bug fix for SIP User Agent not handling INVITE request with no SDP offer.
 - Version 4.0.29-pre: Added AudioScope sound wave visualisation.
 - Version 4.0.16-4.0.28-pre: Big rework of RTP and Audio/Video integration.
