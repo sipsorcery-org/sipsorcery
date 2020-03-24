@@ -41,6 +41,7 @@ namespace SIPSorcery.SoftPhone
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.SIPServer;
+        private bool m_useAudioScope = SIPSoftPhoneState.UseAudioScope;
 
         private SIPTransportManager _sipTransportManager;
         private List<SIPClient> _sipClients;
@@ -59,6 +60,14 @@ namespace SIPSorcery.SoftPhone
         public SoftPhone()
         {
             InitializeComponent();
+
+            if(!m_useAudioScope)
+            {
+                _audioScope0Border.Visibility = Visibility.Collapsed;
+                //OpenGLDraw = "AudioScopeDraw0" OpenGLInitialized = "AudioScopeInitialized0"
+                AudioScope0.IsEnabled = false;
+                AudioScope0.Visibility = Visibility.Hidden;
+            }
 
             // Do some UI initialization.
             ResetToCallStartState(null);
@@ -162,7 +171,7 @@ namespace SIPSorcery.SoftPhone
                     _client0Video.Visibility = Visibility.Collapsed;
                     SetStatusText(m_signallingStatus, "Ready");
 
-                    if (_sipClients?.Count > 0 && sipClient == _sipClients[0] && sipClient.MediaSession != null)
+                    if (m_useAudioScope && _sipClients?.Count > 0 && sipClient == _sipClients[0] && sipClient.MediaSession != null)
                     {
                         sipClient.MediaSession.OnAudioScopeSampleReady -= _audioScope0.ProcessSample;
                     }
@@ -270,7 +279,10 @@ namespace SIPSorcery.SoftPhone
                         _client0Video.Visibility = Visibility.Visible;
                     }
 
-                    _sipClients[0].MediaSession.OnAudioScopeSampleReady += _audioScope0.ProcessSample;
+                    if (m_useAudioScope)
+                    {
+                        _sipClients[0].MediaSession.OnAudioScopeSampleReady += _audioScope0.ProcessSample;
+                    }
                 });
             }
             else if (client == _sipClients[1])
@@ -711,10 +723,13 @@ namespace SIPSorcery.SoftPhone
 
         private void AudioScopeInitialized0(object sender, OpenGLEventArgs args)
         {
-            _audioScope0 = new AudioScope.AudioScope();
-            _audioScope0.InitAudio(AudioScope.AudioSourceEnum.External);
-            _audioScopeGL0 = new AudioScope.AudioScopeOpenGL(_audioScope0);
-            _audioScopeGL0.Initialise(args.OpenGL);
+            if (m_useAudioScope)
+            {
+                _audioScope0 = new AudioScope.AudioScope();
+                _audioScope0.InitAudio(AudioScope.AudioSourceEnum.External);
+                _audioScopeGL0 = new AudioScope.AudioScopeOpenGL(_audioScope0);
+                _audioScopeGL0.Initialise(args.OpenGL);
+            }
         }
 
         private void AudioScopeInitialized1(object sender, OpenGLEventArgs args)
@@ -722,13 +737,16 @@ namespace SIPSorcery.SoftPhone
 
         private void AudioScopeDraw0(object sender, OpenGLEventArgs args)
         {
-            if (_sipClients?.Count > 0 && _sipClients[0].IsCallActive)
+            if (m_useAudioScope)
             {
-                int width = Convert.ToInt32(this.AudioScope0.Width);
-                int height = Convert.ToInt32(this.AudioScope0.Height);
+                if (_sipClients?.Count > 0 && _sipClients[0].IsCallActive)
+                {
+                    int width = Convert.ToInt32(this.AudioScope0.Width);
+                    int height = Convert.ToInt32(this.AudioScope0.Height);
 
-                OpenGL gl = args.OpenGL;
-                _audioScopeGL0.Draw(gl, width, height);
+                    OpenGL gl = args.OpenGL;
+                    _audioScopeGL0.Draw(gl, width, height);
+                }
             }
         }
 
