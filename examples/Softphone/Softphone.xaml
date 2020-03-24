@@ -12,7 +12,7 @@
             <Grid Margin="2" VerticalAlignment="Stretch" x:Name="m_callVideoGrid" HorizontalAlignment="Stretch">
                 <Grid x:Name="_client0VideoCanvas" MouseLeftButtonUp="OnClickVideo">
                     <Image x:Name="_client0Video" MinWidth="128" MinHeight="96" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed" MaxWidth="490" MaxHeight="277"/>
-                    <Border x:Name="circularBorder" CornerRadius="40" Width="42" Height="42" Margin="10,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                    <Border x:Name="_audioScope0Border" CornerRadius="40" Width="42" Height="42" Margin="10,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom">
                         <Border.OpacityMask>
                             <VisualBrush>
                                 <VisualBrush.Visual>

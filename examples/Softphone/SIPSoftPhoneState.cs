@@ -40,6 +40,7 @@ namespace SIPSorcery.SoftPhone
         public static readonly string SIPPassword = ConfigurationManager.AppSettings["SIPPassword"];    // Get the SIP password from the config file.
         public static readonly string SIPServer = ConfigurationManager.AppSettings["SIPServer"];        // Get the SIP server from the config file.
         public static readonly string SIPFromName = ConfigurationManager.AppSettings["SIPFromName"];    // Get the SIP From display name from the config file.
+        public static readonly bool UseAudioScope = Boolean.Parse(ConfigurationManager.AppSettings["UseAudioScope"]);
 
         public static IPAddress PublicIPAddress;
 
