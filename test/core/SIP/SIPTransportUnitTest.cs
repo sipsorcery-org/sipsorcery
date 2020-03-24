@@ -122,6 +122,47 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("Test complete.");
         }
 
+        [Fact]
+        public void IPv4WSLoopbackSendReceiveTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            ManualResetEventSlim serverReadyEvent = new ManualResetEventSlim(false);
+            CancellationTokenSource cancelServer = new CancellationTokenSource();
+            TaskCompletionSource<bool> testComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var serverChannel = new SIPWebSocketChannel(IPAddress.Loopback, 9000);
+            var clientChannel = new SIPClientWebSocketChannel();
+
+            var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
+            var clientTask = Task.Run(async () => {
+                await RunClient(
+                    clientChannel,
+                    serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.ws, new IPEndPoint(IPAddress.Loopback, 0))),
+                    testComplete,
+                    cancelServer,
+                    serverReadyEvent);
+            });
+
+            serverReadyEvent.Wait();
+            if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
+            {
+                logger.LogWarning($"Tasks timed out");
+            }
+
+            if (testComplete.Task.IsCompleted == false)
+            {
+                // The client did not set the completed signal. This means the delay task must have completed and hence the test failed.
+                testComplete.SetResult(false);
+            }
+
+            Assert.True(testComplete.Task.Result);
+            cancelServer.Cancel();
+
+            logger.LogDebug("Test complete.");
+        }
+
         /// <summary>
         /// Tests that an OPTIONS request can be sent and received on two separate TCP IPv6 sockets using the loopback address.
         /// </summary>
@@ -503,6 +544,12 @@ namespace SIPSorcery.SIP.UnitTests
                     if (sipRequest.Method == SIPMethodsEnum.OPTIONS)
                     {
                         SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                        optionsResponse.Header.UnknownHeaders.Add("X-Header-1:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+                        optionsResponse.Header.UnknownHeaders.Add("X-Header-2:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+                        optionsResponse.Header.UnknownHeaders.Add("X-Header-3:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+                        optionsResponse.Header.UnknownHeaders.Add("X-Header-4:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+                        optionsResponse.Header.UnknownHeaders.Add("X-Header-5:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+                        optionsResponse.Header.UnknownHeaders.Add("X-Header-6:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
                         logger.LogDebug(optionsResponse.ToString());
                         return serverSIPTransport.SendResponseAsync(optionsResponse);
                     }
@@ -562,6 +609,13 @@ namespace SIPSorcery.SIP.UnitTests
 
                     if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
                     {
+                        //rj2: confirm that we have received the whole SIP-Message by checking for the last x-header (issue #175, websocket fragmented send/receive)
+                        if(!sipResponse.Header.UnknownHeaders.Contains("X-Header-6:12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"))
+                        {
+                            logger.LogError("SIPResponse was not received completely");
+                            tcs.SetException(new Exception("SIPResponse was not received completely"));
+                            return Task.FromResult(1);
+                        }
                         // Got the expected response, set the signal.
                         if (!tcs.TrySetResult(true))
                         {
