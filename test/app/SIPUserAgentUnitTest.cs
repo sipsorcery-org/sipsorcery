@@ -246,7 +246,11 @@ namespace SIPSorcery.SIP.App.UnitTests
 "Content-Type: application/sdp" + m_CRLF +
 "Session-Expires: 1800" + m_CRLF + m_CRLF;
 
-            var uas = userAgent.AcceptCall(SIPRequest.ParseSIPRequest(inviteReqStr));
+            SIPEndPoint dummySipEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Loopback, 0));
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummySipEndPoint, dummySipEndPoint);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+
+            var uas = userAgent.AcceptCall(inviteReq);
             var mediaSession = CreateMediaSession();
             await userAgent.Answer(uas, mediaSession);
 
