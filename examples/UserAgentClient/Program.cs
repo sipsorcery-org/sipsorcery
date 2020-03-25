@@ -68,8 +68,8 @@ namespace SIPSorcery
             var dstAddress = lookupResult.GetSIPEndPoint().Address;
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var audioOptions = new AudioOptions 
-            { 
+            var audioOptions = new AudioOptions
+            {
                 AudioSource = AudioSourcesEnum.Microphone,
                 AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.PCMU }
             };
@@ -91,7 +91,7 @@ namespace SIPSorcery
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                    rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.answer, sdp = SDP.ParseSDPDescription(resp.Body) } );
+                    rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.answer, sdp = SDP.ParseSDPDescription(resp.Body) });
                     rtpSession.Start();
                 }
                 else

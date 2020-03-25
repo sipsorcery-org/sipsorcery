@@ -20,9 +20,9 @@ using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Serilog;
+using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Media;
 
 namespace demo
 {
@@ -43,7 +43,7 @@ namespace demo
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
             Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
-          
+
             Console.WriteLine("press any key to exit...");
             Console.Read();
 

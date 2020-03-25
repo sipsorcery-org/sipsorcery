@@ -18,7 +18,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -65,10 +64,8 @@ namespace SIPSorcery
         private static string DEFAULT_CALL_DESTINATION = "sip:*61@192.168.11.48";
         private static string DEFAULT_TRANSFER_DESTINATION = "sip:*61@192.168.11.48";
         private static int SIP_LISTEN_PORT = 5060;
-        private const int DTMF_EVENT_PAYLOAD_ID = 101;
-        private const int SEND_SILENCE_PERIOD_MS = 20;      // Period in milliseconds to send silence packets.
-        private static readonly byte PCMA_SILENCE_BYTE_ZERO = 0x55;
-        private static readonly byte PCMA_SILENCE_BYTE_ONE = 0xD5;
+        private const string MUSIC_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
+        private const string MUSIC_FILE_G722 = "media/Macroform_-_Simplicity.g722";
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -79,6 +76,8 @@ namespace SIPSorcery
         {
             new SIPRegisterAccount( "softphonesample", "password", "sipsorcery.com", 120)
         };
+
+        private static SDPMediaFormatsEnum DEFAULT_CODEC = SDPMediaFormatsEnum.PCMA;
 
         private static SIPTransport _sipTransport;
 
@@ -91,8 +90,6 @@ namespace SIPSorcery
         /// Keeps track of the SIP account registrations.
         /// </summary>
         private static ConcurrentDictionary<string, SIPRegistrationUserAgent> _registrations = new ConcurrentDictionary<string, SIPRegistrationUserAgent>();
-
-        private static Timer _sendSilenceTimer = null;
 
         static async Task Main()
         {
@@ -157,12 +154,13 @@ namespace SIPSorcery
                         ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
                         ua.OnCallHungup += OnHangup;
 
-                        var rtpSession = CreateRtpSession(ua);
+                        var rtpSession = CreateRtpSession(ua, null);
                         var callResult = await ua.Call(DEFAULT_CALL_DESTINATION, null, null, rtpSession);
 
                         if (callResult)
                         {
-                            _calls.TryAdd(ua.Dialogue.CallId, ua);                           
+                            await rtpSession.Start();
+                            _calls.TryAdd(ua.Dialogue.CallId, ua);
                         }
                     }
                     else if (keyProps.KeyChar == 'd')
@@ -202,7 +200,7 @@ namespace SIPSorcery
                         }
                         else
                         {
-                            foreach(var call in _calls)
+                            foreach (var call in _calls)
                             {
                                 Log.LogInformation($"Hanging up call {call.Key}.");
                                 call.Value.Hangup();
@@ -252,7 +250,7 @@ namespace SIPSorcery
                             Log.LogInformation($"Transferring call {newestCall.Key} to {DEFAULT_TRANSFER_DESTINATION}.");
                             bool transferResult = await newestCall.Value.BlindTransfer(SIPURI.ParseSIPURI(DEFAULT_TRANSFER_DESTINATION), TimeSpan.FromSeconds(3), exit);
 
-                            if(transferResult)
+                            if (transferResult)
                             {
                                 Log.LogInformation($"Transferring succeeded.");
 
@@ -288,53 +286,37 @@ namespace SIPSorcery
         /// </summary>
         /// <param name="ua">The suer agent the RTP session is being created for.</param>
         /// <returns>A new RTP session object.</returns>
-        private static RtpAudioSession CreateRtpSession(SIPUserAgent ua)
+        private static RtpAudioSession CreateRtpSession(SIPUserAgent ua, string dst)
         {
-            var rtpAudioSession = new RtpAudioSession(AddressFamily.InterNetwork);
+            SDPMediaFormatsEnum codec = DEFAULT_CODEC;
 
-            // Add the required audio capabilities to the RTP session. These will 
-            // automatically get used when creating SDP offers/answers.
-            var pcma = new SDPMediaFormat(SDPMediaFormatsEnum.PCMA);
+            int audioChoice = 0;
+            int.TryParse(dst, out audioChoice);
 
-            // RTP event support.
-            int clockRate = pcma.GetClockRate();
-            SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
-            rtpEventFormat.SetFormatAttribute($"{RTPSession.TELEPHONE_EVENT_ATTRIBUTE}/{clockRate}");
-            rtpEventFormat.SetFormatParameterAttribute("0-16");
+            if (audioChoice >= 10)
+            {
+                codec = SDPMediaFormatsEnum.G722;
+                audioChoice = audioChoice - 10;
+            }
 
-            var audioCapabilities = new List<SDPMediaFormat> { pcma, rtpEventFormat };
+            var audioSource = DummyAudioSourcesEnum.Silence;
+            if (!Enum.TryParse<DummyAudioSourcesEnum>(dst, out audioSource))
+            {
+                audioSource = DummyAudioSourcesEnum.Silence;
+            }
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, audioCapabilities);
-            rtpAudioSession.addTrack(audioTrack);
+            var audioOptions = new DummyAudioOptions { AudioSource = audioSource };
+            if (audioSource == DummyAudioSourcesEnum.Music)
+            {
+                audioOptions.SourceFile = (codec == SDPMediaFormatsEnum.PCMU) ? MUSIC_FILE_PCMU : MUSIC_FILE_G722;
+            };
+
+            var rtpAudioSession = new RtpAudioSession(audioOptions, codec);
 
             // Wire up the event handler for RTP packets received from the remote party.
             rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(ua, type, rtp);
 
-            if(_sendSilenceTimer == null)
-            {
-                _sendSilenceTimer = new Timer(SendSilence, null, 0, SEND_SILENCE_PERIOD_MS);
-            }
-
             return rtpAudioSession;
-        }
-
-        private static void SendSilence(object state)
-        {
-            uint bufferSize = (uint)SEND_SILENCE_PERIOD_MS;
-
-            byte[] sample = new byte[bufferSize / 2];
-            int sampleIndex = 0;
-
-            for (int index = 0; index < bufferSize; index += 2)
-            {
-                sample[sampleIndex] = PCMA_SILENCE_BYTE_ZERO;
-                sample[sampleIndex + 1] = PCMA_SILENCE_BYTE_ONE;
-            }
-
-            foreach (var ua in _calls.Values)
-            {
-                ua.MediaSession.SendMedia(SDPMediaTypesEnum.audio, bufferSize, sample);
-            }
         }
 
         /// <summary>
@@ -343,7 +325,7 @@ namespace SIPSorcery
         /// <param name="ua">The SIP user agent associated with the RTP session.</param>
         /// <param name="type">The media type of the RTP packet (audio or video).</param>
         /// <param name="rtpPacket">The RTP packet received from the remote party.</param>
-        private static void  OnRtpPacketReceived(SIPUserAgent ua, SDPMediaTypesEnum type, RTPPacket rtpPacket)
+        private static void OnRtpPacketReceived(SIPUserAgent ua, SDPMediaTypesEnum type, RTPPacket rtpPacket)
         {
             // The raw audio data is available in rtpPacket.Payload.
         }
@@ -384,13 +366,13 @@ namespace SIPSorcery
                     ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
 
                     var uas = ua.AcceptCall(sipRequest);
-                    var rtpSession = CreateRtpSession(ua);
+                    var rtpSession = CreateRtpSession(ua, sipRequest.URI.User);
                     await ua.Answer(uas, rtpSession);
 
-                    if(ua.IsCallActive)
-                    {                      
+                    if (ua.IsCallActive)
+                    {
+                        await rtpSession.Start();
                         _calls.TryAdd(ua.Dialogue.CallId, ua);
-                        Timer sendSilenceTimer = new Timer(SendSilence, ua, 0, SEND_SILENCE_PERIOD_MS);
                     }
                 }
                 else if (sipRequest.Method == SIPMethodsEnum.BYE)
@@ -431,11 +413,6 @@ namespace SIPSorcery
                     _calls.TryRemove(callID, out _);
                 }
             }
-
-            if(_calls.Count() == 0)
-            {
-                _sendSilenceTimer.Dispose();
-            }
         }
 
         /// <summary>
@@ -445,7 +422,7 @@ namespace SIPSorcery
         /// <param name="sipAccounts">The list of SIP accounts to create a registration for.</param>
         private static void StartRegistrations(SIPTransport sipTransport, List<SIPRegisterAccount> sipAccounts)
         {
-            foreach(var sipAccount in sipAccounts)
+            foreach (var sipAccount in sipAccounts)
             {
                 var regUserAgent = new SIPRegistrationUserAgent(sipTransport, sipAccount.Username, sipAccount.Password, sipAccount.Domain, sipAccount.Expiry);
 
