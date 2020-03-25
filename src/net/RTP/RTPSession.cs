@@ -31,6 +31,12 @@ namespace SIPSorcery.Net
 {
     public delegate int ProtectRtpPacket(byte[] payload, int length, out int outputBufferLength);
 
+    public class MediaFormatMistachException : ApplicationException
+    {
+        public MediaFormatMistachException(string message) : base(message)
+        { }
+    }
+
     public enum RTCSdpType
     {
         answer = 0,
@@ -42,7 +48,7 @@ namespace SIPSorcery.Net
     public class RTCOfferOptions
     {
         /// <summary>
-        /// Optional. The remote address that was used for signalling during the conenction
+        /// Optional. The remote address that was used for signalling during the connection
         /// set up. For non-ICE RTP sessions this can be sued to determine the best local
         /// IP address to use in an SDP offer/answer.
         /// </summary>
@@ -75,7 +81,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The media capabilities supported by this track.
         /// </summary>
-        public List<SDPMediaFormat> Capabilties { get; private set; }
+        public List<SDPMediaFormat> Capabilties { get; internal set; }
 
         /// <summary>
         /// Holds the SDP and flow state of the track.
@@ -500,51 +506,59 @@ namespace SIPSorcery.Net
         {
             try
             {
-                IPAddress localAddress = NetServices.GetLocalAddressForInternet();
-
-                if (AudioDestinationEndPoint != null)
+                if (AudioLocalTrack == null && VideoLocalTrack == null)
                 {
-                    localAddress = NetServices.GetLocalAddressForRemote(AudioDestinationEndPoint.Address);
+                    logger.LogWarning("No local media tracks available for create offer.");
+                    return null;
                 }
-                else if (options != null && options.RemoteSignallingAddress != null)
+                else
                 {
-                    localAddress = NetServices.GetLocalAddressForRemote(options.RemoteSignallingAddress);
+                    IPAddress localAddress = NetServices.GetLocalAddressForInternet();
+
+                    if (AudioDestinationEndPoint != null)
+                    {
+                        localAddress = NetServices.GetLocalAddressForRemote(AudioDestinationEndPoint.Address);
+                    }
+                    else if (options != null && options.RemoteSignallingAddress != null)
+                    {
+                        localAddress = NetServices.GetLocalAddressForRemote(options.RemoteSignallingAddress);
+                    }
+
+                    SDP offerSdp = new SDP(IPAddress.Loopback);
+                    offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
+
+                    offerSdp.Connection = new SDPConnectionInformation(localAddress);
+
+                    // --- Audio announcement ---
+                    if (AudioLocalTrack != null)
+                    {
+                        SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
+                            SDPMediaTypesEnum.audio,
+                           m_rtpChannels[SDPMediaTypesEnum.audio].RTPPort,
+                           AudioLocalTrack.Capabilties);
+
+                        audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
+                        audioAnnouncement.MediaStreamStatus = AudioLocalTrack.Transceiver.Direction;
+
+                        offerSdp.Media.Add(audioAnnouncement);
+                    }
+
+                    // --- Video announcement ---
+                    if (VideoLocalTrack != null)
+                    {
+                        SDPMediaAnnouncement videoAnnouncement = new SDPMediaAnnouncement(
+                            SDPMediaTypesEnum.video,
+                            m_rtpChannels[SDPMediaTypesEnum.video].RTPPort,
+                           VideoLocalTrack.Capabilties);
+
+                        videoAnnouncement.Transport = RTP_MEDIA_PROFILE;
+                        videoAnnouncement.MediaStreamStatus = VideoLocalTrack.Transceiver.Direction;
+
+                        offerSdp.Media.Add(videoAnnouncement);
+                    }
+
+                    return Task.FromResult(offerSdp);
                 }
-
-                SDP offerSdp = new SDP(IPAddress.Loopback);
-                offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
-
-                offerSdp.Connection = new SDPConnectionInformation(localAddress);
-
-                // --- Audio announcement ---
-                if (AudioLocalTrack != null)
-                {
-                    SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
-                        SDPMediaTypesEnum.audio,
-                       m_rtpChannels[SDPMediaTypesEnum.audio].RTPPort,
-                       AudioLocalTrack.Capabilties);
-
-                    audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
-                    audioAnnouncement.MediaStreamStatus = AudioLocalTrack.Transceiver.Direction;
-
-                    offerSdp.Media.Add(audioAnnouncement);
-                }
-
-                // --- Video announcement ---
-                if (VideoLocalTrack != null)
-                {
-                    SDPMediaAnnouncement videoAnnouncement = new SDPMediaAnnouncement(
-                        SDPMediaTypesEnum.video,
-                        m_rtpChannels[SDPMediaTypesEnum.video].RTPPort,
-                       VideoLocalTrack.Capabilties);
-
-                    videoAnnouncement.Transport = RTP_MEDIA_PROFILE;
-                    videoAnnouncement.MediaStreamStatus = VideoLocalTrack.Transceiver.Direction;
-
-                    offerSdp.Media.Add(videoAnnouncement);
-                }
-
-                return Task.FromResult(offerSdp);
             }
             catch (Exception excp)
             {
@@ -566,7 +580,48 @@ namespace SIPSorcery.Net
             }
             else
             {
-                // TODO: the answer needs to take into account the remote SDP.
+                // Adjust the local audio tracks to only include compatible capabilities.
+                if (remoteDescription.sdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
+                {
+                    if (HasAudio)
+                    {
+                        var remoteAudioFormats = remoteDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaFormats;
+                        var audioCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilties, remoteAudioFormats);
+
+                        // Set the capabilities on our audio track to the ones the remote party can use.
+                        AudioLocalTrack.Capabilties = audioCompatibleFormats;
+                    }
+                }
+                else
+                {
+                    // Remote party doesn't support audio remove our local track if we have one.
+                    if (AudioLocalTrack != null)
+                    {
+                        m_tracks.Remove(AudioLocalTrack);
+                    }
+                }
+
+                // Adjust the local video tracks to only include compatible capabilities.
+                if (remoteDescription.sdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
+                {
+                    if (HasVideo)
+                    {
+                        var remoteVideoFormats = remoteDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats;
+                        var videoCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilties, remoteVideoFormats);
+
+                        // Set the capabilities on our video track to the ones the remote party can use.
+                        VideoLocalTrack.Capabilties = videoCompatibleFormats;
+                    }
+                }
+                else
+                {
+                    // Remote party doesn't support video remove our local track if we have one.
+                    if (VideoLocalTrack != null)
+                    {
+                        m_tracks.Remove(VideoLocalTrack);
+                    }
+                }
+
                 return createOffer(null);
             }
         }
