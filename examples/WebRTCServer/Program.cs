@@ -421,7 +421,7 @@ namespace WebRTCServer
             //cliHandshake.Debug = true;
             var cliTask = Task.Run(() => cliHandshake.DoHandshakeAsClient((ulong)cliSock.Handle, (short)testAddr.AddressFamily, testAddr.GetAddressBytes(), (ushort)svrPort));
 
-            bool result = Task.WaitAll(new Task[] { svrTask, cliTask}, TEST_DTLS_HANDSHAKE_TIMEOUT);
+            bool result = Task.WaitAll(new Task[] { svrTask, cliTask }, TEST_DTLS_HANDSHAKE_TIMEOUT);
 
             cliHandshake.Shutdown();
             svrHandshake.Shutdown();

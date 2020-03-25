@@ -158,11 +158,11 @@ namespace SIPSorcery
                             int taskNum = Interlocked.Increment(ref taskCount);
                             bool success = await RunTask(options, taskNum);
 
-                            if(success)
+                            if (success)
                             {
                                 Interlocked.Increment(ref successCount);
                             }
-                            else if(options.BreakOnFail)
+                            else if (options.BreakOnFail)
                             {
                                 cts.Cancel();
                                 break;

@@ -43,7 +43,7 @@ namespace SIPSorcery
         private const string AUDIO_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
-        
+
         private static string _currentDir;
 
         static void Main()
