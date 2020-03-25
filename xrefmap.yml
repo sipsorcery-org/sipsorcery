@@ -7,6 +7,25 @@ references:
   commentId: N:SIPSorcery.Media
   fullName: SIPSorcery.Media
   nameWithType: SIPSorcery.Media
+- uid: SIPSorcery.Media.ALawEncoder
+  name: ALawEncoder
+  href: api/SIPSorcery.Media.ALawEncoder.html
+  commentId: T:SIPSorcery.Media.ALawEncoder
+  fullName: SIPSorcery.Media.ALawEncoder
+  nameWithType: ALawEncoder
+- uid: SIPSorcery.Media.ALawEncoder.LinearToALawSample(System.Int16)
+  name: LinearToALawSample(Int16)
+  href: api/SIPSorcery.Media.ALawEncoder.html#SIPSorcery_Media_ALawEncoder_LinearToALawSample_System_Int16_
+  commentId: M:SIPSorcery.Media.ALawEncoder.LinearToALawSample(System.Int16)
+  fullName: SIPSorcery.Media.ALawEncoder.LinearToALawSample(System.Int16)
+  nameWithType: ALawEncoder.LinearToALawSample(Int16)
+- uid: SIPSorcery.Media.ALawEncoder.LinearToALawSample*
+  name: LinearToALawSample
+  href: api/SIPSorcery.Media.ALawEncoder.html#SIPSorcery_Media_ALawEncoder_LinearToALawSample_
+  commentId: Overload:SIPSorcery.Media.ALawEncoder.LinearToALawSample
+  isSpec: "True"
+  fullName: SIPSorcery.Media.ALawEncoder.LinearToALawSample
+  nameWithType: ALawEncoder.LinearToALawSample
 - uid: SIPSorcery.Media.Band
   name: Band
   href: api/SIPSorcery.Media.Band.html
@@ -103,12 +122,12 @@ references:
   commentId: F:SIPSorcery.Media.DummyAudioOptions.AudioSource
   fullName: SIPSorcery.Media.DummyAudioOptions.AudioSource
   nameWithType: DummyAudioOptions.AudioSource
-- uid: SIPSorcery.Media.DummyAudioOptions.SourceFile
-  name: SourceFile
-  href: api/SIPSorcery.Media.DummyAudioOptions.html#SIPSorcery_Media_DummyAudioOptions_SourceFile
-  commentId: F:SIPSorcery.Media.DummyAudioOptions.SourceFile
-  fullName: SIPSorcery.Media.DummyAudioOptions.SourceFile
-  nameWithType: DummyAudioOptions.SourceFile
+- uid: SIPSorcery.Media.DummyAudioOptions.SourceFiles
+  name: SourceFiles
+  href: api/SIPSorcery.Media.DummyAudioOptions.html#SIPSorcery_Media_DummyAudioOptions_SourceFiles
+  commentId: F:SIPSorcery.Media.DummyAudioOptions.SourceFiles
+  fullName: SIPSorcery.Media.DummyAudioOptions.SourceFiles
+  nameWithType: DummyAudioOptions.SourceFiles
 - uid: SIPSorcery.Media.DummyAudioSourcesEnum
   name: DummyAudioSourcesEnum
   href: api/SIPSorcery.Media.DummyAudioSourcesEnum.html
@@ -387,12 +406,15 @@ references:
   commentId: T:SIPSorcery.Media.RtpAudioSession
   fullName: SIPSorcery.Media.RtpAudioSession
   nameWithType: RtpAudioSession
-- uid: SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.DummyAudioOptions,SIPSorcery.Net.SDPMediaFormatsEnum)
-  name: RtpAudioSession(DummyAudioOptions, SDPMediaFormatsEnum)
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession__ctor_SIPSorcery_Media_DummyAudioOptions_SIPSorcery_Net_SDPMediaFormatsEnum_
-  commentId: M:SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.DummyAudioOptions,SIPSorcery.Net.SDPMediaFormatsEnum)
-  fullName: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(SIPSorcery.Media.DummyAudioOptions, SIPSorcery.Net.SDPMediaFormatsEnum)
-  nameWithType: RtpAudioSession.RtpAudioSession(DummyAudioOptions, SDPMediaFormatsEnum)
+- uid: SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.DummyAudioOptions,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum})
+  name: RtpAudioSession(DummyAudioOptions, List<SDPMediaFormatsEnum>)
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession__ctor_SIPSorcery_Media_DummyAudioOptions_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormatsEnum__
+  commentId: M:SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.DummyAudioOptions,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum})
+  name.vb: RtpAudioSession(DummyAudioOptions, List(Of SDPMediaFormatsEnum))
+  fullName: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(SIPSorcery.Media.DummyAudioOptions, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormatsEnum>)
+  fullName.vb: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(SIPSorcery.Media.DummyAudioOptions, System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormatsEnum))
+  nameWithType: RtpAudioSession.RtpAudioSession(DummyAudioOptions, List<SDPMediaFormatsEnum>)
+  nameWithType.vb: RtpAudioSession.RtpAudioSession(DummyAudioOptions, List(Of SDPMediaFormatsEnum))
 - uid: SIPSorcery.Media.RtpAudioSession.#ctor*
   name: RtpAudioSession
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession__ctor_
@@ -1564,6 +1586,25 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.ICMPListener.Stop
   nameWithType: ICMPListener.Stop
+- uid: SIPSorcery.Net.MediaFormatMistachException
+  name: MediaFormatMistachException
+  href: api/SIPSorcery.Net.MediaFormatMistachException.html
+  commentId: T:SIPSorcery.Net.MediaFormatMistachException
+  fullName: SIPSorcery.Net.MediaFormatMistachException
+  nameWithType: MediaFormatMistachException
+- uid: SIPSorcery.Net.MediaFormatMistachException.#ctor(System.String)
+  name: MediaFormatMistachException(String)
+  href: api/SIPSorcery.Net.MediaFormatMistachException.html#SIPSorcery_Net_MediaFormatMistachException__ctor_System_String_
+  commentId: M:SIPSorcery.Net.MediaFormatMistachException.#ctor(System.String)
+  fullName: SIPSorcery.Net.MediaFormatMistachException.MediaFormatMistachException(System.String)
+  nameWithType: MediaFormatMistachException.MediaFormatMistachException(String)
+- uid: SIPSorcery.Net.MediaFormatMistachException.#ctor*
+  name: MediaFormatMistachException
+  href: api/SIPSorcery.Net.MediaFormatMistachException.html#SIPSorcery_Net_MediaFormatMistachException__ctor_
+  commentId: Overload:SIPSorcery.Net.MediaFormatMistachException.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.MediaFormatMistachException.MediaFormatMistachException
+  nameWithType: MediaFormatMistachException.MediaFormatMistachException
 - uid: SIPSorcery.Net.MediaStreamStatusEnum
   name: MediaStreamStatusEnum
   href: api/SIPSorcery.Net.MediaStreamStatusEnum.html
@@ -6051,6 +6092,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPMediaFormat.GetClockRate
   nameWithType: SDPMediaFormat.GetClockRate
+- uid: SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats(System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat},System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat})
+  name: GetCompatibleFormats(List<SDPMediaFormat>, List<SDPMediaFormat>)
+  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_GetCompatibleFormats_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__
+  commentId: M:SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats(System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat},System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat})
+  name.vb: GetCompatibleFormats(List(Of SDPMediaFormat), List(Of SDPMediaFormat))
+  fullName: SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats(System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormat>, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormat>)
+  fullName.vb: SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats(System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormat), System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormat))
+  nameWithType: SDPMediaFormat.GetCompatibleFormats(List<SDPMediaFormat>, List<SDPMediaFormat>)
+  nameWithType.vb: SDPMediaFormat.GetCompatibleFormats(List(Of SDPMediaFormat), List(Of SDPMediaFormat))
+- uid: SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats*
+  name: GetCompatibleFormats
+  href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_GetCompatibleFormats_
+  commentId: Overload:SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPMediaFormat.GetCompatibleFormats
+  nameWithType: SDPMediaFormat.GetCompatibleFormats
 - uid: SIPSorcery.Net.SDPMediaFormat.GetFormatCodec(System.String)
   name: GetFormatCodec(String)
   href: api/SIPSorcery.Net.SDPMediaFormat.html#SIPSorcery_Net_SDPMediaFormat_GetFormatCodec_System_String_
