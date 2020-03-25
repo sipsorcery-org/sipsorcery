@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
@@ -211,6 +212,18 @@ namespace SIPSorcery.UnitTests
 
         public Task Start()
         {
+            var audioLocalAnn = (localDescription != null) ? localDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
+            var audioRemoteAnn = (remoteDescription != null) ? remoteDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
+
+            if (audioLocalAnn == null || audioLocalAnn.MediaFormats.Count == 0)
+            {
+                throw new ApplicationException("Cannot start audio session without a local audio track being available.");
+            }
+            else if (audioRemoteAnn == null || audioRemoteAnn.MediaFormats.Count == 0)
+            {
+                throw new ApplicationException("Cannot start audio session without a remote audio track being available.");
+            }
+
             return Task.CompletedTask;
         }
     }

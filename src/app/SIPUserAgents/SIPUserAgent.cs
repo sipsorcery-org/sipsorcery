@@ -479,8 +479,6 @@ namespace SIPSorcery.SIP.App
                     }
                 }
 
-                await MediaSession.Start().ConfigureAwait(false);
-
                 m_uas = uas;
 
                 // In cases where the initial INVITE did not contain an SDP offer the action sequence is:
@@ -504,6 +502,8 @@ namespace SIPSorcery.SIP.App
                     }
 
                     Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+
+                    await MediaSession.Start().ConfigureAwait(false);
                 }
                 else
                 {
