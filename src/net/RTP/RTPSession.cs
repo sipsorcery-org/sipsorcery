@@ -583,7 +583,7 @@ namespace SIPSorcery.Net
                 // Adjust the local audio tracks to only include compatible capabilities.
                 if (remoteDescription.sdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 {
-                    if (HasAudio)
+                    if (AudioLocalTrack != null)
                     {
                         var remoteAudioFormats = remoteDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaFormats;
                         var audioCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilties, remoteAudioFormats);
@@ -604,7 +604,7 @@ namespace SIPSorcery.Net
                 // Adjust the local video tracks to only include compatible capabilities.
                 if (remoteDescription.sdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
                 {
-                    if (HasVideo)
+                    if (VideoLocalTrack != null)
                     {
                         var remoteVideoFormats = remoteDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaFormats;
                         var videoCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilties, remoteVideoFormats);
