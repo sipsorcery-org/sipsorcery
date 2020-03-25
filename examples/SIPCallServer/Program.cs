@@ -385,16 +385,11 @@ namespace SIPSorcery
 
                     var uas = ua.AcceptCall(sipRequest);
                     var rtpSession = CreateRtpSession(ua);
-                    rtpSession.SetDestination(SDPMediaTypesEnum.audio, remoteEndPoint.GetIPEndPoint(), null);    
                     await ua.Answer(uas, rtpSession);
 
                     if(ua.IsCallActive)
                     {                      
-                        var remoteSDP = SDP.ParseSDPDescription(ua.Dialogue.RemoteSDP);
-                        rtpSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSDP, type = RTCSdpType.answer });
-
                         _calls.TryAdd(ua.Dialogue.CallId, ua);
-
                         Timer sendSilenceTimer = new Timer(SendSilence, ua, 0, SEND_SILENCE_PERIOD_MS);
                     }
                 }

@@ -433,6 +433,7 @@ namespace SIPSorcery.SIP.App
 
                 if (!String.IsNullOrEmpty(sipRequest.Body))
                 {
+                    // The SDP offer was included in the INVITE request.
                     SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
                     MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSdp, type = RTCSdpType.offer });
 
@@ -444,7 +445,8 @@ namespace SIPSorcery.SIP.App
                 else
                 {
                     // No SDP offer was included in the INVITE request need to wait for the ACK.
-                    var sdpOffer = await MediaSession.createOffer(null).ConfigureAwait(false);
+                    RTCOfferOptions offerOptions = new RTCOfferOptions { RemoteSignallingAddress = sipRequest.RemoteSIPEndPoint.GetIPEndPoint().Address };
+                    var sdpOffer = await MediaSession.createOffer(offerOptions).ConfigureAwait(false);
                     MediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdpOffer, type = RTCSdpType.offer });
 
                     sdp = sdpOffer.ToString();
@@ -454,8 +456,11 @@ namespace SIPSorcery.SIP.App
 
                 m_uas = uas;
 
+                // In cases where the initial INVITE did not contain an SDP offer the action sequence is:
+                // - INVITE with no SDP offer received,
+                // - Reply with OK and an SDP offer,
+                // - Wait for ACK with SDP answer.
                 TaskCompletionSource<SIPDialogue> dialogueCreatedTcs = new TaskCompletionSource<SIPDialogue>(TaskCreationOptions.RunContinuationsAsynchronously);
-
                 m_uas.OnDialogueCreated += (dialogue) => dialogueCreatedTcs.TrySetResult(dialogue);
 
                 m_uas.Answer(m_sdpContentType, sdp, null, SIPDialogueTransferModesEnum.Default, customHeaders);
@@ -464,6 +469,13 @@ namespace SIPSorcery.SIP.App
 
                 if (Dialogue != null)
                 {
+                    if (MediaSession.remoteDescription == null || MediaSession.remoteDescription.sdp == null)
+                    {
+                        // If the initial INVITE did not contain an offer then the remote description will not yet be set.
+                        var remoteSDP = SDP.ParseSDPDescription(Dialogue.RemoteSDP);
+                        MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSDP, type = RTCSdpType.answer });
+                    }
+
                     Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
                 }
                 else
