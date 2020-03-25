@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -22,6 +23,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests
@@ -302,7 +304,6 @@ namespace SIPSorcery.SIP.UnitTests
                 cancelServer, 
                 serverReadyEvent); });
 
-            serverReadyEvent.Wait(); 
             if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
                 logger.LogWarning($"Tasks timed out");
@@ -351,7 +352,6 @@ namespace SIPSorcery.SIP.UnitTests
                 cancelServer, 
                 serverReadyEvent); });
 
-            serverReadyEvent.Wait();
             if(!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
                 logger.LogWarning($"Tasks timed out");
@@ -482,11 +482,118 @@ namespace SIPSorcery.SIP.UnitTests
         }
 
         /// <summary>
+        /// Tests that an OPTIONS request can be sent on a client web socket SIP channel and get
+        /// received on server web socket SIP channel.
+        /// </summary>
+        [Fact]
+        public async void WebSocketLoopbackSendReceiveTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var serverChannel = new SIPWebSocketChannel(IPAddress.Loopback, 9000);
+            var clientChannel = new SIPClientWebSocketChannel();
+            var sipTransport = new SIPTransport();
+            sipTransport.AddSIPChannel(new List<SIPChannel> { serverChannel, clientChannel });
+
+            ManualResetEvent gotResponseMre = new ManualResetEvent(false);
+
+            sipTransport.SIPTransportRequestReceived += (localSIPEndPoint, remoteEndPoint, sipRequest) =>
+            {
+                SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                return sipTransport.SendResponseAsync(optionsResponse);
+            };
+
+            SIPResponse rtnResponse = null;
+
+            sipTransport.SIPTransportResponseReceived += (localSIPEndPoint, remoteEndPoint, sipResponse) =>
+            {
+                rtnResponse = sipResponse;
+                gotResponseMre.Set();
+                return Task.CompletedTask;
+            };
+
+            var serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, clientChannel.ListeningSIPEndPoint);
+            var optionsRequest = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
+            await sipTransport.SendRequestAsync(optionsRequest);
+
+            gotResponseMre.WaitOne(TRANSPORT_TEST_TIMEOUT, false);
+
+            Assert.NotNull(rtnResponse);
+
+            sipTransport.Shutdown();
+
+            logger.LogDebug("Test complete.");
+        }
+
+        /// <summary>
+        /// Tests that large request and responses can be correctly sent and received via the web socket
+        /// SIP channels. Web sockets have special rules about detecting the end of sends.
+        /// </summary>
+        [Fact]
+        public async void WebSocketLoopbackLargeSendReceiveTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var serverChannel = new SIPWebSocketChannel(IPAddress.Loopback, 9001);
+            var clientChannel = new SIPClientWebSocketChannel();
+            var sipTransport = new SIPTransport();
+            sipTransport.AddSIPChannel(new List<SIPChannel> { serverChannel, clientChannel });
+
+            ManualResetEvent gotResponseMre = new ManualResetEvent(false);
+
+            SIPRequest receivedRequest = null;
+            SIPResponse receivedResponse = null;
+
+            sipTransport.SIPTransportRequestReceived += (localSIPEndPoint, remoteEndPoint, sipRequest) =>
+            {
+                receivedRequest = sipRequest;
+
+                SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
+                optionsResponse.Header.UnknownHeaders.Add($"X-Response-Random:{Crypto.GetRandomString(1000)}");
+                optionsResponse.Header.UnknownHeaders.Add("X-Response-Final: TheEnd");
+
+                return sipTransport.SendResponseAsync(optionsResponse);
+            };
+
+            sipTransport.SIPTransportResponseReceived += (localSIPEndPoint, remoteEndPoint, sipResponse) =>
+            {
+                receivedResponse = sipResponse;
+                gotResponseMre.Set();
+                return Task.CompletedTask;
+            };
+
+            var serverUri = serverChannel.GetContactURI(SIPSchemesEnum.sip, clientChannel.ListeningSIPEndPoint);
+            var optionsRequest = SIPRequest.GetRequest(SIPMethodsEnum.OPTIONS, serverUri);
+            optionsRequest.Header.UnknownHeaders.Add($"X-Request-Random:{Crypto.GetRandomString(1000)}");
+            optionsRequest.Header.UnknownHeaders.Add("X-Request-Final: TheEnd");
+            await sipTransport.SendRequestAsync(optionsRequest);
+
+            gotResponseMre.WaitOne(TRANSPORT_TEST_TIMEOUT, false);
+
+            Assert.NotNull(receivedRequest);
+            Assert.NotNull(receivedResponse);
+            //rj2: confirm that we have received the whole SIP-Message by checking for the last x-header (issue #175, websocket fragmented send/receive)
+            Assert.Contains("X-Request-Final: TheEnd", receivedRequest.Header.UnknownHeaders);
+            Assert.Contains("X-Response-Final: TheEnd", receivedResponse.Header.UnknownHeaders);
+
+            sipTransport.Shutdown();
+
+            logger.LogDebug("Test complete.");
+        }
+
+        /// <summary>
         /// Initialises a SIP transport to act as a server in single request/response exchange.
         /// </summary>
         /// <param name="testServerChannel">The server SIP channel to test.</param>
         /// <param name="cts">Cancellation token to tell the server when to shutdown.</param>
-        private void RunServer(SIPChannel testServerChannel, CancellationTokenSource cts, ManualResetEventSlim serverReadyEvent)
+        /// <param name="serverReadyEvent">Used to notify the client task that the server task is 
+        /// ready for the unit test to commence.</param>
+        private void RunServer(
+            SIPChannel testServerChannel, 
+            CancellationTokenSource cts, 
+            ManualResetEventSlim serverReadyEvent)
         {
             logger.LogDebug($"RunServer test channel created on {testServerChannel.ListeningSIPEndPoint}.");
 
@@ -507,7 +614,7 @@ namespace SIPSorcery.SIP.UnitTests
                         return serverSIPTransport.SendResponseAsync(optionsResponse);
                     }
 
-                    return Task.FromResult(0);
+                    return Task.CompletedTask;
                 };
 
                 serverSIPTransport.SIPRequestInTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
@@ -544,7 +651,14 @@ namespace SIPSorcery.SIP.UnitTests
         /// <param name="testClientChannel">The client SIP channel to test.</param>
         /// <param name="serverUri">The URI of the server end point to test the client against.</param>
         /// <param name="tcs">The task completion source that this method will set if it receives the expected response.</param>
-        private async Task RunClient(SIPChannel testClientChannel, SIPURI serverUri, TaskCompletionSource<bool> tcs, CancellationTokenSource cts, ManualResetEventSlim serverReadyEvent)
+        /// <param name="cts">Cancellation token in case the server task intialisation fails.</param>
+        /// <param name="serverReadyEvent">Event to notify when the server thread is ready for the test to commence.</param>
+        private async Task RunClient(
+            SIPChannel testClientChannel,
+            SIPURI serverUri, 
+            TaskCompletionSource<bool> tcs, 
+            CancellationTokenSource cts, 
+            ManualResetEventSlim serverReadyEvent)
         {
             logger.LogDebug($"RunClient Starting client task for {testClientChannel.ListeningSIPEndPoint}.");
 
@@ -569,7 +683,7 @@ namespace SIPSorcery.SIP.UnitTests
                         }
                     }
 
-                    return Task.FromResult(0);
+                    return Task.CompletedTask;
                 };
 
                 clientSIPTransport.SIPRequestOutTraceEvent += (SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest) =>
