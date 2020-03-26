@@ -151,6 +151,7 @@ namespace SIPSorcery
                         ua.ClientCallFailed += (uac, err) => Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                         ua.ClientCallAnswered += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
                         ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
+                        ua.OnRtpEvent += (evt, hdr) => Log.LogDebug($"rtp event {evt.EventID}, duration {evt.Duration}, end of event {evt.EndOfEvent}, timestamp {hdr.Timestamp}, marker {hdr.MarkerBit}.");
                         ua.OnCallHungup += OnHangup;
 
                         var rtpSession = CreateRtpSession(ua, null);
@@ -359,6 +360,7 @@ namespace SIPSorcery
                     ua.OnCallHungup += OnHangup;
                     ua.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
                     ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
+                    ua.OnRtpEvent += (evt, hdr) => Log.LogDebug($"rtp event {evt.EventID}, duration {evt.Duration}, end of event {evt.EndOfEvent}, timestamp {hdr.Timestamp}, marker {hdr.MarkerBit}.");
 
                     var uas = ua.AcceptCall(sipRequest);
                     var rtpSession = CreateRtpSession(ua, sipRequest.URI.User);

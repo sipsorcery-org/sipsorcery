@@ -182,6 +182,12 @@ namespace SIPSorcery.SIP.App
         public event Action<byte, int> OnDtmfTone;
 
         /// <summary>
+        /// Gets fired for every RTP event packet received from the remote party. This event allows the
+        /// application to decipher the vents as it wishes.
+        /// </summary>
+        public event Action<RTPEvent, RTPHeader> OnRtpEvent;
+
+        /// <summary>
         /// Creates a new SIP client and server combination user agent.
         /// </summary>
         /// <param name="transport">The transport layer to use for requests and responses.</param>
@@ -1066,8 +1072,11 @@ namespace SIPSorcery.SIP.App
         /// when the event is completed.
         /// </summary>
         /// <param name="rtpEvent">The received RTP event.</param>
-        private void OnRemoteRtpEvent(RTPEvent rtpEvent)
+        /// <param name="rtpHeader">THe RTP header on the packet that the event was received in.</param>
+        private void OnRemoteRtpEvent(RTPEvent rtpEvent, RTPHeader rtpHeader)
         {
+            OnRtpEvent?.Invoke(rtpEvent, rtpHeader);
+
             if (rtpEvent.EndOfEvent)
             {
                 OnDtmfTone?.Invoke(rtpEvent.EventID, rtpEvent.Duration);
