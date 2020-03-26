@@ -143,7 +143,7 @@ namespace SIPSorcery.UnitTests
         public event Action<byte[], uint, uint, int> OnVideoSampleReady;
         public event Action<string> OnRtpClosed;
         public event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
-        public event Action<RTPEvent> OnRtpEvent;
+        public event Action<RTPEvent, RTPHeader> OnRtpEvent;
         public event Action<Complex[]> OnAudioScopeSampleReady;
         public event Action<Complex[]> OnHoldAudioScopeSampleReady;
 

@@ -356,7 +356,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
         /// </summary>
-        public event Action<RTPEvent> OnRtpEvent;
+        public event Action<RTPEvent, RTPHeader> OnRtpEvent;
 
         /// <summary>
         /// Gets fired when the RTP session and underlying channel are closed.
@@ -1284,7 +1284,7 @@ namespace SIPSorcery.Net
                         if (RemoteRtpEventPayloadID != 0 && rtpPacket.Header.PayloadType == RemoteRtpEventPayloadID)
                         {
                             RTPEvent rtpEvent = new RTPEvent(rtpPacket.Payload);
-                            OnRtpEvent?.Invoke(rtpEvent);
+                            OnRtpEvent?.Invoke(rtpEvent, rtpPacket.Header);
                         }
                         else
                         {

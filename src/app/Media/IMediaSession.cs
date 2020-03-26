@@ -74,7 +74,7 @@ namespace SIPSorcery.SIP.App
         /// Fired when an RTP event (typically representing a DTMF tone) is
         /// detected.
         /// </summary>
-        event Action<RTPEvent> OnRtpEvent;
+        event Action<RTPEvent, RTPHeader> OnRtpEvent;
 
         Task<SDP> createOffer(RTCOfferOptions options);
         void setLocalDescription(RTCSessionDescription sessionDescription);
