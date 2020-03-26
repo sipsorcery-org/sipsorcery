@@ -101,7 +101,7 @@ namespace SIPSorcery
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
 
-                        rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+                        rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
                         await userAgent.Answer(incomingCall, rtpAVSession);
 
                         Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");
@@ -128,7 +128,7 @@ namespace SIPSorcery
                         {
                             if (!userAgent.IsCallActive)
                             {
-                                rtpAVSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+                                rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
                                 bool callResult = await userAgent.Call(DEFAULT_DESTINATION_SIP_URI, SIP_USERNAME, SIP_PASSWORD, rtpAVSession);
 
                                 Log.LogInformation($"Call attempt {((callResult) ? "successfull" : "failed")}.");
