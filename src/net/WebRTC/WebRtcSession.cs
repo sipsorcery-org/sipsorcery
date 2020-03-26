@@ -117,7 +117,7 @@ namespace SIPSorcery.Net
             string dtlsFingerprint,
             List<IPAddress> offerAddresses,
             IPEndPoint turnServerEndPoint) :
-            base(addrFamily, true, true, true)
+            base(true, true, true)
         {
             _dtlsCertificateFingerprint = dtlsFingerprint;
             _offerAddresses = offerAddresses;
@@ -508,7 +508,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                var localIPAddresses = _offerAddresses ?? NetServices.GetAllLocalIPAddresses();
+                var localIPAddresses = _offerAddresses ?? NetServices.LocalIPAddresses;
                 IceNegotiationStartedAt = DateTime.Now;
                 LocalIceCandidates = new List<IceCandidate>();
 

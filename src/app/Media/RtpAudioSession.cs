@@ -80,7 +80,7 @@ namespace SIPSorcery.Media
         public event Action<Complex[]> OnHoldAudioScopeSampleReady;
 
         public RtpAudioSession(DummyAudioOptions audioOptions, List<SDPMediaFormatsEnum> audioCodecs) :
-            base(AddressFamily.InterNetwork, false, false, false)
+            base(false, false, false)
         {
             if (audioCodecs == null || audioCodecs.Count() == 0)
             {

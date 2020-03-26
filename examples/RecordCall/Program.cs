@@ -45,7 +45,6 @@ namespace demo
             var userAgent = new SIPUserAgent(sipTransport, null);
             userAgent.OnCallHungup += (dialog) => _waveFile?.Close();
             var rtpSession = new RtpAVSession(
-                AddressFamily.InterNetwork,
                 new AudioOptions
                 {
                     AudioSource = AudioSourcesEnum.Microphone,

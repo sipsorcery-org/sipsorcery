@@ -80,7 +80,7 @@ namespace SIPSorcery.Net
             // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
             // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
             // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
-            catch (SocketException) 
+            catch (SocketException)
             {
                 //logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceive. {sockExcp.Message}");
                 //Close(sockExcp.Message);
@@ -176,8 +176,8 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTPChannel : IDisposable
     {
-        private const int RTP_PORT_START = 10000;             // Arbitrary port number for the start of the range allocate RTP and control ports from.
-        private const int RTP_PORT_END = 20000;               // Arbitrary port number for the end of the range to allocate RTP and control ports from.
+        private const int RTP_PORT_START = 10000;   // Arbitrary port number for the start of the range allocate RTP and control ports from.
+        private const int RTP_PORT_END = 20000;     // Arbitrary port number for the end of the range to allocate RTP and control ports from.
 
         private static ILogger logger = Log.Logger;
 
@@ -239,15 +239,14 @@ namespace SIPSorcery.Net
         /// <param name="controlEndPoint">The remote end point that the RTCP control socket is sending to.</param>
         /// <param name="mediaStartPort">The media start port.</param>
         /// <param name="mediaEndPort">The media end port.</param>
-        public RTPChannel(IPAddress localAddress,
-                          bool createControlSocket,
+        public RTPChannel(bool createControlSocket,
                           IPEndPoint rtpRemoteEndPoint = null,
                           IPEndPoint controlEndPoint = null,
                           int mediaStartPort = RTP_PORT_START,
                           int mediaEndPort = RTP_PORT_END)
         {
             int startFrom = Crypto.GetRandomInt(RTP_PORT_START, RTP_PORT_END);
-            NetServices.CreateRtpSocket(localAddress, mediaStartPort, mediaEndPort, startFrom, createControlSocket, out var rtpSocket, out m_controlSocket);
+            NetServices.CreateRtpSocket(mediaStartPort, mediaEndPort, startFrom, createControlSocket, null, out var rtpSocket, out m_controlSocket);
 
             RtpSocket = rtpSocket;
             RTPLocalEndPoint = RtpSocket.LocalEndPoint as IPEndPoint;
@@ -299,7 +298,7 @@ namespace SIPSorcery.Net
                     m_isClosed = true;
                     m_rtpReceiver?.Close(null);
                     m_controlReceiver?.Close(null);
-                    
+
                     OnClosed?.Invoke(closeReason);
                 }
                 catch (Exception excp)
@@ -311,7 +310,7 @@ namespace SIPSorcery.Net
 
         public SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
-            if(m_isClosed)
+            if (m_isClosed)
             {
                 return SocketError.Disconnecting;
             }
@@ -323,42 +322,49 @@ namespace SIPSorcery.Net
             {
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for SendAsync in RTPChannel.");
             }
-
-            try
+            else if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
             {
-                Socket sendSocket = RtpSocket;
-                if (sendOn == RTPChannelSocketsEnum.Control)
+                logger.LogWarning($"The destination address for SendAsync in RTPChannel cannot be {dstEndPoint.Address}.");
+                return SocketError.DestinationAddressRequired;
+            }
+            else
+            {
+                try
                 {
-                    LastControlDestination = dstEndPoint;
-                    if (m_controlSocket == null)
+                    Socket sendSocket = RtpSocket;
+                    if (sendOn == RTPChannelSocketsEnum.Control)
                     {
-                        throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
+                        LastControlDestination = dstEndPoint;
+                        if (m_controlSocket == null)
+                        {
+                            throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
+                        }
+                        else
+                        {
+                            sendSocket = m_controlSocket;
+                        }
                     }
                     else
                     {
-                        sendSocket = m_controlSocket;
+                        LastRtpDestination = dstEndPoint;
                     }
-                }
-                else
-                {
-                    LastRtpDestination = dstEndPoint;
-                }
 
-                sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
-                return SocketError.Success;
-            }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            {
-                return SocketError.Disconnecting;
-            }
-            catch (SocketException sockExcp)
-            {
-                return sockExcp.SocketErrorCode;
-            }
-            catch (Exception excp)
-            {
-                logger.LogError($"Exception RTPChannel.SendAsync. {excp}");
-                return SocketError.Fault;
+                    sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
+                    return SocketError.Success;
+                }
+                catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
+                {
+                    return SocketError.Disconnecting;
+                }
+                catch (SocketException sockExcp)
+                {
+                    return sockExcp.SocketErrorCode;
+                }
+                catch (Exception excp)
+                {
+                    logger.LogError($"Exception RTPChannel.SendAsync. {excp}");
+                    return SocketError.Fault;
+                }
             }
         }
 
