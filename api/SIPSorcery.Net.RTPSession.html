@@ -1515,7 +1515,7 @@ The string parameter contains the BYE reason.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public event Action&lt;RTPEvent&gt; OnRtpEvent</code></pre>
+    <pre><code class="lang-csharp hljs">public event Action&lt;RTPEvent, RTPHeader&gt; OnRtpEvent</code></pre>
   </div>
   <h5 class="eventType">Event Type</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1527,7 +1527,7 @@ The string parameter contains the BYE reason.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTPEvent.html">RTPEvent</a>&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTPEvent.html">RTPEvent</a>, <a class="xref" href="SIPSorcery.Net.RTPHeader.html">RTPHeader</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>

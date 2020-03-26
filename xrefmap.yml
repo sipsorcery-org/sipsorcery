@@ -13374,6 +13374,12 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
   fullName: SIPSorcery.SIP.App.SIPUserAgent.OnReinviteRequest
   nameWithType: SIPUserAgent.OnReinviteRequest
+- uid: SIPSorcery.SIP.App.SIPUserAgent.OnRtpEvent
+  name: OnRtpEvent
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnRtpEvent
+  commentId: E:SIPSorcery.SIP.App.SIPUserAgent.OnRtpEvent
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.OnRtpEvent
+  nameWithType: SIPUserAgent.OnRtpEvent
 - uid: SIPSorcery.SIP.App.SIPUserAgent.OnTransferNotify
   name: OnTransferNotify
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_OnTransferNotify
