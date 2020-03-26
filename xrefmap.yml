@@ -2872,12 +2872,12 @@ references:
   commentId: T:SIPSorcery.Net.RTPChannel
   fullName: SIPSorcery.Net.RTPChannel
   nameWithType: RTPChannel
-- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint,System.Int32,System.Int32)
-  name: RTPChannel(IPAddress, Boolean, IPEndPoint, IPEndPoint, Int32, Int32)
-  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Net_IPAddress_System_Boolean_System_Net_IPEndPoint_System_Net_IPEndPoint_System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Net.IPAddress,System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint,System.Int32,System.Int32)
-  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Net.IPAddress, System.Boolean, System.Net.IPEndPoint, System.Net.IPEndPoint, System.Int32, System.Int32)
-  nameWithType: RTPChannel.RTPChannel(IPAddress, Boolean, IPEndPoint, IPEndPoint, Int32, Int32)
+- uid: SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint,System.Int32,System.Int32)
+  name: RTPChannel(Boolean, IPEndPoint, IPEndPoint, Int32, Int32)
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPEndPoint_System_Net_IPEndPoint_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint,System.Int32,System.Int32)
+  fullName: SIPSorcery.Net.RTPChannel.RTPChannel(System.Boolean, System.Net.IPEndPoint, System.Net.IPEndPoint, System.Int32, System.Int32)
+  nameWithType: RTPChannel.RTPChannel(Boolean, IPEndPoint, IPEndPoint, Int32, Int32)
 - uid: SIPSorcery.Net.RTPChannel.#ctor*
   name: RTPChannel
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel__ctor_
@@ -3419,12 +3419,12 @@ references:
   commentId: T:SIPSorcery.Net.RTPSession
   fullName: SIPSorcery.Net.RTPSession
   nameWithType: RTPSession
-- uid: SIPSorcery.Net.RTPSession.#ctor(System.Net.Sockets.AddressFamily,System.Boolean,System.Boolean,System.Boolean)
-  name: RTPSession(AddressFamily, Boolean, Boolean, Boolean)
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Net_Sockets_AddressFamily_System_Boolean_System_Boolean_System_Boolean_
-  commentId: M:SIPSorcery.Net.RTPSession.#ctor(System.Net.Sockets.AddressFamily,System.Boolean,System.Boolean,System.Boolean)
-  fullName: SIPSorcery.Net.RTPSession.RTPSession(System.Net.Sockets.AddressFamily, System.Boolean, System.Boolean, System.Boolean)
-  nameWithType: RTPSession.RTPSession(AddressFamily, Boolean, Boolean, Boolean)
+- uid: SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean)
+  name: RTPSession(Boolean, Boolean, Boolean)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_System_Boolean_System_Boolean_System_Boolean_
+  commentId: M:SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean)
+  fullName: SIPSorcery.Net.RTPSession.RTPSession(System.Boolean, System.Boolean, System.Boolean)
+  nameWithType: RTPSession.RTPSession(Boolean, Boolean, Boolean)
 - uid: SIPSorcery.Net.RTPSession.#ctor*
   name: RTPSession
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession__ctor_
@@ -3432,6 +3432,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.RTPSession
   nameWithType: RTPSession.RTPSession
+- uid: SIPSorcery.Net.RTPSession.addSingleTrack
+  name: addSingleTrack()
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addSingleTrack
+  commentId: M:SIPSorcery.Net.RTPSession.addSingleTrack
+  fullName: SIPSorcery.Net.RTPSession.addSingleTrack()
+  nameWithType: RTPSession.addSingleTrack()
+- uid: SIPSorcery.Net.RTPSession.addSingleTrack*
+  name: addSingleTrack
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addSingleTrack_
+  commentId: Overload:SIPSorcery.Net.RTPSession.addSingleTrack
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.addSingleTrack
+  nameWithType: RTPSession.addSingleTrack
 - uid: SIPSorcery.Net.RTPSession.addTrack(SIPSorcery.Net.MediaStreamTrack)
   name: addTrack(MediaStreamTrack)
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addTrack_SIPSorcery_Net_MediaStreamTrack_
@@ -24907,15 +24920,15 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.CreateRandomUDPListener
   nameWithType: NetServices.CreateRandomUDPListener
-- uid: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Net.IPAddress,System.Int32,System.Int32,System.Int32,System.Boolean,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
-  name: CreateRtpSocket(IPAddress, Int32, Int32, Int32, Boolean, out Socket, out Socket)
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Net_IPAddress_System_Int32_System_Int32_System_Int32_System_Boolean_System_Net_Sockets_Socket__System_Net_Sockets_Socket__
-  commentId: M:SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Net.IPAddress,System.Int32,System.Int32,System.Int32,System.Boolean,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
-  name.vb: CreateRtpSocket(IPAddress, Int32, Int32, Int32, Boolean, ByRef Socket, ByRef Socket)
-  fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Net.IPAddress, System.Int32, System.Int32, System.Int32, System.Boolean, out System.Net.Sockets.Socket, out System.Net.Sockets.Socket)
-  fullName.vb: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Net.IPAddress, System.Int32, System.Int32, System.Int32, System.Boolean, ByRef System.Net.Sockets.Socket, ByRef System.Net.Sockets.Socket)
-  nameWithType: NetServices.CreateRtpSocket(IPAddress, Int32, Int32, Int32, Boolean, out Socket, out Socket)
-  nameWithType.vb: NetServices.CreateRtpSocket(IPAddress, Int32, Int32, Int32, Boolean, ByRef Socket, ByRef Socket)
+- uid: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Int32,System.Int32,System.Int32,System.Boolean,System.Net.IPAddress,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
+  name: CreateRtpSocket(Int32, Int32, Int32, Boolean, IPAddress, out Socket, out Socket)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Int32_System_Int32_System_Int32_System_Boolean_System_Net_IPAddress_System_Net_Sockets_Socket__System_Net_Sockets_Socket__
+  commentId: M:SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Int32,System.Int32,System.Int32,System.Boolean,System.Net.IPAddress,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)
+  name.vb: CreateRtpSocket(Int32, Int32, Int32, Boolean, IPAddress, ByRef Socket, ByRef Socket)
+  fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Int32, System.Int32, System.Int32, System.Boolean, System.Net.IPAddress, out System.Net.Sockets.Socket, out System.Net.Sockets.Socket)
+  fullName.vb: SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Int32, System.Int32, System.Int32, System.Boolean, System.Net.IPAddress, ByRef System.Net.Sockets.Socket, ByRef System.Net.Sockets.Socket)
+  nameWithType: NetServices.CreateRtpSocket(Int32, Int32, Int32, Boolean, IPAddress, out Socket, out Socket)
+  nameWithType.vb: NetServices.CreateRtpSocket(Int32, Int32, Int32, Boolean, IPAddress, ByRef Socket, ByRef Socket)
 - uid: SIPSorcery.Sys.NetServices.CreateRtpSocket*
   name: CreateRtpSocket
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateRtpSocket_
@@ -24923,32 +24936,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket
   nameWithType: NetServices.CreateRtpSocket
-- uid: SIPSorcery.Sys.NetServices.GetAllLocalIPAddresses
-  name: GetAllLocalIPAddresses()
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetAllLocalIPAddresses
-  commentId: M:SIPSorcery.Sys.NetServices.GetAllLocalIPAddresses
-  fullName: SIPSorcery.Sys.NetServices.GetAllLocalIPAddresses()
-  nameWithType: NetServices.GetAllLocalIPAddresses()
-- uid: SIPSorcery.Sys.NetServices.GetAllLocalIPAddresses*
-  name: GetAllLocalIPAddresses
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetAllLocalIPAddresses_
-  commentId: Overload:SIPSorcery.Sys.NetServices.GetAllLocalIPAddresses
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.NetServices.GetAllLocalIPAddresses
-  nameWithType: NetServices.GetAllLocalIPAddresses
-- uid: SIPSorcery.Sys.NetServices.GetLocalAddressForInternet
-  name: GetLocalAddressForInternet()
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressForInternet
-  commentId: M:SIPSorcery.Sys.NetServices.GetLocalAddressForInternet
-  fullName: SIPSorcery.Sys.NetServices.GetLocalAddressForInternet()
-  nameWithType: NetServices.GetLocalAddressForInternet()
-- uid: SIPSorcery.Sys.NetServices.GetLocalAddressForInternet*
-  name: GetLocalAddressForInternet
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressForInternet_
-  commentId: Overload:SIPSorcery.Sys.NetServices.GetLocalAddressForInternet
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.NetServices.GetLocalAddressForInternet
-  nameWithType: NetServices.GetLocalAddressForInternet
 - uid: SIPSorcery.Sys.NetServices.GetLocalAddressForRemote(System.Net.IPAddress)
   name: GetLocalAddressForRemote(IPAddress)
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressForRemote_System_Net_IPAddress_
@@ -24962,6 +24949,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.GetLocalAddressForRemote
   nameWithType: NetServices.GetLocalAddressForRemote
+- uid: SIPSorcery.Sys.NetServices.InternetDefaultAddress
+  name: InternetDefaultAddress
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_InternetDefaultAddress
+  commentId: P:SIPSorcery.Sys.NetServices.InternetDefaultAddress
+  fullName: SIPSorcery.Sys.NetServices.InternetDefaultAddress
+  nameWithType: NetServices.InternetDefaultAddress
+- uid: SIPSorcery.Sys.NetServices.InternetDefaultAddress*
+  name: InternetDefaultAddress
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_InternetDefaultAddress_
+  commentId: Overload:SIPSorcery.Sys.NetServices.InternetDefaultAddress
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetServices.InternetDefaultAddress
+  nameWithType: NetServices.InternetDefaultAddress
+- uid: SIPSorcery.Sys.NetServices.LocalIPAddresses
+  name: LocalIPAddresses
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_LocalIPAddresses
+  commentId: P:SIPSorcery.Sys.NetServices.LocalIPAddresses
+  fullName: SIPSorcery.Sys.NetServices.LocalIPAddresses
+  nameWithType: NetServices.LocalIPAddresses
+- uid: SIPSorcery.Sys.NetServices.LocalIPAddresses*
+  name: LocalIPAddresses
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_LocalIPAddresses_
+  commentId: Overload:SIPSorcery.Sys.NetServices.LocalIPAddresses
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetServices.LocalIPAddresses
+  nameWithType: NetServices.LocalIPAddresses
 - uid: SIPSorcery.Sys.NetServices.UDP_PORT_END
   name: UDP_PORT_END
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_UDP_PORT_END
