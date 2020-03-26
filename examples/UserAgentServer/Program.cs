@@ -173,7 +173,7 @@ namespace SIPSorcery
 
                             UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
                             uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
-                            uas.CallCancelled += (uasAgent) => 
+                            uas.CallCancelled += (uasAgent) =>
                             {
                                 rtpCts?.Cancel();
                                 rtpSession.CloseSession(null);

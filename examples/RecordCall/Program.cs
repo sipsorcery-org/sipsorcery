@@ -1,28 +1,28 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: A getting started program to demonstrate how to use the SIPSorcery
-// library to place a call.
+// Description: Sample program of how to place and record a call.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 13 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
-// 31 Dec 2019  Aaron Clauson   Changed from an OPTIONS example to a call example.
-// 20 Feb 2020  Aaron Clauson   Switched to RtpAVSession and simplified.
+// 26 Mar 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using NAudio.Wave;
 
 namespace demo
 {
@@ -30,15 +30,29 @@ namespace demo
     {
         private static string DESTINATION = "time@sipsorcery.com";
 
+        private static readonly WaveFormat _waveFormat = new WaveFormat(8000, 16, 1);
+        private static WaveFileWriter _waveFile;
+
         static async Task Main()
         {
             Console.WriteLine("SIPSorcery Getting Started Demo");
 
             AddConsoleLogger();
 
+            _waveFile = new WaveFileWriter("output.mp3", _waveFormat);
+
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+            userAgent.OnCallHungup += (dialog) => _waveFile?.Close();
+            var rtpSession = new RtpAVSession(
+                AddressFamily.InterNetwork,
+                new AudioOptions
+                {
+                    AudioSource = AudioSourcesEnum.Microphone,
+                    AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA }
+                },
+                null);
+            rtpSession.OnRtpPacketReceived += OnRtpPacketReceived;
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
@@ -56,6 +70,30 @@ namespace demo
             // Clean up.
             sipTransport.Shutdown();
             SIPSorcery.Net.DNSManager.Stop();
+        }
+
+        private static void OnRtpPacketReceived(SDPMediaTypesEnum mediaType, RTPPacket rtpPacket)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio)
+            {
+                var sample = rtpPacket.Payload;
+
+                for (int index = 0; index < sample.Length; index++)
+                {
+                    if (rtpPacket.Header.PayloadType == (int)SDPMediaFormatsEnum.PCMA)
+                    {
+                        short pcm = NAudio.Codecs.ALawDecoder.ALawToLinearSample(sample[index]);
+                        byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
+                        _waveFile.Write(pcmSample, 0, 2);
+                    }
+                    else
+                    {
+                        short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);
+                        byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
+                        _waveFile.Write(pcmSample, 0, 2);
+                    }
+                }
+            }
         }
 
         /// <summary>

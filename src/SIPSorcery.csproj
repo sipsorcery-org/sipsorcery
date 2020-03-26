@@ -25,23 +25,12 @@
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Net.WebSockets.Client">
-      <Version>4.3.2</Version>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <PackageReference Include="System.Net.WebSockets.Client">
-      <Version>4.3.2</Version>
-    </PackageReference>
-  </ItemGroup>
- 
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.31-pre</Version>
+	<Version>4.0.33-pre</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -61,7 +50,9 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP WebRTC RTP SDP STUN SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version: 4.0.31-pre: Bug fix setting inactive address when call request with no SDP offer.
+	<PackageReleaseNotes>- Version 4.0.33-pre: Bug fix starting media session before remote SDP available. Websocket client parsing fix.
+- Version 4.0.32-pre: Bug fix not setting remote offer when call request with no SDP offer.
+- Version 4.0.31-pre: Bug fix setting inactive address when call request with no SDP offer.
 - Version 4.0.30-pre: Bug fix for SIP User Agent not handling INVITE request with no SDP offer.
 - Version 4.0.29-pre: Added AudioScope sound wave visualisation.
 - Version 4.0.16-4.0.28-pre: Big rework of RTP and Audio/Video integration.
@@ -75,8 +66,8 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
 </PackageReleaseNotes>
 	<NeutralLanguage>en-GB</NeutralLanguage>
-	<AssemblyVersion>4.0.31.0</AssemblyVersion>
-	<FileVersion>4.0.31.0</FileVersion>
+	<AssemblyVersion>4.0.33.0</AssemblyVersion>
+	<FileVersion>4.0.33.0</FileVersion>
   </PropertyGroup>    
 
 </Project>

@@ -14,6 +14,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace SIPSorcery.Net
@@ -253,6 +255,37 @@ namespace SIPSorcery.Net
         public override string ToString()
         {
             return FormatAttribute;
+        }
+
+        /// <summary>
+        /// Attempts to get the compatible formats between two lists.
+        /// </summary>
+        /// <param name="a">The first list to match the media formats for.</param>
+        /// <param name="b">The second list to match the media formats for.</param>
+        /// <returns>A list of media formats that are compatible for BOTH lists.</returns>
+        public static List<SDPMediaFormat> GetCompatibleFormats(List<SDPMediaFormat> a, List<SDPMediaFormat> b)
+        {
+            if (a == null || a.Count == 0)
+            {
+                throw new ArgumentNullException("a", "The first media format list supplied was empty.");
+            }
+            else if (b == null || b.Count == 0)
+            {
+                throw new ArgumentNullException("b", "The second media format list supplied was empty.");
+            }
+
+            List<SDPMediaFormat> compatible = new List<SDPMediaFormat>();
+
+            foreach (var format in a)
+            {
+                // TODO: Need to compare all aspects of the format not just the codec.
+                if (b.Any(x => x.FormatCodec == format.FormatCodec))
+                {
+                    compatible.Add(format);
+                }
+            }
+
+            return compatible;
         }
     }
 }

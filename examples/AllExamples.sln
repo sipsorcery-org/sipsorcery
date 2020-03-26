@@ -37,6 +37,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GetStartedVideo", "GetStart
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPCallServer", "SIPCallServer\SIPCallServer.csproj", "{F3B13842-F6FA-49BB-A635-FF1075748853}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RecordCall", "RecordCall\RecordCall.csproj", "{DF274BDD-F506-4F27-B9BC-790EB940BD81}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -251,6 +253,18 @@ Global
 		{F3B13842-F6FA-49BB-A635-FF1075748853}.Release|x64.Build.0 = Release|Any CPU
 		{F3B13842-F6FA-49BB-A635-FF1075748853}.Release|x86.ActiveCfg = Release|Any CPU
 		{F3B13842-F6FA-49BB-A635-FF1075748853}.Release|x86.Build.0 = Release|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Debug|x64.Build.0 = Debug|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Debug|x86.Build.0 = Debug|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Release|x64.ActiveCfg = Release|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Release|x64.Build.0 = Release|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Release|x86.ActiveCfg = Release|Any CPU
+		{DF274BDD-F506-4F27-B9BC-790EB940BD81}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

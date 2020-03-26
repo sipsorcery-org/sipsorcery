@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
@@ -151,7 +152,7 @@ namespace SIPSorcery.UnitTests
             IsClosed = true;
         }
 
-        public Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
+        public Task<SDP> createAnswer(RTCAnswerOptions options)
         {
             SDP answerSdp = new SDP(IPAddress.Loopback);
             answerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
@@ -167,16 +168,10 @@ namespace SIPSorcery.UnitTests
 
             answerSdp.Media.Add(audioAnnouncement);
 
-            var descriptionInit = new RTCSessionDescriptionInit
-            {
-                type = RTCSdpType.answer,
-                sdp = answerSdp.ToString()
-            };
-
-            return Task.FromResult(descriptionInit);
+            return Task.FromResult(answerSdp);
         }
 
-        public Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options)
+        public Task<SDP> createOffer(RTCOfferOptions options)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
@@ -192,13 +187,7 @@ namespace SIPSorcery.UnitTests
 
             offerSdp.Media.Add(audioAnnouncement);
 
-            var descriptionInit = new RTCSessionDescriptionInit
-            {
-                type = RTCSdpType.offer,
-                sdp = offerSdp.ToString()
-            };
-
-            return Task.FromResult(descriptionInit);
+            return Task.FromResult(offerSdp);
         }
 
         public Task SendDtmf(byte tone, CancellationToken ct)
@@ -211,20 +200,30 @@ namespace SIPSorcery.UnitTests
             throw new NotImplementedException();
         }
 
-        public Task setLocalDescription(RTCSessionDescriptionInit sessionDescription)
+        public void setLocalDescription(RTCSessionDescription sessionDescription)
         {
-            localDescription = new RTCSessionDescription(sessionDescription);
-            return Task.CompletedTask;
+            localDescription = sessionDescription;
         }
 
-        public Task setRemoteDescription(RTCSessionDescriptionInit sessionDescription)
+        public void setRemoteDescription(RTCSessionDescription sessionDescription)
         {
-            remoteDescription = new RTCSessionDescription(sessionDescription);
-            return Task.CompletedTask;
+            remoteDescription = sessionDescription;
         }
 
         public Task Start()
         {
+            var audioLocalAnn = (localDescription != null) ? localDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
+            var audioRemoteAnn = (remoteDescription != null) ? remoteDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
+
+            if (audioLocalAnn == null || audioLocalAnn.MediaFormats.Count == 0)
+            {
+                throw new ApplicationException("Cannot start audio session without a local audio track being available.");
+            }
+            else if (audioRemoteAnn == null || audioRemoteAnn.MediaFormats.Count == 0)
+            {
+                throw new ApplicationException("Cannot start audio session without a remote audio track being available.");
+            }
+
             return Task.CompletedTask;
         }
     }

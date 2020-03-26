@@ -178,6 +178,7 @@ namespace WebRTCServer
             try
             {
                 logger.LogDebug("Answer SDP: " + sdpAnswer);
+				
                 //var answerSdp = SDP.ParseSDPDescription(sdpAnswer);
                 await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = sdpAnswer, type = RTCSdpType.answer }); 
             }
@@ -205,6 +206,7 @@ namespace WebRTCServer
             }
 
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
+
             peerConnection.OnClose += (reason) => dtls.Shutdown();
             
             int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
@@ -366,7 +368,7 @@ namespace WebRTCServer
         /// </summary>
         private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
         {
-            if(sentRtcpReport.Bye != null)
+            if (sentRtcpReport.Bye != null)
             {
                 logger.LogDebug($"RTCP sent BYE {mediaType}.");
             }

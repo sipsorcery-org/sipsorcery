@@ -3,7 +3,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-    xmlns:sharpGL="clr-namespace:SharpGL.WPF;assembly=SharpGL.WPF"
     x:Class="SIPSorcery.SoftPhone.SoftPhone"
     Title="SIPSorcery SoftPhone" Background="#FF808080" Closing="Window_Closing" Icon="favicon.ico" MinHeight="560" MinWidth="490" Loaded="OnWindowLoaded" Height="560" Width="490">
 
@@ -12,7 +11,7 @@
             <Grid Margin="2" VerticalAlignment="Stretch" x:Name="m_callVideoGrid" HorizontalAlignment="Stretch">
                 <Grid x:Name="_client0VideoCanvas" MouseLeftButtonUp="OnClickVideo">
                     <Image x:Name="_client0Video" MinWidth="128" MinHeight="96" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Collapsed" MaxWidth="490" MaxHeight="277"/>
-                    <Border x:Name="_audioScope0Border" CornerRadius="40" Width="42" Height="42" Margin="10,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                    <!--<Border x:Name="_audioScope0Border" CornerRadius="40" Width="42" Height="42" Margin="10,0,0,10" HorizontalAlignment="Left" VerticalAlignment="Bottom">
                         <Border.OpacityMask>
                             <VisualBrush>
                                 <VisualBrush.Visual>
@@ -27,7 +26,7 @@
                             </VisualBrush>
                         </Border.OpacityMask>
                         <sharpGL:OpenGLControl x:Name="AudioScope0" Width="42" Height="42" OpenGLDraw="AudioScopeDraw0" OpenGLInitialized="AudioScopeInitialized0" RenderContextType="FBO" />
-                    </Border>
+                    </Border>-->
                 </Grid>
                 <Grid Visibility="Hidden">
                     <Image x:Name="_client1Video" MinWidth="128" MinHeight="96" VerticalAlignment="Bottom" HorizontalAlignment="Right" Visibility="Collapsed" MaxWidth="490" MaxHeight="277" MouseLeftButtonUp="OnClickVideo"/>

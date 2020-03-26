@@ -33,6 +33,72 @@ namespace SIPSorcery.Net
     public delegate int DoDtlsHandshakeDelegate(RTCPeerConnection rtcPeerConnection);
 
     /// <summary>
+    /// Options for creating the SDP offer.
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#dictionary-rtcofferoptions-members.
+    /// </remarks>
+    //public class RTCOfferOptions
+    //{
+    //    /// <summary>
+    //    /// If true then a new set of ICE credentials will be generated otherwise any
+    //    /// existing set of credentials will be used.
+    //    /// </summary>
+    //    public bool iceRestart;
+    //}
+
+    /// <summary>
+    /// Initialiser for the RTCSessionDescription instance.
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#rtcsessiondescription-class.
+    /// </remarks>
+    public class RTCSessionDescriptionInit
+    {
+        /// <summary>
+        /// The type of the Session Description.
+        /// </summary>
+        public RTCSdpType type;
+
+        /// <summary>
+        /// A string representation of the Session Description.
+        /// </summary>
+        public string sdp;
+    }
+
+    ///// <summary>
+    ///// 
+    ///// </summary>
+    ///// <remarks>
+    ///// As specified in https://www.w3.org/TR/webrtc/#rtcsessiondescription-class.
+    ///// </remarks>
+    //public class RTCSessionDescription
+    //{
+    //    /// <summary>
+    //    /// The type of the Session Description.
+    //    /// </summary>
+    //    public RTCSdpType type;
+
+    //    /// <summary>
+    //    /// A string representation of the Session Description.
+    //    /// </summary>
+    //    public string sdp;
+
+    //    /// <summary>
+    //    /// Creates a new session description instance.
+    //    /// </summary>
+    //    /// <param name="init">Optional. Initialisation properties to control the creation of the session object.</param>
+    //    public RTCSessionDescription(RTCSessionDescriptionInit init)
+    //    {
+    //        if (init != null)
+    //        {
+    //            type = init.type;
+    //            sdp = init.sdp;
+    //        }
+    //    }
+    //}
+
+    /// <summary>
     /// Represents a WebRTC RTCPeerConnection.
     /// </summary>
     /// <remarks>
@@ -133,9 +199,10 @@ namespace SIPSorcery.Net
         /// <param name="description">Optional. The session description to set as 
         /// local description. If not supplied then an offer or answer will be created as required. 
         /// </param>
-        public async override Task setLocalDescription(RTCSessionDescriptionInit description)
+        public Task setLocalDescription(RTCSessionDescriptionInit init)
         {
-            await base.setLocalDescription(description).ConfigureAwait(false);
+            RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
+            base.setLocalDescription(description);
 
             var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
 
@@ -143,6 +210,8 @@ namespace SIPSorcery.Net
             {
                 rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -153,11 +222,12 @@ namespace SIPSorcery.Net
         /// If they are not available there's no point carrying on.
         /// </summary>
         /// <param name="sessionDescription">The answer/offer SDP from the remote party.</param>
-        public async override Task setRemoteDescription(RTCSessionDescriptionInit description)
+        public Task setRemoteDescription(RTCSessionDescriptionInit init)
         {
-            await base.setRemoteDescription(description).ConfigureAwait(false);
+            RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
+            base.setRemoteDescription(description);
 
-            SDP remoteSdp = SDP.ParseSDPDescription(remoteDescription.sdp);
+            SDP remoteSdp = SDP.ParseSDPDescription(init.sdp);
 
             var audioAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
             if (audioAnnounce != null)
@@ -197,6 +267,8 @@ namespace SIPSorcery.Net
             //        }
             //    }
             //}
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -287,7 +359,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be sued to apply additional
         /// controls over the generated offer SDP.</param>
-        public override async Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options)
+        public new async Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options)
         {
             try
             {
@@ -328,7 +400,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be used to apply additional
         /// controls over the generated answer SDP.</param>
-        public override async Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
+        public new async Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
         {
             if (remoteDescription == null)
             {

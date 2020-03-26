@@ -18,7 +18,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -66,6 +65,7 @@ namespace SIPSorcery
         private static string DEFAULT_TRANSFER_DESTINATION = "sip:*61@192.168.11.48";
         private static int SIP_LISTEN_PORT = 5060;
         private const string MUSIC_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
+        private const string MUSIC_FILE_PCMA = "media/Macroform_-_Simplicity.alaw";
         private const string MUSIC_FILE_G722 = "media/Macroform_-_Simplicity.g722";
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
@@ -287,30 +287,26 @@ namespace SIPSorcery
         /// <returns>A new RTP session object.</returns>
         private static RtpAudioSession CreateRtpSession(SIPUserAgent ua, string dst)
         {
-            SDPMediaFormatsEnum codec = SDPMediaFormatsEnum.PCMU;
+            List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
 
-            int audioChoice = 0;
-            int.TryParse(dst, out audioChoice);
-
-            if(audioChoice >= 10)
-            {
-                codec = SDPMediaFormatsEnum.G722;
-                audioChoice = audioChoice - 10;
-            }
-
-            var audioSource = DummyAudioSourcesEnum.Silence;
+            var audioSource = DummyAudioSourcesEnum.SineWave;
             if (!Enum.TryParse<DummyAudioSourcesEnum>(dst, out audioSource))
             {
                 audioSource = DummyAudioSourcesEnum.Silence;
             }
 
             var audioOptions = new DummyAudioOptions { AudioSource = audioSource };
-            if(audioSource == DummyAudioSourcesEnum.Music)
+            if (audioSource == DummyAudioSourcesEnum.Music)
             {
-                audioOptions.SourceFile = (codec == SDPMediaFormatsEnum.PCMU) ? MUSIC_FILE_PCMU : MUSIC_FILE_G722;
+                audioOptions.SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>();
+                if (codecs.Contains(SDPMediaFormatsEnum.PCMA)) { audioOptions.SourceFiles.Add(SDPMediaFormatsEnum.PCMA, MUSIC_FILE_PCMA); }
+                if (codecs.Contains(SDPMediaFormatsEnum.PCMU)) { audioOptions.SourceFiles.Add(SDPMediaFormatsEnum.PCMU, MUSIC_FILE_PCMU); }
+                if (codecs.Contains(SDPMediaFormatsEnum.G722)) { audioOptions.SourceFiles.Add(SDPMediaFormatsEnum.G722, MUSIC_FILE_G722); }
             };
 
-            var rtpAudioSession = new RtpAudioSession(audioOptions, codec);
+            Log.LogInformation($"RTP audio session source set to {audioSource}.");
+
+            var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
 
             // Wire up the event handler for RTP packets received from the remote party.
             rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(ua, type, rtp);
@@ -348,7 +344,14 @@ namespace SIPSorcery
         {
             try
             {
-                if (sipRequest.Method == SIPMethodsEnum.INVITE)
+                if (sipRequest.Header.From != null &&
+                sipRequest.Header.From.FromTag != null &&
+                sipRequest.Header.To != null &&
+                sipRequest.Header.To.ToTag != null)
+                {
+                    // This is an in-dialog request that will be handled directly by a user agent instance.
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.INVITE)
                 {
                     Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
 

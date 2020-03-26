@@ -68,8 +68,8 @@ namespace SIPSorcery
             var dstAddress = lookupResult.GetSIPEndPoint().Address;
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
-            var audioOptions = new AudioOptions 
-            { 
+            var audioOptions = new AudioOptions
+            {
                 AudioSource = AudioSourcesEnum.Microphone,
                 AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.PCMU }
             };
@@ -85,15 +85,14 @@ namespace SIPSorcery
                 Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                 hasCallFailed = true;
             };
-            uac.CallAnswered += async (uac, resp) =>
+            uac.CallAnswered += (uac, resp) =>
             {
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                    RTCSessionDescriptionInit sdpInit = new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = resp.Body };
-                    await rtpSession.setRemoteDescription(sdpInit);
-                    await rtpSession.Start();
+                    rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.answer, sdp = SDP.ParseSDPDescription(resp.Body) });
+                    rtpSession.Start();
                 }
                 else
                 {
@@ -128,7 +127,7 @@ namespace SIPSorcery
                 null, null, null,
                 SIPCallDirection.Out,
                 SDP.SDP_MIME_CONTENTTYPE,
-                offerSDP.sdp,
+                offerSDP.ToString(),
                 null);
 
             uac.Call(callDescriptor);

@@ -53,6 +53,7 @@ namespace SIPSorcery.SIP
     /// </summary>
     public class SIPWebSocketChannel : SIPChannel
     {
+        private const int CLOSE_TIMEOUT = 5000;
         public const string SIP_Sec_WebSocket_Protocol = "sip"; // Web socket protocol string for SIP as defined in RFC7118.
 
         /// <summary>
@@ -324,7 +325,10 @@ namespace SIPSorcery.SIP
                 logger.LogDebug($"Closing SIP Web Socket Channel {ListeningEndPoint}.");
 
                 Closed = true;
-                m_webSocketServer.Stop();
+                //m_webSocketServer.Stop();
+
+                // The web socket server hangs when attempting to shutdown on Ubuntu.
+                Task.WhenAny(Task.Run(m_webSocketServer.Stop), Task.Delay(CLOSE_TIMEOUT)).Wait();
             }
             catch (Exception excp)
             {
