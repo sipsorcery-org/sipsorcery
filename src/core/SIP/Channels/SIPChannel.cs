@@ -155,11 +155,11 @@ namespace SIPSorcery.SIP
 
         static SIPChannel()
         {
-            LocalIPAddresses = NetServices.GetAllLocalIPAddresses();
+            LocalIPAddresses = NetServices.LocalIPAddresses;
 
             // When using IPAddress.Any a default end point is still needed for placing in SIP headers and payloads.
             // Using 0.0.0.0 in SIP headers causes issues for some SIP software stacks.
-            InternetDefaultAddress = NetServices.GetLocalAddressForInternet();
+            InternetDefaultAddress = NetServices.InternetDefaultAddress;
         }
 
         public SIPChannel()

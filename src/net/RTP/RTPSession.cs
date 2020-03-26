@@ -55,9 +55,15 @@ namespace SIPSorcery.Net
         public IPAddress RemoteSignallingAddress;
     }
 
+    /// <summary>
+    /// Options for creating an SDP answer.
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#dictionary-rtcofferansweroptions-members.
+    /// </remarks>
     public class RTCAnswerOptions
     {
-
+        // Note: At the time of writing there are no answer options in the WebRTC specification.
     }
 
     public class RTCSessionDescription
@@ -191,9 +197,6 @@ namespace SIPSorcery.Net
 
         private static ILogger logger = Log.Logger;
 
-        //private int m_mediaID = 0;
-
-        private AddressFamily m_addressFamily;
         private bool m_isMediaMultiplexed = false;      // Indicates whether audio and video are multiplexed on a single RTP channel or not.
         private bool m_isRtcpMultiplexed = false;       // Indicates whether the RTP channel is multiplexing RTP and RTCP packets on the same port.
         private bool m_rtpEventInProgress;               // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
@@ -386,22 +389,30 @@ namespace SIPSorcery.Net
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
         /// pseudo random values.
         /// </summary>
-        /// <param name="addrFamily">Determines whether the RTP channel will use an IPv4 or IPv6 socket.</param>
         /// <param name="isRtcpMultiplexed">If true RTCP reports will be multiplexed with RTP on a single channel.
         /// If false (standard mode) then a separate socket is used to send and receive RTCP reports.</param>
         /// <param name="isSecure">If true indicated this session is using SRTP to encrypt and authorise
         /// RTP and RTCP packets. No communications or reporting will commence until the 
         /// is explicitly set as complete.</param>
         public RTPSession(
-            AddressFamily addrFamily,
             bool isMediaMultiplexed,
             bool isRtcpMultiplexed,
             bool isSecure)
         {
-            m_addressFamily = addrFamily;
             m_isMediaMultiplexed = isMediaMultiplexed;
             m_isRtcpMultiplexed = isRtcpMultiplexed;
             IsSecure = isSecure;
+        }
+
+        /// <summary>
+        /// Used for child classes that require a single RTP channel for all RTP (audio and video)
+        /// and RTCP communications.
+        /// </summary>
+        protected void addSingleTrack()
+        {
+            // We use audio as the media type when multiplexing.
+            CreateRtpChannel(SDPMediaTypesEnum.audio);
+            m_audioRtcpSession = CreateRtcpSession(SDPMediaTypesEnum.audio);
         }
 
         /// <summary>
@@ -513,7 +524,7 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    IPAddress localAddress = NetServices.GetLocalAddressForInternet();
+                    IPAddress localAddress = null;
 
                     if (AudioDestinationEndPoint != null)
                     {
@@ -737,10 +748,15 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Creates a new RTP channel (which manages the UDP socket sending and receiving RTP
+        /// packets) for use with this session.
+        /// </summary>
+        /// <param name="mediaType">The type of media the RTP channel is for. Must be audio or video.</param>
+        /// <returns>A new RTPChannel instance.</returns>
         private RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
         {
-            var channelAddress = (m_addressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
-            var rtpChannel = new RTPChannel(channelAddress, !m_isRtcpMultiplexed);
+            var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed);
             m_rtpChannels.Add(mediaType, rtpChannel);
 
             rtpChannel.OnRTPDataReceived += OnReceive;

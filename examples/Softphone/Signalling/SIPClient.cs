@@ -148,7 +148,7 @@ namespace SIPSorcery.SoftPhone
                     SourceFile = RtpAVSession.VIDEO_TESTPATTERN,
                     SourceFramesPerSecond = VIDEO_LIVE_FRAMES_PER_SECOND
                 };
-                MediaSession = new RtpAVSession(dstEndpoint.Address.AddressFamily, audioSrcOpts, videoSrcOpts);
+                MediaSession = new RtpAVSession(audioSrcOpts, videoSrcOpts);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
@@ -210,7 +210,7 @@ namespace SIPSorcery.SoftPhone
                     };
                 }
 
-                MediaSession = new RtpAVSession(sipRequest.RemoteSIPEndPoint.Address.AddressFamily, audioOpts, videoOpts);
+                MediaSession = new RtpAVSession(audioOpts, videoOpts);
 
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;

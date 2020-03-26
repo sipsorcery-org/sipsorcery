@@ -1004,7 +1004,7 @@ namespace SIPSorcery.SIP
                 }
 
                 // Now we're clutching at straws. Try the IP address the OS routing table tells us is used for accessing the Internet.
-                IPAddress internetSrcAddr = NetServices.GetLocalAddressForInternet();
+                IPAddress internetSrcAddr = NetServices.InternetDefaultAddress;
                 if (internetSrcAddr != null)
                 {
                     matchingChannel = GetSIPChannel(protocol, internetSrcAddr);

@@ -134,7 +134,7 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddresses = NetServices.GetAllLocalIPAddresses();
+            var localAddresses = NetServices.LocalIPAddresses;
             Assert.NotNull(localAddresses);
 
             foreach (var localAddress in localAddresses)
@@ -152,7 +152,7 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localInternetAddresses = NetServices.GetLocalAddressForInternet();
+            var localInternetAddresses = NetServices.InternetDefaultAddress;
             Assert.NotNull(localInternetAddresses);
 
             logger.LogDebug($"Local Internet address {localInternetAddresses}.");

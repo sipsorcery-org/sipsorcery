@@ -39,13 +39,11 @@ namespace SIPSorcery.Sys
         private const int RTP_SEND_BUFFER_SIZE = 100000000;
         private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 25;  // The maximum number of re-attempts that will be made when trying to bind the RTP port.
         private const string INTERNET_IPADDRESS = "1.1.1.1";    // IP address to use when getting default IP address from OS. No connection is established.
-        private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on macos).
+        private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on MacOS).
         private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;   // The amount of time to leave the result of a local IP address determination in the cache.
-        private const int RECENT_PORTS_QUEUE_SIZE = 100;
 
         private static ILogger logger = Log.Logger;
 
-        private static ConcurrentQueue<int> _recentlyAllocatedPorts = new ConcurrentQueue<int>();
         private static Mutex _allocatePortsMutex = new Mutex();
 
         /// <summary>
@@ -57,12 +55,65 @@ namespace SIPSorcery.Sys
         /// </summary>
         private static ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>> m_localAddressTable = new ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>>();
 
+        /// <summary>
+        /// The list of IP addresses that this machine can use.
+        /// </summary>
+        public static List<IPAddress> LocalIPAddresses 
+        { 
+            get
+            {
+                // TODO: Reset if the local network interfaces change.
+                if (_localIPAddresses == null)
+                {
+                    _localIPAddresses = NetServices.GetAllLocalIPAddresses();
+                }
+
+                return _localIPAddresses;
+            }
+        }
+        private static List<IPAddress> _localIPAddresses = null;
+
+        /// <summary>
+        /// The local IP address this machine uses to communicate with the Internet.
+        /// </summary>
+        public static IPAddress InternetDefaultAddress 
+        { 
+            get
+            {
+                // TODO: Reset if the local network interfaces change.
+                if(_internetDefaultAddress == null)
+                {
+                    _internetDefaultAddress = GetLocalAddressForInternet();
+                }
+
+                return _internetDefaultAddress;
+            }
+        }
+        private static IPAddress _internetDefaultAddress = null;
+
         public static UdpClient CreateRandomUDPListener(IPAddress localAddress, out IPEndPoint localEndPoint)
         {
             return CreateRandomUDPListener(localAddress, UDP_PORT_START, UDP_PORT_END, null, out localEndPoint);
         }
 
-        public static void CreateRtpSocket(IPAddress localAddress, int rangeStartPort, int rangeEndPort, int startPort, bool createControlSocket, out Socket rtpSocket, out Socket controlSocket)
+        /// <summary>
+        /// Attempts to create and bind a new RTP, and optionally an control (RTCP), socket(s) within a specified port range.
+        /// The RTP and control sockets created are IPv4 and IPv6 dual mode sockets which means they can send and receive
+        /// either IPv4 or IPv6 packets.
+        /// </summary>
+        /// <param name="rangeStartPort">The start of the port range that the sockets should be created within.</param>
+        /// <param name="rangeEndPort">The end of the port range that the sockets should be created within.</param>
+        /// <param name="startPort">A port within the range indicated by the start and end ports to attempt to
+        /// bind the new socket(s) on. The main purpose of this parameter is to provide a pseudo-random way to allocate
+        /// the port for a new RTP socket.</param>
+        /// <param name="createControlSocket">True if a control (RTCP) socket should be created. Set to false if RTP
+        /// and RTCP are being multiplexed on the same connection.</param>
+        /// <param name="localAddress">Optional. If null The RTP and control sockets will be created as IPv4 and IPv6 dual mode 
+        /// sockets which means they can send and receive either IPv4 or IPv6 packets. If the local address is specified an attempt
+        /// will be made to bind the RTP and optionally control listeners on it.</param>
+        /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
+        /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
+        public static void CreateRtpSocket(int rangeStartPort, int rangeEndPort, int startPort, bool createControlSocket, IPAddress localAddress, out Socket rtpSocket, out Socket controlSocket)
         {
             logger.LogDebug($"CreateRtpSocket start port {startPort}, range {rangeStartPort}:{rangeEndPort}.");
 
@@ -75,44 +126,75 @@ namespace SIPSorcery.Sys
             {
                 lock (_allocatePortsMutex)
                 {
-                    IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
-                    var udpListeners = ipGlobalProperties.GetActiveUdpListeners();
+                    int rtpPort = startPort;
 
-                    var portRange = Enumerable.Range(rangeStartPort, rangeEndPort - rangeStartPort).OrderBy(x => (x > startPort) ? x : x + rangeEndPort);
-                    var inUsePorts = udpListeners.Where(x => x.Port >= rangeStartPort && x.Port <= rangeEndPort).Select(x => x.Port); //.OrderBy(x => x);
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    {
+                        // On Windows we can get a list of in use UDP ports and avoid attempting to bind to them.
+                        IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+                        var udpListeners = ipGlobalProperties.GetActiveUdpListeners();
 
-                    logger.LogDebug($"In use UDP ports count {inUsePorts.Count()}.");
+                        var portRange = Enumerable.Range(rangeStartPort, rangeEndPort - rangeStartPort).OrderBy(x => (x > startPort) ? x : x + rangeEndPort);
+                        var inUsePorts = udpListeners.Where(x => x.Port >= rangeStartPort && x.Port <= rangeEndPort).Select(x => x.Port);
 
-                    int rtpPort = portRange.Except(inUsePorts).Where(x => x % 2 == 0).FirstOrDefault();
+                        logger.LogDebug($"In use UDP ports count {inUsePorts.Count()}.");
+
+                        rtpPort = portRange.Except(inUsePorts).Where(x => x % 2 == 0).FirstOrDefault();
+                    }
+                    else
+                    {
+                        rtpPort = (rtpPort % 2 != 0) ? rtpPort + 1 : rtpPort;
+                    }
 
                     int controlPort = (createControlSocket == true) ? rtpPort + 1 : 0;
 
                     try
                     {
                         // The potential ports have been found now try and use them.
-                        rtpSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                        rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
-                        rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
-
-                        rtpSocket.Bind(new IPEndPoint(localAddress, rtpPort));
-
-                        if (controlPort != 0)
+                        if (localAddress != null)
                         {
-                            controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                            controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
-
-                            logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort} and control socket {localAddress}:{controlPort}.");
+                            rtpSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                            rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+                            rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+                            rtpSocket.Bind(new IPEndPoint(localAddress, rtpPort));
                         }
                         else
                         {
-                            logger.LogDebug($"Successfully bound RTP socket {localAddress}:{rtpPort}.");
+                            // Create a dual mode IPv4/IPv6 socket.
+                            rtpSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                            rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+                            rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+                            var bindAddress = (Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
+                            rtpSocket.Bind(new IPEndPoint(bindAddress, rtpPort));
+                        }
+
+                        if (controlPort != 0)
+                        {
+                            if (localAddress != null)
+                            {
+                                controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                                controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
+                            }
+                            else
+                            {
+                                // Create a dual mode IPv4/IPv6 socket.
+                                controlSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                                var bindAddress = (Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
+                                controlSocket.Bind(new IPEndPoint(bindAddress, controlPort));
+                            }
+
+                            logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint} and control socket {controlSocket.LocalEndPoint}.");
+                        }
+                        else
+                        {
+                            logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint}.");
                         }
 
                         bindSuccess = true;
 
                         break;
                     }
-                    catch (System.Net.Sockets.SocketException sockExcp)
+                    catch (SocketException sockExcp)
                     {
                         if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
                         {
@@ -199,9 +281,20 @@ namespace SIPSorcery.Sys
             }
             else
             {
-                UdpClient udpClient = new UdpClient(destination.AddressFamily);
-                udpClient.Connect(destination, NETWORK_TEST_PORT);
-                var localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+                IPAddress localAddress = null;
+
+                if (destination.AddressFamily == AddressFamily.InterNetwork || destination.IsIPv4MappedToIPv6)
+                {
+                    UdpClient udpClient = new UdpClient();
+                    udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
+                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+                }
+                else
+                {
+                    UdpClient udpClient = new UdpClient(AddressFamily.InterNetworkV6);
+                    udpClient.Connect(destination, NETWORK_TEST_PORT);
+                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint).Address;
+                }
 
                 m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
 
@@ -213,7 +306,7 @@ namespace SIPSorcery.Sys
         /// Gets the default local address for this machine for communicating with the Internet.
         /// </summary>
         /// <returns>The local address this machine should use for communicating with the Internet.</returns>
-        public static IPAddress GetLocalAddressForInternet()
+        private static IPAddress GetLocalAddressForInternet()
         {
             var internetAddress = IPAddress.Parse(INTERNET_IPADDRESS);
             return GetLocalAddressForRemote(internetAddress);
@@ -223,7 +316,7 @@ namespace SIPSorcery.Sys
         /// Gets all the IP addresses for all active interfaces on the machine.
         /// </summary>
         /// <returns>A list of all local IP addresses.</returns>
-        public static List<IPAddress> GetAllLocalIPAddresses()
+        private static List<IPAddress> GetAllLocalIPAddresses()
         {
             List<IPAddress> localAddresses = new List<IPAddress>();
 

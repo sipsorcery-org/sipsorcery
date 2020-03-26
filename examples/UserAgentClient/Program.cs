@@ -73,7 +73,7 @@ namespace SIPSorcery
                 AudioSource = AudioSourcesEnum.Microphone,
                 AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.PCMU }
             };
-            var rtpSession = new RtpAVSession(dstAddress.AddressFamily, audioOptions, null);
+            var rtpSession = new RtpAVSession(audioOptions, null);
             var offerSDP = await rtpSession.createOffer(new RTCOfferOptions { RemoteSignallingAddress = dstAddress });
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
