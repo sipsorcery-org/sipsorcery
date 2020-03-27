@@ -1725,7 +1725,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPClientUserAgent.html",
-          "hash": "QIFRvOTWLKYUvlGXv7eqmQ=="
+          "hash": "btDIjknduPdmWhb6Gjg+VA=="
         }
       },
       "is_incremental": false,
@@ -1953,7 +1953,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html",
-          "hash": "c8DAJXWgeHzkCZ1ecDFmlg=="
+          "hash": "BUMicuBdYDaRK+33iVxGdg=="
         }
       },
       "is_incremental": false,

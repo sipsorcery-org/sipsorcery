@@ -10907,6 +10907,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPClientUserAgent.AccountCode
   nameWithType: SIPClientUserAgent.AccountCode
+- uid: SIPSorcery.SIP.App.SIPClientUserAgent.AdjustInvite
+  name: AdjustInvite
+  href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_AdjustInvite
+  commentId: F:SIPSorcery.SIP.App.SIPClientUserAgent.AdjustInvite
+  fullName: SIPSorcery.SIP.App.SIPClientUserAgent.AdjustInvite
+  nameWithType: SIPClientUserAgent.AdjustInvite
 - uid: SIPSorcery.SIP.App.SIPClientUserAgent.AdminMemberId
   name: AdminMemberId
   href: api/SIPSorcery.SIP.App.SIPClientUserAgent.html#SIPSorcery_SIP_App_SIPClientUserAgent_AdminMemberId
@@ -12536,6 +12542,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.SIPRegistrationUserAgent
   nameWithType: SIPRegistrationUserAgent.SIPRegistrationUserAgent
+- uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.AdjustRegister
+  name: AdjustRegister
+  href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_AdjustRegister
+  commentId: F:SIPSorcery.SIP.App.SIPRegistrationUserAgent.AdjustRegister
+  fullName: SIPSorcery.SIP.App.SIPRegistrationUserAgent.AdjustRegister
+  nameWithType: SIPRegistrationUserAgent.AdjustRegister
 - uid: SIPSorcery.SIP.App.SIPRegistrationUserAgent.IsRegistered
   name: IsRegistered
   href: api/SIPSorcery.SIP.App.SIPRegistrationUserAgent.html#SIPSorcery_SIP_App_SIPRegistrationUserAgent_IsRegistered
