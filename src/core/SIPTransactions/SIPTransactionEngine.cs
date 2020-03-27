@@ -140,7 +140,7 @@ namespace SIPSorcery.SIP
                     {
                         //logger.LogDebug("Looking for ACK transaction, branchid=" + sipRequest.Header.Via.TopViaHeader.Branch + ".");
 
-                        foreach (SIPTransaction transaction in m_pendingTransactions.Values)
+                        foreach (var (_, transaction) in m_pendingTransactions)
                         {
                             // According to the standard an ACK should only not get matched by the branchid on the original INVITE for a non-2xx response. However
                             // my Cisco phone created a new branchid on ACKs to 487 responses and since the Cisco also used the same Call-ID and From tag on the initial
@@ -184,7 +184,7 @@ namespace SIPSorcery.SIP
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.PRACK)
                     {
-                        foreach (SIPTransaction transaction in m_pendingTransactions.Values)
+                        foreach (var (_, transaction) in m_pendingTransactions)
                         {
                             if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
                             {
@@ -232,7 +232,7 @@ namespace SIPSorcery.SIP
         {
             logger.LogDebug("=== Pending Transactions ===");
 
-            foreach (SIPTransaction transaction in m_pendingTransactions.Values)
+            foreach (var (_, transaction) in m_pendingTransactions)
             {
                 logger.LogDebug("Pending transaction " + transaction.TransactionRequest.Method + " " + transaction.TransactionState + " " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0.##") + "s " + transaction.TransactionRequestURI.ToString() + " (" + transaction.TransactionId + ").");
             }
@@ -271,7 +271,7 @@ namespace SIPSorcery.SIP
 
             lock (m_pendingTransactions)
             {
-                foreach (SIPTransaction transaction in m_pendingTransactions.Values)
+                foreach (var (_, transaction) in m_pendingTransactions)
                 {
                     if ((transaction.TransactionType == SIPTransactionTypesEnum.InviteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer) &&
                         transaction.TransactionFinalResponse != null &&
@@ -311,7 +311,7 @@ namespace SIPSorcery.SIP
                     }
                     else
                     {
-                        foreach (SIPTransaction transaction in m_pendingTransactions.Values.Where(x => x.DeliveryPending))
+                        foreach (var (_, transaction) in m_pendingTransactions.Where(x => x.Value.DeliveryPending))
                         {
                             try
                             {
@@ -578,7 +578,7 @@ namespace SIPSorcery.SIP
             {
                 List<string> expiredTransactionIds = new List<string>();
 
-                foreach (SIPTransaction transaction in m_pendingTransactions.Values)
+                foreach (var (_, transaction) in m_pendingTransactions)
                 {
                     if (transaction.TransactionType == SIPTransactionTypesEnum.InviteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
                     {
