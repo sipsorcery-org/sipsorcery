@@ -19,6 +19,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -64,19 +65,31 @@ namespace SIPSorcery.Net
         public ushort sdpMLineIndex { get; private set; }
 
         /// <summary>
-        /// Composed of 1 to 32 chars.  It is an
+        /// Composed of 1 to 32 chars. It is an
         /// identifier that is equivalent for two candidates that are of the
         /// same type, share the same base, and come from the same STUN
         /// server.
         /// </summary>
-        public string foundation { get; private set; }
+        /// <remarks>
+        /// See https://tools.ietf.org/html/rfc8445#section-5.1.1.3.
+        /// </remarks>
+        public string foundation
+        {
+            get
+            {
+                int addressVal = !String.IsNullOrEmpty(address) ? Crypto.GetSHAHash(address).Sum(x => (byte)x) : 0;
+                int svrVal = type == RTCIceCandidateType.relay || type == RTCIceCandidateType.srflx ?
+                    Crypto.GetSHAHash(StunServerAddress, TurnServerAddress).Sum(x => (byte)x) : 0;
+                return (type.GetHashCode() + addressVal + svrVal + protocol.GetHashCode()).ToString();
+            }
+        }
 
         /// <summary>
         ///  Is a positive integer between 1 and 256 (inclusive)
         /// that identifies the specific component of the data stream for
         /// which this is a candidate.
         /// </summary>
-        public RTCIceComponent component { get; private set; }
+        public RTCIceComponent component { get; private set; } = RTCIceComponent.rtp;
 
         /// <summary>
         /// A positive integer between 1 and (2**31 - 1) inclusive.
@@ -139,11 +152,11 @@ namespace SIPSorcery.Net
         public bool HasConnectionError;
 
         //public string Transport;
-        public string NetworkAddress;
-        //public int Port;
-        //public RTCIceCandidateType CandidateType;
-        public string RemoteAddress;
-        public int RemotePort;
+        //public string NetworkAddress;
+        ////public int Port;
+        ////public RTCIceCandidateType CandidateType;
+        //public string RemoteAddress;
+        //public int RemotePort;
         public string RawString;
 
         public Task InitialStunBindingCheck;
@@ -154,12 +167,9 @@ namespace SIPSorcery.Net
         //}
 
         private RTCIceCandidate()
-        {
-            component = RTCIceComponent.rtp;
-            foundation = Crypto.GetRandomInt(10).ToString();
-        }
+        { }
 
-        public RTCIceCandidate(RTCIceCandidateInit init) : this()
+        public RTCIceCandidate(RTCIceCandidateInit init)
         {
             candidate = init.candidate;
             sdpMid = init.sdpMid;
@@ -167,20 +177,20 @@ namespace SIPSorcery.Net
             usernameFragment = init.usernameFragment;
         }
 
-        public RTCIceCandidate(IPAddress localAddress, ushort localPort) : this()
+        public void SetAddressProperties(
+            RTCIceProtocol cProtocol, 
+            IPAddress cAddress, 
+            ushort cPort, 
+            RTCIceCandidateType cType,
+            IPAddress cRelatedAddress,
+            ushort cRelatedPort)
         {
-            NetworkAddress = localAddress.ToString();
-            port = localPort;
-        }
-
-        public RTCIceCandidate(RTCIceProtocol candidateProtocol, IPAddress remoteAddress, ushort localPort, RTCIceCandidateType candidateType)
-             : this()
-        {
-            //Transport = transport;
-            protocol = candidateProtocol;
-            NetworkAddress = remoteAddress.ToString();
-            port = localPort;
-            type = candidateType;
+            protocol = cProtocol;
+            address = cAddress.ToString();
+            port = cPort;
+            type = cType;
+            relatedAddress = cRelatedAddress?.ToString();
+            relatedPort = cRelatedPort;
         }
 
         public static RTCIceCandidate Parse(string candidateLine)
@@ -196,7 +206,7 @@ namespace SIPSorcery.Net
                 candidate.protocol = candidateProtocol;
             }
 
-            candidate.NetworkAddress = candidateFields[4];
+            candidate.address = candidateFields[4];
             candidate.port = Convert.ToUInt16(candidateFields[5]);
 
             if (Enum.TryParse<RTCIceCandidateType>(candidateFields[7], out var candidateType))
@@ -206,16 +216,17 @@ namespace SIPSorcery.Net
 
             if (candidateFields.Length > 8 && candidateFields[8] == REMOTE_ADDRESS_KEY)
             {
-                candidate.RemoteAddress = candidateFields[9];
+                candidate.relatedAddress = candidateFields[9];
             }
 
             if (candidateFields.Length > 10 && candidateFields[10] == REMOTE_PORT_KEY)
             {
-                candidate.RemotePort = Convert.ToInt32(candidateFields[11]);
+                candidate.relatedPort = Convert.ToUInt16(candidateFields[11]);
             }
 
             return candidate;
         }
+
         /// <summary>
         /// 
         /// </summary>
@@ -228,39 +239,24 @@ namespace SIPSorcery.Net
         {
             var candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ host generation 0",
                 foundation,
-                component,
+                component.GetHashCode(),
                 priority,
-                NetworkAddress,
+                address,
                 port);
 
             if (StunRflxIPEndPoint != null)
             {
                 candidateStr += String.Format("{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0",
                     foundation,
-                    component,
+                    component.GetHashCode(),
                     priority,
-                    StunRflxIPEndPoint.Address,
-                    StunRflxIPEndPoint.Port,
-                    NetworkAddress,
+                    relatedAddress,
+                    relatedPort,
+                    address,
                     port);
             }
 
             return candidateStr;
-        }
-
-        /// <summary>
-        /// Calculates the foundation string for an ICE candidate. It can be used to determine whether two ICE candidates are 
-        /// equivalent.
-        /// </summary>
-        /// <remarks>
-        /// See https://tools.ietf.org/html/rfc8445#section-5.1.1.3.
-        /// </remarks>
-        /// <returns>A string capturing the attributes that are used in determining the foundation value.</returns>
-        public string GetFoundation()
-        {
-            string stunOrTurnAddress = !String.IsNullOrEmpty(StunServerAddress) ? StunServerAddress : TurnServerAddress;
-
-            return type + BaseAddress.ToString() + stunOrTurnAddress + TransportProtocol.ToString();
         }
 
         /// <summary>

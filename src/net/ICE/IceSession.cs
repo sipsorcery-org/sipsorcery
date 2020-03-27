@@ -56,10 +56,6 @@ namespace SIPSorcery.Net
         private const float STUN_CHECK_LOW_RANDOMISATION_FACTOR = 0.5F;
         private const float STUN_CHECK_HIGH_RANDOMISATION_FACTOR = 1.5F;
 
-        //a=ice-options:trickle
-        //a=ice-options:ice2
-        //a=setup:actpass // ICE role
-
         private RTPChannel _rtpChannel;
 
         public RTCIceGatheringState GatheringState { get; private set; } = RTCIceGatheringState.@new;
@@ -105,6 +101,22 @@ namespace SIPSorcery.Net
             LocalIcePassword = Crypto.GetRandomString(ICE_PASSWORD_LENGTH);
         }
 
+        /// <summary>
+        /// We've been given the green light to start the ICE candidate gathering process.
+        /// This could include contacting external STUN and TURN servers. Events will 
+        /// be fired as each ICE is identified and as the gathering state machine changes
+        /// state.
+        /// </summary>
+        public void StartGathering()
+        {
+            GatheringState = RTCIceGatheringState.gathering;
+        }
+
+        public List<RTCIceCandidate> GetCandidates()
+        {
+            return HostCandidates;
+        }
+
         public void Close()
         { }
 
@@ -122,11 +134,13 @@ namespace SIPSorcery.Net
         private List<RTCIceCandidate> GetHostCandidates()
         {
             List<RTCIceCandidate> hostCandidates = new List<RTCIceCandidate>();
+            RTCIceCandidateInit init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
 
             foreach(var localAddress in NetServices.LocalIPAddresses.Where(x => 
-                !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal))
+                !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6LinkLocal && !x.IsIPv6SiteLocal))
             {
-                var hostCandidate = new RTCIceCandidate(localAddress, (ushort)_rtpChannel.RTPPort);
+                var hostCandidate = new RTCIceCandidate(init);
+                hostCandidate.SetAddressProperties(RTCIceProtocol.udp, localAddress, (ushort)_rtpChannel.RTPPort, RTCIceCandidateType.host, null, 0);
                 hostCandidates.Add(hostCandidate);
             }
 

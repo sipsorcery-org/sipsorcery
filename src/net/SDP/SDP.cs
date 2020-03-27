@@ -115,15 +115,18 @@ namespace SIPSorcery.Net
         public const string SDP_MIME_CONTENTTYPE = "application/sdp";
         public const decimal SDP_PROTOCOL_VERSION = 0M;
         public const string GROUP_ATRIBUTE_PREFIX = "group";
-        public const string ICE_UFRAG_ATTRIBUTE_PREFIX = "ice-ufrag";
-        public const string ICE_PWD_ATTRIBUTE_PREFIX = "ice-pwd";
         public const string DTLS_FINGERPRINT_ATTRIBUTE_PREFIX = "fingerprint";
         public const string ICE_CANDIDATE_ATTRIBUTE_PREFIX = "candidate";
         public const string ADDRESS_TYPE_IPV4 = "IP4";
         public const string ADDRESS_TYPE_IPV6 = "IP6";
         public const string DEFAULT_TIMING = "0 0";
-        public const string END_ICE_CANDIDATES_ATTRIBUTE = "end-of-candidates";
         public const string MEDIA_ID_ATTRIBUTE_PREFIX = "mid";
+
+        // ICE attributes.
+        public const string ICE_UFRAG_ATTRIBUTE_PREFIX = "ice-ufrag";
+        public const string ICE_PWD_ATTRIBUTE_PREFIX = "ice-pwd";
+        public const string END_ICE_CANDIDATES_ATTRIBUTE = "end-of-candidates";
+        public const string ICE_OPTIONS = "ice-options";
 
         private static ILogger logger = Log.Logger;
 

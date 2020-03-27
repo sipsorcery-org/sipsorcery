@@ -36,6 +36,8 @@ namespace SIPSorcery.Net
         public string Transport = "RTP/AVP";    // Defined types RTP/AVP (RTP Audio Visual Profile) and udp.
         public string IceUfrag;                 // If ICE is being used the username for the STUN requests.
         public string IcePwd;                   // If ICE is being used the password for the STUN requests.
+        public string IceOptions;               // Optional attribute to specify support ICE options, e.g. "trickle".
+        public bool IceEndOfCandidates;         // If ICE candidate trickling is being used this needs to be set if all candidates have been gathered.
         public string DtlsFingerprint;          // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
 
         /// <summary>
@@ -169,6 +171,15 @@ namespace SIPSorcery.Net
                 {
                     announcement += $"a={SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX}:{candidate}{m_CRLF}";
                 }
+            }
+
+            if(IceOptions != null)
+            {
+                announcement += $"a={SDP.ICE_OPTIONS}:" + IceOptions + m_CRLF;
+            }
+
+            if (IceEndOfCandidates)
+            {
                 announcement += $"a={SDP.END_ICE_CANDIDATES_ATTRIBUTE}" + m_CRLF;
             }
 

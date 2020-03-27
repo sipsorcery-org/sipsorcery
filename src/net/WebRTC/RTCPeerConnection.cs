@@ -115,6 +115,7 @@ namespace SIPSorcery.Net
         private const string SETUP_OFFER_ATTRIBUTE = "a=setup:actpass"; // Indicates the media announcement DTLS negotiation state is active/passive.
         private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is passive.
         private const string MEDIA_GROUPING = "BUNDLE 0 1";
+        private const string ICE_OPTIONS = "trickle";                   // Supported ICE options.
 
         private static ILogger logger = Log.Logger;
 
@@ -205,11 +206,8 @@ namespace SIPSorcery.Net
             base.setLocalDescription(description);
 
             var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
-
-            if (rtpChannel != null)
-            {
-                rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
-            }
+            rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
+            IceSession.StartGathering();
 
             return Task.CompletedTask;
         }
@@ -365,16 +363,37 @@ namespace SIPSorcery.Net
             {
                 var offerSdp = await createBaseSdp().ConfigureAwait(false);
 
+                SDPMediaAnnouncement firstAnnouncement = null;
+
                 if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 {
                     var audioAnnouncement = offerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single();
-                    audioAnnouncement.AddExtra(SETUP_OFFER_ATTRIBUTE);
+                    //audioAnnouncement.AddExtra(SETUP_OFFER_ATTRIBUTE);
+                    firstAnnouncement = audioAnnouncement;
                 }
 
-                if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
+                if (firstAnnouncement == null)
                 {
-                    var videoAnnouncement = offerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single();
-                    videoAnnouncement.AddExtra(SETUP_OFFER_ATTRIBUTE);
+                    if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
+                    {
+                        var videoAnnouncement = offerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single();
+                        //videoAnnouncement.AddExtra(SETUP_OFFER_ATTRIBUTE);
+                        firstAnnouncement = videoAnnouncement;
+                    }
+                }
+
+                // Add ICE candidates.
+                if (firstAnnouncement != null)
+                {
+                    firstAnnouncement.IceUfrag = IceSession.LocalIceUser;
+                    firstAnnouncement.IcePwd = IceSession.LocalIcePassword;
+                    firstAnnouncement.IceOptions = ICE_OPTIONS;
+
+                    firstAnnouncement.IceCandidates = new List<string>();
+                    foreach(var iceCandidate in IceSession.GetCandidates())
+                    {
+                        firstAnnouncement.IceCandidates.Add(iceCandidate.ToString());
+                    }
                 }
 
                 RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit

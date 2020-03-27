@@ -80,7 +80,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Single(offerSDP.Media);
             Assert.Contains(offerSDP.Media, x => x.Media == SDPMediaTypesEnum.audio);
 
-            logger.LogDebug(offer.ToString());
+            logger.LogDebug(offer.sdp);
         }
     }
 }
