@@ -84,6 +84,8 @@ namespace SIPSorcery.SIP.App
         public event Action<SIPURI> RegistrationSuccessful;
         public event Action<SIPURI> RegistrationRemoved;
 
+        public Func<SIPRequest, SIPRequest> AdjustRegister;
+
         /// <summary>
         /// Creates a new SIP registration agent that will attempt to register with a SIP Registrar server.
         /// If the registration fails the agent will retry up to a hard coded maximum number of 3 attempts.
@@ -606,7 +608,12 @@ namespace SIPSorcery.SIP.App
                     }
                 }
 
-                return registerRequest;
+                if (AdjustRegister == null)
+                {
+                    return registerRequest;
+                }
+
+                return AdjustRegister(registerRequest);
             }
             catch (Exception excp)
             {
