@@ -493,13 +493,13 @@ namespace SIPSorcery.SIP
         /// <returns>The result of the send attempt.</returns>
         private Task<SocketError> SendTransactionProvisionalResponse(SIPTransaction transaction)
         {
-            if (transaction.InitialTransmit == DateTime.MinValue)
-            {
-                transaction.InitialTransmit = DateTime.Now;
-            }
-
             transaction.Retransmits = transaction.Retransmits + 1;
             transaction.LastTransmit = DateTime.Now;
+
+            if (transaction.InitialTransmit == DateTime.MinValue)
+            {
+                transaction.InitialTransmit = transaction.LastTransmit;
+            }
 
             // Provisional response reliable for INVITE-UAS.
             if (transaction.Retransmits > 1)
@@ -518,13 +518,13 @@ namespace SIPSorcery.SIP
         /// <returns>The result of the send attempt.</returns>
         private Task<SocketError> SendTransactionFinalResponse(SIPTransaction transaction)
         {
-            if (transaction.InitialTransmit == DateTime.MinValue)
-            {
-                transaction.InitialTransmit = DateTime.Now;
-            }
-
             transaction.Retransmits = transaction.Retransmits + 1;
             transaction.LastTransmit = DateTime.Now;
+
+            if (transaction.InitialTransmit == DateTime.MinValue)
+            {
+                transaction.InitialTransmit = transaction.LastTransmit;
+            }
 
             if (transaction.Retransmits > 1)
             {
@@ -543,13 +543,13 @@ namespace SIPSorcery.SIP
         {
             Task<SocketError> result = null;
 
-            if (transaction.InitialTransmit == DateTime.MinValue)
-            {
-                transaction.InitialTransmit = DateTime.Now;
-            }
-
             transaction.Retransmits = transaction.Retransmits + 1;
             transaction.LastTransmit = DateTime.Now;
+
+            if (transaction.InitialTransmit == DateTime.MinValue)
+            {
+                transaction.InitialTransmit = transaction.LastTransmit;
+            }
 
             // INVITE-UAC and no-INVITE transaction types, send request reliably.
             if (transaction.Retransmits > 1)
