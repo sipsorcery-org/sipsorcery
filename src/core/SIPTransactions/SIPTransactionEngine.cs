@@ -232,9 +232,10 @@ namespace SIPSorcery.SIP
         {
             logger.LogDebug("=== Pending Transactions ===");
 
+            var now = DateTime.Now;
             foreach (var (_, transaction) in m_pendingTransactions)
             {
-                logger.LogDebug("Pending transaction " + transaction.TransactionRequest.Method + " " + transaction.TransactionState + " " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0.##") + "s " + transaction.TransactionRequestURI.ToString() + " (" + transaction.TransactionId + ").");
+                logger.LogDebug("Pending transaction " + transaction.TransactionRequest.Method + " " + transaction.TransactionState + " " + now.Subtract(transaction.Created).TotalSeconds.ToString("0.##") + "s " + transaction.TransactionRequestURI.ToString() + " (" + transaction.TransactionId + ").");
             }
         }
 
@@ -577,6 +578,7 @@ namespace SIPSorcery.SIP
             try
             {
                 List<string> expiredTransactionIds = new List<string>();
+                var now = DateTime.Now;
 
                 foreach (var (_, transaction) in m_pendingTransactions)
                 {
@@ -585,14 +587,14 @@ namespace SIPSorcery.SIP
                         if (transaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
                         {
                             // Need to wait until the transaction timeout period is reached in case any ACK re-transmits are received.
-                            if (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
+                            if (now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
                             {
                                 expiredTransactionIds.Add(transaction.TransactionId);
                             }
                         }
                         else if (transaction.TransactionState == SIPTransactionStatesEnum.Completed)
                         {
-                            if (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
+                            if (now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
                             {
                                 expiredTransactionIds.Add(transaction.TransactionId);
                             }
@@ -600,24 +602,24 @@ namespace SIPSorcery.SIP
                         else if (transaction.HasTimedOut)
                         {
                             // For INVITES need to give timed out transactions time to send the reliable responses and receive the ACKs.
-                            if (DateTime.Now.Subtract(transaction.TimedOutAt).TotalSeconds >= m_t6)
+                            if (now.Subtract(transaction.TimedOutAt).TotalSeconds >= m_t6)
                             {
                                 expiredTransactionIds.Add(transaction.TransactionId);
                             }
                         }
                         else if (transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
                         {
-                            if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_maxRingTime)
+                            if (now.Subtract(transaction.Created).TotalMilliseconds >= m_maxRingTime)
                             {
                                 // INVITE requests that have been ringing too long.
                                 transaction.HasTimedOut = true;
-                                transaction.TimedOutAt = DateTime.Now;
+                                transaction.TimedOutAt = now;
                                 transaction.DeliveryPending = false;
                                 transaction.DeliveryFailed = true;
                                 transaction.FireTransactionTimedOut();
                             }
                         }
-                        else if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
+                        else if (now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
                         {
                             //logger.LogDebug("INVITE transaction (" + transaction.TransactionId + ") " + transaction.TransactionRequestURI.ToString() + " in " + transaction.TransactionState + " has been alive for " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0") + ".");
 
@@ -625,7 +627,7 @@ namespace SIPSorcery.SIP
                                 transaction.TransactionState == SIPTransactionStatesEnum.Trying)
                             {
                                 transaction.HasTimedOut = true;
-                                transaction.TimedOutAt = DateTime.Now;
+                                transaction.TimedOutAt = now;
                                 transaction.DeliveryPending = false;
                                 transaction.DeliveryFailed = true;
                                 transaction.FireTransactionTimedOut();
@@ -636,7 +638,7 @@ namespace SIPSorcery.SIP
                     {
                         expiredTransactionIds.Add(transaction.TransactionId);
                     }
-                    else if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
+                    else if (now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
                     {
                         if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
                            transaction.TransactionState == SIPTransactionStatesEnum.Trying ||
@@ -645,7 +647,7 @@ namespace SIPSorcery.SIP
                             //logger.LogWarning("Timed out transaction in SIPTransactionEngine, should have been timed out in the SIP Transport layer. " + transaction.TransactionRequest.Method + ".");
                             transaction.DeliveryPending = false;
                             transaction.DeliveryFailed = true;
-                            transaction.TimedOutAt = DateTime.Now;
+                            transaction.TimedOutAt = now;
                             transaction.HasTimedOut = true;
                             transaction.FireTransactionTimedOut();
                         }
