@@ -307,7 +307,7 @@ namespace SIPSorcery.SIP
                 {
                     if (m_pendingTransactions.IsEmpty)
                     {
-                        Task.Delay(MAX_TXCHECK_WAIT_MILLISECONDS).Wait();
+                        Thread.Sleep(MAX_TXCHECK_WAIT_MILLISECONDS);
                     }
                     else
                     {
@@ -474,7 +474,7 @@ namespace SIPSorcery.SIP
 
                         RemoveExpiredTransactions();
 
-                       Task.Delay(TXCHECK_WAIT_MILLISECONDS).Wait();
+                       Thread.Sleep(TXCHECK_WAIT_MILLISECONDS);
                     }
                 }
             }
