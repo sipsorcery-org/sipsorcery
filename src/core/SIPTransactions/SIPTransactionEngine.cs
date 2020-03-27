@@ -305,7 +305,7 @@ namespace SIPSorcery.SIP
             {
                 while (!m_isClosed)
                 {
-                    if (m_pendingTransactions.Count == 0)
+                    if (m_pendingTransactions.IsEmpty)
                     {
                         Task.Delay(MAX_TXCHECK_WAIT_MILLISECONDS).Wait();
                     }
