@@ -53,6 +53,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
@@ -148,7 +149,77 @@ namespace SIPSorcery
             {
                 logger.LogDebug($"RunCommand scenario {options.Scenario}, destination {options.Destination}");
 
-                SIPTransport sipTransport = new SIPTransport();
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+
+                CancellationTokenSource cts = new CancellationTokenSource();
+                int taskCount = 0;
+                int successCount = 0;
+
+                List<Task> tasks = new List<Task>();
+
+                for (int i = 0; i < options.Concurrent; i++)
+                {
+                    var task = Task.Run(async () =>
+                    {
+                        while (taskCount < options.Count && !cts.IsCancellationRequested)
+                        {
+                            int taskNum = Interlocked.Increment(ref taskCount);
+                            bool success = await RunTask(options, taskNum);
+
+                            if (success)
+                            {
+                                Interlocked.Increment(ref successCount);
+                            }
+                            else if (options.BreakOnFail)
+                            {
+                                cts.Cancel();
+                                break;
+                            }
+                            else if (options.Period > 0)
+                            {
+                                await Task.Delay(options.Period * 1000);
+                            }
+                        }
+                    }, cts.Token);
+
+                    tasks.Add(task);
+
+                    // Spread the concurrent tasks out a tiny bit.
+                    await Task.Delay(Crypto.GetRandomInt(500, 2000));
+                }
+
+                // Wait for all the concurrent tasks to complete.
+                await Task.WhenAll(tasks.ToArray());
+
+                sw.Stop();
+
+                DNSManager.Stop();
+
+                // Give the transport half a second to shutdown (puts the log messages in a better sequence).
+                await Task.Delay(500);
+
+                logger.LogInformation($"=> Command completed task count {taskCount} success count {successCount} duration {sw.Elapsed.TotalSeconds:0.##}s.");
+            }
+            catch (Exception excp)
+            {
+                logger.LogError($"Exception RunCommand. {excp.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Runs a single task as part of the overall job.
+        /// </summary>
+        /// <param name="options">The options that dictate the type of task to run.</param>
+        /// <param name="taskNumber">The number assigned to this task.</param>
+        /// <returns>A boolean indicating whether this single task succeeded or not.</returns>
+        private static async Task<bool> RunTask(Options options, int taskNumber)
+        {
+            SIPTransport sipTransport = new SIPTransport();
+
+            try
+            {
+                DateTime startTime = DateTime.Now;
 
                 (var dstEp, var dstUri) = ParseDestination(options.Destination);
 
@@ -181,105 +252,6 @@ namespace SIPSorcery
                 }
 
                 sipTransport.AddSIPChannel(sipChannel);
-
-                CancellationTokenSource cts = new CancellationTokenSource();
-                int taskCount = 0;
-                int successCount = 0;
-
-                List<Task> tasks = new List<Task>();
-
-                for (int i = 0; i < options.Concurrent; i++)
-                {
-                    var task = Task.Run(async () =>
-                    {
-                        while (taskCount < options.Count && !cts.IsCancellationRequested)
-                        {
-                            int taskNum = Interlocked.Increment(ref taskCount);
-                            bool success = await RunTask(options, taskNum, sipTransport, dstUri, dstEp);
-
-                            if (success)
-                            {
-                                Interlocked.Increment(ref successCount);
-                            }
-                            else if (options.BreakOnFail)
-                            {
-                                cts.Cancel();
-                                break;
-                            }
-                            else if (options.Period > 0)
-                            {
-                                await Task.Delay(options.Period * 1000);
-                            }
-                        }
-                    }, cts.Token);
-
-                    tasks.Add(task);
-
-                    // Spread the concurrent tasks out a tiny bit.
-                    await Task.Delay(Crypto.GetRandomInt(500, 2000));
-                }
-
-                // Wait for all the concurrent tasks to complete.
-                await Task.WhenAll(tasks.ToArray());
-
-                DNSManager.Stop();
-
-                // Give the transport half a second to shutdown (puts the log messages in a better sequence).
-                await Task.Delay(500);
-
-                logger.LogInformation($"=> Command completed task count {taskCount} success count {successCount}.");
-            }
-            catch (Exception excp)
-            {
-                logger.LogError($"Exception RunCommand. {excp.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Runs a single task as part of the overall job.
-        /// </summary>
-        /// <param name="options">The options that dictate the type of task to run.</param>
-        /// <param name="taskNumber">The number assigned to this task.</param>
-        /// <returns>A boolean indicating whether this single task succeeded or not.</returns>
-        private static async Task<bool> RunTask(Options options, int taskNumber, SIPTransport sipTransport, SIPURI dstUri, SIPEndPoint dstEp)
-        {
-            //SIPTransport sipTransport = new SIPTransport();
-
-            try
-            {
-                DateTime startTime = DateTime.Now;
-
-                //(var dstEp, var dstUri) = ParseDestination(options.Destination);
-
-                //logger.LogDebug($"Destination IP end point {dstEp} and SIP URI {dstUri}");
-
-                //IPAddress localAddress = (dstEp.Address.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
-                //SIPChannel sipChannel = null;
-
-                //switch (dstEp.Protocol)
-                //{
-                //    case SIPProtocolsEnum.tcp:
-                //        sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
-                //        (sipChannel as SIPTCPChannel).DisableLocalTCPSocketsCheck = true; // Allow sends to listeners on this host.
-                //        break;
-                //    case SIPProtocolsEnum.tls:
-                //        var certificate = new X509Certificate2(@"localhost.pfx", "");
-                //        sipChannel = new SIPTLSChannel(certificate, new IPEndPoint(localAddress, DEFAULT_SIPS_CLIENT_PORT));
-                //        break;
-                //    case SIPProtocolsEnum.udp:
-                //        sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
-                //        break;
-                //    case SIPProtocolsEnum.ws:
-                //        sipChannel = new SIPClientWebSocketChannel();
-                //        break;
-                //    case SIPProtocolsEnum.wss:
-                //        sipChannel = new SIPClientWebSocketChannel();
-                //        break;
-                //    default:
-                //        throw new ApplicationException($"Don't know how to create SIP channel for transport {dstEp.Protocol}.");
-                //}
-
-                //sipTransport.AddSIPChannel(sipChannel);
 
                 Task<bool> task = null;
 
@@ -319,7 +291,7 @@ namespace SIPSorcery
             finally
             {
                 logger.LogDebug("Shutting down the SIP transport...");
-                //sipTransport.Shutdown();
+                sipTransport.Shutdown();
             }
         }
 
