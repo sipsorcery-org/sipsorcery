@@ -25331,6 +25331,22 @@ references:
   commentId: T:SIPSorcery.Sys.TypeExtensions
   fullName: SIPSorcery.Sys.TypeExtensions
   nameWithType: TypeExtensions
+- uid: SIPSorcery.Sys.TypeExtensions.Deconstruct*
+  name: Deconstruct
+  href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_Deconstruct_
+  commentId: Overload:SIPSorcery.Sys.TypeExtensions.Deconstruct
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.TypeExtensions.Deconstruct
+  nameWithType: TypeExtensions.Deconstruct
+- uid: SIPSorcery.Sys.TypeExtensions.Deconstruct``2(System.Collections.Generic.KeyValuePair{``0,``1},``0@,``1@)
+  name: Deconstruct<T1, T2>(KeyValuePair<T1, T2>, out T1, out T2)
+  href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_Deconstruct__2_System_Collections_Generic_KeyValuePair___0___1____0____1__
+  commentId: M:SIPSorcery.Sys.TypeExtensions.Deconstruct``2(System.Collections.Generic.KeyValuePair{``0,``1},``0@,``1@)
+  name.vb: Deconstruct(Of T1, T2)(KeyValuePair(Of T1, T2), ByRef T1, ByRef T2)
+  fullName: SIPSorcery.Sys.TypeExtensions.Deconstruct<T1, T2>(System.Collections.Generic.KeyValuePair<T1, T2>, out T1, out T2)
+  fullName.vb: SIPSorcery.Sys.TypeExtensions.Deconstruct(Of T1, T2)(System.Collections.Generic.KeyValuePair(Of T1, T2), ByRef T1, ByRef T2)
+  nameWithType: TypeExtensions.Deconstruct<T1, T2>(KeyValuePair<T1, T2>, out T1, out T2)
+  nameWithType.vb: TypeExtensions.Deconstruct(Of T1, T2)(KeyValuePair(Of T1, T2), ByRef T1, ByRef T2)
 - uid: SIPSorcery.Sys.TypeExtensions.GetEpoch(System.DateTime)
   name: GetEpoch(DateTime)
   href: api/SIPSorcery.Sys.TypeExtensions.html#SIPSorcery_Sys_TypeExtensions_GetEpoch_System_DateTime_
