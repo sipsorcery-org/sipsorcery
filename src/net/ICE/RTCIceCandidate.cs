@@ -32,14 +32,6 @@ namespace SIPSorcery.Net
         public const string m_CRLF = "\r\n";
         public const string REMOTE_ADDRESS_KEY = "raddr";
         public const string REMOTE_PORT_KEY = "rport";
-        public const int RTP_COMPONENT_ID = 1;
-        public const int RTCP_COMPONENTID = 2;
-
-        /// <summary>
-        /// This implementation does not support separate RTP and RTCP sessions.
-        /// It assumes RTP and RTCP will always be multiplexed.
-        /// </summary>
-        public readonly int ComponentID = RTP_COMPONENT_ID;
 
         /// <summary>
         /// The base address is the local address on this host for the candidate. The 
@@ -100,7 +92,15 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See specification at https://tools.ietf.org/html/rfc8445#section-5.1.2.
         /// </remarks>
-        public ulong priority { get; private set; }
+        public ulong priority
+        {
+            get
+            {
+                return (ulong)((2 ^ 24) * (126 - type.GetHashCode()) +
+                       (2 ^ 8) * (65535) + // TODO: Add some kind of priority to different local IP addresses if needed.
+                       (2 ^ 0) * (256 - component.GetHashCode()));
+            }
+        }
 
         /// <summary>
         /// The local address for the candidate.
@@ -157,24 +157,28 @@ namespace SIPSorcery.Net
         ////public RTCIceCandidateType CandidateType;
         //public string RemoteAddress;
         //public int RemotePort;
-        public string RawString;
-
+        //public string RawString;
         public Task InitialStunBindingCheck;
-
-        //public bool IsConnected
-        //{
-        //    get { return IsStunLocalExchangeComplete == true && IsStunRemoteExchangeComplete && !IsDisconnected; }
-        //}
 
         private RTCIceCandidate()
         { }
 
         public RTCIceCandidate(RTCIceCandidateInit init)
         {
-            candidate = init.candidate;
             sdpMid = init.sdpMid;
             sdpMLineIndex = init.sdpMLineIndex;
             usernameFragment = init.usernameFragment;
+
+            if(!String.IsNullOrEmpty(init.candidate))
+            {
+                var iceCandidate = Parse(init.candidate);
+                component = iceCandidate.component;
+                address = iceCandidate.address;
+                port = iceCandidate.port;
+                type = iceCandidate.type;
+                relatedAddress = iceCandidate.relatedAddress;
+                relatedPort = iceCandidate.relatedPort;
+            }
         }
 
         public void SetAddressProperties(
@@ -197,7 +201,7 @@ namespace SIPSorcery.Net
         {
             RTCIceCandidate candidate = new RTCIceCandidate();
 
-            candidate.RawString = candidateLine;
+            //candidate.RawString = candidateLine;
 
             string[] candidateFields = candidateLine.Trim().Split(' ');
 
@@ -228,13 +232,15 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// 
+        /// Serialises an ICE candidate to a string that's suitable for inclusion in an SDP session
+        /// description payload.
         /// </summary>
         /// <remarks>
         /// The specification regarding how an ICE candidate should be serialised in SDP is at
         /// https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-5.1.   
         /// </remarks>
-        /// <returns></returns>
+        /// <returns>A string representing the ICE candidate suitable for inclusion in an SDP session
+        /// description.</returns>
         public override string ToString()
         {
             var candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ host generation 0",
@@ -257,18 +263,6 @@ namespace SIPSorcery.Net
             }
 
             return candidateStr;
-        }
-
-        /// <summary>
-        /// Determines the unique priority value for an ICE candidate.
-        /// </summary>
-        /// <remarks>
-        /// See https://tools.ietf.org/html/rfc8445#section-5.1.2.
-        /// </remarks>
-        /// <returns></returns>
-        public int GetPriority()
-        {
-            return 0;
         }
 
         public RTCIceCandidateInit toJSON()
