@@ -53,6 +53,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
@@ -148,6 +149,9 @@ namespace SIPSorcery
             {
                 logger.LogDebug($"RunCommand scenario {options.Scenario}, destination {options.Destination}");
 
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+
                 CancellationTokenSource cts = new CancellationTokenSource();
                 int taskCount = 0;
                 int successCount = 0;
@@ -188,12 +192,14 @@ namespace SIPSorcery
                 // Wait for all the concurrent tasks to complete.
                 await Task.WhenAll(tasks.ToArray());
 
+                sw.Stop();
+
                 DNSManager.Stop();
 
                 // Give the transport half a second to shutdown (puts the log messages in a better sequence).
                 await Task.Delay(500);
 
-                logger.LogInformation($"=> Command completed task count {taskCount} success count {successCount}.");
+                logger.LogInformation($"=> Command completed task count {taskCount} success count {successCount} duration {sw.Elapsed.TotalSeconds:0.##}s.");
             }
             catch (Exception excp)
             {
