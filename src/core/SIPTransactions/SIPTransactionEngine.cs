@@ -140,7 +140,7 @@ namespace SIPSorcery.SIP
                     {
                         //logger.LogDebug("Looking for ACK transaction, branchid=" + sipRequest.Header.Via.TopViaHeader.Branch + ".");
 
-                        foreach (SIPTransaction transaction in m_pendingTransactions.Values)
+                        foreach (var (_, transaction) in m_pendingTransactions)
                         {
                             // According to the standard an ACK should only not get matched by the branchid on the original INVITE for a non-2xx response. However
                             // my Cisco phone created a new branchid on ACKs to 487 responses and since the Cisco also used the same Call-ID and From tag on the initial
@@ -184,7 +184,7 @@ namespace SIPSorcery.SIP
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.PRACK)
                     {
-                        foreach (SIPTransaction transaction in m_pendingTransactions.Values)
+                        foreach (var (_, transaction) in m_pendingTransactions)
                         {
                             if (transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
                             {
@@ -232,9 +232,10 @@ namespace SIPSorcery.SIP
         {
             logger.LogDebug("=== Pending Transactions ===");
 
-            foreach (SIPTransaction transaction in m_pendingTransactions.Values)
+            var now = DateTime.Now;
+            foreach (var (_, transaction) in m_pendingTransactions)
             {
-                logger.LogDebug("Pending transaction " + transaction.TransactionRequest.Method + " " + transaction.TransactionState + " " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0.##") + "s " + transaction.TransactionRequestURI.ToString() + " (" + transaction.TransactionId + ").");
+                logger.LogDebug("Pending transaction " + transaction.TransactionRequest.Method + " " + transaction.TransactionState + " " + now.Subtract(transaction.Created).TotalSeconds.ToString("0.##") + "s " + transaction.TransactionRequestURI.ToString() + " (" + transaction.TransactionId + ").");
             }
         }
 
@@ -271,7 +272,7 @@ namespace SIPSorcery.SIP
 
             lock (m_pendingTransactions)
             {
-                foreach (SIPTransaction transaction in m_pendingTransactions.Values)
+                foreach (var (_, transaction) in m_pendingTransactions)
                 {
                     if ((transaction.TransactionType == SIPTransactionTypesEnum.InviteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer) &&
                         transaction.TransactionFinalResponse != null &&
@@ -305,13 +306,13 @@ namespace SIPSorcery.SIP
             {
                 while (!m_isClosed)
                 {
-                    if (m_pendingTransactions.Count == 0)
+                    if (m_pendingTransactions.IsEmpty)
                     {
-                        Task.Delay(MAX_TXCHECK_WAIT_MILLISECONDS).Wait();
+                        Thread.Sleep(MAX_TXCHECK_WAIT_MILLISECONDS);
                     }
                     else
                     {
-                        foreach (SIPTransaction transaction in m_pendingTransactions.Values.Where(x => x.DeliveryPending))
+                        foreach (var (_, transaction) in m_pendingTransactions.Where(x => x.Value.DeliveryPending))
                         {
                             try
                             {
@@ -474,7 +475,7 @@ namespace SIPSorcery.SIP
 
                         RemoveExpiredTransactions();
 
-                       Task.Delay(TXCHECK_WAIT_MILLISECONDS).Wait();
+                       Thread.Sleep(TXCHECK_WAIT_MILLISECONDS);
                     }
                 }
             }
@@ -492,13 +493,13 @@ namespace SIPSorcery.SIP
         /// <returns>The result of the send attempt.</returns>
         private Task<SocketError> SendTransactionProvisionalResponse(SIPTransaction transaction)
         {
-            if (transaction.InitialTransmit == DateTime.MinValue)
-            {
-                transaction.InitialTransmit = DateTime.Now;
-            }
-
             transaction.Retransmits = transaction.Retransmits + 1;
             transaction.LastTransmit = DateTime.Now;
+
+            if (transaction.InitialTransmit == DateTime.MinValue)
+            {
+                transaction.InitialTransmit = transaction.LastTransmit;
+            }
 
             // Provisional response reliable for INVITE-UAS.
             if (transaction.Retransmits > 1)
@@ -517,13 +518,13 @@ namespace SIPSorcery.SIP
         /// <returns>The result of the send attempt.</returns>
         private Task<SocketError> SendTransactionFinalResponse(SIPTransaction transaction)
         {
-            if (transaction.InitialTransmit == DateTime.MinValue)
-            {
-                transaction.InitialTransmit = DateTime.Now;
-            }
-
             transaction.Retransmits = transaction.Retransmits + 1;
             transaction.LastTransmit = DateTime.Now;
+
+            if (transaction.InitialTransmit == DateTime.MinValue)
+            {
+                transaction.InitialTransmit = transaction.LastTransmit;
+            }
 
             if (transaction.Retransmits > 1)
             {
@@ -542,13 +543,13 @@ namespace SIPSorcery.SIP
         {
             Task<SocketError> result = null;
 
-            if (transaction.InitialTransmit == DateTime.MinValue)
-            {
-                transaction.InitialTransmit = DateTime.Now;
-            }
-
             transaction.Retransmits = transaction.Retransmits + 1;
             transaction.LastTransmit = DateTime.Now;
+
+            if (transaction.InitialTransmit == DateTime.MinValue)
+            {
+                transaction.InitialTransmit = transaction.LastTransmit;
+            }
 
             // INVITE-UAC and no-INVITE transaction types, send request reliably.
             if (transaction.Retransmits > 1)
@@ -577,22 +578,23 @@ namespace SIPSorcery.SIP
             try
             {
                 List<string> expiredTransactionIds = new List<string>();
+                var now = DateTime.Now;
 
-                foreach (SIPTransaction transaction in m_pendingTransactions.Values)
+                foreach (var (_, transaction) in m_pendingTransactions)
                 {
                     if (transaction.TransactionType == SIPTransactionTypesEnum.InviteClient || transaction.TransactionType == SIPTransactionTypesEnum.InviteServer)
                     {
                         if (transaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
                         {
                             // Need to wait until the transaction timeout period is reached in case any ACK re-transmits are received.
-                            if (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
+                            if (now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
                             {
                                 expiredTransactionIds.Add(transaction.TransactionId);
                             }
                         }
                         else if (transaction.TransactionState == SIPTransactionStatesEnum.Completed)
                         {
-                            if (DateTime.Now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
+                            if (now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
                             {
                                 expiredTransactionIds.Add(transaction.TransactionId);
                             }
@@ -600,24 +602,24 @@ namespace SIPSorcery.SIP
                         else if (transaction.HasTimedOut)
                         {
                             // For INVITES need to give timed out transactions time to send the reliable responses and receive the ACKs.
-                            if (DateTime.Now.Subtract(transaction.TimedOutAt).TotalSeconds >= m_t6)
+                            if (now.Subtract(transaction.TimedOutAt).TotalSeconds >= m_t6)
                             {
                                 expiredTransactionIds.Add(transaction.TransactionId);
                             }
                         }
                         else if (transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
                         {
-                            if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_maxRingTime)
+                            if (now.Subtract(transaction.Created).TotalMilliseconds >= m_maxRingTime)
                             {
                                 // INVITE requests that have been ringing too long.
                                 transaction.HasTimedOut = true;
-                                transaction.TimedOutAt = DateTime.Now;
+                                transaction.TimedOutAt = now;
                                 transaction.DeliveryPending = false;
                                 transaction.DeliveryFailed = true;
                                 transaction.FireTransactionTimedOut();
                             }
                         }
-                        else if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
+                        else if (now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
                         {
                             //logger.LogDebug("INVITE transaction (" + transaction.TransactionId + ") " + transaction.TransactionRequestURI.ToString() + " in " + transaction.TransactionState + " has been alive for " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0") + ".");
 
@@ -625,7 +627,7 @@ namespace SIPSorcery.SIP
                                 transaction.TransactionState == SIPTransactionStatesEnum.Trying)
                             {
                                 transaction.HasTimedOut = true;
-                                transaction.TimedOutAt = DateTime.Now;
+                                transaction.TimedOutAt = now;
                                 transaction.DeliveryPending = false;
                                 transaction.DeliveryFailed = true;
                                 transaction.FireTransactionTimedOut();
@@ -636,7 +638,7 @@ namespace SIPSorcery.SIP
                     {
                         expiredTransactionIds.Add(transaction.TransactionId);
                     }
-                    else if (DateTime.Now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
+                    else if (now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
                     {
                         if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
                            transaction.TransactionState == SIPTransactionStatesEnum.Trying ||
@@ -645,7 +647,7 @@ namespace SIPSorcery.SIP
                             //logger.LogWarning("Timed out transaction in SIPTransactionEngine, should have been timed out in the SIP Transport layer. " + transaction.TransactionRequest.Method + ".");
                             transaction.DeliveryPending = false;
                             transaction.DeliveryFailed = true;
-                            transaction.TimedOutAt = DateTime.Now;
+                            transaction.TimedOutAt = now;
                             transaction.HasTimedOut = true;
                             transaction.FireTransactionTimedOut();
                         }
