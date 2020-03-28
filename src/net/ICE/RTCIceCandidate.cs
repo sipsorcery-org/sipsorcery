@@ -158,7 +158,7 @@ namespace SIPSorcery.Net
         //public string RemoteAddress;
         //public int RemotePort;
         //public string RawString;
-        public Task InitialStunBindingCheck;
+        //public Task InitialStunBindingCheck;
 
         private RTCIceCandidate()
         { }

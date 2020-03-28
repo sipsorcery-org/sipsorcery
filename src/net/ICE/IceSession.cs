@@ -87,6 +87,8 @@ namespace SIPSorcery.Net
         public string LocalIceUser;
         public string LocalIcePassword;
 
+        public event Action<RTCIceCandidate> onicecandidate;
+
         /// <summary>
         /// Creates a new instance of an ICE session.
         /// </summary>
