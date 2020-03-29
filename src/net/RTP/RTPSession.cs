@@ -696,6 +696,9 @@ namespace SIPSorcery.Net
                 {
                     m_tracks.Remove(m_tracks.Where(x => x.Kind == SDPMediaTypesEnum.audio).Single());
                 }
+
+                m_audioRtcpSession?.Close("no audio track");
+                m_audioRtcpSession = null;
             }
 
             var videoAnnounce = sessionDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
@@ -710,8 +713,8 @@ namespace SIPSorcery.Net
                     addTrack(remoteVideoTrack);
 
                     var videoAddr = (videoAnnounce.Connection != null) ? IPAddress.Parse(videoAnnounce.Connection.ConnectionAddress) : connAddr;
-                    VideoDestinationEndPoint = new IPEndPoint(videoAddr, audioAnnounce.Port);
-                    VideoControlDestinationEndPoint = new IPEndPoint(videoAddr, audioAnnounce.Port + 1);
+                    VideoDestinationEndPoint = new IPEndPoint(videoAddr, videoAnnounce.Port);
+                    VideoControlDestinationEndPoint = new IPEndPoint(videoAddr, videoAnnounce.Port + 1);
                 }
                 else
                 {
@@ -725,6 +728,9 @@ namespace SIPSorcery.Net
                 {
                     m_tracks.Remove(m_tracks.Where(x => x.Kind == SDPMediaTypesEnum.video).Single());
                 }
+
+                m_videoRtcpSession?.Close("no video track");
+                m_videoRtcpSession = null;
             }
         }
 
@@ -789,7 +795,7 @@ namespace SIPSorcery.Net
         /// <param name="unprotectRtp">SRTP decrypt RTP packet delegate.</param>
         /// <param name="protectRtcp">SRTP encrypt RTCP packet delegate.</param>
         /// <param name="unprotectRtcp">SRTP decrypt RTCP packet delegate.</param>
-        public void SetSecurityContext(
+        public virtual void SetSecurityContext(
             ProtectRtpPacket protectRtp,
             ProtectRtpPacket unprotectRtp,
             ProtectRtpPacket protectRtcp,

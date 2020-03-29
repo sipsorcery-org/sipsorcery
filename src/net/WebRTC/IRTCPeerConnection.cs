@@ -109,6 +109,10 @@ namespace SIPSorcery.Net
         /// </summary>
         public DateTimeOffset expires;
 
+        public string X_CertificatePath;
+        public string X_KeyPath;
+        public string X_Fingerprint;
+
         public List<RTCDtlsFingerprint> getFingerprints()
         {
             throw new NotImplementedException("RTCCertificate.getFingerprints");
@@ -185,17 +189,17 @@ namespace SIPSorcery.Net
         RTCIceGatheringState iceGatheringState { get; }
         RTCIceConnectionState iceConnectionState { get; }
         RTCPeerConnectionState connectionState { get; }
-        bool canTrickleIceCandidates { get; set; }
+        bool canTrickleIceCandidates { get; }
         void restartIce();
         RTCConfiguration getConfiguration();
         void setConfiguration(RTCConfiguration configuration = null);
         void close();
         event Action onnegotiationneeded;
-        event Action onicecandidate;
+        event Action<RTCIceCandidate> onicecandidate;
         event Action onicecandidateerror;
         event Action onsignalingstatechange;
-        event Action oniceconnectionstatechange;
-        event Action onicegatheringstatechange;
-        event Action onconnectionstatechange;
+        event Action<RTCIceConnectionState> oniceconnectionstatechange;
+        event Action<RTCIceGatheringState> onicegatheringstatechange;
+        event Action<RTCPeerConnectionState> onconnectionstatechange;
     }
 }

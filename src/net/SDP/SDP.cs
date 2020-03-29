@@ -121,6 +121,7 @@ namespace SIPSorcery.Net
         public const string ADDRESS_TYPE_IPV6 = "IP6";
         public const string DEFAULT_TIMING = "0 0";
         public const string MEDIA_ID_ATTRIBUTE_PREFIX = "mid";
+        public const int DISABLED_PORT_NUMBER = 9;
 
         // ICE attributes.
         public const string ICE_UFRAG_ATTRIBUTE_PREFIX = "ice-ufrag";

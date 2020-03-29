@@ -20,6 +20,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -107,7 +108,7 @@ namespace SIPSorcery.Net
     /// https://tools.ietf.org/html/draft-ietf-rtcweb-jsep-26 (or later if the
     /// draft has been updated).
     /// </remarks>
-    public class RTCPeerConnection : RTPSession //, IRTCPeerConnection
+    public class RTCPeerConnection : RTPSession, IRTCPeerConnection
     {
         // SDP constants.
         private const string RTP_MEDIA_PROFILE = "RTP/SAVP";
@@ -116,6 +117,7 @@ namespace SIPSorcery.Net
         private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is passive.
         private const string MEDIA_GROUPING = "BUNDLE 0 1";
         private const string ICE_OPTIONS = "trickle";                   // Supported ICE options.
+        private const string NORMAL_CLOSE_REASON = "normal";
 
         private static ILogger logger = Log.Logger;
 
@@ -154,19 +156,39 @@ namespace SIPSorcery.Net
         /// </summary>
         public IPEndPoint RemoteEndPoint { get; private set; }
 
-        private string _dtlsCertificateFingerprint;
-        private IPEndPoint _turnServerEndPoint;
-        private List<IPAddress> _offerAddresses;            // If set restricts which local IP addresses will be offered in ICE candidates.
-        private DateTime _lastStunSentAt = DateTime.MinValue;
-        private DateTime _lastStunMessageReceivedAt = DateTime.MinValue;
-        private DateTime _lastCommunicationAt = DateTime.MinValue;
+        public RTCSessionDescription currentLocalDescription => throw new NotImplementedException();
 
-        public event Action<string> OnClose;
+        public RTCSessionDescription pendingLocalDescription => throw new NotImplementedException();
+
+        public RTCSessionDescription currentRemoteDescription => throw new NotImplementedException();
+
+        public RTCSessionDescription pendingRemoteDescription => throw new NotImplementedException();
+
+        public RTCSignalingState signalingState => throw new NotImplementedException();
+
+        public RTCIceGatheringState iceGatheringState => throw new NotImplementedException();
+
+        public RTCIceConnectionState iceConnectionState => throw new NotImplementedException();
+
+        public RTCPeerConnectionState connectionState { get; private set; } = RTCPeerConnectionState.@new;
+
+        public bool canTrickleIceCandidates { get => throw new NotImplementedException(); }
+
+        private RTCConfiguration _configuration;
+        private RTCCertificate _currentCertificate;
+
+        public event Action onnegotiationneeded; // ?
+        public event Action<RTCIceCandidate> onicecandidate;
+        public event Action onicecandidateerror; // ?
+        public event Action onsignalingstatechange; // ?
+        public event Action<RTCIceConnectionState> oniceconnectionstatechange;
+        public event Action<RTCIceGatheringState> onicegatheringstatechange;
 
         /// <summary>
-        /// Time to schedule the STUN checks on each ICE candidate.
+        /// The state of the peer connection. A state of connected means the DTLS handshake has
+        /// completed and media packets can be exchanged.
         /// </summary>
-        private Timer m_stunChecksTimer;
+        public event Action<RTCPeerConnectionState> onconnectionstatechange;
 
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
@@ -175,6 +197,13 @@ namespace SIPSorcery.Net
         public RTCPeerConnection(RTCConfiguration configuration) :
             base(true, true, true)
         {
+            _configuration = configuration;
+
+            if (_configuration != null && _configuration.certificates.Count > 0)
+            {
+                _currentCertificate = _configuration.certificates.First();
+            }
+
             //_dtlsCertificateFingerprint = dtlsFingerprint;
             //_offerAddresses = offerAddresses;
             //_turnServerEndPoint = turnServerEndPoint;
@@ -186,6 +215,17 @@ namespace SIPSorcery.Net
             addSingleTrack();
 
             IceSession = new IceSession(GetRtpChannel(SDPMediaTypesEnum.audio));
+            IceSession.OnIceCandidate += (candidate) => onicecandidate?.Invoke(candidate);
+            IceSession.OnIceConnectionStateChange += (state) =>
+            {
+                if (state == RTCIceConnectionState.connected)
+                {
+                    RemoteEndPoint = IceSession.ConnectedRemoteEndPoint;
+                }
+
+                oniceconnectionstatechange?.Invoke(state);
+            };
+            IceSession.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
@@ -207,6 +247,8 @@ namespace SIPSorcery.Net
 
             var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
             rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
+
+            // This is the point the ICE session potentially starts contacting STUN and TURN servers.
             IceSession.StartGathering();
 
             return Task.CompletedTask;
@@ -227,23 +269,32 @@ namespace SIPSorcery.Net
 
             SDP remoteSdp = SDP.ParseSDPDescription(init.sdp);
 
+            string remoteIceUser = null;
+            string remoteIcePassword = null;
+
             var audioAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
             if (audioAnnounce != null)
             {
-                var audioTrack = new MediaStreamTrack(audioAnnounce.MediaID, SDPMediaTypesEnum.audio, true, audioAnnounce.MediaFormats);
-                addTrack(audioTrack);
+                remoteIceUser = audioAnnounce.IceUfrag;
+                remoteIcePassword = audioAnnounce.IcePwd;
             }
 
             var videoAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
             if (videoAnnounce != null)
             {
-                var videoTrack = new MediaStreamTrack(videoAnnounce.MediaID, SDPMediaTypesEnum.video, true, videoAnnounce.MediaFormats);
-                addTrack(videoTrack);
+                if (remoteIceUser == null && remoteIcePassword == null)
+                {
+                    remoteIceUser = videoAnnounce.IceUfrag;
+                    remoteIcePassword = videoAnnounce.IcePwd;
+                }
             }
 
             SdpSessionID = remoteSdp.SessionId;
-            //RemoteIceUser = remoteSdp.IceUfrag ?? remoteSdp.Media.First().IceUfrag;
-            //RemoteIcePassword = remoteSdp.IcePwd ?? remoteSdp.Media.First().IcePwd;
+
+            if (remoteIceUser != null && remoteIcePassword != null)
+            {
+                IceSession.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
+            }
 
             //// All browsers seem to have gone to trickling ICE candidates now but just
             //// in case one or more are given we can start the STUN dance immediately.
@@ -309,6 +360,18 @@ namespace SIPSorcery.Net
         //    SendStunConnectivityChecks(null);
         //}
 
+        public override void SetSecurityContext(
+            ProtectRtpPacket protectRtp,
+            ProtectRtpPacket unprotectRtp,
+            ProtectRtpPacket protectRtcp,
+            ProtectRtpPacket unprotectRtcp)
+        {
+            base.SetSecurityContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
+
+            connectionState = RTCPeerConnectionState.connected;
+            onconnectionstatechange?.Invoke(RTCPeerConnectionState.connected);
+        }
+
         /// <summary>
         /// Send a media sample to the remote party.
         /// </summary>
@@ -340,13 +403,20 @@ namespace SIPSorcery.Net
         {
             if (!IsClosed)
             {
-                //IceConnectionState = RTCIceConnectionState.closed;
-                IceSession.Close();
-                m_stunChecksTimer.Dispose();
+                IceSession.Close(reason);
                 CloseSession(reason);
 
-                OnClose?.Invoke(reason);
+                connectionState = RTCPeerConnectionState.closed;
+                onconnectionstatechange?.Invoke(RTCPeerConnectionState.closed);
             }
+        }
+
+        /// <summary>
+        /// Closes the connection with the default reason.
+        /// </summary>
+        public void close()
+        {
+            Close(NORMAL_CLOSE_REASON);
         }
 
         /// <summary>
@@ -362,39 +432,6 @@ namespace SIPSorcery.Net
             try
             {
                 var offerSdp = await createBaseSdp().ConfigureAwait(false);
-
-                SDPMediaAnnouncement firstAnnouncement = null;
-
-                if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
-                {
-                    var audioAnnouncement = offerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single();
-                    //audioAnnouncement.AddExtra(SETUP_OFFER_ATTRIBUTE);
-                    firstAnnouncement = audioAnnouncement;
-                }
-
-                if (firstAnnouncement == null)
-                {
-                    if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
-                    {
-                        var videoAnnouncement = offerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single();
-                        //videoAnnouncement.AddExtra(SETUP_OFFER_ATTRIBUTE);
-                        firstAnnouncement = videoAnnouncement;
-                    }
-                }
-
-                // Add ICE candidates.
-                if (firstAnnouncement != null)
-                {
-                    firstAnnouncement.IceUfrag = IceSession.LocalIceUser;
-                    firstAnnouncement.IcePwd = IceSession.LocalIcePassword;
-                    firstAnnouncement.IceOptions = ICE_OPTIONS;
-
-                    firstAnnouncement.IceCandidates = new List<string>();
-                    foreach(var iceCandidate in IceSession.GetCandidates())
-                    {
-                        firstAnnouncement.IceCandidates.Add(iceCandidate.ToString());
-                    }
-                }
 
                 RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
                 {
@@ -469,16 +506,7 @@ namespace SIPSorcery.Net
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
 
-            bool haveIceCandidatesBeenAdded = false;
-            string localIceCandidateString = null;
-
-            //if (LocalIceCandidates != null)
-            //{
-            //    foreach (var iceCandidate in LocalIceCandidates)
-            //    {
-            //        localIceCandidateString += iceCandidate.ToString();
-            //    }
-            //}
+            SDPMediaAnnouncement firstAnnouncement = null;
 
             // Add a bundle attribute. Indicates that audio and video sessions will be multiplexed
             // on a single RTP socket.
@@ -499,22 +527,14 @@ namespace SIPSorcery.Net
                     AudioLocalTrack.Capabilties);
 
                 audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
-
-                //if (!haveIceCandidatesBeenAdded)
-                //{
-                //    audioAnnouncement.IceCandidates = LocalIceCandidates;
-                //    haveIceCandidatesBeenAdded = true;
-                //}
-
                 audioAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
-                //audioAnnouncement.IceUfrag = LocalIceUser;
-                //audioAnnouncement.IcePwd = LocalIcePassword;
-                audioAnnouncement.DtlsFingerprint = _dtlsCertificateFingerprint;
                 audioAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
                 audioAnnouncement.MediaStreamStatus = AudioLocalTrack.Transceiver.Direction;
                 audioAnnouncement.MediaID = AudioLocalTrack.Transceiver.MID;
 
                 offerSdp.Media.Add(audioAnnouncement);
+
+                firstAnnouncement = audioAnnouncement;
             }
 
             // --- Video announcement ---
@@ -522,26 +542,36 @@ namespace SIPSorcery.Net
             {
                 SDPMediaAnnouncement videoAnnouncement = new SDPMediaAnnouncement(
                     SDPMediaTypesEnum.video,
-                    rtpChannel.RTPPort,
+                    (firstAnnouncement == null) ? rtpChannel.RTPPort : SDP.DISABLED_PORT_NUMBER,
                     VideoLocalTrack.Capabilties);
 
                 videoAnnouncement.Transport = RTP_MEDIA_PROFILE;
-
-                //if (!haveIceCandidatesBeenAdded)
-                //{
-                //    videoAnnouncement.IceCandidates = LocalIceCandidates;
-                //    haveIceCandidatesBeenAdded = true;
-                //}
-
                 videoAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
-                //videoAnnouncement.IceUfrag = LocalIceUser;
-                //videoAnnouncement.IcePwd = LocalIcePassword;
-                videoAnnouncement.DtlsFingerprint = _dtlsCertificateFingerprint;
                 videoAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
                 videoAnnouncement.MediaStreamStatus = VideoLocalTrack.Transceiver.Direction;
                 videoAnnouncement.MediaID = VideoLocalTrack.Transceiver.MID;
 
                 offerSdp.Media.Add(videoAnnouncement);
+
+                if (firstAnnouncement == null)
+                {
+                    firstAnnouncement = videoAnnouncement;
+                }
+            }
+
+            // Add ICE candidates.
+            if (firstAnnouncement != null)
+            {
+                firstAnnouncement.IceUfrag = IceSession.LocalIceUser;
+                firstAnnouncement.IcePwd = IceSession.LocalIcePassword;
+                firstAnnouncement.IceOptions = ICE_OPTIONS;
+                firstAnnouncement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
+
+                firstAnnouncement.IceCandidates = new List<string>();
+                foreach (var iceCandidate in IceSession.Candidates)
+                {
+                    firstAnnouncement.IceCandidates.Add(iceCandidate.ToString());
+                }
             }
 
             return Task.FromResult(offerSdp);
@@ -565,16 +595,13 @@ namespace SIPSorcery.Net
 
             if (buffer?.Length > 0)
             {
-                _lastCommunicationAt = DateTime.Now;
-
                 try
                 {
                     if (buffer[0] == 0x00 || buffer[0] == 0x01)
                     {
                         // STUN packet.
-                        _lastStunMessageReceivedAt = DateTime.Now;
                         var stunMessage = STUNv2Message.ParseSTUNMessage(buffer, buffer.Length);
-                        //ProcessStunMessage(stunMessage, remoteEP);
+                        IceSession?.ProcessStunMessage(stunMessage, remoteEP);
                     }
                     else if (buffer[0] >= 128 && buffer[0] <= 191)
                     {
@@ -597,6 +624,31 @@ namespace SIPSorcery.Net
                     logger.LogError($"Exception WebRtcSession.OnRTPDataReceived {excp.Message}.");
                 }
             }
+        }
+
+        /// <summary>
+        /// Adds a remote ICE candidate to the list this peer is attempting to connect against.
+        /// </summary>
+        /// <param name="candidate">The remote candidate to add.</param>
+        public Task addIceCandidate(RTCIceCandidateInit candidate)
+        {
+            IceSession.AddRemoteCandidate(candidate);
+            return Task.CompletedTask;
+        }
+
+        public void restartIce()
+        {
+            throw new NotImplementedException();
+        }
+
+        public RTCConfiguration getConfiguration()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void setConfiguration(RTCConfiguration configuration = null)
+        {
+            throw new NotImplementedException();
         }
     }
 }

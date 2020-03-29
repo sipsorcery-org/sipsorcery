@@ -21,8 +21,6 @@
 using System;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Threading.Tasks;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -42,7 +40,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Whether the candidate is UDP or TCP.
         /// </summary>
-        public ProtocolType TransportProtocol { get; private set; }
+        //public ProtocolType TransportProtocol { get; private set; }
 
         public string StunServerAddress { get; private set; }
 
@@ -65,16 +63,7 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See https://tools.ietf.org/html/rfc8445#section-5.1.1.3.
         /// </remarks>
-        public string foundation
-        {
-            get
-            {
-                int addressVal = !String.IsNullOrEmpty(address) ? Crypto.GetSHAHash(address).Sum(x => (byte)x) : 0;
-                int svrVal = type == RTCIceCandidateType.relay || type == RTCIceCandidateType.srflx ?
-                    Crypto.GetSHAHash(StunServerAddress, TurnServerAddress).Sum(x => (byte)x) : 0;
-                return (type.GetHashCode() + addressVal + svrVal + protocol.GetHashCode()).ToString();
-            }
-        }
+        public string foundation { get; private set; }
 
         /// <summary>
         ///  Is a positive integer between 1 and 256 (inclusive)
@@ -92,15 +81,7 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See specification at https://tools.ietf.org/html/rfc8445#section-5.1.2.
         /// </remarks>
-        public ulong priority
-        {
-            get
-            {
-                return (ulong)((2 ^ 24) * (126 - type.GetHashCode()) +
-                       (2 ^ 8) * (65535) + // TODO: Add some kind of priority to different local IP addresses if needed.
-                       (2 ^ 0) * (256 - component.GetHashCode()));
-            }
-        }
+        public ulong priority { get; private set; }
 
         /// <summary>
         /// The local address for the candidate.
@@ -172,6 +153,8 @@ namespace SIPSorcery.Net
             if(!String.IsNullOrEmpty(init.candidate))
             {
                 var iceCandidate = Parse(init.candidate);
+                foundation = iceCandidate.foundation;
+                priority = iceCandidate.priority;
                 component = iceCandidate.component;
                 address = iceCandidate.address;
                 port = iceCandidate.port;
@@ -195,19 +178,32 @@ namespace SIPSorcery.Net
             type = cType;
             relatedAddress = cRelatedAddress?.ToString();
             relatedPort = cRelatedPort;
+
+            foundation = GetFoundation();
+            priority = GetPriority();
         }
 
         public static RTCIceCandidate Parse(string candidateLine)
         {
             RTCIceCandidate candidate = new RTCIceCandidate();
 
-            //candidate.RawString = candidateLine;
-
             string[] candidateFields = candidateLine.Trim().Split(' ');
+
+            candidate.foundation = candidateFields[0];
+
+            if (Enum.TryParse<RTCIceComponent>(candidateFields[1], out var candidateComponent))
+            {
+                candidate.component = candidateComponent;
+            }
 
             if (Enum.TryParse<RTCIceProtocol>(candidateFields[2], out var candidateProtocol))
             {
                 candidate.protocol = candidateProtocol;
+            }
+
+            if(ulong.TryParse(candidateFields[3], out var candidatePriority))
+            {
+                candidate.priority = candidatePriority;
             }
 
             candidate.address = candidateFields[4];
@@ -263,6 +259,21 @@ namespace SIPSorcery.Net
             }
 
             return candidateStr;
+        }
+
+        private string GetFoundation()
+        {
+            int addressVal = !String.IsNullOrEmpty(address) ? Crypto.GetSHAHash(address).Sum(x => (byte)x) : 0;
+            int svrVal = (type == RTCIceCandidateType.relay || type == RTCIceCandidateType.srflx) ?
+                Crypto.GetSHAHash(StunServerAddress, TurnServerAddress).Sum(x => (byte)x) : 0;
+            return (type.GetHashCode() + addressVal + svrVal + protocol.GetHashCode()).ToString();
+        }
+
+        private ulong GetPriority()
+        {
+             return (ulong) ((2 ^ 24) * (126 - type.GetHashCode()) +
+                       (2 ^ 8) * (65535) + // TODO: Add some kind of priority to different local IP addresses if needed.
+                       (2 ^ 0) * (256 - component.GetHashCode()));
         }
 
         public RTCIceCandidateInit toJSON()
