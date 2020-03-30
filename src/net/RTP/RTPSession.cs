@@ -587,6 +587,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="options">Optional. Options to customise the answer.</param>
         /// <returns>A task that when complete contains the SDP answer.</returns>
+        /// <remarks>As specified in https://tools.ietf.org/html/rfc3264#section-6.1.</remarks>
         public virtual Task<SDP> createAnswer(RTCAnswerOptions options)
         {
             if (remoteDescription == null)

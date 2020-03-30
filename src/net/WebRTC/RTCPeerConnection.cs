@@ -164,11 +164,11 @@ namespace SIPSorcery.Net
 
         public RTCSessionDescription pendingRemoteDescription => throw new NotImplementedException();
 
-        public RTCSignalingState signalingState => throw new NotImplementedException();
+        public RTCSignalingState signalingState { get; private set; } = RTCSignalingState.stable;
 
-        public RTCIceGatheringState iceGatheringState => throw new NotImplementedException();
+        public RTCIceGatheringState iceGatheringState { get; private set; } = RTCIceGatheringState.@new;
 
-        public RTCIceConnectionState iceConnectionState => throw new NotImplementedException();
+        public RTCIceConnectionState iceConnectionState { get; private set; } = RTCIceConnectionState.@new;
 
         public RTCPeerConnectionState connectionState { get; private set; } = RTCPeerConnectionState.@new;
 
@@ -204,7 +204,6 @@ namespace SIPSorcery.Net
                 _currentCertificate = _configuration.certificates.First();
             }
 
-            //_dtlsCertificateFingerprint = dtlsFingerprint;
             //_offerAddresses = offerAddresses;
             //_turnServerEndPoint = turnServerEndPoint;
 
@@ -431,7 +430,10 @@ namespace SIPSorcery.Net
         {
             try
             {
-                var offerSdp = await createBaseSdp().ConfigureAwait(false);
+                var audioCapabilities = AudioLocalTrack?.Capabilties;
+                var videoCapabilities = VideoLocalTrack?.Capabilties;
+
+                var offerSdp = await createBaseSdp(audioCapabilities, videoCapabilities).ConfigureAwait(false);
 
                 RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
                 {
@@ -452,7 +454,8 @@ namespace SIPSorcery.Net
         /// Creates an answer to an SDP offer from a remote peer.
         /// </summary>
         /// <remarks>
-        /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-createanswer.
+        /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-createanswer and
+        /// https://tools.ietf.org/html/rfc3264#section-6.1.
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be used to apply additional
         /// controls over the generated answer SDP.</param>
@@ -464,7 +467,12 @@ namespace SIPSorcery.Net
             }
             else
             {
-                var answerSdp = await createBaseSdp().ConfigureAwait(false);
+                var audioCapabilities = (AudioLocalTrack != null && AudioRemoteTrack != null) ?
+                    SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilties, AudioRemoteTrack.Capabilties) : null;
+                var videoCapabilities = (VideoLocalTrack != null && VideoRemoteTrack != null) ?
+                    SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilties, VideoRemoteTrack.Capabilties) : null;
+
+                var answerSdp = await createBaseSdp(audioCapabilities, videoCapabilities).ConfigureAwait(false);
 
                 if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 {
@@ -492,17 +500,14 @@ namespace SIPSorcery.Net
         /// Generates the base SDP for an offer or answer. The SDP will then be tailored depending
         /// on whether it's being used in an offer or an answer.
         /// </summary>
-        private Task<SDP> createBaseSdp()
+        /// <param name="audioCapabilities">Optional. The audio formats to support in the SDP. This list can differ from
+        /// the local audio track if an answer is being generated and only mutually supported formats are being
+        /// used.</param>
+        /// <param name="videoCapabilities">Optional. The video formats to support in the SDP. This list can differ from
+        /// the local video track if an answer is being generated and only mutually supported formats are being
+        /// used.</param>
+        private Task<SDP> createBaseSdp(List<SDPMediaFormat> audioCapabilities, List<SDPMediaFormat> videoCapabilities)
         {
-            DateTime startGatheringTime = DateTime.Now;
-
-            //IceConnectionState = RTCIceConnectionState.@new;
-
-            //await GetIceCandidatesAsync().ConfigureAwait(false);
-
-            //logger.LogDebug($"ICE gathering completed for in {DateTime.Now.Subtract(startGatheringTime).TotalMilliseconds:#}ms, candidate count {LocalIceCandidates.Count}.");
-
-            //IceConnectionState = IceConnectionStatesEnum.GatheringComplete;
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
 
@@ -519,12 +524,12 @@ namespace SIPSorcery.Net
             var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
 
             // --- Audio announcement ---
-            if (AudioLocalTrack != null && rtpChannel != null)
+            if (AudioLocalTrack != null && audioCapabilities != null && rtpChannel != null)
             {
                 SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
                     SDPMediaTypesEnum.audio,
                     rtpChannel.RTPPort,
-                    AudioLocalTrack.Capabilties);
+                    audioCapabilities);
 
                 audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
                 audioAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
@@ -538,12 +543,12 @@ namespace SIPSorcery.Net
             }
 
             // --- Video announcement ---
-            if (VideoLocalTrack != null && rtpChannel != null)
+            if (VideoLocalTrack != null && videoCapabilities != null && rtpChannel != null)
             {
                 SDPMediaAnnouncement videoAnnouncement = new SDPMediaAnnouncement(
                     SDPMediaTypesEnum.video,
                     (firstAnnouncement == null) ? rtpChannel.RTPPort : SDP.DISABLED_PORT_NUMBER,
-                    VideoLocalTrack.Capabilties);
+                    videoCapabilities);
 
                 videoAnnouncement.Transport = RTP_MEDIA_PROFILE;
                 videoAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);

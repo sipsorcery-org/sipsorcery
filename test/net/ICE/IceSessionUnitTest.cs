@@ -64,9 +64,9 @@ namespace SIPSorcery.Net.UnitTests
             var iceSession = new IceSession(rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio));
 
             Assert.NotNull(iceSession);
-            Assert.NotEmpty(iceSession.HostCandidates);
+            Assert.NotEmpty(iceSession.Candidates);
 
-            foreach(var hostCandidate in iceSession.HostCandidates)
+            foreach(var hostCandidate in iceSession.Candidates)
             {
                 logger.LogDebug(hostCandidate.ToString());
             }
