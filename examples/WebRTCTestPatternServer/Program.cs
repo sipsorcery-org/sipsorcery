@@ -56,11 +56,18 @@ namespace WebRTCServer
             base.OnOpen();
             PeerConnection = await WebSocketOpened(this.Context);
         }
+
+        protected override void OnClose(CloseEventArgs e)
+        {
+            base.OnClose(e);
+            PeerConnection.Close("remote party close");
+        }
     }
 
     class Program
     {
         private static string TEST_PATTERN_IMAGE_PATH = "media/testpattern.jpeg";
+        private const int TEST_PATTERN_SPACING_MILLISECONDS = 33;
         private const float TEXT_SIZE_PERCENTAGE = 0.035f;       // height of text as a percentage of the total image height
         private const float TEXT_OUTLINE_REL_THICKNESS = 0.02f; // Black text outline thickness is set as a percentage of text height in pixels
         private const int TEXT_MARGIN_PIXELS = 5;
@@ -75,12 +82,12 @@ namespace WebRTCServer
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
-        //public static readonly List<SDPMediaFormat> _supportedVideoFormats = new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) };
-
         private static WebSocketServer _webSocketServer;
-        private static bool _exit = false;
-        //private static ConcurrentDictionary<string, WebRtcSession> _webRtcSessions = new ConcurrentDictionary<string, WebRtcSession>();
-        //private static WebRtcSession _webRtcSession;
+        private static SIPSorceryMedia.VpxEncoder _vpxEncoder;
+        private static SIPSorceryMedia.ImageConvert _colorConverter;
+        private static Bitmap _testPattern;
+        private static int _stride;
+        private static Timer _sendTestPatternTimer;
 
         private static event Action<SDPMediaTypesEnum, uint, byte[]> OnTestPatternSampleReady;
 
@@ -100,7 +107,7 @@ namespace WebRTCServer
             DtlsHandshake.InitialiseOpenSSL();
             Srtp.InitialiseLibSrtp();
 
-            Task.Run(SendTestPattern);
+            InitialiseTestPattern();
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -121,6 +128,7 @@ namespace WebRTCServer
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
                 e.Cancel = true;
+                _sendTestPatternTimer?.Dispose();
                 exitMre.Set();
             };
 
@@ -146,12 +154,26 @@ namespace WebRTCServer
             };
 
             var peerConnection = new RTCPeerConnection(pcConfiguration);
+            var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
             peerConnection.addTrack(videoTrack);
 
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
+
+            //peerConnection.OnRtcpBye += (reason) =>
+            //{
+            //    logger.LogInformation("RTCP BYE report received from remote peer.");
+            //    peerConnection.Close(reason);
+            //    dtls.Shutdown();
+            //};
+
+            peerConnection.OnTimeout += (mediaType) =>
+            {
+                peerConnection.Close("remote timeout");
+                dtls.Shutdown();
+            };
 
             peerConnection.onconnectionstatechange += (state) =>
             {
@@ -175,7 +197,7 @@ namespace WebRTCServer
                     logger.LogDebug("Starting DTLS handshake task.");
 
                     bool dtlsResult = false;
-                    Task.Run(() => dtlsResult = DoDtlsHandshake(peerConnection))
+                    Task.Run(() => dtlsResult = DoDtlsHandshake(peerConnection, dtls))
                     .ContinueWith((t) =>
                     {
                         logger.LogDebug($"dtls handshake result {dtlsResult}.");
@@ -186,6 +208,7 @@ namespace WebRTCServer
                         }
                         else
                         {
+                            dtls.Shutdown();
                             peerConnection.Close("dtls handshake failed.");
                         }
                     });
@@ -196,7 +219,7 @@ namespace WebRTCServer
             await peerConnection.setLocalDescription(offerSdp);
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
-            logger.LogDebug(offerSdp.ToString());
+            logger.LogDebug(offerSdp.sdp);
 
             context.WebSocket.Send(offerSdp.sdp);
 
@@ -228,7 +251,7 @@ namespace WebRTCServer
         /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
         /// </summary>
         /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
-        private static bool DoDtlsHandshake(RTCPeerConnection peerConnection)
+        private static bool DoDtlsHandshake(RTCPeerConnection peerConnection, DtlsHandshake dtls)
         {
             logger.LogDebug("DoDtlsHandshake started.");
 
@@ -240,8 +263,6 @@ namespace WebRTCServer
             {
                 throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
             }
-
-            var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
 
             int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
 
@@ -260,67 +281,71 @@ namespace WebRTCServer
                     srtpSendContext.ProtectRTCP,
                     srtpReceiveContext.UnprotectRTCP);
 
-                dtls.Shutdown();
+                //dtls.Shutdown();
+                if (_sendTestPatternTimer == null)
+                {
+                    _sendTestPatternTimer = new Timer(SendTestPattern, null, 0, TEST_PATTERN_SPACING_MILLISECONDS);
+                }
+
                 return true;
             }
             else
             {
-                dtls.Shutdown();
                 return false;
             }
         }
 
-        private static void SendTestPattern()
+        private static void InitialiseTestPattern()
+        {
+            _testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
+
+            // Get the stride.
+            Rectangle rect = new Rectangle(0, 0, _testPattern.Width, _testPattern.Height);
+            System.Drawing.Imaging.BitmapData bmpData =
+                _testPattern.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite,
+                _testPattern.PixelFormat);
+
+            // Get the address of the first line.
+            _stride = bmpData.Stride;
+
+            _testPattern.UnlockBits(bmpData);
+
+            // Initialise the video codec and color converter.
+            _vpxEncoder = new VpxEncoder();
+            _vpxEncoder.InitEncoder((uint)_testPattern.Width, (uint)_testPattern.Height, (uint)_stride);
+
+            _colorConverter = new ImageConvert();
+        }
+
+        private static void SendTestPattern(object state)
         {
             try
             {
-                unsafe
+                lock (_sendTestPatternTimer)
                 {
-                    Bitmap testPattern = new Bitmap(TEST_PATTERN_IMAGE_PATH);
-
-                    // Get the stride.
-                    Rectangle rect = new Rectangle(0, 0, testPattern.Width, testPattern.Height);
-                    System.Drawing.Imaging.BitmapData bmpData =
-                        testPattern.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite,
-                        testPattern.PixelFormat);
-
-                    // Get the address of the first line.
-                    int stride = bmpData.Stride;
-
-                    testPattern.UnlockBits(bmpData);
-
-                    // Initialise the video codec and color converter.
-                    SIPSorceryMedia.VpxEncoder vpxEncoder = new VpxEncoder();
-                    vpxEncoder.InitEncoder((uint)testPattern.Width, (uint)testPattern.Height, (uint)stride);
-
-                    SIPSorceryMedia.ImageConvert colorConverter = new ImageConvert();
-
-                    byte[] sampleBuffer = null;
-                    byte[] encodedBuffer = null;
-                    int sampleCount = 0;
-                    uint rtpTimestamp = 0;
-
-                    while (!_exit)
+                    unsafe
                     {
+                        byte[] sampleBuffer = null;
+                        byte[] encodedBuffer = null;
+
                         if (OnTestPatternSampleReady != null)
                         {
-                            var stampedTestPattern = testPattern.Clone() as System.Drawing.Image;
+                            var stampedTestPattern = _testPattern.Clone() as System.Drawing.Image;
                             AddTimeStampAndLocation(stampedTestPattern, DateTime.UtcNow.ToString("dd MMM yyyy HH:mm:ss:fff"), "Test Pattern");
                             sampleBuffer = BitmapToRGB24(stampedTestPattern as System.Drawing.Bitmap);
 
                             fixed (byte* p = sampleBuffer)
                             {
                                 byte[] convertedFrame = null;
-                                colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, testPattern.Width, testPattern.Height, stride, VideoSubTypesEnum.I420, ref convertedFrame);
+                                _colorConverter.ConvertRGBtoYUV(p, VideoSubTypesEnum.BGR24, _testPattern.Width, _testPattern.Height, _stride, VideoSubTypesEnum.I420, ref convertedFrame);
 
                                 fixed (byte* q = convertedFrame)
                                 {
-                                    int encodeResult = vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
+                                    int encodeResult = _vpxEncoder.Encode(q, convertedFrame.Length, 1, ref encodedBuffer);
 
                                     if (encodeResult != 0)
                                     {
                                         logger.LogWarning("VPX encode of video sample failed.");
-                                        continue;
                                     }
                                 }
                             }
@@ -328,15 +353,15 @@ namespace WebRTCServer
                             stampedTestPattern.Dispose();
                             stampedTestPattern = null;
 
-                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, rtpTimestamp, encodedBuffer);
+                            OnTestPatternSampleReady?.Invoke(SDPMediaTypesEnum.video, VP8_TIMESTAMP_SPACING, encodedBuffer);
 
                             encodedBuffer = null;
-
-                            sampleCount++;
-                            rtpTimestamp += VP8_TIMESTAMP_SPACING;
                         }
-
-                        Thread.Sleep(30);
+                        else
+                        {
+                            _sendTestPatternTimer?.Dispose();
+                            _sendTestPatternTimer = null;
+                        }
                     }
                 }
             }

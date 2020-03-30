@@ -365,7 +365,11 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Gets fired when an RTCP BYE packet is received from the remote party.
-        /// The string parameter contains the BYE reason.
+        /// The string parameter contains the BYE reason. Normally a BYE
+        /// report means the RTP session is finished. But... cases have been observed where
+        /// an RTCP BYE is received when a remote party is put on hold and then the session
+        /// resumes when take off hold. It's up to the application to decide what action to
+        /// take when n RTCP BYE is received.
         /// </summary>
         public event Action<string> OnRtcpBye;
 

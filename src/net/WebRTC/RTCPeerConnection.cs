@@ -380,7 +380,7 @@ namespace SIPSorcery.Net
         /// <param name="sample">The sample payload.</param>
         public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
         {
-            if (RemoteEndPoint != null && IsDtlsNegotiationComplete)
+            if (RemoteEndPoint != null && IsDtlsNegotiationComplete && connectionState != RTCPeerConnectionState.closed)
             {
                 if (mediaType == SDPMediaTypesEnum.video)
                 {
