@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -292,9 +293,9 @@ namespace SIPSorcery.SIP.App
                     }
                 };
 
-                RTCOfferOptions offerOptions = new RTCOfferOptions { RemoteSignallingAddress = serverEndPoint.Address };
+                var sdpAnnounceAddress = NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
 
-                var sdp = await mediaSession.createOffer(offerOptions).ConfigureAwait(false);
+                var sdp = await mediaSession.createOffer(sdpAnnounceAddress).ConfigureAwait(false);
                 if (sdp == null)
                 {
                     ClientCallFailed?.Invoke(m_uac, $"Could not generate an offer.");
@@ -302,7 +303,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    mediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdp, type = RTCSdpType.offer });
+                    mediaSession.setLocalDescription(sdp);
 
                     if (mediaSession.localDescription == null)
                     {
@@ -311,7 +312,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        sipCallDescriptor.Content = mediaSession.localDescription.sdp.ToString();
+                        sipCallDescriptor.Content = mediaSession.localDescription.ToString();
                         // This initiates the call but does not wait for an answer.
                         m_uac.Call(sipCallDescriptor);
                     }
@@ -449,9 +450,9 @@ namespace SIPSorcery.SIP.App
                 {
                     // The SDP offer was included in the INVITE request.
                     SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
-                    MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSdp, type = RTCSdpType.offer });
+                    MediaSession.setRemoteDescription(remoteSdp);
 
-                    var sdpAnswer = await MediaSession.createAnswer(null).ConfigureAwait(false);
+                    var sdpAnswer = await MediaSession.createAnswer(remoteSdp).ConfigureAwait(false);
 
                     if (sdpAnswer == null)
                     {
@@ -461,15 +462,16 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        MediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdpAnswer, type = RTCSdpType.answer });
+                        MediaSession.setLocalDescription(sdpAnswer);
                         sdp = sdpAnswer.ToString();
                     }
                 }
                 else
                 {
                     // No SDP offer was included in the INVITE request need to wait for the ACK.
-                    RTCOfferOptions offerOptions = new RTCOfferOptions { RemoteSignallingAddress = sipRequest.RemoteSIPEndPoint.GetIPEndPoint().Address };
-                    var sdpOffer = await MediaSession.createOffer(offerOptions).ConfigureAwait(false);
+
+                    var sdpAnnounceAddress = NetServices.GetLocalAddressForRemote(sipRequest.RemoteSIPEndPoint.GetIPEndPoint().Address);
+                    var sdpOffer = await MediaSession.createOffer(sdpAnnounceAddress).ConfigureAwait(false);
 
                     if (sdpOffer == null)
                     {
@@ -480,7 +482,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        MediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdpOffer, type = RTCSdpType.offer });
+                        MediaSession.setLocalDescription(sdpOffer);
                         sdp = sdpOffer.ToString();
                     }
                 }
@@ -500,11 +502,11 @@ namespace SIPSorcery.SIP.App
 
                 if (Dialogue != null)
                 {
-                    if (MediaSession.remoteDescription == null || MediaSession.remoteDescription.sdp == null)
+                    if (MediaSession.remoteDescription == null)
                     {
                         // If the initial INVITE did not contain an offer then the remote description will not yet be set.
                         var remoteSDP = SDP.ParseSDPDescription(Dialogue.RemoteSDP);
-                        MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSDP, type = RTCSdpType.answer });
+                        MediaSession.setRemoteDescription(remoteSDP);
                     }
 
                     Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
@@ -588,7 +590,7 @@ namespace SIPSorcery.SIP.App
             // music.
             var localSDP = await MediaSession.createOffer(null).ConfigureAwait(false);
             SetLocalSdpForOnHoldState(ref localSDP);
-            MediaSession.setLocalDescription(new RTCSessionDescription { sdp = localSDP, type = RTCSdpType.offer });
+            MediaSession.setLocalDescription( localSDP);
 
             SendReInviteRequest(localSDP);
         }
@@ -602,7 +604,7 @@ namespace SIPSorcery.SIP.App
 
             var localSDP = await MediaSession.createOffer(null).ConfigureAwait(false);
             SetLocalSdpForOnHoldState(ref localSDP);
-            MediaSession.setLocalDescription(new RTCSessionDescription { sdp = localSDP, type = RTCSdpType.offer });
+            MediaSession.setLocalDescription(localSDP);
 
             SendReInviteRequest(localSDP);
         }
@@ -690,9 +692,9 @@ namespace SIPSorcery.SIP.App
 
                 try
                 {
-                    MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = SDP.ParseSDPDescription(sipRequest.Body), type = RTCSdpType.offer });
+                    MediaSession.setRemoteDescription(SDP.ParseSDPDescription(sipRequest.Body));
 
-                    CheckRemotePartyHoldCondition(MediaSession.remoteDescription.sdp);
+                    CheckRemotePartyHoldCondition(MediaSession.remoteDescription);
 
                     var answerSdp = await MediaSession.createAnswer(null).ConfigureAwait(false);
 
@@ -847,7 +849,7 @@ namespace SIPSorcery.SIP.App
             {
                 // Update the remote party's SDP.
                 Dialogue.RemoteSDP = sipResponse.Body;
-                MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = SDP.ParseSDPDescription(sipResponse.Body), type = RTCSdpType.answer });
+                MediaSession.setRemoteDescription(SDP.ParseSDPDescription(sipResponse.Body));
             }
             else
             {
@@ -930,7 +932,7 @@ namespace SIPSorcery.SIP.App
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = SDP.ParseSDPDescription(sipResponse.Body), type = RTCSdpType.answer });
+                MediaSession.setRemoteDescription(SDP.ParseSDPDescription(sipResponse.Body));
                 await MediaSession.Start().ConfigureAwait(false);
 
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;

@@ -19,6 +19,42 @@ using System.Threading.Tasks;
 
 namespace SIPSorcery.Net
 {
+
+    public enum RTCSdpType
+    {
+        answer = 0,
+        offer = 1,
+        pranswer = 2,
+        rollback = 3
+    }
+
+    public class RTCOfferOptions
+    {
+        /// <summary>
+        /// Optional. The remote address that was used for signalling during the connection
+        /// set up. For non-ICE RTP sessions this can be used to determine the best local
+        /// IP address to use in an SDP offer/answer.
+        /// </summary>
+        //public IPAddress RemoteSignallingAddress;
+    }
+
+    /// <summary>
+    /// Options for creating an SDP answer.
+    /// </summary>
+    /// <remarks>
+    /// As specified in https://www.w3.org/TR/webrtc/#dictionary-rtcofferansweroptions-members.
+    /// </remarks>
+    public class RTCAnswerOptions
+    {
+        // Note: At the time of writing there are no answer options in the WebRTC specification.
+    }
+
+    public class RTCSessionDescription
+    {
+        public RTCSdpType type;
+        public SDP sdp;
+    }
+
     /// <summary>
     /// The types of credentials for an ICE server.
     /// </summary>

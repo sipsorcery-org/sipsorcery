@@ -14,7 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Numerics;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
@@ -31,34 +31,11 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public interface IMediaSession
     {
-        RTCSessionDescription localDescription { get; }
-        RTCSessionDescription remoteDescription { get; }
+        SDP localDescription { get; }
+        SDP remoteDescription { get; }
         bool IsClosed { get; }
         bool HasAudio { get; }
         bool HasVideo { get; }
-
-        /// <summary>
-        /// Fired when a video sample is ready for rendering.
-        /// [sample, width, height, stride]
-        /// </summary>
-        event Action<byte[], uint, uint, int> OnVideoSampleReady;
-
-        /// <summary>
-        /// Fired when an audio sample is ready for the audio scope (which serves
-        /// as a visual representation of the audio). Note the audio signal should
-        /// already have been played. This event is for an optional visual representation
-        /// of the same signal.
-        /// [sample in IEEE float format].
-        /// </summary>
-        event Action<Complex[]> OnAudioScopeSampleReady;
-
-        /// <summary>
-        /// Fired when an audio sample generated from the on hold music is ready for 
-        /// the audio scope (which serves as a visual representation of the audio).
-        /// This audio scope is used to send an on hold video to the remote call party.
-        /// [sample in IEEE float format].
-        /// </summary>
-        event Action<Complex[]> OnHoldAudioScopeSampleReady;
 
         /// <summary>
         /// Fired when the RTP channel is closed.
@@ -76,10 +53,10 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         event Action<RTPEvent, RTPHeader> OnRtpEvent;
 
-        Task<SDP> createOffer(RTCOfferOptions options);
-        void setLocalDescription(RTCSessionDescription sessionDescription);
-        Task<SDP> createAnswer(RTCAnswerOptions options);
-        void setRemoteDescription(RTCSessionDescription sessionDescription);
+        Task<SDP> createOffer(IPAddress connectionAddress);
+        void setLocalDescription(SDP sdp);
+        Task<SDP> createAnswer(SDP offer);
+        void setRemoteDescription(SDP sdp);
 
         Task SendDtmf(byte tone, CancellationToken ct);
         void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample);

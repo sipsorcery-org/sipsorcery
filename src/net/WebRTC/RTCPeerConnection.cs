@@ -156,6 +156,10 @@ namespace SIPSorcery.Net
         /// </summary>
         public IPEndPoint RemoteEndPoint { get; private set; }
 
+        public new RTCSessionDescription localDescription { get; private set; }
+
+        public new RTCSessionDescription remoteDescription { get; private set; }
+
         public RTCSessionDescription currentLocalDescription => throw new NotImplementedException();
 
         public RTCSessionDescription pendingLocalDescription => throw new NotImplementedException();
@@ -242,7 +246,8 @@ namespace SIPSorcery.Net
         public Task setLocalDescription(RTCSessionDescriptionInit init)
         {
             RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
-            base.setLocalDescription(description);
+            //base.setLocalDescription(description);
+            localDescription = description;
 
             var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
             rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
@@ -264,7 +269,8 @@ namespace SIPSorcery.Net
         public Task setRemoteDescription(RTCSessionDescriptionInit init)
         {
             RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
-            base.setRemoteDescription(description);
+            //base.setRemoteDescription(description);
+            remoteDescription = description;
 
             SDP remoteSdp = SDP.ParseSDPDescription(init.sdp);
 

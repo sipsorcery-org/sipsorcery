@@ -133,26 +133,23 @@ namespace SIPSorcery.UnitTests
     {
         private const string RTP_MEDIA_PROFILE = "RTP/AVP";
 
-        public RTCSessionDescription localDescription { get; private set; }
-        public RTCSessionDescription remoteDescription { get; private set; }
+        public SDP localDescription { get; private set; }
+        public SDP remoteDescription { get; private set; }
 
         public bool IsClosed { get; private set; }
         public bool HasAudio => true;
         public bool HasVideo => false;
 
-        public event Action<byte[], uint, uint, int> OnVideoSampleReady;
         public event Action<string> OnRtpClosed;
         public event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
         public event Action<RTPEvent, RTPHeader> OnRtpEvent;
-        public event Action<Complex[]> OnAudioScopeSampleReady;
-        public event Action<Complex[]> OnHoldAudioScopeSampleReady;
 
         public void Close(string reason)
         {
             IsClosed = true;
         }
 
-        public Task<SDP> createAnswer(RTCAnswerOptions options)
+        public Task<SDP> createAnswer(SDP offer)
         {
             SDP answerSdp = new SDP(IPAddress.Loopback);
             answerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
@@ -171,12 +168,12 @@ namespace SIPSorcery.UnitTests
             return Task.FromResult(answerSdp);
         }
 
-        public Task<SDP> createOffer(RTCOfferOptions options)
+        public Task<SDP> createOffer(IPAddress connectionAddress)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
 
-            offerSdp.Connection = new SDPConnectionInformation(IPAddress.Loopback);
+            offerSdp.Connection = new SDPConnectionInformation(connectionAddress);
 
             SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
                 SDPMediaTypesEnum.audio,
@@ -200,20 +197,20 @@ namespace SIPSorcery.UnitTests
             throw new NotImplementedException();
         }
 
-        public void setLocalDescription(RTCSessionDescription sessionDescription)
+        public void setLocalDescription(SDP sessionDescription)
         {
             localDescription = sessionDescription;
         }
 
-        public void setRemoteDescription(RTCSessionDescription sessionDescription)
+        public void setRemoteDescription(SDP sessionDescription)
         {
             remoteDescription = sessionDescription;
         }
 
         public Task Start()
         {
-            var audioLocalAnn = (localDescription != null) ? localDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
-            var audioRemoteAnn = (remoteDescription != null) ? remoteDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
+            var audioLocalAnn = (localDescription != null) ? localDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
+            var audioRemoteAnn = (remoteDescription != null) ? remoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
 
             if (audioLocalAnn == null || audioLocalAnn.MediaFormats.Count == 0)
             {

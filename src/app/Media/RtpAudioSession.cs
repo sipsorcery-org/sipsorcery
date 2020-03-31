@@ -75,10 +75,6 @@ namespace SIPSorcery.Media
         private G722Codec _g722Codec;
         private G722CodecState _g722CodecState;
 
-        public event Action<byte[], uint, uint, int> OnVideoSampleReady;
-        public event Action<Complex[]> OnAudioScopeSampleReady;
-        public event Action<Complex[]> OnHoldAudioScopeSampleReady;
-
         public RtpAudioSession(DummyAudioOptions audioOptions, List<SDPMediaFormatsEnum> audioCodecs) :
             base(false, false, false)
         {
@@ -714,5 +710,4 @@ namespace SIPSorcery.Media
         /// </summary>
         SawTooth,
     }
-
 }
