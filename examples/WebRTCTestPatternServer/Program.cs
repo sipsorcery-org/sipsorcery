@@ -197,7 +197,7 @@ namespace WebRTCServer
                     logger.LogDebug("Starting DTLS handshake task.");
 
                     bool dtlsResult = false;
-                    Task.Run(() => dtlsResult = DoDtlsHandshake(peerConnection, dtls))
+                    Task.Run(async () => dtlsResult = await DoDtlsHandshake(peerConnection, dtls))
                     .ContinueWith((t) =>
                     {
                         logger.LogDebug($"dtls handshake result {dtlsResult}.");
@@ -251,7 +251,7 @@ namespace WebRTCServer
         /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
         /// </summary>
         /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
-        private static bool DoDtlsHandshake(RTCPeerConnection peerConnection, DtlsHandshake dtls)
+        private static async Task<bool> DoDtlsHandshake(RTCPeerConnection peerConnection, DtlsHandshake dtls)
         {
             logger.LogDebug("DoDtlsHandshake started.");
 
@@ -280,6 +280,8 @@ namespace WebRTCServer
                     srtpReceiveContext.UnprotectRTP,
                     srtpSendContext.ProtectRTCP,
                     srtpReceiveContext.UnprotectRTCP);
+
+                await peerConnection.Start();
 
                 //dtls.Shutdown();
                 if (_sendTestPatternTimer == null)

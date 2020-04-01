@@ -604,6 +604,7 @@ namespace SIPSorcery.SIP.App
             // The action we take to put a call on hold is to switch the media status
             // to send only and change the audio input from a capture device to on hold
             // music.
+
             // TODO: Add a deep copy of SDP class.
             var localSDP = SDP.ParseSDPDescription(MediaSession.LocalDescription.ToString());
             SetLocalSdpForOnHoldState(ref localSDP);

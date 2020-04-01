@@ -71,7 +71,7 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Creates a new SDP offer based on the local media tracks in the session.
-        /// </summary>
+        /// </summary> 
         /// <param name="connectionAddress">Optional. If set this address will be used
         /// as the Connection address in the SDP offer. If not set an attempt will be 
         /// made to determine the best matching address.</param>
