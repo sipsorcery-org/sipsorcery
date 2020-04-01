@@ -197,7 +197,6 @@ namespace SIPSorcery.Net
         private const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
         public const int H264_RTP_HEADER_LENGTH = 2;
         public const int RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS = 50; // Default sample period for an RTP event as specified by RFC2833.
-        public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
         public const SDPMediaTypesEnum DEFAULT_MEDIA_TYPE = SDPMediaTypesEnum.audio; // If we can't match an RTP payload ID assume it's audio.
         public const int DEFAULT_DTMF_EVENT_PAYLOAD_ID = 101;
         private const string RTP_MEDIA_PROFILE = "RTP/AVP";
@@ -635,15 +634,25 @@ namespace SIPSorcery.Net
         /// <returns>If successful an OK enum result. If not an enum result indicating the failure cause.</returns>
         public SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription)
         {
-            RemoteDescription = sessionDescription;
+            var connAddr = IPAddress.Parse(sessionDescription.Connection.ConnectionAddress);
 
-            var connAddr = IPAddress.Parse(RemoteDescription.Connection.ConnectionAddress);
+            IPEndPoint remoteAudioRtpEP = null;
+            IPEndPoint remoteAudioRtcpEP = null;
+            IPEndPoint remoteVideoRtpEP = null;
+            IPEndPoint remoteVideoRtcpEP = null;
 
-            foreach (var announcement in RemoteDescription.Media)
+            foreach (var announcement in sessionDescription.Media)
             {
                 if (announcement.Media == SDPMediaTypesEnum.audio)
                 {
                     var audioAnnounce = announcement;
+
+                    // Check that there is at least one compatible non-"RTP Event" audio codec.
+                    var audioCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilties, audioAnnounce.MediaFormats);
+                    if(audioCompatibleFormats?.Count == 0)
+                    {
+                        return SetDescriptionResultEnum.AudioIncompatible;
+                    }
 
                     // If there's an existing remote audio track it needs to be replaced.
                     var existingRemoteAudioTrack = m_tracks.Where(x => x.Kind == SDPMediaTypesEnum.audio && x.IsRemote).SingleOrDefault();
@@ -659,12 +668,12 @@ namespace SIPSorcery.Net
                     addTrack(remoteAudioTrack);
 
                     var audioAddr = (audioAnnounce.Connection != null) ? IPAddress.Parse(audioAnnounce.Connection.ConnectionAddress) : connAddr;
-                    AudioDestinationEndPoint = new IPEndPoint(audioAddr, audioAnnounce.Port);
-                    AudioControlDestinationEndPoint = new IPEndPoint(audioAddr, audioAnnounce.Port + 1);
+                    remoteAudioRtpEP = new IPEndPoint(audioAddr, audioAnnounce.Port);
+                    remoteAudioRtcpEP = new IPEndPoint(audioAddr, audioAnnounce.Port + 1);
 
                     foreach (var mediaFormat in audioAnnounce.MediaFormats)
                     {
-                        if (mediaFormat.FormatAttribute?.StartsWith(TELEPHONE_EVENT_ATTRIBUTE) == true)
+                        if (mediaFormat.FormatAttribute?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true)
                         {
                             if (int.TryParse(mediaFormat.FormatID, out var remoteRtpEventPayloadID))
                             {
@@ -677,6 +686,13 @@ namespace SIPSorcery.Net
                 else if (announcement.Media == SDPMediaTypesEnum.video)
                 {
                     var videoAnnounce = announcement;
+
+                    // Check that there is at least one compatible non-"RTP Event" video codec.
+                    var videoCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilties, videoAnnounce.MediaFormats);
+                    if (videoCompatibleFormats?.Count == 0)
+                    {
+                        return SetDescriptionResultEnum.VideoIncompatible;
+                    }
 
                     // If there's an existing remote video track it needs to be replaced.
                     var existingRemoteVideoTrack = m_tracks.Where(x => x.Kind == SDPMediaTypesEnum.video && x.IsRemote).SingleOrDefault();
@@ -692,12 +708,20 @@ namespace SIPSorcery.Net
                     addTrack(remoteVideoTrack);
 
                     var videoAddr = (videoAnnounce.Connection != null) ? IPAddress.Parse(videoAnnounce.Connection.ConnectionAddress) : connAddr;
-                    VideoDestinationEndPoint = new IPEndPoint(videoAddr, videoAnnounce.Port);
-                    VideoControlDestinationEndPoint = new IPEndPoint(videoAddr, videoAnnounce.Port + 1);
+                    remoteVideoRtpEP = new IPEndPoint(videoAddr, videoAnnounce.Port);
+                    remoteVideoRtcpEP = new IPEndPoint(videoAddr, videoAnnounce.Port + 1);
                 }
             }
 
             AdjustLocalTracks();
+
+            // If we get to here then the remote description was compatible with the local media tracks.
+            // Set the remote description and end points.
+            RemoteDescription = sessionDescription;
+            AudioDestinationEndPoint = remoteAudioRtpEP ?? AudioDestinationEndPoint;
+            AudioControlDestinationEndPoint = remoteAudioRtcpEP ?? AudioControlDestinationEndPoint;
+            VideoDestinationEndPoint = remoteVideoRtpEP ?? VideoDestinationEndPoint;
+            VideoControlDestinationEndPoint = remoteVideoRtcpEP ?? VideoControlDestinationEndPoint;
 
             return SetDescriptionResultEnum.OK;
         }
@@ -915,12 +939,23 @@ namespace SIPSorcery.Net
             {
                 if (AudioLocalTrack != null && AudioRemoteTrack != null)
                 {
-                    return SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilties, AudioRemoteTrack.Capabilties)
-                        .Where(x => x.FormatID != RemoteRtpEventPayloadID.ToString()).First();
+                    var format = SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilties, AudioRemoteTrack.Capabilties)
+                        .Where(x => x.FormatID != RemoteRtpEventPayloadID.ToString()).FirstOrDefault();
+
+                    if(format == null)
+                    {
+                        // It's not expected that this occurs as a compatibility check is done when the remote session description
+                        // is set. By this point a compatible codec should be available.
+                        throw new ApplicationException($"No compatible sending format could be found for media {mediaType}.");
+                    }
+                    else
+                    {
+                        return format;
+                    }
                 }
                 else
                 {
-                    throw new ApplicationException($"Cannot get the {mediaType} sending format, missing wither local or remote {mediaType} track.");
+                    throw new ApplicationException($"Cannot get the {mediaType} sending format, missing either local or remote {mediaType} track.");
                 }
             }
             else if (mediaType == SDPMediaTypesEnum.video)

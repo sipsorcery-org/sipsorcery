@@ -90,7 +90,7 @@ namespace SIPSorcery.Media
 
             // RTP event support.
             SDPMediaFormat rtpEventFormat = new SDPMediaFormat(DTMF_EVENT_PAYLOAD_ID);
-            rtpEventFormat.SetFormatAttribute($"{RTPSession.TELEPHONE_EVENT_ATTRIBUTE}/{SAMPLE_RATE}");
+            rtpEventFormat.SetFormatAttribute($"{SDP.TELEPHONE_EVENT_ATTRIBUTE}/{SAMPLE_RATE}");
             rtpEventFormat.SetFormatParameterAttribute("0-16");
 
             var audioCapabilities = new List<SDPMediaFormat> { rtpEventFormat };

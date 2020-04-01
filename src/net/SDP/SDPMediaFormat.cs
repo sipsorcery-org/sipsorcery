@@ -258,7 +258,8 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Attempts to get the compatible formats between two lists.
+        /// Attempts to get the compatible formats between two lists. Formats for
+        /// "RTP Events" are not included.
         /// </summary>
         /// <param name="a">The first list to match the media formats for.</param>
         /// <param name="b">The second list to match the media formats for.</param>
@@ -279,7 +280,8 @@ namespace SIPSorcery.Net
             foreach (var format in a)
             {
                 // TODO: Need to compare all aspects of the format not just the codec.
-                if (b.Any(x => x.FormatCodec == format.FormatCodec))
+                if (format.FormatAttribute?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) != true 
+                    && b.Any(x => x.FormatCodec == format.FormatCodec))
                 {
                     compatible.Add(format);
                 }

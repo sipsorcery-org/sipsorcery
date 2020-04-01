@@ -403,9 +403,9 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
-        public async Task Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
+        public Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
         {
-            await Answer(uas, mediaSession, null).ConfigureAwait(false);
+            return Answer(uas, mediaSession, null);
         }
 
         /// <summary>
@@ -416,17 +416,21 @@ namespace SIPSorcery.SIP.App
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
         /// <param name="customHeaders">Custom SIP-Headers to use in Answer.</param>
-        public async Task Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
+        /// <returns>True if the call was successfully answered or false if there was a problem
+        /// such as incompatible codecs.</returns>
+        public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
         {
             // This call is now taking over any existing call.
             if (IsCallActive)
             {
                 Hangup();
             }
-            else if (uas.IsCancelled)
+            
+            if (uas.IsCancelled)
             {
                 logger.LogDebug("The incoming call has been cancelled.");
                 mediaSession?.Close("call cancelled");
+                return false;
             }
             else
             {
@@ -454,9 +458,11 @@ namespace SIPSorcery.SIP.App
                     if (setRemoteResult != SetDescriptionResultEnum.OK)
                     {
                         logger.LogWarning($"Error setting remote description from INVITE {setRemoteResult}.");
-                        m_uas.Reject(SIPResponseStatusCodesEnum.NotAcceptable, setRemoteResult.ToString());
+                        uas.Reject(SIPResponseStatusCodesEnum.NotAcceptable, setRemoteResult.ToString());
                         MediaSession.Close("sdp offer not acceptable");
-                        return;
+                        Hangup();
+
+                        return false;
                     }
                     else
                     {
@@ -501,18 +507,24 @@ namespace SIPSorcery.SIP.App
                             logger.LogWarning($"Error setting remote description from ACK {setRemoteResult}.");
                             MediaSession.Close(setRemoteResult.ToString());
                             Hangup();
+
+                            return false;
                         }
                         else
                         {
                             // SDP from the ACK request was accepted. Start the RTP session.
                             Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
                             await MediaSession.Start().ConfigureAwait(false);
+
+                            return true;
                         }
                     }
                     else
                     {
                         Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
                         await MediaSession.Start().ConfigureAwait(false);
+
+                        return true;
                     }
                 }
                 else
@@ -521,6 +533,8 @@ namespace SIPSorcery.SIP.App
 
                     MediaSession.Close("dialog creation failed");
                     Hangup();
+
+                    return false;
                 }
             }
         }
@@ -590,7 +604,8 @@ namespace SIPSorcery.SIP.App
             // The action we take to put a call on hold is to switch the media status
             // to send only and change the audio input from a capture device to on hold
             // music.
-            var localSDP = MediaSession.CreateOffer(null);
+            // TODO: Add a deep copy of SDP class.
+            var localSDP = SDP.ParseSDPDescription(MediaSession.LocalDescription.ToString());
             SetLocalSdpForOnHoldState(ref localSDP);
             MediaSession.SetLocalDescription(localSDP);
 
@@ -604,7 +619,8 @@ namespace SIPSorcery.SIP.App
         {
             IsOnLocalHold = false;
 
-            var localSDP = MediaSession.CreateOffer(null);
+            // TODO: Add a deep copy of SDP class.
+            var localSDP = SDP.ParseSDPDescription(MediaSession.LocalDescription.ToString());
             SetLocalSdpForOnHoldState(ref localSDP);
             MediaSession.SetLocalDescription(localSDP);
 

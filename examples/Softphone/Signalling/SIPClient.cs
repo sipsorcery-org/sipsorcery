@@ -182,11 +182,12 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Answers an incoming SIP call.
         /// </summary>
-        public async Task Answer()
+        public async Task<bool> Answer()
         {
             if (m_pendingIncomingCall == null)
             {
                 StatusMessage(this, $"There was no pending call available to answer.");
+                return false;
             }
             else
             {
@@ -218,8 +219,10 @@ namespace SIPSorcery.SoftPhone
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.Answer(m_pendingIncomingCall, MediaSession);
+                bool result = await m_userAgent.Answer(m_pendingIncomingCall, MediaSession);
                 m_pendingIncomingCall = null;
+
+                return result;
             }
         }
 
@@ -236,21 +239,24 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public async void PutOnHold()
         {
-            await m_userAgent.PutOnHold();
+            bool hasAudio = MediaSession.HasAudio;
+            bool hasVideo = MediaSession.HasVideo;
 
-            AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null :
+            m_userAgent.PutOnHold();
+
+            AudioOptions audioOnHold = (!hasAudio) ? null :
                 new AudioOptions
                 {
                     AudioSource = AudioSourcesEnum.Music,
                     SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
-                    { 
+                    {
                         { SDPMediaFormatsEnum.PCMU, MUSIC_FILE_PCMU },
                         { SDPMediaFormatsEnum.PCMA, MUSIC_FILE_PCMA }
                     }
                 };
             VideoOptions videoOnHold = null;
 
-            if (MediaSession.HasVideo)
+            if (hasVideo)
             {
                 //if (bmpSource != null)
                 //{
@@ -283,10 +289,13 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public async void TakeOffHold()
         {
-            await m_userAgent.TakeOffHold();
+            bool hasAudio = MediaSession.HasAudio;
+            bool hasVideo = MediaSession.HasVideo;
 
-            AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
-            VideoOptions videoOnHold = (!MediaSession.HasVideo) ? null : new VideoOptions
+            m_userAgent.TakeOffHold();
+
+            AudioOptions audioOnHold = (!hasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+            VideoOptions videoOnHold = (!hasVideo) ? null : new VideoOptions
             {
                 VideoSource = VideoSourcesEnum.TestPattern,
                 SourceFile = RtpAVSession.VIDEO_TESTPATTERN,

@@ -416,8 +416,16 @@ namespace SIPSorcery.SoftPhone
         /// <returns></returns>
         private async Task AnswerCallAsync(SIPClient client)
         {
-            await client.Answer();
-            SIPCallAnswered(client);
+            bool result = await client.Answer();
+
+            if (result)
+            {
+                SIPCallAnswered(client);
+            }
+            else
+            {
+                ResetToCallStartState(client);
+            }
         }
 
         /// <summary>
