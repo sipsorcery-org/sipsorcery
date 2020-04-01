@@ -47,6 +47,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -149,44 +150,51 @@ namespace SIPSorcery
                         {
                             Log.LogDebug($"Client offer contained PCMU audio codec.");
                             rtpSession = new RtpAVSession(
-                                new AudioOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = executableDir + "/" + AUDIO_FILE_PCMU }, null);
-                            RTCSessionDescriptionInit sdpInit = new RTCSessionDescriptionInit { type = RTCSdpType.offer, sdp = offerSdp.ToString() };
-                            await rtpSession.setRemoteDescription(sdpInit);
-                        }
+                                new AudioOptions
+                                {
+                                    AudioSource = AudioSourcesEnum.Music,
+                                    SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
+                                    {
+                                        { SDPMediaFormatsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
+                                    }
+                                }, null);
 
-                        if (rtpSession == null)
-                        {
-                            // Didn't get a match on the codecs we support.
-                            SIPResponse noMatchingCodecResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptableHere, null);
-                            await sipTransport.SendResponseAsync(noMatchingCodecResponse);
-                        }
-                        else
-                        {
-                            // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
-                            // means this example can be kept simpler.
-                            if (uas?.IsHungup == false)
+                            var setResult = rtpSession.SetRemoteDescription(offerSdp);
+
+                            if (setResult != SetDescriptionResultEnum.OK)
                             {
-                                uas?.Hangup(false);
+                                // Didn't get a match on the codecs we support.
+                                SIPResponse noMatchingCodecResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptableHere, setResult.ToString());
+                                await sipTransport.SendResponseAsync(noMatchingCodecResponse);
                             }
-                            rtpCts?.Cancel();
-                            rtpCts = new CancellationTokenSource();
-
-                            UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
-                            uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
-                            uas.CallCancelled += (uasAgent) =>
+                            else
                             {
+                                // If there's already a call in progress hang it up. Of course this is not ideal for a real softphone or server but it 
+                                // means this example can be kept simpler.
+                                if (uas?.IsHungup == false)
+                                {
+                                    uas?.Hangup(false);
+                                }
                                 rtpCts?.Cancel();
-                                rtpSession.CloseSession(null);
-                            };
-                            rtpSession.OnRtpClosed += (reason) => uas?.Hangup(false);
-                            uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
-                            uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
+                                rtpCts = new CancellationTokenSource();
 
-                            var answerSdp = await rtpSession.createAnswer(null);
-                            await rtpSession.setLocalDescription(answerSdp);
-                            uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp.sdp, null, SIPDialogueTransferModesEnum.NotAllowed);
+                                UASInviteTransaction uasTransaction = new UASInviteTransaction(sipTransport, sipRequest, null);
+                                uas = new SIPServerUserAgent(sipTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
+                                uas.CallCancelled += (uasAgent) =>
+                                {
+                                    rtpCts?.Cancel();
+                                    rtpSession.CloseSession(null);
+                                };
+                                rtpSession.OnRtpClosed += (reason) => uas?.Hangup(false);
+                                uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+                                uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
-                            await rtpSession.Start();
+                                var answerSdp = rtpSession.CreateAnswer();
+                                rtpSession.SetLocalDescription(answerSdp);
+                                uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
+
+                                await rtpSession.Start();
+                            }
                         }
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.BYE)
@@ -208,7 +216,7 @@ namespace SIPSorcery
                         SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         await sipTransport.SendResponseAsync(optionsResponse);
                     }
-                }
+                    }
                 catch (Exception reqExcp)
                 {
                     SIPSorcery.Sys.Log.Logger.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");

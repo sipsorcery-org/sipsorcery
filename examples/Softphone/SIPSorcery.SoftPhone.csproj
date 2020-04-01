@@ -17,6 +17,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="1.0.1" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
+    <PackageReference Include="SIPSorcery" Version="4.0.38-pre" />
+    <PackageReference Include="SIPSorceryMedia" Version="4.0.38-pre" />
     <!--<PackageReference Include="SharpGL" Version="2.4.1.2" />
     <PackageReference Include="SharpGL.SceneGraph" Version="2.4.1.2" />
     <PackageReference Include="SharpGL.WPF" Version="2.4.1.2" />-->
@@ -28,13 +30,6 @@
     <Content Include="favicon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\sipsorcery-media\src\AudioScope\AudioScope.csproj" />
-    <ProjectReference Include="..\..\..\sipsorcery-media\src\RtpAVSession\SIPSorcery.RtpAVSession.csproj" />
-    <ProjectReference Include="..\..\..\sipsorcery-media\src\SIPSorcery.Media.vcxproj" />
-    <ProjectReference Include="..\..\src\SIPSorcery.csproj" />
   </ItemGroup>
 
 </Project>

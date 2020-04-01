@@ -15,15 +15,16 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -33,7 +34,7 @@ namespace demo
     {
         private const string AUDIO_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
         private const string VIDEO_TEST_PATTERN_FILE = "media/testpattern.jpeg";
-        private static string DESTINATION = "aaron@172.19.16.1:7060"; //"127.0.0.1:5060"; //"aaron@172.19.16.1:7060";
+        private static string DESTINATION = "aaron@127.0.0.1:51042"; //"127.0.0.1:5060"; //"aaron@172.19.16.1:7060";
         private static int CALL_IMTEOUT_SECONDS = 20;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
@@ -79,7 +80,14 @@ namespace demo
             string executableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
             var userAgent = new SIPUserAgent(_sipTransport, null);
-            var audioSrcOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Music, SourceFile = executableDir + "/" + AUDIO_FILE_PCMU };
+            var audioSrcOpts = new AudioOptions
+            {
+                AudioSource = AudioSourcesEnum.Music,
+                SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
+                {
+                    { SDPMediaFormatsEnum.PCMU, executableDir + "/" + AUDIO_FILE_PCMU }
+                }
+            };
             var videoSrcOpts = new VideoOptions { VideoSource = VideoSourcesEnum.TestPattern, SourceFile = executableDir + "/" + VIDEO_TEST_PATTERN_FILE };
             var rtpSession = new RtpAVSession(audioSrcOpts, videoSrcOpts);
 

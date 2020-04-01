@@ -26,6 +26,7 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery
 {
@@ -66,6 +67,7 @@ namespace SIPSorcery
             var lookupResult = SIPDNSManager.ResolveSIPService(callUri, false);
             Log.LogDebug($"DNS lookup result for {callUri}: {lookupResult?.GetSIPEndPoint()}.");
             var dstAddress = lookupResult.GetSIPEndPoint().Address;
+            var localOfferAddress = NetServices.GetLocalAddressForRemote(dstAddress);
 
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
             var audioOptions = new AudioOptions
@@ -74,7 +76,8 @@ namespace SIPSorcery
                 AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.PCMU }
             };
             var rtpSession = new RtpAVSession(audioOptions, null);
-            var offerSDP = await rtpSession.createOffer(new RTCOfferOptions { RemoteSignallingAddress = dstAddress });
+            var offerSDP = rtpSession.CreateOffer(localOfferAddress);
+            rtpSession.SetLocalDescription(offerSDP);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var uac = new SIPClientUserAgent(sipTransport);
@@ -85,14 +88,22 @@ namespace SIPSorcery
                 Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                 hasCallFailed = true;
             };
-            uac.CallAnswered += (uac, resp) =>
+            uac.CallAnswered += (iuac, resp) =>
             {
                 if (resp.Status == SIPResponseStatusCodesEnum.Ok)
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                    rtpSession.setRemoteDescription(new RTCSessionDescription { type = RTCSdpType.answer, sdp = SDP.ParseSDPDescription(resp.Body) });
-                    rtpSession.Start();
+                    var result = rtpSession.SetRemoteDescription(SDP.ParseSDPDescription(resp.Body));
+                    if(result == SetDescriptionResultEnum.OK)
+                    {
+                        rtpSession.Start();
+                    }
+                    else
+                    {
+                        Log.LogWarning($"Failed to set remote description {result}.");
+                        uac.Hangup();
+                    }
                 }
                 else
                 {

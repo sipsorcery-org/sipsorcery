@@ -233,11 +233,14 @@ namespace SIPSorcery
 
             Log.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
-            _peerConnection.OnClose += (reason) =>
+            _peerConnection.onconnectionstatechange += (state) =>
             {
-                Log.LogDebug($"WebRtcSession was closed with reason {reason}");
-                _peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
-                _peerConnection.OnSendReport -= RtpSession_OnSendReport;
+                if (state == RTCPeerConnectionState.closed)
+                {
+                    Log.LogDebug($"RTC peer connection closed.");
+                    _peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
+                    _peerConnection.OnSendReport -= RtpSession_OnSendReport;
+                }
             };
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
@@ -295,7 +298,13 @@ namespace SIPSorcery
             }
 
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-            peerConnection.OnClose += (reason) => dtls.Shutdown();
+            peerConnection.onconnectionstatechange += (state) =>
+            {
+                if (state == RTCPeerConnectionState.closed)
+                {
+                    dtls.Shutdown();
+                }
+            };
 
             int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
 
