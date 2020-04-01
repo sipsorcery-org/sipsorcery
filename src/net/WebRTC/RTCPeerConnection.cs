@@ -67,6 +67,33 @@ namespace SIPSorcery.Net
         public string sdp;
     }
 
+    /// <summary>
+    /// Describes a pairing of an RTP sender and receiver and their shared state. The state
+    /// is set by and relevant for the SDP that is controlling the RTP.
+    /// </summary>
+    //public class RTCRtpTransceiver
+    //{
+    //    /// <summary>
+    //    /// The media ID of the SDP m-line associated with this transceiver.
+    //    /// </summary>
+    //    public string MID { get; private set; }
+
+    //    /// <summary>
+    //    /// The current state of the RTP flow between us and the remote party.
+    //    /// </summary>
+    //    public MediaStreamStatusEnum Direction { get; private set; } = MediaStreamStatusEnum.SendRecv;
+
+    //    public RTCRtpTransceiver(string mid)
+    //    {
+    //        MID = mid;
+    //    }
+
+    //    public void SetStreamStatus(MediaStreamStatusEnum direction)
+    //    {
+    //        Direction = direction;
+    //    }
+    //}
+
     ///// <summary>
     ///// 
     ///// </summary>
@@ -113,7 +140,6 @@ namespace SIPSorcery.Net
         // SDP constants.
         private const string RTP_MEDIA_PROFILE = "RTP/SAVP";
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
-        private const string SETUP_OFFER_ATTRIBUTE = "a=setup:actpass"; // Indicates the media announcement DTLS negotiation state is active/passive.
         private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is passive.
         private const string MEDIA_GROUPING = "BUNDLE 0 1";
         private const string ICE_OPTIONS = "trickle";                   // Supported ICE options.
@@ -432,7 +458,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be sued to apply additional
         /// controls over the generated offer SDP.</param>
-        public new async Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options)
+        public async Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options)
         {
             try
             {
@@ -465,7 +491,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be used to apply additional
         /// controls over the generated answer SDP.</param>
-        public new async Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
+        public async Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
         {
             if (remoteDescription == null)
             {
@@ -540,8 +566,8 @@ namespace SIPSorcery.Net
                 audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
                 audioAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
                 audioAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
-                audioAnnouncement.MediaStreamStatus = AudioLocalTrack.Transceiver.Direction;
-                audioAnnouncement.MediaID = AudioLocalTrack.Transceiver.MID;
+                audioAnnouncement.MediaStreamStatus = AudioLocalTrack.StreamStatus;
+                audioAnnouncement.MediaID = AudioLocalTrack.MID;
 
                 offerSdp.Media.Add(audioAnnouncement);
 
@@ -559,8 +585,8 @@ namespace SIPSorcery.Net
                 videoAnnouncement.Transport = RTP_MEDIA_PROFILE;
                 videoAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
                 videoAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
-                videoAnnouncement.MediaStreamStatus = VideoLocalTrack.Transceiver.Direction;
-                videoAnnouncement.MediaID = VideoLocalTrack.Transceiver.MID;
+                videoAnnouncement.MediaStreamStatus = VideoLocalTrack.StreamStatus;
+                videoAnnouncement.MediaID = VideoLocalTrack.MID;
 
                 offerSdp.Media.Add(videoAnnouncement);
 

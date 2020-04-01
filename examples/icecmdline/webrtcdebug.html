@@ -52,7 +52,7 @@
 				console.log("Offer SDP received.");
                 console.log(evt.data);
 				
-                await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
+				await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
 
                 // Now create our offer SDP to send back to the web socket server.
                 pc.createAnswer().then(function (answer) {

@@ -15,12 +15,12 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Drawing;
+using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using AudioScope;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
@@ -35,6 +35,9 @@ namespace SIPSorcery.SoftPhone
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
         private static int VIDEO_LIVE_FRAMES_PER_SECOND = 30;
         private static int VIDEO_ONHOLD_FRAMES_PER_SECOND = 3;
+        private const string MUSIC_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
+        private const string MUSIC_FILE_PCMA = "media/Macroform_-_Simplicity.alaw";
+        private const string MUSIC_FILE_G722 = "media/Macroform_-_Simplicity.g722";
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
@@ -231,32 +234,41 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Puts the remote call party on hold.
         /// </summary>
-        public async void PutOnHold(IBitmapSource bmpSource)
+        public async void PutOnHold()
         {
             await m_userAgent.PutOnHold();
 
-            AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Music };
+            AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null :
+                new AudioOptions
+                {
+                    AudioSource = AudioSourcesEnum.Music,
+                    SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
+                    { 
+                        { SDPMediaFormatsEnum.PCMU, MUSIC_FILE_PCMU },
+                        { SDPMediaFormatsEnum.PCMA, MUSIC_FILE_PCMA }
+                    }
+                };
             VideoOptions videoOnHold = null;
 
             if (MediaSession.HasVideo)
             {
-                if (bmpSource != null)
+                //if (bmpSource != null)
+                //{
+                //    videoOnHold = new VideoOptions
+                //    {
+                //        VideoSource = VideoSourcesEnum.ExternalBitmap,
+                //        BitmapSource = bmpSource
+                //    };
+                //}
+                //else
+                //{
+                videoOnHold = new VideoOptions
                 {
-                    videoOnHold = new VideoOptions
-                    {
-                        VideoSource = VideoSourcesEnum.ExternalBitmap,
-                        BitmapSource = bmpSource
-                    };
-                }
-                else
-                {
-                    videoOnHold = new VideoOptions
-                    {
-                        VideoSource = VideoSourcesEnum.TestPattern,
-                        SourceFile = RtpAVSession.VIDEO_ONHOLD_TESTPATTERN,
-                        SourceFramesPerSecond = VIDEO_ONHOLD_FRAMES_PER_SECOND
-                    };
-                }
+                    VideoSource = VideoSourcesEnum.TestPattern,
+                    SourceFile = RtpAVSession.VIDEO_ONHOLD_TESTPATTERN,
+                    SourceFramesPerSecond = VIDEO_ONHOLD_FRAMES_PER_SECOND
+                };
+                //}
             }
 
             await MediaSession.SetSources(audioOnHold, videoOnHold);

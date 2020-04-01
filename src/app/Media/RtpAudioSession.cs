@@ -18,8 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Sockets;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -62,7 +60,7 @@ namespace SIPSorcery.Media
         private static readonly byte PCMA_SILENCE_BYTE_ZERO = 0x55;
         private static readonly byte PCMA_SILENCE_BYTE_ONE = 0xD5;
 
-        private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
+        private static ILogger Log = SIPSorcery.Sys.Log.Logger;
 
         private StreamReader _audioStreamReader;
         private SignalGenerator _signalGenerator;
@@ -101,7 +99,7 @@ namespace SIPSorcery.Media
                 audioCapabilities.Add(new SDPMediaFormat(codec));
             }
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, audioCapabilities);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, audioCapabilities);
             base.addTrack(audioTrack);
         }
 
@@ -127,7 +125,7 @@ namespace SIPSorcery.Media
         /// <summary>
         /// Initialises the audio source as required.
         /// </summary>
-        public Task Start()
+        public override Task Start()
         {
             lock (this)
             {
@@ -145,9 +143,10 @@ namespace SIPSorcery.Media
                     }
 
                     // Choose which codec to use.
-                    _sendingFormat = AudioLocalTrack.Capabilties
-                        .Where(x => x.FormatID != DTMF_EVENT_PAYLOAD_ID.ToString() && int.TryParse(x.FormatID, out _))
-                        .OrderBy(x => int.Parse(x.FormatID)).First();
+                    //_sendingFormat = AudioLocalTrack.Capabilties
+                    //    .Where(x => x.FormatID != DTMF_EVENT_PAYLOAD_ID.ToString() && int.TryParse(x.FormatID, out _))
+                    //    .OrderBy(x => int.Parse(x.FormatID)).First();
+                    _sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
 
                     Log.LogDebug($"RTP audio session selected sending codec {_sendingFormat.FormatCodec}.");
 
@@ -210,7 +209,7 @@ namespace SIPSorcery.Media
                     }
                 }
 
-                return Task.CompletedTask;
+                return base.Start();
             }
         }
 

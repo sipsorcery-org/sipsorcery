@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
@@ -133,8 +132,8 @@ namespace SIPSorcery.UnitTests
     {
         private const string RTP_MEDIA_PROFILE = "RTP/AVP";
 
-        public SDP localDescription { get; private set; }
-        public SDP remoteDescription { get; private set; }
+        public SDP LocalDescription { get; private set; }
+        public SDP RemoteDescription { get; private set; }
 
         public bool IsClosed { get; private set; }
         public bool HasAudio => true;
@@ -149,7 +148,7 @@ namespace SIPSorcery.UnitTests
             IsClosed = true;
         }
 
-        public Task<SDP> createAnswer(SDP offer)
+        public SDP CreateAnswer()
         {
             SDP answerSdp = new SDP(IPAddress.Loopback);
             answerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
@@ -165,10 +164,10 @@ namespace SIPSorcery.UnitTests
 
             answerSdp.Media.Add(audioAnnouncement);
 
-            return Task.FromResult(answerSdp);
+            return answerSdp;
         }
 
-        public Task<SDP> createOffer(IPAddress connectionAddress)
+        public SDP CreateOffer(IPAddress connectionAddress)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
@@ -184,7 +183,7 @@ namespace SIPSorcery.UnitTests
 
             offerSdp.Media.Add(audioAnnouncement);
 
-            return Task.FromResult(offerSdp);
+            return offerSdp;
         }
 
         public Task SendDtmf(byte tone, CancellationToken ct)
@@ -197,20 +196,21 @@ namespace SIPSorcery.UnitTests
             throw new NotImplementedException();
         }
 
-        public void setLocalDescription(SDP sessionDescription)
+        public void SetLocalDescription(SDP sessionDescription)
         {
-            localDescription = sessionDescription;
+            LocalDescription = sessionDescription;
         }
 
-        public void setRemoteDescription(SDP sessionDescription)
+        public SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription)
         {
-            remoteDescription = sessionDescription;
+            RemoteDescription = sessionDescription;
+            return SetDescriptionResultEnum.OK;
         }
 
         public Task Start()
         {
-            var audioLocalAnn = (localDescription != null) ? localDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
-            var audioRemoteAnn = (remoteDescription != null) ? remoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
+            var audioLocalAnn = (LocalDescription != null) ? LocalDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
+            var audioRemoteAnn = (RemoteDescription != null) ? RemoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
 
             if (audioLocalAnn == null || audioLocalAnn.MediaFormats.Count == 0)
             {
