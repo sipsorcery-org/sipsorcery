@@ -17,8 +17,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="1.0.1" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
-    <PackageReference Include="SIPSorcery" Version="4.0.38-pre" />
-    <PackageReference Include="SIPSorceryMedia" Version="4.0.38-pre" />
+    <PackageReference Include="SIPSorcery" Version="4.0.39-pre" />
+    <PackageReference Include="SIPSorceryMedia" Version="4.0.39-pre" />
     <!--<PackageReference Include="SharpGL" Version="2.4.1.2" />
     <PackageReference Include="SharpGL.SceneGraph" Version="2.4.1.2" />
     <PackageReference Include="SharpGL.WPF" Version="2.4.1.2" />-->

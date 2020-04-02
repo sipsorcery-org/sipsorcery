@@ -36,7 +36,7 @@ namespace SIPSorcery
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
             Console.WriteLine("SIPSorcery client user agent example.");
             Console.WriteLine("Press ctrl-c to exit.");
@@ -73,11 +73,11 @@ namespace SIPSorcery
             var audioOptions = new AudioOptions
             {
                 AudioSource = AudioSourcesEnum.Microphone,
-                AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.PCMU }
+                AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.PCMU },
+                OutputDeviceIndex = AudioOptions.DEFAULT_OUTPUTDEVICE_INDEX
             };
             var rtpSession = new RtpAVSession(audioOptions, null);
             var offerSDP = rtpSession.CreateOffer(localOfferAddress);
-            rtpSession.SetLocalDescription(offerSDP);
 
             // Create a client user agent to place a call to a remote SIP server along with event handlers for the different stages of the call.
             var uac = new SIPClientUserAgent(sipTransport);
