@@ -121,19 +121,20 @@ namespace TestConsole
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
             peerConnection.OnRtpPacketReceived += RtpSession_OnRtpPacketReceived;
-            peerConnection.OnClose += (reason) =>
+            peerConnection.onconnectionstatechange += (state) =>
             {
-                Console.WriteLine($"webrtc session closed: {reason}");
-                _peerConnections.Remove(peerConnection);
+                if (state == RTCPeerConnectionState.closed)
+                {
+                    Console.WriteLine($"webrtc session closed.");
+                    _peerConnections.Remove(peerConnection);
+                }
             };
 
             // Add local recvonly tracks. This ensures that the SDP answer includes only
             // the codecs we support.
-            MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
-            audioTrack.Transceiver.SetStreamStatus(MediaStreamStatusEnum.RecvOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
-            MediaStreamTrack videoTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
-            videoTrack.Transceiver.SetStreamStatus(MediaStreamStatusEnum.RecvOnly);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(videoTrack);
 
             var answerInit = await peerConnection.createAnswer(null);
@@ -241,7 +242,13 @@ namespace TestConsole
             Console.WriteLine("DoDtlsHandshake started.");
 
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-            peerConnection.OnClose += (reason) => dtls.Shutdown();
+            peerConnection.onconnectionstatechange += (state) =>
+            {
+                if (state == RTCPeerConnectionState.closed)
+                {
+                    dtls.Shutdown();
+                }
+            };
 
             int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
 

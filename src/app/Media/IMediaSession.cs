@@ -47,12 +47,6 @@ namespace SIPSorcery.SIP.App
         bool IsClosed { get; }
 
         /// <summary>
-        /// The SDP description describing the local audio/video
-        /// sending and receive capabilities.
-        /// </summary>
-        SDP LocalDescription { get; }
-
-        /// <summary>
         /// The SDP description from the remote party describing
         /// their audio/video sending and receive capabilities.
         /// </summary>
@@ -71,28 +65,15 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Creates a new SDP offer based on the local media tracks in the session.
+        /// Calling this method does NOT change the state of the media tracks. It is
+        /// safe to call at any time if a session description of the local media state is
+        /// required.
         /// </summary> 
         /// <param name="connectionAddress">Optional. If set this address will be used
         /// as the Connection address in the SDP offer. If not set an attempt will be 
         /// made to determine the best matching address.</param>
         /// <returns>A new SDP offer representing the session's local media tracks.</returns>
         SDP CreateOffer(IPAddress connectionAddress);
-
-        /// <summary>
-        /// Sets the local SDP description.
-        /// </summary>
-        /// <param name="sdp">The SDP to set as the local description.</param>
-        void SetLocalDescription(SDP sdp);
-
-        /// <summary>
-        /// Generates an SDP answer to an offer based on the local media tracks. Calling
-        /// this method does NOT result in any changes to the local tracks. To apply the
-        /// changes the SetRemoteDescription method must be called.
-        /// </summary>
-        /// <param name="offer">The SDP offer to generate an answer for.</param>
-        /// <returns>An SDP answer matching the offer and the local media tracks contained
-        /// in the session.</returns>
-        SDP CreateAnswer();
 
         /// <summary>
         /// Sets the remote description. Calling this method can result in the local
@@ -105,6 +86,29 @@ namespace SIPSorcery.SIP.App
         SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription);
 
         /// <summary>
+        /// Generates an SDP answer to an offer based on the local media tracks. Calling
+        /// this method does NOT result in any changes to the local tracks. To apply the
+        /// changes the SetRemoteDescription method must be called.
+        /// </summary>
+        /// <param name="offer">The SDP offer to generate an answer for.</param>
+        /// <returns>An SDP answer matching the offer and the local media tracks contained
+        /// in the session.</returns>
+        SDP CreateAnswer();
+
+        /// <summary>
+        /// Needs to be called prior to sending media. Performs any set up tasks such as 
+        /// starting audio/video capture devices and starting RTCP reporting.
+        /// </summary>
+        Task Start();
+
+        /// <summary>
+        /// Sets the stream status on a local audio or video media track.
+        /// </summary>
+        /// <param name="kind">The type of the media track. Must be audio or video.</param>
+        /// <param name="status">The stream status for the media track.</param>
+        void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status);
+
+        /// <summary>
         /// Attempts to send a DTMF tone to the remote party.
         /// </summary>
         /// <param name="tone">The digit representing the DTMF tone to send.</param>
@@ -113,12 +117,6 @@ namespace SIPSorcery.SIP.App
         /// multiple RTP packets. This token can be used to cancel any further RTP packets
         /// being sent for the tone.</param>
         Task SendDtmf(byte tone, CancellationToken ct);
-
-        /// <summary>
-        /// Needs to be called prior to sending media. Performs any set up tasks such as 
-        /// starting audio/video capture devices and starting RTCP reporting.
-        /// </summary>
-        Task Start();
 
         /// <summary>
         /// Closes the session. This will stop any audio/video capturing and rendering devices as

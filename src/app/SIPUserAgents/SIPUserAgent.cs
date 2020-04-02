@@ -303,19 +303,9 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    mediaSession.SetLocalDescription(sdp);
-
-                    if (mediaSession.LocalDescription == null)
-                    {
-                        ClientCallFailed?.Invoke(m_uac, $"Could not create a local SDP offer.");
-                        CallEnded();
-                    }
-                    else
-                    {
-                        sipCallDescriptor.Content = mediaSession.LocalDescription.ToString();
-                        // This initiates the call but does not wait for an answer.
-                        m_uac.Call(sipCallDescriptor);
-                    }
+                    sipCallDescriptor.Content = sdp.ToString();
+                    // This initiates the call but does not wait for an answer.
+                    m_uac.Call(sipCallDescriptor);
                 }
             }
             else
@@ -425,7 +415,7 @@ namespace SIPSorcery.SIP.App
             {
                 Hangup();
             }
-            
+
             if (uas.IsCancelled)
             {
                 logger.LogDebug("The incoming call has been cancelled.");
@@ -467,7 +457,6 @@ namespace SIPSorcery.SIP.App
                     else
                     {
                         var sdpAnswer = MediaSession.CreateAnswer();
-                        MediaSession.SetLocalDescription(sdpAnswer);
                         sdp = sdpAnswer.ToString();
                     }
                 }
@@ -476,7 +465,6 @@ namespace SIPSorcery.SIP.App
                     // No SDP offer was included in the INVITE request need to wait for the ACK.
                     var sdpAnnounceAddress = NetServices.GetLocalAddressForRemote(sipRequest.RemoteSIPEndPoint.GetIPEndPoint().Address);
                     var sdpOffer = MediaSession.CreateOffer(sdpAnnounceAddress);
-                    MediaSession.SetLocalDescription(sdpOffer);
                     sdp = sdpOffer.ToString();
                 }
 
@@ -604,13 +592,7 @@ namespace SIPSorcery.SIP.App
             // The action we take to put a call on hold is to switch the media status
             // to send only and change the audio input from a capture device to on hold
             // music.
-
-            // TODO: Add a deep copy of SDP class.
-            var localSDP = SDP.ParseSDPDescription(MediaSession.LocalDescription.ToString());
-            SetLocalSdpForOnHoldState(ref localSDP);
-            MediaSession.SetLocalDescription(localSDP);
-
-            SendReInviteRequest(localSDP);
+            ApplyHoldAndReinvite();
         }
 
         /// <summary>
@@ -619,13 +601,20 @@ namespace SIPSorcery.SIP.App
         public void TakeOffHold()
         {
             IsOnLocalHold = false;
+            ApplyHoldAndReinvite();
+        }
 
-            // TODO: Add a deep copy of SDP class.
-            var localSDP = SDP.ParseSDPDescription(MediaSession.LocalDescription.ToString());
-            SetLocalSdpForOnHoldState(ref localSDP);
-            MediaSession.SetLocalDescription(localSDP);
+        /// <summary>
+        /// Updates the stream status of the RTP session and sends the re-INVITE request.
+        /// </summary>
+        private void ApplyHoldAndReinvite()
+        {
+            var streamStatus = GetStreamStatusForOnHoldState();
+            MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, streamStatus);
+            MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, streamStatus);
 
-            SendReInviteRequest(localSDP);
+            var sdp = MediaSession.CreateOffer(null);
+            SendReInviteRequest(sdp);
         }
 
         /// <summary>
@@ -1073,30 +1062,31 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
-        /// Adjusts our SDP offer for a change to the local on hold state.
+        /// Gets the required state of the local media tracks for the on hold state.
         /// </summary>
-        /// <param name="localSDP">Our SDP prior to the on hold adjustment. The SDP object
-        /// will be updated in place for the on hold changes.</param>
-        private void SetLocalSdpForOnHoldState(ref SDP localSDP)
+        /// <returns>The required state of the local media tracks to match the current on
+        /// hold conditions.</returns>
+        private MediaStreamStatusEnum GetStreamStatusForOnHoldState()
         {
-            foreach (var mediaAnnouncement in localSDP.Media)
+            var streamStatus = MediaStreamStatusEnum.SendRecv;
+
+            if (IsOnLocalHold && IsOnRemoteHold)
             {
-                if (IsOnLocalHold && IsOnRemoteHold)
-                {
-                    mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.None;
-                }
-                else if (!IsOnLocalHold && !IsOnRemoteHold)
-                {
-                    mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
-                }
-                else
-                {
-                    mediaAnnouncement.MediaStreamStatus =
-                        IsOnLocalHold
-                            ? MediaStreamStatusEnum.SendOnly
-                            : MediaStreamStatusEnum.RecvOnly;
-                }
+                streamStatus = MediaStreamStatusEnum.None;
             }
+            else if (!IsOnLocalHold && !IsOnRemoteHold)
+            {
+                streamStatus = MediaStreamStatusEnum.SendRecv;
+            }
+            else
+            {
+                streamStatus =
+                    IsOnLocalHold
+                        ? MediaStreamStatusEnum.SendOnly
+                        : MediaStreamStatusEnum.RecvOnly;
+            }
+
+            return streamStatus;
         }
 
         /// <summary>

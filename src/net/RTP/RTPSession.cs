@@ -81,7 +81,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Holds the stream state of the track.
         /// </summary>
-        public MediaStreamStatusEnum StreamStatus { get; internal set; } = MediaStreamStatusEnum.SendRecv;
+        public MediaStreamStatusEnum StreamStatus { get; internal set; }
 
         /// <summary>
         /// Creates a lightweight class to track a media stream track within an RTP session 
@@ -98,11 +98,18 @@ namespace SIPSorcery.Net
         /// type is supported locally and remotely only the mutual capabilities can be used. This will
         /// occur if we receive an SDP offer (add track initiated by the remote party) and we need
         /// to remove capabilities we don't support.</param>
-        public MediaStreamTrack(SDPMediaTypesEnum kind, bool isRemote, List<SDPMediaFormat> capabilties)
+        /// <param name="streamStatus">The initial stream status for the media track. Defaults to
+        /// send receive.</param>
+        public MediaStreamTrack(
+            SDPMediaTypesEnum kind, 
+            bool isRemote, 
+            List<SDPMediaFormat> capabilties,
+            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv)
         {
             Kind = kind;
             IsRemote = isRemote;
             Capabilties = capabilties;
+            StreamStatus = streamStatus;
 
             if (!isRemote)
             {
@@ -114,8 +121,13 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Additional constructor that allows the Media ID to be set.
         /// </summary>
-        public MediaStreamTrack(string mediaID, SDPMediaTypesEnum kind, bool isRemote, List<SDPMediaFormat> capabilties) :
-            this(kind, isRemote, capabilties)
+        public MediaStreamTrack(
+            string mediaID, 
+            SDPMediaTypesEnum kind, 
+            bool isRemote, 
+            List<SDPMediaFormat> capabilties,
+            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
+            this(kind, isRemote, capabilties, streamStatus)
         {
             MID = mediaID;
         }
@@ -137,9 +149,10 @@ namespace SIPSorcery.Net
         public MediaStreamTrack CopyOf()
         {
             List<SDPMediaFormat> capabilties = new List<SDPMediaFormat>(Capabilties);
-            var copy = new MediaStreamTrack(Kind, IsRemote, capabilties);
+            var copy = new MediaStreamTrack(MID, Kind, IsRemote, capabilties, StreamStatus);
             copy.Ssrc = Ssrc;
             copy.SeqNum = SeqNum;
+            copy.Timestamp = Timestamp;
             return copy;
         }
     }
@@ -148,7 +161,7 @@ namespace SIPSorcery.Net
     /// The RTPSession class is the primary point for interacting with the Real-Time
     /// Protocol. It manages all the resources required for setting up and then sending
     /// and receiving RTP packets. This class IS designed to be inherited by child 
-    /// classes that add audio and video processing logic.
+    /// classes and for child classes to add audio and video processing logic.
     /// </summary>
     /// <remarks>
     /// The setting up of an RTP stream involved the exchange of Session Descriptions 
@@ -156,20 +169,18 @@ namespace SIPSorcery.Net
     /// The steps are:
     /// 1. If acting as the initiator:
     ///   a. Create offer,
-    ///   b. Set local description,
-    ///   c. Send offer to remote party and get their answer (external to this class, requires signalling),
-    ///   d. Set remote description,
-    ///   e. Optionally perform any additional set up, such as negotiating SRTP keying material,
-    ///   f. Call Start to commence RTCP reporting.
+    ///   b. Send offer to remote party and get their answer (external to this class, requires signalling),
+    ///   c. Set remote description,
+    ///   d. Optionally perform any additional set up, such as negotiating SRTP keying material,
+    ///   e. Call Start to commence RTCP reporting.
     /// 2. If acting as the recipient:
     ///   a. Receive offer,
     ///   b. Set remote description. This step MUST be done before an SDP answer can be generated.
     ///      This step can also result in an error condition if the codecs/formats offered aren't supported,
     ///   c. Create answer,
-    ///   d. Set local description,
-    ///   e. Send answer to remote party (external to this class, requires signalling),
-    ///   f. Optionally perform any additional set up, such as negotiating SRTP keying material,
-    ///   g. Call Start to commence RTCP reporting.
+    ///   d. Send answer to remote party (external to this class, requires signalling),
+    ///   e. Optionally perform any additional set up, such as negotiating SRTP keying material,
+    ///   f. Call Start to commence RTCP reporting.
     /// </remarks>
     public class RTPSession : IDisposable
     {
@@ -258,7 +269,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The SDP for our end of the call.
         /// </summary>
-        public SDP LocalDescription { get; protected set; }
+        //public SDP LocalDescription { get; protected set; }
 
         /// <summary>
         /// The SDP offered by the remote call party for this session.
@@ -619,15 +630,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Sets the local SDP description for this session.
-        /// </summary>
-        /// <param name="sessionDescriptionn">The SDP that will be set as the local description.</param>
-        public void SetLocalDescription(SDP sessionDescription)
-        {
-            LocalDescription = sessionDescription;
-        }
-
-        /// <summary>
         /// Sets the remote SDP description for this session.
         /// </summary>
         /// <param name="sessionDescription">The SDP that will be set as the remote description.</param>
@@ -724,6 +726,23 @@ namespace SIPSorcery.Net
             VideoControlDestinationEndPoint = remoteVideoRtcpEP ?? VideoControlDestinationEndPoint;
 
             return SetDescriptionResultEnum.OK;
+        }
+
+        /// <summary>
+        /// Sets the stream status on a local audio or video media track.
+        /// </summary>
+        /// <param name="kind">The type of the media track. Must be audio or video.</param>
+        /// <param name="status">The stream status for the media track.</param>
+        public void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status)
+        {
+            if(kind == SDPMediaTypesEnum.audio && AudioLocalTrack != null)
+            {
+                AudioLocalTrack.StreamStatus = status;
+            }
+            else if(kind == SDPMediaTypesEnum.video && VideoLocalTrack != null)
+            {
+                VideoLocalTrack.StreamStatus = status;
+            }
         }
 
         /// <summary>

@@ -157,12 +157,15 @@ namespace WebRTCServer
             peerConnection.OnSendReport += RtpSession_OnSendReport;
             OnMediaSampleReady += peerConnection.SendMedia;
 
-            peerConnection.OnClose += (reason) =>
+            peerConnection.onconnectionstatechange += (state) =>
             {
-                logger.LogDebug($"WebRtcSession was closed with reason {reason}");
-                OnMediaSampleReady -= peerConnection.SendMedia;
-                peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
-                peerConnection.OnSendReport -= RtpSession_OnSendReport;
+                if (state == RTCPeerConnectionState.closed)
+                {
+                    logger.LogDebug($"RTC peer connect was closed.");
+                    OnMediaSampleReady -= peerConnection.SendMedia;
+                    peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
+                    peerConnection.OnSendReport -= RtpSession_OnSendReport;
+                }
             };
 
             var offerInit = await peerConnection.createOffer(null);
@@ -219,7 +222,13 @@ namespace WebRTCServer
             }
 
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-            peerConnection.OnClose += (reason) => dtls.Shutdown();
+            peerConnection.onconnectionstatechange += (state) =>
+            {
+                if (state == RTCPeerConnectionState.closed)
+                {
+                    dtls.Shutdown();
+                }
+            };
 
             int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
 

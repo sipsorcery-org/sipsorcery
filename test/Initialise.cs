@@ -132,7 +132,6 @@ namespace SIPSorcery.UnitTests
     {
         private const string RTP_MEDIA_PROFILE = "RTP/AVP";
 
-        public SDP LocalDescription { get; private set; }
         public SDP RemoteDescription { get; private set; }
 
         public bool IsClosed { get; private set; }
@@ -186,21 +185,6 @@ namespace SIPSorcery.UnitTests
             return offerSdp;
         }
 
-        public Task SendDtmf(byte tone, CancellationToken ct)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetLocalDescription(SDP sessionDescription)
-        {
-            LocalDescription = sessionDescription;
-        }
-
         public SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription)
         {
             RemoteDescription = sessionDescription;
@@ -209,19 +193,17 @@ namespace SIPSorcery.UnitTests
 
         public Task Start()
         {
-            var audioLocalAnn = (LocalDescription != null) ? LocalDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
-            var audioRemoteAnn = (RemoteDescription != null) ? RemoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
-
-            if (audioLocalAnn == null || audioLocalAnn.MediaFormats.Count == 0)
-            {
-                throw new ApplicationException("Cannot start audio session without a local audio track being available.");
-            }
-            else if (audioRemoteAnn == null || audioRemoteAnn.MediaFormats.Count == 0)
-            {
-                throw new ApplicationException("Cannot start audio session without a remote audio track being available.");
-            }
-
             return Task.CompletedTask;
+        }
+
+        public void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SendDtmf(byte tone, CancellationToken ct)
+        {
+            throw new NotImplementedException();
         }
     }
 }
