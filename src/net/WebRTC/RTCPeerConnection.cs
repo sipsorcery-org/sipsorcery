@@ -140,6 +140,7 @@ namespace SIPSorcery.Net
         // SDP constants.
         private const string RTP_MEDIA_PROFILE = "RTP/SAVP";
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
+        private const string RTCP_ATTRIBUTE = "a=rtcp:9 IN IP4 0.0.0.0";
         private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is passive.
         private const string MEDIA_GROUPING = "BUNDLE 0 1";
         private const string ICE_OPTIONS = "trickle";                   // Supported ICE options.
@@ -295,60 +296,68 @@ namespace SIPSorcery.Net
         public Task setRemoteDescription(RTCSessionDescriptionInit init)
         {
             RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
-            //base.setRemoteDescription(description);
             remoteDescription = description;
 
             SDP remoteSdp = SDP.ParseSDPDescription(init.sdp);
 
-            string remoteIceUser = null;
-            string remoteIcePassword = null;
+            var setResult = base.SetRemoteDescription(remoteSdp);
 
-            var audioAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
-            if (audioAnnounce != null)
+            if (setResult != SetDescriptionResultEnum.OK)
             {
-                remoteIceUser = audioAnnounce.IceUfrag;
-                remoteIcePassword = audioAnnounce.IcePwd;
+                throw new ApplicationException($"Error setting remote description {setResult}.");
             }
-
-            var videoAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
-            if (videoAnnounce != null)
+            else
             {
-                if (remoteIceUser == null && remoteIcePassword == null)
+                string remoteIceUser = null;
+                string remoteIcePassword = null;
+
+                var audioAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
+                if (audioAnnounce != null)
                 {
-                    remoteIceUser = videoAnnounce.IceUfrag;
-                    remoteIcePassword = videoAnnounce.IcePwd;
+                    remoteIceUser = audioAnnounce.IceUfrag;
+                    remoteIcePassword = audioAnnounce.IcePwd;
                 }
+
+                var videoAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
+                if (videoAnnounce != null)
+                {
+                    if (remoteIceUser == null && remoteIcePassword == null)
+                    {
+                        remoteIceUser = videoAnnounce.IceUfrag;
+                        remoteIcePassword = videoAnnounce.IcePwd;
+                    }
+                }
+
+                SdpSessionID = remoteSdp.SessionId;
+
+                if (remoteIceUser != null && remoteIcePassword != null)
+                {
+                    IceSession.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
+                }
+
+                //// All browsers seem to have gone to trickling ICE candidates now but just
+                //// in case one or more are given we can start the STUN dance immediately.
+                //if (remoteSdp.IceCandidates != null)
+                //{
+                //    foreach (var iceCandidate in remoteSdp.IceCandidates)
+                //    {
+                //        AppendRemoteIceCandidate(iceCandidate);
+                //    }
+                //}
+
+                //foreach (var media in remoteSdp.Media)
+                //{
+                //    if (media.IceCandidates != null)
+                //    {
+                //        foreach (var iceCandidate in media.IceCandidates)
+                //        {
+                //            AppendRemoteIceCandidate(iceCandidate);
+                //        }
+                //    }
+                //}
+
+                return Task.CompletedTask;
             }
-
-            SdpSessionID = remoteSdp.SessionId;
-
-            if (remoteIceUser != null && remoteIcePassword != null)
-            {
-                IceSession.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
-            }
-
-            //// All browsers seem to have gone to trickling ICE candidates now but just
-            //// in case one or more are given we can start the STUN dance immediately.
-            //if (remoteSdp.IceCandidates != null)
-            //{
-            //    foreach (var iceCandidate in remoteSdp.IceCandidates)
-            //    {
-            //        AppendRemoteIceCandidate(iceCandidate);
-            //    }
-            //}
-
-            //foreach (var media in remoteSdp.Media)
-            //{
-            //    if (media.IceCandidates != null)
-            //    {
-            //        foreach (var iceCandidate in media.IceCandidates)
-            //        {
-            //            AppendRemoteIceCandidate(iceCandidate);
-            //        }
-            //    }
-            //}
-
-            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -552,22 +561,25 @@ namespace SIPSorcery.Net
                 offerSdp.Group = MEDIA_GROUPING;
             }
 
-            // The media is being multiplexed so the audio and video RTP channel is the same.
-            var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
-
             // --- Audio announcement ---
-            if (AudioLocalTrack != null && audioCapabilities != null && rtpChannel != null)
+            if (AudioLocalTrack != null && audioCapabilities != null)
             {
                 SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
                     SDPMediaTypesEnum.audio,
-                    rtpChannel.RTPPort,
+                    SDP.DISABLED_PORT_NUMBER,
                     audioCapabilities);
 
                 audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
                 audioAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
                 audioAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
+                audioAnnouncement.AddExtra(RTCP_ATTRIBUTE);
                 audioAnnouncement.MediaStreamStatus = AudioLocalTrack.StreamStatus;
                 audioAnnouncement.MediaID = AudioLocalTrack.MID;
+
+                audioAnnouncement.IceUfrag = IceSession.LocalIceUser;
+                audioAnnouncement.IcePwd = IceSession.LocalIcePassword;
+                audioAnnouncement.IceOptions = ICE_OPTIONS;
+                audioAnnouncement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
 
                 offerSdp.Media.Add(audioAnnouncement);
 
@@ -575,18 +587,24 @@ namespace SIPSorcery.Net
             }
 
             // --- Video announcement ---
-            if (VideoLocalTrack != null && videoCapabilities != null && rtpChannel != null)
+            if (VideoLocalTrack != null && videoCapabilities != null)
             {
                 SDPMediaAnnouncement videoAnnouncement = new SDPMediaAnnouncement(
                     SDPMediaTypesEnum.video,
-                    (firstAnnouncement == null) ? rtpChannel.RTPPort : SDP.DISABLED_PORT_NUMBER,
+                    SDP.DISABLED_PORT_NUMBER,
                     videoCapabilities);
 
                 videoAnnouncement.Transport = RTP_MEDIA_PROFILE;
                 videoAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
                 videoAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
+                videoAnnouncement.AddExtra(RTCP_ATTRIBUTE);
                 videoAnnouncement.MediaStreamStatus = VideoLocalTrack.StreamStatus;
                 videoAnnouncement.MediaID = VideoLocalTrack.MID;
+
+                videoAnnouncement.IceUfrag = IceSession.LocalIceUser;
+                videoAnnouncement.IcePwd = IceSession.LocalIcePassword;
+                videoAnnouncement.IceOptions = ICE_OPTIONS;
+                videoAnnouncement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
 
                 offerSdp.Media.Add(videoAnnouncement);
 
@@ -599,11 +617,6 @@ namespace SIPSorcery.Net
             // Add ICE candidates.
             if (firstAnnouncement != null)
             {
-                firstAnnouncement.IceUfrag = IceSession.LocalIceUser;
-                firstAnnouncement.IcePwd = IceSession.LocalIcePassword;
-                firstAnnouncement.IceOptions = ICE_OPTIONS;
-                firstAnnouncement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
-
                 firstAnnouncement.IceCandidates = new List<string>();
                 foreach (var iceCandidate in IceSession.Candidates)
                 {

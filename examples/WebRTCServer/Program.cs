@@ -38,21 +38,26 @@ namespace WebRTCServer
         public RTCPeerConnection PeerConnection;
 
         public event Func<WebSocketContext, Task<RTCPeerConnection>> WebSocketOpened;
-        public event Func<RTCPeerConnection, string, Task> SDPAnswerReceived;
+        public event Func<RTCPeerConnection, string, Task> OnMessageReceived;
 
         public SDPExchange()
         { }
 
-        protected override void OnMessage(MessageEventArgs e)
+        protected override async void OnMessage(MessageEventArgs e)
         {
-            SDPAnswerReceived(PeerConnection, e.Data);
-            this.Close();
+            await OnMessageReceived(PeerConnection, e.Data);
         }
 
         protected override async void OnOpen()
         {
             base.OnOpen();
             PeerConnection = await WebSocketOpened(this.Context);
+        }
+
+        protected override void OnClose(CloseEventArgs e)
+        {
+            base.OnClose(e);
+            PeerConnection.Close("remote party close");
         }
     }
 
@@ -95,6 +100,14 @@ namespace WebRTCServer
             {
                 throw new ApplicationException($"The media file at does not exist at {MP4_FILE_PATH}.");
             }
+            else if (!File.Exists(DTLS_CERTIFICATE_PATH))
+            {
+                throw new ApplicationException($"The DTLS certificate file could not be found at {DTLS_CERTIFICATE_PATH}.");
+            }
+            else if (!File.Exists(DTLS_KEY_PATH))
+            {
+                throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
+            }
 
             // Initialise OpenSSL & libsrtp, saves a couple of seconds for the first client connection.
             Console.WriteLine("Initialising OpenSSL and libsrtp...");
@@ -118,7 +131,7 @@ namespace WebRTCServer
             _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
             {
                 sdpExchanger.WebSocketOpened += SendSDPOffer;
-                sdpExchanger.SDPAnswerReceived += SDPAnswerReceived;
+                sdpExchanger.OnMessageReceived += WebSocketMessageReceived;
             });
             _webSocketServer.Start();
 
@@ -142,29 +155,74 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            var peerConnection = new RTCPeerConnection(null);
-                //AddressFamily.InterNetwork,
-                //DTLS_CERTIFICATE_FINGERPRINT,
-                //null,
-                //null);
+            RTCConfiguration pcConfiguration = new RTCConfiguration
+            {
+                certificates = new List<RTCCertificate>
+                {
+                    new RTCCertificate
+                    {
+                        X_CertificatePath = DTLS_CERTIFICATE_PATH,
+                        X_KeyPath = DTLS_KEY_PATH,
+                        X_Fingerprint = DTLS_CERTIFICATE_FINGERPRINT
+                    }
+                }
+            };
+
+            var peerConnection = new RTCPeerConnection(pcConfiguration);
+            var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             peerConnection.addTrack(audioTrack);
             MediaStreamTrack videoTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
             peerConnection.addTrack(videoTrack);
 
-            //webRtcSession.RtpSession.OnReceiveReport += RtpSession_OnReceiveReport;
+            peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
-            OnMediaSampleReady += peerConnection.SendMedia;
+
+            peerConnection.OnTimeout += (mediaType) =>
+            {
+                peerConnection.Close("remote timeout");
+                dtls.Shutdown();
+            };
 
             peerConnection.onconnectionstatechange += (state) =>
             {
-                if (state == RTCPeerConnectionState.closed)
+                if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {
-                    logger.LogDebug($"RTC peer connect was closed.");
+                    logger.LogDebug($"RTC peer connection was closed.");
                     OnMediaSampleReady -= peerConnection.SendMedia;
                     peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
                     peerConnection.OnSendReport -= RtpSession_OnSendReport;
+                }
+                else if (state == RTCPeerConnectionState.connected)
+                {
+                    logger.LogDebug("Peer connection connected.");
+                    OnMediaSampleReady += peerConnection.SendMedia;
+                }
+            };
+
+            peerConnection.oniceconnectionstatechange += (state) =>
+            {
+                if (state == RTCIceConnectionState.connected)
+                {
+                    logger.LogDebug("Starting DTLS handshake task.");
+
+                    bool dtlsResult = false;
+                    Task.Run(async () => dtlsResult = await DoDtlsHandshake(peerConnection, dtls))
+                    .ContinueWith((t) =>
+                    {
+                        logger.LogDebug($"dtls handshake result {dtlsResult}.");
+
+                        if (dtlsResult)
+                        {
+                            peerConnection.SetDestination(SDPMediaTypesEnum.audio, peerConnection.IceSession.ConnectedRemoteEndPoint, peerConnection.IceSession.ConnectedRemoteEndPoint);
+                        }
+                        else
+                        {
+                            dtls.Shutdown();
+                            peerConnection.Close("dtls handshake failed.");
+                        }
+                    });
                 }
             };
 
@@ -175,31 +233,27 @@ namespace WebRTCServer
 
             context.WebSocket.Send(offerInit.sdp);
 
-            if (DoDtlsHandshake(peerConnection))
-            {
-                if (!_isSampling)
-                {
-                    _ = Task.Run(StartMedia);
-                }
-            }
-            else
-            {
-                peerConnection.Close("dtls handshake failed.");
-            }
-
             return peerConnection;
         }
 
-        private static async Task SDPAnswerReceived(RTCPeerConnection peerConnection, string sdpAnswer)
+        private static async Task WebSocketMessageReceived(RTCPeerConnection peerConnection, string message)
         {
             try
             {
-                logger.LogDebug("Answer SDP: " + sdpAnswer);;
-                await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = sdpAnswer, type = RTCSdpType.answer });
+                if (peerConnection.remoteDescription == null)
+                {
+                    logger.LogDebug("Answer SDP: " + message);
+                    await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                }
+                else
+                {
+                    logger.LogDebug("ICE Candidate: " + message);
+                    await peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
+                }
             }
             catch (Exception excp)
             {
-                logger.LogError("Exception SDPAnswerReceived. " + excp.Message);
+                logger.LogError("Exception WebSocketMessageReceived. " + excp.Message);
             }
         }
 
@@ -208,27 +262,9 @@ namespace WebRTCServer
         /// </summary>
         /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
         /// <returns>True if the handshake completed successfully or false otherwise.</returns>
-        private static bool DoDtlsHandshake(RTCPeerConnection peerConnection)
+        private static async Task<bool> DoDtlsHandshake(RTCPeerConnection peerConnection, DtlsHandshake dtls)
         {
             logger.LogDebug("DoDtlsHandshake started.");
-
-            if (!File.Exists(DTLS_CERTIFICATE_PATH))
-            {
-                throw new ApplicationException($"The DTLS certificate file could not be found at {DTLS_CERTIFICATE_PATH}.");
-            }
-            else if (!File.Exists(DTLS_KEY_PATH))
-            {
-                throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
-            }
-
-            var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-            peerConnection.onconnectionstatechange += (state) =>
-            {
-                if (state == RTCPeerConnectionState.closed)
-                {
-                    dtls.Shutdown();
-                }
-            };
 
             int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
 
@@ -246,6 +282,13 @@ namespace WebRTCServer
                     srtpReceiveContext.UnprotectRTP,
                     srtpSendContext.ProtectRTCP,
                     srtpReceiveContext.UnprotectRTCP);
+
+                await peerConnection.Start();
+
+                if (!_isSampling)
+                {
+                    _ = Task.Run(StartMedia);
+                }
 
                 return true;
             }
