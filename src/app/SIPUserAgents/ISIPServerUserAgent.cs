@@ -51,7 +51,7 @@ namespace SIPSorcery.SIP.App
         SIPDialogue Answer(string contentType, string body, string toTag, SIPDialogueTransferModesEnum transferMode, string[] customHeaders);
         void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase); 
         void Reject(SIPResponseStatusCodesEnum failureStatus, string reasonPhrase, string[] customHeaders);
-        void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI); 
+        void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI);
         void Redirect(SIPResponseStatusCodesEnum redirectCode, SIPURI redirectURI, string[] customHeaders);
         void NoCDR();
         void SetTraceDelegate(SIPTransactionTraceMessageDelegate traceDelegate);

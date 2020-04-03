@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
@@ -133,26 +132,22 @@ namespace SIPSorcery.UnitTests
     {
         private const string RTP_MEDIA_PROFILE = "RTP/AVP";
 
-        public RTCSessionDescription localDescription { get; private set; }
-        public RTCSessionDescription remoteDescription { get; private set; }
+        public SDP RemoteDescription { get; private set; }
 
         public bool IsClosed { get; private set; }
         public bool HasAudio => true;
         public bool HasVideo => false;
 
-        public event Action<byte[], uint, uint, int> OnVideoSampleReady;
         public event Action<string> OnRtpClosed;
         public event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
         public event Action<RTPEvent, RTPHeader> OnRtpEvent;
-        public event Action<Complex[]> OnAudioScopeSampleReady;
-        public event Action<Complex[]> OnHoldAudioScopeSampleReady;
 
         public void Close(string reason)
         {
             IsClosed = true;
         }
 
-        public Task<SDP> createAnswer(RTCAnswerOptions options)
+        public SDP CreateAnswer()
         {
             SDP answerSdp = new SDP(IPAddress.Loopback);
             answerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
@@ -168,15 +163,15 @@ namespace SIPSorcery.UnitTests
 
             answerSdp.Media.Add(audioAnnouncement);
 
-            return Task.FromResult(answerSdp);
+            return answerSdp;
         }
 
-        public Task<SDP> createOffer(RTCOfferOptions options)
+        public SDP CreateOffer(IPAddress connectionAddress)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
 
-            offerSdp.Connection = new SDPConnectionInformation(IPAddress.Loopback);
+            offerSdp.Connection = new SDPConnectionInformation(connectionAddress);
 
             SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
                 SDPMediaTypesEnum.audio,
@@ -187,44 +182,28 @@ namespace SIPSorcery.UnitTests
 
             offerSdp.Media.Add(audioAnnouncement);
 
-            return Task.FromResult(offerSdp);
+            return offerSdp;
+        }
+
+        public SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription)
+        {
+            RemoteDescription = sessionDescription;
+            return SetDescriptionResultEnum.OK;
+        }
+
+        public Task Start()
+        {
+            return Task.CompletedTask;
+        }
+
+        public void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status)
+        {
+            throw new NotImplementedException();
         }
 
         public Task SendDtmf(byte tone, CancellationToken ct)
         {
             throw new NotImplementedException();
-        }
-
-        public void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void setLocalDescription(RTCSessionDescription sessionDescription)
-        {
-            localDescription = sessionDescription;
-        }
-
-        public void setRemoteDescription(RTCSessionDescription sessionDescription)
-        {
-            remoteDescription = sessionDescription;
-        }
-
-        public Task Start()
-        {
-            var audioLocalAnn = (localDescription != null) ? localDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
-            var audioRemoteAnn = (remoteDescription != null) ? remoteDescription.sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).SingleOrDefault() : null;
-
-            if (audioLocalAnn == null || audioLocalAnn.MediaFormats.Count == 0)
-            {
-                throw new ApplicationException("Cannot start audio session without a local audio track being available.");
-            }
-            else if (audioRemoteAnn == null || audioRemoteAnn.MediaFormats.Count == 0)
-            {
-                throw new ApplicationException("Cannot start audio session without a remote audio track being available.");
-            }
-
-            return Task.CompletedTask;
         }
     }
 }

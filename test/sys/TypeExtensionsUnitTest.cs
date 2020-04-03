@@ -12,7 +12,6 @@
 using System;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 using Xunit;
 
 namespace SIPSorcery.Sys.UnitTests

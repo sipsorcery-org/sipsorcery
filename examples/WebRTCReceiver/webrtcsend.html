@@ -6,6 +6,7 @@
 
         const url = "wss://localhost:8081/"
 		var pc;
+		var ws;
 	
 		async function start() {
 		
@@ -15,8 +16,6 @@
 			const remoteVideo = document.querySelector('#videoCtl');
 			//remoteVideo.srcObject = remoteStream;
 
-            //var ws = new WebSocket(url, []);
-
             const constraints = {
                 'video': true,
                 'audio': true
@@ -24,7 +23,7 @@
 
 			const localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
 			remoteVideo.srcObject = localStream;
-			
+
 			pc = new RTCPeerConnection(null);
 			
 			localStream.getTracks().forEach(track => {
@@ -50,73 +49,63 @@
 			//ws.onopen = function () {
              //   console.log("web socket onopen.");
 			
-				pc.addEventListener('icecandidate', event => {
-					if (event.candidate) {
-						console.log('new-ice-candidate:');
-						//console.log(event.candidate.candidate);
-						console.log(event.candidate);
-						//console.log(pc.localDescription.sdp);
-						//iceStr = "ice" + event.candidate.candidate + "\n" + event.candidate.sdpMLineIndex + "\n" + event.candidate.sdpMid
-						//console.log(iceStr);
-						//ws.send(iceStr);
-					}
-				});
+            pc.onicecandidate = function (event) {
+                if (event.candidate) {
+                    console.log('new-ice-candidate:');
+                    console.log(event.candidate.candidate);
+                    console.log(event.candidate);
+                    //console.log(pc.localDescription.sdp);
+                    ws.send(event.candidate.candidate);
+                }
+            };
 				
-				pc.addEventListener("icegatheringstatechange", async (ev) => {
-					  console.log('icegatheringstatechange');
-					  console.log(ev);
+            pc.onicegatheringstatechange = function () {
+                console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+            }
+
+            pc.oniceconnectionstatechange = function () {
+                console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+            }
+
+            pc.onsignalingstatechange = function () {
+                console.log("onsignalingstatechange: " + pc.signalingState);
+            }
+
+            pc.ontrack = ({ track, streams: [stream] }) => {
+                track.onunmute = () => {
+                    //videoControl.srcObject = stream;
+                    remoteStream.addTrack(track, remoteStream);
+                };
+            };
 				
-					  let connection = ev.target;
-					  console.log('icegatheringstatechange state: ' + connection.iceGatheringState);
-					  
-					  switch(connection.iceGatheringState) {
-						case "gathering":
-						  /* collection of candidates has begun */
-						  break;
-						case "complete":
-						  /* collection of candidates is finished */
-						  console.log('ice gathering complete.');
-						  const offer = await pc.createOffer();
+				//pc.addEventListener('track', async (event) => {
+				//	console.log('Remote ' + event.track.kind + ' stream available.');
+				//	console.log(event);
+				//	remoteStream.addTrack(event.track, remoteStream);
+				//});
 				
-						  console.log('offer sdp:');
-						  console.log(offer);
-						  console.log(offer.sdp);
-						  
-						  ws = new WebSocket(url, []);
-						  ws.onopen = function () {
-							ws.send(offer.sdp);
-						  };
-						  ws.onmessage =  async function (evt) {
-							await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: evt.data }))
-						  };
-						  
-						  break;
-					  }
-					}, false);
-				
-				pc.addEventListener('connectionstatechange', event => {
-					console.log('ice connection state change ' + event);
-					console.log(event);
-					console.log("pc ice conn state = " + pc.iceConnectionState);
-					if (pc.iceConnectionState === 'connected') {
-						// Peers connected!
-						console.log('ice state connected.');
-					}
-				});
-				
-				pc.addEventListener('track', async (event) => {
-					console.log('Remote ' + event.track.kind + ' stream available.');
-					console.log(event);
-					remoteStream.addTrack(event.track, remoteStream);
-				});
-				
-				const offer = await pc.createOffer();
+			
 				
 				//console.log('offer sdp:');
 				//console.log(offer);
 				//console.log(offer.sdp);
 				
-				await pc.setLocalDescription(offer);
+            ws = new WebSocket(url, []);
+
+            ws.onopen = async function () {
+                const offer = await pc.createOffer();
+
+                await pc.setLocalDescription(offer);
+
+                ws.send(offer.sdp);
+            };
+
+            ws.onmessage = async function (evt) {
+                // Received SDP answer from the remote web socket server.
+                console.log("web socket onmessage: " + evt.data + ".");
+				await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: evt.data }));
+            };
+
             //};
 
             /*ws.onmessage = async function (evt) {
@@ -138,10 +127,15 @@
 		};
 
 		function closePeer() {
-			console.log("close peer");
-			if(pc != null) {
-				pc.close();
-			}
+            if (ws != null) {
+                console.log("closing web socket.");
+                ws.close();
+            }
+
+            if (pc != null) {
+                console.log("close peer");
+                pc.close();
+            }
 		};
 
     </script>

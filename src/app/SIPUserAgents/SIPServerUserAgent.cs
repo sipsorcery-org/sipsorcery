@@ -541,7 +541,7 @@ namespace SIPSorcery.SIP.App
                             redirectResponse.Header.UnknownHeaders.Add(header);
                         }
                     }
-                    
+
                     m_uasTransaction.SendFinalResponse(redirectResponse);
                 }
             }

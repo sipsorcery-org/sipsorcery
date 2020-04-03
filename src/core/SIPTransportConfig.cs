@@ -29,7 +29,7 @@ namespace SIPSorcery.SIP
         private const string CERTIFICATE_TYPE_PARAMETER = "certificatetype";    // Can be file or store, defaults to store.
         private const string CERTIFICATE_KEY_PASSWORD_PARAMETER = "certificatekeypassword";
         private const string SIP_PROTOCOL_PARAMETER = "protocol";
-        private const string ALL_LOCAL_IPADDRESSES_KEY  = "*";
+        private const string ALL_LOCAL_IPADDRESSES_KEY = "*";
 
         private const int m_defaultSIPPort = SIPConstants.DEFAULT_SIP_PORT;
         private const int m_defaultSIPTLSPort = SIPConstants.DEFAULT_SIP_TLS_PORT;

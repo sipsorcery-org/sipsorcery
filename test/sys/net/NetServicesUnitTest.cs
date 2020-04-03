@@ -13,8 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Net;
+using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -156,6 +156,24 @@ namespace SIPSorcery.Sys.UnitTests
             Assert.NotNull(localInternetAddresses);
 
             logger.LogDebug($"Local Internet address {localInternetAddresses}.");
+        }
+
+        /// <summary>
+        /// Tests that RTP and control listeners can be created with a pseudo-random port assignment.
+        /// </summary>
+        [Fact]
+        public void CreateRtpAndControlSocketsUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            Socket rtpSocket = null;
+            Socket controlSocket = null;
+
+            NetServices.CreateRtpSocket(10000, 20000, 13677, true, null, out rtpSocket, out controlSocket);
+
+            Assert.NotNull(rtpSocket);
+            Assert.NotNull(controlSocket);
         }
     }
 }

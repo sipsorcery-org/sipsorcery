@@ -222,7 +222,7 @@ namespace SIPSorcery.SIP
                     ackRequest.Header.ContentType = contentType;
                 }
 
-               return ackRequest;
+                return ackRequest;
             }
             catch (Exception excp)
             {
@@ -356,7 +356,7 @@ namespace SIPSorcery.SIP
             prackRequest.Header.RAckCSeq = progressResponse.Header.CSeq;
             prackRequest.Header.RAckCSeqMethod = progressResponse.Header.CSeqMethod;
 
-           return prackRequest;
+            return prackRequest;
         }
     }
 }

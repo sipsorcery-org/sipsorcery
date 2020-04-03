@@ -40,7 +40,7 @@ namespace SIPSorcery.UnitTests.app.SIPUserAgents
                 new[] { "My-Header: value" });
 
             userAgent.Start();
-            
+
             channel.SIPMessageSent.WaitOne(5000);
             Assert.Contains("My-Header: value", channel.LastSIPMessageSent);
 

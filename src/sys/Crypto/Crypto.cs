@@ -340,6 +340,15 @@ namespace SIPSorcery.Sys
             return sessionID;
         }
 
+        /// <summary>
+        /// Fills a buffer with random bytes.
+        /// </summary>
+        /// <param name="buffer">The buffer to fill.</param>
+        public static void GetRandomBytes(byte[] buffer)
+        {
+            m_randomProvider.GetBytes(buffer);
+        }
+
         public static byte[] GetSHAHash(params string[] values)
         {
             SHA1 sha = new SHA1Managed();
