@@ -124,7 +124,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            
+
             DNSResponse result = DNSManager.Lookup("www.google.com", QType.AAAA, 10, null, false, false);
 
             foreach (var aaaaResult in result.RecordsAAAA)

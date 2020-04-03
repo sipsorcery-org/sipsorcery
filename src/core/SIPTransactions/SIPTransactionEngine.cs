@@ -475,7 +475,7 @@ namespace SIPSorcery.SIP
 
                         RemoveExpiredTransactions();
 
-                       Thread.Sleep(TXCHECK_WAIT_MILLISECONDS);
+                        Thread.Sleep(TXCHECK_WAIT_MILLISECONDS);
                     }
                 }
             }

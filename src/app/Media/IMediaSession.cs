@@ -14,7 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Numerics;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
@@ -31,34 +31,26 @@ namespace SIPSorcery.SIP.App
     /// </summary>
     public interface IMediaSession
     {
-        RTCSessionDescription localDescription { get; }
-        RTCSessionDescription remoteDescription { get; }
-        bool IsClosed { get; }
+        /// <summary>
+        /// Indicates whether the session supports audio.
+        /// </summary>
         bool HasAudio { get; }
+
+        /// <summary>
+        /// Indicates whether the session supports video.
+        /// </summary>
         bool HasVideo { get; }
 
         /// <summary>
-        /// Fired when a video sample is ready for rendering.
-        /// [sample, width, height, stride]
+        /// Indicates whether the session has been closed.
         /// </summary>
-        event Action<byte[], uint, uint, int> OnVideoSampleReady;
+        bool IsClosed { get; }
 
         /// <summary>
-        /// Fired when an audio sample is ready for the audio scope (which serves
-        /// as a visual representation of the audio). Note the audio signal should
-        /// already have been played. This event is for an optional visual representation
-        /// of the same signal.
-        /// [sample in IEEE float format].
+        /// The SDP description from the remote party describing
+        /// their audio/video sending and receive capabilities.
         /// </summary>
-        event Action<Complex[]> OnAudioScopeSampleReady;
-
-        /// <summary>
-        /// Fired when an audio sample generated from the on hold music is ready for 
-        /// the audio scope (which serves as a visual representation of the audio).
-        /// This audio scope is used to send an on hold video to the remote call party.
-        /// [sample in IEEE float format].
-        /// </summary>
-        event Action<Complex[]> OnHoldAudioScopeSampleReady;
+        SDP RemoteDescription { get; }
 
         /// <summary>
         /// Fired when the RTP channel is closed.
@@ -66,25 +58,71 @@ namespace SIPSorcery.SIP.App
         event Action<string> OnRtpClosed;
 
         /// <summary>
-        /// Fired when a media RTP packet is received.
-        /// </summary>
-        event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
-
-        /// <summary>
         /// Fired when an RTP event (typically representing a DTMF tone) is
         /// detected.
         /// </summary>
         event Action<RTPEvent, RTPHeader> OnRtpEvent;
 
-        Task<SDP> createOffer(RTCOfferOptions options);
-        void setLocalDescription(RTCSessionDescription sessionDescription);
-        Task<SDP> createAnswer(RTCAnswerOptions options);
-        void setRemoteDescription(RTCSessionDescription sessionDescription);
+        /// <summary>
+        /// Creates a new SDP offer based on the local media tracks in the session.
+        /// Calling this method does NOT change the state of the media tracks. It is
+        /// safe to call at any time if a session description of the local media state is
+        /// required.
+        /// </summary> 
+        /// <param name="connectionAddress">Optional. If set this address will be used
+        /// as the Connection address in the SDP offer. If not set an attempt will be 
+        /// made to determine the best matching address.</param>
+        /// <returns>A new SDP offer representing the session's local media tracks.</returns>
+        SDP CreateOffer(IPAddress connectionAddress);
 
-        Task SendDtmf(byte tone, CancellationToken ct);
-        void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample);
+        /// <summary>
+        /// Sets the remote description. Calling this method can result in the local
+        /// media tracks being disabled if not supported or setting the RTP/RTCP end points
+        /// if they are.
+        /// </summary>
+        /// <param name="sdp">The SDP description from the remote party.</param>
+        /// <returns>If successful an OK enum result. If not an enum result indicating the 
+        /// failure cause.</returns>
+        SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription);
 
+        /// <summary>
+        /// Generates an SDP answer to an offer based on the local media tracks. Calling
+        /// this method does NOT result in any changes to the local tracks. To apply the
+        /// changes the SetRemoteDescription method must be called.
+        /// </summary>
+        /// <param name="offer">The SDP offer to generate an answer for.</param>
+        /// <returns>An SDP answer matching the offer and the local media tracks contained
+        /// in the session.</returns>
+        SDP CreateAnswer();
+
+        /// <summary>
+        /// Needs to be called prior to sending media. Performs any set up tasks such as 
+        /// starting audio/video capture devices and starting RTCP reporting.
+        /// </summary>
         Task Start();
+
+        /// <summary>
+        /// Sets the stream status on a local audio or video media track.
+        /// </summary>
+        /// <param name="kind">The type of the media track. Must be audio or video.</param>
+        /// <param name="status">The stream status for the media track.</param>
+        void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status);
+
+        /// <summary>
+        /// Attempts to send a DTMF tone to the remote party.
+        /// </summary>
+        /// <param name="tone">The digit representing the DTMF tone to send.</param>
+        /// <param name="ct">A cancellation token that should be set if the DTMF send should be 
+        /// cancelled before completing. Depending on the duration a DTMF send can require 
+        /// multiple RTP packets. This token can be used to cancel any further RTP packets
+        /// being sent for the tone.</param>
+        Task SendDtmf(byte tone, CancellationToken ct);
+
+        /// <summary>
+        /// Closes the session. This will stop any audio/video capturing and rendering devices as
+        /// well as the RTP and RTCP sessions and sockets.
+        /// </summary>
+        /// <param name="reason">Optional. A descriptive reason for closing the session.</param>
         void Close(string reason);
     }
 }

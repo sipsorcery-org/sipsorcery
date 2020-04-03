@@ -62,7 +62,7 @@ namespace SIPSorcery.Net.UnitTests
             uint ssrc = 19;
             string reason = "x";
 
-            RTCPBye bye = new RTCPBye(ssrc,reason);
+            RTCPBye bye = new RTCPBye(ssrc, reason);
             byte[] buffer = bye.GetBytes();
 
             RTCPBye parsedBye = new RTCPBye(buffer);

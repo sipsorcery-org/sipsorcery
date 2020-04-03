@@ -1,8 +1,7 @@
 ﻿using System;
-using SIPSorcery.Net;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using System.Text;
 
 namespace SIPSorcery.Net.UnitTests
 {

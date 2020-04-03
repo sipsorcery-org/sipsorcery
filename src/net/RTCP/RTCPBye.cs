@@ -126,7 +126,7 @@ namespace SIPSorcery.Net
             }
 
             if (reasonLength > 0)
-            {   
+            {
                 buffer[payloadIndex + 4] = (byte)reasonLength;
                 Buffer.BlockCopy(reasonBytes, 0, buffer, payloadIndex + 5, reasonBytes.Length);
             }
@@ -144,7 +144,7 @@ namespace SIPSorcery.Net
         private int GetPaddedLength(int reasonLength)
         {
             // Plus one is for the reason length field.
-            if(reasonLength > 0)
+            if (reasonLength > 0)
             {
                 reasonLength += 1;
             }

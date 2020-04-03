@@ -9,7 +9,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace SIPSorcery.SIP.UnitTests

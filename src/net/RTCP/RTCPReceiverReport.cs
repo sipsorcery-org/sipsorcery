@@ -126,7 +126,7 @@ namespace SIPSorcery.Net
             }
 
             int bufferIndex = payloadIndex + 4;
-            for(int i=0; i<rrCount; i++)
+            for (int i = 0; i < rrCount; i++)
             {
                 var receptionReportBytes = ReceptionReports[i].GetBytes();
                 Buffer.BlockCopy(receptionReportBytes, 0, buffer, bufferIndex, ReceptionReportSample.PAYLOAD_SIZE);

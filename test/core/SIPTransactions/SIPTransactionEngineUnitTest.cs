@@ -116,7 +116,7 @@ namespace SIPSorcery.SIP.UnitTests
                 UASInviteTransaction serverTransaction = null;
                 serverTransport = new SIPTransport(false, SIPSorcery.UnitTests.MockSIPDNSManager.Resolve);
                 serverTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Loopback, 0)));
-                SIPTransactionEngine serverEngine = serverTransport.m_transactionEngine;     
+                SIPTransactionEngine serverEngine = serverTransport.m_transactionEngine;
                 SetTransportTraceEvents(serverTransport);
                 serverTransport.SIPTransportRequestReceived += (localEndPoint, remoteEndPoint, sipRequest) =>
                 {

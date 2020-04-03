@@ -17,15 +17,16 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -146,17 +147,20 @@ namespace SIPSorcery
                                 if (userAgent.IsOnLocalHold)
                                 {
                                     Log.LogInformation("Taking the remote call party off hold.");
-                                    await userAgent.TakeOffHold();
+                                    userAgent.TakeOffHold();
                                     await (userAgent.MediaSession as RtpAVSession).SetSources(new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
                                 }
                                 else
                                 {
                                     Log.LogInformation("Placing the remote call party on hold.");
-                                    await userAgent.PutOnHold();
+                                    userAgent.PutOnHold();
                                     await (userAgent.MediaSession as RtpAVSession).SetSources(new AudioOptions
                                     {
                                         AudioSource = AudioSourcesEnum.Music,
-                                        SourceFile = _currentDir + "/" + AUDIO_FILE_PCMU
+                                        SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
+                                        {
+                                            { SDPMediaFormatsEnum.PCMU, _currentDir + "/" + AUDIO_FILE_PCMU }
+                                        }
                                     }, null);
                                 }
                             }

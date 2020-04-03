@@ -57,9 +57,9 @@ namespace SIPSorcery.Net
         public RTCPCompoundPacket(byte[] packet)
         {
             int offset = 0;
-            while(offset < packet.Length)
+            while (offset < packet.Length)
             {
-                if(packet.Length - offset < RTCPHeader.HEADER_BYTES_LENGTH)
+                if (packet.Length - offset < RTCPHeader.HEADER_BYTES_LENGTH)
                 {
                     // Not enough bytes left for a RTCP header.
                     break;
@@ -122,7 +122,7 @@ namespace SIPSorcery.Net
             {
                 throw new ApplicationException("An RTCP compound packet must have either a Sender or Receiver report set.");
             }
-            else if(SDesReport == null)
+            else if (SDesReport == null)
             {
                 throw new ApplicationException("An RTCP compound packet must have an SDES report set.");
             }
@@ -130,8 +130,8 @@ namespace SIPSorcery.Net
             List<byte> compoundBuffer = new List<byte>();
             compoundBuffer.AddRange((SenderReport != null) ? SenderReport.GetBytes() : ReceiverReport.GetBytes());
             compoundBuffer.AddRange(SDesReport.GetBytes());
-            
-            if(Bye != null)
+
+            if (Bye != null)
             {
                 compoundBuffer.AddRange(Bye.GetBytes());
             }

@@ -36,6 +36,8 @@ namespace SIPSorcery.Net
         public string Transport = "RTP/AVP";    // Defined types RTP/AVP (RTP Audio Visual Profile) and udp.
         public string IceUfrag;                 // If ICE is being used the username for the STUN requests.
         public string IcePwd;                   // If ICE is being used the password for the STUN requests.
+        public string IceOptions;               // Optional attribute to specify support ICE options, e.g. "trickle".
+        public bool IceEndOfCandidates;         // If ICE candidate trickling is being used this needs to be set if all candidates have been gathered.
         public string DtlsFingerprint;          // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
 
         /// <summary>
@@ -48,7 +50,7 @@ namespace SIPSorcery.Net
         public List<SDPMediaFormat> MediaFormats = new List<SDPMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
         public List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
         public List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
-        public List<IceCandidate> IceCandidates;
+        public List<string> IceCandidates;
 
         /// <summary>
         /// The stream status of this media announcement. Note that None means no explicit value has been set
@@ -167,8 +169,17 @@ namespace SIPSorcery.Net
             {
                 foreach (var candidate in IceCandidates)
                 {
-                    announcement += candidate.ToString();
+                    announcement += $"a={SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX}:{candidate}{m_CRLF}";
                 }
+            }
+
+            if(IceOptions != null)
+            {
+                announcement += $"a={SDP.ICE_OPTIONS}:" + IceOptions + m_CRLF;
+            }
+
+            if (IceEndOfCandidates)
+            {
                 announcement += $"a={SDP.END_ICE_CANDIDATES_ATTRIBUTE}" + m_CRLF;
             }
 

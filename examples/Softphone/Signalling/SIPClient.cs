@@ -15,17 +15,15 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Drawing;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using AudioScope;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone
 {
@@ -35,11 +33,15 @@ namespace SIPSorcery.SoftPhone
         private static int TRANSFER_RESPONSE_TIMEOUT_SECONDS = 10;
         private static int VIDEO_LIVE_FRAMES_PER_SECOND = 30;
         private static int VIDEO_ONHOLD_FRAMES_PER_SECOND = 3;
+        private const string MUSIC_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
+        private const string MUSIC_FILE_PCMA = "media/Macroform_-_Simplicity.alaw";
+        private const string MUSIC_FILE_G722 = "media/Macroform_-_Simplicity.g722";
 
         private string m_sipUsername = SIPSoftPhoneState.SIPUsername;
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.SIPServer;
         private string m_sipFromName = SIPSoftPhoneState.SIPFromName;
+        private int m_audioOutDeviceIndex = SIPSoftPhoneState.AudioOutDeviceIndex;
 
         private SIPTransport m_sipTransport;
         private SIPUserAgent m_userAgent;
@@ -141,7 +143,11 @@ namespace SIPSorcery.SoftPhone
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
-                var audioSrcOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                var audioSrcOpts = new AudioOptions
+                {
+                    AudioSource = AudioSourcesEnum.Microphone,
+                    OutputDeviceIndex = m_audioOutDeviceIndex
+                };
                 var videoSrcOpts = new VideoOptions
                 {
                     VideoSource = VideoSourcesEnum.TestPattern,
@@ -179,11 +185,12 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Answers an incoming SIP call.
         /// </summary>
-        public async Task Answer()
+        public async Task<bool> Answer()
         {
             if (m_pendingIncomingCall == null)
             {
                 StatusMessage(this, $"There was no pending call available to answer.");
+                return false;
             }
             else
             {
@@ -196,7 +203,11 @@ namespace SIPSorcery.SoftPhone
                 AudioOptions audioOpts = new AudioOptions { AudioSource = AudioSourcesEnum.None };
                 if (hasAudio)
                 {
-                    audioOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                    audioOpts = new AudioOptions
+                    {
+                        AudioSource = AudioSourcesEnum.Microphone,
+                        OutputDeviceIndex = m_audioOutDeviceIndex
+                    };
                 }
 
                 VideoOptions videoOpts = new VideoOptions { VideoSource = VideoSourcesEnum.None };
@@ -215,8 +226,10 @@ namespace SIPSorcery.SoftPhone
                 m_userAgent.RemotePutOnHold += OnRemotePutOnHold;
                 m_userAgent.RemoteTookOffHold += OnRemoteTookOffHold;
 
-                await m_userAgent.Answer(m_pendingIncomingCall, MediaSession);
+                bool result = await m_userAgent.Answer(m_pendingIncomingCall, MediaSession);
                 m_pendingIncomingCall = null;
+
+                return result;
             }
         }
 
@@ -231,32 +244,45 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// Puts the remote call party on hold.
         /// </summary>
-        public async void PutOnHold(IBitmapSource bmpSource)
+        public async void PutOnHold()
         {
-            await m_userAgent.PutOnHold();
+            bool hasAudio = MediaSession.HasAudio;
+            bool hasVideo = MediaSession.HasVideo;
 
-            AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Music };
+            m_userAgent.PutOnHold();
+
+            AudioOptions audioOnHold = (!hasAudio) ? null :
+                new AudioOptions
+                {
+                    AudioSource = AudioSourcesEnum.Music,
+                    OutputDeviceIndex = m_audioOutDeviceIndex,
+                    SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
+                    {
+                        { SDPMediaFormatsEnum.PCMU, MUSIC_FILE_PCMU },
+                        { SDPMediaFormatsEnum.PCMA, MUSIC_FILE_PCMA }
+                    }
+                };
             VideoOptions videoOnHold = null;
 
-            if (MediaSession.HasVideo)
+            if (hasVideo)
             {
-                if (bmpSource != null)
+                //if (bmpSource != null)
+                //{
+                //    videoOnHold = new VideoOptions
+                //    {
+                //        VideoSource = VideoSourcesEnum.ExternalBitmap,
+                //        BitmapSource = bmpSource
+                //    };
+                //}
+                //else
+                //{
+                videoOnHold = new VideoOptions
                 {
-                    videoOnHold = new VideoOptions
-                    {
-                        VideoSource = VideoSourcesEnum.ExternalBitmap,
-                        BitmapSource = bmpSource
-                    };
-                }
-                else
-                {
-                    videoOnHold = new VideoOptions
-                    {
-                        VideoSource = VideoSourcesEnum.TestPattern,
-                        SourceFile = RtpAVSession.VIDEO_ONHOLD_TESTPATTERN,
-                        SourceFramesPerSecond = VIDEO_ONHOLD_FRAMES_PER_SECOND
-                    };
-                }
+                    VideoSource = VideoSourcesEnum.TestPattern,
+                    SourceFile = RtpAVSession.VIDEO_ONHOLD_TESTPATTERN,
+                    SourceFramesPerSecond = VIDEO_ONHOLD_FRAMES_PER_SECOND
+                };
+                //}
             }
 
             await MediaSession.SetSources(audioOnHold, videoOnHold);
@@ -271,10 +297,17 @@ namespace SIPSorcery.SoftPhone
         /// </summary>
         public async void TakeOffHold()
         {
-            await m_userAgent.TakeOffHold();
+            bool hasAudio = MediaSession.HasAudio;
+            bool hasVideo = MediaSession.HasVideo;
 
-            AudioOptions audioOnHold = (!MediaSession.HasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
-            VideoOptions videoOnHold = (!MediaSession.HasVideo) ? null : new VideoOptions
+            m_userAgent.TakeOffHold();
+
+            AudioOptions audioOnHold = (!hasAudio) ? null : new AudioOptions
+            {
+                AudioSource = AudioSourcesEnum.Microphone,
+                OutputDeviceIndex = m_audioOutDeviceIndex
+            };
+            VideoOptions videoOnHold = (!hasVideo) ? null : new VideoOptions
             {
                 VideoSource = VideoSourcesEnum.TestPattern,
                 SourceFile = RtpAVSession.VIDEO_TESTPATTERN,

@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -292,9 +293,9 @@ namespace SIPSorcery.SIP.App
                     }
                 };
 
-                RTCOfferOptions offerOptions = new RTCOfferOptions { RemoteSignallingAddress = serverEndPoint.Address };
+                var sdpAnnounceAddress = NetServices.GetLocalAddressForRemote(serverEndPoint.Address);
 
-                var sdp = await mediaSession.createOffer(offerOptions).ConfigureAwait(false);
+                var sdp = mediaSession.CreateOffer(sdpAnnounceAddress);
                 if (sdp == null)
                 {
                     ClientCallFailed?.Invoke(m_uac, $"Could not generate an offer.");
@@ -302,19 +303,9 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    mediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdp, type = RTCSdpType.offer });
-
-                    if (mediaSession.localDescription == null)
-                    {
-                        ClientCallFailed?.Invoke(m_uac, $"Could not create a local SDP offer.");
-                        CallEnded();
-                    }
-                    else
-                    {
-                        sipCallDescriptor.Content = mediaSession.localDescription.sdp.ToString();
-                        // This initiates the call but does not wait for an answer.
-                        m_uac.Call(sipCallDescriptor);
-                    }
+                    sipCallDescriptor.Content = sdp.ToString();
+                    // This initiates the call but does not wait for an answer.
+                    m_uac.Call(sipCallDescriptor);
                 }
             }
             else
@@ -402,9 +393,9 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
-        public async Task Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
+        public Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession)
         {
-            await Answer(uas, mediaSession, null).ConfigureAwait(false);
+            return Answer(uas, mediaSession, null);
         }
 
         /// <summary>
@@ -415,17 +406,21 @@ namespace SIPSorcery.SIP.App
         /// <param name="uas">The user agent server holding the pending call to answer.</param>
         /// <param name="mediaSession">The media session used for this call</param>
         /// <param name="customHeaders">Custom SIP-Headers to use in Answer.</param>
-        public async Task Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
+        /// <returns>True if the call was successfully answered or false if there was a problem
+        /// such as incompatible codecs.</returns>
+        public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
         {
             // This call is now taking over any existing call.
             if (IsCallActive)
             {
                 Hangup();
             }
-            else if (uas.IsCancelled)
+
+            if (uas.IsCancelled)
             {
                 logger.LogDebug("The incoming call has been cancelled.");
                 mediaSession?.Close("call cancelled");
+                return false;
             }
             else
             {
@@ -434,7 +429,6 @@ namespace SIPSorcery.SIP.App
 
                 MediaSession = mediaSession;
                 MediaSession.OnRtpEvent += OnRemoteRtpEvent;
-                //MediaSession.OnRtpClosed += (reason) => Hangup();
                 MediaSession.OnRtpClosed += (reason) =>
                 {
                     if (!MediaSession.IsClosed)
@@ -449,40 +443,29 @@ namespace SIPSorcery.SIP.App
                 {
                     // The SDP offer was included in the INVITE request.
                     SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
-                    MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSdp, type = RTCSdpType.offer });
+                    var setRemoteResult = MediaSession.SetRemoteDescription(remoteSdp);
 
-                    var sdpAnswer = await MediaSession.createAnswer(null).ConfigureAwait(false);
-
-                    if (sdpAnswer == null)
+                    if (setRemoteResult != SetDescriptionResultEnum.OK)
                     {
-                        logger.LogWarning($"Could not generate an SDP answer.");
-                        m_uas.Reject(SIPResponseStatusCodesEnum.NotAcceptable, null);
-                        return;
+                        logger.LogWarning($"Error setting remote description from INVITE {setRemoteResult}.");
+                        uas.Reject(SIPResponseStatusCodesEnum.NotAcceptable, setRemoteResult.ToString());
+                        MediaSession.Close("sdp offer not acceptable");
+                        Hangup();
+
+                        return false;
                     }
                     else
                     {
-                        MediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdpAnswer, type = RTCSdpType.answer });
+                        var sdpAnswer = MediaSession.CreateAnswer();
                         sdp = sdpAnswer.ToString();
                     }
                 }
                 else
                 {
                     // No SDP offer was included in the INVITE request need to wait for the ACK.
-                    RTCOfferOptions offerOptions = new RTCOfferOptions { RemoteSignallingAddress = sipRequest.RemoteSIPEndPoint.GetIPEndPoint().Address };
-                    var sdpOffer = await MediaSession.createOffer(offerOptions).ConfigureAwait(false);
-
-                    if (sdpOffer == null)
-                    {
-                        // This shouldn't occur unless we're unable to create an audio/video track.
-                        logger.LogWarning($"Could not generate an SDP answer.");
-                        m_uas.Reject(SIPResponseStatusCodesEnum.NotAcceptable, null);
-                        return;
-                    }
-                    else
-                    {
-                        MediaSession.setLocalDescription(new RTCSessionDescription { sdp = sdpOffer, type = RTCSdpType.offer });
-                        sdp = sdpOffer.ToString();
-                    }
+                    var sdpAnnounceAddress = NetServices.GetLocalAddressForRemote(sipRequest.RemoteSIPEndPoint.GetIPEndPoint().Address);
+                    var sdpOffer = MediaSession.CreateOffer(sdpAnnounceAddress);
+                    sdp = sdpOffer.ToString();
                 }
 
                 m_uas = uas;
@@ -500,16 +483,37 @@ namespace SIPSorcery.SIP.App
 
                 if (Dialogue != null)
                 {
-                    if (MediaSession.remoteDescription == null || MediaSession.remoteDescription.sdp == null)
+                    if (MediaSession.RemoteDescription == null)
                     {
                         // If the initial INVITE did not contain an offer then the remote description will not yet be set.
                         var remoteSDP = SDP.ParseSDPDescription(Dialogue.RemoteSDP);
-                        MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = remoteSDP, type = RTCSdpType.answer });
+                        var setRemoteResult = MediaSession.SetRemoteDescription(remoteSDP);
+
+                        if (setRemoteResult != SetDescriptionResultEnum.OK)
+                        {
+                            // Failed to set the remote SDP from the ACK request. Only option is to hangup.
+                            logger.LogWarning($"Error setting remote description from ACK {setRemoteResult}.");
+                            MediaSession.Close(setRemoteResult.ToString());
+                            Hangup();
+
+                            return false;
+                        }
+                        else
+                        {
+                            // SDP from the ACK request was accepted. Start the RTP session.
+                            Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+                            await MediaSession.Start().ConfigureAwait(false);
+
+                            return true;
+                        }
                     }
+                    else
+                    {
+                        Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
+                        await MediaSession.Start().ConfigureAwait(false);
 
-                    Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
-
-                    await MediaSession.Start().ConfigureAwait(false);
+                        return true;
+                    }
                 }
                 else
                 {
@@ -517,6 +521,8 @@ namespace SIPSorcery.SIP.App
 
                     MediaSession.Close("dialog creation failed");
                     Hangup();
+
+                    return false;
                 }
             }
         }
@@ -579,32 +585,36 @@ namespace SIPSorcery.SIP.App
         /// <summary>
         /// Send a re-INVITE request to put the remote call party on hold.
         /// </summary>
-        public async Task PutOnHold()
+        public void PutOnHold()
         {
             IsOnLocalHold = true;
 
             // The action we take to put a call on hold is to switch the media status
             // to send only and change the audio input from a capture device to on hold
             // music.
-            var localSDP = await MediaSession.createOffer(null).ConfigureAwait(false);
-            SetLocalSdpForOnHoldState(ref localSDP);
-            MediaSession.setLocalDescription(new RTCSessionDescription { sdp = localSDP, type = RTCSdpType.offer });
-
-            SendReInviteRequest(localSDP);
+            ApplyHoldAndReinvite();
         }
 
         /// <summary>
         /// Send a re-INVITE request to take the remote call party on hold.
         /// </summary>
-        public async Task TakeOffHold()
+        public void TakeOffHold()
         {
             IsOnLocalHold = false;
+            ApplyHoldAndReinvite();
+        }
 
-            var localSDP = await MediaSession.createOffer(null).ConfigureAwait(false);
-            SetLocalSdpForOnHoldState(ref localSDP);
-            MediaSession.setLocalDescription(new RTCSessionDescription { sdp = localSDP, type = RTCSdpType.offer });
+        /// <summary>
+        /// Updates the stream status of the RTP session and sends the re-INVITE request.
+        /// </summary>
+        private void ApplyHoldAndReinvite()
+        {
+            var streamStatus = GetStreamStatusForOnHoldState();
+            MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, streamStatus);
+            MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, streamStatus);
 
-            SendReInviteRequest(localSDP);
+            var sdp = MediaSession.CreateOffer(null);
+            SendReInviteRequest(sdp);
         }
 
         /// <summary>
@@ -690,18 +700,29 @@ namespace SIPSorcery.SIP.App
 
                 try
                 {
-                    MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = SDP.ParseSDPDescription(sipRequest.Body), type = RTCSdpType.offer });
+                    SDP offer = SDP.ParseSDPDescription(sipRequest.Body);
+                    var setRemoteResult = MediaSession.SetRemoteDescription(offer);
 
-                    CheckRemotePartyHoldCondition(MediaSession.remoteDescription.sdp);
+                    if (setRemoteResult != SetDescriptionResultEnum.OK)
+                    {
+                        logger.LogWarning($"Unable to set remote description from reINVITE request {setRemoteResult}");
 
-                    var answerSdp = await MediaSession.createAnswer(null).ConfigureAwait(false);
+                        var notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, setRemoteResult.ToString());
+                        reInviteTransaction.SendFinalResponse(notAcceptableResponse);
+                    }
+                    else
+                    {
+                        var answerSdp = MediaSession.CreateAnswer();
 
-                    Dialogue.RemoteSDP = sipRequest.Body;
-                    Dialogue.SDP = answerSdp.ToString();
-                    Dialogue.RemoteCSeq = sipRequest.Header.CSeq;
+                        CheckRemotePartyHoldCondition(MediaSession.RemoteDescription);
 
-                    var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, Dialogue.SDP);
-                    reInviteTransaction.SendFinalResponse(okResponse);
+                        Dialogue.RemoteSDP = sipRequest.Body;
+                        Dialogue.SDP = answerSdp.ToString();
+                        Dialogue.RemoteCSeq = sipRequest.Header.CSeq;
+
+                        var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, Dialogue.SDP);
+                        reInviteTransaction.SendFinalResponse(okResponse);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -847,7 +868,7 @@ namespace SIPSorcery.SIP.App
             {
                 // Update the remote party's SDP.
                 Dialogue.RemoteSDP = sipResponse.Body;
-                MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = SDP.ParseSDPDescription(sipResponse.Body), type = RTCSdpType.answer });
+                MediaSession.SetRemoteDescription(SDP.ParseSDPDescription(sipResponse.Body));
             }
             else
             {
@@ -930,7 +951,7 @@ namespace SIPSorcery.SIP.App
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                MediaSession.setRemoteDescription(new RTCSessionDescription { sdp = SDP.ParseSDPDescription(sipResponse.Body), type = RTCSdpType.answer });
+                MediaSession.SetRemoteDescription(SDP.ParseSDPDescription(sipResponse.Body));
                 await MediaSession.Start().ConfigureAwait(false);
 
                 Dialogue.DialogueState = SIPDialogueStateEnum.Confirmed;
@@ -1041,30 +1062,31 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
-        /// Adjusts our SDP offer for a change to the local on hold state.
+        /// Gets the required state of the local media tracks for the on hold state.
         /// </summary>
-        /// <param name="localSDP">Our SDP prior to the on hold adjustment. The SDP object
-        /// will be updated in place for the on hold changes.</param>
-        private void SetLocalSdpForOnHoldState(ref SDP localSDP)
+        /// <returns>The required state of the local media tracks to match the current on
+        /// hold conditions.</returns>
+        private MediaStreamStatusEnum GetStreamStatusForOnHoldState()
         {
-            foreach (var mediaAnnouncement in localSDP.Media)
+            var streamStatus = MediaStreamStatusEnum.SendRecv;
+
+            if (IsOnLocalHold && IsOnRemoteHold)
             {
-                if (IsOnLocalHold && IsOnRemoteHold)
-                {
-                    mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.None;
-                }
-                else if (!IsOnLocalHold && !IsOnRemoteHold)
-                {
-                    mediaAnnouncement.MediaStreamStatus = MediaStreamStatusEnum.SendRecv;
-                }
-                else
-                {
-                    mediaAnnouncement.MediaStreamStatus =
-                        IsOnLocalHold
-                            ? MediaStreamStatusEnum.SendOnly
-                            : MediaStreamStatusEnum.RecvOnly;
-                }
+                streamStatus = MediaStreamStatusEnum.None;
             }
+            else if (!IsOnLocalHold && !IsOnRemoteHold)
+            {
+                streamStatus = MediaStreamStatusEnum.SendRecv;
+            }
+            else
+            {
+                streamStatus =
+                    IsOnLocalHold
+                        ? MediaStreamStatusEnum.SendOnly
+                        : MediaStreamStatusEnum.RecvOnly;
+            }
+
+            return streamStatus;
         }
 
         /// <summary>

@@ -289,7 +289,7 @@ namespace SIPSorcery.Net.UnitTests
             var buffer = msg.ToByteBufferStringKey(icePassword, true);
 
             string hmac = "HMAC: ";
-            for(int i=36; i < 56; i++)
+            for (int i = 36; i < 56; i++)
             {
                 hmac += $"{buffer[i]:X2} ";
             }

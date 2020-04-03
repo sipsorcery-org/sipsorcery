@@ -257,7 +257,7 @@ namespace SIPSorcery.SoftPhone
                 if (_sipClients[1].IsCallActive && !_sipClients[1].IsOnHold)
                 {
                     //_sipClients[1].PutOnHold(_onHoldAudioScopeGL);
-                    _sipClients[1].PutOnHold(null);
+                    _sipClients[1].PutOnHold();
                 }
 
                 Dispatcher.DoOnUIThread(() =>
@@ -311,7 +311,7 @@ namespace SIPSorcery.SoftPhone
                     if (!_sipClients[0].IsOnHold)
                     {
                         //_sipClients[0].PutOnHold(_onHoldAudioScopeGL);
-                        _sipClients[0].PutOnHold(null);
+                        _sipClients[0].PutOnHold();
                     }
 
                     Dispatcher.DoOnUIThread(() =>
@@ -359,7 +359,7 @@ namespace SIPSorcery.SoftPhone
                     if (_sipClients[0].IsCallActive)
                     {
                         //_sipClients[0].PutOnHold(_onHoldAudioScopeGL);
-                        _sipClients[0].PutOnHold(null);
+                        _sipClients[0].PutOnHold();
                         m_holdButton.Visibility = Visibility.Collapsed;
                         m_offHoldButton.Visibility = Visibility.Visible;
                     }
@@ -416,8 +416,16 @@ namespace SIPSorcery.SoftPhone
         /// <returns></returns>
         private async Task AnswerCallAsync(SIPClient client)
         {
-            await client.Answer();
-            SIPCallAnswered(client);
+            bool result = await client.Answer();
+
+            if (result)
+            {
+                SIPCallAnswered(client);
+            }
+            else
+            {
+                ResetToCallStartState(client);
+            }
         }
 
         /// <summary>
@@ -541,7 +549,7 @@ namespace SIPSorcery.SoftPhone
                 m_holdButton.Visibility = Visibility.Collapsed;
                 m_offHoldButton.Visibility = Visibility.Visible;
                 //client.PutOnHold(_onHoldAudioScopeGL);
-                client.PutOnHold(null);
+                client.PutOnHold();
                 //_sipClients[0].MediaSession.OnHoldAudioScopeSampleReady += _onHoldAudioScope.ProcessSample;
             }
             else if (client == _sipClients[1])
@@ -549,7 +557,7 @@ namespace SIPSorcery.SoftPhone
                 m_hold2Button.Visibility = Visibility.Collapsed;
                 m_offHold2Button.Visibility = Visibility.Visible;
                 //client.PutOnHold(_onHoldAudioScopeGL);
-                client.PutOnHold(null);
+                client.PutOnHold();
             }
         }
 

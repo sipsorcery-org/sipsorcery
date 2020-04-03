@@ -262,7 +262,7 @@ namespace SIPSorcery.SIP.App
                     {
                         m_attempts = 0;
                         m_expiry = 0;
-                        ThreadPool.QueueUserWorkItem(delegate{ SendInitialRegister(); });
+                        ThreadPool.QueueUserWorkItem(delegate { SendInitialRegister(); });
                     }
 
                     m_registrationTimer.Dispose();

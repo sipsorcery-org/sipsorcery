@@ -1,5 +1,4 @@
 ﻿using System;
-using SIPSorcery.Net;
 using Microsoft.Extensions.Logging;
 using Xunit;
 

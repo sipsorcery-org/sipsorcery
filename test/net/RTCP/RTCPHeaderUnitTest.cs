@@ -13,7 +13,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -28,7 +27,7 @@ namespace SIPSorcery.Net.UnitTests
         {
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
-        
+
         [Fact]
         public void GetRTCPHeaderTest()
         {

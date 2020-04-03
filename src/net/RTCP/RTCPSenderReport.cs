@@ -119,7 +119,7 @@ namespace SIPSorcery.Net
             }
 
             int rrIndex = 28;
-            for(int i=0; i<Header.ReceptionReportCount; i++)
+            for (int i = 0; i < Header.ReceptionReportCount; i++)
             {
                 var rr = new ReceptionReportSample(packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray());
                 ReceptionReports.Add(rr);
