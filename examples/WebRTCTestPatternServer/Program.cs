@@ -155,7 +155,7 @@ namespace WebRTCServer
             var peerConnection = new RTCPeerConnection(pcConfiguration);
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            MediaStreamTrack videoTrack = new MediaStreamTrack("0", SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
             peerConnection.addTrack(videoTrack);
 
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
