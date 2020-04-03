@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -25,7 +24,6 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.SoftPhone
 {
@@ -43,6 +41,7 @@ namespace SIPSorcery.SoftPhone
         private string m_sipPassword = SIPSoftPhoneState.SIPPassword;
         private string m_sipServer = SIPSoftPhoneState.SIPServer;
         private string m_sipFromName = SIPSoftPhoneState.SIPFromName;
+        private int m_audioOutDeviceIndex = SIPSoftPhoneState.AudioOutDeviceIndex;
 
         private SIPTransport m_sipTransport;
         private SIPUserAgent m_userAgent;
@@ -144,7 +143,11 @@ namespace SIPSorcery.SoftPhone
                 System.Diagnostics.Debug.WriteLine($"DNS lookup result for {callURI}: {dstEndpoint}.");
                 SIPCallDescriptor callDescriptor = new SIPCallDescriptor(sipUsername, sipPassword, callURI.ToString(), fromHeader, null, null, null, null, SIPCallDirection.Out, _sdpMimeContentType, null, null);
 
-                var audioSrcOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                var audioSrcOpts = new AudioOptions
+                {
+                    AudioSource = AudioSourcesEnum.Microphone,
+                    OutputDeviceIndex = m_audioOutDeviceIndex
+                };
                 var videoSrcOpts = new VideoOptions
                 {
                     VideoSource = VideoSourcesEnum.TestPattern,
@@ -200,7 +203,11 @@ namespace SIPSorcery.SoftPhone
                 AudioOptions audioOpts = new AudioOptions { AudioSource = AudioSourcesEnum.None };
                 if (hasAudio)
                 {
-                    audioOpts = new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+                    audioOpts = new AudioOptions
+                    {
+                        AudioSource = AudioSourcesEnum.Microphone,
+                        OutputDeviceIndex = m_audioOutDeviceIndex
+                    };
                 }
 
                 VideoOptions videoOpts = new VideoOptions { VideoSource = VideoSourcesEnum.None };
@@ -248,6 +255,7 @@ namespace SIPSorcery.SoftPhone
                 new AudioOptions
                 {
                     AudioSource = AudioSourcesEnum.Music,
+                    OutputDeviceIndex = m_audioOutDeviceIndex,
                     SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>
                     {
                         { SDPMediaFormatsEnum.PCMU, MUSIC_FILE_PCMU },
@@ -294,7 +302,11 @@ namespace SIPSorcery.SoftPhone
 
             m_userAgent.TakeOffHold();
 
-            AudioOptions audioOnHold = (!hasAudio) ? null : new AudioOptions { AudioSource = AudioSourcesEnum.Microphone };
+            AudioOptions audioOnHold = (!hasAudio) ? null : new AudioOptions
+            {
+                AudioSource = AudioSourcesEnum.Microphone,
+                OutputDeviceIndex = m_audioOutDeviceIndex
+            };
             VideoOptions videoOnHold = (!hasVideo) ? null : new VideoOptions
             {
                 VideoSource = VideoSourcesEnum.TestPattern,

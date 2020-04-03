@@ -41,8 +41,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RecordCall", "RecordCall\Re
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RecordIncomingCall", "RecordIncomingCall\RecordIncomingCall.csproj", "{1124DB50-400F-4633-8BC1-1CFFC20D2930}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\src\SIPSorcery.csproj", "{B4907B1C-D446-450F-9E34-275CE6FB32B2}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -281,18 +279,6 @@ Global
 		{1124DB50-400F-4633-8BC1-1CFFC20D2930}.Release|x64.Build.0 = Release|Any CPU
 		{1124DB50-400F-4633-8BC1-1CFFC20D2930}.Release|x86.ActiveCfg = Release|Any CPU
 		{1124DB50-400F-4633-8BC1-1CFFC20D2930}.Release|x86.Build.0 = Release|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Debug|x64.Build.0 = Debug|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Debug|x86.Build.0 = Debug|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Release|x64.ActiveCfg = Release|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Release|x64.Build.0 = Release|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Release|x86.ActiveCfg = Release|Any CPU
-		{B4907B1C-D446-450F-9E34-275CE6FB32B2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
