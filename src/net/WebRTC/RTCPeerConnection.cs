@@ -142,7 +142,7 @@ namespace SIPSorcery.Net
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
         private const string RTCP_ATTRIBUTE = "a=rtcp:9 IN IP4 0.0.0.0";
         private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is passive.
-        private const string MEDIA_GROUPING = "BUNDLE 0 1";
+        private const string BUNDLE_ATTRIBUTE = "BUNDLE";
         private const string ICE_OPTIONS = "trickle";                   // Supported ICE options.
         private const string NORMAL_CLOSE_REASON = "normal";
 
@@ -474,7 +474,7 @@ namespace SIPSorcery.Net
                 var audioCapabilities = AudioLocalTrack?.Capabilties;
                 var videoCapabilities = VideoLocalTrack?.Capabilties;
 
-                var offerSdp = await createBaseSdp(audioCapabilities, videoCapabilities).ConfigureAwait(false);
+                var offerSdp = await createBaseSdp(m_tracks.Where(x => x.IsRemote == false).ToList(), audioCapabilities, videoCapabilities).ConfigureAwait(false);
 
                 RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
                 {
@@ -513,7 +513,7 @@ namespace SIPSorcery.Net
                 var videoCapabilities = (VideoLocalTrack != null && VideoRemoteTrack != null) ?
                     SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilties, VideoRemoteTrack.Capabilties) : null;
 
-                var answerSdp = await createBaseSdp(audioCapabilities, videoCapabilities).ConfigureAwait(false);
+                var answerSdp = await createBaseSdp(m_tracks.Where(x => x.IsRemote == false).ToList(), audioCapabilities, videoCapabilities).ConfigureAwait(false);
 
                 if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 {
@@ -547,81 +547,53 @@ namespace SIPSorcery.Net
         /// <param name="videoCapabilities">Optional. The video formats to support in the SDP. This list can differ from
         /// the local video track if an answer is being generated and only mutually supported formats are being
         /// used.</param>
-        private Task<SDP> createBaseSdp(List<SDPMediaFormat> audioCapabilities, List<SDPMediaFormat> videoCapabilities)
+        private Task<SDP> createBaseSdp(List<MediaStreamTrack> tracks, List<SDPMediaFormat> audioCapabilities, List<SDPMediaFormat> videoCapabilities)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
 
-            SDPMediaAnnouncement firstAnnouncement = null;
+            bool iceCandidatesAdded = false;
 
             // Add a bundle attribute. Indicates that audio and video sessions will be multiplexed
             // on a single RTP socket.
-            if (AudioLocalTrack != null && VideoLocalTrack != null)
+            offerSdp.Group = BUNDLE_ATTRIBUTE;
+
+            // Media announcements must be in the same order in the offer and answer.
+            foreach (var track in tracks.OrderBy(x => x.MID))
             {
-                offerSdp.Group = MEDIA_GROUPING;
-            }
+                offerSdp.Group += $" {track.MID}";
 
-            // --- Audio announcement ---
-            if (AudioLocalTrack != null && audioCapabilities != null)
-            {
-                SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
-                    SDPMediaTypesEnum.audio,
-                    SDP.DISABLED_PORT_NUMBER,
-                    audioCapabilities);
+                SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
+                 track.Kind,
+                 SDP.DISABLED_PORT_NUMBER,
+                 (track.Kind == SDPMediaTypesEnum.video) ? videoCapabilities : audioCapabilities);
 
-                audioAnnouncement.Transport = RTP_MEDIA_PROFILE;
-                audioAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
-                audioAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
-                audioAnnouncement.AddExtra(RTCP_ATTRIBUTE);
-                audioAnnouncement.MediaStreamStatus = AudioLocalTrack.StreamStatus;
-                audioAnnouncement.MediaID = AudioLocalTrack.MID;
+                announcement.Transport = RTP_MEDIA_PROFILE;
+                announcement.Connection = new SDPConnectionInformation(IPAddress.Any);
+                announcement.AddExtra(RTCP_MUX_ATTRIBUTE);
+                announcement.AddExtra(RTCP_ATTRIBUTE);
+                announcement.MediaStreamStatus = track.StreamStatus;
+                announcement.MediaID = track.MID;
 
-                audioAnnouncement.IceUfrag = IceSession.LocalIceUser;
-                audioAnnouncement.IcePwd = IceSession.LocalIcePassword;
-                audioAnnouncement.IceOptions = ICE_OPTIONS;
-                audioAnnouncement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
+                announcement.IceUfrag = IceSession.LocalIceUser;
+                announcement.IcePwd = IceSession.LocalIcePassword;
+                announcement.IceOptions = ICE_OPTIONS;
+                announcement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
 
-                offerSdp.Media.Add(audioAnnouncement);
-
-                firstAnnouncement = audioAnnouncement;
-            }
-
-            // --- Video announcement ---
-            if (VideoLocalTrack != null && videoCapabilities != null)
-            {
-                SDPMediaAnnouncement videoAnnouncement = new SDPMediaAnnouncement(
-                    SDPMediaTypesEnum.video,
-                    SDP.DISABLED_PORT_NUMBER,
-                    videoCapabilities);
-
-                videoAnnouncement.Transport = RTP_MEDIA_PROFILE;
-                videoAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
-                videoAnnouncement.AddExtra(RTCP_MUX_ATTRIBUTE);
-                videoAnnouncement.AddExtra(RTCP_ATTRIBUTE);
-                videoAnnouncement.MediaStreamStatus = VideoLocalTrack.StreamStatus;
-                videoAnnouncement.MediaID = VideoLocalTrack.MID;
-
-                videoAnnouncement.IceUfrag = IceSession.LocalIceUser;
-                videoAnnouncement.IcePwd = IceSession.LocalIcePassword;
-                videoAnnouncement.IceOptions = ICE_OPTIONS;
-                videoAnnouncement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
-
-                offerSdp.Media.Add(videoAnnouncement);
-
-                if (firstAnnouncement == null)
+                if (iceCandidatesAdded == false)
                 {
-                    firstAnnouncement = videoAnnouncement;
-                }
-            }
+                    announcement.IceCandidates = new List<string>();
 
-            // Add ICE candidates.
-            if (firstAnnouncement != null)
-            {
-                firstAnnouncement.IceCandidates = new List<string>();
-                foreach (var iceCandidate in IceSession.Candidates)
-                {
-                    firstAnnouncement.IceCandidates.Add(iceCandidate.ToString());
+                    // Add ICE candidates.
+                    foreach (var iceCandidate in IceSession.Candidates)
+                    {
+                        announcement.IceCandidates.Add(iceCandidate.ToString());
+                    }
+
+                    iceCandidatesAdded = true;
                 }
+
+                offerSdp.Media.Add(announcement);
             }
 
             return Task.FromResult(offerSdp);

@@ -154,7 +154,7 @@ namespace TestConsole
                 Console.WriteLine($"ICE Candidate: {msg}.");
                 //await _peerConnections[0].addIceCandidate(new RTCIceCandidateInit { candidate = msg });
 
-                //await peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = msg });
+                //  await peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = msg });
                 Console.WriteLine("add ICE candidate complete.");
             }
             else

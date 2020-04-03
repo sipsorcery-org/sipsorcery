@@ -31,19 +31,19 @@ using WebSocketSharp.Server;
 
 namespace SIPSorcery.Examples
 {
-    public class SDPExchange : WebSocketBehavior
+    public class WebRtcClient : WebSocketBehavior
     {
         public RTCPeerConnection PeerConnection;
 
         public event Func<WebSocketContext, Task<RTCPeerConnection>> WebSocketOpened;
-        public event Func<RTCPeerConnection, string, Task> OnMessageReceived;
+        public event Func<WebSocketContext, RTCPeerConnection, string, Task> OnMessageReceived;
 
-        public SDPExchange()
+        public WebRtcClient()
         { }
 
         protected override void OnMessage(MessageEventArgs e)
         {
-            OnMessageReceived(PeerConnection, e.Data);
+            OnMessageReceived(this.Context, PeerConnection, e.Data);
         }
 
         protected override async void OnOpen()
@@ -74,6 +74,15 @@ namespace SIPSorcery.Examples
             Console.WriteLine("ICE Console Test Program");
             Console.WriteLine("Press ctrl-c to exit.");
 
+            if (!File.Exists(DTLS_CERTIFICATE_PATH))
+            {
+                throw new ApplicationException($"The DTLS certificate file could not be found at {DTLS_CERTIFICATE_PATH}.");
+            }
+            else if (!File.Exists(DTLS_KEY_PATH))
+            {
+                throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
+            }
+
             // Plumbing code to facilitate a graceful exit.
             CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
             ManualResetEvent exitMre = new ManualResetEvent(false);
@@ -95,10 +104,15 @@ namespace SIPSorcery.Examples
             _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
             _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
             //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
-            _webSocketServer.AddWebSocketService<SDPExchange>("/", (sdpExchanger) =>
+            _webSocketServer.AddWebSocketService<WebRtcClient>("/sendoffer", (client) =>
             {
-                sdpExchanger.WebSocketOpened += SendSDPOffer;
-                sdpExchanger.OnMessageReceived += WebSocketMessageReceived;
+                client.WebSocketOpened += SendOffer;
+                client.OnMessageReceived += WebSocketMessageReceived;
+            });
+            _webSocketServer.AddWebSocketService<WebRtcClient>("/receiveoffer", (client) =>
+            {
+                client.WebSocketOpened += ReceiveOffer;
+                client.OnMessageReceived += WebSocketMessageReceived;
             });
             _webSocketServer.Start();
 
@@ -117,10 +131,39 @@ namespace SIPSorcery.Examples
             _webSocketServer.Stop();
         }
 
-        private static async Task<RTCPeerConnection> SendSDPOffer(WebSocketContext context)
+        private static Task<RTCPeerConnection> ReceiveOffer(WebSocketContext context)
         {
-            logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
+            logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, waiting for offer...");
 
+            var peerConnection = CreatePeerConnection();
+
+            return Task.FromResult(peerConnection);
+        }
+
+        private static async Task<RTCPeerConnection> SendOffer(WebSocketContext context)
+        {
+            logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, sending offer.");
+
+            var peerConnection = CreatePeerConnection();
+
+            // Offer audio and video.
+            MediaStreamTrack audioTrack = new MediaStreamTrack("0", SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.SendRecv);
+            peerConnection.addTrack(audioTrack);
+            MediaStreamTrack videoTrack = new MediaStreamTrack("1", SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.SendRecv);
+            peerConnection.addTrack(videoTrack);
+
+            var offerInit = await peerConnection.createOffer(null);
+            await peerConnection.setLocalDescription(offerInit);
+
+            logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
+
+            context.WebSocket.Send(offerInit.sdp);
+
+            return peerConnection;
+        }
+
+        private static RTCPeerConnection CreatePeerConnection()
+        {
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
                 certificates = new List<RTCCertificate>
@@ -135,11 +178,6 @@ namespace SIPSorcery.Examples
             };
 
             var peerConnection = new RTCPeerConnection(pcConfiguration);
-
-            MediaStreamTrack audioTrack = new MediaStreamTrack("0", SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
-            peerConnection.addTrack(audioTrack);
-            MediaStreamTrack videoTrack = new MediaStreamTrack("1", SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
-            peerConnection.addTrack(videoTrack);
 
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
@@ -161,7 +199,7 @@ namespace SIPSorcery.Examples
 
             peerConnection.oniceconnectionstatechange += (state) =>
             {
-                if(state == RTCIceConnectionState.connected)
+                if (state == RTCIceConnectionState.connected)
                 {
                     logger.LogDebug("Starting DTLS handshake task.");
 
@@ -183,21 +221,45 @@ namespace SIPSorcery.Examples
                 }
             };
 
-            var offerInit = await peerConnection.createOffer(null);
-            await peerConnection.setLocalDescription(offerInit);
-
-            logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
-
-            context.WebSocket.Send(offerInit.sdp);
-
             return peerConnection;
         }
 
-        private static async Task WebSocketMessageReceived(RTCPeerConnection peerConnection, string message)
+        private static async Task WebSocketMessageReceived(WebSocketContext context, RTCPeerConnection peerConnection, string message)
         {
             try
             {
-                if (peerConnection.remoteDescription == null)
+                if(peerConnection.localDescription == null)
+                {
+                    logger.LogDebug("Offer SDP: " + message);
+
+                    // Add local media tracks depending on what was offered. Also add local tracks with the same media ID as 
+                    // the remote tracks so that the media announcement in the SDP answer are in the same order.
+                    SDP remoteSdp = SDP.ParseSDPDescription(message);
+
+                    var remoteAudioAnn = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
+                    var remoteVideoAnn = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
+
+                    if (remoteAudioAnn != null)
+                    {
+                        MediaStreamTrack audioTrack = new MediaStreamTrack(remoteAudioAnn.MediaID, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
+                        peerConnection.addTrack(audioTrack);
+                    }
+                    
+                    if (remoteVideoAnn != null)
+                    {
+                        MediaStreamTrack videoTrack = new MediaStreamTrack(remoteVideoAnn.MediaID, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.RecvOnly);
+                        peerConnection.addTrack(videoTrack);
+                    }
+
+                    // After local media tracks have been added the remote description can be set.
+                    await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
+
+                    var answer = await peerConnection.createAnswer(null);
+                    await peerConnection.setLocalDescription(answer);
+
+                    context.WebSocket.Send(answer.sdp);
+                }
+                else if (peerConnection.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
                     await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
@@ -222,15 +284,6 @@ namespace SIPSorcery.Examples
         private static bool DoDtlsHandshake(RTCPeerConnection peerConnection)
         {
             logger.LogDebug("DoDtlsHandshake started.");
-
-            if (!File.Exists(DTLS_CERTIFICATE_PATH))
-            {
-                throw new ApplicationException($"The DTLS certificate file could not be found at {DTLS_CERTIFICATE_PATH}.");
-            }
-            else if (!File.Exists(DTLS_KEY_PATH))
-            {
-                throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
-            }
 
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
 
@@ -273,7 +326,7 @@ namespace SIPSorcery.Examples
                     var sr = sentRtcpReport.SenderReport;
                     Console.WriteLine($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
                 }
-                else if(sentRtcpReport.ReceiverReport != null && sentRtcpReport.ReceiverReport.ReceptionReports?.Count > 0)
+                else if (sentRtcpReport.ReceiverReport != null && sentRtcpReport.ReceiverReport.ReceptionReports?.Count > 0)
                 {
                     var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
                     Console.WriteLine($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
@@ -283,7 +336,7 @@ namespace SIPSorcery.Examples
                     Console.WriteLine($"RTCP report (empty sender and receiver reports) SDES CNAME {sentRtcpReport.SDesReport.CNAME}.");
                 }
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogWarning($"Exception RtpSession_OnSendReport. {excp.Message}");
             }

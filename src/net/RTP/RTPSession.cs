@@ -636,7 +636,16 @@ namespace SIPSorcery.Net
         /// <returns>If successful an OK enum result. If not an enum result indicating the failure cause.</returns>
         public SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription)
         {
-            var connAddr = IPAddress.Parse(sessionDescription.Connection.ConnectionAddress);
+            IPAddress connectionAddress = null;
+
+            if (sessionDescription.Connection != null && !String.IsNullOrEmpty(sessionDescription.Connection.ConnectionAddress))
+            {
+                connectionAddress = IPAddress.Parse(sessionDescription.Connection.ConnectionAddress);
+            }
+            else
+            {
+                logger.LogWarning("RTP session set remote description was supplied an SDP with no connection address.");
+            }
 
             IPEndPoint remoteAudioRtpEP = null;
             IPEndPoint remoteAudioRtcpEP = null;
@@ -669,9 +678,13 @@ namespace SIPSorcery.Net
                     var remoteAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, true, audioAnnounce.MediaFormats);
                     addTrack(remoteAudioTrack);
 
-                    var audioAddr = (audioAnnounce.Connection != null) ? IPAddress.Parse(audioAnnounce.Connection.ConnectionAddress) : connAddr;
-                    remoteAudioRtpEP = new IPEndPoint(audioAddr, audioAnnounce.Port);
-                    remoteAudioRtcpEP = new IPEndPoint(audioAddr, audioAnnounce.Port + 1);
+                    var audioAddr = (audioAnnounce.Connection != null) ? IPAddress.Parse(audioAnnounce.Connection.ConnectionAddress) : connectionAddress;
+
+                    if (audioAddr != null)
+                    {
+                        remoteAudioRtpEP = new IPEndPoint(audioAddr, audioAnnounce.Port);
+                        remoteAudioRtcpEP = new IPEndPoint(audioAddr, audioAnnounce.Port + 1);
+                    }
 
                     foreach (var mediaFormat in audioAnnounce.MediaFormats)
                     {
@@ -709,9 +722,13 @@ namespace SIPSorcery.Net
                     var remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, true, videoAnnounce.MediaFormats);
                     addTrack(remoteVideoTrack);
 
-                    var videoAddr = (videoAnnounce.Connection != null) ? IPAddress.Parse(videoAnnounce.Connection.ConnectionAddress) : connAddr;
-                    remoteVideoRtpEP = new IPEndPoint(videoAddr, videoAnnounce.Port);
-                    remoteVideoRtcpEP = new IPEndPoint(videoAddr, videoAnnounce.Port + 1);
+                    var videoAddr = (videoAnnounce.Connection != null) ? IPAddress.Parse(videoAnnounce.Connection.ConnectionAddress) : connectionAddress;
+
+                    if (videoAddr != null)
+                    {
+                        remoteVideoRtpEP = new IPEndPoint(videoAddr, videoAnnounce.Port);
+                        remoteVideoRtcpEP = new IPEndPoint(videoAddr, videoAnnounce.Port + 1);
+                    }
                 }
             }
 

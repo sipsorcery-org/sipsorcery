@@ -70,7 +70,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The list of host ICE candidates that have been gathered for this peer.
         /// </summary>
-        public ConcurrentBag<RTCIceCandidate> Candidates
+        public List<RTCIceCandidate> Candidates
         {
             get
             {
@@ -79,11 +79,11 @@ namespace SIPSorcery.Net
                     _candidates = GetHostCandidates();
                 }
 
-                return _candidates;
+                return _candidates.Values.ToList();
             }
         }
-        private ConcurrentBag<RTCIceCandidate> _candidates;
-        private ConcurrentBag<RTCIceCandidate> _remoteCandidates = new ConcurrentBag<RTCIceCandidate>();
+        private ConcurrentDictionary<string, RTCIceCandidate> _candidates;
+        private ConcurrentDictionary<string, RTCIceCandidate> _remoteCandidates = new ConcurrentDictionary<string, RTCIceCandidate>();
 
         /// <summary>
         /// The list of ICE candidates from the remote peer.
@@ -155,7 +155,15 @@ namespace SIPSorcery.Net
         public void AddRemoteCandidate(RTCIceCandidateInit candidateInit)
         {
             RTCIceCandidate candidate = new RTCIceCandidate(candidateInit);
-            _remoteCandidates.Add(candidate);
+
+            if (!_remoteCandidates.ContainsKey(candidate.foundation))
+            {
+                _remoteCandidates.TryAdd(candidate.foundation, candidate);
+            }
+            else
+            {
+                logger.LogWarning("Remote ICE candidate not added as candidate with same foundation already present.");
+            }
         }
 
         /// <summary>
@@ -169,9 +177,9 @@ namespace SIPSorcery.Net
         ///   permanent addresses), see RFC6724.
         /// </summary>
         /// <returns>A list of "host" ICE candidates for the local machine.</returns>
-        private ConcurrentBag<RTCIceCandidate> GetHostCandidates()
+        private ConcurrentDictionary<string, RTCIceCandidate> GetHostCandidates()
         {
-            ConcurrentBag<RTCIceCandidate> hostCandidates = new ConcurrentBag<RTCIceCandidate>();
+            ConcurrentDictionary<string, RTCIceCandidate> hostCandidates = new ConcurrentDictionary<string, RTCIceCandidate>();
             RTCIceCandidateInit init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
 
             foreach (var localAddress in NetServices.LocalIPAddresses.Where(x =>
@@ -179,7 +187,11 @@ namespace SIPSorcery.Net
             {
                 var hostCandidate = new RTCIceCandidate(init);
                 hostCandidate.SetAddressProperties(RTCIceProtocol.udp, localAddress, (ushort)_rtpChannel.RTPPort, RTCIceCandidateType.host, null, 0);
-                hostCandidates.Add(hostCandidate);
+
+                if (!hostCandidates.ContainsKey(hostCandidate.foundation))
+                {
+                    hostCandidates.TryAdd(hostCandidate.foundation, hostCandidate);
+                }
             }
 
             return hostCandidates;
@@ -261,15 +273,15 @@ namespace SIPSorcery.Net
                 //}
 
                 if (_remoteCandidates != null && !_remoteCandidates.Any(x =>
-                     (x.address == remoteEndPoint.Address.ToString() || x.relatedAddress == remoteEndPoint.Address.ToString()) &&
-                     (x.port == remoteEndPoint.Port || x.relatedPort == remoteEndPoint.Port)))
+                     (x.Value.address == remoteEndPoint.Address.ToString() || x.Value.relatedAddress == remoteEndPoint.Address.ToString()) &&
+                     (x.Value.port == remoteEndPoint.Port || x.Value.relatedPort == remoteEndPoint.Port)))
                 {
                     // This STUN request has come from a socket not in the remote ICE candidates list. Add it so we can send our STUN binding request to it.
                     // RTCIceCandidate remoteIceCandidate = new IceCandidate("udp", remoteEndPoint.Address, (ushort)remoteEndPoint.Port, RTCIceCandidateType.host);
                     RTCIceCandidate peerRflxCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
                     peerRflxCandidate.SetAddressProperties(RTCIceProtocol.udp, remoteEndPoint.Address, (ushort)remoteEndPoint.Port, RTCIceCandidateType.prflx, null, 0);
                     logger.LogDebug($"Adding peer reflex ICE candidate for {remoteEndPoint}.");
-                    _remoteCandidates.Add(peerRflxCandidate);
+                    _remoteCandidates.TryAdd(peerRflxCandidate.foundation, peerRflxCandidate);
 
                     // Some browsers require a STUN binding request from our end before the DTLS handshake will be initiated.
                     // The STUN connectivity checks are already scheduled but we can speed things up by sending a binding
@@ -371,20 +383,21 @@ namespace SIPSorcery.Net
                         {
                             if (_remoteCandidates.Count() > 0 && _candidates != null)
                             {
-                                foreach (var localIceCandidate in _candidates.Where(x => x.IsStunLocalExchangeComplete == false && x.StunConnectionRequestAttempts < MAXIMUM_STUN_CONNECTION_ATTEMPTS))
+                                foreach (var localIceCandidate in _candidates.Where(x => x.Value.IsStunLocalExchangeComplete == false && x.Value.StunConnectionRequestAttempts < MAXIMUM_STUN_CONNECTION_ATTEMPTS))
                                 {
-                                    localIceCandidate.StunConnectionRequestAttempts++;
+                                    localIceCandidate.Value.StunConnectionRequestAttempts++;
 
                                     // ToDo: Include srflx and relay addresses.
 
                                     // Only supporting UDP candidates at this stage.
-                                    foreach (var remoteIceCandidate in _remoteCandidates.Where(x => x.protocol == RTCIceProtocol.udp && x.address.NotNullOrBlank() && x.HasConnectionError == false))
+                                    foreach (var remoteIceCandidate in _remoteCandidates.Where(x => x.Value.protocol == RTCIceProtocol.udp 
+                                        && x.Value.address.NotNullOrBlank() && x.Value.HasConnectionError == false))
                                     {
                                         try
                                         {
-                                            IPAddress remoteAddress = IPAddress.Parse(remoteIceCandidate.address);
+                                            IPAddress remoteAddress = IPAddress.Parse(remoteIceCandidate.Value.address);
 
-                                            logger.LogDebug($"Sending authenticated STUN binding request {localIceCandidate.StunConnectionRequestAttempts} from {_rtpChannel.RTPLocalEndPoint} to WebRTC peer at {remoteIceCandidate.address}:{remoteIceCandidate.port}.");
+                                            logger.LogDebug($"Sending authenticated STUN binding request {localIceCandidate.Value.StunConnectionRequestAttempts} from {_rtpChannel.RTPLocalEndPoint} to WebRTC peer at {remoteIceCandidate.Value.address}:{remoteIceCandidate.Value.port}.");
 
                                             string localUser = LocalIceUser;
 
@@ -395,14 +408,14 @@ namespace SIPSorcery.Net
                                             stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));
                                             byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
 
-                                            _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.address), remoteIceCandidate.port), stunReqBytes);
+                                            _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, new IPEndPoint(IPAddress.Parse(remoteIceCandidate.Value.address), remoteIceCandidate.Value.port), stunReqBytes);
 
-                                            localIceCandidate.LastSTUNSendAt = DateTime.Now;
+                                            localIceCandidate.Value.LastSTUNSendAt = DateTime.Now;
                                         }
                                         catch (System.Net.Sockets.SocketException sockExcp)
                                         {
-                                            logger.LogWarning($"SocketException sending STUN request to {remoteIceCandidate.address}:{remoteIceCandidate.port}, removing candidate. {sockExcp.Message}");
-                                            remoteIceCandidate.HasConnectionError = true;
+                                            logger.LogWarning($"SocketException sending STUN request to {remoteIceCandidate.Value.address}:{remoteIceCandidate.Value.port}, removing candidate. {sockExcp.Message}");
+                                            remoteIceCandidate.Value.HasConnectionError = true;
                                         }
                                     }
                                 }
