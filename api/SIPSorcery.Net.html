@@ -86,13 +86,14 @@
 has only been done to accommodate packet types required by this library (at the time of writing
 the sole type is SIP).</p>
 </section>
-      <h4><a class="xref" href="SIPSorcery.Net.IceCandidate.html">IceCandidate</a></h4>
-      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.IceSession.html">IceSession</a></h4>
+      <section><p>An ICE session carries out connectivity checks with a remote peer in an
+attempt to determine the best destination end point to communicate with the
+remote party.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.ICMP.html">ICMP</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ICMPListener.html">ICMPListener</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.MediaFormatMistachException.html">MediaFormatMistachException</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.MediaStreamStatusType.html">MediaStreamStatusType</a></h4>
       <section></section>
@@ -111,6 +112,23 @@ the sole type is SIP).</p>
       <h4><a class="xref" href="SIPSorcery.Net.RTCAnswerOptions.html">RTCAnswerOptions</a></h4>
       <section><p>Options for creating an SDP answer.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCCertificate.html">RTCCertificate</a></h4>
+      <section><p>Represents a certificate used to authenticate WebRTC communications.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCConfiguration.html">RTCConfiguration</a></h4>
+      <section><p>Defines the parameters to configure how a new RTCPeerConnection is created.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCDtlsFingerprint.html">RTCDtlsFingerprint</a></h4>
+      <section><p>Represents a fingerprint of a certificate used to authenticate WebRTC communications.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCIceCandidateInit.html">RTCIceCandidateInit</a></h4>
+      <section><p>Properties to influence the initialisation of an ICE candidate.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCIceServer.html">RTCIceServer</a></h4>
+      <section><p>Used to specify properties for a STUN or TURN server that can be used by an ICE agent.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCOfferOptions.html">RTCOfferOptions</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPBye.html">RTCPBye</a></h4>
@@ -123,6 +141,9 @@ RTCP packets combined together in a single buffer. According to RFC3550 RTCP
 transmissions should always have at least 2 RTCP packets (a sender/receiver report
 and an SDES report). This implementation does not enforce that constraint for
 received reports but does for sends.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a></h4>
+      <section><p>Represents a WebRTC RTCPeerConnection.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPHeader.html">RTCPHeader</a></h4>
       <section><p>RTCP Header as defined in RFC3550.</p>
@@ -138,12 +159,11 @@ Only the mandatory CNAME item is supported.</p>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPSenderReport.html">RTCPSenderReport</a></h4>
       <section><p>An RTCP sender report is for use by active RTP senders.</p>
 </section>
-      <h4><a class="xref" href="SIPSorcery.Net.RTCRtpTransceiver.html">RTCRtpTransceiver</a></h4>
-      <section><p>Describes a pairing of an RTP sender and receiver and their shared state. The state
-is set by and relevant for the SDP that is controlling the RTP.</p>
-</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCSessionDescriptionInit.html">RTCSessionDescriptionInit</a></h4>
+      <section><p>Initialiser for the RTCSessionDescription instance.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPChannel.html">RTPChannel</a></h4>
       <section><p>A communications channel for transmitting and receiving Real-time Protocol (RTP) and
 Real-time Control Protocol (RTCP) packets. This class performs the socket management
@@ -156,7 +176,11 @@ functions.</p>
       <h4><a class="xref" href="SIPSorcery.Net.RTPPacket.html">RTPPacket</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPSession.html">RTPSession</a></h4>
-      <section></section>
+      <section><p>The RTPSession class is the primary point for interacting with the Real-Time
+Protocol. It manages all the resources required for setting up and then sending
+and receiving RTP packets. This class IS designed to be inherited by child
+classes and for child classes to add audio and video processing logic.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPConstants.html">RTSPConstants</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPEntityHeaders.html">RTSPEntityHeaders</a></h4>
@@ -302,18 +326,11 @@ THe reason for this is to stop NAT application layer gateways from doing string 
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.Utility.html">Utility</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a></h4>
-      <section><p>Represents a WebRTC session with a remote peer.</p>
-</section>
     <h3 id="enums">Enums
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.CaptureProtocolTypeEnum.html">CaptureProtocolTypeEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ChunkTypeEnum.html">ChunkTypeEnum</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.IceCandidateTypesEnum.html">IceCandidateTypesEnum</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.IceConnectionStatesEnum.html">IceConnectionStatesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.MediaStreamStatusEnum.html">MediaStreamStatusEnum</a></h4>
       <section><p>The types of status that a media stream can have. Note that the stream status can
@@ -323,11 +340,48 @@ Note that this status applies to RTP streams only. If there is an RTCP stream
 associated with the RTP it should carry on as normal.
 See <a href="https://tools.ietf.org/html/rfc4566#section-6">https://tools.ietf.org/html/rfc4566#section-6</a></p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCBundlePolicy.html">RTCBundlePolicy</a></h4>
+      <section><p>Affects which media tracks are negotiated if the remote end point is not bundle aware.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCIceCandidateType.html">RTCIceCandidateType</a></h4>
+      <section><p>The RTCIceCandidateType represents the type of the ICE candidate.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCIceComponent.html">RTCIceComponent</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCIceConnectionState.html">RTCIceConnectionState</a></h4>
+      <section><p>The states an ICE session transitions through.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCIceCredentialType.html">RTCIceCredentialType</a></h4>
+      <section><p>The types of credentials for an ICE server.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCIceGatheringState.html">RTCIceGatheringState</a></h4>
+      <section><p>The gathering states an ICE session transitions through.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCIceProtocol.html">RTCIceProtocol</a></h4>
+      <section><p>The transport protocol types for an ICE candidate.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCIceTcpCandidateType.html">RTCIceTcpCandidateType</a></h4>
+      <section><p>The RTCIceTcpCandidateType represents the type of the ICE TCP candidate.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCIceTransportPolicy.html">RTCIceTransportPolicy</a></h4>
+      <section><p>Determines which ICE candidates can be used for a peer connection.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCPeerConnectionState.html">RTCPeerConnectionState</a></h4>
+      <section><p>The states a peer connection transitions through.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPReportTypesEnum.html">RTCPReportTypesEnum</a></h4>
       <section><p>The different types of RTCP packets as defined in RFC3550.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCRtcpMuxPolicy.html">RTCRtcpMuxPolicy</a></h4>
+      <section><p>The RTCP multiplex options for ICE candidates. This option is currently redundant
+since the single option means RTCP multiplexing MUST be available or the SDP negotiation
+will fail.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCSdpType.html">RTCSdpType</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCSignalingState.html">RTCSignalingState</a></h4>
+      <section><p>Signalling states for a WebRTC peer connection.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPChannelSocketsEnum.html">RTPChannelSocketsEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTSPHeaderError.html">RTSPHeaderError</a></h4>
@@ -355,6 +409,8 @@ there is no qualifying format attribute provided.</p>
       <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.SessionParameter.FecTypes.html">SDPSecurityDescription.SessionParameter.FecTypes</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.SessionParameter.SrtpSessionParams.html">SDPSecurityDescription.SessionParameter.SrtpSessionParams</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SetDescriptionResultEnum.html">SetDescriptionResultEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAttributeTypesEnum.html">STUNAttributeTypesEnum</a></h4>
       <section></section>

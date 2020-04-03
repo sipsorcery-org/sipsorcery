@@ -70,11 +70,11 @@
 <h2 id="rtp-session">RTP Session</h2>
 
 <p>The <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class provides the building blocks for dealing with the <a href="https://tools.ietf.org/html/rfc3550">Real-Time Transport Protocol</a>. It is used to transport audio and video packets between session participants.</p>
-<p><strong>Note: As of Feb/Mar 2020 work is ongoing to standardise the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> and <a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> classes closer to the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> interface from the <a href="https://www.w3.org/TR/webrtc">WebRTC 1.0: Real-time Communication Between Browsers</a> API.</strong></p>
+<p><strong>Note: As of Feb/Mar 2020 work is ongoing to standardise the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> and @&quot;SIPSorcery.Net.WebRtcSession&quot; classes closer to the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> interface from the <a href="https://www.w3.org/TR/webrtc">WebRTC 1.0: Real-time Communication Between Browsers</a> API.</strong></p>
 <p>There are currently two higher level classes that wrap the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class for use in common scenarios:</p>
 <ul>
 <li>The <a href="https://github.com/sipsorcery/sipsorcery-media/blob/master/src/RtpAVSession/RtpAVSession.cs">RtpAVSession</a> which is the recommended implementation for SIP applications. This class is part of the <a href="https://github.com/sipsorcery/sipsorcery-media">SIPSorceryMedia</a> library and uses Windows specific API's to provide access to the capturing/rendering devices for audio/video.</li>
-<li>The <a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> which needs to be used when creating a WebRTC peer connection.</li>
+<li>The @&quot;SIPSorcery.Net.WebRtcSession&quot; which needs to be used when creating a WebRTC peer connection.</li>
 </ul>
 <h3 id="features">Features</h3>
 <p>As well as taking care of the plumbing required to send and receive media packets the <a class="xref" href="../api/SIPSorcery.Net.RTPSession.html">RTPSession</a> class performs a number of additional functions that are required for correct operation of an RTP connection.</p>
@@ -91,7 +91,7 @@
 <p>Higher level applications do not need to be concerned with these differences but do need to make sure they use the correct session class:</p>
 <ul>
 <li><a href="https://github.com/sipsorcery/sipsorcery-media/blob/master/src/RtpAVSession/RtpAVSession.cs">RtpAVSession</a> for SIP applications.</li>
-<li><a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> for WebRTC applications.</li>
+<li>@&quot;SIPSorcery.Net.WebRtcSession&quot; for WebRTC applications.</li>
 </ul>
 <h3 id="usage">Usage</h3>
 <p>This article describes how to use the <a href="https://github.com/sipsorcery/sipsorcery-media/blob/master/src/RtpAVSession/RtpAVSession.cs">RtpAVSession</a>. For WebRTC see the <a href="webrtcsession.html">webrtcsession article</a>.</p>

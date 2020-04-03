@@ -1,0 +1,1536 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class RTCPeerConnection
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class RTCPeerConnection
+   ">
+    <meta name="generator" content="docfx 2.51.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.RTCPeerConnection">
+  
+  
+  <h1 id="SIPSorcery_Net_RTCPeerConnection" data-uid="SIPSorcery.Net.RTCPeerConnection" class="text-break">Class RTCPeerConnection
+  </h1>
+  <div class="markdown level0 summary"><p>Represents a WebRTC RTCPeerConnection.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="SIPSorcery.Net.RTPSession.html">RTPSession</a></div>
+    <div class="level2"><span class="xref">RTCPeerConnection</span></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.IDisposable</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SRTP_MAX_PREFIX_LENGTH">RTPSession.SRTP_MAX_PREFIX_LENGTH</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_H264_RTP_HEADER_LENGTH">RTPSession.H264_RTP_HEADER_LENGTH</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS">RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_DEFAULT_MEDIA_TYPE">RTPSession.DEFAULT_MEDIA_TYPE</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_DEFAULT_DTMF_EVENT_PAYLOAD_ID">RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteDescription">RTPSession.RemoteDescription</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecure">RTPSession.IsSecure</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsSecureContextReady">RTPSession.IsSecureContextReady</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioDestinationEndPoint">RTPSession.AudioDestinationEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioControlDestinationEndPoint">RTPSession.AudioControlDestinationEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoDestinationEndPoint">RTPSession.VideoDestinationEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoControlDestinationEndPoint">RTPSession.VideoControlDestinationEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteRtpEventPayloadID">RTPSession.RemoteRtpEventPayloadID</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsClosed">RTPSession.IsClosed</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_HasAudio">RTPSession.HasAudio</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_HasVideo">RTPSession.HasVideo</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpPacketReceived">RTPSession.OnRtpPacketReceived</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpEvent">RTPSession.OnRtpEvent</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtpClosed">RTPSession.OnRtpClosed</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnRtcpBye">RTPSession.OnRtcpBye</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnTimeout">RTPSession.OnTimeout</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceiveReport">RTPSession.OnReceiveReport</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnSendReport">RTPSession.OnSendReport</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addSingleTrack">RTPSession.addSingleTrack()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addTrack_SIPSorcery_Net_MediaStreamTrack_">RTPSession.addTrack(MediaStreamTrack)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateOffer_System_Net_IPAddress_">RTPSession.CreateOffer(IPAddress)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateAnswer">RTPSession.CreateAnswer()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetRemoteDescription_SIPSorcery_Net_SDP_">RTPSession.SetRemoteDescription(SDP)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetMediaStreamStatus_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_MediaStreamStatusEnum_">RTPSession.SetMediaStreamStatus(SDPMediaTypesEnum, MediaStreamStatusEnum)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.GetRtpChannel(SDPMediaTypesEnum)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_System_Net_IPEndPoint_System_Net_IPEndPoint_">RTPSession.SetDestination(SDPMediaTypesEnum, IPEndPoint, IPEndPoint)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Start">RTPSession.Start()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetSendingFormat_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.GetSendingFormat(SDPMediaTypesEnum)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendAudioFrame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendAudioFrame(UInt32, Int32, Byte[])</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVp8Frame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendVp8Frame(UInt32, Int32, Byte[])</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendJpegFrame_System_UInt32_System_Int32_System_Byte___System_Int32_System_Int32_System_Int32_">RTPSession.SendJpegFrame(UInt32, Int32, Byte[], Int32, Int32, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendH264Frame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendH264Frame(UInt32, Int32, Byte[])</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationToken_System_Int32_">RTPSession.SendDtmfEvent(RTPEvent, CancellationToken, Int32)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CloseSession_System_String_">RTPSession.CloseSession(String)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Dispose_System_Boolean_">RTPSession.Dispose(Boolean)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Dispose">RTPSession.Dispose()</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Net_RTCPeerConnection_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class RTCPeerConnection : RTPSession, IDisposable, IRTCPeerConnection</code></pre>
+  </div>
+  <h5 id="SIPSorcery_Net_RTCPeerConnection_remarks"><strong>Remarks</strong></h5>
+  <div class="markdown level0 remarks"><p>Interface is defined in <a href="https://www.w3.org/TR/webrtc/#interface-definition">https://www.w3.org/TR/webrtc/#interface-definition</a>.
+The Session Description offer/answer mechanisms are detailed in
+<a href="https://tools.ietf.org/html/draft-ietf-rtcweb-jsep-26">https://tools.ietf.org/html/draft-ietf-rtcweb-jsep-26</a> (or later if the
+draft has been updated).</p>
+</div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection__ctor_SIPSorcery_Net_RTCConfiguration_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.%23ctor(SIPSorcery.Net.RTCConfiguration)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L228">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection__ctor_" data-uid="SIPSorcery.Net.RTCPeerConnection.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection__ctor_SIPSorcery_Net_RTCConfiguration_" data-uid="SIPSorcery.Net.RTCPeerConnection.#ctor(SIPSorcery.Net.RTCConfiguration)">RTCPeerConnection(RTCConfiguration)</h4>
+  <div class="markdown level1 summary"><p>Constructor to create a new RTC peer connection instance.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCPeerConnection(RTCConfiguration configuration)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCConfiguration.html">RTCConfiguration</a></td>
+        <td><span class="parametername">configuration</span></td>
+        <td><p>Optional.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_LocalSdpSessionID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.LocalSdpSessionID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L153">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_LocalSdpSessionID" data-uid="SIPSorcery.Net.RTCPeerConnection.LocalSdpSessionID">LocalSdpSessionID</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string LocalSdpSessionID</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_SdpSessionID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.SdpSessionID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L152">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_SdpSessionID" data-uid="SIPSorcery.Net.RTCPeerConnection.SdpSessionID">SdpSessionID</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string SdpSessionID</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_canTrickleIceCandidates.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.canTrickleIceCandidates%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L206">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_canTrickleIceCandidates_" data-uid="SIPSorcery.Net.RTCPeerConnection.canTrickleIceCandidates*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_canTrickleIceCandidates" data-uid="SIPSorcery.Net.RTCPeerConnection.canTrickleIceCandidates">canTrickleIceCandidates</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool canTrickleIceCandidates { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_connectionState.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.connectionState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L204">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_connectionState_" data-uid="SIPSorcery.Net.RTCPeerConnection.connectionState*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_connectionState" data-uid="SIPSorcery.Net.RTCPeerConnection.connectionState">connectionState</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCPeerConnectionState connectionState { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCPeerConnectionState.html">RTCPeerConnectionState</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_currentLocalDescription.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.currentLocalDescription%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L190">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_currentLocalDescription_" data-uid="SIPSorcery.Net.RTCPeerConnection.currentLocalDescription*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_currentLocalDescription" data-uid="SIPSorcery.Net.RTCPeerConnection.currentLocalDescription">currentLocalDescription</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCSessionDescription currentLocalDescription { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_currentRemoteDescription.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.currentRemoteDescription%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L194">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_currentRemoteDescription_" data-uid="SIPSorcery.Net.RTCPeerConnection.currentRemoteDescription*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_currentRemoteDescription" data-uid="SIPSorcery.Net.RTCPeerConnection.currentRemoteDescription">currentRemoteDescription</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCSessionDescription currentRemoteDescription { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_iceConnectionState.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.iceConnectionState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L202">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_iceConnectionState_" data-uid="SIPSorcery.Net.RTCPeerConnection.iceConnectionState*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_iceConnectionState" data-uid="SIPSorcery.Net.RTCPeerConnection.iceConnectionState">iceConnectionState</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCIceConnectionState iceConnectionState { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceConnectionState.html">RTCIceConnectionState</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_iceGatheringState.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.iceGatheringState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L200">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_iceGatheringState_" data-uid="SIPSorcery.Net.RTCPeerConnection.iceGatheringState*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_iceGatheringState" data-uid="SIPSorcery.Net.RTCPeerConnection.iceGatheringState">iceGatheringState</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCIceGatheringState iceGatheringState { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceGatheringState.html">RTCIceGatheringState</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_IceSession.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.IceSession%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L173">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_IceSession_" data-uid="SIPSorcery.Net.RTCPeerConnection.IceSession*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_IceSession" data-uid="SIPSorcery.Net.RTCPeerConnection.IceSession">IceSession</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IceSession IceSession { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.IceSession.html">IceSession</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_IsDtlsNegotiationComplete.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.IsDtlsNegotiationComplete%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L175">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_IsDtlsNegotiationComplete_" data-uid="SIPSorcery.Net.RTCPeerConnection.IsDtlsNegotiationComplete*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_IsDtlsNegotiationComplete" data-uid="SIPSorcery.Net.RTCPeerConnection.IsDtlsNegotiationComplete">IsDtlsNegotiationComplete</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsDtlsNegotiationComplete { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_localDescription.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.localDescription%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L186">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_localDescription_" data-uid="SIPSorcery.Net.RTCPeerConnection.localDescription*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_localDescription" data-uid="SIPSorcery.Net.RTCPeerConnection.localDescription">localDescription</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCSessionDescription localDescription { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_pendingLocalDescription.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.pendingLocalDescription%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L192">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_pendingLocalDescription_" data-uid="SIPSorcery.Net.RTCPeerConnection.pendingLocalDescription*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_pendingLocalDescription" data-uid="SIPSorcery.Net.RTCPeerConnection.pendingLocalDescription">pendingLocalDescription</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCSessionDescription pendingLocalDescription { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_pendingRemoteDescription.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.pendingRemoteDescription%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L196">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_pendingRemoteDescription_" data-uid="SIPSorcery.Net.RTCPeerConnection.pendingRemoteDescription*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_pendingRemoteDescription" data-uid="SIPSorcery.Net.RTCPeerConnection.pendingRemoteDescription">pendingRemoteDescription</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCSessionDescription pendingRemoteDescription { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_remoteDescription.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.remoteDescription%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L188">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_remoteDescription_" data-uid="SIPSorcery.Net.RTCPeerConnection.remoteDescription*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_remoteDescription" data-uid="SIPSorcery.Net.RTCPeerConnection.remoteDescription">remoteDescription</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCSessionDescription remoteDescription { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_RemoteEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.RemoteEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L184">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_RemoteEndPoint_" data-uid="SIPSorcery.Net.RTCPeerConnection.RemoteEndPoint*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_RemoteEndPoint" data-uid="SIPSorcery.Net.RTCPeerConnection.RemoteEndPoint">RemoteEndPoint</h4>
+  <div class="markdown level1 summary"><p>The raison d'etre for the ICE checks. This represents the end point
+that we were able to connect to for the WebRTC session.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public IPEndPoint RemoteEndPoint { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_SessionID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.SessionID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L151">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_SessionID_" data-uid="SIPSorcery.Net.RTCPeerConnection.SessionID*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_SessionID" data-uid="SIPSorcery.Net.RTCPeerConnection.SessionID">SessionID</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string SessionID { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_signalingState.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.signalingState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L198">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_signalingState_" data-uid="SIPSorcery.Net.RTCPeerConnection.signalingState*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_signalingState" data-uid="SIPSorcery.Net.RTCPeerConnection.signalingState">signalingState</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCSignalingState signalingState { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSignalingState.html">RTCSignalingState</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_addIceCandidate_SIPSorcery_Net_RTCIceCandidateInit_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.addIceCandidate(SIPSorcery.Net.RTCIceCandidateInit)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L655">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_addIceCandidate_" data-uid="SIPSorcery.Net.RTCPeerConnection.addIceCandidate*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_addIceCandidate_SIPSorcery_Net_RTCIceCandidateInit_" data-uid="SIPSorcery.Net.RTCPeerConnection.addIceCandidate(SIPSorcery.Net.RTCIceCandidateInit)">addIceCandidate(RTCIceCandidateInit)</h4>
+  <div class="markdown level1 summary"><p>Adds a remote ICE candidate to the list this peer is attempting to connect against.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task addIceCandidate(RTCIceCandidateInit candidate)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceCandidateInit.html">RTCIceCandidateInit</a></td>
+        <td><span class="parametername">candidate</span></td>
+        <td><p>The remote candidate to add.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_close.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.close%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L457">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_close_" data-uid="SIPSorcery.Net.RTCPeerConnection.close*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_close" data-uid="SIPSorcery.Net.RTCPeerConnection.close">close()</h4>
+  <div class="markdown level1 summary"><p>Closes the connection with the default reason.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void close()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L442">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_Close_" data-uid="SIPSorcery.Net.RTCPeerConnection.Close*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_Close_System_String_" data-uid="SIPSorcery.Net.RTCPeerConnection.Close(System.String)">Close(String)</h4>
+  <div class="markdown level1 summary"><p>Close the session including the underlying RTP session and channels.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Close(string reason)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">reason</span></td>
+        <td><p>An optional descriptive reason for the closure.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_createAnswer_SIPSorcery_Net_RTCAnswerOptions_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.createAnswer(SIPSorcery.Net.RTCAnswerOptions)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L503">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_createAnswer_" data-uid="SIPSorcery.Net.RTCPeerConnection.createAnswer*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_createAnswer_SIPSorcery_Net_RTCAnswerOptions_" data-uid="SIPSorcery.Net.RTCPeerConnection.createAnswer(SIPSorcery.Net.RTCAnswerOptions)">createAnswer(RTCAnswerOptions)</h4>
+  <div class="markdown level1 summary"><p>Creates an answer to an SDP offer from a remote peer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task&lt;RTCSessionDescriptionInit&gt; createAnswer(RTCAnswerOptions options)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCAnswerOptions.html">RTCAnswerOptions</a></td>
+        <td><span class="parametername">options</span></td>
+        <td><p>Optional. If supplied the options will be used to apply additional
+controls over the generated answer SDP.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCSessionDescriptionInit.html">RTCSessionDescriptionInit</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="SIPSorcery_Net_RTCPeerConnection_createAnswer_SIPSorcery_Net_RTCAnswerOptions__remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>As specified in <a href="https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-createanswer">https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-createanswer</a> and
+<a href="https://tools.ietf.org/html/rfc3264#section-6.1">https://tools.ietf.org/html/rfc3264#section-6.1</a>.</p>
+</div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_createOffer_SIPSorcery_Net_RTCOfferOptions_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.createOffer(SIPSorcery.Net.RTCOfferOptions)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L470">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_createOffer_" data-uid="SIPSorcery.Net.RTCPeerConnection.createOffer*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_createOffer_SIPSorcery_Net_RTCOfferOptions_" data-uid="SIPSorcery.Net.RTCPeerConnection.createOffer(SIPSorcery.Net.RTCOfferOptions)">createOffer(RTCOfferOptions)</h4>
+  <div class="markdown level1 summary"><p>Generates the SDP for an offer that can be made to a remote peer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task&lt;RTCSessionDescriptionInit&gt; createOffer(RTCOfferOptions options)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCOfferOptions.html">RTCOfferOptions</a></td>
+        <td><span class="parametername">options</span></td>
+        <td><p>Optional. If supplied the options will be sued to apply additional
+controls over the generated offer SDP.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCSessionDescriptionInit.html">RTCSessionDescriptionInit</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="SIPSorcery_Net_RTCPeerConnection_createOffer_SIPSorcery_Net_RTCOfferOptions__remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>As specified in <a href="https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-createoffer">https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-createoffer</a>.</p>
+</div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_getConfiguration.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.getConfiguration%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L666">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_getConfiguration_" data-uid="SIPSorcery.Net.RTCPeerConnection.getConfiguration*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_getConfiguration" data-uid="SIPSorcery.Net.RTCPeerConnection.getConfiguration">getConfiguration()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCConfiguration getConfiguration()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCConfiguration.html">RTCConfiguration</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_restartIce.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.restartIce%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L661">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_restartIce_" data-uid="SIPSorcery.Net.RTCPeerConnection.restartIce*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_restartIce" data-uid="SIPSorcery.Net.RTCPeerConnection.restartIce">restartIce()</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void restartIce()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_SendMedia_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum%2CSystem.UInt32%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L421">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_SendMedia_" data-uid="SIPSorcery.Net.RTCPeerConnection.SendMedia*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_SendMedia_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_System_Byte___" data-uid="SIPSorcery.Net.RTCPeerConnection.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum,System.UInt32,System.Byte[])">SendMedia(SDPMediaTypesEnum, UInt32, Byte[])</h4>
+  <div class="markdown level1 summary"><p>Send a media sample to the remote party.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></td>
+        <td><span class="parametername">mediaType</span></td>
+        <td><p>Whether the sample is audio or video.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.UInt32</span></td>
+        <td><span class="parametername">sampleTimestamp</span></td>
+        <td><p>The RTP timestamp for the sample.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">sample</span></td>
+        <td><p>The sample payload.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_setConfiguration_SIPSorcery_Net_RTCConfiguration_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.setConfiguration(SIPSorcery.Net.RTCConfiguration)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L671">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_setConfiguration_" data-uid="SIPSorcery.Net.RTCPeerConnection.setConfiguration*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_setConfiguration_SIPSorcery_Net_RTCConfiguration_" data-uid="SIPSorcery.Net.RTCPeerConnection.setConfiguration(SIPSorcery.Net.RTCConfiguration)">setConfiguration(RTCConfiguration)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void setConfiguration(RTCConfiguration configuration = null)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCConfiguration.html">RTCConfiguration</a></td>
+        <td><span class="parametername">configuration</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_setLocalDescription_SIPSorcery_Net_RTCSessionDescriptionInit_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.setLocalDescription(SIPSorcery.Net.RTCSessionDescriptionInit)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L273">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_setLocalDescription_" data-uid="SIPSorcery.Net.RTCPeerConnection.setLocalDescription*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_setLocalDescription_SIPSorcery_Net_RTCSessionDescriptionInit_" data-uid="SIPSorcery.Net.RTCPeerConnection.setLocalDescription(SIPSorcery.Net.RTCSessionDescriptionInit)">setLocalDescription(RTCSessionDescriptionInit)</h4>
+  <div class="markdown level1 summary"><p>Sets the local SDP.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task setLocalDescription(RTCSessionDescriptionInit init)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescriptionInit.html">RTCSessionDescriptionInit</a></td>
+        <td><span class="parametername">init</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="SIPSorcery_Net_RTCPeerConnection_setLocalDescription_SIPSorcery_Net_RTCSessionDescriptionInit__remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>As specified in <a href="https://www.w3.org/TR/webrtc/#dom-peerconnection-setlocaldescription">https://www.w3.org/TR/webrtc/#dom-peerconnection-setlocaldescription</a>.</p>
+</div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_setRemoteDescription_SIPSorcery_Net_RTCSessionDescriptionInit_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.setRemoteDescription(SIPSorcery.Net.RTCSessionDescriptionInit)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L296">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_setRemoteDescription_" data-uid="SIPSorcery.Net.RTCPeerConnection.setRemoteDescription*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_setRemoteDescription_SIPSorcery_Net_RTCSessionDescriptionInit_" data-uid="SIPSorcery.Net.RTCPeerConnection.setRemoteDescription(SIPSorcery.Net.RTCSessionDescriptionInit)">setRemoteDescription(RTCSessionDescriptionInit)</h4>
+  <div class="markdown level1 summary"><p>Updates the session after receiving the remote SDP.
+At this point check that the codecs match. We currently only support:</p>
+<ul>
+<li>Audio: PCMU,</li>
+<li>Video: VP8.
+If they are not available there's no point carrying on.</li>
+</ul>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task setRemoteDescription(RTCSessionDescriptionInit init)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCSessionDescriptionInit.html">RTCSessionDescriptionInit</a></td>
+        <td><span class="parametername">init</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_SetSecurityContext_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.SetSecurityContext(SIPSorcery.Net.ProtectRtpPacket%2CSIPSorcery.Net.ProtectRtpPacket%2CSIPSorcery.Net.ProtectRtpPacket%2CSIPSorcery.Net.ProtectRtpPacket)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L403">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTCPeerConnection_SetSecurityContext_" data-uid="SIPSorcery.Net.RTCPeerConnection.SetSecurityContext*"></a>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_SetSecurityContext_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_" data-uid="SIPSorcery.Net.RTCPeerConnection.SetSecurityContext(SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket,SIPSorcery.Net.ProtectRtpPacket)">SetSecurityContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)</h4>
+  <div class="markdown level1 summary"><p>Adds an ICE candidate to the list of remote party candidates.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override void SetSecurityContext(ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></td>
+        <td><span class="parametername">protectRtp</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></td>
+        <td><span class="parametername">unprotectRtp</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></td>
+        <td><span class="parametername">protectRtcp</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></td>
+        <td><span class="parametername">unprotectRtcp</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetSecurityContext_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_SIPSorcery_Net_ProtectRtpPacket_">RTPSession.SetSecurityContext(ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket, ProtectRtpPacket)</a></div>
+  <h3 id="events">Events
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_onconnectionstatechange.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.onconnectionstatechange%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L222">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_onconnectionstatechange" data-uid="SIPSorcery.Net.RTCPeerConnection.onconnectionstatechange">onconnectionstatechange</h4>
+  <div class="markdown level1 summary"><p>The state of the peer connection. A state of connected means the DTLS handshake has
+completed and media packets can be exchanged.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;RTCPeerConnectionState&gt; onconnectionstatechange</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCPeerConnectionState.html">RTCPeerConnectionState</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_onicecandidate.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.onicecandidate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L212">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_onicecandidate" data-uid="SIPSorcery.Net.RTCPeerConnection.onicecandidate">onicecandidate</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;RTCIceCandidate&gt; onicecandidate</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_onicecandidateerror.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.onicecandidateerror%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L213">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_onicecandidateerror" data-uid="SIPSorcery.Net.RTCPeerConnection.onicecandidateerror">onicecandidateerror</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action onicecandidateerror</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_oniceconnectionstatechange.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.oniceconnectionstatechange%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L215">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_oniceconnectionstatechange" data-uid="SIPSorcery.Net.RTCPeerConnection.oniceconnectionstatechange">oniceconnectionstatechange</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;RTCIceConnectionState&gt; oniceconnectionstatechange</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceConnectionState.html">RTCIceConnectionState</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_onicegatheringstatechange.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.onicegatheringstatechange%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L216">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_onicegatheringstatechange" data-uid="SIPSorcery.Net.RTCPeerConnection.onicegatheringstatechange">onicegatheringstatechange</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;RTCIceGatheringState&gt; onicegatheringstatechange</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceGatheringState.html">RTCIceGatheringState</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_onnegotiationneeded.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.onnegotiationneeded%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L211">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_onnegotiationneeded" data-uid="SIPSorcery.Net.RTCPeerConnection.onnegotiationneeded">onnegotiationneeded</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action onnegotiationneeded</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection_onsignalingstatechange.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection.onsignalingstatechange%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L214">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RTCPeerConnection_onsignalingstatechange" data-uid="SIPSorcery.Net.RTCPeerConnection.onsignalingstatechange">onsignalingstatechange</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action onsignalingstatechange</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.IDisposable</span>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCPeerConnection.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCPeerConnection%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/RTCPeerConnection.cs/#L138" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

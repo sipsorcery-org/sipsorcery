@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Enum SignalGeneratorType
+    <title>Enum RTCRtcpMuxPolicy
    </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Enum SignalGeneratorType
+    <meta name="title" content="Enum RTCRtcpMuxPolicy
    ">
     <meta name="generator" content="docfx 2.51.0.0">
     
@@ -68,20 +68,25 @@
         </div>
         <div class="article row grid-right">
           <div class="col-md-10">
-            <article class="content wrap" id="_content" data-uid="SIPSorcery.Media.SignalGeneratorType">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.RTCRtcpMuxPolicy">
   
   
-  <h1 id="SIPSorcery_Media_SignalGeneratorType" data-uid="SIPSorcery.Media.SignalGeneratorType" class="text-break">Enum SignalGeneratorType
+  <h1 id="SIPSorcery_Net_RTCRtcpMuxPolicy" data-uid="SIPSorcery.Net.RTCRtcpMuxPolicy" class="text-break">Enum RTCRtcpMuxPolicy
   </h1>
-  <div class="markdown level0 summary"><p>Signal Generator type</p>
+  <div class="markdown level0 summary"><p>The RTCP multiplex options for ICE candidates. This option is currently redundant
+since the single option means RTCP multiplexing MUST be available or the SDP negotiation
+will fail.</p>
 </div>
   <div class="markdown level0 conceptual"></div>
-  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Media.html">SIPSorcery.Media</a></h6>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
-  <h5 id="SIPSorcery_Media_SignalGeneratorType_syntax">Syntax</h5>
+  <h5 id="SIPSorcery_Net_RTCRtcpMuxPolicy_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public enum SignalGeneratorType</code></pre>
+    <pre><code class="lang-csharp hljs">public enum RTCRtcpMuxPolicy</code></pre>
   </div>
+  <h5 id="SIPSorcery_Net_RTCRtcpMuxPolicy_remarks"><strong>Remarks</strong></h5>
+  <div class="markdown level0 remarks"><p>As specified in <a href="https://www.w3.org/TR/webrtc/#dom-rtcrtcpmuxpolicy">https://www.w3.org/TR/webrtc/#dom-rtcrtcpmuxpolicy</a>.</p>
+</div>
   <h3 id="fields">Fields
   </h3>
   <table class="table table-bordered table-striped table-condensed">
@@ -93,39 +98,8 @@
     <thead>
     <tbody>
       <tr>
-        <td id="SIPSorcery_Media_SignalGeneratorType_Pink">Pink</td>
-        <td><p>Pink noise</p>
-</td>
-      </tr>
-      <tr>
-        <td id="SIPSorcery_Media_SignalGeneratorType_SawTooth">SawTooth</td>
-        <td><p>Sawtooth wave</p>
-</td>
-      </tr>
-      <tr>
-        <td id="SIPSorcery_Media_SignalGeneratorType_Sin">Sin</td>
-        <td><p>Sine wave</p>
-</td>
-      </tr>
-      <tr>
-        <td id="SIPSorcery_Media_SignalGeneratorType_Square">Square</td>
-        <td><p>Square wave</p>
-</td>
-      </tr>
-      <tr>
-        <td id="SIPSorcery_Media_SignalGeneratorType_Sweep">Sweep</td>
-        <td><p>Sweep</p>
-</td>
-      </tr>
-      <tr>
-        <td id="SIPSorcery_Media_SignalGeneratorType_Triangle">Triangle</td>
-        <td><p>Triangle Wave</p>
-</td>
-      </tr>
-      <tr>
-        <td id="SIPSorcery_Media_SignalGeneratorType_White">White</td>
-        <td><p>White noise</p>
-</td>
+        <td id="SIPSorcery_Net_RTCRtcpMuxPolicy_require">require</td>
+        <td></td>
       </tr>
     </tbody>
   </thead></thead></table>
@@ -137,10 +111,10 @@
               <div class="contribution">
                 <ul class="nav">
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_SignalGeneratorType.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.SignalGeneratorType%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCRtcpMuxPolicy.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCRtcpMuxPolicy%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RtpAudioSession.cs/#L681" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/WebRTC/IRTCPeerConnection.cs/#L115" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

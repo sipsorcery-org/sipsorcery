@@ -69,12 +69,12 @@
             <article class="content wrap" id="_content" data-uid="">
 <h2 id="webrtc-session">WebRTC Session</h2>
 
-<p>The <a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> class is intended to be the equivalent of the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> available in WebRTC supporting Browsers.</p>
-<p><strong>NOTE</strong> the goal for <a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> class' public interface is to make it as close as possible to the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> interface. This is currently a work in progress.</p>
+<p>The <a href="xref:SIPSorcery.Net.WebRtcSession">WebRtcSession</a> class is intended to be the equivalent of the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> available in WebRTC supporting Browsers.</p>
+<p><strong>NOTE</strong> the goal for <a href="xref:SIPSorcery.Net.WebRtcSession">WebRtcSession</a> class' public interface is to make it as close as possible to the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> interface. This is currently a work in progress.</p>
 <h3 id="usage">Usage</h3>
 <p>The steps involved in getting a WebRTC session to a state where RTP media packets can be exchanged are:</p>
 <ul>
-<li>Instantiate the <a class="xref" href="../api/SIPSorcery.Net.WebRtcSession.html">WebRtcSession</a> instance,</li>
+<li>Instantiate the <a href="xref:SIPSorcery.Net.WebRtcSession">WebRtcSession</a> instance,</li>
 <li>Add the audio and/or video tracks as required,</li>
 <li>Call the <code>createOffer</code> method to acquire an SDP offer that can be sent to the remote peer,</li>
 <li>Send the SDP offer and get the SDP answer from the remote peer (this exchange is not part of the WebRTC specification and can be done using any signalling layer, examples are SIP, web sockets etc),</li>
