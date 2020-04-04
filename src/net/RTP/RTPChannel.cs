@@ -118,7 +118,7 @@ namespace SIPSorcery.Net
                         // During experiments IPPacketInformation wasn't getting set on Linux. Without it the local IP address
                         // cannot be determined when a listener was bound to IPAddress.Any (or IPv6 equivalent). If the caller
                         // is relying on getting the local IP address on Linux then something may fail.
-                        if (packetInfo != null)
+                        if (packetInfo != null && packetInfo.Address != null)
                         {
                             localEndPoint = new IPEndPoint(packetInfo.Address, localEndPoint.Port);
                         }
