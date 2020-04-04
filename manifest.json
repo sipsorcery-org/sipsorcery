@@ -9,7 +9,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.ALawEncoder.html",
-          "hash": "bPsgQKYIa4oAA4PhhrwD6Q=="
+          "hash": "XDOgH9cQSfkgMHFYd4aGvA=="
         }
       },
       "is_incremental": false,
@@ -93,7 +93,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.MuLawEncoder.html",
-          "hash": "CSuvr5z916FFQPim4+0Dzg=="
+          "hash": "nOxmADrkQH01NNEtvk0tQA=="
         }
       },
       "is_incremental": false,
@@ -105,7 +105,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.RtpAudioSession.html",
-          "hash": "JDeC5uiG432XeONsoYVMTg=="
+          "hash": "VKcwAL4M2PyoIweu2twOSw=="
         }
       },
       "is_incremental": false,
@@ -129,7 +129,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.SignalGenerator.html",
-          "hash": "uadPhv3bdGrg/tK/n1YbFA=="
+          "hash": "xvvs9jZneDuKuzOtyJt5kA=="
         }
       },
       "is_incremental": false,
@@ -141,7 +141,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.SignalGeneratorType.html",
-          "hash": "oEP70Ac4e03qS1w3/eShQg=="
+          "hash": "Ls79cL+cdnul94LcLpOmJw=="
         }
       },
       "is_incremental": false,

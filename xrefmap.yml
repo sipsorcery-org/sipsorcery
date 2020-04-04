@@ -448,22 +448,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.RtpAudioSession.SendDtmf
   nameWithType: RtpAudioSession.SendDtmf
-- uid: SIPSorcery.Media.RtpAudioSession.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum,System.UInt32,System.Byte[])
-  name: SendMedia(SDPMediaTypesEnum, UInt32, Byte[])
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendMedia_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_System_Byte___
-  commentId: M:SIPSorcery.Media.RtpAudioSession.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum,System.UInt32,System.Byte[])
-  name.vb: SendMedia(SDPMediaTypesEnum, UInt32, Byte())
-  fullName: SIPSorcery.Media.RtpAudioSession.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum, System.UInt32, System.Byte[])
-  fullName.vb: SIPSorcery.Media.RtpAudioSession.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum, System.UInt32, System.Byte())
-  nameWithType: RtpAudioSession.SendMedia(SDPMediaTypesEnum, UInt32, Byte[])
-  nameWithType.vb: RtpAudioSession.SendMedia(SDPMediaTypesEnum, UInt32, Byte())
-- uid: SIPSorcery.Media.RtpAudioSession.SendMedia*
-  name: SendMedia
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendMedia_
-  commentId: Overload:SIPSorcery.Media.RtpAudioSession.SendMedia
-  isSpec: "True"
-  fullName: SIPSorcery.Media.RtpAudioSession.SendMedia
-  nameWithType: RtpAudioSession.SendMedia
 - uid: SIPSorcery.Media.RtpAudioSession.Start
   name: Start()
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_Start
