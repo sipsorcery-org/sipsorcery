@@ -117,11 +117,6 @@ namespace SIPSorcery.Media
             return SendDtmfEvent(dtmfEvent, ct);
         }
 
-        public void SendMedia(SDPMediaTypesEnum mediaType, uint samplePeriod, byte[] sample)
-        {
-            throw new NotImplementedException("SendMedia is not implemented for RtpAudioSession.");
-        }
-
         /// <summary>
         /// Initialises the audio source as required.
         /// </summary>

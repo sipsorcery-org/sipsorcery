@@ -17,7 +17,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Media;
