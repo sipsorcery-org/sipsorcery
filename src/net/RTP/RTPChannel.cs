@@ -113,7 +113,16 @@ namespace SIPSorcery.Net
 
                     if (bytesRead > 0)
                     {
-                        IPEndPoint localEndPoint = new IPEndPoint(packetInfo.Address, (m_udpSocket.LocalEndPoint as IPEndPoint).Port);
+                        IPEndPoint localEndPoint = m_udpSocket.LocalEndPoint as IPEndPoint;
+
+                        // During experiments IPPacketInformation wasn't getting set on Linux. Without it the local IP address
+                        // cannot be determined when a listener was bound to IPAddress.Any (or IPv6 equivalent). If the caller
+                        // is relying on getting the local IP address on Linux then something may fail.
+                        if (packetInfo != null)
+                        {
+                            localEndPoint = new IPEndPoint(packetInfo.Address, localEndPoint.Port);
+                        }
+
                         byte[] packetBuffer = new byte[bytesRead];
                         Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
                         OnPacketReceived?.Invoke(this, localEndPoint, remoteEP as IPEndPoint, packetBuffer);
