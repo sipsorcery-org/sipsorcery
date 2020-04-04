@@ -43,6 +43,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RecordIncomingCall", "Recor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPCallConvertAudio", "SIPCallConvertAudio\SIPCallConvertAudio.csproj", "{3604EF4A-F81D-4D35-8A4E-7849859348E1}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\src\SIPSorcery.csproj", "{6D6985C0-9CAF-40CE-898A-F6D96870B752}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -293,6 +295,18 @@ Global
 		{3604EF4A-F81D-4D35-8A4E-7849859348E1}.Release|x64.Build.0 = Release|Any CPU
 		{3604EF4A-F81D-4D35-8A4E-7849859348E1}.Release|x86.ActiveCfg = Release|Any CPU
 		{3604EF4A-F81D-4D35-8A4E-7849859348E1}.Release|x86.Build.0 = Release|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Debug|x64.Build.0 = Debug|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Debug|x86.Build.0 = Debug|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Release|x64.ActiveCfg = Release|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Release|x64.Build.0 = Release|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Release|x86.ActiveCfg = Release|Any CPU
+		{6D6985C0-9CAF-40CE-898A-F6D96870B752}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
