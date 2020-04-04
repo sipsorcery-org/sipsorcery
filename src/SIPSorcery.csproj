@@ -31,7 +31,7 @@
 
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.40-pre</Version>
+	<Version>4.0.41-pre</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -51,7 +51,8 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP WebRTC RTP SDP STUN SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version 4.0.40-pre: Modifications to IMediaSession. WebRtcSession changed to RTCPeerCOnnection.
+	<PackageReleaseNotes>- Version 4.0.41-pre: Added workaround for UDP packet info not being set on Linux.
+- Version 4.0.40-pre: Modifications to IMediaSession. WebRtcSession changed to RTCPeerConnection.
 - Version 4.0.35-pre: Added RTP header to the OnRtpEvent delegate.
 - Version 4.0.34-pre: Minor adjustments to RTP channel and session to facilitate ICE implementation.
 - Version 4.0.33-pre: Bug fix starting media session before remote SDP available. Websocket client parsing fix.
@@ -70,8 +71,8 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
 </PackageReleaseNotes>
 	<NeutralLanguage>en-GB</NeutralLanguage>
-	<AssemblyVersion>4.0.40.0</AssemblyVersion>
-	<FileVersion>4.0.40.0</FileVersion>
+	<AssemblyVersion>4.0.41.0</AssemblyVersion>
+	<FileVersion>4.0.41.0</FileVersion>
   </PropertyGroup>    
 
 </Project>
