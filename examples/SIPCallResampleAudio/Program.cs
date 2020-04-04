@@ -17,6 +17,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NAudio;
+using NAudio.Wave;
 using Serilog;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
@@ -31,14 +33,29 @@ namespace demo
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
+        private static int OUT_SAMPLE_RATE = 48000;
+        private static int RTP_SAMPLE_RATE = SDPMediaFormatInfo.GetClockRate(SDPMediaFormatsEnum.PCMU);
+
+        private static WaveFormat _format_s16le48k = new WaveFormat(OUT_SAMPLE_RATE, 16, 1);
+        private static WaveFileWriter _waveFile;
+        private static double _ratio = (double)(OUT_SAMPLE_RATE / RTP_SAMPLE_RATE);
+
         static async Task Main()
         {
             Console.WriteLine("SIPSorcery Convert Audio");
 
             AddConsoleLogger();
 
+            //WaveFormatConversionStream converter = new WaveFormatConversionStream(_format_s16le48k, )
+            _waveFile = new WaveFileWriter("output_s16le48k.mp3", _format_s16le48k);
+
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
+            userAgent.OnCallHungup += (dialog) =>
+            {
+                Console.WriteLine("Call hungup.");
+                _waveFile?.Close();
+            };
 
             //EnableTraceLogs(sipTransport);
 
@@ -67,7 +84,7 @@ namespace demo
 
         private static void RtpSession_OnRtpPacketReceived(SDPMediaTypesEnum kind, RTPPacket pkt)
         {
-            Log.LogDebug($"{kind} RTP packet received {pkt.Header.SequenceNumber}.");
+            //Log.LogDebug($"{kind} RTP packet received {pkt.Header.SequenceNumber}.");
 
             if (kind == SDPMediaTypesEnum.audio)
             {
@@ -76,8 +93,12 @@ namespace demo
                 for (int index = 0; index < sample.Length; index++)
                 {
                     short pcm = NAudio.Codecs.MuLawDecoder.MuLawToLinearSample(sample[index]);
-                    byte[] pcmSample = new byte[] { (byte)(pcm & 0xFF), (byte)(pcm >> 8) };
-                    //_waveFile.Write(pcmSample, 0, 2);
+                    float s16 = pcm / 32768f;
+
+                    for (int i = 0; i < _ratio; i++)
+                    {
+                        _waveFile.WriteSample(s16);
+                    }
                 }
             }
         }
