@@ -319,20 +319,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
-      <Project>{339648e6-3b61-4a27-b4a2-38a8216b1d7e}</Project>
-      <Name>SIPSorcery.SIP.App</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
-      <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
-      <Name>SIPSorcery.SIP.Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
-      <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
-      <Name>SIPSorcery.Sys</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="App.Config">
       <SubType>Designer</SubType>
     </None>
@@ -365,6 +351,20 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DomainServices\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
+      <Project>{339648e6-3b61-4a27-b4a2-38a8216b1d7e}</Project>
+      <Name>SIPSorcery.SIP.App</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
+      <Project>{01d01bc6-231f-4fd6-badf-51c509ab495f}</Project>
+      <Name>SIPSorcery.SIP.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
+      <Project>{6d8dbb7d-8937-4cc4-9703-561f776f9dbd}</Project>
+      <Name>SIPSorcery.Sys</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
