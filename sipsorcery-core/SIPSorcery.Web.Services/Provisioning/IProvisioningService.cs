@@ -46,7 +46,7 @@ namespace SIPSorcery.Web.Services {
         [OperationContract] int GetCallsCount(string whereExpression);
         [OperationContract] List<SIPDialogueAsset> GetCalls(string whereExpression, int offset, int count);
         [OperationContract] int GetCDRsCount(string whereExpression);
-        [OperationContract] List<SIPSorcery.Entities.CDR> GetCDRs(string whereExpression, int offset, int count);
+        [OperationContract] List<SIPCDRAsset> GetCDRs(string whereExpression, int offset, int count);
         [OperationContract] void ExtendSession(int minutes);
         [OperationContract] int GetTimeZoneOffsetMinutes();
     }

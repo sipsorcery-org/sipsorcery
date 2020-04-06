@@ -259,32 +259,6 @@
     <Compile Include="SIPSorceryMembershipProvider.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">
-      <Project>{f951789f-1abb-42e8-bb51-f028dc4824ef}</Project>
-      <Name>SIPSorcery.CRM</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Entities\SIPSorcery.Entities.csproj">
-      <Project>{8EB4E07E-76C8-445A-8252-5B392A9C12FB}</Project>
-      <Name>SIPSorcery.Entities</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
-      <Project>{7194705F-5564-4040-BC8A-8FAD806F5408}</Project>
-      <Name>SIPSorcery.Persistence</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
-      <Project>{339648E6-3B61-4A27-B4A2-38A8216B1D7E}</Project>
-      <Name>SIPSorcery.SIP.App</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
-      <Project>{01D01BC6-231F-4FD6-BADF-51C509AB495F}</Project>
-      <Name>SIPSorcery.SIP.Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
-      <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
-      <Name>SIPSorcery.Sys</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="web.config" />
     <Content Include="packages.config" />
     <None Include="web.Debug.config">
@@ -296,6 +270,32 @@
     <None Include="web.Release.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.CRM\SIPSorcery.CRM.csproj">
+      <Project>{f951789f-1abb-42e8-bb51-f028dc4824ef}</Project>
+      <Name>SIPSorcery.CRM</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Entities\SIPSorcery.Entities.csproj">
+      <Project>{8eb4e07e-76c8-445a-8252-5b392a9c12fb}</Project>
+      <Name>SIPSorcery.Entities</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
+      <Project>{7194705f-5564-4040-bc8a-8fad806f5408}</Project>
+      <Name>SIPSorcery.Persistence</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
+      <Project>{339648e6-3b61-4a27-b4a2-38a8216b1d7e}</Project>
+      <Name>SIPSorcery.SIP.App</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.SIP.Core\SIPSorcery.SIP.Core.csproj">
+      <Project>{01d01bc6-231f-4fd6-badf-51c509ab495f}</Project>
+      <Name>SIPSorcery.SIP.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
+      <Project>{6d8dbb7d-8937-4cc4-9703-561f776f9dbd}</Project>
+      <Name>SIPSorcery.Sys</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

@@ -85,6 +85,6 @@ namespace SIPSorcery.Web.Services {
 
         [OperationContract]
         [WebGet(UriTemplate = "getcdrs?whereexpression={whereexpression}&offset={offset}&count={count}")]
-        List<SIPSorcery.Entities.CDR> GetCDRs(string whereExpression, int offset, int count);
+        List<SIPCDRAsset> GetCDRs(string whereExpression, int offset, int count);
     }
 }

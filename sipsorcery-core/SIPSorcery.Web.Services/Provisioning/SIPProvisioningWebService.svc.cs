@@ -853,16 +853,16 @@ namespace SIPSorcery.Web.Services
                 string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
                 logger.Debug("SIPProvisioningWebService GetCDRsCount for " + customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
-                //if (authoriseExpression.IsNullOrBlank())
-                //{
-                //    return SIPCDRPersistor.Count(null);
-                //}
-                //else
-                //{
-                //    return SIPCDRPersistor.Count(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression));
-                //}
+                if (authoriseExpression.IsNullOrBlank())
+                {
+                    return SIPCDRPersistor.Count(null);
+                }
+                else
+                {
+                    return SIPCDRPersistor.Count(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression));
+                }
 
-                return m_service.GetCDRCount(customer.CustomerUsername, authoriseExpression);
+                //return m_service.GetCDRCount(customer.CustomerUsername, authoriseExpression);
             }
             catch (Exception excp)
             {
@@ -877,7 +877,7 @@ namespace SIPSorcery.Web.Services
             }
         }
 
-        public List<SIPSorcery.Entities.CDR> GetCDRs(string whereExpression, int offset, int count)
+        public List<SIPCDRAsset> GetCDRs(string whereExpression, int offset, int count)
         {
             try
             {
@@ -886,20 +886,22 @@ namespace SIPSorcery.Web.Services
                 string authoriseExpression = GetAuthorisedWhereExpression(customer, whereExpression);
                 logger.Debug("SIPProvisioningWebService GetCDRs for " + customer.CustomerUsername + " and where: " + authoriseExpression + ".");
 
-                //if (authoriseExpression.IsNullOrBlank())
-                //{
-                //    return SIPCDRPersistor.Get(null, "created desc", offset, count);
-                //}
-                //else
-                //{
-                //    return SIPCDRPersistor.Get(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression), "created desc", offset, count);
-                //}
+                if (authoriseExpression.IsNullOrBlank())
+                {
+                    return SIPCDRPersistor.Get(null, "created desc", offset, count);
+                }
+                else
+                {
+                    return SIPCDRPersistor.Get(DynamicExpression.ParseLambda<SIPCDRAsset, bool>(authoriseExpression), "created desc", offset, count);
+                }
 
-                return m_service.GetCDRs(customer.CustomerUsername, authoriseExpression, offset, count);
+                //var results=  m_service.GetCDRs(customer.CustomerUsername, authoriseExpression, offset, count);
+
+                //return results;
             }
             catch (Exception excp)
             {
-                logger.Error("Exception GetCDRsCount. " + excp.Message);
+                logger.Error("Exception GetCDRs. " + excp.Message);
 
                 if (excp.InnerException != null)
                 {

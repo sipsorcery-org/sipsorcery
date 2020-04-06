@@ -220,20 +220,6 @@
     <Compile Include="ThirtySevenSignals\PhoneNumber.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
-      <Project>{7194705F-5564-4040-BC8A-8FAD806F5408}</Project>
-      <Name>SIPSorcery.Persistence</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
-      <Project>{339648e6-3b61-4a27-b4a2-38a8216b1d7e}</Project>
-      <Name>SIPSorcery.SIP.App</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
-      <Project>{6D8DBB7D-8937-4CC4-9703-561F776F9DBD}</Project>
-      <Name>SIPSorcery.Sys</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
       <Visible>False</Visible>
       <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
@@ -337,7 +323,20 @@
       <LastGenOutput>Reference.cs</LastGenOutput>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\SIPSorcery.Persistence\SIPSorcery.Persistence.csproj">
+      <Project>{7194705f-5564-4040-bc8a-8fad806f5408}</Project>
+      <Name>SIPSorcery.Persistence</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.SIP.App\SIPSorcery.SIP.App.csproj">
+      <Project>{339648e6-3b61-4a27-b4a2-38a8216b1d7e}</Project>
+      <Name>SIPSorcery.SIP.App</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SIPSorcery.Sys\SIPSorcery.Sys.csproj">
+      <Project>{6d8dbb7d-8937-4cc4-9703-561f776f9dbd}</Project>
+      <Name>SIPSorcery.Sys</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
