@@ -1393,7 +1393,7 @@ namespace SIPSorcery.Entities
             }
         }
 
-        public List<CDR> GetCDRs(string authUser, string where, int offset, int count)
+        public List<CDR> GetCDRs(string authUser, string where, int offset, int count, string orderby = null)
         {
             if (authUser.IsNullOrBlank())
             {
@@ -1414,7 +1414,16 @@ namespace SIPSorcery.Entities
                     query = query.Where(DynamicExpression.ParseLambda<CDR, bool>(where));
                 }
 
-                return query.AsEnumerable().OrderByDescending(x => x.Created).Skip(offset).Take(count).ToList();
+                if (!string.IsNullOrEmpty(orderby))
+                {
+                    query = query.OrderBy(orderby);
+                }
+                else
+                {
+                    query = query.OrderByDescending(x => x.Created);
+                }
+
+                return query.AsEnumerable().Skip(offset).Take(count).ToList();
             }
         }
 

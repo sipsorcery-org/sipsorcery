@@ -163,8 +163,8 @@ namespace SIPSorcery.Web.Services
         JSONResult<int> GetCDRsCount(string where);
 
         [OperationContract]
-        [WebGet(UriTemplate = "cdr/get?where={where}&offset={offset}&count={count}", ResponseFormat = WebMessageFormat.Json)]
-        JSONResult<List<CDRJSON>> GetCDRs(string where, int offset, int count);
+        [WebGet(UriTemplate = "cdr/get?where={where}&offset={offset}&count={count}&orderby={orderby}", ResponseFormat = WebMessageFormat.Json)]
+        JSONResult<List<CDRJSON>> GetCDRs(string where, int offset, int count, string orderby);
 
         [OperationContract]
         [WebInvoke(Method = "POST", UriTemplate = "keyvalue/write", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json, BodyStyle = WebMessageBodyStyle.WrappedRequest)]

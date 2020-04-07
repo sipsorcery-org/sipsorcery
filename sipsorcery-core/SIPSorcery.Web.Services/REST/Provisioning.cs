@@ -648,7 +648,7 @@ namespace SIPSorcery.Web.Services
             }
         }
 
-        public JSONResult<List<CDRJSON>> GetCDRs(string where, int offset, int count)
+        public JSONResult<List<CDRJSON>> GetCDRs(string where, int offset, int count, string orderby)
         {
             try
             {
@@ -659,7 +659,7 @@ namespace SIPSorcery.Web.Services
                     count = DEFAULT_COUNT;
                 }
 
-                var result = m_service.GetCDRs(customer.Name, @where, offset, count).Select(x =>
+                var result = m_service.GetCDRs(customer.Name, @where, offset, count, orderby).Select(x =>
                     new CDRJSON()
                     {
                         ID = x.ID,
