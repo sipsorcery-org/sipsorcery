@@ -50,6 +50,21 @@ namespace SIPSorcery.Net
 
         public string candidate { get; private set; }
 
+        public IPAddress CandidateAddress
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(address))
+                {
+                    return IPAddress.Parse(address);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
         public string sdpMid { get; private set; }
 
         public ushort sdpMLineIndex { get; private set; }
@@ -185,46 +200,55 @@ namespace SIPSorcery.Net
 
         public static RTCIceCandidate Parse(string candidateLine)
         {
-            RTCIceCandidate candidate = new RTCIceCandidate();
-
-            string[] candidateFields = candidateLine.Trim().Split(' ');
-
-            candidate.foundation = candidateFields[0];
-
-            if (Enum.TryParse<RTCIceComponent>(candidateFields[1], out var candidateComponent))
+            if (string.IsNullOrEmpty(candidateLine))
             {
-                candidate.component = candidateComponent;
+                throw new ArgumentNullException("Cant parse ICE candidate from empty string.", candidateLine);
             }
-
-            if (Enum.TryParse<RTCIceProtocol>(candidateFields[2], out var candidateProtocol))
+            else
             {
-                candidate.protocol = candidateProtocol;
+                candidateLine = candidateLine.Replace("candidate:", "");
+
+                RTCIceCandidate candidate = new RTCIceCandidate();
+
+                string[] candidateFields = candidateLine.Trim().Split(' ');
+
+                candidate.foundation = candidateFields[0];
+
+                if (Enum.TryParse<RTCIceComponent>(candidateFields[1], out var candidateComponent))
+                {
+                    candidate.component = candidateComponent;
+                }
+
+                if (Enum.TryParse<RTCIceProtocol>(candidateFields[2], out var candidateProtocol))
+                {
+                    candidate.protocol = candidateProtocol;
+                }
+
+                if (ulong.TryParse(candidateFields[3], out var candidatePriority))
+                {
+                    candidate.priority = candidatePriority;
+                }
+
+                candidate.address = candidateFields[4];
+                candidate.port = Convert.ToUInt16(candidateFields[5]);
+
+                if (Enum.TryParse<RTCIceCandidateType>(candidateFields[7], out var candidateType))
+                {
+                    candidate.type = candidateType;
+                }
+
+                if (candidateFields.Length > 8 && candidateFields[8] == REMOTE_ADDRESS_KEY)
+                {
+                    candidate.relatedAddress = candidateFields[9];
+                }
+
+                if (candidateFields.Length > 10 && candidateFields[10] == REMOTE_PORT_KEY)
+                {
+                    candidate.relatedPort = Convert.ToUInt16(candidateFields[11]);
+                }
+
+                return candidate;
             }
-
-            if(ulong.TryParse(candidateFields[3], out var candidatePriority))
-            {
-                candidate.priority = candidatePriority;
-            }
-
-            candidate.address = candidateFields[4];
-            candidate.port = Convert.ToUInt16(candidateFields[5]);
-
-            if (Enum.TryParse<RTCIceCandidateType>(candidateFields[7], out var candidateType))
-            {
-                candidate.type = candidateType;
-            }
-
-            if (candidateFields.Length > 8 && candidateFields[8] == REMOTE_ADDRESS_KEY)
-            {
-                candidate.relatedAddress = candidateFields[9];
-            }
-
-            if (candidateFields.Length > 10 && candidateFields[10] == REMOTE_PORT_KEY)
-            {
-                candidate.relatedPort = Convert.ToUInt16(candidateFields[11]);
-            }
-
-            return candidate;
         }
 
         /// <summary>
