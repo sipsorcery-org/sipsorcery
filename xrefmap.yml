@@ -1156,12 +1156,12 @@ references:
   commentId: T:SIPSorcery.Net.IceSession
   fullName: SIPSorcery.Net.IceSession
   nameWithType: IceSession
-- uid: SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel)
-  name: IceSession(RTPChannel)
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession__ctor_SIPSorcery_Net_RTPChannel_
-  commentId: M:SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel)
-  fullName: SIPSorcery.Net.IceSession.IceSession(SIPSorcery.Net.RTPChannel)
-  nameWithType: IceSession.IceSession(RTPChannel)
+- uid: SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel,SIPSorcery.Net.RTCIceComponent)
+  name: IceSession(RTPChannel, RTCIceComponent)
+  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession__ctor_SIPSorcery_Net_RTPChannel_SIPSorcery_Net_RTCIceComponent_
+  commentId: M:SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel,SIPSorcery.Net.RTCIceComponent)
+  fullName: SIPSorcery.Net.IceSession.IceSession(SIPSorcery.Net.RTPChannel, SIPSorcery.Net.RTCIceComponent)
+  nameWithType: IceSession.IceSession(RTPChannel, RTCIceComponent)
 - uid: SIPSorcery.Net.IceSession.#ctor*
   name: IceSession
   href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession__ctor_
@@ -1169,12 +1169,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.IceSession.IceSession
   nameWithType: IceSession.IceSession
-- uid: SIPSorcery.Net.IceSession.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidateInit)
-  name: AddRemoteCandidate(RTCIceCandidateInit)
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_AddRemoteCandidate_SIPSorcery_Net_RTCIceCandidateInit_
-  commentId: M:SIPSorcery.Net.IceSession.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidateInit)
-  fullName: SIPSorcery.Net.IceSession.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidateInit)
-  nameWithType: IceSession.AddRemoteCandidate(RTCIceCandidateInit)
+- uid: SIPSorcery.Net.IceSession.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)
+  name: AddRemoteCandidate(RTCIceCandidate)
+  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_AddRemoteCandidate_SIPSorcery_Net_RTCIceCandidate_
+  commentId: M:SIPSorcery.Net.IceSession.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)
+  fullName: SIPSorcery.Net.IceSession.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)
+  nameWithType: IceSession.AddRemoteCandidate(RTCIceCandidate)
 - uid: SIPSorcery.Net.IceSession.AddRemoteCandidate*
   name: AddRemoteCandidate
   href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_AddRemoteCandidate_
@@ -1208,6 +1208,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.IceSession.Close
   nameWithType: IceSession.Close
+- uid: SIPSorcery.Net.IceSession.Component
+  name: Component
+  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_Component
+  commentId: P:SIPSorcery.Net.IceSession.Component
+  fullName: SIPSorcery.Net.IceSession.Component
+  nameWithType: IceSession.Component
+- uid: SIPSorcery.Net.IceSession.Component*
+  name: Component
+  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_Component_
+  commentId: Overload:SIPSorcery.Net.IceSession.Component
+  isSpec: "True"
+  fullName: SIPSorcery.Net.IceSession.Component
+  nameWithType: IceSession.Component
 - uid: SIPSorcery.Net.IceSession.ConnectedRemoteEndPoint
   name: ConnectedRemoteEndPoint
   href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_ConnectedRemoteEndPoint
@@ -1247,6 +1260,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.IceSession.GatheringState
   nameWithType: IceSession.GatheringState
+- uid: SIPSorcery.Net.IceSession.IsController
+  name: IsController
+  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_IsController
+  commentId: P:SIPSorcery.Net.IceSession.IsController
+  fullName: SIPSorcery.Net.IceSession.IsController
+  nameWithType: IceSession.IsController
+- uid: SIPSorcery.Net.IceSession.IsController*
+  name: IsController
+  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_IsController_
+  commentId: Overload:SIPSorcery.Net.IceSession.IsController
+  isSpec: "True"
+  fullName: SIPSorcery.Net.IceSession.IsController
+  nameWithType: IceSession.IsController
 - uid: SIPSorcery.Net.IceSession.LocalIcePassword
   name: LocalIcePassword
   href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_LocalIcePassword
@@ -2150,6 +2176,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidate.candidate
   nameWithType: RTCIceCandidate.candidate
+- uid: SIPSorcery.Net.RTCIceCandidate.CandidateAddress
+  name: CandidateAddress
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_CandidateAddress
+  commentId: P:SIPSorcery.Net.RTCIceCandidate.CandidateAddress
+  fullName: SIPSorcery.Net.RTCIceCandidate.CandidateAddress
+  nameWithType: RTCIceCandidate.CandidateAddress
+- uid: SIPSorcery.Net.RTCIceCandidate.CandidateAddress*
+  name: CandidateAddress
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_CandidateAddress_
+  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.CandidateAddress
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCIceCandidate.CandidateAddress
+  nameWithType: RTCIceCandidate.CandidateAddress
 - uid: SIPSorcery.Net.RTCIceCandidate.component
   name: component
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_component
