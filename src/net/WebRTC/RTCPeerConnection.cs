@@ -20,11 +20,9 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -143,7 +141,7 @@ namespace SIPSorcery.Net
         private const string RTCP_ATTRIBUTE = "a=rtcp:9 IN IP4 0.0.0.0";
         private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is passive.
         private const string BUNDLE_ATTRIBUTE = "BUNDLE";
-        private const string ICE_OPTIONS = "trickle";                   // Supported ICE options.
+        private const string ICE_OPTIONS = "ice2,trickle";                   // Supported ICE options.
         private const string NORMAL_CLOSE_REASON = "normal";
 
         private static ILogger logger = Log.Logger;
@@ -183,9 +181,9 @@ namespace SIPSorcery.Net
         /// </summary>
         public IPEndPoint RemoteEndPoint { get; private set; }
 
-        public new RTCSessionDescription localDescription { get; private set; }
+        public RTCSessionDescription localDescription { get; private set; }
 
-        public new RTCSessionDescription remoteDescription { get; private set; }
+        public RTCSessionDescription remoteDescription { get; private set; }
 
         public RTCSessionDescription currentLocalDescription => throw new NotImplementedException();
 
@@ -244,7 +242,7 @@ namespace SIPSorcery.Net
             // Request the underlying RTP session to create the RTP channel.
             addSingleTrack();
 
-            IceSession = new IceSession(GetRtpChannel(SDPMediaTypesEnum.audio));
+            IceSession = new IceSession(GetRtpChannel(SDPMediaTypesEnum.audio), RTCIceComponent.rtp);
             IceSession.OnIceCandidate += (candidate) => onicecandidate?.Invoke(candidate);
             IceSession.OnIceConnectionStateChange += (state) =>
             {
@@ -275,6 +273,11 @@ namespace SIPSorcery.Net
             RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
             //base.setLocalDescription(description);
             localDescription = description;
+
+            if (init.type == RTCSdpType.offer)
+            {
+                IceSession.IsController = true;
+            }
 
             var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
             rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
@@ -329,6 +332,11 @@ namespace SIPSorcery.Net
                 }
 
                 SdpSessionID = remoteSdp.SessionId;
+
+                if(init.type == RTCSdpType.answer)
+                {
+                    IceSession.IsController = true;
+                }
 
                 if (remoteIceUser != null && remoteIcePassword != null)
                 {
@@ -547,6 +555,13 @@ namespace SIPSorcery.Net
         /// <param name="videoCapabilities">Optional. The video formats to support in the SDP. This list can differ from
         /// the local video track if an answer is being generated and only mutually supported formats are being
         /// used.</param>
+        /// <remarks>
+        /// From https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-4.2.5:
+        ///   "The transport address from the peer for the default destination
+        ///   is set to IPv4/IPv6 address values "0.0.0.0"/"::" and port value
+        ///   of "9".  This MUST NOT be considered as a ICE failure by the peer
+        ///   agent and the ICE processing MUST continue as usual."
+        /// </remarks>
         private Task<SDP> createBaseSdp(List<MediaStreamTrack> tracks, List<SDPMediaFormat> audioCapabilities, List<SDPMediaFormat> videoCapabilities)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
@@ -651,10 +666,20 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Adds a remote ICE candidate to the list this peer is attempting to connect against.
         /// </summary>
-        /// <param name="candidate">The remote candidate to add.</param>
-        public Task addIceCandidate(RTCIceCandidateInit candidate)
+        /// <param name="candidateInit">The remote candidate to add.</param>
+        public Task addIceCandidate(RTCIceCandidateInit candidateInit)
         {
-            IceSession.AddRemoteCandidate(candidate);
+            RTCIceCandidate candidate = new RTCIceCandidate(candidateInit);
+
+            if (IceSession.Component == candidate.component)
+            {
+                IceSession.AddRemoteCandidate(candidate);
+            }
+            else
+            {
+                logger.LogWarning($"Remote ICE candidate not added as no available ICE session for component {candidate.component}.");
+            }
+
             return Task.CompletedTask;
         }
 

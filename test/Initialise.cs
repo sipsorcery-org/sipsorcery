@@ -138,9 +138,11 @@ namespace SIPSorcery.UnitTests
         public bool HasAudio => true;
         public bool HasVideo => false;
 
+#pragma warning disable 67
         public event Action<string> OnRtpClosed;
         public event Action<SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
         public event Action<RTPEvent, RTPHeader> OnRtpEvent;
+#pragma warning restore 67
 
         public void Close(string reason)
         {
