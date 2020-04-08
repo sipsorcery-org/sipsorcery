@@ -90,10 +90,13 @@ namespace SIPSorcery.SIP.App
         /// this method does NOT result in any changes to the local tracks. To apply the
         /// changes the SetRemoteDescription method must be called.
         /// </summary>
-        /// <param name="offer">The SDP offer to generate an answer for.</param>
+        /// <param name="connectionAddress">Optional. If set this address will be used as 
+        /// the SDP Connection address. If not specified the Operating System routing table
+        /// will be used to lookup the address used to connect to the SDP connection address
+        /// from the remote offer.</param>
         /// <returns>An SDP answer matching the offer and the local media tracks contained
         /// in the session.</returns>
-        SDP CreateAnswer();
+        SDP CreateAnswer(IPAddress connectionAddress);
 
         /// <summary>
         /// Needs to be called prior to sending media. Performs any set up tasks such as 

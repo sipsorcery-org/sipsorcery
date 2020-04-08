@@ -456,7 +456,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        var sdpAnswer = MediaSession.CreateAnswer();
+                        var sdpAnswer = MediaSession.CreateAnswer(null);
                         sdp = sdpAnswer.ToString();
                     }
                 }
@@ -712,7 +712,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        var answerSdp = MediaSession.CreateAnswer();
+                        var answerSdp = MediaSession.CreateAnswer(null);
 
                         CheckRemotePartyHoldCondition(MediaSession.RemoteDescription);
 

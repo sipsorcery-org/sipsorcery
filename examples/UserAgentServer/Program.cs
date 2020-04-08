@@ -189,7 +189,7 @@ namespace SIPSorcery
                                 uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
                                 uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
 
-                                var answerSdp = rtpSession.CreateAnswer();
+                                var answerSdp = rtpSession.CreateAnswer(null);
                                 uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString(), null, SIPDialogueTransferModesEnum.NotAllowed);
 
                                 await rtpSession.Start();
