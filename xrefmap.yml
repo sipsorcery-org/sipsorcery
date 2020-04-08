@@ -4667,12 +4667,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.CloseSession
   nameWithType: RTPSession.CloseSession
-- uid: SIPSorcery.Net.RTPSession.CreateAnswer
-  name: CreateAnswer()
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateAnswer
-  commentId: M:SIPSorcery.Net.RTPSession.CreateAnswer
-  fullName: SIPSorcery.Net.RTPSession.CreateAnswer()
-  nameWithType: RTPSession.CreateAnswer()
+- uid: SIPSorcery.Net.RTPSession.CreateAnswer(System.Net.IPAddress)
+  name: CreateAnswer(IPAddress)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateAnswer_System_Net_IPAddress_
+  commentId: M:SIPSorcery.Net.RTPSession.CreateAnswer(System.Net.IPAddress)
+  fullName: SIPSorcery.Net.RTPSession.CreateAnswer(System.Net.IPAddress)
+  nameWithType: RTPSession.CreateAnswer(IPAddress)
 - uid: SIPSorcery.Net.RTPSession.CreateAnswer*
   name: CreateAnswer
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateAnswer_
@@ -10296,12 +10296,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.IMediaSession.Close
   nameWithType: IMediaSession.Close
-- uid: SIPSorcery.SIP.App.IMediaSession.CreateAnswer
-  name: CreateAnswer()
-  href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_CreateAnswer
-  commentId: M:SIPSorcery.SIP.App.IMediaSession.CreateAnswer
-  fullName: SIPSorcery.SIP.App.IMediaSession.CreateAnswer()
-  nameWithType: IMediaSession.CreateAnswer()
+- uid: SIPSorcery.SIP.App.IMediaSession.CreateAnswer(System.Net.IPAddress)
+  name: CreateAnswer(IPAddress)
+  href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_CreateAnswer_System_Net_IPAddress_
+  commentId: M:SIPSorcery.SIP.App.IMediaSession.CreateAnswer(System.Net.IPAddress)
+  fullName: SIPSorcery.SIP.App.IMediaSession.CreateAnswer(System.Net.IPAddress)
+  nameWithType: IMediaSession.CreateAnswer(IPAddress)
 - uid: SIPSorcery.SIP.App.IMediaSession.CreateAnswer*
   name: CreateAnswer
   href: api/SIPSorcery.SIP.App.IMediaSession.html#SIPSorcery_SIP_App_IMediaSession_CreateAnswer_
