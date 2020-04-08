@@ -267,11 +267,6 @@ namespace SIPSorcery.Net
         private RTCPSession m_videoRtcpSession;
 
         /// <summary>
-        /// The SDP for our end of the call.
-        /// </summary>
-        //public SDP LocalDescription { get; protected set; }
-
-        /// <summary>
         /// The SDP offered by the remote call party for this session.
         /// </summary>
         public SDP RemoteDescription { get; protected set; }
@@ -353,18 +348,6 @@ namespace SIPSorcery.Net
         {
             get { return m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.video); }
         }
-
-        /// <summary>
-        /// Gets fired when the session detects that the remote end point 
-        /// has changed. This is useful because the RTP socket advertised in an SDP
-        /// payload will often be different to the one the packets arrive from due
-        /// to NAT.
-        /// 
-        /// The parameters for the event are:
-        ///  - Original remote end point,
-        ///  - Most recent remote end point.
-        /// </summary>
-        //public event Action<IPEndPoint, IPEndPoint> OnReceiveFromEndPointChanged;
 
         /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
@@ -554,14 +537,17 @@ namespace SIPSorcery.Net
         /// Generates an SDP answer in response to an offer. The remote description MUST be set 
         /// prior to calling this method.
         /// </summary>
-        /// <param name="offer">The SDP offer to generate an answer for.</param>
+        /// <param name="connectionAddress">Optional. If set this address will be used as 
+        /// the SDP Connection address. If not specified the Operating System routing table
+        /// will be used to lookup the address used to connect to the SDP connection address
+        /// from the remote offer.</param>
         /// <returns>A task that when complete contains the SDP answer.</returns>
         /// <remarks>As specified in https://tools.ietf.org/html/rfc3264#section-6.1.
         ///  "If the answerer has no media formats in common for a particular
         ///   offered stream, the answerer MUST reject that media stream by setting
         ///   the port to zero."
         /// </remarks>
-        public SDP CreateAnswer()
+        public SDP CreateAnswer(IPAddress connectionAddress)
         {
             if (RemoteDescription == null)
             {
@@ -621,9 +607,22 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                var offerAnnouncementAddress = IPAddress.Parse(offer.Connection.ConnectionAddress);
+                if (connectionAddress == null)
+                {
+                    // No specific connection address supplied. Lookup the local address to connect to the offer address.
+                    var offerConnectionAddress = (offer.Connection?.ConnectionAddress != null) ? IPAddress.Parse(offer.Connection.ConnectionAddress) : null;
 
-                var answerSdp = GetSessionDesciption(tracks, offerAnnouncementAddress);
+                    if (offerConnectionAddress == null || offerConnectionAddress == IPAddress.Any || offerConnectionAddress == IPAddress.IPv6Any)
+                    {
+                        connectionAddress = NetServices.InternetDefaultAddress;
+                    }
+                    else
+                    {
+                        connectionAddress = NetServices.GetLocalAddressForRemote(offerConnectionAddress);
+                    }
+                }
+
+                var answerSdp = GetSessionDesciption(tracks, connectionAddress);
 
                 return answerSdp;
             }
@@ -1383,12 +1382,6 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data received.</param>
         private void OnReceive(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] buffer)
         {
-            //if (m_lastReceiveFromEndPoint == null || !m_lastReceiveFromEndPoint.Equals(remoteEndPoint))
-            //{
-            //    OnReceiveFromEndPointChanged?.Invoke(m_lastReceiveFromEndPoint, remoteEndPoint);
-            //    m_lastReceiveFromEndPoint = remoteEndPoint;
-            //}
-
             // Quick sanity check on whether this is not an RTP or RTCP packet.
             if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {

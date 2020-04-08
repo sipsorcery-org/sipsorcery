@@ -149,12 +149,12 @@ namespace SIPSorcery.UnitTests
             IsClosed = true;
         }
 
-        public SDP CreateAnswer()
+        public SDP CreateAnswer(IPAddress connectionAddress)
         {
             SDP answerSdp = new SDP(IPAddress.Loopback);
             answerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
 
-            answerSdp.Connection = new SDPConnectionInformation(IPAddress.Loopback);
+            answerSdp.Connection = new SDPConnectionInformation(connectionAddress ?? IPAddress.Loopback);
 
             SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
                 SDPMediaTypesEnum.audio,
@@ -173,7 +173,7 @@ namespace SIPSorcery.UnitTests
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = Crypto.GetRandomInt(5).ToString();
 
-            offerSdp.Connection = new SDPConnectionInformation(connectionAddress);
+            offerSdp.Connection = new SDPConnectionInformation(connectionAddress ?? IPAddress.Loopback);
 
             SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
                 SDPMediaTypesEnum.audio,

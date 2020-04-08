@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\SIPSorcery.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="media\Macroform_-_Simplicity.alaw">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
