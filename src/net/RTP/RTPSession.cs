@@ -1391,7 +1391,7 @@ namespace SIPSorcery.Net
                 }
                 else if (buffer[1] == 0xC8 /* RTCP SR */ || buffer[1] == 0xC9 /* RTCP RR */)
                 {
-                    //logger.LogDebug($"RTCP packet received from {remoteEndPoint} before: {buffer.HexStr()}");
+                    //logger.LogDebug($"RTCP packet received from {remoteEndPoint} {buffer.HexStr()}");
 
                     #region RTCP packet.
 
@@ -1426,6 +1426,24 @@ namespace SIPSorcery.Net
                             var rtcpSession = GetRtcpSession(rtcpPkt);
                             if (rtcpSession != null)
                             {
+                                if (rtcpSession.LastActivityAt == DateTime.MinValue)
+                                {
+                                    // On the first received RTCP report for a session check whether the remote end point matches the
+                                    // expected remote end point. If not it's "likely" that a private IP address was specified in the SDP.
+                                    // Take the risk and switch the remote control end point to the one we are receiving from.
+
+                                    if (rtcpSession == m_audioRtcpSession && AudioControlDestinationEndPoint != remoteEndPoint)
+                                    {
+                                        logger.LogDebug($"Audio control end point switched to {remoteEndPoint}.");
+                                        AudioControlDestinationEndPoint = remoteEndPoint;
+                                    }
+                                    else if (rtcpSession == m_videoRtcpSession && VideoControlDestinationEndPoint != remoteEndPoint)
+                                    {
+                                        logger.LogDebug($"Video control end point switched to {remoteEndPoint}.");
+                                        VideoControlDestinationEndPoint = remoteEndPoint;
+                                    }
+                                }
+
                                 rtcpSession.ReportReceived(remoteEndPoint, rtcpPkt);
                                 OnReceiveReport?.Invoke(rtcpSession.MediaType, rtcpPkt);
                             }
@@ -1491,11 +1509,31 @@ namespace SIPSorcery.Net
                             {
                                 logger.LogDebug($"Set remote audio track SSRC to {rtpPacket.Header.SyncSource}.");
                                 AudioRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
+
+                                if(AudioDestinationEndPoint != remoteEndPoint)
+                                {
+                                    logger.LogDebug($"Audio end point switched to {remoteEndPoint}.");
+
+                                    // If the remote end point doesn't match where we are sending then it's likely a private IP address
+                                    // was specified in the SDP. We take the risk that the first packet came from the genuine source and
+                                    // switch the RTP audio end point.
+                                    AudioDestinationEndPoint = remoteEndPoint;
+                                }
                             }
                             else if (rtpMediaType == SDPMediaTypesEnum.video && VideoRemoteTrack?.Ssrc == 0)
                             {
                                 logger.LogDebug($"Set remote video track SSRC to {rtpPacket.Header.SyncSource}.");
                                 VideoRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
+
+                                if (VideoDestinationEndPoint != remoteEndPoint)
+                                {
+                                    logger.LogDebug($"Video end point switched to {remoteEndPoint}.");
+
+                                    // If the remote end point doesn't match where we are sending then it's likely a private IP address
+                                    // was specified in the SDP. We take the risk that the first packet came from the genuine source and
+                                    // switch the RTP video end point.
+                                    VideoDestinationEndPoint = remoteEndPoint;
+                                }
                             }
 
                             SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;

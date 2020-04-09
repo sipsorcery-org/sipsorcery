@@ -89,7 +89,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Timestamp that the last RTP or RTCP packet for was received at.
         /// </summary>
-        public DateTime LastActivityAt { get; private set; }
+        public DateTime LastActivityAt { get; private set; } = DateTime.MinValue;
 
         /// <summary>
         /// Indicates whether the session is currently in a timed out state. This
