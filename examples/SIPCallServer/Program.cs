@@ -284,7 +284,9 @@ namespace SIPSorcery
         /// <summary>
         /// Example of how to create a basic RTP session object and hook up the event handlers.
         /// </summary>
-        /// <param name="ua">The suer agent the RTP session is being created for.</param>
+        /// <param name="ua">The user agent the RTP session is being created for.</param>
+        /// <param name="dst">THe destination specified on an incoming call. Can be used to
+        /// set the audio source.</param>
         /// <returns>A new RTP session object.</returns>
         private static RtpAudioSession CreateRtpSession(SIPUserAgent ua, string dst)
         {
@@ -311,6 +313,14 @@ namespace SIPSorcery
 
             // Wire up the event handler for RTP packets received from the remote party.
             rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(ua, type, rtp);
+            rtpAudioSession.OnTimeout += (mediaType) =>
+            {
+                if (ua?.IsCallActive == true)
+                {
+                    Log.LogWarning($"RTP timeout on call with {ua.Dialogue.RemoteTarget}, hanging up.");
+                    ua.Hangup();
+                }
+            };
 
             return rtpAudioSession;
         }
