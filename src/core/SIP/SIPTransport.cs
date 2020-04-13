@@ -844,6 +844,11 @@ namespace SIPSorcery.SIP
                                                 sipRequest.Header.Vias.UpateTopViaHeader(remoteEndPoint.GetIPEndPoint());
                                                 requestTransaction.PRACKReceived(localEndPoint, remoteEndPoint, sipRequest);
                                             }
+                                            else if(sipRequest.Method == SIPMethodsEnum.INVITE && (requestTransaction.TransactionState == SIPTransactionStatesEnum.Trying ||
+                                                requestTransaction.TransactionState == SIPTransactionStatesEnum.Proceeding))
+                                            {
+                                                return SendResponseAsync(requestTransaction.UnreliableProvisionalResponse);
+                                            }
                                             else
                                             {
                                                 logger.LogWarning("Transaction already exists, ignoring duplicate request, " + sipRequest.Method + " " + sipRequest.URI.ToString() + ".");

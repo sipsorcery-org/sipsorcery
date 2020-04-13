@@ -162,7 +162,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// The most recent non reliable provisional response that was requested to be sent.
         /// </summary>
-        //public SIPResponse ProvisionalResponse { get; internal set; }
+        public SIPResponse UnreliableProvisionalResponse { get; private set; }
 
         /// <summary>
         /// The most recent provisional response that was requested to be sent. If reliable provisional responses
@@ -369,6 +369,7 @@ namespace SIPSorcery.SIP
             if (sipResponse.StatusCode == 100)
             {
                 UpdateTransactionState(SIPTransactionStatesEnum.Trying);
+                UnreliableProvisionalResponse = sipResponse;
                 return m_sipTransport.SendResponseAsync(sipResponse);
             }
             else if (sipResponse.StatusCode > 100 && sipResponse.StatusCode <= 199)
@@ -401,6 +402,7 @@ namespace SIPSorcery.SIP
                 }
                 else
                 {
+                    UnreliableProvisionalResponse = sipResponse;
                     return m_sipTransport.SendResponseAsync(sipResponse);
                 }
             }
