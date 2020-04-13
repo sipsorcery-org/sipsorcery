@@ -22988,6 +22988,19 @@ references:
   commentId: F:SIPSorcery.SIP.SIPTransaction.TransactionType
   fullName: SIPSorcery.SIP.SIPTransaction.TransactionType
   nameWithType: SIPTransaction.TransactionType
+- uid: SIPSorcery.SIP.SIPTransaction.UnreliableProvisionalResponse
+  name: UnreliableProvisionalResponse
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_UnreliableProvisionalResponse
+  commentId: P:SIPSorcery.SIP.SIPTransaction.UnreliableProvisionalResponse
+  fullName: SIPSorcery.SIP.SIPTransaction.UnreliableProvisionalResponse
+  nameWithType: SIPTransaction.UnreliableProvisionalResponse
+- uid: SIPSorcery.SIP.SIPTransaction.UnreliableProvisionalResponse*
+  name: UnreliableProvisionalResponse
+  href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_UnreliableProvisionalResponse_
+  commentId: Overload:SIPSorcery.SIP.SIPTransaction.UnreliableProvisionalResponse
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.SIPTransaction.UnreliableProvisionalResponse
+  nameWithType: SIPTransaction.UnreliableProvisionalResponse
 - uid: SIPSorcery.SIP.SIPTransaction.UpdateTransactionState(SIPSorcery.SIP.SIPTransactionStatesEnum)
   name: UpdateTransactionState(SIPTransactionStatesEnum)
   href: api/SIPSorcery.SIP.SIPTransaction.html#SIPSorcery_SIP_SIPTransaction_UpdateTransactionState_SIPSorcery_SIP_SIPTransactionStatesEnum_
