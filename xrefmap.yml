@@ -4724,6 +4724,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.Dispose
   nameWithType: RTPSession.Dispose
+- uid: SIPSorcery.Net.RTPSession.GetLocalTracks
+  name: GetLocalTracks()
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetLocalTracks
+  commentId: M:SIPSorcery.Net.RTPSession.GetLocalTracks
+  fullName: SIPSorcery.Net.RTPSession.GetLocalTracks()
+  nameWithType: RTPSession.GetLocalTracks()
+- uid: SIPSorcery.Net.RTPSession.GetLocalTracks*
+  name: GetLocalTracks
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetLocalTracks_
+  commentId: Overload:SIPSorcery.Net.RTPSession.GetLocalTracks
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.GetLocalTracks
+  nameWithType: RTPSession.GetLocalTracks
 - uid: SIPSorcery.Net.RTPSession.GetRtpChannel(SIPSorcery.Net.SDPMediaTypesEnum)
   name: GetRtpChannel(SDPMediaTypesEnum)
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_
