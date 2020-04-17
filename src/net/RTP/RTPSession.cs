@@ -84,14 +84,6 @@ namespace SIPSorcery.Net
         public MediaStreamStatusEnum StreamStatus { get; internal set; }
 
         /// <summary>
-        /// For remote tracks only. Indicates the remote party is no longer sending us RTP packets
-        /// matching this track and instead have sent us new information. The terminated track is not
-        /// used or required BUT removing it from the collection would require a lock check on
-        /// every RTP packet. It's easier just to flag the track as terminated and add the new one.
-        /// </summary>
-        internal bool IsTerminated { get; set; }
-
-        /// <summary>
         /// Creates a lightweight class to track a media stream track within an RTP session 
         /// When supporting RFC3550 (the standard RTP specification) the relationship between
         /// an RTP stream and session is 1:1. For WebRTC and RFC8101 there can be multiple
@@ -219,6 +211,7 @@ namespace SIPSorcery.Net
         public const SDPMediaTypesEnum DEFAULT_MEDIA_TYPE = SDPMediaTypesEnum.audio; // If we can't match an RTP payload ID assume it's audio.
         public const int DEFAULT_DTMF_EVENT_PAYLOAD_ID = 101;
         private const string RTP_MEDIA_PROFILE = "RTP/AVP";
+        private const int UNEXPECTED_PERIODIC_WARNING_COUNT = 500;  // Display a warning message for unexpected packet counts.
 
         private static ILogger logger = Log.Logger;
 
@@ -229,24 +222,17 @@ namespace SIPSorcery.Net
         private bool m_isClosed;
         private bool m_isStarted;
 
-        internal List<MediaStreamTrack> m_tracks = new List<MediaStreamTrack>();
         internal Dictionary<SDPMediaTypesEnum, RTPChannel> m_rtpChannels = new Dictionary<SDPMediaTypesEnum, RTPChannel>();
 
         /// <summary>
         /// The local audio stream for this session. Will be null if we are not sending audio.
         /// </summary>
-        internal MediaStreamTrack AudioLocalTrack
-        {
-            get { return m_tracks.SingleOrDefault(x => x.Kind == SDPMediaTypesEnum.audio && !x.IsRemote); }
-        }
+        internal MediaStreamTrack AudioLocalTrack { get; private set; }
 
         /// <summary>
         /// The remote audio track for this session. Will be null if the remote party is not sending audio.
         /// </summary>
-        internal MediaStreamTrack AudioRemoteTrack
-        {
-            get { return m_tracks.SingleOrDefault(x => x.Kind == SDPMediaTypesEnum.audio && x.IsRemote && !x.IsTerminated); }
-        }
+        internal MediaStreamTrack AudioRemoteTrack { get; private set; }
 
         /// <summary>
         /// The reporting session for the audio stream. Will be null if only video is being sent.
@@ -256,18 +242,12 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The local video track for this session. Will be null if we are not sending video.
         /// </summary>
-        internal MediaStreamTrack VideoLocalTrack
-        {
-            get { return m_tracks.SingleOrDefault(x => x.Kind == SDPMediaTypesEnum.video && !x.IsRemote); }
-        }
+        internal MediaStreamTrack VideoLocalTrack { get; private set; }
 
         /// <summary>
         /// The remote video track for this session. Will be null if the remote party is not sending video.
         /// </summary>
-        internal MediaStreamTrack VideoRemoteTrack
-        {
-            get { return m_tracks.SingleOrDefault(x => x.Kind == SDPMediaTypesEnum.video && x.IsRemote && !x.IsTerminated); }
-        }
+        internal MediaStreamTrack VideoRemoteTrack { get; private set; }
 
         /// <summary>
         /// The reporting session for the video stream. Will be null if only audio is being sent.
@@ -346,7 +326,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public bool HasAudio
         {
-            get { return m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.audio); }
+            get { return AudioLocalTrack != null && AudioLocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive 
+                    && AudioRemoteTrack != null && AudioRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive; }
         }
 
         /// <summary>
@@ -354,7 +335,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public bool HasVideo
         {
-            get { return m_tracks.Any(x => x.Kind == SDPMediaTypesEnum.video); }
+            get { return VideoLocalTrack != null && VideoLocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive 
+                    && VideoRemoteTrack != null && VideoRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive; }
         }
 
         /// <summary>
@@ -465,7 +447,7 @@ namespace SIPSorcery.Net
                     {
                         // Need to create a sending SSRC and set it on the RTCP session. 
                         m_audioRtcpSession.Ssrc = track.Ssrc;
-                        m_tracks.Add(track);
+                        AudioLocalTrack = track;
                     }
                 }
                 else
@@ -476,7 +458,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        m_tracks.Add(track);
+                        AudioRemoteTrack = track;
                     }
                 }
             }
@@ -502,7 +484,7 @@ namespace SIPSorcery.Net
                     {
                         // Need to create a sending SSRC and set it on the RTCP session. 
                         m_videoRtcpSession.Ssrc = track.Ssrc;
-                        m_tracks.Add(track);
+                        VideoLocalTrack = track;
                     }
                 }
                 else
@@ -513,7 +495,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        m_tracks.Add(track);
+                        VideoRemoteTrack = track;
                     }
                 }
             }
@@ -536,7 +518,8 @@ namespace SIPSorcery.Net
             }
             else
             {
-                var offerSdp = GetSessionDesciption(m_tracks.Where(x => x.IsRemote == false).ToList(), connectionAddress);
+                List<MediaStreamTrack> localTracks = GetLocalTracks();
+                var offerSdp = GetSessionDesciption(localTracks, connectionAddress);
                 return offerSdp;
             }
         }
@@ -673,11 +656,10 @@ namespace SIPSorcery.Net
                     }
 
                     // If there's an existing remote audio track it needs to be replaced.
-                    var existingRemoteAudioTrack = AudioRemoteTrack;
-                    if (existingRemoteAudioTrack != null)
+                    if (AudioRemoteTrack != null)
                     {
-                        logger.LogDebug($"Setting existing remote audio track for ssrc {existingRemoteAudioTrack.Ssrc} as terminated.");
-                        existingRemoteAudioTrack.IsTerminated = true;
+                        logger.LogDebug($"Removing existing remote audio track for ssrc {AudioRemoteTrack.Ssrc}.");
+                        AudioRemoteTrack = null;
                     }
 
                     logger.LogDebug("Adding remote audio track to session.");
@@ -691,6 +673,8 @@ namespace SIPSorcery.Net
                     {
                         remoteAudioRtpEP = new IPEndPoint(audioAddr, audioAnnounce.Port);
                         remoteAudioRtcpEP = new IPEndPoint(audioAddr, audioAnnounce.Port + 1);
+
+                        logger.LogDebug($"Remote audio end RTP and RTCP points set from remote description to {remoteAudioRtpEP} and {remoteAudioRtcpEP}.");
                     }
 
                     foreach (var mediaFormat in audioAnnounce.MediaFormats)
@@ -717,11 +701,10 @@ namespace SIPSorcery.Net
                     }
 
                     // If there's an existing remote video track it needs to be replaced.
-                    var existingRemoteVideoTrack = VideoRemoteTrack;
-                    if (existingRemoteVideoTrack != null)
+                    if (VideoRemoteTrack != null)
                     {
-                        logger.LogDebug($"Setting existing remote video track for ssrc {existingRemoteVideoTrack.Ssrc} as terminated.");
-                        existingRemoteVideoTrack.IsTerminated = true;
+                        logger.LogDebug($"Removing existing remote video track for ssrc {VideoRemoteTrack.Ssrc}.");
+                        VideoRemoteTrack = null;
                     }
 
                     logger.LogDebug("Adding remote video track to session.");
@@ -735,6 +718,8 @@ namespace SIPSorcery.Net
                     {
                         remoteVideoRtpEP = new IPEndPoint(videoAddr, videoAnnounce.Port);
                         remoteVideoRtcpEP = new IPEndPoint(videoAddr, videoAnnounce.Port + 1);
+
+                        logger.LogDebug($"Remote video end RTP and RTCP points set from remote description to {remoteVideoRtpEP} and {remoteVideoRtcpEP}.");
                     }
                 }
             }
@@ -922,6 +907,28 @@ namespace SIPSorcery.Net
             IsSecureContextReady = true;
 
             logger.LogDebug("Secure context successfully set on RTPSession.");
+        }
+
+        /// <summary>
+        /// Gets the local tracks available in this session. Will only be audio, video or both.
+        /// Local tracks represent an audio or video source that we are sending to the remote party.
+        /// </summary>
+        /// <returns>A list of the local tracks that have been added to this session.</returns>
+        protected List<MediaStreamTrack> GetLocalTracks()
+        {
+            List<MediaStreamTrack> localTracks = new List<MediaStreamTrack>();
+
+            if (AudioLocalTrack != null)
+            {
+                localTracks.Add(AudioLocalTrack);
+            }
+
+            if (VideoLocalTrack != null)
+            {
+                localTracks.Add(VideoLocalTrack);
+            }
+
+            return localTracks;
         }
 
         /// <summary>
@@ -1390,6 +1397,13 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data received.</param>
         private void OnReceive(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] buffer)
         {
+            if(remoteEndPoint.Address.IsIPv4MappedToIPv6)
+            {
+                // Required for matching existing RTP end points (typically set from SDP) and
+                // whether or not the destination end point should be switched.
+                remoteEndPoint.Address = remoteEndPoint.Address.MapToIPv4();
+            }
+
             // Quick sanity check on whether this is not an RTP or RTCP packet.
             if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {
@@ -1451,12 +1465,18 @@ namespace SIPSorcery.Net
                                     // expected remote end point. If not it's "likely" that a private IP address was specified in the SDP.
                                     // Take the risk and switch the remote control end point to the one we are receiving from.
 
-                                    if (rtcpSession == m_audioRtcpSession && AudioControlDestinationEndPoint != remoteEndPoint)
+                                    if (rtcpSession == m_audioRtcpSession && 
+                                        (AudioControlDestinationEndPoint == null || 
+                                        !AudioControlDestinationEndPoint.Address.Equals(remoteEndPoint.Address) ||
+                                        AudioControlDestinationEndPoint.Port != remoteEndPoint.Port))
                                     {
                                         logger.LogDebug($"Audio control end point switched from {AudioControlDestinationEndPoint} to {remoteEndPoint}.");
                                         AudioControlDestinationEndPoint = remoteEndPoint;
                                     }
-                                    else if (rtcpSession == m_videoRtcpSession && VideoControlDestinationEndPoint != remoteEndPoint)
+                                    else if (rtcpSession == m_videoRtcpSession &&
+                                        (VideoControlDestinationEndPoint == null ||
+                                        !VideoControlDestinationEndPoint.Address.Equals(remoteEndPoint.Address) ||
+                                        VideoControlDestinationEndPoint.Port != remoteEndPoint.Port))
                                     {
                                         logger.LogDebug($"Video control end point switched from {VideoControlDestinationEndPoint} to {remoteEndPoint}.");
                                         VideoControlDestinationEndPoint = remoteEndPoint;
@@ -1529,9 +1549,10 @@ namespace SIPSorcery.Net
                                 logger.LogDebug($"Set remote audio track SSRC to {rtpPacket.Header.SyncSource}.");
                                 AudioRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
 
-                                if (AudioDestinationEndPoint == null || !AudioDestinationEndPoint.Equals(remoteEndPoint))
+                                if (AudioDestinationEndPoint == null || !AudioDestinationEndPoint.Address.Equals(remoteEndPoint.Address)
+                                    || AudioDestinationEndPoint.Port != remoteEndPoint.Port)
                                 {
-                                    logger.LogDebug($"Audio end point switched from {AudioDestinationEndPoint} to {remoteEndPoint}.");
+                                    logger.LogDebug($"Audio end point switched for RTP ssrc {rtpPacket.Header.SyncSource} from {AudioDestinationEndPoint} to {remoteEndPoint}.");
 
                                     // If the remote end point doesn't match where we are sending then it's likely a private IP address
                                     // was specified in the SDP. We take the risk that the first packet came from the genuine source and
@@ -1544,9 +1565,10 @@ namespace SIPSorcery.Net
                                 logger.LogDebug($"Set remote video track SSRC to {rtpPacket.Header.SyncSource}.");
                                 VideoRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
 
-                                if (VideoDestinationEndPoint == null || !VideoDestinationEndPoint.Equals(remoteEndPoint))
+                                if (VideoDestinationEndPoint == null || !VideoDestinationEndPoint.Address.Equals(remoteEndPoint.Address)
+                                    || VideoDestinationEndPoint.Port != remoteEndPoint.Port)
                                 {
-                                    logger.LogDebug($"Video end point switched from {VideoDestinationEndPoint} to {remoteEndPoint}.");
+                                    logger.LogDebug($"Video end point switched for RTP ssrc {rtpPacket.Header.SyncSource} from {VideoDestinationEndPoint} to {remoteEndPoint}.");
 
                                     // If the remote end point doesn't match where we are sending then it's likely a private IP address
                                     // was specified in the SDP. We take the risk that the first packet came from the genuine source and
@@ -1556,6 +1578,7 @@ namespace SIPSorcery.Net
                             }
 
                             SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
+
                             OnRtpPacketReceived?.Invoke(mediaType, rtpPacket);
 
                             // Used for reporting purposes.
