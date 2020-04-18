@@ -14,11 +14,26 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// Usage on Linux:
+// The PortAduioSharp package DOES NOT install the required native libraries on
+// Linux.
+//
+// The approach I used to install the PortAudio library on Linux was:
+// - Install Microsoft's C++ pakcage manager (yes it works on Linux) from
+//   https://github.com/microsoft/vcpkg,
+// - Use vcpkg to install PortAudio: ./vcpkg install portaudio,
+// - Build this app using "dotnet run" in the same directory as the project file. It's
+//   expected to build successfully but fail at runtime with an error that it cannot
+//   locate the portaudio library.
+// - Copy the portaudio.so from <vcpkg dir>/installed/x64-linux/lib/portaudio.so to
+//   the bin directory, for example:
+//   aaron@pcdodo:~/src/sipsorcery/examples/GetStartedPortAudio/bin/Debug/netcoreapp3.1$ cp ~/src/vcpkg/installed/x64-linux/lib/libportaudio.so .
+// - Retry "dotnet run". Please report success or failure at https://github.com/sipsorcery/sipsorcery/issues/196.
+
 using System;
 using System.Threading.Tasks;
 using Serilog;
-using PortAudioSharp;
-using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
