@@ -2,13 +2,13 @@
 // Filename: Program.cs
 //
 // Description: A getting started program to demonstrate how to use the SIPSorcery
-// library to place a call targeting the .Net Framework.
+// library to place a call using PortAudio for audio capture and render.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 17 Apr 2020 Aaron Clauson	Created, Dublin, Ireland.
+// 17 Apr 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -17,6 +17,8 @@
 using System;
 using System.Threading.Tasks;
 using Serilog;
+using PortAudioSharp;
+using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -24,7 +26,8 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "time@sipsorcery.com";
+        //private static string DESTINATION = "time@sipsorcery.com";
+        private static string DESTINATION = "*61@192.168.11.48";
 
         static async Task Main()
         {
@@ -34,7 +37,7 @@ namespace demo
 
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new NAudioRtpSession();
+            var rtpSession = new PortAudioRtpSession();
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
@@ -70,3 +73,4 @@ namespace demo
         }
     }
 }
+
