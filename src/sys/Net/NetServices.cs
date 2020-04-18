@@ -35,8 +35,8 @@ namespace SIPSorcery.Sys
     {
         public const int UDP_PORT_START = 1025;
         public const int UDP_PORT_END = 65535;
-        private const int RTP_RECEIVE_BUFFER_SIZE = 100000000;
-        private const int RTP_SEND_BUFFER_SIZE = 100000000;
+        private const int RTP_RECEIVE_BUFFER_SIZE = 1000000; //100000000;
+        private const int RTP_SEND_BUFFER_SIZE = 1000000; //100000000;
         private const int MAXIMUM_RTP_PORT_BIND_ATTEMPTS = 25;  // The maximum number of re-attempts that will be made when trying to bind the RTP port.
         private const string INTERNET_IPADDRESS = "1.1.1.1";    // IP address to use when getting default IP address from OS. No connection is established.
         private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on MacOS).
