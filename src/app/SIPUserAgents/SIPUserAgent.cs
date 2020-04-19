@@ -253,7 +253,7 @@ namespace SIPSorcery.SIP.App
             {
                 callResult.TrySetResult(true);
             };
-            ClientCallFailed += (uac, errorMessage) =>
+            ClientCallFailed += (uac, errorMessage, result) =>
             {
                 callResult.TrySetResult(false);
             };
@@ -298,7 +298,7 @@ namespace SIPSorcery.SIP.App
                 var sdp = mediaSession.CreateOffer(sdpAnnounceAddress);
                 if (sdp == null)
                 {
-                    ClientCallFailed?.Invoke(m_uac, $"Could not generate an offer.");
+                    ClientCallFailed?.Invoke(m_uac, $"Could not generate an offer.", null);
                     CallEnded();
                 }
                 else
@@ -310,7 +310,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
-                ClientCallFailed?.Invoke(m_uac, $"Could not resolve destination when placing call to {sipCallDescriptor.Uri}.");
+                ClientCallFailed?.Invoke(m_uac, $"Could not resolve destination when placing call to {sipCallDescriptor.Uri}.", null);
                 CallEnded();
             }
         }
@@ -934,11 +934,11 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <param name="uac">The client user agent used to initiate the call.</param>
         /// <param name="errorMessage">An error message indicating the reason for the failure.</param>
-        private void ClientCallFailedHandler(ISIPClientUserAgent uac, string errorMessage)
+        private void ClientCallFailedHandler(ISIPClientUserAgent uac, string errorMessage, SIPResponse sipResponse)
         {
             logger.LogWarning($"Call attempt to {m_uac.CallDescriptor.Uri} failed with {errorMessage}.");
 
-            ClientCallFailed?.Invoke(uac, errorMessage);
+            ClientCallFailed?.Invoke(uac, errorMessage, sipResponse);
         }
 
         /// <summary>
@@ -963,7 +963,7 @@ namespace SIPSorcery.SIP.App
             else
             {
                 logger.LogDebug($"Call attempt was answered with failure response {sipResponse.ShortDescription}.");
-                ClientCallFailed?.Invoke(uac, sipResponse.ReasonPhrase);
+                ClientCallFailed?.Invoke(uac, sipResponse.ReasonPhrase, sipResponse);
                 CallEnded();
             }
         }

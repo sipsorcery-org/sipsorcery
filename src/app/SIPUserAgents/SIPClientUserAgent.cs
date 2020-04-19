@@ -229,7 +229,7 @@ namespace SIPSorcery.SIP.App
                     if (m_callCancelled)
                     {
                         Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Call was cancelled during DNS resolution of " + callURI.Host, Owner));
-                        CallFailed?.Invoke(this, "Cancelled by caller");
+                        CallFailed?.Invoke(this, "Cancelled by caller", null);
                     }
                     else if (m_serverEndPoint != null)
                     {
@@ -370,7 +370,7 @@ namespace SIPSorcery.SIP.App
                         else
                         {
                             m_serverTransaction.CancelCall(rtccError);
-                            CallFailed?.Invoke(this, rtccError);
+                            CallFailed?.Invoke(this, rtccError, null);
                         }
 
                         return switchServerInvite;
@@ -381,13 +381,13 @@ namespace SIPSorcery.SIP.App
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Forward leg failed, could not resolve URI host " + callURI.Host, Owner));
                             m_serverTransaction?.CancelCall("Unresolvable destination " + callURI.Host);
-                            CallFailed?.Invoke(this, "unresolvable destination " + callURI.Host);
+                            CallFailed?.Invoke(this, "unresolvable destination " + callURI.Host, null);
                         }
                         else
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Forward leg failed, could not resolve top Route host " + routeSet.TopRoute.Host, Owner));
                             m_serverTransaction?.CancelCall("Unresolvable destination " + routeSet.TopRoute.Host);
-                            CallFailed?.Invoke(this, "unresolvable destination " + routeSet.TopRoute.Host);
+                            CallFailed?.Invoke(this, "unresolvable destination " + routeSet.TopRoute.Host, null);
                         }
                     }
                 }
@@ -395,7 +395,7 @@ namespace SIPSorcery.SIP.App
             catch (ApplicationException appExcp)
             {
                 m_serverTransaction?.CancelCall(appExcp.Message);
-                CallFailed?.Invoke(this, appExcp.Message);
+                CallFailed?.Invoke(this, appExcp.Message, null);
             }
             catch (AggregateException aggExcp)
             {
@@ -404,13 +404,13 @@ namespace SIPSorcery.SIP.App
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Exception UserAgentClient Call. " + innerExcp.Message, Owner));
                 }
                 m_serverTransaction?.CancelCall($"Aggregate exception, inner exception count {aggExcp.InnerExceptions.Count}.");
-                CallFailed?.Invoke(this, aggExcp.InnerExceptions.First().Message);
+                CallFailed?.Invoke(this, aggExcp.InnerExceptions.First().Message, null);
             }
             catch (Exception excp)
             {
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Exception UserAgentClient Call. " + excp.Message, Owner));
                 m_serverTransaction?.CancelCall("Unknown exception");
-                CallFailed?.Invoke(this, excp.Message);
+                CallFailed?.Invoke(this, excp.Message, null);
             }
             return null;
         }
@@ -467,7 +467,7 @@ namespace SIPSorcery.SIP.App
                     m_cancelTransaction.SendRequest();
                 }
 
-                CallFailed?.Invoke(this, "Call cancelled by user.");
+                CallFailed?.Invoke(this, "Call cancelled by user.", null);
             }
             catch (Exception excp)
             {
@@ -567,7 +567,7 @@ namespace SIPSorcery.SIP.App
                         {
                             // No point trying to authenticate if there is no password to use.
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.DialPlan, "Forward leg failed, authentication was requested but no credentials were available.", Owner));
-                            CallFailed?.Invoke(this, "Authentication requested when no credentials available");
+                            CallFailed?.Invoke(this, "Authentication requested when no credentials available", sipResponse);
                         }
                         else if (m_serverAuthAttempts == 0)
                         {
@@ -611,7 +611,7 @@ namespace SIPSorcery.SIP.App
                         }
                         else
                         {
-                            CallFailed?.Invoke(this, "Authentication with provided credentials failed");
+                            CallFailed?.Invoke(this, "Authentication with provided credentials failed", sipResponse);
                         }
                     }
 
@@ -674,7 +674,7 @@ namespace SIPSorcery.SIP.App
         {
             if (!m_callCancelled)
             {
-                CallFailed?.Invoke(this, "Timeout, no response from server");
+                CallFailed?.Invoke(this, "Timeout, no response from server", null);
             }
         }
 
