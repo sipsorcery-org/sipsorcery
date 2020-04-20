@@ -29,7 +29,7 @@ namespace SIPSorcery.SIP.App
 
     // SIP User Agent Delegates.
     public delegate void SIPCallResponseDelegate(ISIPClientUserAgent uac, SIPResponse sipResponse);
-    public delegate void SIPCallFailedDelegate(ISIPClientUserAgent uac, string errorMessage);
+    public delegate void SIPCallFailedDelegate(ISIPClientUserAgent uac, string errorMessage, SIPResponse sipResponse);
     public delegate void SIPUASStateChangedDelegate(ISIPServerUserAgent uas, SIPResponseStatusCodesEnum statusCode, string reasonPhrase);
 
     // Get SIP account(s) from external sources delegate.
