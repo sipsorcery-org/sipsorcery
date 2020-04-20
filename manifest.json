@@ -1881,7 +1881,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPCallFailedDelegate.html",
-          "hash": "oEoIFDa1IX99Y2TUDwvyHw=="
+          "hash": "VJFQsXL3Sv6OUj5Y7JRNhg=="
         }
       },
       "is_incremental": false,
@@ -2205,7 +2205,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPUserAgent.html",
-          "hash": "2cLVg09d7JDsI5igiF7Z0A=="
+          "hash": "cwF9jtD6uF4PtFY3zn6uRA=="
         }
       },
       "is_incremental": false,

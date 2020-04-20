@@ -79,7 +79,7 @@
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_App_SIPCallFailedDelegate_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public delegate void SIPCallFailedDelegate(ISIPClientUserAgent uac, string errorMessage);</code></pre>
+    <pre><code class="lang-csharp hljs">public delegate void SIPCallFailedDelegate(ISIPClientUserAgent uac, string errorMessage, SIPResponse sipResponse);</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -99,6 +99,11 @@
       <tr>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">errorMessage</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPResponse.html">SIPResponse</a></td>
+        <td><span class="parametername">sipResponse</span></td>
         <td></td>
       </tr>
     </tbody>
