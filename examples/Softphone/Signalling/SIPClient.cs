@@ -206,7 +206,8 @@ namespace SIPSorcery.SoftPhone
                     audioOpts = new AudioOptions
                     {
                         AudioSource = AudioSourcesEnum.Microphone,
-                        OutputDeviceIndex = m_audioOutDeviceIndex
+                        OutputDeviceIndex = m_audioOutDeviceIndex,
+                        AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA  }
                     };
                 }
 
@@ -396,7 +397,7 @@ namespace SIPSorcery.SoftPhone
         /// <summary>
         /// An outgoing call was rejected by the remote SIP UAS on an outgoing call.
         /// </summary>
-        private void CallFailed(ISIPClientUserAgent uac, string errorMessage)
+        private void CallFailed(ISIPClientUserAgent uac, string errorMessage, SIPResponse failureResponse)
         {
             StatusMessage(this, "Call failed: " + errorMessage + ".");
             CallFinished(null);

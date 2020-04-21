@@ -427,7 +427,7 @@ namespace SIPSorcery
                 var ua = new SIPUserAgent(sipTransport, null);
                 ua.ClientCallTrying += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
                 ua.ClientCallRinging += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
-                ua.ClientCallFailed += (uac, err) => logger.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
+                ua.ClientCallFailed += (uac, err, resp) => logger.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                 ua.ClientCallAnswered += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
                 var audioOptions = new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.Silence };
