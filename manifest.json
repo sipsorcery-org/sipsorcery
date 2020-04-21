@@ -5,11 +5,23 @@
   "files": [
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.ALawDecoder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.ALawDecoder.html",
+          "hash": "aivi7gy8A5vXs2HWLQFZHw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Media.ALawEncoder.yml",
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.ALawEncoder.html",
-          "hash": "gNhlsc3tJm9hrbPIEbp9Zg=="
+          "hash": "o4w2dNhRlCqJzAc1R6ETsg=="
         }
       },
       "is_incremental": false,
@@ -33,7 +45,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.DummyAudioOptions.html",
-          "hash": "uyGaXlpP3pcZkMAWOv6n5A=="
+          "hash": "PAZrDxgriR6SeQ4UEO59xw=="
         }
       },
       "is_incremental": false,
@@ -45,7 +57,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.DummyAudioSourcesEnum.html",
-          "hash": "aXlV47Xujaf6xKBggqZcYQ=="
+          "hash": "RahbfkugD1x69Q1ZRpNs/A=="
         }
       },
       "is_incremental": false,
@@ -89,11 +101,23 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.MuLawDecoder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.MuLawDecoder.html",
+          "hash": "d4+8sFIta3j231PyKfIZow=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Media.MuLawEncoder.yml",
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.MuLawEncoder.html",
-          "hash": "9bYvtJq8ZSWzspuQVAsuow=="
+          "hash": "hXDQVc4nVgL91D7+LDRkOQ=="
         }
       },
       "is_incremental": false,
@@ -105,7 +129,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.RtpAudioSession.html",
-          "hash": "E/KQgKIAE5kPoxu+aGikAA=="
+          "hash": "LFIBlyLccuZQmJ8u/IW3jw=="
         }
       },
       "is_incremental": false,
@@ -129,7 +153,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.SignalGenerator.html",
-          "hash": "ARgKrtbWLYs98EYau3gcCg=="
+          "hash": "76yeJIDZd27Ex3jg+a3WxA=="
         }
       },
       "is_incremental": false,
@@ -141,7 +165,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.SignalGeneratorType.html",
-          "hash": "gQN3e6ZB8jhIwHP6ObX9Dw=="
+          "hash": "RlZO/Xp9HHLZUDZARgxkNg=="
         }
       },
       "is_incremental": false,
@@ -153,7 +177,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.html",
-          "hash": "KjToYbwpFuGZb/mxlYH4fA=="
+          "hash": "knVwjVSuKpRrqRO6B5rkzg=="
         }
       },
       "is_incremental": false,
@@ -3789,7 +3813,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "Hm3YNBOgEFfAOKYhfxctiA=="
+          "hash": "9//ayivfwHfkSgnPLxPvHQ=="
         }
       },
       "is_incremental": false,
@@ -4045,7 +4069,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 314,
+          "total_file_count": 316,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {

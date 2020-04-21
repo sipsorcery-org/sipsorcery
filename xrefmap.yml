@@ -7,6 +7,25 @@ references:
   commentId: N:SIPSorcery.Media
   fullName: SIPSorcery.Media
   nameWithType: SIPSorcery.Media
+- uid: SIPSorcery.Media.ALawDecoder
+  name: ALawDecoder
+  href: api/SIPSorcery.Media.ALawDecoder.html
+  commentId: T:SIPSorcery.Media.ALawDecoder
+  fullName: SIPSorcery.Media.ALawDecoder
+  nameWithType: ALawDecoder
+- uid: SIPSorcery.Media.ALawDecoder.ALawToLinearSample(System.Byte)
+  name: ALawToLinearSample(Byte)
+  href: api/SIPSorcery.Media.ALawDecoder.html#SIPSorcery_Media_ALawDecoder_ALawToLinearSample_System_Byte_
+  commentId: M:SIPSorcery.Media.ALawDecoder.ALawToLinearSample(System.Byte)
+  fullName: SIPSorcery.Media.ALawDecoder.ALawToLinearSample(System.Byte)
+  nameWithType: ALawDecoder.ALawToLinearSample(Byte)
+- uid: SIPSorcery.Media.ALawDecoder.ALawToLinearSample*
+  name: ALawToLinearSample
+  href: api/SIPSorcery.Media.ALawDecoder.html#SIPSorcery_Media_ALawDecoder_ALawToLinearSample_
+  commentId: Overload:SIPSorcery.Media.ALawDecoder.ALawToLinearSample
+  isSpec: "True"
+  fullName: SIPSorcery.Media.ALawDecoder.ALawToLinearSample
+  nameWithType: ALawDecoder.ALawToLinearSample
 - uid: SIPSorcery.Media.ALawEncoder
   name: ALawEncoder
   href: api/SIPSorcery.Media.ALawEncoder.html
@@ -381,6 +400,25 @@ references:
   commentId: F:SIPSorcery.Media.G722Flags.SampleRate8000
   fullName: SIPSorcery.Media.G722Flags.SampleRate8000
   nameWithType: G722Flags.SampleRate8000
+- uid: SIPSorcery.Media.MuLawDecoder
+  name: MuLawDecoder
+  href: api/SIPSorcery.Media.MuLawDecoder.html
+  commentId: T:SIPSorcery.Media.MuLawDecoder
+  fullName: SIPSorcery.Media.MuLawDecoder
+  nameWithType: MuLawDecoder
+- uid: SIPSorcery.Media.MuLawDecoder.MuLawToLinearSample(System.Byte)
+  name: MuLawToLinearSample(Byte)
+  href: api/SIPSorcery.Media.MuLawDecoder.html#SIPSorcery_Media_MuLawDecoder_MuLawToLinearSample_System_Byte_
+  commentId: M:SIPSorcery.Media.MuLawDecoder.MuLawToLinearSample(System.Byte)
+  fullName: SIPSorcery.Media.MuLawDecoder.MuLawToLinearSample(System.Byte)
+  nameWithType: MuLawDecoder.MuLawToLinearSample(Byte)
+- uid: SIPSorcery.Media.MuLawDecoder.MuLawToLinearSample*
+  name: MuLawToLinearSample
+  href: api/SIPSorcery.Media.MuLawDecoder.html#SIPSorcery_Media_MuLawDecoder_MuLawToLinearSample_
+  commentId: Overload:SIPSorcery.Media.MuLawDecoder.MuLawToLinearSample
+  isSpec: "True"
+  fullName: SIPSorcery.Media.MuLawDecoder.MuLawToLinearSample
+  nameWithType: MuLawDecoder.MuLawToLinearSample
 - uid: SIPSorcery.Media.MuLawEncoder
   name: MuLawEncoder
   href: api/SIPSorcery.Media.MuLawEncoder.html
