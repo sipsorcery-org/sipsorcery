@@ -90,7 +90,7 @@ namespace SIPSorcery
                     rtpSession.Start();
                 }
             };
-            uac.CallFailed += (uac, err) =>
+            uac.CallFailed += (uac, err, resp) =>
             {
                 Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                 hasCallFailed = true;

@@ -1544,7 +1544,7 @@ namespace SIPSorcery.Net
                             }
 
                             // Set the remote track SSRC so that RTCP reports can match the media type.
-                            if (rtpMediaType == SDPMediaTypesEnum.audio && AudioRemoteTrack?.Ssrc == 0)
+                            if (rtpMediaType == SDPMediaTypesEnum.audio && AudioRemoteTrack != null && AudioRemoteTrack.Ssrc == 0)
                             {
                                 logger.LogDebug($"Set remote audio track SSRC to {rtpPacket.Header.SyncSource}.");
                                 AudioRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
@@ -1560,7 +1560,7 @@ namespace SIPSorcery.Net
                                     AudioDestinationEndPoint = remoteEndPoint;
                                 }
                             }
-                            else if (rtpMediaType == SDPMediaTypesEnum.video && VideoRemoteTrack?.Ssrc == 0)
+                            else if (rtpMediaType == SDPMediaTypesEnum.video && VideoRemoteTrack != null && VideoRemoteTrack.Ssrc == 0)
                             {
                                 logger.LogDebug($"Set remote video track SSRC to {rtpPacket.Header.SyncSource}.");
                                 VideoRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
