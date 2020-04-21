@@ -208,11 +208,11 @@ namespace demo
 
                     if (rtpPacket.Header.PayloadType == (int)SDPMediaFormatsEnum.PCMA)
                     {
-                        pcm = ALawDecoder.ALawToLinearSample(sample[index]);
+                        pcm = SIPSorcery.Media.ALawDecoder.ALawToLinearSample(sample[index]);
                     }
                     else
                     {
-                        pcm = MuLawDecoder.MuLawToLinearSample(sample[index]);
+                        pcm = SIPSorcery.Media.MuLawDecoder.MuLawToLinearSample(sample[index]);
                     }
 
                     outputSamples[index] = pcm * NORMALISE_FACTOR;
