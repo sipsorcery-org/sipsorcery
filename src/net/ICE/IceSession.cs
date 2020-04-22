@@ -334,6 +334,11 @@ namespace SIPSorcery.Net
         {
             RemoteIceUser = username;
             RemoteIcePassword = password;
+
+            // Once the remote party's ICE credentials are known connection checking can 
+            // commence immediately as candidates trickle in.
+            ConnectionState = RTCIceConnectionState.checking;
+            OnIceConnectionStateChange?.Invoke(ConnectionState);
         }
 
         public void Close(string reason)
@@ -353,16 +358,11 @@ namespace SIPSorcery.Net
         {
             if (!_remoteCandidates.Any(x => x.foundation == candidate.foundation))
             {
+                // Have a remote candidate. Connectivity checks can start. Note because we support ICE trickle
+                // we may also still be gathering candidates. Connectivity checks and gathering can be done in parallel.
+
                 _remoteCandidates.Add(candidate);
                 UpdateChecklist(candidate);
-
-                if (ConnectionState == RTCIceConnectionState.@new)
-                {
-                    // Have a remote candidate. Connectivity checks can start. Note because we support ICE trickle
-                    // we may also still be gathering candidates. Connectivity checks and gathering can be done in parallel.
-                    ConnectionState = RTCIceConnectionState.checking;
-                    OnIceConnectionStateChange?.Invoke(ConnectionState);
-                }
             }
             else
             {
@@ -560,11 +560,6 @@ namespace SIPSorcery.Net
                     peerRflxCandidate.SetAddressProperties(RTCIceProtocol.udp, remoteEndPoint.Address, (ushort)remoteEndPoint.Port, RTCIceCandidateType.prflx, null, 0);
                     logger.LogDebug($"Adding peer reflex ICE candidate for {remoteEndPoint}.");
                     _remoteCandidates.Add(peerRflxCandidate);
-
-                    // Some browsers require a STUN binding request from our end before the DTLS handshake will be initiated.
-                    // The STUN connectivity checks are already scheduled but we can speed things up by sending a binding
-                    // request immediately.
-                    //SendStunConnectivityChecks(null);
                 }
             }
             else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingSuccessResponse)
@@ -637,9 +632,10 @@ namespace SIPSorcery.Net
             {
                 if (ConnectionState == RTCIceConnectionState.checking && _checklist != null && _checklist.Count > 0)
                 {
-                    if (RemoteIceUser != null || RemoteIcePassword == null)
+                    if (RemoteIceUser == null || RemoteIcePassword == null)
                     {
                         logger.LogWarning("ICE session checklist processing cannot occur as either the remote ICE user or password are not set.");
+                        ConnectionState = RTCIceConnectionState.failed;
                     }
                     else
                     {

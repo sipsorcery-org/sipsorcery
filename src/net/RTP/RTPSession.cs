@@ -211,7 +211,7 @@ namespace SIPSorcery.Net
         public const SDPMediaTypesEnum DEFAULT_MEDIA_TYPE = SDPMediaTypesEnum.audio; // If we can't match an RTP payload ID assume it's audio.
         public const int DEFAULT_DTMF_EVENT_PAYLOAD_ID = 101;
         private const string RTP_MEDIA_PROFILE = "RTP/AVP";
-        private const int UNEXPECTED_PERIODIC_WARNING_COUNT = 500;  // Display a warning message for unexpected packet counts.
+        private const int SDP_SESSIONID_LENGTH = 10;             // The length of the pseudo-random string to use for the session ID.
 
         private static ILogger logger = Log.Logger;
 
@@ -221,6 +221,9 @@ namespace SIPSorcery.Net
         private uint m_lastRtpTimestamp;                // The last timestamp used in an RTP packet.    
         private bool m_isClosed;
         private bool m_isStarted;
+
+        private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
+        private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
 
         internal Dictionary<SDPMediaTypesEnum, RTPChannel> m_rtpChannels = new Dictionary<SDPMediaTypesEnum, RTPChannel>();
 
@@ -397,6 +400,8 @@ namespace SIPSorcery.Net
             m_isMediaMultiplexed = isMediaMultiplexed;
             m_isRtcpMultiplexed = isRtcpMultiplexed;
             IsSecure = isSecure;
+
+            m_sdpSessionID = Crypto.GetRandomInt(SDP_SESSIONID_LENGTH).ToString();
         }
 
         /// <summary>
@@ -747,10 +752,12 @@ namespace SIPSorcery.Net
             if (kind == SDPMediaTypesEnum.audio && AudioLocalTrack != null)
             {
                 AudioLocalTrack.StreamStatus = status;
+                m_sdpAnnouncementVersion++;
             }
             else if (kind == SDPMediaTypesEnum.video && VideoLocalTrack != null)
             {
                 VideoLocalTrack.StreamStatus = status;
+                m_sdpAnnouncementVersion++;
             }
         }
 
@@ -803,7 +810,8 @@ namespace SIPSorcery.Net
             }
 
             SDP sdp = new SDP(IPAddress.Loopback);
-            sdp.SessionId = Crypto.GetRandomInt(5).ToString();
+            sdp.SessionId = m_sdpSessionID;
+            sdp.AnnouncementVersion = m_sdpAnnouncementVersion;
 
             sdp.Connection = new SDPConnectionInformation(localAddress);
 
