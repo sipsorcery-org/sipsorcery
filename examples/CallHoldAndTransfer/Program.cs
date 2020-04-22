@@ -35,10 +35,10 @@ namespace SIPSorcery
     class Program
     {
         private static int SIP_LISTEN_PORT = 5060;
-        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:*61@192.168.11.48";
+        private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7001@192.168.11.24";
         //private static readonly string DEFAULT_DESTINATION_SIP_URI = "sip:7000@192.168.11.48";
-        private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.48";  // The destination to transfer the initial call to.
-        private static readonly string SIP_USERNAME = "7001";
+        private static readonly string TRANSFER_DESTINATION_SIP_URI = "sip:*60@192.168.11.24";  // The destination to transfer the initial call to.
+        private static readonly string SIP_USERNAME = "7000";
         private static readonly string SIP_PASSWORD = "password";
         private static int TRANSFER_TIMEOUT_SECONDS = 10;                    // Give up on transfer if no response within this period.
         private const string AUDIO_FILE_PCMU = "media/Macroform_-_Simplicity.ulaw";
@@ -67,7 +67,7 @@ namespace SIPSorcery
 
             Console.WriteLine($"Listening for incoming calls on: {sipTransport.GetSIPChannels().First().ListeningEndPoint}.");
 
-            //EnableTraceLogs(sipTransport);
+            EnableTraceLogs(sipTransport);
 
             _currentDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
