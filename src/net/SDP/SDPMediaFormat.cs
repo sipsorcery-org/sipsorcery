@@ -280,7 +280,7 @@ namespace SIPSorcery.Net
             foreach (var format in a)
             {
                 // TODO: Need to compare all aspects of the format not just the codec.
-                if (format.FormatAttribute?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) != true 
+                if (format.FormatAttribute?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) != true
                     && b.Any(x => x.FormatCodec == format.FormatCodec))
                 {
                     compatible.Add(format);

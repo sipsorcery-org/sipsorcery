@@ -333,7 +333,7 @@ namespace SIPSorcery.Net
 
                 SdpSessionID = remoteSdp.SessionId;
 
-                if(init.type == RTCSdpType.answer)
+                if (init.type == RTCSdpType.answer)
                 {
                     IceSession.IsController = true;
                 }

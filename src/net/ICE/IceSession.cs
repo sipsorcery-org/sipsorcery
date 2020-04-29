@@ -646,7 +646,7 @@ namespace SIPSorcery.Net
 
                             var nextEntry = _checklist.Where(x => x.State == ChecklistEntryState.Waiting).FirstOrDefault();
 
-                            if(nextEntry != null)
+                            if (nextEntry != null)
                             {
                                 DoConnectivityCheck(nextEntry);
                             }
