@@ -7482,6 +7482,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetClockRate
   nameWithType: SDPMediaFormatInfo.GetClockRate
+- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate(SIPSorcery.Net.SDPMediaFormatsEnum)
+  name: GetRtpClockRate(SDPMediaFormatsEnum)
+  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetRtpClockRate_SIPSorcery_Net_SDPMediaFormatsEnum_
+  commentId: M:SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate(SIPSorcery.Net.SDPMediaFormatsEnum)
+  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate(SIPSorcery.Net.SDPMediaFormatsEnum)
+  nameWithType: SDPMediaFormatInfo.GetRtpClockRate(SDPMediaFormatsEnum)
+- uid: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate*
+  name: GetRtpClockRate
+  href: api/SIPSorcery.Net.SDPMediaFormatInfo.html#SIPSorcery_Net_SDPMediaFormatInfo_GetRtpClockRate_
+  commentId: Overload:SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate
+  isSpec: "True"
+  fullName: SIPSorcery.Net.SDPMediaFormatInfo.GetRtpClockRate
+  nameWithType: SDPMediaFormatInfo.GetRtpClockRate
 - uid: SIPSorcery.Net.SDPMediaFormatsEnum
   name: SDPMediaFormatsEnum
   href: api/SIPSorcery.Net.SDPMediaFormatsEnum.html
