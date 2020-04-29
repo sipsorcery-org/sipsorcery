@@ -246,19 +246,18 @@ namespace SIPSorcery.Media
                 uint bufferSize = SAMPLE_RATE / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
 
                 byte[] sample = new byte[bufferSize / 2];
-                int sampleIndex = 0;
 
                 for (int index = 0; index < bufferSize; index += 2)
                 {
                     if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMA)
                     {
-                        sample[sampleIndex] = PCMA_SILENCE_BYTE_ZERO;
-                        sample[sampleIndex + 1] = PCMA_SILENCE_BYTE_ONE;
+                        sample[index] = PCMA_SILENCE_BYTE_ZERO;
+                        sample[index + 1] = PCMA_SILENCE_BYTE_ONE;
                     }
                     else if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMU)
                     {
-                        sample[sampleIndex] = PCMU_SILENCE_BYTE_ZERO;
-                        sample[sampleIndex + 1] = PCMU_SILENCE_BYTE_ONE;
+                        sample[index] = PCMU_SILENCE_BYTE_ZERO;
+                        sample[index + 1] = PCMU_SILENCE_BYTE_ONE;
                     }
                     else
                     {
