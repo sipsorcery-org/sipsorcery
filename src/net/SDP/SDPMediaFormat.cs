@@ -70,6 +70,24 @@ namespace SIPSorcery.Net
                     return 0;
             }
         }
+
+        /// <summary>
+        /// Attempts to get the RTP clock rate of known payload types. Generally this will be the same
+        /// as the clock rate but in some cases for seemingly historical reasons they are different
+        /// </summary>
+        /// <param name="mediaType">The media type to get the clock rate for.</param>
+        /// <returns>An integer representing the payload type's RTP timestamp frequency or 0
+        /// if it's not known.</returns>
+        public static int GetRtpClockRate(SDPMediaFormatsEnum payloadType)
+        {
+            switch (payloadType)
+            {
+                case SDPMediaFormatsEnum.G722:
+                    return 8000;
+                default:
+                    return GetClockRate(payloadType);
+            }
+        }
     }
 
     /// <summary>
