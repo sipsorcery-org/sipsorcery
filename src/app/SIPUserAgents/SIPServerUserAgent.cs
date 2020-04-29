@@ -112,7 +112,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         public SDP OfferSDP
         {
-            get 
+            get
             {
                 if (!String.IsNullOrEmpty(m_uasTransaction.TransactionRequest.Body))
                 {
@@ -428,13 +428,13 @@ namespace SIPSorcery.SIP.App
                         }
                     }
 
-                    if(OfferSDP == null)
+                    if (OfferSDP == null)
                     {
                         // The INVITE request did not contain an SDP offer. We need to send the offer in the response and
                         // then get the answer from the ACK.
                         m_uasTransaction.OnAckReceived += OnAckAnswerReceived;
                     }
-                   
+
                     m_uasTransaction.SendFinalResponse(okResponse);
 
                     if (OfferSDP != null)
@@ -461,7 +461,7 @@ namespace SIPSorcery.SIP.App
         }
 
         private Task<SocketError> OnAckAnswerReceived(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPTransaction sipTransaction, SIPRequest sipRequest)
-        { 
+        {
             SIPDialogue = new SIPDialogue(m_uasTransaction, m_owner, m_adminMemberId);
             SIPDialogue.TransferMode = m_transferMode;
 

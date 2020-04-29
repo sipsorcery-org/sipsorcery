@@ -165,7 +165,7 @@ namespace SIPSorcery.Net
             sdpMLineIndex = init.sdpMLineIndex;
             usernameFragment = init.usernameFragment;
 
-            if(!String.IsNullOrEmpty(init.candidate))
+            if (!String.IsNullOrEmpty(init.candidate))
             {
                 var iceCandidate = Parse(init.candidate);
                 foundation = iceCandidate.foundation;
@@ -180,9 +180,9 @@ namespace SIPSorcery.Net
         }
 
         public void SetAddressProperties(
-            RTCIceProtocol cProtocol, 
-            IPAddress cAddress, 
-            ushort cPort, 
+            RTCIceProtocol cProtocol,
+            IPAddress cAddress,
+            ushort cPort,
             RTCIceCandidateType cType,
             IPAddress cRelatedAddress,
             ushort cRelatedPort)
@@ -295,9 +295,9 @@ namespace SIPSorcery.Net
 
         private ulong GetPriority()
         {
-             return (ulong) ((2 ^ 24) * (126 - type.GetHashCode()) +
-                       (2 ^ 8) * (65535) + // TODO: Add some kind of priority to different local IP addresses if needed.
-                       (2 ^ 0) * (256 - component.GetHashCode()));
+            return (ulong)((2 ^ 24) * (126 - type.GetHashCode()) +
+                      (2 ^ 8) * (65535) + // TODO: Add some kind of priority to different local IP addresses if needed.
+                      (2 ^ 0) * (256 - component.GetHashCode()));
         }
 
         public RTCIceCandidateInit toJSON()

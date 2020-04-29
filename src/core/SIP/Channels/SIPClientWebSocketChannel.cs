@@ -409,7 +409,7 @@ namespace SIPSorcery.SIP
         /// <param name="bytesRead">The bytes that were read by the latest receive operation (the new bytes available).</param>
         private void ExtractSIPMessages(SIPChannel recvChannel, ClientWebSocketConnection clientConn, ArraySegment<byte> buffer, int bytesRead)
         {
-            if(bytesRead + clientConn.RecvEndPosn > clientConn.PendingReceiveBuffer.Length)
+            if (bytesRead + clientConn.RecvEndPosn > clientConn.PendingReceiveBuffer.Length)
             {
                 // Don't have enough space for the read. Throw away the pending buffer and hope the SIP transaction is re-attempted.
                 clientConn.RecvStartPosn = clientConn.RecvEndPosn = 0;

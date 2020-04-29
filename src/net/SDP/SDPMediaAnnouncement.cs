@@ -173,7 +173,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            if(IceOptions != null)
+            if (IceOptions != null)
             {
                 announcement += $"a={SDP.ICE_OPTIONS}:" + IceOptions + m_CRLF;
             }

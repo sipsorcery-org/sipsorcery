@@ -329,8 +329,11 @@ namespace SIPSorcery.Net
         /// </summary>
         public bool HasAudio
         {
-            get { return AudioLocalTrack != null && AudioLocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive 
-                    && AudioRemoteTrack != null && AudioRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive; }
+            get
+            {
+                return AudioLocalTrack != null && AudioLocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
+                  && AudioRemoteTrack != null && AudioRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+            }
         }
 
         /// <summary>
@@ -338,8 +341,11 @@ namespace SIPSorcery.Net
         /// </summary>
         public bool HasVideo
         {
-            get { return VideoLocalTrack != null && VideoLocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive 
-                    && VideoRemoteTrack != null && VideoRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive; }
+            get
+            {
+                return VideoLocalTrack != null && VideoLocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
+                  && VideoRemoteTrack != null && VideoRemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+            }
         }
 
         /// <summary>
@@ -1405,7 +1411,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data received.</param>
         private void OnReceive(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] buffer)
         {
-            if(remoteEndPoint.Address.IsIPv4MappedToIPv6)
+            if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
             {
                 // Required for matching existing RTP end points (typically set from SDP) and
                 // whether or not the destination end point should be switched.
@@ -1473,8 +1479,8 @@ namespace SIPSorcery.Net
                                     // expected remote end point. If not it's "likely" that a private IP address was specified in the SDP.
                                     // Take the risk and switch the remote control end point to the one we are receiving from.
 
-                                    if (rtcpSession == m_audioRtcpSession && 
-                                        (AudioControlDestinationEndPoint == null || 
+                                    if (rtcpSession == m_audioRtcpSession &&
+                                        (AudioControlDestinationEndPoint == null ||
                                         !AudioControlDestinationEndPoint.Address.Equals(remoteEndPoint.Address) ||
                                         AudioControlDestinationEndPoint.Port != remoteEndPoint.Port))
                                     {

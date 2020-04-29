@@ -58,8 +58,8 @@ namespace SIPSorcery.Sys
         /// <summary>
         /// The list of IP addresses that this machine can use.
         /// </summary>
-        public static List<IPAddress> LocalIPAddresses 
-        { 
+        public static List<IPAddress> LocalIPAddresses
+        {
             get
             {
                 // TODO: Reset if the local network interfaces change.
@@ -76,12 +76,12 @@ namespace SIPSorcery.Sys
         /// <summary>
         /// The local IP address this machine uses to communicate with the Internet.
         /// </summary>
-        public static IPAddress InternetDefaultAddress 
-        { 
+        public static IPAddress InternetDefaultAddress
+        {
             get
             {
                 // TODO: Reset if the local network interfaces change.
-                if(_internetDefaultAddress == null)
+                if (_internetDefaultAddress == null)
                 {
                     _internetDefaultAddress = GetLocalAddressForInternet();
                 }
