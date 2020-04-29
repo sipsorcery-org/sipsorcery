@@ -1024,6 +1024,9 @@ namespace SIPSorcery.SIP.App
             m_uac = null;
             m_uas = null;
 
+            IsOnLocalHold = false;
+            IsOnRemoteHold = false;
+
             if (MediaSession != null && !MediaSession.IsClosed)
             {
                 MediaSession.Close("normal");
