@@ -5,9 +5,9 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>WebRTC Session </title>
+    <title>Real-time Communication Connection (aka WebRTC Session/Connection) </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="WebRTC Session ">
+    <meta name="title" content="Real-time Communication Connection (aka WebRTC Session/Connection) ">
     <meta name="generator" content="docfx 2.52.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
@@ -67,14 +67,14 @@
         <div class="article row grid-right">
           <div class="col-md-10">
             <article class="content wrap" id="_content" data-uid="">
-<h2 id="webrtc-session">WebRTC Session</h2>
+<h2 id="real-time-communication-connection-aka-webrtc-sessionconnection">Real-time Communication Connection (aka WebRTC Session/Connection)</h2>
 
-<p>The <a href="xref:SIPSorcery.Net.WebRtcSession">WebRtcSession</a> class is intended to be the equivalent of the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> available in WebRTC supporting Browsers.</p>
-<p><strong>NOTE</strong> the goal for <a href="xref:SIPSorcery.Net.WebRtcSession">WebRtcSession</a> class' public interface is to make it as close as possible to the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> interface. This is currently a work in progress.</p>
+<p>The <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> class is intended to be the equivalent of the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> available in WebRTC supporting Browsers.</p>
+<p><strong>NOTE</strong> the goal for <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a>) class' public interface is to make it as close as possible to the <a href="https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface">RTCPeerConnection</a> interface. This is currently a work in progress.</p>
 <h3 id="usage">Usage</h3>
-<p>The steps involved in getting a WebRTC session to a state where RTP media packets can be exchanged are:</p>
+<p>The steps involved in getting a WebRTC connection to a state where RTP media packets can be exchanged are:</p>
 <ul>
-<li>Instantiate the <a href="xref:SIPSorcery.Net.WebRtcSession">WebRtcSession</a> instance,</li>
+<li>Instantiate the <a class="xref" href="../api/SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a> instance,</li>
 <li>Add the audio and/or video tracks as required,</li>
 <li>Call the <code>createOffer</code> method to acquire an SDP offer that can be sent to the remote peer,</li>
 <li>Send the SDP offer and get the SDP answer from the remote peer (this exchange is not part of the WebRTC specification and can be done using any signalling layer, examples are SIP, web sockets etc),</li>
@@ -94,53 +94,63 @@ const string DTLS_CERTIFICATE_PATH = &quot;certs/localhost.pem&quot;;
 const string DTLS_KEY_PATH = &quot;certs/localhost_key.pem&quot;;
 const string DTLS_CERTIFICATE_FINGERPRINT = &quot;sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD&quot;;
 
-var webRtcSession = new WebRtcSession(
-        AddressFamily.InterNetwork,
-        DTLS_CERTIFICATE_FINGERPRINT,
-        null,
-        null);
+{
+	certificates = new List&lt;RTCCertificate&gt;
+	{
+		new RTCCertificate
+		{
+			X_CertificatePath = DTLS_CERTIFICATE_PATH,
+			X_KeyPath = DTLS_KEY_PATH,
+			X_Fingerprint = DTLS_CERTIFICATE_FINGERPRINT
+		}
+	}
+};
+
+var rtcPeerConnection = new RTCPeerConnection(pcConfiguration);
 
 // Add the required media tracks to the session.
-webRtcSession.addTrack(SDPMediaTypesEnum.audio, new List&lt;SDPMediaFormat&gt; { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
-webRtcSession.addTrack(SDPMediaTypesEnum.video, new List&lt;SDPMediaFormat&gt; { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+MediaStreamTrack audioTrack = new MediaStreamTrack(&quot;0&quot;, SDPMediaTypesEnum.audio, false, new List&lt;SDPMediaFormat&gt; { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+rtcPeerConnection.addTrack(audioTrack);
+MediaStreamTrack videoTrack = new MediaStreamTrack(&quot;1&quot;, SDPMediaTypesEnum.video, false, new List&lt;SDPMediaFormat&gt; { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+rtcPeerConnection.addTrack(videoTrack);
 
 // Create our SDP offer.
-var offerSdp = await webRtcSession.createOffer();
-webRtcSession.setLocalDescription(offerSdp);
-            
+var offerSdp = await rtcPeerConnection.createOffer(null);
+await rtcPeerConnection.setLocalDescription(offerSdp);
+
 // Send our SDP offer to remote peer and get their SDP answer.
 //var answerSDP = SDP.ParseSDPDescription(sdpAnswer);
-//webRtcSession.setRemoteDescription(SdpType.answer, answerSDP);
+//rtcPeerConnection.setRemoteDescription(SdpType.answer, answerSDP);
 
 // Once the SDP offer/answer exchange has happened the ICE negotiation can commence.
 // Once complete the DTLS handshake needs to occur to obtain the keying material to 
 // use to initialise the SRTP context.
 var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-dtls.DoHandshakeAsServer((ulong)webRtcSession.RtpSession.RtpChannel.RtpSocket.Handle);
+dtls.DoHandshakeAsServer((ulong)rtcPeerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
 
 if (dtls.IsHandshakeComplete())
 {
-    Console.WriteLine(&quot;DTLS handshake completed successfully.&quot;);
+	Console.WriteLine(&quot;DTLS handshake completed successfully.&quot;);
 
-    // The DTLS handshake completed successfully.
-    // Initialise the SRTP contexts for the RTP and RTCP sessions
-    // in this WebRTC session.
-    var srtpSendContext = new Srtp(dtls, false);
-    var srtpReceiveContext = new Srtp(dtls, true);
+	// The DTLS handshake completed successfully.
+	// Initialise the SRTP contexts for the RTP and RTCP sessions
+	// in this WebRTC session.
+	var srtpSendContext = new Srtp(dtls, false);
+	var srtpReceiveContext = new Srtp(dtls, true);
 
-    webRtcSession.RtpSession.SetSecurityContext(
-        srtpSendContext.ProtectRTP,
-        srtpReceiveContext.UnprotectRTP,
-        srtpSendContext.ProtectRTCP,
-        srtpReceiveContext.UnprotectRTCP);
-
-    webRtcSession.IsDtlsNegotiationComplete = true;
+	rtcPeerConnection.SetSecurityContext(
+		srtpSendContext.ProtectRTP,
+		srtpReceiveContext.UnprotectRTP,
+		srtpSendContext.ProtectRTCP,
+		srtpReceiveContext.UnprotectRTCP);
 }
 else
 {
-    Console.WriteLine(&quot;DTLS handshake failed.&quot;);
-    webRtcSession.Close(&quot;dtls failure&quot;);
+	Console.WriteLine(&quot;DTLS handshake failed.&quot;);
+	rtcPeerConnection.Close(&quot;dtls failure&quot;);
 }
+
+// If the DTLS key exchange succeeded then secure RTP packets can now be exchanged between the peers.
 </code></pre>
 </article>
           </div>
