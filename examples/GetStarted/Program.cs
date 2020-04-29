@@ -17,9 +17,11 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Media;
+using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -27,7 +29,7 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "time@sipsorcery.com";
+        private static string DESTINATION = "aaronbria@172.30.48.1:7060";
 
         static async Task Main()
         {
@@ -36,8 +38,11 @@ namespace demo
             AddConsoleLogger();
 
             var sipTransport = new SIPTransport();
+
+            EnableTraceLogs(sipTransport);
+
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+            var rtpSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.Microphone, AudioCodecs = new List<SDPMediaFormatsEnum>{ SDPMediaFormatsEnum.PCMU } }, null);
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
@@ -65,11 +70,51 @@ namespace demo
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
             var loggerConfig = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Information)
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()
                 .CreateLogger();
             loggerFactory.AddSerilog(loggerConfig);
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
+        }
+
+        /// <summary>
+        /// Enable detailed SIP log messages.
+        /// </summary>
+        private static void EnableTraceLogs(SIPTransport sipTransport)
+        {
+            sipTransport.SIPRequestInTraceEvent += (localEP, remoteEP, req) =>
+            {
+                Console.WriteLine($"Request received: {localEP}<-{remoteEP}");
+                Console.WriteLine(req.ToString());
+            };
+
+            sipTransport.SIPRequestOutTraceEvent += (localEP, remoteEP, req) =>
+            {
+                Console.WriteLine($"Request sent: {localEP}->{remoteEP}");
+                Console.WriteLine(req.ToString());
+            };
+
+            sipTransport.SIPResponseInTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                Console.WriteLine($"Response received: {localEP}<-{remoteEP}");
+                Console.WriteLine(resp.ToString());
+            };
+
+            sipTransport.SIPResponseOutTraceEvent += (localEP, remoteEP, resp) =>
+            {
+                Console.WriteLine($"Response sent: {localEP}->{remoteEP}");
+                Console.WriteLine(resp.ToString());
+            };
+
+            sipTransport.SIPRequestRetransmitTraceEvent += (tx, req, count) =>
+            {
+                Console.WriteLine($"Request retransmit {count} for request {req.StatusLine}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+            };
+
+            sipTransport.SIPResponseRetransmitTraceEvent += (tx, resp, count) =>
+            {
+                Console.WriteLine($"Response retransmit {count} for response {resp.ShortDescription}, initial transmit {DateTime.Now.Subtract(tx.InitialTransmit).TotalSeconds.ToString("0.###")}s ago.");
+            };
         }
     }
 }

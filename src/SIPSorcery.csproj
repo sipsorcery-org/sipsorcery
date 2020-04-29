@@ -31,7 +31,7 @@
 
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.43-pre</Version>
+	<Version>4.0.44-pre</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -51,7 +51,8 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP WebRTC RTP SDP STUN SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version 4.0.43-pre: Bug fix not updating SDP version when changing RTP stream status.
+	<PackageReleaseNotes>- Version 4.0.44-pre: Minor change to RTP codec clock rate methods to support G722.
+- Version 4.0.43-pre: Bug fix not updating SDP version when changing RTP stream status.
 - Version 4.0.42-pre: Added mulaw and alaw decoders to dummy audio RTP session.
 - Version 4.0.41-pre: Added workaround for UDP packet info not being set on Linux.
 - Version 4.0.40-pre: Modifications to IMediaSession. WebRtcSession changed to RTCPeerConnection.
@@ -73,8 +74,8 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
 </PackageReleaseNotes>
 	<NeutralLanguage>en-GB</NeutralLanguage>
-	<AssemblyVersion>4.0.43.0</AssemblyVersion>
-	<FileVersion>4.0.43.0</FileVersion>
+	<AssemblyVersion>4.0.44.0</AssemblyVersion>
+	<FileVersion>4.0.44.0</FileVersion>
   </PropertyGroup>    
 
 </Project>
