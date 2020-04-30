@@ -109,7 +109,7 @@ namespace SIPSorcery
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
             // If it's desired to listen on a single IP address use the equivalent of:
             //_sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Parse("192.168.11.50"), SIP_LISTEN_PORT)));
-            EnableTraceLogs(_sipTransport);
+            //EnableTraceLogs(_sipTransport);
 
             _sipTransport.SIPTransportRequestReceived += OnRequest;
 
@@ -219,7 +219,10 @@ namespace SIPSorcery
                             Log.LogInformation("Current call list:");
                             foreach (var call in _calls)
                             {
-                                Log.LogInformation($"{call.Key}: {call.Value.Dialogue.RemoteTarget}");
+                                int duration = Convert.ToInt32(DateTimeOffset.Now.Subtract(call.Value.Dialogue.Inserted).TotalSeconds);
+                                uint rtpSent = (call.Value.MediaSession as RtpAudioSession).RtpPacketsSent;
+                                uint rtpRecv = (call.Value.MediaSession as RtpAudioSession).RtpPacketsReceived;
+                                Log.LogInformation($"{call.Key}: {call.Value.Dialogue.RemoteTarget} {duration}s {rtpSent}/{rtpRecv}");
                             }
                         }
                     }
@@ -293,7 +296,7 @@ namespace SIPSorcery
             List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
 
             var audioSource = DummyAudioSourcesEnum.SineWave;
-            if (!Enum.TryParse<DummyAudioSourcesEnum>(dst, out audioSource))
+            if (string.IsNullOrEmpty(dst) || !Enum.TryParse<DummyAudioSourcesEnum>(dst, out audioSource))
             {
                 audioSource = DummyAudioSourcesEnum.Silence;
             }
@@ -318,6 +321,11 @@ namespace SIPSorcery
                 if (ua?.IsCallActive == true)
                 {
                     Log.LogWarning($"RTP timeout on call with {ua.Dialogue.RemoteTarget}, hanging up.");
+                    ua.Hangup();
+                }
+                else
+                {
+                    Log.LogWarning($"RTP timeout on incomplete call, closing RTP session.");
                     ua.Hangup();
                 }
             };

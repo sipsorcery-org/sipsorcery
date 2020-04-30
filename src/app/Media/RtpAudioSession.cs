@@ -77,6 +77,16 @@ namespace SIPSorcery.Media
         private G722Codec _g722Codec;
         private G722CodecState _g722CodecState;
 
+        public uint RtpPacketsSent
+        {
+            get { return base.AudioRtcpSession.PacketsSentCount; }
+        }
+
+        public uint RtpPacketsReceived
+        {
+            get { return base.AudioRtcpSession.PacketsReceivedCount; }
+        }
+
         public RtpAudioSession(DummyAudioOptions audioOptions, List<SDPMediaFormatsEnum> audioCodecs) :
             base(false, false, false)
         {
