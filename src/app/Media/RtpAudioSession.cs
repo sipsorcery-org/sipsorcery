@@ -245,7 +245,7 @@ namespace SIPSorcery.Media
             {
                 uint bufferSize = SAMPLE_RATE / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
 
-                byte[] sample = new byte[bufferSize / 2];
+                byte[] sample = new byte[bufferSize];
 
                 for (int index = 0; index < bufferSize; index += 2)
                 {
