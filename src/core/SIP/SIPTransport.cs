@@ -860,7 +860,10 @@ namespace SIPSorcery.SIP
                                             UASInviteTransaction inviteTransaction = (UASInviteTransaction)GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE));
                                             if (inviteTransaction != null)
                                             {
+                                                // Note: this will generate the INVITE request response.
                                                 inviteTransaction.CancelCall();
+
+                                                // Note: this will generate the CANCEL request response.
                                                 SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                                                 okResponse.Header.To.ToTag = inviteTransaction.LocalTag;
                                                 return SendResponseAsync(okResponse);

@@ -646,12 +646,14 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
+                logger.LogDebug($"SIPServerUserAgent client timed out in transaction state {m_uasTransaction.TransactionState}.");
+
                 Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentServer, SIPMonitorEventTypesEnum.DialPlan, "UAS for " + m_uasTransaction.TransactionRequest.URI.ToString() + " timed out in transaction state " + m_uasTransaction.TransactionState + ".", null));
 
-                if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Calling && NoRingTimeout != null)
-                {
-                    NoRingTimeout(this);
-                }
+                //if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Calling && NoRingTimeout != null)
+                //{
+                    NoRingTimeout?.Invoke(this);
+                //}
             }
             catch (Exception excp)
             {

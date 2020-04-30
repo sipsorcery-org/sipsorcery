@@ -146,6 +146,13 @@ namespace SIPSorcery.SIP.App
         public event SIPUASDelegate ServerCallCancelled;
 
         /// <summary>
+        /// For calls accepted by this user agent this event will be fired if the call
+        /// is answered but the answer response is never confirmed. This can occur if
+        /// the client does not send the ACK or the ACK does not get through.
+        /// </summary>
+        public event SIPUASDelegate ServerCallRingTimeout;
+
+        /// <summary>
         /// The remote call party has sent us a new re-INVITE request that this
         /// class didn't know how to or couldn't handle. Things we can
         /// handle are on and off hold. Common examples of what we can't handle
@@ -186,6 +193,17 @@ namespace SIPSorcery.SIP.App
         /// application to decipher the vents as it wishes.
         /// </summary>
         public event Action<RTPEvent, RTPHeader> OnRtpEvent;
+
+        /// <summary>
+        /// Diagnostic event to allow monitoring of the INVITE transaction state.
+        /// </summary>
+        public event SIPTransactionStateChangeDelegate OnTransactionStateChange;
+
+        /// <summary>
+        /// Diagnostic event to receive trace messages related to the INVITE transaction
+        /// state machine processing.
+        /// </summary>
+        public event SIPTransactionTraceMessageDelegate OnTransactionTraceMessage;
 
         /// <summary>
         /// Creates a new SIP client and server combination user agent.
@@ -373,10 +391,16 @@ namespace SIPSorcery.SIP.App
         {
             UASInviteTransaction uasTransaction = new UASInviteTransaction(m_transport, inviteRequest, m_outboundProxy);
             SIPServerUserAgent uas = new SIPServerUserAgent(m_transport, m_outboundProxy, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
+            uas.ClientTransaction.TransactionStateChanged += (tx) => OnTransactionStateChange?.Invoke(tx);
+            uas.ClientTransaction.TransactionTraceMessage += (tx, msg) => OnTransactionTraceMessage?.Invoke(tx, msg);
             uas.CallCancelled += (pendingUas) =>
             {
                 CallEnded();
                 ServerCallCancelled?.Invoke(pendingUas);
+            };
+            uas.NoRingTimeout += (pendingUas) =>
+            {
+                ServerCallRingTimeout?.Invoke(pendingUas);
             };
 
             uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
