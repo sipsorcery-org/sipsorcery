@@ -301,7 +301,7 @@ namespace SIPSorcery.SIP
         }
 
         /// <summary>
-        /// Generates a BYE request for this dialog and forwards it to the remote cal party.
+        /// Generates a BYE request for this dialog and forwards it to the remote call party.
         /// This has the effect of hanging up the call.
         /// </summary>
         /// <param name="sipTransport">The transport layer to use for sending the request.</param>

@@ -203,6 +203,7 @@ namespace SIPSorcery
                             foreach (var call in _calls)
                             {
                                 Log.LogInformation($"Hanging up call {call.Key}.");
+                                call.Value.OnCallHungup -= OnHangup;
                                 call.Value.Hangup();
                             }
                             _calls.Clear();
@@ -379,11 +380,10 @@ namespace SIPSorcery
                     ua.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
                     ua.OnDtmfTone += (key, duration) => OnDtmfTone(ua, key, duration);
                     ua.OnRtpEvent += (evt, hdr) => Log.LogDebug($"rtp event {evt.EventID}, duration {evt.Duration}, end of event {evt.EndOfEvent}, timestamp {hdr.Timestamp}, marker {hdr.MarkerBit}.");
-                    ua.OnTransactionStateChange += (tx) => Log.LogDebug($"uas tx {tx.TransactionId} state change to {tx.TransactionState}.");
                     ua.OnTransactionTraceMessage += (tx, msg) => Log.LogDebug($"uas tx {tx.TransactionId}: {msg}");
                     ua.ServerCallRingTimeout += (uas) =>
                     {
-                        Log.LogWarning($"Incoming call timed out in ringing state waiting for client ACK, terminating.");
+                        Log.LogWarning($"Incoming call timed out in {uas.ClientTransaction.TransactionState} state waiting for client ACK, terminating.");
                         ua.Hangup();
                     };
 
@@ -425,11 +425,9 @@ namespace SIPSorcery
         /// <param name="dialogue">The dialogue that was hungup.</param>
         private static void OnHangup(SIPDialogue dialogue)
         {
-            // If the dialogue is null it means the hangup was initiated from our end.
             if (dialogue != null)
             {
                 string callID = dialogue.CallId;
-                Log.LogInformation($"Call hungup by remote party {callID}.");
                 if (_calls.ContainsKey(callID))
                 {
                     _calls.TryRemove(callID, out _);

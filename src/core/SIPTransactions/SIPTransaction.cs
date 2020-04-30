@@ -559,11 +559,11 @@ namespace SIPSorcery.SIP
         /// Marks a transaction as expired and prevents anymore delivery attempts of outstanding 
         /// requests of responses.
         /// </summary>
-        internal void Expire()
+        internal void Expire(DateTime now)
         {
             DeliveryPending = false;
             DeliveryFailed = true;
-            TimedOutAt = DateTime.Now;
+            TimedOutAt = now;
             HasTimedOut = true;
             UpdateTransactionState(SIPTransactionStatesEnum.Terminated);
             FireTransactionTimedOut();
