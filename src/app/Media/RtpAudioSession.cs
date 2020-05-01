@@ -142,17 +142,17 @@ namespace SIPSorcery.Media
                 {
                     _isStarted = true;
 
-                    if (AudioLocalTrack == null || AudioLocalTrack.Capabilties == null || AudioLocalTrack.Capabilties.Count == 0)
+                    if (AudioLocalTrack == null || AudioLocalTrack.Capabilities == null || AudioLocalTrack.Capabilities.Count == 0)
                     {
                         throw new ApplicationException("Cannot start audio session without a local audio track being available.");
                     }
-                    else if (AudioRemoteTrack == null || AudioRemoteTrack.Capabilties == null || AudioRemoteTrack.Capabilties.Count == 0)
+                    else if (AudioRemoteTrack == null || AudioRemoteTrack.Capabilities == null || AudioRemoteTrack.Capabilities.Count == 0)
                     {
                         throw new ApplicationException("Cannot start audio session without a remote audio track being available.");
                     }
 
                     // Choose which codec to use.
-                    //_sendingFormat = AudioLocalTrack.Capabilties
+                    //_sendingFormat = AudioLocalTrack.Capabilities
                     //    .Where(x => x.FormatID != DTMF_EVENT_PAYLOAD_ID.ToString() && int.TryParse(x.FormatID, out _))
                     //    .OrderBy(x => int.Parse(x.FormatID)).First();
                     _sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);

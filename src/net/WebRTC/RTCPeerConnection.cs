@@ -432,12 +432,12 @@ namespace SIPSorcery.Net
             {
                 if (mediaType == SDPMediaTypesEnum.video)
                 {
-                    int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
+                    int vp8PayloadID = Convert.ToInt32(VideoLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.VP8).FormatID);
                     SendVp8Frame(sampleTimestamp, vp8PayloadID, sample);
                 }
                 else if (mediaType == SDPMediaTypesEnum.audio)
                 {
-                    int pcmuPayloadID = Convert.ToInt32(AudioLocalTrack.Capabilties.Single(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).FormatID);
+                    int pcmuPayloadID = Convert.ToInt32(AudioLocalTrack.Capabilities.Single(x => x.FormatCodec == SDPMediaFormatsEnum.PCMU).FormatID);
                     SendAudioFrame(sampleTimestamp, pcmuPayloadID, sample);
                 }
             }
@@ -479,8 +479,8 @@ namespace SIPSorcery.Net
         {
             try
             {
-                var audioCapabilities = AudioLocalTrack?.Capabilties;
-                var videoCapabilities = VideoLocalTrack?.Capabilties;
+                var audioCapabilities = AudioLocalTrack?.Capabilities;
+                var videoCapabilities = VideoLocalTrack?.Capabilities;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
                 var offerSdp = await createBaseSdp(localTracks, audioCapabilities, videoCapabilities).ConfigureAwait(false);
@@ -518,9 +518,9 @@ namespace SIPSorcery.Net
             else
             {
                 var audioCapabilities = (AudioLocalTrack != null && AudioRemoteTrack != null) ?
-                    SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilties, AudioRemoteTrack.Capabilties) : null;
+                    SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, AudioRemoteTrack.Capabilities) : null;
                 var videoCapabilities = (VideoLocalTrack != null && VideoRemoteTrack != null) ?
-                    SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilties, VideoRemoteTrack.Capabilties) : null;
+                    SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, VideoRemoteTrack.Capabilities) : null;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
                 var answerSdp = await createBaseSdp(localTracks, audioCapabilities, videoCapabilities).ConfigureAwait(false);
