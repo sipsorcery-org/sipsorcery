@@ -65,6 +65,16 @@ namespace SIPSorcery.Net
         NoMatchingMediaType,
 
         /// <summary>
+        /// The audio end point port supplied by the remote party was invalid.
+        /// </summary>
+        InvalidAudioPort,
+
+        /// <summary>
+        /// The audio end point port supplied by the remote party was invalid.
+        /// </summary>
+        InvalidVideoPort,
+
+        /// <summary>
         /// An unknown error.
         /// </summary>
         Error
@@ -744,6 +754,11 @@ namespace SIPSorcery.Net
 
                         if (audioAddr != null)
                         {
+                            if(audioAnnounce.Port <= IPEndPoint.MinPort || audioAnnounce.Port > IPEndPoint.MaxPort - 1)
+                            {
+                                return SetDescriptionResultEnum.InvalidAudioPort;
+                            }
+
                             remoteAudioRtpEP = new IPEndPoint(audioAddr, audioAnnounce.Port);
                             remoteAudioRtcpEP = new IPEndPoint(audioAddr, audioAnnounce.Port + 1);
 
@@ -797,6 +812,11 @@ namespace SIPSorcery.Net
 
                         if (videoAddr != null)
                         {
+                            if (videoAnnounce.Port <= IPEndPoint.MinPort || videoAnnounce.Port > IPEndPoint.MaxPort - 1)
+                            {
+                                return SetDescriptionResultEnum.InvalidAudioPort;
+                            }
+
                             remoteVideoRtpEP = new IPEndPoint(videoAddr, videoAnnounce.Port);
                             remoteVideoRtcpEP = new IPEndPoint(videoAddr, videoAnnounce.Port + 1);
 

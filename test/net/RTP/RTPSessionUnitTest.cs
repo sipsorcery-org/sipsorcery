@@ -192,7 +192,7 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 
-            Assert.Equal(SetDescriptionResultEnum.Error, result);
+            Assert.Equal(SetDescriptionResultEnum.InvalidAudioPort, result);
         }
     }
 }
