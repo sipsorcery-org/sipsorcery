@@ -16,7 +16,7 @@
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
+using SIPSorcery.Sys;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -94,7 +94,7 @@ namespace SIPSorcery.Net.UnitTests
 
             // A local session is created but NO media tracks are added to it.
             RTPSession localSession = new RTPSession(false, false, false);
-           
+
             // Create a remote session WITH an audio track.
             RTPSession remoteSession = new RTPSession(false, false, false);
             // The track for the track for the remote session is still local relative to the session it's being added to.
@@ -158,6 +158,41 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"Set remote description on local session result {result}.");
 
             Assert.Equal(SetDescriptionResultEnum.NoMatchingMediaType, result);
+        }
+
+        /// <summary>
+        /// Checks that the correct failure condition is returned when a remote description is provided
+        /// with an invalid connection port.
+        /// </summary>
+        [Fact]
+        public void InvalidPortInRemoteOfferTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            RTPSession localSession = new RTPSession(false, false, false);
+            MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            localSession.addTrack(localAudioTrack);
+
+            var remoteOffer = new SDP();
+            remoteOffer.SessionId = Crypto.GetRandomInt(5).ToString();
+
+            remoteOffer.Connection = new SDPConnectionInformation(IPAddress.Loopback);
+
+            SDPMediaAnnouncement audioAnnouncement = new SDPMediaAnnouncement(
+                SDPMediaTypesEnum.audio,
+                66000,
+                new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+
+            audioAnnouncement.Transport = RTPSession.RTP_MEDIA_PROFILE;
+
+            remoteOffer.Media.Add(audioAnnouncement);
+
+            var result = localSession.SetRemoteDescription(remoteOffer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.Error, result);
         }
     }
 }
