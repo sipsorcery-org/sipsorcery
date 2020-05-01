@@ -277,14 +277,14 @@ namespace SIPSorcery.Net
                 m_started = true;
 
                 m_rtpReceiver = new UdpReceiver(RtpSocket);
-                m_rtpReceiver.OnPacketReceived += OnRTPPacketRecived;
+                m_rtpReceiver.OnPacketReceived += OnRTPPacketReceived;
                 m_rtpReceiver.OnClosed += Close;
                 m_rtpReceiver.BeginReceive();
 
                 if (m_controlSocket != null)
                 {
                     m_controlReceiver = new UdpReceiver(m_controlSocket);
-                    m_controlReceiver.OnPacketReceived += OnControlPacketRecived;
+                    m_controlReceiver.OnPacketReceived += OnControlPacketReceived;
                     m_controlReceiver.OnClosed += Close;
                     m_controlReceiver.BeginReceive();
                 }
@@ -412,7 +412,7 @@ namespace SIPSorcery.Net
         /// <param name="localEndPoint">The local end point it was received on.</param>
         /// <param name="remoteEndPoint">The remote end point of the sender.</param>
         /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-        private void OnRTPPacketRecived(UdpReceiver receiver, IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] packet)
+        private void OnRTPPacketReceived(UdpReceiver receiver, IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] packet)
         {
             if (packet?.Length > 0)
             {
@@ -428,7 +428,7 @@ namespace SIPSorcery.Net
         /// <param name="localEndPoint">The local end point it was received on.</param>
         /// <param name="remoteEndPoint">The remote end point of the sender.</param>
         /// <param name="packet">The raw packet received which should always be an RTCP packet.</param>
-        private void OnControlPacketRecived(UdpReceiver receiver, IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] packet)
+        private void OnControlPacketReceived(UdpReceiver receiver, IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] packet)
         {
             LastControlDestination = remoteEndPoint;
             OnControlDataReceived?.Invoke(localEndPoint, remoteEndPoint, packet);
