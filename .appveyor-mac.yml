@@ -1,0 +1,4 @@
+version: 1.0.{build}
+image: macos
+build_script:
+  dotnet build src\SIPSorcery.sln
