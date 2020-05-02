@@ -187,7 +187,7 @@ namespace SIPSorcery.Net
     public class RTPChannel : IDisposable
     {
         private const int RTP_PORT_START = 49152;   // IANA recommended start range for ephemeral ports, see https://en.wikipedia.org/wiki/Ephemeral_port.
-        private const int RTP_PORT_END = 65535;     // IANA recommended end range for ephemeral ports, see https://en.wikipedia.org/wiki/Ephemeral_port.
+        private const int RTP_PORT_END = 65535 - 1; // IANA recommended end range for ephemeral ports, see https://en.wikipedia.org/wiki/Ephemeral_port.
 
         private static ILogger logger = Log.Logger;
 
