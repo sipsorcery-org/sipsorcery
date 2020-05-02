@@ -1,4 +1,7 @@
 version: 1.0.{build}
+branches:
+  except:
+    - mac-ci
 image: Visual Studio 2019
 before_build:
 - cmd: nuget restore -DisableParallelProcessing examples\Softphone\SIPSorcery.SoftPhone.sln
