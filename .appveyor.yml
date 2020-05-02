@@ -1,4 +1,7 @@
 version: 1.0.{build}
+branches:
+  except:
+    - mac-ci
 environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
   access_token:
