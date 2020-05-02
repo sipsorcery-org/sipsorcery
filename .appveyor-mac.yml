@@ -1,4 +1,6 @@
 version: 1.0.{build}
 image: macos
 build_script:
-  dotnet build src\SIPSorcery.sln
+- cmd: dotnet build src\SIPSorcery.sln
+test_script:
+- cmd: dotnet test src\SIPSorcery.sln
