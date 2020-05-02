@@ -77,6 +77,9 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"Set remote description on local session result {result}.");
 
             Assert.Equal(SetDescriptionResultEnum.OK, result);
+
+            localSession.CloseSession("normal");
+            remoteSession.CloseSession("normal");
         }
 
         /// <summary>
@@ -109,6 +112,9 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"Set remote description on local session result {result}.");
 
             Assert.Equal(SetDescriptionResultEnum.NoLocalMedia, result);
+
+            localSession.CloseSession("normal");
+            remoteSession.CloseSession("normal");
         }
 
         /// <summary>
@@ -132,6 +138,8 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"Set remote description on local session result {result}.");
 
             Assert.Equal(SetDescriptionResultEnum.NoRemoteMedia, result);
+
+            localSession.CloseSession("normal");
         }
 
         /// <summary>
@@ -158,6 +166,9 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"Set remote description on local session result {result}.");
 
             Assert.Equal(SetDescriptionResultEnum.NoMatchingMediaType, result);
+
+            localSession.CloseSession("normal");
+            remoteSession.CloseSession("normal");
         }
 
         /// <summary>
@@ -193,6 +204,8 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"Set remote description on local session result {result}.");
 
             Assert.Equal(SetDescriptionResultEnum.InvalidAudioPort, result);
+
+            localSession.CloseSession("normal");
         }
     }
 }
