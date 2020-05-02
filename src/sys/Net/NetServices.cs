@@ -137,8 +137,8 @@ namespace SIPSorcery.Sys
 
             for (int bindAttempts = 0; bindAttempts <= MAXIMUM_RTP_PORT_BIND_ATTEMPTS; bindAttempts++)
             {
-                lock (_allocatePortsMutex)
-                {
+                //lock (_allocatePortsMutex)
+                //{
                     if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
                         // On Windows we can get a list of in use UDP ports and avoid attempting to bind to them.
@@ -228,7 +228,7 @@ namespace SIPSorcery.Sys
                         int step = Crypto.GetRandomInt(RTP_STEP_MIN, RTP_STEM_MAX);
                         rtpPort = (rtpPort + step + 1) > rangeEndPort ? rangeStartPort + step : rtpPort + step;
                     }
-                }
+                //}
             }
 
             if (!bindSuccess)
