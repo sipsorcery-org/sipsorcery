@@ -1,7 +1,14 @@
 version: 1.0.{build}
 image: macos
+environment:
+  APPVEYOR_SSH_KEY: AAAAC3NzaC1lZDI1NTE5AAAAIOgZaR7bVAJCsBs/yDlzNbHTvhicc1C7SeyEuVwN+Q0l
+init:
+  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 build_script:
 - cmd: dotnet --version
 - cmd: dotnet build src\SIPSorcery.sln
 test_script:
 - cmd: dotnet test src\SIPSorcery.sln
+on_finish:
+  - sh: export APPVEYOR_SSH_BLOCK=true
+  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
