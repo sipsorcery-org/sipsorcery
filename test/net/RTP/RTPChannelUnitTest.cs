@@ -95,10 +95,12 @@ namespace SIPSorcery.Net.UnitTests
 
             testCompleteEvent.Wait(TimeSpan.FromSeconds(TEST_TIMEOUT_SECONDS));
 
+            Assert.True(testResult);
+
             channel1.Close("normal");
             channel2.Close("normal");
 
-            Assert.True(testResult);
+            logger.LogDebug($"Test complete.");
         }
     }
 }
