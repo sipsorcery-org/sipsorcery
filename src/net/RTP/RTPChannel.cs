@@ -303,7 +303,14 @@ namespace SIPSorcery.Net
                 {
                     string closeReason = reason ?? "normal";
 
-                    logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.");
+                    if (m_controlReceiver == null)
+                    {
+                        logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.");
+                    }
+                    else
+                    {
+                        logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}, Control receiver on port {ControlPort}. Reason: {closeReason}.");
+                    }
 
                     m_isClosed = true;
                     m_rtpReceiver?.Close(null);

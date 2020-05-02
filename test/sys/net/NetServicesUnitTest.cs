@@ -13,6 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
@@ -174,6 +175,40 @@ namespace SIPSorcery.Sys.UnitTests
 
             Assert.NotNull(rtpSocket);
             Assert.NotNull(controlSocket);
+
+            rtpSocket.Close();
+            controlSocket.Close();
+        }
+
+        /// <summary>
+        /// Tests that RTP and control listeners can be created when the start of the port range is duplicated.
+        /// </summary>
+        [Fact]
+        public void CreateRtpAndControlSocketsDuplicateStartPortUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            List<Socket> sockets = new List<Socket>();
+
+            for (int i = 0; i < 20; i++)
+            {
+                Socket rtpSocket = null;
+                Socket controlSocket = null;
+
+                NetServices.CreateRtpSocket(49152, 65534, 51277, true, null, out rtpSocket, out controlSocket);
+
+                Assert.NotNull(rtpSocket);
+                Assert.NotNull(controlSocket);
+
+                sockets.Add(rtpSocket);
+                sockets.Add(controlSocket);
+            }
+
+            foreach (var socket in sockets)
+            {
+                socket.Close();
+            }
         }
     }
 }

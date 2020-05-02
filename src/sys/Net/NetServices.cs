@@ -41,6 +41,8 @@ namespace SIPSorcery.Sys
         private const string INTERNET_IPADDRESS = "1.1.1.1";    // IP address to use when getting default IP address from OS. No connection is established.
         private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on MacOS).
         private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;   // The amount of time to leave the result of a local IP address determination in the cache.
+        private const int RTP_STEP_MIN = 2;
+        private const int RTP_STEM_MAX = 20;
 
         private static ILogger logger = Log.Logger;
 
@@ -115,19 +117,28 @@ namespace SIPSorcery.Sys
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
         public static void CreateRtpSocket(int rangeStartPort, int rangeEndPort, int startPort, bool createControlSocket, IPAddress localAddress, out Socket rtpSocket, out Socket controlSocket)
         {
+            if(startPort == 0)
+            {
+                startPort = Crypto.GetRandomInt(rangeStartPort, rangeEndPort);
+            }
+            else if(startPort < rangeStartPort || startPort > rangeEndPort)
+            {
+                logger.LogWarning($"The start port of {startPort} supplied to CreateRtpSocket was outside the request range of {rangeStartPort}:{rangeEndPort}. A new valid start port will be pseudo-randomly chosen.");
+                startPort = Crypto.GetRandomInt(rangeStartPort, rangeEndPort);
+            }
+
             logger.LogDebug($"CreateRtpSocket start port {startPort}, range {rangeStartPort}:{rangeEndPort}.");
 
             rtpSocket = null;
             controlSocket = null;
 
             bool bindSuccess = false;
+            int rtpPort = startPort;
 
             for (int bindAttempts = 0; bindAttempts <= MAXIMUM_RTP_PORT_BIND_ATTEMPTS; bindAttempts++)
             {
                 lock (_allocatePortsMutex)
                 {
-                    int rtpPort = startPort;
-
                     if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
                         // On Windows we can get a list of in use UDP ports and avoid attempting to bind to them.
@@ -143,7 +154,12 @@ namespace SIPSorcery.Sys
                     }
                     else
                     {
-                        rtpPort = (rtpPort % 2 != 0) ? rtpPort + 1 : rtpPort;
+                        // If the start port isn't even adjust it so it is. The original RTP specification required RTP ports to be even 
+                        // numbered and the control port to be the RTP port + 1.
+                        if(rtpPort % 2 != 0)
+                        {
+                            rtpPort = (rtpPort + 1) > rangeEndPort ? rtpPort - 1 : rtpPort + 1;
+                        }
                     }
 
                     int controlPort = (createControlSocket == true) ? rtpPort + 1 : 0;
@@ -207,6 +223,10 @@ namespace SIPSorcery.Sys
                                 logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort}, attempt {bindAttempts}.");
                             }
                         }
+
+                        // Adjust the start port for the next attempt.
+                        int step = Crypto.GetRandomInt(RTP_STEP_MIN, RTP_STEM_MAX);
+                        rtpPort = (rtpPort + step + 1) > rangeEndPort ? rangeStartPort + step : rtpPort + step;
                     }
                 }
             }

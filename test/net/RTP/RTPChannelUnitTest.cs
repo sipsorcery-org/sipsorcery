@@ -36,6 +36,31 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
+        /// Tests that multiple RTP channels can be created during a short space of time.
+        /// </summary>
+        [Fact]
+        public void RtpChannelCreateManyUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            List<RTPChannel> channels = new List<RTPChannel>();
+
+            for (int i = 0; i < 10; i++)
+            {
+                RTPChannel channel = new RTPChannel(true);
+                channels.Add(channel);
+            }
+
+            Assert.Equal(10, channels.Count);
+
+            foreach(var channel in channels)
+            {
+                channel.Close("normal");
+            }
+        }
+
+        /// <summary>
         /// Tests that two RTP channels can communicate.
         /// </summary>
         [Fact]
