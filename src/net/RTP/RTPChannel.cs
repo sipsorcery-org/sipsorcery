@@ -58,7 +58,7 @@ namespace SIPSorcery.Net
         public UdpReceiver(Socket udpSocket)
         {
             m_udpSocket = udpSocket;
-            m_udpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 1);
+            m_udpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 1000);
             m_localPort = (m_udpSocket.LocalEndPoint as IPEndPoint).Port;
             m_recvBuffer = new byte[RECEIVE_BUFFER_SIZE];
             m_cts = new CancellationTokenSource();
@@ -93,9 +93,12 @@ namespace SIPSorcery.Net
                 //int bytesRead = await Task<int>.Factory.FromAsync(asyncResult, _ => m_udpSocket.EndReceiveFrom(asyncResult, ref remoteEP));
                 int bytesRead = m_udpSocket.Receive(m_recvBuffer);
 
-                byte[] packetBuffer = new byte[bytesRead];
-                Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
-                OnPacketReceived?.Invoke(this, m_localPort, remoteEP as IPEndPoint, packetBuffer);
+                if (bytesRead > 0)
+                {
+                    byte[] packetBuffer = new byte[bytesRead];
+                    Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
+                    OnPacketReceived?.Invoke(this, m_localPort, remoteEP as IPEndPoint, packetBuffer);
+                }
             }
             catch (SocketException)
             {
