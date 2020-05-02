@@ -58,6 +58,7 @@ namespace SIPSorcery.Net
         public UdpReceiver(Socket udpSocket)
         {
             m_udpSocket = udpSocket;
+            m_udpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 1);
             m_localPort = (m_udpSocket.LocalEndPoint as IPEndPoint).Port;
             m_recvBuffer = new byte[RECEIVE_BUFFER_SIZE];
             m_cts = new CancellationTokenSource();
