@@ -117,11 +117,11 @@ namespace SIPSorcery.Sys
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
         public static void CreateRtpSocket(int rangeStartPort, int rangeEndPort, int startPort, bool createControlSocket, IPAddress localAddress, out Socket rtpSocket, out Socket controlSocket)
         {
-            if(startPort == 0)
+            if (startPort == 0)
             {
                 startPort = Crypto.GetRandomInt(rangeStartPort, rangeEndPort);
             }
-            else if(startPort < rangeStartPort || startPort > rangeEndPort)
+            else if (startPort < rangeStartPort || startPort > rangeEndPort)
             {
                 logger.LogWarning($"The start port of {startPort} supplied to CreateRtpSocket was outside the request range of {rangeStartPort}:{rangeEndPort}. A new valid start port will be pseudo-randomly chosen.");
                 startPort = Crypto.GetRandomInt(rangeStartPort, rangeEndPort);
@@ -135,99 +135,111 @@ namespace SIPSorcery.Sys
             bool bindSuccess = false;
             int rtpPort = startPort;
 
+            // Attempt to adjust the start port for:
+            // - If in use ports can be checked find the first even unused port,
+            // - Otherwise if not even then set to the nearest even port.
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                // On Windows we can get a list of in use UDP ports and avoid attempting to bind to them.
+                IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
+                var udpListeners = ipGlobalProperties.GetActiveUdpListeners();
+
+                var portRange = Enumerable.Range(rangeStartPort, rangeEndPort - rangeStartPort).OrderBy(x => (x > startPort) ? x : x + rangeEndPort);
+                var inUsePorts = udpListeners.Where(x => x.Port >= rangeStartPort && x.Port <= rangeEndPort).Select(x => x.Port);
+
+                logger.LogDebug($"In use UDP ports count {inUsePorts.Count()}.");
+
+                rtpPort = portRange.Except(inUsePorts).Where(x => x % 2 == 0).FirstOrDefault();
+            }
+            else
+            {
+                // If the start port isn't even adjust it so it is. The original RTP specification required RTP ports to be even 
+                // numbered and the control port to be the RTP port + 1.
+                if (rtpPort % 2 != 0)
+                {
+                    rtpPort = (rtpPort + 1) > rangeEndPort ? rtpPort - 1 : rtpPort + 1;
+                }
+            }
+
             for (int bindAttempts = 0; bindAttempts <= MAXIMUM_RTP_PORT_BIND_ATTEMPTS; bindAttempts++)
             {
                 //lock (_allocatePortsMutex)
                 //{
-                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                int controlPort = (createControlSocket == true) ? rtpPort + 1 : 0;
+
+                try
+                {
+                    // The potential ports have been found now try and use them.
+                    if (localAddress != null)
                     {
-                        // On Windows we can get a list of in use UDP ports and avoid attempting to bind to them.
-                        IPGlobalProperties ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties();
-                        var udpListeners = ipGlobalProperties.GetActiveUdpListeners();
-
-                        var portRange = Enumerable.Range(rangeStartPort, rangeEndPort - rangeStartPort).OrderBy(x => (x > startPort) ? x : x + rangeEndPort);
-                        var inUsePorts = udpListeners.Where(x => x.Port >= rangeStartPort && x.Port <= rangeEndPort).Select(x => x.Port);
-
-                        logger.LogDebug($"In use UDP ports count {inUsePorts.Count()}.");
-
-                        rtpPort = portRange.Except(inUsePorts).Where(x => x % 2 == 0).FirstOrDefault();
+                        rtpSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                        rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+                        rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+                        rtpSocket.Bind(new IPEndPoint(localAddress, rtpPort));
                     }
                     else
                     {
-                        // If the start port isn't even adjust it so it is. The original RTP specification required RTP ports to be even 
-                        // numbered and the control port to be the RTP port + 1.
-                        if(rtpPort % 2 != 0)
-                        {
-                            rtpPort = (rtpPort + 1) > rangeEndPort ? rtpPort - 1 : rtpPort + 1;
-                        }
+                        // Create a dual mode IPv4/IPv6 socket.
+                        rtpSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                        rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+                        rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+                        var bindAddress = (Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
+                        rtpSocket.Bind(new IPEndPoint(bindAddress, rtpPort));
                     }
 
-                    int controlPort = (createControlSocket == true) ? rtpPort + 1 : 0;
-
-                    try
+                    if (controlPort != 0)
                     {
-                        // The potential ports have been found now try and use them.
                         if (localAddress != null)
                         {
-                            rtpSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                            rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
-                            rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
-                            rtpSocket.Bind(new IPEndPoint(localAddress, rtpPort));
+                            controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                            controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
                         }
                         else
                         {
                             // Create a dual mode IPv4/IPv6 socket.
-                            rtpSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
-                            rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
-                            rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+                            controlSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
                             var bindAddress = (Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
-                            rtpSocket.Bind(new IPEndPoint(bindAddress, rtpPort));
+                            controlSocket.Bind(new IPEndPoint(bindAddress, controlPort));
                         }
 
+                        logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint} and control socket {controlSocket.LocalEndPoint}.");
+                    }
+                    else
+                    {
+                        logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint}.");
+                    }
+
+                    bindSuccess = true;
+
+                    break;
+                }
+                catch (SocketException sockExcp)
+                {
+                    if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
+                    {
                         if (controlPort != 0)
                         {
-                            if (localAddress != null)
-                            {
-                                controlSocket = new Socket(localAddress.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                                controlSocket.Bind(new IPEndPoint(localAddress, controlPort));
-                            }
-                            else
-                            {
-                                // Create a dual mode IPv4/IPv6 socket.
-                                controlSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
-                                var bindAddress = (Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
-                                controlSocket.Bind(new IPEndPoint(bindAddress, controlPort));
-                            }
-
-                            logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint} and control socket {controlSocket.LocalEndPoint}.");
+                            logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort} and/or control port of {controlPort}, attempt {bindAttempts}.");
                         }
                         else
                         {
-                            logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint}.");
+                            logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort}, attempt {bindAttempts}.");
                         }
-
-                        bindSuccess = true;
-
-                        break;
                     }
-                    catch (SocketException sockExcp)
+                    else
                     {
-                        if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
-                        {
-                            if (controlPort != 0)
-                            {
-                                logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort} and/or control port of {controlPort}, attempt {bindAttempts}.");
-                            }
-                            else
-                            {
-                                logger.LogWarning($"Socket error {sockExcp.ErrorCode} binding to address {localAddress} and RTP port {rtpPort}, attempt {bindAttempts}.");
-                            }
-                        }
-
-                        // Adjust the start port for the next attempt.
-                        int step = Crypto.GetRandomInt(RTP_STEP_MIN, RTP_STEM_MAX);
-                        rtpPort = (rtpPort + step + 1) > rangeEndPort ? rangeStartPort + step : rtpPort + step;
+                        logger.LogWarning($"SocketException in NetServices.CreateRtpSocket. {sockExcp}");
                     }
+                }
+                catch(Exception excp)
+                {
+                    logger.LogWarning($"Exception in NetServices.CreateRtpSocket. {excp}");
+                }
+
+                // Adjust the start port for the next attempt.
+                int step = Crypto.GetRandomInt(RTP_STEP_MIN, RTP_STEM_MAX);
+                step = (step % 2 == 0) ? step : step + 1;
+                rtpPort = (rtpPort + step + 1) > rangeEndPort ? rangeStartPort + step : rtpPort + step;
                 //}
             }
 
