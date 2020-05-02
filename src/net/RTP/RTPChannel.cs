@@ -66,21 +66,18 @@ namespace SIPSorcery.Net
             {
                 while(!m_isClosed)
                 {
-                    await ReceiveAsync();
+                    DoReceive();
                 }
             }).ConfigureAwait(false);
         }
 
-
-        // ToDo: Supposedly the Event Asynchronous Pattern (EAP) can be turned into the Task Asynchronous Pattern (TAP)
-        // with one line. Couldn't make it work as yet.
-        private async Task ReceiveAsync()
+        private void DoReceive()
         {
             try
             {
                 EndPoint remoteEP = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                var asyncResult = m_udpSocket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref remoteEP, null, null);
-                int bytesRead = await Task<int>.Factory.FromAsync(asyncResult, _ => m_udpSocket.EndReceiveFrom(asyncResult, ref remoteEP));
+                int bytesRead = m_udpSocket.ReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref remoteEP);
+                //int bytesRead = await Task<int>.Factory.FromAsync(asyncResult, _ => m_udpSocket.EndReceiveFrom(asyncResult, ref remoteEP));
 
                 byte[] packetBuffer = new byte[bytesRead];
                 Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
