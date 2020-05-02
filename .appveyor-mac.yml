@@ -1,7 +1,7 @@
 version: 1.0.{build}
 image: macos
 environment:
-  APPVEYOR_SSH_KEY: AAAAC3NzaC1lZDI1NTE5AAAAIOgZaR7bVAJCsBs/yDlzNbHTvhicc1C7SeyEuVwN+Q0l
+  APPVEYOR_SSH_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOgZaR7bVAJCsBs/yDlzNbHTvhicc1C7SeyEuVwN+Q0l
 init:
   - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 build_script:
