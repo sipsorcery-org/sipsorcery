@@ -62,7 +62,7 @@ namespace SIPSorcery.Net
 
         public void Receive()
         {
-            Task.Run(async () =>
+            Task.Run(() =>
             {
                 while(!m_isClosed)
                 {
@@ -76,8 +76,9 @@ namespace SIPSorcery.Net
             try
             {
                 EndPoint remoteEP = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                int bytesRead = m_udpSocket.ReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref remoteEP);
+                //int bytesRead = m_udpSocket.ReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref remoteEP);
                 //int bytesRead = await Task<int>.Factory.FromAsync(asyncResult, _ => m_udpSocket.EndReceiveFrom(asyncResult, ref remoteEP));
+                int bytesRead = m_udpSocket.Receive(m_recvBuffer);
 
                 byte[] packetBuffer = new byte[bytesRead];
                 Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
@@ -99,7 +100,7 @@ namespace SIPSorcery.Net
             { }
             catch (Exception excp)
             {
-                logger.LogError($"Exception UdpReceiver.ReceiveAsync. {excp}");
+                logger.LogError($"Exception UdpReceiver.DoReceive. {excp}");
                 Close(excp.Message);
             }
             //finally
