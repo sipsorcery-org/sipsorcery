@@ -1546,10 +1546,10 @@ namespace SIPSorcery.Net
         /// Event handler for receiving data on the RTP and Control channels. For multiplexed
         /// sessions both RTP and RTCP packets will be received on the RTP channel.
         /// </summary>
-        /// <param name="localEndPoint">The local end point the data was received on.</param>
+        /// <param name="localPort">The local port the data was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the data was received from.</param>
         /// <param name="buffer">The data received.</param>
-        private void OnReceive(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] buffer)
+        private void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
             if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
             {
@@ -1694,7 +1694,7 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                rtpMediaType = GetMediaTypeForLocalEndPoint(localEndPoint);
+                                rtpMediaType = GetMediaTypeForLocalPort(localPort);
                             }
 
                             // Set the remote track SSRC so that RTCP reports can match the media type.
@@ -1756,15 +1756,15 @@ namespace SIPSorcery.Net
         /// Attempts to determine which media stream a received RTP packet is for based on the RTP socket
         /// it was received on. This is for cases where media multiplexing is not in use (i.e. legacy RTP).
         /// </summary>
-        /// <param name="localEndPoint">The local end point the RTP packet was received on.</param>
+        /// <param name="localPort">The local port the RTP packet was received on.</param>
         /// <returns>The media type for the received packet or null if it could not be determined.</returns>
-        private SDPMediaTypesEnum? GetMediaTypeForLocalEndPoint(IPEndPoint localEndPoint)
+        private SDPMediaTypesEnum? GetMediaTypeForLocalPort(int localPort)
         {
-            if (m_rtpChannels.ContainsKey(SDPMediaTypesEnum.audio) && m_rtpChannels[SDPMediaTypesEnum.audio].RTPPort == localEndPoint.Port)
+            if (m_rtpChannels.ContainsKey(SDPMediaTypesEnum.audio) && m_rtpChannels[SDPMediaTypesEnum.audio].RTPPort == localPort)
             {
                 return SDPMediaTypesEnum.audio;
             }
-            else if (m_rtpChannels.ContainsKey(SDPMediaTypesEnum.video) && m_rtpChannels[SDPMediaTypesEnum.video].RTPPort == localEndPoint.Port)
+            else if (m_rtpChannels.ContainsKey(SDPMediaTypesEnum.video) && m_rtpChannels[SDPMediaTypesEnum.video].RTPPort == localPort)
             {
                 return SDPMediaTypesEnum.video;
             }

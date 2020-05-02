@@ -626,9 +626,10 @@ namespace SIPSorcery.Net
         ///             |       B< 2    -+--> forward to STUN
         ///             +----------------+
         /// </summary>
-        /// <param name="remoteEP"></param>
-        /// <param name="buffer"></param>
-        private void OnRTPDataReceived(IPEndPoint localEndPoint, IPEndPoint remoteEP, byte[] buffer)
+        /// <paramref name="localPort">The local port on the RTP socket that received the packet.</paramref>
+        /// <param name="remoteEP">The remote end point the packet was received on.</param>
+        /// <param name="buffer">The data received.</param>
+        private void OnRTPDataReceived(int localPort, IPEndPoint remoteEP, byte[] buffer)
         {
             //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
 
