@@ -20,6 +20,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -42,6 +43,7 @@ namespace SIPSorcery.Net
         private byte[] m_recvBuffer;
         private bool m_isClosed;
         private int m_localPort;
+        private CancellationTokenSource m_cts;
 
         /// <summary>
         /// Fires when a new packet has been received in the UDP socket.
@@ -58,17 +60,27 @@ namespace SIPSorcery.Net
             m_udpSocket = udpSocket;
             m_localPort = (m_udpSocket.LocalEndPoint as IPEndPoint).Port;
             m_recvBuffer = new byte[RECEIVE_BUFFER_SIZE];
+            m_cts = new CancellationTokenSource();
         }
 
         public void Receive()
         {
             Task.Run(() =>
             {
-                while(!m_isClosed)
+                try
                 {
-                    DoReceive();
+                    while (!m_isClosed)
+                    {
+                        DoReceive();
+                    }
                 }
-            }).ConfigureAwait(false);
+                catch (TaskCanceledException)
+                { }
+                catch(Exception excp)
+                {
+                    logger.LogError($"Exception UdpReceiver.Receive. {excp.Message}");
+                }
+            }, m_cts.Token).ConfigureAwait(false);
         }
 
         private void DoReceive()
@@ -212,8 +224,10 @@ namespace SIPSorcery.Net
             {
                 m_isClosed = true;
                 m_udpSocket?.Close();
-
+                
                 OnClosed?.Invoke(reason);
+
+                m_cts.Cancel();
             }
         }
     }
