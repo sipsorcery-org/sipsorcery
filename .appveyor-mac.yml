@@ -5,10 +5,11 @@ environment:
 init:
   - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 build_script:
+- uname -a
 - dotnet --version
-- dotnet build src\SIPSorcery.sln --framework netcoreapp3.1
+- dotnet build src/SIPSorcery.sln --framework netcoreapp3.1
 test_script:
-- dotnet test src\SIPSorcery.sln --framework netcoreapp3.1 --filter "Category!=IPv6"
+- dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 --filter "Category!=IPv6"
 #on_finish:
 #  - sh: export APPVEYOR_SSH_BLOCK=true
 #  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
