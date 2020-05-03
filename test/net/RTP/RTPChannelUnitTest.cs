@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 using Xunit;
@@ -64,7 +65,7 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that two RTP channels can communicate.
         /// </summary>
         [Fact]
-        public void RtpChannelLoopbackUnitTest()
+        public async void RtpChannelLoopbackUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -84,6 +85,9 @@ namespace SIPSorcery.Net.UnitTests
 
             channel1.Start();
             channel2.Start();
+
+            // Give the socket receive tasks time to fire up.
+            await Task.Delay(1000);
 
             IPEndPoint channel2Dst = new IPEndPoint(IPAddress.Loopback, channel2.RTPPort);
 

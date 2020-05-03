@@ -171,7 +171,8 @@ namespace SIPSorcery.Sys.UnitTests
             Socket rtpSocket = null;
             Socket controlSocket = null;
 
-            NetServices.CreateRtpSocket(10000, 20000, 13677, true, null, out rtpSocket, out controlSocket);
+            //NetServices.CreateRtpSocket(10000, 20000, 13677, true, null, out rtpSocket, out controlSocket);
+            NetServices.CreateRtpSocket(true, true, null, out rtpSocket, out controlSocket);
 
             Assert.NotNull(rtpSocket);
             Assert.NotNull(controlSocket);
@@ -196,10 +197,13 @@ namespace SIPSorcery.Sys.UnitTests
                 Socket rtpSocket = null;
                 Socket controlSocket = null;
 
-                NetServices.CreateRtpSocket(49152, 65534, 51277, true, null, out rtpSocket, out controlSocket);
+                //NetServices.CreateRtpSocket(49152, 65534, 51277, true, null, out rtpSocket, out controlSocket);
+                NetServices.CreateRtpSocket(true, true, null, out rtpSocket, out controlSocket);
 
                 Assert.NotNull(rtpSocket);
                 Assert.NotNull(controlSocket);
+                Assert.True((rtpSocket.LocalEndPoint as IPEndPoint).Port % 2 == 0);
+                Assert.False((controlSocket.LocalEndPoint as IPEndPoint).Port % 2 == 0);
 
                 sockets.Add(rtpSocket);
                 sockets.Add(controlSocket);

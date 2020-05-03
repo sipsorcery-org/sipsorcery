@@ -318,8 +318,8 @@ namespace SIPSorcery.Net
                           int mediaStartPort = RTP_PORT_START,
                           int mediaEndPort = RTP_PORT_END)
         {
-            int startFrom = Crypto.GetRandomInt(RTP_PORT_START, RTP_PORT_END);
-            NetServices.CreateRtpSocket(mediaStartPort, mediaEndPort, startFrom, createControlSocket, null, out var rtpSocket, out m_controlSocket);
+            //int startFrom = Crypto.GetRandomInt(RTP_PORT_START, RTP_PORT_END);
+            NetServices.CreateRtpSocket(true, createControlSocket, null, out var rtpSocket, out m_controlSocket);
 
             RtpSocket = rtpSocket;
             RTPLocalEndPoint = RtpSocket.LocalEndPoint as IPEndPoint;

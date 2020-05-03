@@ -99,6 +99,125 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
+        /// Attempts to create and bind a new RTP, and optionally an control (RTCP), socket(s).
+        /// The RTP and control sockets created are IPv4 and IPv6 dual mode sockets which means they can send and receive
+        /// either IPv4 or IPv6 packets.
+        /// </summary>
+        /// <param name="dualMode">Whether to set the created sockets to dual mode IPuv and IPv6. It's recommended that 
+        /// where possible dual mode sockets be used. At the time of writing dotnet core does not support dual mode sockets 
+        /// on Mac OS if packet information such as the remote end point address needs to be known.
+        /// </param>
+        /// <param name="createControlSocket">True if a control (RTCP) socket should be created. Set to false if RTP
+        /// and RTCP are being multiplexed on the same connection.</param>
+        /// <param name="bindAddress">Optional. If null The RTP and control sockets will be created as IPv4 and IPv6 dual mode 
+        /// sockets which means they can send and receive either IPv4 or IPv6 packets. If the bind address is specified an attempt
+        /// will be made to bind the RTP and optionally control listeners on it.</param>
+        /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
+        /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
+        public static void CreateRtpSocket(bool dualMode, bool createControlSocket, IPAddress bindAddress, out Socket rtpSocket, out Socket controlSocket)
+        {
+            if(dualMode && bindAddress != null && bindAddress.AddressFamily == AddressFamily.InterNetwork)
+            {
+                throw new ArgumentException("CreateRtpSocket cannot create a dual mode socket with an IPv4 bind address.");
+            }
+
+            logger.LogDebug($"CreateRtpSocket start port using OS default ephemeral port range.");
+
+            if (bindAddress == null)
+            {
+                bindAddress = (Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
+            }
+
+            rtpSocket = null;
+            controlSocket = null;
+            int bindAttempts = 0;
+
+            do
+            {
+                Socket firstSocket = null;
+                Socket secondSocket = null;
+                bool successs = false;
+
+                try
+                {
+                    // Create a dual mode IPv4/IPv6 socket.
+                    firstSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                    firstSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+                    firstSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+
+                    if (firstSocket.DualMode && !dualMode)
+                    {
+                        // Dual mode sockets are created by default if an IPv6 bind address was specified.
+                        firstSocket.DualMode = false;
+                    }
+
+                    firstSocket.Bind(new IPEndPoint(bindAddress, 0));
+
+                    if (createControlSocket)
+                    {
+                        // For legacy VoIP the RTP and Control sockets need to be consecutive with the RTP port being
+                        // an even number.
+
+                        int firstSocketPort = (firstSocket.LocalEndPoint as IPEndPoint).Port;
+                        int secondSocketPort = (firstSocketPort % 2 == 0) ? firstSocketPort + 1 : firstSocketPort - 1;
+
+                        secondSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                        secondSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
+                        secondSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+
+                        if (secondSocket.DualMode && !dualMode)
+                        {
+                            // Dual mode sockets are created by default if an IPv6 bind address was specified.
+                            secondSocket.DualMode = false;
+                        }
+
+                        secondSocket.Bind(new IPEndPoint(bindAddress, firstSocketPort + 1));
+
+                        rtpSocket = (firstSocketPort % 2 == 0) ? firstSocket : secondSocket;
+                        controlSocket = (firstSocketPort % 2 == 0) ? secondSocket : firstSocket;
+
+                        logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint} and control socket {controlSocket.LocalEndPoint}.");
+                    }
+                    else
+                    {
+                        rtpSocket = firstSocket;
+                        logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint}.");
+                    }
+
+                    successs = true;
+                    break;
+                }
+                catch (SocketException sockExcp)
+                {
+                    if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
+                    {
+                        logger.LogWarning($"Address already in use exception attempting to create control socket, attempt {bindAttempts}..");
+                    }
+                    else
+                    {
+                        logger.LogError($"SocketException in NetServices.CreateRtpSocket. {sockExcp}");
+                        throw;
+                    }
+                }
+                catch (Exception excp)
+                {
+                    logger.LogError($"Exception in NetServices.CreateRtpSocket. {excp}");
+                    throw;
+                }
+                finally
+                {
+                    if(!successs)
+                    {
+                        firstSocket?.Close();
+                        secondSocket?.Close();
+                    }
+                }
+
+                bindAttempts++;
+            } while (bindAttempts < MAXIMUM_RTP_PORT_BIND_ATTEMPTS);
+        }
+
+        /// <summary>
         /// Attempts to create and bind a new RTP, and optionally an control (RTCP), socket(s) within a specified port range.
         /// The RTP and control sockets created are IPv4 and IPv6 dual mode sockets which means they can send and receive
         /// either IPv4 or IPv6 packets.
@@ -115,7 +234,7 @@ namespace SIPSorcery.Sys
         /// will be made to bind the RTP and optionally control listeners on it.</param>
         /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
-        public static void CreateRtpSocket(int rangeStartPort, int rangeEndPort, int startPort, bool createControlSocket, IPAddress localAddress, out Socket rtpSocket, out Socket controlSocket)
+        public static void CreateRtpSocketInRange(int rangeStartPort, int rangeEndPort, int startPort, bool createControlSocket, IPAddress localAddress, out Socket rtpSocket, out Socket controlSocket)
         {
             if (startPort == 0)
             {
@@ -231,7 +350,7 @@ namespace SIPSorcery.Sys
                         logger.LogWarning($"SocketException in NetServices.CreateRtpSocket. {sockExcp}");
                     }
                 }
-                catch(Exception excp)
+                catch (Exception excp)
                 {
                     logger.LogWarning($"Exception in NetServices.CreateRtpSocket. {excp}");
                 }
