@@ -179,14 +179,8 @@ namespace SIPSorcery.Sys
 
                     if (addressFamily == AddressFamily.InterNetworkV6)
                     {
-                        if (firstSocket.DualMode && !SupportsDualModeIPv4PacketInfo)
-                        {
-                            firstSocket.DualMode = false;
-                        }
-                        else
-                        {
-                            firstSocket.DualMode = true;
-                        }
+                        logger.LogDebug($"CreateRtpSocket setting first socket dual mod to {SupportsDualModeIPv4PacketInfo}.");
+                        firstSocket.DualMode = SupportsDualModeIPv4PacketInfo;
                     }
 
                     firstSocket.Bind(new IPEndPoint(bindAddress, 0));
@@ -227,14 +221,8 @@ namespace SIPSorcery.Sys
 
                         if (addressFamily == AddressFamily.InterNetworkV6)
                         {
-                            if (secondSocket.DualMode && !SupportsDualModeIPv4PacketInfo)
-                            {
-                                secondSocket.DualMode = false;
-                            }
-                            else
-                            {
-                                secondSocket.DualMode = true;
-                            }
+                            logger.LogDebug($"CreateRtpSocket setting second socket dual mod to {SupportsDualModeIPv4PacketInfo}.");
+                            secondSocket.DualMode = SupportsDualModeIPv4PacketInfo;
                         }
 
                         secondSocket.Bind(new IPEndPoint(bindAddress, secondSocketPort));
