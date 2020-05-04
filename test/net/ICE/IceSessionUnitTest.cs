@@ -77,7 +77,7 @@ namespace SIPSorcery.Net.UnitTests
         /// in priority sorted order.
         /// </summary>
         [Fact]
-        public void SortChecklitUnitTest()
+        public void SortChecklistUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
