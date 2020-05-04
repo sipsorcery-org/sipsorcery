@@ -49,6 +49,26 @@ namespace SIPSorcery.Sys
         private static Mutex _allocatePortsMutex = new Mutex();
 
         /// <summary>
+        /// Doing the same check as here https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/SocketPal.Unix.cs#L19.
+        /// Which is checking if a dual mode socket can use the *ReceiveFrom* methods in order to
+        /// be able to get the remote destination end point.
+        /// To date the only case this has cropped up for is Mac OS as per https://github.com/sipsorcery/sipsorcery/issues/207.
+        /// </summary>
+        private static bool? _supportsDualModeIPv4PacketInfo = null;
+        public static bool SupportsDualModeIPv4PacketInfo
+        {
+            get
+            {
+                if (_supportsDualModeIPv4PacketInfo == null)
+                {
+                    _supportsDualModeIPv4PacketInfo = DoCheckSupportsDualModeIPv4PacketInfo();
+                }
+
+                return _supportsDualModeIPv4PacketInfo.Value;
+            }
+        }
+
+        /// <summary>
         /// A lookup collection to cache the local IP address for a destination address. The collection will cache results of
         /// asking the Operating System which local address to use for a destination address. The cache saves a relatively 
         /// expensive call to create a socket and ask the OS for a route lookup.
@@ -103,10 +123,6 @@ namespace SIPSorcery.Sys
         /// The RTP and control sockets created are IPv4 and IPv6 dual mode sockets which means they can send and receive
         /// either IPv4 or IPv6 packets.
         /// </summary>
-        /// <param name="dualMode">Whether to set the created sockets to dual mode IPuv and IPv6. It's recommended that 
-        /// where possible dual mode sockets be used. At the time of writing dotnet core does not support dual mode sockets 
-        /// on Mac OS if packet information such as the remote end point address needs to be known.
-        /// </param>
         /// <param name="createControlSocket">True if a control (RTCP) socket should be created. Set to false if RTP
         /// and RTCP are being multiplexed on the same connection.</param>
         /// <param name="bindAddress">Optional. If null The RTP and control sockets will be created as IPv4 and IPv6 dual mode 
@@ -114,13 +130,8 @@ namespace SIPSorcery.Sys
         /// will be made to bind the RTP and optionally control listeners on it.</param>
         /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
-        public static void CreateRtpSocket(bool dualMode, bool createControlSocket, IPAddress bindAddress, out Socket rtpSocket, out Socket controlSocket)
+        public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, out Socket rtpSocket, out Socket controlSocket)
         {
-            if(dualMode && bindAddress != null && bindAddress.AddressFamily == AddressFamily.InterNetwork)
-            {
-                throw new ArgumentException("CreateRtpSocket cannot create a dual mode socket with an IPv4 bind address.");
-            }
-
             logger.LogDebug($"CreateRtpSocket start port using OS default ephemeral port range.");
 
             if (bindAddress == null)
@@ -131,6 +142,7 @@ namespace SIPSorcery.Sys
             rtpSocket = null;
             controlSocket = null;
             int bindAttempts = 0;
+            AddressFamily addressFamily = bindAddress.AddressFamily;
 
             do
             {
@@ -144,14 +156,12 @@ namespace SIPSorcery.Sys
                     firstSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
                     firstSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                     firstSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
+                    firstSocket.Bind(new IPEndPoint(bindAddress, 0));
 
-                    if (firstSocket.DualMode && !dualMode)
+                    if (addressFamily == AddressFamily.InterNetworkV6 && firstSocket.DualMode && !SupportsDualModeIPv4PacketInfo)
                     {
-                        // Dual mode sockets are created by default if an IPv6 bind address was specified.
                         firstSocket.DualMode = false;
                     }
-
-                    firstSocket.Bind(new IPEndPoint(bindAddress, 0));
 
                     if (createControlSocket)
                     {
@@ -165,7 +175,7 @@ namespace SIPSorcery.Sys
                         secondSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                         secondSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
 
-                        if (secondSocket.DualMode && !dualMode)
+                        if (addressFamily == AddressFamily.InterNetworkV6 && firstSocket.DualMode && !SupportsDualModeIPv4PacketInfo)
                         {
                             // Dual mode sockets are created by default if an IPv6 bind address was specified.
                             secondSocket.DualMode = false;
@@ -191,7 +201,7 @@ namespace SIPSorcery.Sys
                 {
                     if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
                     {
-                        logger.LogWarning($"Address already in use exception attempting to create control socket, attempt {bindAttempts}..");
+                        logger.LogWarning($"Address already in use exception attempting to create control socket, attempt {bindAttempts}.");
                     }
                     else
                     {
@@ -206,7 +216,7 @@ namespace SIPSorcery.Sys
                 }
                 finally
                 {
-                    if(!successs)
+                    if (!successs)
                     {
                         firstSocket?.Close();
                         secondSocket?.Close();
@@ -215,6 +225,48 @@ namespace SIPSorcery.Sys
 
                 bindAttempts++;
             } while (bindAttempts < MAXIMUM_RTP_PORT_BIND_ATTEMPTS);
+        }
+
+        /// <summary>
+        /// Dual mode sockets are created by default if an IPv6 bind address was specified.
+        /// Dual mode needs to be disabled for Mac OS sockets as they don't support the use
+        /// of dual mode and the receive methods that return packet information. Packet info
+        /// is needed to get the remote recipient.
+        /// </summary>
+        /// <returns></returns>
+        private static bool DoCheckSupportsDualModeIPv4PacketInfo()
+        {
+            bool hasDualModeReceiveSupport = true;
+
+            if (!Socket.OSSupportsIPv6)
+            {
+                hasDualModeReceiveSupport = false;
+            }
+            else
+            {
+                var testSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+
+                try
+                {
+                    testSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, 0));
+                    testSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 1);
+                    byte[] buf = new byte[1];
+                    EndPoint remoteEP = new IPEndPoint(IPAddress.IPv6Any, 0);
+                    testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, (ar) => { testSocket.EndReceiveFrom(ar, ref remoteEP); }, null);
+                    hasDualModeReceiveSupport = true;
+                }
+                catch (PlatformNotSupportedException platExcp)
+                {
+                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed with {platExcp.Message}, dual mode sockets will be disabled.");
+                    hasDualModeReceiveSupport = false;
+                }
+                finally
+                {
+                    testSocket.Close();
+                }
+            }
+
+            return hasDualModeReceiveSupport;
         }
 
         /// <summary>

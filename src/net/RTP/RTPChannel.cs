@@ -186,9 +186,6 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTPChannel : IDisposable
     {
-        private const int RTP_PORT_START = 49152;   // IANA recommended start range for ephemeral ports, see https://en.wikipedia.org/wiki/Ephemeral_port.
-        private const int RTP_PORT_END = 65535 - 1; // IANA recommended end range for ephemeral ports, see https://en.wikipedia.org/wiki/Ephemeral_port.
-
         private static ILogger logger = Log.Logger;
 
         public Socket RtpSocket { get; private set; }
@@ -247,16 +244,11 @@ namespace SIPSorcery.Net
         /// RTCP are being multiplexed (as they are for WebRTC) there's no need to a separate control socket.</param>
         /// <param name="rtpRemoteEndPoint">The remote end point that the RTP socket is sending to.</param>
         /// <param name="controlEndPoint">The remote end point that the RTCP control socket is sending to.</param>
-        /// <param name="mediaStartPort">The media start port.</param>
-        /// <param name="mediaEndPort">The media end port.</param>
         public RTPChannel(bool createControlSocket,
                           IPEndPoint rtpRemoteEndPoint = null,
-                          IPEndPoint controlEndPoint = null,
-                          int mediaStartPort = RTP_PORT_START,
-                          int mediaEndPort = RTP_PORT_END)
+                          IPEndPoint controlEndPoint = null)
         {
-            //int startFrom = Crypto.GetRandomInt(RTP_PORT_START, RTP_PORT_END);
-            NetServices.CreateRtpSocket(true, createControlSocket, null, out var rtpSocket, out m_controlSocket);
+            NetServices.CreateRtpSocket(createControlSocket, null, out var rtpSocket, out m_controlSocket);
 
             RtpSocket = rtpSocket;
             RTPLocalEndPoint = RtpSocket.LocalEndPoint as IPEndPoint;
