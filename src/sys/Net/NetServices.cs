@@ -242,7 +242,14 @@ namespace SIPSorcery.Sys
                         rtpSocket = (firstSocketPort % 2 == 0) ? firstSocket : secondSocket;
                         controlSocket = (firstSocketPort % 2 == 0) ? secondSocket : firstSocket;
 
-                        logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint} and control socket {controlSocket.LocalEndPoint}.");
+                        if (addressFamily == AddressFamily.InterNetworkV6)
+                        {
+                            logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint} (dual mode {rtpSocket.DualMode}) and control socket {controlSocket.LocalEndPoint} (dual mode {controlSocket.DualMode}).");
+                        }
+                        else
+                        {
+                            logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint} and control socket {controlSocket.LocalEndPoint}.");
+                        }
 
                         success = true;
                         break;
@@ -276,7 +283,15 @@ namespace SIPSorcery.Sys
                 else
                 {
                     rtpSocket = firstSocket;
-                    logger.LogDebug($"Successfully bound RTP socket on {rtpSocket.LocalEndPoint}.");
+
+                    if (addressFamily == AddressFamily.InterNetworkV6)
+                    {
+                        logger.LogDebug($"Successfully bound RTP socket on {rtpSocket.LocalEndPoint} (dual mode {rtpSocket.DualMode}).");
+                    }
+                    else
+                    {
+                        logger.LogDebug($"Successfully bound RTP socket on {rtpSocket.LocalEndPoint}.");
+                    }
                     break;
                 }
 

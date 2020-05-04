@@ -400,6 +400,8 @@ namespace SIPSorcery.Net
                 if (hostCandidate.component == RTCIceComponent.rtp && hostCandidate.sdpMLineIndex == 0)
                 {
                     hostCandidates.Add(hostCandidate);
+
+                    OnIceCandidate?.Invoke(hostCandidate);
                 }
             }
 
