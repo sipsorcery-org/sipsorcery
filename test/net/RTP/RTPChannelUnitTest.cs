@@ -16,10 +16,10 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -89,7 +89,8 @@ namespace SIPSorcery.Net.UnitTests
             // Give the socket receive tasks time to fire up.
             await Task.Delay(1000);
 
-            IPEndPoint channel2Dst = new IPEndPoint(IPAddress.Loopback, channel2.RTPPort);
+            IPAddress channel2Address = (channel2.RTPLocalEndPoint.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Loopback : IPAddress.Loopback;
+            IPEndPoint channel2Dst = new IPEndPoint(channel2Address, channel2.RTPPort);
 
             logger.LogDebug($"Attempting to send packet from {channel1.RTPLocalEndPoint} to {channel2Dst}.");
 
