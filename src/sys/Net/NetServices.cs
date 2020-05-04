@@ -179,7 +179,7 @@ namespace SIPSorcery.Sys
 
                     if (addressFamily == AddressFamily.InterNetworkV6)
                     {
-                        logger.LogDebug($"CreateRtpSocket setting first socket dual mod to {SupportsDualModeIPv4PacketInfo}.");
+                        //logger.LogDebug($"CreateRtpSocket setting first socket dual mode to {SupportsDualModeIPv4PacketInfo}.");
                         firstSocket.DualMode = SupportsDualModeIPv4PacketInfo;
                     }
 
@@ -221,7 +221,7 @@ namespace SIPSorcery.Sys
 
                         if (addressFamily == AddressFamily.InterNetworkV6)
                         {
-                            logger.LogDebug($"CreateRtpSocket setting second socket dual mod to {SupportsDualModeIPv4PacketInfo}.");
+                            //logger.LogDebug($"CreateRtpSocket setting second socket dual mode to {SupportsDualModeIPv4PacketInfo}.");
                             secondSocket.DualMode = SupportsDualModeIPv4PacketInfo;
                         }
 
