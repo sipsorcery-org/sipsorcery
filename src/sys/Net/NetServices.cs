@@ -132,38 +132,79 @@ namespace SIPSorcery.Sys
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
         public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, out Socket rtpSocket, out Socket controlSocket)
         {
-            logger.LogDebug($"CreateRtpSocket start port using OS default ephemeral port range.");
-
             if (bindAddress == null)
             {
                 bindAddress = (Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
             }
 
+            if (bindAddress != null && bindAddress.AddressFamily == AddressFamily.InterNetworkV6 && !Socket.OSSupportsIPv6)
+            {
+                throw new ApplicationException("An RTP socket cannot be created on an IPv6 address due to lack of OS support.");
+            }
+            if (bindAddress != null && bindAddress.AddressFamily == AddressFamily.InterNetwork && !Socket.OSSupportsIPv4)
+            {
+                throw new ApplicationException("An RTP socket cannot be created on an IPv4 address due to lack of OS support.");
+            }
+
+            logger.LogDebug($"CreateRtpSocket start port using OS default ephemeral port range on {bindAddress}.");
+
             rtpSocket = null;
             controlSocket = null;
             int bindAttempts = 0;
             AddressFamily addressFamily = bindAddress.AddressFamily;
+            bool success = false;
 
             do
             {
                 Socket firstSocket = null;
                 Socket secondSocket = null;
-                bool successs = false;
 
+                // If we're unable to even bind a socket on the address we want using a port chosen by the OS 
+                // then there's no point trying repeatedly. Most likely there's something wrong with the networking
+                // set up. Except... if an address already in use error occurs it could be because another process/thread
+                // asked the OS for a bind at the same time. In that case it is worth re-trying.
                 try
                 {
                     // Create a dual mode IPv4/IPv6 socket.
-                    firstSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                    firstSocket = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
                     firstSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                     firstSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
-                    firstSocket.Bind(new IPEndPoint(bindAddress, 0));
 
-                    if (addressFamily == AddressFamily.InterNetworkV6 && firstSocket.DualMode && !SupportsDualModeIPv4PacketInfo)
+                    if (addressFamily == AddressFamily.InterNetworkV6)
                     {
-                        firstSocket.DualMode = false;
+                        if (firstSocket.DualMode && !SupportsDualModeIPv4PacketInfo)
+                        {
+                            firstSocket.DualMode = false;
+                        }
+                        else
+                        {
+                            firstSocket.DualMode = true;
+                        }
                     }
 
-                    if (createControlSocket)
+                    firstSocket.Bind(new IPEndPoint(bindAddress, 0));
+                }
+                catch (SocketException sockExcp)
+                {
+                    if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
+                    {
+                        logger.LogWarning($"Address already in use exception attempting to create RTP socket, attempt {bindAttempts}.");
+                    }
+                    else
+                    {
+                        logger.LogError($"SocketException in NetServices.CreateRtpSocket. {sockExcp}");
+                        break;
+                    }
+                }
+                catch (Exception excp)
+                {
+                    logger.LogError($"Exception in NetServices.CreateRtpSocket attempting the initial socket bind on address {bindAddress}. {excp}");
+                    break;
+                }
+
+                if (createControlSocket)
+                {
+                    try
                     {
                         // For legacy VoIP the RTP and Control sockets need to be consecutive with the RTP port being
                         // an even number.
@@ -173,14 +214,20 @@ namespace SIPSorcery.Sys
 
                         logger.LogDebug($"CreateRtpSocket successfully bound on {firstSocket.LocalEndPoint}, attempting second socket bind on port {secondSocketPort}.");
 
-                        secondSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                        secondSocket = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
                         secondSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                         secondSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
 
-                        if (addressFamily == AddressFamily.InterNetworkV6 && firstSocket.DualMode && !SupportsDualModeIPv4PacketInfo)
+                        if (addressFamily == AddressFamily.InterNetworkV6)
                         {
-                            // Dual mode sockets are created by default if an IPv6 bind address was specified.
-                            secondSocket.DualMode = false;
+                            if (secondSocket.DualMode && !SupportsDualModeIPv4PacketInfo)
+                            {
+                                secondSocket.DualMode = false;
+                            }
+                            else
+                            {
+                                secondSocket.DualMode = true;
+                            }
                         }
 
                         secondSocket.Bind(new IPEndPoint(bindAddress, secondSocketPort));
@@ -189,40 +236,41 @@ namespace SIPSorcery.Sys
                         controlSocket = (firstSocketPort % 2 == 0) ? secondSocket : firstSocket;
 
                         logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint} and control socket {controlSocket.LocalEndPoint}.");
-                    }
-                    else
-                    {
-                        rtpSocket = firstSocket;
-                        logger.LogDebug($"Successfully bound RTP socket {rtpSocket.LocalEndPoint}.");
-                    }
 
-                    successs = true;
-                    break;
-                }
-                catch (SocketException sockExcp)
-                {
-                    if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
-                    {
-                        logger.LogWarning($"Address already in use exception attempting to create control socket, attempt {bindAttempts}.");
+                        success = true;
+                        break;
                     }
-                    else
+                    catch (SocketException sockExcp)
                     {
-                        logger.LogError($"SocketException in NetServices.CreateRtpSocket. {sockExcp}");
+                        if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
+                        {
+                            logger.LogWarning($"Address already in use exception attempting to create control socket, attempt {bindAttempts}.");
+                        }
+                        else
+                        {
+                            logger.LogError($"SocketException in NetServices.CreateRtpSocket. {sockExcp}");
+                            throw;
+                        }
+                    }
+                    catch (Exception excp)
+                    {
+                        logger.LogError($"Exception in NetServices.CreateRtpSocket. {excp}");
                         throw;
                     }
-                }
-                catch (Exception excp)
-                {
-                    logger.LogError($"Exception in NetServices.CreateRtpSocket. {excp}");
-                    throw;
-                }
-                finally
-                {
-                    if (!successs)
+                    finally
                     {
-                        firstSocket?.Close();
-                        secondSocket?.Close();
+                        if (!success)
+                        {
+                            firstSocket?.Close();
+                            secondSocket?.Close();
+                        }
                     }
+                }
+                else
+                {
+                    rtpSocket = firstSocket;
+                    logger.LogDebug($"Successfully bound RTP socket on {rtpSocket.LocalEndPoint}.");
+                    break;
                 }
 
                 bindAttempts++;
@@ -262,7 +310,7 @@ namespace SIPSorcery.Sys
                     logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with a platform exception {platExcp.Message}");
                     hasDualModeReceiveSupport = false;
                 }
-                catch(Exception excp)
+                catch (Exception excp)
                 {
                     logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with {excp.Message}");
                     hasDualModeReceiveSupport = false;
