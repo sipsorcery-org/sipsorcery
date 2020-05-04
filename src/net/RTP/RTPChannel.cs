@@ -250,6 +250,15 @@ namespace SIPSorcery.Net
         {
             NetServices.CreateRtpSocket(createControlSocket, null, out var rtpSocket, out m_controlSocket);
 
+            if(rtpSocket == null)
+            {
+                throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
+            }
+            else if(createControlSocket && m_controlSocket == null)
+            {
+                throw new ApplicationException("The RTP channel was not able to create a Control socket.");
+            }
+
             RtpSocket = rtpSocket;
             RTPLocalEndPoint = RtpSocket.LocalEndPoint as IPEndPoint;
             RTPPort = RTPLocalEndPoint.Port;
