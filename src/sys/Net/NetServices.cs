@@ -171,6 +171,8 @@ namespace SIPSorcery.Sys
                         int firstSocketPort = (firstSocket.LocalEndPoint as IPEndPoint).Port;
                         int secondSocketPort = (firstSocketPort % 2 == 0) ? firstSocketPort + 1 : firstSocketPort - 1;
 
+                        logger.LogDebug($"CreateRtpSocket successfully bound on {firstSocket.LocalEndPoint}, attempting second socket bind on port {secondSocketPort}.");
+
                         secondSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
                         secondSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                         secondSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
@@ -181,7 +183,7 @@ namespace SIPSorcery.Sys
                             secondSocket.DualMode = false;
                         }
 
-                        secondSocket.Bind(new IPEndPoint(bindAddress, firstSocketPort + 1));
+                        secondSocket.Bind(new IPEndPoint(bindAddress, secondSocketPort));
 
                         rtpSocket = (firstSocketPort % 2 == 0) ? firstSocket : secondSocket;
                         controlSocket = (firstSocketPort % 2 == 0) ? secondSocket : firstSocket;
@@ -257,12 +259,12 @@ namespace SIPSorcery.Sys
                 }
                 catch (PlatformNotSupportedException platExcp)
                 {
-                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed with a platform exception {platExcp.Message}, dual mode RTP sockets will not be used.");
+                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with a platform exception {platExcp.Message}");
                     hasDualModeReceiveSupport = false;
                 }
                 catch(Exception excp)
                 {
-                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed with {excp.Message}, dual mode RTP sockets will not be used.");
+                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with {excp.Message}");
                     hasDualModeReceiveSupport = false;
                 }
                 finally
