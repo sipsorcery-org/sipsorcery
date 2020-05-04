@@ -252,12 +252,17 @@ namespace SIPSorcery.Sys
                     testSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 1);
                     byte[] buf = new byte[1];
                     EndPoint remoteEP = new IPEndPoint(IPAddress.IPv6Any, 0);
-                    testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, (ar) => { testSocket.EndReceiveFrom(ar, ref remoteEP); }, null);
+                    testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, (ar) => { try { testSocket.EndReceiveFrom(ar, ref remoteEP); } catch { } }, null);
                     hasDualModeReceiveSupport = true;
                 }
                 catch (PlatformNotSupportedException platExcp)
                 {
-                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed with {platExcp.Message}, dual mode sockets will be disabled.");
+                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed with a platform exception {platExcp.Message}, dual mode RTP sockets will not be used.");
+                    hasDualModeReceiveSupport = false;
+                }
+                catch(Exception excp)
+                {
+                    logger.LogWarning($"A socket 'receive from' attempt on a dual mode socket failed with {excp.Message}, dual mode RTP sockets will not be used.");
                     hasDualModeReceiveSupport = false;
                 }
                 finally
