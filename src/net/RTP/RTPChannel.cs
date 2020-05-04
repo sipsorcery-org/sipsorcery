@@ -20,8 +20,6 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -43,7 +41,6 @@ namespace SIPSorcery.Net
         private byte[] m_recvBuffer;
         private bool m_isClosed;
         private int m_localPort;
-        private CancellationTokenSource m_cts;
 
         /// <summary>
         /// Fires when a new packet has been received in the UDP socket.
@@ -58,46 +55,79 @@ namespace SIPSorcery.Net
         public UdpReceiver(Socket udpSocket)
         {
             m_udpSocket = udpSocket;
-            m_udpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 1000);
             m_localPort = (m_udpSocket.LocalEndPoint as IPEndPoint).Port;
             m_recvBuffer = new byte[RECEIVE_BUFFER_SIZE];
-            m_cts = new CancellationTokenSource();
         }
 
-        public void Receive()
-        {
-            Task.Run(() =>
-            {
-                try
-                {
-                    while (!m_isClosed)
-                    {
-                        DoReceive();
-                    }
-                }
-                catch (TaskCanceledException)
-                { }
-                catch(Exception excp)
-                {
-                    logger.LogError($"Exception UdpReceiver.Receive. {excp.Message}");
-                }
-            }, m_cts.Token).ConfigureAwait(false);
-        }
+        // ToDo: Supposedly the Event Asynchronous Pattern (EAP) can be turned into the Task Asynchronous Pattern (TAP)
+        // with one line. Couldn't make it work as yet.
+        //public Task<int> ReceiveAsync(byte[] buffer, int offset, int count, SocketFlags flags)
+        //{
+        //    return Task<int>.Factory.FromAsync(m_udpSocket.BeginReceive, m_udpSocket.EndReceive,
+        //        buffer, offset, count, flags, null, TaskCreationOptions.None);
+        //}
 
-        private void DoReceive()
+        /// <summary>
+        /// Starts the receive. This method returns immediately. An event will be fired in the corresponding "End" event to
+        /// return any data received.
+        /// </summary>
+        public void BeginReceive()
         {
             try
             {
-                EndPoint remoteEP = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                //int bytesRead = m_udpSocket.ReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref remoteEP);
-                //int bytesRead = await Task<int>.Factory.FromAsync(asyncResult, _ => m_udpSocket.EndReceiveFrom(asyncResult, ref remoteEP));
-                int bytesRead = m_udpSocket.Receive(m_recvBuffer);
+                EndPoint recvEndPoint = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+                m_udpSocket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveFrom, null);
+            }
+            catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
+            // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
+            // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
+            // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
+            catch (SocketException)
+            {
+                //logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceive. {sockExcp.Message}");
+                //Close(sockExcp.Message);
+            }
+            catch (Exception excp)
+            {
+                // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
+                // the BeginReceiveMessageFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
+                // case the socket can be considered to be unusable and there's no point trying another receive.
+                logger.LogError($"Exception UdpReceiver.BeginReceive. {excp.Message}");
+                Close(excp.Message);
+            }
+        }
 
-                if (bytesRead > 0)
+        /// <summary>
+        /// Handler for end of the begin receive call.
+        /// </summary>
+        /// <param name="ar">Contains the results of the receive.</param>
+        private void EndReceiveFrom(IAsyncResult ar)
+        {
+            try
+            {
+                // When socket is closed the object will be disposed of in the middle of a receive.
+                if (!m_isClosed)
                 {
-                    byte[] packetBuffer = new byte[bytesRead];
-                    Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
-                    OnPacketReceived?.Invoke(this, m_localPort, remoteEP as IPEndPoint, packetBuffer);
+                    EndPoint remoteEP = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+
+                    int bytesRead = m_udpSocket.EndReceiveFrom(ar, ref remoteEP);
+
+                    if (bytesRead > 0)
+                    {
+                        IPEndPoint localEndPoint = m_udpSocket.LocalEndPoint as IPEndPoint;
+
+                        // During experiments IPPacketInformation wasn't getting set on Linux. Without it the local IP address
+                        // cannot be determined when a listener was bound to IPAddress.Any (or IPv6 equivalent). If the caller
+                        // is relying on getting the local IP address on Linux then something may fail.
+                        //if (packetInfo != null && packetInfo.Address != null)
+                        //{
+                        //    localEndPoint = new IPEndPoint(packetInfo.Address, localEndPoint.Port);
+                        //}
+
+                        byte[] packetBuffer = new byte[bytesRead];
+                        Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
+                        OnPacketReceived?.Invoke(this, m_localPort, remoteEP as IPEndPoint, packetBuffer);
+                    }
                 }
             }
             catch (SocketException)
@@ -116,108 +146,17 @@ namespace SIPSorcery.Net
             { }
             catch (Exception excp)
             {
-                logger.LogError($"Exception UdpReceiver.DoReceive. {excp}");
+                logger.LogError($"Exception UdpReceiver.EndReceiveMessage. {excp}");
                 Close(excp.Message);
             }
-            //finally
-            //{
-            //    if (!m_isClosed)
-            //    {
-            //        ReceiveAsync();
-            //    }
-            //}
+            finally
+            {
+                if (!m_isClosed)
+                {
+                    BeginReceive();
+                }
+            }
         }
-
-        /// <summary>
-        /// Starts the receive. This method returns immediately. An event will be fired in the corresponding "End" event to
-        /// return any data received.
-        /// </summary>
-        //public void BeginReceiveX()
-        //{
-        //    try
-        //    {
-        //        EndPoint recvEndPoint = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-        //        m_udpSocket.BeginReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref recvEndPoint, EndReceiveFromX, null);
-        //    }
-        //    catch (ObjectDisposedException) { } // Thrown when socket is closed. Can be safely ignored.
-        //    // This exception can be thrown in response to an ICMP packet. The problem is the ICMP packet can be a false positive.
-        //    // For example if the remote RTP socket has not yet been opened the remote host could generate an ICMP packet for the 
-        //    // initial RTP packets. Experience has shown that it's not safe to close an RTP connection based solely on ICMP packets.
-        //    catch (SocketException)
-        //    {
-        //        //logger.LogWarning($"Socket error {sockExcp.SocketErrorCode} in UdpReceiver.BeginReceive. {sockExcp.Message}");
-        //        //Close(sockExcp.Message);
-        //    }
-        //    catch (Exception excp)
-        //    {
-        //        // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
-        //        // the BeginReceiveMessageFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
-        //        // case the socket can be considered to be unusable and there's no point trying another receive.
-        //        logger.LogError($"Exception UdpReceiver.BeginReceive. {excp.Message}");
-        //        Close(excp.Message);
-        //    }
-        //}
-
-        /// <summary>
-        /// Handler for end of the begin receive call.
-        /// </summary>
-        /// <param name="ar">Contains the results of the receive.</param>
-        //private void EndReceiveFromX(IAsyncResult ar)
-        //{
-        //    try
-        //    {
-        //        // When socket is closed the object will be disposed of in the middle of a receive.
-        //        if (!m_isClosed)
-        //        {
-        //            EndPoint remoteEP = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-
-        //            int bytesRead = m_udpSocket.EndReceiveFrom(ar, ref remoteEP);
-
-        //            if (bytesRead > 0)
-        //            {
-        //                IPEndPoint localEndPoint = m_udpSocket.LocalEndPoint as IPEndPoint;
-
-        //                // During experiments IPPacketInformation wasn't getting set on Linux. Without it the local IP address
-        //                // cannot be determined when a listener was bound to IPAddress.Any (or IPv6 equivalent). If the caller
-        //                // is relying on getting the local IP address on Linux then something may fail.
-        //                //if (packetInfo != null && packetInfo.Address != null)
-        //                //{
-        //                //    localEndPoint = new IPEndPoint(packetInfo.Address, localEndPoint.Port);
-        //                //}
-
-        //                byte[] packetBuffer = new byte[bytesRead];
-        //                Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
-        //                OnPacketReceived?.Invoke(this, m_localPort, remoteEP as IPEndPoint, packetBuffer);
-        //            }
-        //        }
-        //    }
-        //    catch (SocketException)
-        //    {
-        //        // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
-        //        // normal RTP operation. For example:
-        //        // - the RTP connection may start sending before the remote socket starts listening,
-        //        // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
-        //        //   or new socket during the transition.
-        //        // It also seems that once a UDP socket pair have exchanged packets and the remote party closes the socket exception will occur
-        //        // in the BeginReceive method (very handy). Follow-up, this doesn't seem to be the case, the socket exception can occur in 
-        //        // BeginReceive before any packets have been exchanged. This means it's not safe to close if BeginReceive gets an ICMP 
-        //        // error since the remote party may not have initialised their socket yet.
-        //    }
-        //    catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-        //    { }
-        //    catch (Exception excp)
-        //    {
-        //        logger.LogError($"Exception UdpReceiver.EndReceiveMessage. {excp}");
-        //        Close(excp.Message);
-        //    }
-        //    finally
-        //    {
-        //        if (!m_isClosed)
-        //        {
-        //            BeginReceiveX();
-        //        }
-        //    }
-        //}
 
         /// <summary>
         /// Closes the socket and stops any new receives from being initiated.
@@ -228,10 +167,8 @@ namespace SIPSorcery.Net
             {
                 m_isClosed = true;
                 m_udpSocket?.Close();
-                
-                OnClosed?.Invoke(reason);
 
-                m_cts.Cancel();
+                OnClosed?.Invoke(reason);
             }
         }
     }
@@ -343,14 +280,14 @@ namespace SIPSorcery.Net
                 m_rtpReceiver = new UdpReceiver(RtpSocket);
                 m_rtpReceiver.OnPacketReceived += OnRTPPacketReceived;
                 m_rtpReceiver.OnClosed += Close;
-                m_rtpReceiver.Receive();
+                m_rtpReceiver.BeginReceive();
 
                 if (m_controlSocket != null)
                 {
                     m_controlReceiver = new UdpReceiver(m_controlSocket);
                     m_controlReceiver.OnPacketReceived += OnControlPacketReceived;
                     m_controlReceiver.OnClosed += Close;
-                    m_controlReceiver.Receive();
+                    m_controlReceiver.BeginReceive();
                 }
             }
         }

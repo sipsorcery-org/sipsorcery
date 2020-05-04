@@ -389,6 +389,11 @@ namespace SIPSorcery
 
                     var uas = ua.AcceptCall(sipRequest);
                     var rtpSession = CreateRtpSession(ua, sipRequest.URI.User);
+
+                    // Insert a brief delay to allow testing of the "Ringing" progress response.
+                    // Without the delay the call gets answered before it can be sent.
+                    await Task.Delay(500);
+
                     await ua.Answer(uas, rtpSession);
 
                     if (ua.IsCallActive)

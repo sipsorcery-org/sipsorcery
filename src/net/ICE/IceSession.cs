@@ -296,6 +296,7 @@ namespace SIPSorcery.Net
         public event Action<RTCIceCandidate> OnIceCandidate;
         public event Action<RTCIceConnectionState> OnIceConnectionStateChange;
         public event Action<RTCIceGatheringState> OnIceGatheringStateChange;
+        public event Action OnIceCandidateError;
 
         /// <summary>
         /// Creates a new instance of an ICE session.
@@ -413,6 +414,7 @@ namespace SIPSorcery.Net
         /// <returns></returns>
         private List<RTCIceCandidate> GetServerRelexiveCandidates()
         {
+            OnIceCandidateError?.Invoke();
             throw new NotImplementedException();
         }
 

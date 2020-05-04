@@ -136,7 +136,7 @@ namespace SIPSorcery.Net
     public class RTCPeerConnection : RTPSession, IRTCPeerConnection
     {
         // SDP constants.
-        private const string RTP_MEDIA_PROFILE = "RTP/SAVP";
+        private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
         private const string RTCP_ATTRIBUTE = "a=rtcp:9 IN IP4 0.0.0.0";
         private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is passive.
@@ -206,11 +206,36 @@ namespace SIPSorcery.Net
         private RTCConfiguration _configuration;
         private RTCCertificate _currentCertificate;
 
-        public event Action onnegotiationneeded; // ?
+        /// <summary>
+        /// Informs the application that session negotiation needs to be done (i.e. a createOffer call 
+        /// followed by setLocalDescription).
+        /// </summary>
+        public event Action onnegotiationneeded;
+
+        /// <summary>
+        /// A new ICE candidate is available for the Peer Connection.
+        /// </summary>
         public event Action<RTCIceCandidate> onicecandidate;
-        public event Action onicecandidateerror; // ?
-        public event Action onsignalingstatechange; // ?
+
+        /// <summary>
+        /// A failure occurred when gathering ICE candidates.
+        /// </summary>
+        public event Action onicecandidateerror;
+
+        /// <summary>
+        /// The signaling state has changed. This state change is the result of either setLocalDescription or 
+        /// setRemoteDescription being invoked.
+        /// </summary>
+        public event Action onsignalingstatechange;
+
+        /// <summary>
+        /// This Peer Connection's ICE connection state has changed.
+        /// </summary>
         public event Action<RTCIceConnectionState> oniceconnectionstatechange;
+
+        /// <summary>
+        /// This Peer Connection's ICE gathering state has changed.
+        /// </summary>
         public event Action<RTCIceGatheringState> onicegatheringstatechange;
 
         /// <summary>
@@ -254,9 +279,12 @@ namespace SIPSorcery.Net
                 oniceconnectionstatechange?.Invoke(state);
             };
             IceSession.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
+            IceSession.OnIceCandidateError += onicecandidateerror;
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
+
+            onnegotiationneeded?.Invoke();
         }
 
         /// <summary>
@@ -284,6 +312,9 @@ namespace SIPSorcery.Net
 
             // This is the point the ICE session potentially starts contacting STUN and TURN servers.
             IceSession.StartGathering();
+
+            signalingState = RTCSignalingState.have_local_offer;
+            onsignalingstatechange?.Invoke();
 
             return Task.CompletedTask;
         }
@@ -363,6 +394,9 @@ namespace SIPSorcery.Net
                 //        }
                 //    }
                 //}
+
+                signalingState = RTCSignalingState.have_remote_offer;
+                onsignalingstatechange?.Invoke();
 
                 return Task.CompletedTask;
             }
