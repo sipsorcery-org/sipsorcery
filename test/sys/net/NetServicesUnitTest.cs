@@ -16,6 +16,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -212,6 +213,31 @@ namespace SIPSorcery.Sys.UnitTests
             foreach (var socket in sockets)
             {
                 socket.Close();
+            }
+        }
+
+        /// <summary>
+        /// Runs the check to determine whether the underlying OS supports dual mode 
+        /// sockets WITH packet info (needed to get remote end point). The only OS currently
+        /// known not to is Mac OSX.
+        /// </summary>
+        [Fact]
+        public void CheckSupportsDualModeIPv4PacketInfoUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            bool supports = NetServices.SupportsDualModeIPv4PacketInfo;
+
+            logger.LogDebug($"SupportsDualModeIPv4PacketInfo result for OS {RuntimeInformation.OSDescription} is {supports}.");
+
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Assert.False(supports);
+            }
+            else
+            {
+                Assert.True(supports);
             }
         }
     }

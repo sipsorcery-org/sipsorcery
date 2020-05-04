@@ -59,9 +59,16 @@ namespace SIPSorcery.Sys
         {
             get
             {
-                if (_supportsDualModeIPv4PacketInfo == null)
+                if (!_supportsDualModeIPv4PacketInfo.HasValue)
                 {
-                    _supportsDualModeIPv4PacketInfo = DoCheckSupportsDualModeIPv4PacketInfo();
+                    try
+                    {
+                        _supportsDualModeIPv4PacketInfo = DoCheckSupportsDualModeIPv4PacketInfo();
+                    }
+                    catch
+                    {
+                        _supportsDualModeIPv4PacketInfo = false;
+                    }
                 }
 
                 return _supportsDualModeIPv4PacketInfo.Value;
@@ -294,7 +301,8 @@ namespace SIPSorcery.Sys
             }
             else
             {
-                var testSocket = new Socket(SocketType.Dgram, ProtocolType.Udp);
+                var testSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                testSocket.DualMode = true;
 
                 try
                 {
@@ -302,7 +310,16 @@ namespace SIPSorcery.Sys
                     testSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 1);
                     byte[] buf = new byte[1];
                     EndPoint remoteEP = new IPEndPoint(IPAddress.IPv6Any, 0);
-                    testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, (ar) => { try { testSocket.EndReceiveFrom(ar, ref remoteEP); } catch { } }, null);
+                    testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, (ar) => { 
+                        try 
+                        { 
+                            testSocket.EndReceiveFrom(ar, ref remoteEP); 
+                        } 
+                        catch 
+                        {
+                            hasDualModeReceiveSupport = false;
+                        } 
+                    }, null);
                     hasDualModeReceiveSupport = true;
                 }
                 catch (PlatformNotSupportedException platExcp)
