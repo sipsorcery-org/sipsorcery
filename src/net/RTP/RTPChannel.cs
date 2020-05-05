@@ -242,13 +242,12 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="createControlSocket">Set to true if a separate RTCP control socket should be created. If RTP and
         /// RTCP are being multiplexed (as they are for WebRTC) there's no need to a separate control socket.</param>
-        /// <param name="rtpRemoteEndPoint">The remote end point that the RTP socket is sending to.</param>
-        /// <param name="controlEndPoint">The remote end point that the RTCP control socket is sending to.</param>
-        public RTPChannel(bool createControlSocket,
-                          IPEndPoint rtpRemoteEndPoint = null,
-                          IPEndPoint controlEndPoint = null)
+        /// <param name="bindAddress">Optional. An IP address belonging to a local interface that will be used to bind
+        /// the RTP and control sockets to. If left empty then the IPv6 any address will be used if IPv6 is supported
+        /// and fallback to the IPv4 any address.</param>
+        public RTPChannel(bool createControlSocket, IPAddress bindAddress)
         {
-            NetServices.CreateRtpSocket(createControlSocket, null, out var rtpSocket, out m_controlSocket);
+            NetServices.CreateRtpSocket(createControlSocket, bindAddress, out var rtpSocket, out m_controlSocket);
 
             if(rtpSocket == null)
             {
@@ -264,9 +263,6 @@ namespace SIPSorcery.Net
             RTPPort = RTPLocalEndPoint.Port;
             ControlLocalEndPoint = (m_controlSocket != null) ? m_controlSocket.LocalEndPoint as IPEndPoint : null;
             ControlPort = (m_controlSocket != null) ? ControlLocalEndPoint.Port : 0;
-
-            LastRtpDestination = rtpRemoteEndPoint;
-            LastControlDestination = controlEndPoint;
         }
 
         /// <summary>

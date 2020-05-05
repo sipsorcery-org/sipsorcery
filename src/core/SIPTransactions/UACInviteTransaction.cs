@@ -142,6 +142,7 @@ namespace SIPSorcery.SIP
             try
             {
                 DeliveryPending = false;
+                base.UpdateTransactionState(SIPTransactionStatesEnum.Confirmed);
 
                 // BranchId for 2xx responses needs to be a new one, non-2xx final responses use same one as original request.
                 if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode < 299)

@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -204,6 +205,60 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"Set remote description on local session result {result}.");
 
             Assert.Equal(SetDescriptionResultEnum.InvalidAudioPort, result);
+
+            localSession.Close("normal");
+        }
+
+        /// <summary>
+        /// Checks that the SDP offer gets created with the correct connection address when the RTPSession
+        /// is instantiated with a specific IPv4 bind address.
+        /// </summary>
+        [Fact]
+        public void CheckCreateOfferWithIPv4BindAddressAnswerTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // Create two RTP sessions. First one acts as the local session to generate the offer.
+            // Second one acts as the remote session to generate the answer.
+
+            RTPSession localSession = new RTPSession(false, false, false, IPAddress.Loopback);
+            MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            localSession.addTrack(localAudioTrack);
+
+            // Generate the offer to send to the remote party.
+            var offer = localSession.CreateOffer(null);
+
+            logger.LogDebug("Local offer: " + offer.ToString());
+
+            Assert.True(IPAddress.Loopback.Equals(IPAddress.Parse(offer.Connection.ConnectionAddress)));
+
+            localSession.Close("normal");
+        }
+
+        /// <summary>
+        /// Checks that the SDP offer gets created with the correct connection address when the RTPSession
+        /// is instantiated with a specific IPv6  bind address.
+        /// </summary>
+        [Fact]
+        public void CheckCreateOfferWithIPv6BindAddressAnswerTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // Create two RTP sessions. First one acts as the local session to generate the offer.
+            // Second one acts as the remote session to generate the answer.
+
+            RTPSession localSession = new RTPSession(false, false, false, IPAddress.IPv6Loopback);
+            MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            localSession.addTrack(localAudioTrack);
+
+            // Generate the offer to send to the remote party.
+            var offer = localSession.CreateOffer(null);
+
+            logger.LogDebug("Local offer: " + offer.ToString());
+
+            Assert.True(IPAddress.IPv6Loopback.Equals(IPAddress.Parse(offer.Connection.ConnectionAddress)));
 
             localSession.Close("normal");
         }

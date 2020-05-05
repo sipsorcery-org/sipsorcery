@@ -163,7 +163,7 @@ namespace SIPSorcery
 
             Log.LogInformation("Exiting...");
 
-            rtpSession.CloseSession(null);
+            rtpSession.Close(null);
 
             if (!isCallHungup && uac != null)
             {

@@ -23,6 +23,7 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 
@@ -315,16 +316,19 @@ namespace SIPSorcery.Sys
                     testSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 1);
                     byte[] buf = new byte[1];
                     EndPoint remoteEP = new IPEndPoint(IPAddress.IPv6Any, 0);
-                    testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, (ar) => { 
-                        try 
-                        { 
-                            testSocket.EndReceiveFrom(ar, ref remoteEP); 
-                        } 
-                        catch 
-                        {
-                            hasDualModeReceiveSupport = false;
-                        } 
-                    }, null);
+
+                    //AsyncCallback endReceiveCB = (IAsyncResult ar) =>
+                    //{
+
+                    //    try
+                    //    {
+                    //        testSocket?.EndReceiveFrom(ar, ref remoteEP);
+                    //    }
+                    //    catch { }
+                    //};
+
+                    //testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, endReceiveCB, null);
+                    testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, null, null);
                     hasDualModeReceiveSupport = true;
                 }
                 catch (PlatformNotSupportedException platExcp)

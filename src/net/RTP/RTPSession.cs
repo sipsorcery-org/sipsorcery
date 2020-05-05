@@ -262,6 +262,7 @@ namespace SIPSorcery.Net
 
         private bool m_isMediaMultiplexed = false;      // Indicates whether audio and video are multiplexed on a single RTP channel or not.
         private bool m_isRtcpMultiplexed = false;       // Indicates whether the RTP channel is multiplexing RTP and RTCP packets on the same port.
+        private IPAddress m_bindAddress = null;         // If set the address to use for binding the RTP and control sockets.
         private bool m_rtpEventInProgress;              // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                // The last timestamp used in an RTP packet.    
         private bool m_isClosed;
@@ -446,11 +447,13 @@ namespace SIPSorcery.Net
         public RTPSession(
             bool isMediaMultiplexed,
             bool isRtcpMultiplexed,
-            bool isSecure)
+            bool isSecure,
+            IPAddress bindAddress = null)
         {
             m_isMediaMultiplexed = isMediaMultiplexed;
             m_isRtcpMultiplexed = isRtcpMultiplexed;
             IsSecure = isSecure;
+            m_bindAddress = bindAddress;
 
             m_sdpSessionID = Crypto.GetRandomInt(SDP_SESSIONID_LENGTH).ToString();
         }
@@ -908,7 +911,11 @@ namespace SIPSorcery.Net
 
             if (localAddress == null)
             {
-                if (AudioDestinationEndPoint != null && AudioDestinationEndPoint.Address != null)
+                if(m_bindAddress != null)
+                {
+                    localAddress = m_bindAddress;
+                }
+                else if (AudioDestinationEndPoint != null && AudioDestinationEndPoint.Address != null)
                 {
                     if (IPAddress.Any.Equals(AudioDestinationEndPoint.Address) || IPAddress.IPv6Any.Equals(AudioDestinationEndPoint.Address))
                     {
@@ -994,7 +1001,8 @@ namespace SIPSorcery.Net
         /// <returns>A new RTPChannel instance.</returns>
         private RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
         {
-            var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed);
+            // If RTCP is multiplexed we don't need a control socket. If not we do.
+            var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress);
             m_rtpChannels.Add(mediaType, rtpChannel);
 
             rtpChannel.OnRTPDataReceived += OnReceive;

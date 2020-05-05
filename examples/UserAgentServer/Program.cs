@@ -183,7 +183,7 @@ namespace SIPSorcery
                                 uas.CallCancelled += (uasAgent) =>
                                 {
                                     rtpCts?.Cancel();
-                                    rtpSession.CloseSession(null);
+                                    rtpSession.Close(null);
                                 };
                                 rtpSession.OnRtpClosed += (reason) => uas?.Hangup(false);
                                 uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
@@ -202,7 +202,7 @@ namespace SIPSorcery
                         SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                         await sipTransport.SendResponseAsync(byeResponse);
                         uas?.Hangup(true);
-                        rtpSession?.CloseSession(null);
+                        rtpSession?.Close(null);
                         rtpCts?.Cancel();
                     }
                     else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
@@ -232,7 +232,7 @@ namespace SIPSorcery
 
                 Hangup(uas).Wait();
 
-                rtpSession?.CloseSession(null);
+                rtpSession?.Close(null);
                 rtpCts?.Cancel();
 
                 if (sipTransport != null)
@@ -259,7 +259,7 @@ namespace SIPSorcery
 
                             Hangup(uas).Wait();
 
-                            rtpSession?.CloseSession(null);
+                            rtpSession?.Close(null);
                             rtpCts?.Cancel();
                         }
 
