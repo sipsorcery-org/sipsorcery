@@ -301,7 +301,6 @@ namespace SIPSorcery.SIP.App
             {
                 MediaSession = mediaSession;
                 MediaSession.OnRtpEvent += OnRemoteRtpEvent;
-                //MediaSession.OnRtpClosed += (reason) => Hangup();
                 MediaSession.OnRtpClosed += (reason) =>
                 {
                     if (!MediaSession.IsClosed)

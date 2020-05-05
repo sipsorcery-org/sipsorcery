@@ -78,8 +78,8 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(SetDescriptionResultEnum.OK, result);
 
-            localSession.CloseSession("normal");
-            remoteSession.CloseSession("normal");
+            localSession.Close("normal");
+            remoteSession.Close("normal");
         }
 
         /// <summary>
@@ -113,8 +113,8 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(SetDescriptionResultEnum.NoLocalMedia, result);
 
-            localSession.CloseSession("normal");
-            remoteSession.CloseSession("normal");
+            localSession.Close("normal");
+            remoteSession.Close("normal");
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(SetDescriptionResultEnum.NoRemoteMedia, result);
 
-            localSession.CloseSession("normal");
+            localSession.Close("normal");
         }
 
         /// <summary>
@@ -167,8 +167,8 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(SetDescriptionResultEnum.NoMatchingMediaType, result);
 
-            localSession.CloseSession("normal");
-            remoteSession.CloseSession("normal");
+            localSession.Close("normal");
+            remoteSession.Close("normal");
         }
 
         /// <summary>
@@ -205,7 +205,7 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(SetDescriptionResultEnum.InvalidAudioPort, result);
 
-            localSession.CloseSession("normal");
+            localSession.Close("normal");
         }
     }
 }

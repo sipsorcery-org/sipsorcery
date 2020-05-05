@@ -55,9 +55,7 @@ namespace SIPSorcery.Media
 
     public class RtpAudioSession : RTPSession, IMediaSession
     {
-        private const int DTMF_EVENT_DURATION = 1200;        // Default duration for a DTMF event.
-        private const int DTMF_EVENT_PAYLOAD_ID = 101;
-        private const int SAMPLE_RATE = 8000;                 // G711 and G722 (mistakenly) use an 8KHz clock.
+        private const int SAMPLE_RATE = 8000;                 // G711 and G722 use an 8KHz for RTP timestamps clock.
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 20;
         private static readonly byte PCMU_SILENCE_BYTE_ZERO = 0x7F;
         private static readonly byte PCMU_SILENCE_BYTE_ONE = 0xFF;
@@ -117,18 +115,12 @@ namespace SIPSorcery.Media
             base.addTrack(audioTrack);
         }
 
-        public void Close(string reason)
+        public override void Close(string reason)
         {
-            base.CloseSession(reason);
+            base.Close(reason);
 
             _audioStreamTimer?.Dispose();
             _audioStreamReader?.Close();
-        }
-
-        public Task SendDtmf(byte key, CancellationToken ct)
-        {
-            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, DTMF_EVENT_DURATION, DTMF_EVENT_PAYLOAD_ID);
-            return SendDtmfEvent(dtmfEvent, ct);
         }
 
         /// <summary>

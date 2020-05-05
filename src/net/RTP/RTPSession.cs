@@ -25,6 +25,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -224,7 +225,7 @@ namespace SIPSorcery.Net
     ///   e. Optionally perform any additional set up, such as negotiating SRTP keying material,
     ///   f. Call Start to commence RTCP reporting.
     /// </remarks>
-    public class RTPSession : IDisposable
+    public class RTPSession : IMediaSession, IDisposable
     {
         private const int RTP_MAX_PAYLOAD = 1400;
 
@@ -254,6 +255,8 @@ namespace SIPSorcery.Net
         public const int DEFAULT_DTMF_EVENT_PAYLOAD_ID = 101;
         public const string RTP_MEDIA_PROFILE = "RTP/AVP";
         private const int SDP_SESSIONID_LENGTH = 10;             // The length of the pseudo-random string to use for the session ID.
+        public const int DTMF_EVENT_DURATION = 1200;            // Default duration for a DTMF event.
+        public const int DTMF_EVENT_PAYLOAD_ID = 101;
 
         private static ILogger logger = Log.Logger;
 
@@ -1409,6 +1412,18 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Sends a DTMF tone as an RTP event to the remote party.
+        /// </summary>
+        /// <param name="key">The DTMF tone to send.</param>
+        /// <param name="ct">RTP events can span multiple RTP packets. This token can
+        /// be used to cancel the send.</param>
+        public virtual Task SendDtmf(byte key, CancellationToken ct)
+        {
+            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, DTMF_EVENT_DURATION, DTMF_EVENT_PAYLOAD_ID);
+            return SendDtmfEvent(dtmfEvent, ct);
+        }
+
+        /// <summary>
         /// Sends an RTP event for a DTMF tone as per RFC2833. Sending the event requires multiple packets to be sent.
         /// This method will hold onto the socket until all the packets required for the event have been sent. The send
         /// can be cancelled using the cancellation token.
@@ -1521,7 +1536,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Close the session and RTP channel.
         /// </summary>
-        public void CloseSession(string reason)
+        public virtual void Close(string reason)
         {
             if (!m_isClosed)
             {
@@ -2028,17 +2043,17 @@ namespace SIPSorcery.Net
         /// </summary>
         private void OnRTPChannelClosed(string reason)
         {
-            CloseSession(reason);
+            Close(reason);
         }
 
         protected virtual void Dispose(bool disposing)
         {
-            CloseSession(null);
+            Close(null);
         }
 
         public void Dispose()
         {
-            CloseSession(null);
+            Close(null);
         }
     }
 }

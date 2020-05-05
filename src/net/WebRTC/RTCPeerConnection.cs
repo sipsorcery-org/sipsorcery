@@ -481,12 +481,12 @@ namespace SIPSorcery.Net
         /// Close the session including the underlying RTP session and channels.
         /// </summary>
         /// <param name="reason">An optional descriptive reason for the closure.</param>
-        public void Close(string reason)
+        public override void Close(string reason)
         {
             if (!IsClosed)
             {
                 IceSession.Close(reason);
-                CloseSession(reason);
+                Close(reason);
 
                 connectionState = RTCPeerConnectionState.closed;
                 onconnectionstatechange?.Invoke(RTCPeerConnectionState.closed);
