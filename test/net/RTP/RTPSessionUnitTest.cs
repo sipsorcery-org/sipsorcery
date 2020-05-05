@@ -262,5 +262,93 @@ namespace SIPSorcery.Net.UnitTests
 
             localSession.Close("normal");
         }
+
+        /// <summary>
+        /// Checks that setting the remote description gets accepted when the remote offer has audio
+        /// and video but the local session only has an audio track.
+        /// </summary>
+        [Fact]
+        public void AudioVideoOfferNoLocalVideoUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // Create two RTP sessions. First one acts as the local session to generate the offer.
+            // Second one acts as the remote session to generate the answer.
+
+            // A local session is created but only has an audio track added to it.
+            RTPSession localSession = new RTPSession(false, false, false);
+            MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            localSession.addTrack(localAudioTrack);
+
+            // Create a remote session with both audio and video tracks.
+            RTPSession remoteSession = new RTPSession(false, false, false);
+            // The track for the track for the remote session is still local relative to the session it's being added to.
+            MediaStreamTrack remoteAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            remoteSession.addTrack(remoteAudioTrack);
+            MediaStreamTrack remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            remoteSession.addTrack(remoteVideoTrack);
+
+            var offer = remoteSession.CreateOffer(IPAddress.Loopback);
+
+            // Give the offer to the local session that is missing a video tracks.
+            var result = localSession.SetRemoteDescription(offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+
+            var answer = localSession.CreateAnswer(null);
+
+            Assert.Equal(MediaStreamStatusEnum.SendRecv, answer.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaStreamStatus);
+            Assert.Equal(MediaStreamStatusEnum.Inactive, answer.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaStreamStatus);
+
+            localSession.Close("normal");
+            remoteSession.Close("normal");
+        }
+
+        /// <summary>
+        /// Checks that setting the remote description gets accepted when the remote offer has audio
+        /// and video but the local session only has a video track.
+        /// </summary>
+        [Fact]
+        public void AudioVideoOfferNoLocalAudioUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // Create two RTP sessions. First one acts as the local session to generate the offer.
+            // Second one acts as the remote session to generate the answer.
+
+            // A local session is created but only has a video track added to it.
+            RTPSession localSession = new RTPSession(false, false, false);
+            MediaStreamTrack localAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            localSession.addTrack(localAudioTrack);
+
+            // Create a remote session with both audio and video tracks.
+            RTPSession remoteSession = new RTPSession(false, false, false);
+            // The track for the track for the remote session is still local relative to the session it's being added to.
+            MediaStreamTrack remoteAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            remoteSession.addTrack(remoteAudioTrack);
+            MediaStreamTrack remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            remoteSession.addTrack(remoteVideoTrack);
+
+            var offer = remoteSession.CreateOffer(IPAddress.Loopback);
+
+            // Give the offer to the local session that is missing a video tracks.
+            var result = localSession.SetRemoteDescription(offer);
+
+            logger.LogDebug($"Set remote description on local session result {result}.");
+
+            Assert.Equal(SetDescriptionResultEnum.OK, result);
+
+            var answer = localSession.CreateAnswer(null);
+
+            Assert.Equal(MediaStreamStatusEnum.Inactive, answer.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaStreamStatus);
+            Assert.Equal(MediaStreamStatusEnum.SendRecv, answer.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().MediaStreamStatus);
+
+            localSession.Close("normal");
+            remoteSession.Close("normal");
+        }
     }
 }

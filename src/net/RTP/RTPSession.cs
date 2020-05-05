@@ -735,15 +735,6 @@ namespace SIPSorcery.Net
                 {
                     if (announcement.Media == SDPMediaTypesEnum.audio)
                     {
-                        var audioAnnounce = announcement;
-
-                        // Check that there is at least one compatible non-"RTP Event" audio codec.
-                        var audioCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats);
-                        if (audioCompatibleFormats?.Count == 0)
-                        {
-                            return SetDescriptionResultEnum.AudioIncompatible;
-                        }
-
                         // If there's an existing remote audio track it needs to be replaced.
                         if (AudioRemoteTrack != null)
                         {
@@ -753,54 +744,66 @@ namespace SIPSorcery.Net
 
                         logger.LogDebug("Adding remote audio track to session.");
 
+                        var audioAnnounce = announcement;
+
                         var remoteAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, true, audioAnnounce.MediaFormats);
                         addTrack(remoteAudioTrack);
 
-                        var audioAddr = (audioAnnounce.Connection != null) ? IPAddress.Parse(audioAnnounce.Connection.ConnectionAddress) : connectionAddress;
-
-                        if (audioAddr != null)
+                        if (AudioLocalTrack == null)
                         {
-                            if(audioAnnounce.Port <= IPEndPoint.MinPort || audioAnnounce.Port > IPEndPoint.MaxPort - 1)
-                            {
-                                return SetDescriptionResultEnum.InvalidAudioPort;
-                            }
-
-                            remoteAudioRtpEP = new IPEndPoint(audioAddr, audioAnnounce.Port);
-                            remoteAudioRtcpEP = new IPEndPoint(audioAddr, audioAnnounce.Port + 1);
-
-                            logger.LogDebug($"Remote audio end RTP and RTCP points set from remote description to {remoteAudioRtpEP} and {remoteAudioRtcpEP}.");
-
-                            if (IPAddress.Any.Equals(audioAddr) || IPAddress.IPv6Any.Equals(audioAddr))
-                            {
-                                // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive.
-                                remoteAudioTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
-
-                                logger.LogDebug($"Audio stream status set to inactive based on connection address of {audioAddr} in remote offer.");
-                            }
+                            // We don't have an audio track BUT we must have another track (which has to be video). The choices are
+                            // to reject the offer or to set audio stream as inactive and accept the video. We accept the video.
+                            var inactiveAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, remoteAudioTrack.Capabilities, MediaStreamStatusEnum.Inactive);
+                            addTrack(inactiveAudioTrack);
                         }
-
-                        foreach (var mediaFormat in audioAnnounce.MediaFormats)
+                        else
                         {
-                            if (mediaFormat.FormatAttribute?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true)
+                            // Check that there is at least one compatible non-"RTP Event" audio codec.
+                            var audioCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, audioAnnounce.MediaFormats);
+                            if (audioCompatibleFormats?.Count == 0)
                             {
-                                if (int.TryParse(mediaFormat.FormatID, out var remoteRtpEventPayloadID))
+                                return SetDescriptionResultEnum.AudioIncompatible;
+                            }
+
+                            var audioAddr = (audioAnnounce.Connection != null) ? IPAddress.Parse(audioAnnounce.Connection.ConnectionAddress) : connectionAddress;
+
+                            if (audioAddr != null)
+                            {
+                                if (audioAnnounce.Port <= IPEndPoint.MinPort || audioAnnounce.Port > IPEndPoint.MaxPort - 1)
                                 {
-                                    RemoteRtpEventPayloadID = remoteRtpEventPayloadID;
+                                    return SetDescriptionResultEnum.InvalidAudioPort;
                                 }
-                                break;
+
+                                remoteAudioRtpEP = new IPEndPoint(audioAddr, audioAnnounce.Port);
+                                remoteAudioRtcpEP = new IPEndPoint(audioAddr, audioAnnounce.Port + 1);
+
+                                logger.LogDebug($"Remote audio end RTP and RTCP points set from remote description to {remoteAudioRtpEP} and {remoteAudioRtcpEP}.");
+
+                                if (IPAddress.Any.Equals(audioAddr) || IPAddress.IPv6Any.Equals(audioAddr))
+                                {
+                                    // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive.
+                                    remoteAudioTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+
+                                    logger.LogDebug($"Audio stream status set to inactive based on connection address of {audioAddr} in remote offer.");
+                                }
+                            }
+
+                            foreach (var mediaFormat in audioAnnounce.MediaFormats)
+                            {
+                                if (mediaFormat.FormatAttribute?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true)
+                                {
+                                    if (int.TryParse(mediaFormat.FormatID, out var remoteRtpEventPayloadID))
+                                    {
+                                        RemoteRtpEventPayloadID = remoteRtpEventPayloadID;
+                                    }
+                                    break;
+                                }
                             }
                         }
                     }
                     else if (announcement.Media == SDPMediaTypesEnum.video)
                     {
                         var videoAnnounce = announcement;
-
-                        // Check that there is at least one compatible non-"RTP Event" video codec.
-                        var videoCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, videoAnnounce.MediaFormats);
-                        if (videoCompatibleFormats?.Count == 0)
-                        {
-                            return SetDescriptionResultEnum.VideoIncompatible;
-                        }
 
                         // If there's an existing remote video track it needs to be replaced.
                         if (VideoRemoteTrack != null)
@@ -814,26 +817,44 @@ namespace SIPSorcery.Net
                         var remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, true, videoAnnounce.MediaFormats);
                         addTrack(remoteVideoTrack);
 
-                        var videoAddr = (videoAnnounce.Connection != null) ? IPAddress.Parse(videoAnnounce.Connection.ConnectionAddress) : connectionAddress;
-
-                        if (videoAddr != null)
+                        if (VideoLocalTrack == null)
                         {
-                            if (videoAnnounce.Port <= IPEndPoint.MinPort || videoAnnounce.Port > IPEndPoint.MaxPort - 1)
+                            // We don't have a video track BUT we must have another track (which has to be audio). The choices are
+                            // to reject the offer or to set video stream as inactive and accept the audio. We accept the audio.
+                            var inactiveVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, remoteVideoTrack.Capabilities, MediaStreamStatusEnum.Inactive);
+                            addTrack(inactiveVideoTrack);
+                        }
+                        else
+                        {
+
+                            // Check that there is at least one compatible non-"RTP Event" video codec.
+                            var videoCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, videoAnnounce.MediaFormats);
+                            if (videoCompatibleFormats?.Count == 0)
                             {
-                                return SetDescriptionResultEnum.InvalidAudioPort;
+                                return SetDescriptionResultEnum.VideoIncompatible;
                             }
 
-                            remoteVideoRtpEP = new IPEndPoint(videoAddr, videoAnnounce.Port);
-                            remoteVideoRtcpEP = new IPEndPoint(videoAddr, videoAnnounce.Port + 1);
+                            var videoAddr = (videoAnnounce.Connection != null) ? IPAddress.Parse(videoAnnounce.Connection.ConnectionAddress) : connectionAddress;
 
-                            logger.LogDebug($"Remote video end RTP and RTCP points set from remote description to {remoteVideoRtpEP} and {remoteVideoRtcpEP}.");
-
-                            if (IPAddress.Any.Equals(videoAddr) || IPAddress.IPv6Any.Equals(videoAddr))
+                            if (videoAddr != null)
                             {
-                                // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive.
-                                remoteVideoTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                                if (videoAnnounce.Port <= IPEndPoint.MinPort || videoAnnounce.Port > IPEndPoint.MaxPort - 1)
+                                {
+                                    return SetDescriptionResultEnum.InvalidAudioPort;
+                                }
 
-                                logger.LogDebug($"Video stream status set to inactive based on connection address of {videoAddr} in remote offer.");
+                                remoteVideoRtpEP = new IPEndPoint(videoAddr, videoAnnounce.Port);
+                                remoteVideoRtcpEP = new IPEndPoint(videoAddr, videoAnnounce.Port + 1);
+
+                                logger.LogDebug($"Remote video end RTP and RTCP points set from remote description to {remoteVideoRtpEP} and {remoteVideoRtcpEP}.");
+
+                                if (IPAddress.Any.Equals(videoAddr) || IPAddress.IPv6Any.Equals(videoAddr))
+                                {
+                                    // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive.
+                                    remoteVideoTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+
+                                    logger.LogDebug($"Video stream status set to inactive based on connection address of {videoAddr} in remote offer.");
+                                }
                             }
                         }
                     }
