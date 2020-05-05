@@ -187,8 +187,9 @@ namespace SIPSorcery.Sys
                 }
                 catch (SocketException sockExcp)
                 {
-                    if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
+                    if (sockExcp.SocketErrorCode == SocketError.AddressAlreadyInUse)
                     {
+                        // Try again if the port is already in use.
                         logger.LogWarning($"Address already in use exception attempting to create RTP socket, attempt {bindAttempts}.");
                     }
                     else
@@ -244,8 +245,9 @@ namespace SIPSorcery.Sys
                     }
                     catch (SocketException sockExcp)
                     {
-                        if (sockExcp.SocketErrorCode != SocketError.AddressAlreadyInUse)
+                        if (sockExcp.SocketErrorCode == SocketError.AddressAlreadyInUse)
                         {
+                            // Try again if the port is already in use.
                             logger.LogWarning($"Address already in use exception attempting to create control socket, attempt {bindAttempts}.");
                         }
                         else
