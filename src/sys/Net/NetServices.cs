@@ -142,7 +142,7 @@ namespace SIPSorcery.Sys
         {
             if (bindAddress == null)
             {
-                bindAddress = (Socket.OSSupportsIPv6) ? IPAddress.IPv6Any : IPAddress.Any;
+                bindAddress = (Socket.OSSupportsIPv6 && SupportsDualModeIPv4PacketInfo) ? IPAddress.IPv6Any : IPAddress.Any;
             }
 
             if (bindAddress != null && bindAddress.AddressFamily == AddressFamily.InterNetworkV6 && !Socket.OSSupportsIPv6)
