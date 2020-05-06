@@ -444,6 +444,13 @@ namespace SIPSorcery.Net
         /// <param name="isSecure">If true indicated this session is using SRTP to encrypt and authorise
         /// RTP and RTCP packets. No communications or reporting will commence until the 
         /// is explicitly set as complete.</param>
+        /// <param name="isMediaMultiplexed">If true only a single RTP socket will be used for both audio
+        /// and video (standard case for WebRTC). If false two separate RTP sockets will be used for
+        /// audio and video (standard case for VoIP).</param>
+        /// <param name="bindAddress">Optional. If specified this address will be used as the bind address for any RTP
+        /// and control sockets created. Generally this address does not need to be set. The default behaviour
+        /// is to bind to [::] or 0.0.0.0,d depending on system support, which minimises network routing
+        /// causing connection issues.</param>
         public RTPSession(
             bool isMediaMultiplexed,
             bool isRtcpMultiplexed,

@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -53,6 +54,10 @@ namespace SIPSorcery.Media
         public Dictionary<SDPMediaFormatsEnum, string> SourceFiles;
     }
 
+    /// <summary>
+    /// An audio only RTP session that can supply an audio stream to the caller. Any incoming audio stream is 
+    /// ignored and this class does NOT use any audio devices on the system for capture or playback.
+    /// </summary>
     public class RtpAudioSession : RTPSession, IMediaSession
     {
         private const int SAMPLE_RATE = 8000;                 // G711 and G722 use an 8KHz for RTP timestamps clock.
@@ -85,8 +90,18 @@ namespace SIPSorcery.Media
             get { return base.AudioRtcpSession.PacketsReceivedCount; }
         }
 
-        public RtpAudioSession(DummyAudioOptions audioOptions, List<SDPMediaFormatsEnum> audioCodecs) :
-            base(false, false, false)
+        /// <summary>
+        /// Creates an audio only RTP session that can supply an audio stream to the caller.
+        /// </summary>
+        /// <param name="audioOptions">The options that determine the type of audio to stream to the remote party. Example
+        /// type of audio sources are music, silence, white noise etc.</param>
+        /// <param name="audioCodecs">The audio codecs to support.</param>
+        /// <param name="bindAddress">Optional. If specified this address will be used as the bind address for any RTP
+        /// and control sockets created. Generally this address does not need to be set. The default behaviour
+        /// is to bind to [::] or 0.0.0.0,d depending on system support, which minimises network routing
+        /// causing connection issues.</param>
+        public RtpAudioSession(DummyAudioOptions audioOptions, List<SDPMediaFormatsEnum> audioCodecs, IPAddress bindAddress = null) :
+            base(false, false, false, bindAddress)
         {
             if (audioCodecs == null || audioCodecs.Count() == 0)
             {

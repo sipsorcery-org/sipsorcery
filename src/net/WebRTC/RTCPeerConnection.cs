@@ -247,9 +247,9 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
-        /// <param name="configuration">Optional. </param>
+        /// <param name="configuration">Optional.</param>
         public RTCPeerConnection(RTCConfiguration configuration) :
-            base(true, true, true)
+            base(true, true, true, configuration?.X_BindAddress)
         {
             _configuration = configuration;
 
