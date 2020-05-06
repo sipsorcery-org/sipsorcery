@@ -17,7 +17,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NAudio.Wave;
@@ -28,8 +27,6 @@ namespace demo
 {
     public class NAudioRtpSession : RTPSession, IMediaSession
     {
-        private const int DTMF_EVENT_DURATION = 1200;        // Default duration for a DTMF event.
-        private const int DTMF_EVENT_PAYLOAD_ID = 101;
         private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 30;
         private const int AUDIO_OUTPUTDEVICE_INDEX = -1;
 
@@ -127,22 +124,10 @@ namespace demo
         }
 
         /// <summary>
-        /// Sends a DTMF tone as an RTP event to the remote party.
-        /// </summary>
-        /// <param name="key">The DTMF tone to send.</param>
-        /// <param name="ct">RTP events can span multiple RTP packets. This token can
-        /// be used to cancel the send.</param>
-        public Task SendDtmf(byte key, CancellationToken ct)
-        {
-            var dtmfEvent = new RTPEvent(key, false, RTPEvent.DEFAULT_VOLUME, DTMF_EVENT_DURATION, DTMF_EVENT_PAYLOAD_ID);
-            return SendDtmfEvent(dtmfEvent, ct);
-        }
-
-        /// <summary>
         /// Closes the session.
         /// </summary>
         /// <param name="reason">Reason for the closure.</param>
-        public void Close(string reason)
+        public override void Close(string reason)
         {
             if (!_isClosed)
             {
