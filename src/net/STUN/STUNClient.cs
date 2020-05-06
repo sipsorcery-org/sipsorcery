@@ -23,7 +23,7 @@ using SIPSorcery.Sys;
 namespace SIPSorcery.Net
 {
     /// <summary>
-    /// 
+    /// Methods to resolve the public IP address and port information of the client.
     /// </summary>
     public class STUNClient
     {
