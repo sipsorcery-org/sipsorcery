@@ -158,7 +158,7 @@ namespace demo
                     _waveInEvent.StopRecording();
                 }
 
-                base.CloseSession(reason);
+                base.Close(reason);
             }
         }
 
