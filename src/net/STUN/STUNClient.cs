@@ -22,14 +22,32 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
+    /// <summary>
+    /// Methods to resolve the public IP address and port information of the client.
+    /// </summary>
     public class STUNClient
     {
         public const int DEFAULT_STUN_PORT = 3478;
         private const int STUN_SERVER_RESPONSE_TIMEOUT = 3;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = Log.Logger;
 
-        public static IPAddress GetPublicIPAddress(string stunServer, int port = DEFAULT_STUN_PORT)
+        /// <summary>
+        /// Used to get the public IP address of the client as seen by the STUN server.
+        /// </summary>
+        /// <param name="stunServer">A server to send STUN requests to.</param>
+        /// <param name="port">The port to use for the request. Defaults to 3478.</param>
+        /// <returns>The public IP address of the client.</returns>
+        public static IPAddress GetPublicIPAddress(string stunServer, int port = DEFAULT_STUN_PORT) =>
+            GetPublicIPEndPoint(stunServer, port).Address;
+
+        /// <summary>
+        /// Used to get the public IP address and port as seen by the STUN server.
+        /// </summary>
+        /// <param name="stunServer">A server to send STUN requests to.</param>
+        /// <param name="port">The port to use for the request. Defaults to 3478.</param>
+        /// <returns>The public IP address and port of the client.</returns>
+        public static IPEndPoint GetPublicIPEndPoint(string stunServer, int port = DEFAULT_STUN_PORT)
         {
             try
             {
@@ -41,8 +59,8 @@ namespace SIPSorcery.Net
                     byte[] stunMessageBytes = initMessage.ToByteBuffer();
                     udpClient.Send(stunMessageBytes, stunMessageBytes.Length);
 
-                    IPAddress publicIPAddress = null;
-                    ManualResetEvent gotResponseMRE = new ManualResetEvent(false);
+                    IPEndPoint publicEndPoint = null;
+                    ManualResetEvent gotResponseMRE = new ManualResetEvent(initialState: false);
 
                     udpClient.BeginReceive((ar) =>
                     {
@@ -62,8 +80,9 @@ namespace SIPSorcery.Net
                                     {
                                         if (stunAttribute.AttributeType == STUNAttributeTypesEnum.MappedAddress)
                                         {
-                                            publicIPAddress = ((STUNAddressAttribute)stunAttribute).Address;
-                                            logger.LogDebug("STUNClient Public IP=" + publicIPAddress.ToString() + ".");
+                                            STUNAddressAttribute stunAddress = (STUNAddressAttribute)stunAttribute;
+                                            publicEndPoint = new IPEndPoint(stunAddress.Address, stunAddress.Port);
+                                            logger.LogDebug($"STUNClient Public IP={publicEndPoint.Address} Port={publicEndPoint.Port}.");
                                         }
                                     }
                                 }
@@ -75,11 +94,11 @@ namespace SIPSorcery.Net
                         {
                             logger.LogWarning("Exception STUNClient Receive. " + recvExcp.Message);
                         }
-                    }, null);
+                    }, state: null);
 
                     if (gotResponseMRE.WaitOne(STUN_SERVER_RESPONSE_TIMEOUT * 1000))
                     {
-                        return publicIPAddress;
+                        return publicEndPoint;
                     }
                     else
                     {
@@ -92,7 +111,6 @@ namespace SIPSorcery.Net
             {
                 logger.LogError("Exception STUNClient GetPublicIPAddress. " + excp.Message);
                 return null;
-                //throw;
             }
         }
     }
