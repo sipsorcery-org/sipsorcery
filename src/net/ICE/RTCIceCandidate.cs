@@ -37,16 +37,9 @@ namespace SIPSorcery.Net
         /// </summary>
         public IPAddress BaseAddress { get; private set; }
 
-        /// <summary>
-        /// Whether the candidate is UDP or TCP.
-        /// </summary>
-        //public ProtocolType TransportProtocol { get; private set; }
-
         public string StunServerAddress { get; private set; }
 
         public string TurnServerAddress { get; private set; }
-
-
 
         public string candidate { get; private set; }
 
@@ -129,32 +122,19 @@ namespace SIPSorcery.Net
 
         public string usernameFragment { get; private set; }
 
-
-        public TurnServer TurnServer;
-        public bool IsGatheringComplete;
-        public int TurnAllocateAttempts;
-        public IPEndPoint StunRflxIPEndPoint;
-        public IPEndPoint TurnRelayIPEndPoint;
-        //public IPEndPoint RemoteRtpEndPoint;
-        //public bool IsDisconnected;
-        //public string DisconnectionMessage;
-        public DateTime LastSTUNSendAt;
-        public DateTime LastStunRequestReceivedAt;
-        public DateTime LastStunResponseReceivedAt;
-        public bool IsStunLocalExchangeComplete;      // This is the authenticated STUN request sent by us to the remote WebRTC peer.
-        public bool IsStunRemoteExchangeComplete;     // This is the authenticated STUN request sent by the remote WebRTC peer to us.
-        public int StunConnectionRequestAttempts = 0;
-        public DateTime LastCommunicationAt;
-        public bool HasConnectionError;
-
-        //public string Transport;
-        //public string NetworkAddress;
-        ////public int Port;
-        ////public RTCIceCandidateType CandidateType;
-        //public string RemoteAddress;
-        //public int RemotePort;
-        //public string RawString;
-        //public Task InitialStunBindingCheck;
+        //public TurnServer TurnServer;
+        //public bool IsGatheringComplete;
+        //public int TurnAllocateAttempts;
+        //public IPEndPoint StunRflxIPEndPoint;
+        //public IPEndPoint TurnRelayIPEndPoint;
+        //public DateTime LastSTUNSendAt;
+        //public DateTime LastStunRequestReceivedAt;
+        //public DateTime LastStunResponseReceivedAt;
+        //public bool IsStunLocalExchangeComplete;      // This is the authenticated STUN request sent by us to the remote WebRTC peer.
+        //public bool IsStunRemoteExchangeComplete;     // This is the authenticated STUN request sent by the remote WebRTC peer to us.
+        //public int StunConnectionRequestAttempts = 0;
+        //public DateTime LastCommunicationAt;
+        //public bool HasConnectionError;
 
         private RTCIceCandidate()
         { }
@@ -270,7 +250,7 @@ namespace SIPSorcery.Net
                 address,
                 port);
 
-            if (StunRflxIPEndPoint != null)
+            if (relatedAddress != null)
             {
                 candidateStr += String.Format("{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0",
                     foundation,
@@ -303,6 +283,25 @@ namespace SIPSorcery.Net
         public RTCIceCandidateInit toJSON()
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Gets the remote IP end point corresponding to the ICE candidate.
+        /// </summary>
+        /// <returns>An IP end point.</returns>
+        public IPEndPoint GetEndPoint()
+        {
+            int remotePort = (relatedPort != 0) ? relatedPort : port;
+
+            if(relatedAddress != null)
+            {
+                return new IPEndPoint(IPAddress.Parse(relatedAddress), remotePort);
+            }
+            else
+            {
+                return new IPEndPoint(IPAddress.Parse(address), remotePort);
+            }
+
         }
     }
 }

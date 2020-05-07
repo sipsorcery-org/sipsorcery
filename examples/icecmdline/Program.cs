@@ -230,7 +230,8 @@ namespace SIPSorcery.Examples
             {
                 if(peerConnection.localDescription == null)
                 {
-                    logger.LogDebug("Offer SDP: " + message);
+                    //logger.LogDebug("Offer SDP: " + message);
+                    logger.LogDebug("Offer SDP received.");
 
                     // Add local media tracks depending on what was offered. Also add local tracks with the same media ID as 
                     // the remote tracks so that the media announcement in the SDP answer are in the same order.

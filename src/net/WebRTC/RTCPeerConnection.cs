@@ -271,9 +271,9 @@ namespace SIPSorcery.Net
             IceSession.OnIceCandidate += (candidate) => onicecandidate?.Invoke(candidate);
             IceSession.OnIceConnectionStateChange += (state) =>
             {
-                if (state == RTCIceConnectionState.connected)
+                if (state == RTCIceConnectionState.connected && IceSession.NominatedCandidate != null)
                 {
-                    RemoteEndPoint = IceSession.ConnectedRemoteEndPoint;
+                    RemoteEndPoint = IceSession.NominatedCandidate.GetEndPoint();
                 }
 
                 oniceconnectionstatechange?.Invoke(state);

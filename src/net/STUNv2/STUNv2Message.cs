@@ -187,5 +187,19 @@ namespace SIPSorcery.Net
 
             return messageDescr;
         }
+
+        /// <summary>
+        /// Check that the message integrity attribute is correct.
+        /// </summary>
+        /// <param name="messageIntegrityKey"></param>
+        /// <param name="localUser"></param>
+        /// <param name="remoteUser"></param>
+        /// <returns></returns>
+        public bool CheckIntegrity(byte[] messageIntegrityKey, string localUser, string remoteUser)
+        {
+            // TODO.
+
+            return true;
+        }
     }
 }
