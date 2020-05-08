@@ -469,7 +469,7 @@ namespace SIPSorcery.Net
             if (!IsClosed)
             {
                 IceSession.Close(reason);
-                Close(reason);
+                base.Close(reason);
 
                 connectionState = RTCPeerConnectionState.closed;
                 onconnectionstatechange?.Invoke(RTCPeerConnectionState.closed);
