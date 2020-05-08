@@ -203,7 +203,8 @@ namespace WebRTCServer
 
                         if (dtlsResult)
                         {
-                            peerConnection.SetDestination(SDPMediaTypesEnum.audio, peerConnection.IceSession.ConnectedRemoteEndPoint, peerConnection.IceSession.ConnectedRemoteEndPoint);
+                            var remoteEP = peerConnection.IceSession.ConnectedRemoteEndPoint;
+                            peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEP, remoteEP);
                         }
                         else
                         {

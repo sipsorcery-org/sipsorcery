@@ -302,6 +302,15 @@ namespace SIPSorcery.Net
         public RTCIceCandidate NominatedCandidate { get; private set; }
 
         /// <summary>
+        /// If the session has successfully connected this returns the remote ned point of
+        /// the nominate candidate.
+        /// </summary>
+        public IPEndPoint ConnectedRemoteEndPoint
+        {
+            get { return (NominatedCandidate != null) ? NominatedCandidate.GetEndPoint() : null; }
+        }
+
+        /// <summary>
         /// Retransmission timer for STUN transactions, measured in milliseconds.
         /// </summary>
         /// <remarks>
