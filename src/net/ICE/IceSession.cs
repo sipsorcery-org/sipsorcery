@@ -27,6 +27,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -176,6 +177,11 @@ namespace SIPSorcery.Net
             /// The number of checks that have been sent without a response.
             /// </summary>
             public int ChecksSent;
+
+            /// <summary>
+            /// The transaction ID that was set in the last STUN request connectivity check.
+            /// </summary>
+            public string RequestTransactionID;
 
             /// <summary>
             /// Creates a new entry for the ICE session checklist.
@@ -643,7 +649,7 @@ namespace SIPSorcery.Net
 
                             if (nextEntry != null)
                             {
-                                SendConnectivityCheck(nextEntry);
+                                SendConnectivityCheck(nextEntry, false);
                                 return;
                             }
 
@@ -653,7 +659,7 @@ namespace SIPSorcery.Net
 
                             if (retransmitEntry != null)
                             {
-                                SendConnectivityCheck(retransmitEntry);
+                                SendConnectivityCheck(retransmitEntry, false);
                                 return;
                             }
 
@@ -694,22 +700,30 @@ namespace SIPSorcery.Net
         /// Performs a connectivity check for a single candidate pair entry.
         /// </summary>
         /// <param name="candidatePair">The candidate pair to perform a connectivity check for.</param>
+        /// <param name="setUseCandidate">If true indicates we are acting as the "controlling" ICE agent
+        /// and are nominating this candidate as the chosen one.</param>
         /// <remarks>As specified in https://tools.ietf.org/html/rfc8445#section-7.2.4.</remarks>
-        private void SendConnectivityCheck(ChecklistEntry candidatePair)
+        private void SendConnectivityCheck(ChecklistEntry candidatePair, bool setUseCandidate)
         {
             candidatePair.State = ChecklistEntryState.InProgress;
             candidatePair.LastCheckSentAt = DateTime.Now;
             candidatePair.ChecksSent++;
+            candidatePair.RequestTransactionID = Crypto.GetRandomString(STUNv2Header.TRANSACTION_ID_LENGTH);
 
             IPEndPoint remoteEndPoint = candidatePair.RemoteCandidate.GetEndPoint();
 
-            logger.LogDebug($"Sending ICE connectivity check from {_rtpChannel.RTPLocalEndPoint} to {remoteEndPoint}.");
+            logger.LogDebug($"Sending ICE connectivity check from {_rtpChannel.RTPLocalEndPoint} to {remoteEndPoint} (use candidate {setUseCandidate}).");
 
             STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.BindingRequest);
-            stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
+            stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(candidatePair.RequestTransactionID);
             stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
             stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Priority, BitConverter.GetBytes(candidatePair.Priority)));
-            //stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));
+
+            if (setUseCandidate)
+            {
+                stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.UseCandidate, null));
+            }
+
             byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
 
             _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunReqBytes);
@@ -734,6 +748,9 @@ namespace SIPSorcery.Net
                 if (!result)
                 {
                     // Send STUN error response.
+                    STUNv2Message stunErrResponse = new STUNv2Message(STUNv2MessageTypesEnum.BindingErrorResponse);
+                    stunErrResponse.Header.TransactionId = stunMessage.Header.TransactionId;
+                    _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
                 }
                 else
                 {
@@ -781,7 +798,7 @@ namespace SIPSorcery.Net
                             }
                             else
                             {
-                                logger.LogDebug($"ICE session remote peer nominated entry: {matchingChecklistEntry.RemoteCandidate}");
+                                logger.LogDebug($"ICE session remote peer nominated entry from binding request: {matchingChecklistEntry.RemoteCandidate}");
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
                         }
@@ -810,49 +827,60 @@ namespace SIPSorcery.Net
                 // - If the controlling candidate set the USE_CANDIDATE attribute then the ICE agent that receives the successful response sets the nominated
                 //   flag of the pair to true. Once the nominated flag is set it concludes the ICE processing for that component.
 
-                // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
-                // To start with we'll just use whichever pair gets the first successful STUN exchange. If needs be the selection algorithm can
-                // improve over time.
+                if (_checklistState == ChecklistState.Running)
+                {
+                    string txID = Encoding.ASCII.GetString(stunMessage.Header.TransactionId);
 
+                    // Attempt to find the checklist entry for this transaction ID.
+                    var matchingChecklistEntry = _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
 
+                    if (matchingChecklistEntry == null)
+                    {
+                        logger.LogWarning("ICE session STUN response transaction ID did not match a checklist entry.");
+                    }
+                    else
+                    {
+                        matchingChecklistEntry.State = ChecklistEntryState.Succeeded;
 
-                //if (_turnServerEndPoint != null && remoteEndPoint.ToString() == _turnServerEndPoint.ToString())
-                //{
-                //    if (iceCandidate.IsGatheringComplete == false)
-                //    {
-                //        var reflexAddressAttribute = stunMessage.Attributes.FirstOrDefault(y => y.AttributeType == STUNv2AttributeTypesEnum.XORMappedAddress) as STUNv2XORAddressAttribute;
+                        if (matchingChecklistEntry.Nominated)
+                        {
+                            logger.LogDebug($"ICE session remote peer nominated entry from binding response: {matchingChecklistEntry.RemoteCandidate}");
 
-                //        if (reflexAddressAttribute != null)
-                //        {
-                //            iceCandidate.StunRflxIPEndPoint = new IPEndPoint(reflexAddressAttribute.Address, reflexAddressAttribute.Port);
-                //            iceCandidate.IsGatheringComplete = true;
+                            // This is the response to a connectivity check that had the "UseCandidate" attribute set.
+                            SetNominatedEntry(matchingChecklistEntry);
+                        }
+                        else if (this.IsController && !_checklist.Any(x => x.Nominated))
+                        {
+                            // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
+                            // To start with we'll just use whichever pair gets the first successful STUN exchange. If needs be the selection algorithm can
+                            // improve over time.
 
-                //            logger.LogDebug("ICE gathering complete for local socket " + iceCandidate.RtpChannel.RTPLocalEndPoint + ", rflx address " + iceCandidate.StunRflxIPEndPoint + ".");
-                //        }
-                //        else
-                //        {
-                //            iceCandidate.IsGatheringComplete = true;
+                            matchingChecklistEntry.ChecksSent = 0;
+                            matchingChecklistEntry.LastCheckSentAt = DateTime.MinValue;
+                            matchingChecklistEntry.Nominated = true;
 
-                //            logger.LogDebug("The STUN binding response received on " + iceCandidate.RtpChannel.RTPLocalEndPoint + " from " + remoteEndPoint + " did not have an XORMappedAddress attribute, rlfx address can not be determined.");
-                //        }
-                //    }
-                //}
-                //else
-                //{
-                //    iceCandidate.LastStunResponseReceivedAt = DateTime.Now;
-
-                //    if (iceCandidate.IsStunLocalExchangeComplete == false)
-                //    {
-                //        iceCandidate.IsStunLocalExchangeComplete = true;
-                //        logger.LogDebug("WebRTC client STUN exchange complete for call " + CallID + ", candidate local socket " + iceCandidate.RtpChannel.RTPLocalEndPoint + ", remote socket " + remoteEndPoint + ".");
-
-                //        SetIceConnectionState(IceConnectionStatesEnum.Connected);
-                //    }
-                //}
+                            SendConnectivityCheck(matchingChecklistEntry, true);
+                        }
+                    }
+                }
             }
             else if (stunMessage.Header.MessageType == STUNv2MessageTypesEnum.BindingErrorResponse)
             {
                 logger.LogWarning($"A STUN binding error response was received from {remoteEndPoint}.");
+
+                // Attempt to find the checklist entry for this transaction ID.
+                string txID = Encoding.ASCII.GetString(stunMessage.Header.TransactionId);
+                var matchingChecklistEntry = _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
+
+                if (matchingChecklistEntry == null)
+                {
+                    logger.LogWarning("ICE session STUN error response transaction ID did not match a checklist entry.");
+                }
+                else
+                {
+                    logger.LogWarning($"ICE session check list entry set to failed: {matchingChecklistEntry.RemoteCandidate}");
+                    matchingChecklistEntry.State = ChecklistEntryState.Failed;
+                }
             }
             else
             {
