@@ -722,6 +722,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
+                // Pre-flight checks have passed. Move onto matching up the local and remote media streams.
                 IPAddress connectionAddress = null;
 
                 if (sessionDescription.Connection != null && !String.IsNullOrEmpty(sessionDescription.Connection.ConnectionAddress))
@@ -781,17 +782,24 @@ namespace SIPSorcery.Net
                                     return SetDescriptionResultEnum.InvalidAudioPort;
                                 }
 
-                                remoteAudioRtpEP = new IPEndPoint(audioAddr, audioAnnounce.Port);
-                                remoteAudioRtcpEP = new IPEndPoint(audioAddr, audioAnnounce.Port + 1);
-
-                                logger.LogDebug($"Remote audio end RTP and RTCP points set from remote description to {remoteAudioRtpEP} and {remoteAudioRtcpEP}.");
-
                                 if (IPAddress.Any.Equals(audioAddr) || IPAddress.IPv6Any.Equals(audioAddr))
                                 {
-                                    // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive.
-                                    remoteAudioTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                                    // If a special port number is used (defined as "9") it indicates that the media announcement is not responsible
+                                    // for setting the remote end point for the audio stream. Instead it's most likely being set using ICE.
+                                    if (audioAnnounce.Port != SDP.DISABLED_RTP_PORT_NUMBER)
+                                    {
+                                        // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive.
+                                        remoteAudioTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
 
-                                    logger.LogDebug($"Audio stream status set to inactive based on connection address of {audioAddr} in remote offer.");
+                                        logger.LogDebug($"Audio stream status set to inactive based on connection address of {audioAddr} in remote offer.");
+                                    }
+                                }
+                                else
+                                {
+                                    remoteAudioRtpEP = new IPEndPoint(audioAddr, audioAnnounce.Port);
+                                    remoteAudioRtcpEP = new IPEndPoint(audioAddr, audioAnnounce.Port + 1);
+
+                                    logger.LogDebug($"Remote audio end RTP and RTCP points set from remote description to {remoteAudioRtpEP} and {remoteAudioRtcpEP}.");
                                 }
                             }
 
@@ -850,17 +858,24 @@ namespace SIPSorcery.Net
                                     return SetDescriptionResultEnum.InvalidAudioPort;
                                 }
 
-                                remoteVideoRtpEP = new IPEndPoint(videoAddr, videoAnnounce.Port);
-                                remoteVideoRtcpEP = new IPEndPoint(videoAddr, videoAnnounce.Port + 1);
-
-                                logger.LogDebug($"Remote video end RTP and RTCP points set from remote description to {remoteVideoRtpEP} and {remoteVideoRtcpEP}.");
-
                                 if (IPAddress.Any.Equals(videoAddr) || IPAddress.IPv6Any.Equals(videoAddr))
                                 {
-                                    // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive.
-                                    remoteVideoTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                                    // If a special port number is used (defined as "9") it indicates that the media announcement is not responsible
+                                    // for setting the remote end point for the audio stream. Instead it's most likely being set using ICE.
+                                    if (videoAnnounce.Port != SDP.DISABLED_RTP_PORT_NUMBER)
+                                    {
+                                        // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive.
+                                        remoteVideoTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
 
-                                    logger.LogDebug($"Video stream status set to inactive based on connection address of {videoAddr} in remote offer.");
+                                        logger.LogDebug($"Video stream status set to inactive based on connection address of {videoAddr} in remote offer.");
+                                    }
+                                }
+                                else
+                                {
+                                    remoteVideoRtpEP = new IPEndPoint(videoAddr, videoAnnounce.Port);
+                                    remoteVideoRtcpEP = new IPEndPoint(videoAddr, videoAnnounce.Port + 1);
+
+                                    logger.LogDebug($"Remote video end RTP and RTCP points set from remote description to {remoteVideoRtpEP} and {remoteVideoRtcpEP}.");
                                 }
                             }
                         }

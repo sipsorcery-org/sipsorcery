@@ -211,7 +211,10 @@ namespace SIPSorcery.Examples
 
                         if (dtlsResult)
                         {
-                            peerConnection.SetDestination(SDPMediaTypesEnum.audio, peerConnection.IceSession.ConnectedRemoteEndPoint, peerConnection.IceSession.ConnectedRemoteEndPoint);
+                            var remoteEndPoint = peerConnection.IceSession.NominatedCandidate.GetEndPoint();
+                            peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEndPoint, remoteEndPoint);
+
+                            logger.LogDebug($"RTP remote end point set to {remoteEndPoint}.");
                         }
                         else
                         {

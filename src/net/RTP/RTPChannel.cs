@@ -227,6 +227,25 @@ namespace SIPSorcery.Net
         /// </summary>
         public IPEndPoint ControlLocalEndPoint { get; private set; }
 
+        /// <summary>
+        /// Returns true if the RTP socket supports dual mode IPv4 & IPv6. If the control
+        /// socket exists it will be the same.
+        /// </summary>
+        public bool IsDualMode
+        {
+            get
+            {
+                if (RtpSocket != null && RtpSocket.AddressFamily == AddressFamily.InterNetworkV6)
+                {
+                    return RtpSocket.DualMode;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
         public bool IsClosed
         {
             get { return m_isClosed; }
@@ -249,11 +268,11 @@ namespace SIPSorcery.Net
         {
             NetServices.CreateRtpSocket(createControlSocket, bindAddress, out var rtpSocket, out m_controlSocket);
 
-            if(rtpSocket == null)
+            if (rtpSocket == null)
             {
                 throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
             }
-            else if(createControlSocket && m_controlSocket == null)
+            else if (createControlSocket && m_controlSocket == null)
             {
                 throw new ApplicationException("The RTP channel was not able to create a Control socket.");
             }

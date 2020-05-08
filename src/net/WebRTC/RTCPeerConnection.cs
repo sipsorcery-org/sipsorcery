@@ -138,35 +138,18 @@ namespace SIPSorcery.Net
         // SDP constants.
         private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
-        private const string RTCP_ATTRIBUTE = "a=rtcp:9 IN IP4 0.0.0.0";
         private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is passive.
         private const string BUNDLE_ATTRIBUTE = "BUNDLE";
         private const string ICE_OPTIONS = "ice2,trickle";                   // Supported ICE options.
         private const string NORMAL_CLOSE_REASON = "normal";
+
+        private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.DISABLED_RTCP_PORT_NUMBER} IN IP4 0.0.0.0";
 
         private static ILogger logger = Log.Logger;
 
         public string SessionID { get; private set; }
         public string SdpSessionID;
         public string LocalSdpSessionID;
-        //public string LocalIceUser;
-        //public string LocalIcePassword;
-        //public string RemoteIceUser;
-        //public string RemoteIcePassword;
-        //public DateTime IceNegotiationStartedAt;
-        //public List<IceCandidate> LocalIceCandidates;
-        //public RTCIceConnectionState IceConnectionState = RTCIceConnectionState.@new;
-
-        //private List<IceCandidate> _remoteIceCandidates = new List<IceCandidate>();
-        //public List<IceCandidate> RemoteIceCandidates
-        //{
-        //    get { return _remoteIceCandidates; }
-        //}
-
-        //public bool IsConnected
-        //{
-        //    get { return IceConnectionState == RTCIceConnectionState.connected; }
-        //}
 
         public IceSession IceSession { get; private set; }
 
@@ -616,7 +599,7 @@ namespace SIPSorcery.Net
 
                 SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
                  track.Kind,
-                 SDP.DISABLED_PORT_NUMBER,
+                 SDP.DISABLED_RTP_PORT_NUMBER,
                  (track.Kind == SDPMediaTypesEnum.video) ? videoCapabilities : audioCapabilities);
 
                 announcement.Transport = RTP_MEDIA_PROFILE;
@@ -661,7 +644,7 @@ namespace SIPSorcery.Net
         ///             +----------------+
         /// </summary>
         /// <paramref name="localPort">The local port on the RTP socket that received the packet.</paramref>
-        /// <param name="remoteEP">The remote end point the packet was received on.</param>
+        /// <param name="remoteEP">The remote end point the packet was received from.</param>
         /// <param name="buffer">The data received.</param>
         private void OnRTPDataReceived(int localPort, IPEndPoint remoteEP, byte[] buffer)
         {

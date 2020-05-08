@@ -21,6 +21,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -47,7 +48,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                if (!string.IsNullOrEmpty(address))
+                if (!string.IsNullOrEmpty(address)) 
                 {
                     return IPAddress.Parse(address);
                 }
@@ -56,6 +57,11 @@ namespace SIPSorcery.Net
                     return null;
                 }
             }
+        }
+
+        public AddressFamily addressFamily
+        {
+            get { return CandidateAddress.AddressFamily; }
         }
 
         public string sdpMid { get; private set; }
@@ -121,20 +127,6 @@ namespace SIPSorcery.Net
         public ushort relatedPort { get; private set; }
 
         public string usernameFragment { get; private set; }
-
-        //public TurnServer TurnServer;
-        //public bool IsGatheringComplete;
-        //public int TurnAllocateAttempts;
-        //public IPEndPoint StunRflxIPEndPoint;
-        //public IPEndPoint TurnRelayIPEndPoint;
-        //public DateTime LastSTUNSendAt;
-        //public DateTime LastStunRequestReceivedAt;
-        //public DateTime LastStunResponseReceivedAt;
-        //public bool IsStunLocalExchangeComplete;      // This is the authenticated STUN request sent by us to the remote WebRTC peer.
-        //public bool IsStunRemoteExchangeComplete;     // This is the authenticated STUN request sent by the remote WebRTC peer to us.
-        //public int StunConnectionRequestAttempts = 0;
-        //public DateTime LastCommunicationAt;
-        //public bool HasConnectionError;
 
         private RTCIceCandidate()
         { }
@@ -286,7 +278,9 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Gets the remote IP end point corresponding to the ICE candidate.
+        /// Gets the IP end point corresponding to the ICE candidate. This will typically
+        /// be called on the remote nominated candidate to identify the remote end point
+        /// to use subsequent to a successful ICE negotiation.
         /// </summary>
         /// <returns>An IP end point.</returns>
         public IPEndPoint GetEndPoint()
@@ -301,7 +295,30 @@ namespace SIPSorcery.Net
             {
                 return new IPEndPoint(IPAddress.Parse(address), remotePort);
             }
+        }
 
+        /// <summary>
+        /// Checks the candidate to identify whether it is equivalent to the specified
+        /// protocol and IP end point. Primary use case is to check whether a candidate
+        /// is a match for a remote end point that a message has been received from.
+        /// </summary>
+        /// <param name="epProtocol">The protocol to check equivalence for.</param>
+        /// <param name="ep">The IP end point to check equivalence for.</param>
+        /// <returns>True if the candidate is deemed equivalent or false if not.</returns>
+        public bool IsEquivalentEndPoint(RTCIceProtocol epPotocol, IPEndPoint ep)
+        {
+            if (protocol == epPotocol &&
+                (
+                 (!string.IsNullOrEmpty(address) && ep.Address.Equals(IPAddress.Parse(address)) && port == ep.Port) ||
+                 (!string.IsNullOrEmpty(relatedAddress) && ep.Address.Equals(IPAddress.Parse(relatedAddress)) && relatedPort == ep.Port)
+                 ))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }
