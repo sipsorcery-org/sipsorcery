@@ -29,7 +29,7 @@
             ws.onmessage = async function (evt) {
                 // Received SDP offer from the remote web socket server.
 				console.log("Offer SDP received.");
-                //console.log(evt.data);
+                console.log(evt.data);
                 await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
 
                 // Now create our offer SDP to send back to the web socket server.
@@ -37,7 +37,7 @@
                     return pc.setLocalDescription(answer);
                 }).then(function () {
                     console.log("Sending answer SDP.");
-					//console.log("answer SDP: " + pc.localDescription.sdp);
+					console.log("answer SDP: " + pc.localDescription.sdp);
                     ws.send(pc.localDescription.sdp);
                 });
             };

@@ -397,6 +397,8 @@ namespace SIPSorcery.Net
         /// <param name="password">The remote peer's ICE password.</param>
         public void SetRemoteCredentials(string username, string password)
         {
+            logger.LogDebug("ICE session remote credentials set.");
+
             RemoteIceUser = username;
             RemoteIcePassword = password;
 
@@ -786,10 +788,13 @@ namespace SIPSorcery.Net
                     {
                         logger.LogWarning("ICE session STUN request matched a remote candidate but NOT a checklist entry.");
                     }
-                    else
-                    {
-                        matchingChecklistEntry.State = ChecklistEntryState.Succeeded;
-                    }
+                    //else
+                    //{
+                    //    if (!IsController)
+                    //    {
+                    //        matchingChecklistEntry.State = ChecklistEntryState.Succeeded;
+                    //    }
+                    //}
 
                     // The UseCandidate attribute is only meant to be set by the "Controller" peer. This implementation
                     // will accept it irrespective of the peer roles. If the remote peer wants us to use a certain remote

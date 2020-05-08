@@ -138,12 +138,13 @@ namespace SIPSorcery.Net
         // SDP constants.
         private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
-        private const string SETUP_ANSWER_ATTRIBUTE = "a=setup:passive"; // Indicates the media announcement DTLS negotiation state is passive.
+        private const string ICE_SETUP_OFFER_ATTRIBUTE = "a=setup:actpass";     // Indicates ICE agent can act as either the "controlling" or "controlled" peer.
+        private const string ICE_SETUP_ANSWER_ATTRIBUTE = "a=setup:passive";    // Indicates ICE agent will act as the "controlled" peer.
         private const string BUNDLE_ATTRIBUTE = "BUNDLE";
         private const string ICE_OPTIONS = "ice2,trickle";                   // Supported ICE options.
         private const string NORMAL_CLOSE_REASON = "normal";
 
-        private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.DISABLED_RTCP_PORT_NUMBER} IN IP4 0.0.0.0";
+        private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.DISABLED_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
         private static ILogger logger = Log.Logger;
 
@@ -282,7 +283,6 @@ namespace SIPSorcery.Net
         public Task setLocalDescription(RTCSessionDescriptionInit init)
         {
             RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
-            //base.setLocalDescription(description);
             localDescription = description;
 
             if (init.type == RTCSdpType.offer)
@@ -385,46 +385,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        /// <summary>
-        /// Adds an ICE candidate to the list of remote party candidates.
-        /// </summary>
-        /// <param name="remoteIceCandidate">The remote party candidate to add.</param>
-        //public void AppendRemoteIceCandidate(IceCandidate remoteIceCandidate)
-        //{
-        //    IPAddress candidateIPAddress = null;
-
-        //    //foreach (var iceCandidate in remoteIceCandidates)
-        //    //{
-        //    //    logger.LogDebug("Appending remote ICE candidate " + iceCandidate.NetworkAddress + ":" + iceCandidate.Port + ".");
-        //    //}
-
-        //    if (remoteIceCandidate.Transport.ToLower() != "udp")
-        //    {
-        //        logger.LogDebug("Omitting remote non-UDP ICE candidate. " + remoteIceCandidate.RawString + ".");
-        //    }
-        //    else if (!IPAddress.TryParse(remoteIceCandidate.NetworkAddress, out candidateIPAddress))
-        //    {
-        //        logger.LogDebug("Omitting ICE candidate with unrecognised IP Address. " + remoteIceCandidate.RawString + ".");
-        //    }
-        //    //else if (candidateIPAddress.AddressFamily == AddressFamily.InterNetworkV6)
-        //    //{
-        //    //    logger.LogDebug("Omitting IPv6 ICE candidate. " + remoteIceCandidate.RawString + ".");
-        //    //}
-        //    else
-        //    {
-        //        // ToDo: Add srflx and relay endpoints as hosts as well.
-
-        //        if (!_remoteIceCandidates.Any(x => x.NetworkAddress == remoteIceCandidate.NetworkAddress && x.port == remoteIceCandidate.port))
-        //        {
-        //            logger.LogDebug("Adding remote ICE candidate: " + remoteIceCandidate.type + " " + remoteIceCandidate.NetworkAddress + ":" + remoteIceCandidate.port + " (" + remoteIceCandidate.RawString + ").");
-        //            _remoteIceCandidates.Add(remoteIceCandidate);
-        //        }
-        //    }
-
-        //    // We now should have a remote ICE candidate to start the STUN dance with.
-        //    SendStunConnectivityChecks(null);
-        //}
-
         public override void SetSecurityContext(
             ProtectRtpPacket protectRtp,
             ProtectRtpPacket unprotectRtp,
@@ -502,6 +462,18 @@ namespace SIPSorcery.Net
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
                 var offerSdp = await createBaseSdp(localTracks, audioCapabilities, videoCapabilities).ConfigureAwait(false);
 
+                if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
+                {
+                    var audioAnnouncement = offerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single();
+                    audioAnnouncement.AddExtra(ICE_SETUP_OFFER_ATTRIBUTE);
+                }
+
+                if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
+                {
+                    var videoAnnouncement = offerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single();
+                    videoAnnouncement.AddExtra(ICE_SETUP_OFFER_ATTRIBUTE);
+                }
+
                 RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
                 {
                     type = RTCSdpType.offer,
@@ -545,13 +517,13 @@ namespace SIPSorcery.Net
                 if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 {
                     var audioAnnouncement = answerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single();
-                    audioAnnouncement.AddExtra(SETUP_ANSWER_ATTRIBUTE);
+                    audioAnnouncement.AddExtra(ICE_SETUP_ANSWER_ATTRIBUTE);
                 }
 
                 if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
                 {
                     var videoAnnouncement = answerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single();
-                    videoAnnouncement.AddExtra(SETUP_ANSWER_ATTRIBUTE);
+                    videoAnnouncement.AddExtra(ICE_SETUP_ANSWER_ATTRIBUTE);
                 }
 
                 RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
