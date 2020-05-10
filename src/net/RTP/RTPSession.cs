@@ -628,6 +628,13 @@ namespace SIPSorcery.Net
                             var remoteAudioFormats = offer.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().MediaFormats;
                             var audioCompatibleFormats = SDPMediaFormat.GetCompatibleFormats(AudioLocalTrack.Capabilities, remoteAudioFormats);
 
+                            // Add the RTP events format if available.
+                            var rtpEventsFormat = AudioLocalTrack.Capabilities.FirstOrDefault(y => y.FormatAttribute?.Contains(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true);
+                            if(rtpEventsFormat != null)
+                            {
+                                audioCompatibleFormats.Add(rtpEventsFormat);
+                            }
+
                             // Set the capabilities on our audio track to the ones the remote party can use.
                             audioCopy.Capabilities = audioCompatibleFormats;
 
@@ -692,7 +699,7 @@ namespace SIPSorcery.Net
         /// <returns>If successful an OK enum result. If not an enum result indicating the failure cause.</returns>
         public SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription)
         {
-            if(sessionDescription == null)
+            if (sessionDescription == null)
             {
                 throw new ArgumentNullException("sessionDescription", "The session description cannot be null for SetRemoteDescription.");
             }
@@ -772,6 +779,9 @@ namespace SIPSorcery.Net
                             {
                                 return SetDescriptionResultEnum.AudioIncompatible;
                             }
+
+                            // Check whether RTP events can be supported and adjust our parameters to match the remote party if we can.
+                            AdjustRtpEventFormat(audioAnnounce);
 
                             var audioAddr = (audioAnnounce.Connection != null) ? IPAddress.Parse(audioAnnounce.Connection.ConnectionAddress) : connectionAddress;
 
@@ -894,7 +904,7 @@ namespace SIPSorcery.Net
 
                 return SetDescriptionResultEnum.OK;
             }
-            catch(Exception excp)
+            catch (Exception excp)
             {
                 logger.LogError($"Exception in RTPSession SetRemoteDescription. {excp.Message}.");
                 return SetDescriptionResultEnum.Error;
@@ -917,6 +927,40 @@ namespace SIPSorcery.Net
             {
                 VideoLocalTrack.StreamStatus = status;
                 m_sdpAnnouncementVersion++;
+            }
+        }
+
+        /// <summary>
+        /// Checks the local audio capabilities against the remote party's audio announcement to see
+        /// whether RTP events can be supported on this media session. If necessary adjustments will be
+        /// made to the local audio capabilities to remote RTPe vents if not supported or adjust to make
+        /// compatible where possible.
+        /// </summary>
+        /// <param name="remoteAudioAnnouncement">The audio announcement supplied from the remote party's
+        /// session description offer or answer.</param>
+        private void AdjustRtpEventFormat(SDPMediaAnnouncement remoteAudioAnnouncement)
+        {
+            if (remoteAudioAnnouncement != null)
+            {
+                // Check if RTP events are supported and if required adjust the local format ID.
+                var remoteEventFormat = remoteAudioAnnouncement.MediaFormats.FirstOrDefault(x => x.FormatAttribute?.Contains(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true);
+                var localEventFormat = AudioLocalTrack.Capabilities.FirstOrDefault(y => y.FormatAttribute?.Contains(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true);
+
+                if (remoteEventFormat != null && localEventFormat != null)
+                {
+                    // We both support RTP events. If using different format ID's set ours to match the remote party's.
+                    if (remoteEventFormat.FormatID != localEventFormat.FormatID)
+                    {
+                        logger.LogDebug($"Adjusting the RTP event format ID on the local audio capabilities to match the remote part: {localEventFormat.FormatID} to {remoteEventFormat.FormatID}.");
+                        localEventFormat.FormatID = remoteEventFormat.FormatID;
+                    }
+                }
+                else if(localEventFormat != null)
+                {
+                    // Remote party does not support RTP events remove our capability.
+                    logger.LogWarning("REmote party does not support RTP events.");
+                    AudioLocalTrack.Capabilities.Remove(localEventFormat);
+                }
             }
         }
 
@@ -954,7 +998,7 @@ namespace SIPSorcery.Net
 
             if (localAddress == null)
             {
-                if(m_bindAddress != null)
+                if (m_bindAddress != null)
                 {
                     localAddress = m_bindAddress;
                 }
@@ -1295,7 +1339,7 @@ namespace SIPSorcery.Net
                 {
                     logger.LogWarning("SendVp8Frame was called on an RTP session without a video stream.");
                 }
-                else if(videoTrack.StreamStatus == MediaStreamStatusEnum.Inactive || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
+                else if (videoTrack.StreamStatus == MediaStreamStatusEnum.Inactive || videoTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly)
                 {
                     return;
                 }

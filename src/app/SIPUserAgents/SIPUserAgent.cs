@@ -453,7 +453,7 @@ namespace SIPSorcery.SIP.App
                 MediaSession.OnRtpEvent += OnRemoteRtpEvent;
                 MediaSession.OnRtpClosed += (reason) =>
                 {
-                    if (!MediaSession.IsClosed)
+                    if (MediaSession?.IsClosed == false)
                     {
                         logger.LogWarning($"RTP channel was closed with reason {reason}.");
                     }
