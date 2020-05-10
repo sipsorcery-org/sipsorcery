@@ -31,7 +31,7 @@
 
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.46-pre</Version>
+	<Version>4.0.47-pre</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -51,7 +51,8 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP WebRTC RTP SDP STUN SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- v4.0.46-pre: Added optional bindAddress parameter to RTPSession constructor for RTP sockets.
+	<PackageReleaseNotes>- v4.0.47-pre: Fixed bug negotiating RTP event format. Added experimental support for REFER processing to SIPUserAgent.
+- v4.0.46-pre: Added optional bindAddress parameter to RTPSession constructor for RTP sockets.
 - Version 4.0.45-pre: RTPSession public interface changed to conform to IMediaSession.
 - Version 4.0.44-pre: Minor change to RTP codec clock rate methods to support G722.
 - Version 4.0.43-pre: Bug fix not updating SDP version when changing RTP stream status.
@@ -76,8 +77,8 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
 </PackageReleaseNotes>
 	<NeutralLanguage>en-GB</NeutralLanguage>
-	<AssemblyVersion>4.0.46.0</AssemblyVersion>
-	<FileVersion>4.0.46.0</FileVersion>
+	<AssemblyVersion>4.0.47.0</AssemblyVersion>
+	<FileVersion>4.0.47.0</FileVersion>
   </PropertyGroup>    
 
 </Project>
