@@ -11,6 +11,7 @@
 // History:
 // 26 Nov 2019	Aaron Clauson   Created, Dublin, Ireland.
 // rj2: added overload for Answer with customHeader
+// 10 May 2020  Aaron Clauson   Added handling for REFER requests as per https://tools.ietf.org/html/rfc3515.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -792,7 +793,28 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    //TODO: Add handling logic for in transfer requests from the remote call party.
+                    // Handling logic for transfer requests from the remote call party as per https://tools.ietf.org/html/rfc3515.
+                    SIPResponse acceptedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Accepted, null);
+                    await SendResponseAsync(acceptedResponse).ConfigureAwait(false);
+
+                    if (!IsOnRemoteHold)
+                    {
+                        // Put the remote party (who has just requested we call a new destination) on hold while we
+                        // attempt a call to the referred destination.
+                        PutOnHold();
+                    }
+
+                    // TODO:
+                    // If norefersub header then.
+                    // Need to create an implicit subscription to keep the remote party that requested the transfer up to date with the 
+                    // status and outcome of the REFER request
+
+                    _ = Task.Run(() =>
+                    {
+                        // To keep the remote party that requested the transfer up to date with the status and outcome of the REFER request
+                        // we need to create a subscription and send NOTIFY requests.
+
+                    });
                 }
             }
             else if (sipRequest.Method == SIPMethodsEnum.NOTIFY)
