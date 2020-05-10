@@ -726,7 +726,7 @@ namespace SIPSorcery.SIP.App
             inviteHeader.CSeqMethod = SIPMethodsEnum.INVITE;
             inviteHeader.UserAgent = m_userAgent;
             inviteHeader.Routes = routeSet;
-            inviteHeader.Supported = (PrackSupported == true) ? SIPExtensionHeaders.PRACK : null; // Let the uas know whether or not we're supporting reliable provisional responses.
+            inviteHeader.Supported = SIPExtensionHeaders.NO_REFER_SUB + ((PrackSupported == true) ? "," + SIPExtensionHeaders.PRACK : "");
 
             inviteRequest.Header = inviteHeader;
 

@@ -415,6 +415,8 @@ a=sendrecv";
             logger.LogDebug($"Client agent answer result {callResult }.");
 
             Assert.True(callResult);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentServer.Dialogue.DialogueState);
         }
 
         /// <summary>
