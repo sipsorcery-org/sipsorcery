@@ -394,7 +394,7 @@ a=sendrecv";
 
                 var uas = userAgentServer.AcceptCall(req);
                 RtpAudioSession serverAudioSession = new RtpAudioSession(
-                    new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.None }, 
+                    new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.None },
                     new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
                 var answerResult = await userAgentServer.Answer(uas, serverAudioSession);
 
@@ -547,7 +547,7 @@ a=sendrecv";
             SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
 
             var uas = userAgent.AcceptCall(inviteReq);
-            
+
             RTPSession rtpSession = new RTPSession(false, false, false);
             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             rtpSession.addTrack(audioTrack);
@@ -678,7 +678,7 @@ a=sendrecv";
 
                 SIPURI dstUri = new SIPURI(SIPSchemesEnum.sip, calleeTransport.GetSIPChannels().First().ListeningSIPEndPoint);
                 var result = await userAgent.Call(dstUri.ToString(), null, null, rtpSession);
-                Assert.False(result);                
+                Assert.False(result);
             }
             finally
             {
@@ -686,6 +686,106 @@ a=sendrecv";
                 callerTransport?.Shutdown();
                 calleeTransport?.Shutdown();
             }
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent can correctly place be the recipient of an attended transfer
+        /// REFER request.
+        /// </summary>
+        /// <remarks>
+        /// This test requires 4 SIPUserAgent instances:
+        ///  - User Agent A is the original caller and transferrer.
+        ///  - User Agent B calls User Agent D to create the call leg that will be replaced by the transfer.
+        ///    This call leg would represent the original caller putting one call leg on hold and then
+        ///    calling and talking to the transfer destination before completing the transfer,
+        ///  - User Agent C receives and answers call from A and then at a later point gets a REFER 
+        ///    request, also from A, to initiate the transfer,
+        ///  - User Agent D receives and answer call from A and then at a later point receives a second
+        ///    call from B that replaces the call with A.
+        /// </remarks>
+        [Fact]
+        public async Task AttendedTransfereeUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // User agents A and B can use the same transport as they don't auto-answer incoming calls.
+            SIPTransport sipTransportCaller = new SIPTransport();
+            sipTransportCaller.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
+            var userAgentA = new SIPUserAgent(sipTransportCaller, null);
+            var userAgentB = new SIPUserAgent(sipTransportCaller, null);
+
+            SIPTransport sipTransportC = new SIPTransport();
+            sipTransportC.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
+            var userAgentC = new SIPUserAgent(sipTransportC, null);
+
+            SIPTransport sipTransportD = new SIPTransport();
+            sipTransportD.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
+            var userAgentD = new SIPUserAgent(sipTransportD, null);
+
+            logger.LogDebug($"sip transport for UA's A and B listening on: {sipTransportCaller.GetSIPChannels()[0].ListeningSIPEndPoint}.");
+            logger.LogDebug($"sip transport for UA C listening on: {sipTransportC.GetSIPChannels()[0].ListeningSIPEndPoint}.");
+            logger.LogDebug($"sip transport for UA D listening on: {sipTransportD.GetSIPChannels()[0].ListeningSIPEndPoint}.");
+
+            // Set up auto-answer for UA's C and D:
+            foreach (var userAgent in new List<SIPUserAgent> { userAgentC, userAgentD })
+            {
+                userAgent.ServerCallCancelled += (uas) => logger.LogDebug("Incoming call cancelled by remote party.");
+                userAgent.OnCallHungup += (dialog) => logger.LogDebug("Call hungup by remote party.");
+                userAgent.OnIncomingCall += async (ua, req) =>
+                {
+                    var uas = ua.AcceptCall(req);
+                    bool answerResult = await ua.Answer(uas, CreateMediaSession());
+                    logger.LogDebug($"Answer incoming call result {answerResult}.");
+                };
+            }
+
+            // Place the two calls from A to C and C to D.
+            var dstUriC = sipTransportC.GetSIPChannels()[0].GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+            logger.LogDebug($"UA-A attempting call UA-C on {dstUriC}.");
+            var callResultAtoC = await userAgentA.Call(dstUriC.ToString(), null, null, CreateMediaSession());
+            logger.LogDebug($"Client agent answer result for A to C {callResultAtoC}.");
+
+            Assert.True(callResultAtoC);
+
+            var dstUriD = sipTransportD.GetSIPChannels()[0].GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+            logger.LogDebug($"UA-B attempting call UA-D on {dstUriD}.");
+            var callResultBtoD = await userAgentB.Call(dstUriD.ToString(), null, null, CreateMediaSession());
+            logger.LogDebug($"Client agent answer result for B to D {callResultBtoD}.");
+
+            Assert.True(callResultBtoD);
+
+            Assert.True(userAgentA.IsCallActive);
+            Assert.True(userAgentB.IsCallActive);
+            Assert.True(userAgentC.IsCallActive);
+            Assert.True(userAgentD.IsCallActive);
+
+            // Initiate attended transfer. A sends REFER request to C such that:
+            // - C calls D,
+            // - The Refer-To URI tells D the call from C replaces its call with B.
+            CancellationTokenSource cts = new CancellationTokenSource();
+            bool transferResult = await userAgentA.AttendedTransfer(userAgentC.Dialogue, TimeSpan.FromSeconds(2), cts.Token);
+
+            // This means the REFER request was accepted but the transfer still needs to be actioned.
+            Assert.True(transferResult);
+
+            // Give the transfer time to be processed.
+            await Task.Delay(2000);
+
+            //userAgentA.Hangup();
+            //userAgentB.Hangup();
+
+            //// Give the hangups time to be processed.
+            //await Task.Delay(1000);
+
+            Assert.False(userAgentA.IsCallActive);
+            Assert.False(userAgentB.IsCallActive);
+            Assert.True(userAgentC.IsCallActive);
+            Assert.True(userAgentD.IsCallActive);
+
+            sipTransportCaller.Shutdown();
+            sipTransportC.Shutdown();
+            sipTransportD.Shutdown();
         }
 
         private IMediaSession CreateMediaSession()
