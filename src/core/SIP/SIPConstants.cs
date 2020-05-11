@@ -218,6 +218,7 @@ namespace SIPSorcery.SIP
         public const string SIP_HEADER_REFERSUB = "Refer-Sub";                      // RFC 4488 Used to stop the implicit SIP event subscription on a REFER request.
         public const string SIP_HEADER_REFERTO = "Refer-To";                        // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method".
         public const string SIP_HEADER_REPLY_TO = "Reply-To";
+        public const string SIP_HEADER_REPLACES = "Replaces";
         public const string SIP_HEADER_REQUIRE = "Require";
         public const string SIP_HEADER_RETRY_AFTER = "Retry-After";
         public const string SIP_HEADER_RELIABLE_SEQ = "RSeq";                     // RFC 3262 "The RSeq header is used in provisional responses in order to transmit them reliably."
@@ -543,6 +544,7 @@ namespace SIPSorcery.SIP
         None = 0,
         Prack = 1,          // Reliable provisional responses as per RFC3262.
         NoReferSub = 2,     // No subscription for REFERs as per RFC4488.
+        Replaces = 3,
     }
 
     /// <summary>
@@ -553,6 +555,7 @@ namespace SIPSorcery.SIP
     {
         public const string PRACK = "100rel";
         public const string NO_REFER_SUB = "norefersub";
+        public const string REPLACES = "replaces";
 
         /// <summary>
         /// Parses a string containing a list of SIP extensions into a list of extensions that this library
@@ -581,6 +584,10 @@ namespace SIPSorcery.SIP
                         else if (extension.Trim().ToLower() == NO_REFER_SUB)
                         {
                             knownExtensions.Add(SIPExtensions.NoReferSub);
+                        }
+                        else if (extension.Trim().ToLower() == REPLACES)
+                        {
+                            knownExtensions.Add(SIPExtensions.Replaces);
                         }
                         else
                         {

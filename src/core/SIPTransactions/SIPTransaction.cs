@@ -388,7 +388,7 @@ namespace SIPSorcery.SIP
                     }
 
                     sipResponse.Header.RSeq = RSeq;
-                    sipResponse.Header.Require += SIPExtensionHeaders.PRACK;
+                    sipResponse.Header.Require += SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB + ", " + SIPExtensionHeaders.PRACK;
 
                     // If reliable provisional responses are supported then need to send this response reliably.
                     if (ReliableProvisionalResponse != null)

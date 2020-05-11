@@ -43,7 +43,7 @@ namespace SIPSorcery
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
-        static void Main()
+        static void Main(string[] args)
         {
             Console.WriteLine("SIPSorcery Attended Transferee example.");
             Console.WriteLine("Call this program and then initiate the attended transfer.");
@@ -54,13 +54,45 @@ namespace SIPSorcery
 
             AddConsoleLogger();
 
+            int bindPort = SIP_LISTEN_PORT;
+
+            if (args != null && args.Length > 0)
+            {
+                if (!int.TryParse(args[0], out bindPort))
+                {
+                    Log.LogWarning($"Command line argument could not be parsed as an integer {args[0]}");
+                }
+            }
+
             // Set up a default SIP transport.
             _sipTransport = new SIPTransport();
-            _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, SIP_LISTEN_PORT)));
+            _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, bindPort)));
 
             EnableTraceLogs(_sipTransport);
 
-            _sipTransport.SIPTransportRequestReceived += OnRequest;
+            var userAgent = new SIPUserAgent(_sipTransport, null);
+            userAgent.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
+            userAgent.OnCallHungup += (dialog) => Log.LogDebug("Call hungup by remote party.");
+            userAgent.OnIncomingCall += async (ua, req) =>
+            {
+                var rtpSession = new RtpAVSession(
+                new AudioOptions
+                {
+                    AudioSource = AudioSourcesEnum.Microphone,
+                    AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA }
+                },
+                null);
+
+                var uas = ua.AcceptCall(req);
+                bool answerResult = await ua.Answer(uas, rtpSession);
+
+                Log.LogDebug($"Answer incoming call result {answerResult}.");
+
+                if (answerResult && ua.IsCallActive)
+                {
+                    await rtpSession.Start();
+                }
+            };
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
@@ -94,67 +126,7 @@ namespace SIPSorcery
         }
 
         /// <summary>
-        /// Because this is a server user agent the SIP transport must start listening for client user agents.
-        /// </summary>
-        private static async Task OnRequest(SIPEndPoint localSIPEndPoint, SIPEndPoint remoteEndPoint, SIPRequest sipRequest)
-        {
-            try
-            {
-                if (sipRequest.Header.From != null &&
-                sipRequest.Header.From.FromTag != null &&
-                sipRequest.Header.To != null &&
-                sipRequest.Header.To.ToTag != null)
-                {
-                    // This is an in-dialog request that will be handled directly by a user agent instance.
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.INVITE)
-                {
-                    Log.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint} {sipRequest.URI}.");
-
-                    var userAgent = new SIPUserAgent(_sipTransport, null);
-                    userAgent.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
-                    userAgent.OnCallHungup += (dialog) => Log.LogDebug("Call hungup by remote party.");
-
-                    var rtpSession = new RtpAVSession(
-                        new AudioOptions
-                        {
-                            AudioSource = AudioSourcesEnum.Microphone,
-                            AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA }
-                        },
-                        null);
-
-                    var uas = userAgent.AcceptCall(sipRequest);
-                    await userAgent.Answer(uas, rtpSession);
-
-                    if (userAgent.IsCallActive)
-                    {
-                        await rtpSession.Start();
-                    }
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.BYE)
-                {
-                    SIPResponse byeResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.CallLegTransactionDoesNotExist, null);
-                    await _sipTransport.SendResponseAsync(byeResponse);
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.SUBSCRIBE)
-                {
-                    SIPResponse notAllowededResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
-                    await _sipTransport.SendResponseAsync(notAllowededResponse);
-                }
-                else if (sipRequest.Method == SIPMethodsEnum.OPTIONS || sipRequest.Method == SIPMethodsEnum.REGISTER)
-                {
-                    SIPResponse optionsResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
-                    await _sipTransport.SendResponseAsync(optionsResponse);
-                }
-            }
-            catch (Exception reqExcp)
-            {
-                Log.LogWarning($"Exception handling {sipRequest.Method}. {reqExcp.Message}");
-            }
-        }
-
-        /// <summary>
-        ///  Adds a console logger. Can be ommitted if internal SIPSorcery debug and warning messages are not required.
+        ///  Adds a console logger. Can be omitted if internal SIPSorcery debug and warning messages are not required.
         /// </summary>
         private static void AddConsoleLogger()
         {

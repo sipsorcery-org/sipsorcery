@@ -200,7 +200,7 @@ namespace SIPSorcery.UnitTests
 
         public void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         public Task SendDtmf(byte tone, CancellationToken ct)
