@@ -978,16 +978,14 @@ namespace SIPSorcery.SIP.App
                     await uas.SendProvisionalResponse(SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null));
 
                     // An attended transfer INVITE should only be accepted if the dialog parameters in the Replaces header 
-                    // match the current dialog.
+                    // match the current dialog. But... to be more accepting with only a small increase in risk we only 
+                    // require a match on the Call-ID (only small increase in risk as if a malicious party can get 1
+                    // of the three required headers they can almost certainly get all 3).
                     SIPReplacesParameter replaces = SIPReplacesParameter.Parse(sipRequest.Header.Replaces);
 
-                    logger.LogDebug($"INVITE for attended transfer received, callid:{replaces.CallID},{m_sipDialogue.CallId}, " +
-                        $"to-tag:{replaces.ToTag},{m_sipDialogue.LocalTag}, from-tag:{replaces.FromTag},{m_sipDialogue.RemoteTag}.");
+                    logger.LogDebug($"INVITE for attended transfer received, Replaces CallID {replaces.CallID}, our dialog Call-ID {m_sipDialogue.CallId}.");
 
-                    if(replaces == null ||
-                        replaces.CallID != m_sipDialogue.CallId || 
-                        replaces.FromTag != m_sipDialogue.RemoteTag ||
-                        replaces.ToTag != m_sipDialogue.LocalTag)
+                    if(replaces == null || replaces.CallID != m_sipDialogue.CallId)
                     {
                         logger.LogDebug("The attended transfer INVITE's Replaces header did not match the current dialog, rejecting.");
                         uas.SendFinalResponse(SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, null));

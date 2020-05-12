@@ -740,7 +740,7 @@ a=sendrecv";
                 };
             }
 
-            // Place the two calls from A to C and C to D.
+            // Place the two calls from A to C and B to D.
             var dstUriC = sipTransportC.GetSIPChannels()[0].GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
             logger.LogDebug($"UA-A attempting call UA-C on {dstUriC}.");
             var callResultAtoC = await userAgentA.Call(dstUriC.ToString(), null, null, CreateMediaSession());
@@ -761,10 +761,13 @@ a=sendrecv";
             Assert.True(userAgentD.IsCallActive);
 
             // Initiate attended transfer. A sends REFER request to C such that:
-            // - C calls D,
-            // - The Refer-To URI tells D the call from C replaces its call with B.
+            // - A sends a REFER request to C,
+            // - The REFER request Refer-To header tells C who to call and what to put in its INVITE request Replaces header,
+            // - The INVITE from C to D tells D this new call from C replaces its call with B,
+            // - When D answers it hangs up its call with B,
+            // - When C gets the Ok response from C it hangs up its call with A.
             CancellationTokenSource cts = new CancellationTokenSource();
-            bool transferResult = await userAgentA.AttendedTransfer(userAgentC.Dialogue, TimeSpan.FromSeconds(2), cts.Token);
+            bool transferResult = await userAgentA.AttendedTransfer(userAgentB.Dialogue, TimeSpan.FromSeconds(2), cts.Token);
 
             // This means the REFER request was accepted but the transfer still needs to be actioned.
             Assert.True(transferResult);
