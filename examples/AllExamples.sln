@@ -45,7 +45,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPCallResampleAudio", "SIP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AttendedTransferee", "AttendedTransferee\AttendedTransferee.csproj", "{2D3F9FAF-F102-45C2-8BCF-B866B70F106F}"
 EndProject
+<<<<<<< HEAD
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebRTCNoSignalling", "WebRTCNoSignalling\WebRTCNoSignalling.csproj", "{66A55C9B-A8F0-493E-B9BF-33E20EDE72AA}"
+=======
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\src\SIPSorcery.csproj", "{A0A36830-1FA0-42FD-B2A7-0509BF440C4C}"
+>>>>>>> 71d79f25bff7f2f35ab1097fa975b4bd176ff294
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
