@@ -1,10 +1,10 @@
-###Overview
+### Overview
 
 This example is intended to allow a WebRTC peer connection test between a .Net Core Console application and a WebRTC Browser WITHOUT needing any signalling.
 
 To avoid the need for signalling a number of manual steps are required in order to exchange the information each peers needs for the Session Description offer and answer.
 
-###Instructions
+### Instructions
 
 To run the example follow the steps below in order.
 
