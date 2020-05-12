@@ -52,14 +52,15 @@ Press enter when you the SDP answer is available and then enter the ICE username
  - Open the `webrtc-nosignalling.html` with a WebRTC enabled browser and open the debug console with ctrl-shift-i and click `Start`,
  - The Browser peer connection should print diagnostics messages including the SDP answer,
  - Go back to the Console application and press Enter to provide the ICE username and password from the Browser,
- ````
- Enter the remote peer ICE User (e.g. for 'a=ice-ufrag:tGXy' enter tGXy) =>
- ```
+````
+Enter the remote peer ICE User (e.g. for 'a=ice-ufrag:tGXy' enter tGXy) =>
+````
  - Copy the ICE username from the SDP answer in the Browser. In the example below:
-  - The ICE username that needs to be provided to the COnsole application is: `aQfz`
-  - The ICE password that needs to be provided to the COnsole application is: `G1idYvwZ/eXix4mUj7yqXlUE`
- ````
- answer SDP: v=0
+  - The ICE username that needs to be provided to the Console application is: `aQfz`
+  - The ICE password that needs to be provided to the Console application is: `G1idYvwZ/eXix4mUj7yqXlUE`
+ 
+````
+answer SDP: v=0
 o=- 8577810580265776401 2 IN IP4 127.0.0.1
 s=-
 t=0 0
@@ -78,4 +79,5 @@ a=recvonly
 a=rtcp-mux
 a=rtpmap:100 VP8/90000
 ````
+
 - The peer connection between the Console and the Browser should now connect after a few seconds and a test pattern video should be displayed in the Browser.
