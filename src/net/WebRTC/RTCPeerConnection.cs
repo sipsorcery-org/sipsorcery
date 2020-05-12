@@ -223,8 +223,9 @@ namespace SIPSorcery.Net
         public event Action<RTCIceGatheringState> onicegatheringstatechange;
 
         /// <summary>
-        /// The state of the peer connection. A state of connected means the DTLS handshake has
-        /// completed and media packets can be exchanged.
+        /// The state of the peer connection. A state of connected means the ICE checks have 
+        /// succeeded and the DTLS handshake has completed. Once in the connected state it's
+        /// suitable for media packets can be exchanged.
         /// </summary>
         public event Action<RTCPeerConnectionState> onconnectionstatechange;
 
@@ -260,7 +261,17 @@ namespace SIPSorcery.Net
                     RemoteEndPoint = IceSession.NominatedCandidate.GetEndPoint();
                 }
 
-                oniceconnectionstatechange?.Invoke(state);
+                iceConnectionState = state;
+                oniceconnectionstatechange?.Invoke(iceConnectionState);
+
+                if(base.IsSecureContextReady && 
+                    iceConnectionState == RTCIceConnectionState.connected &&
+                    connectionState != RTCPeerConnectionState.connected)
+                {
+                    // This is the case where the ICE connection checks completed after the DTLS handshake.
+                    connectionState = RTCPeerConnectionState.connected;
+                    onconnectionstatechange?.Invoke(RTCPeerConnectionState.connected);
+                }
             };
             IceSession.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
             IceSession.OnIceCandidateError += onicecandidateerror;
@@ -393,8 +404,13 @@ namespace SIPSorcery.Net
         {
             base.SetSecurityContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
 
-            connectionState = RTCPeerConnectionState.connected;
-            onconnectionstatechange?.Invoke(RTCPeerConnectionState.connected);
+            if (iceConnectionState == RTCIceConnectionState.connected &&
+                connectionState != RTCPeerConnectionState.connected)
+            {
+                // This is the case where the DTLS handshake completed before the ICE connection checks.
+                connectionState = RTCPeerConnectionState.connected;
+                onconnectionstatechange?.Invoke(RTCPeerConnectionState.connected);
+            }
         }
 
         /// <summary>
