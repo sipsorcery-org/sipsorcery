@@ -16,12 +16,12 @@
 			const remoteVideo = document.querySelector('#videoCtl');
 			//remoteVideo.srcObject = remoteStream;
 
-            const constraints = {
-                'video': true,
-                'audio': true
-			}
+   //         const constraints = {
+   //             'video': false,
+   //             'audio': true
+			//}
 
-			const localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+			const localStream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
 			remoteVideo.srcObject = localStream;
 
 			pc = new RTCPeerConnection(null);
