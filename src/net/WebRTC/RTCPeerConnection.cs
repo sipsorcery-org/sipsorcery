@@ -57,12 +57,12 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The type of the Session Description.
         /// </summary>
-        public RTCSdpType type;
+        public RTCSdpType type { get; set; }
 
         /// <summary>
         /// A string representation of the Session Description.
         /// </summary>
-        public string sdp;
+        public string sdp { get; set; }
     }
 
     /// <summary>
