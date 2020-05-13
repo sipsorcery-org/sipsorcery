@@ -42,7 +42,7 @@ namespace SIPSorcery.Net
 
         public string TurnServerAddress { get; private set; }
 
-        public string candidate { get; private set; }
+        public string candidate { get; set; }
 
         public IPAddress CandidateAddress
         {
@@ -64,9 +64,9 @@ namespace SIPSorcery.Net
             get { return CandidateAddress.AddressFamily; }
         }
 
-        public string sdpMid { get; private set; }
+        public string sdpMid { get; set; }
 
-        public ushort sdpMLineIndex { get; private set; }
+        public ushort sdpMLineIndex { get; set; }
 
         /// <summary>
         /// Composed of 1 to 32 chars. It is an
@@ -77,14 +77,14 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See https://tools.ietf.org/html/rfc8445#section-5.1.1.3.
         /// </remarks>
-        public string foundation { get; private set; }
+        public string foundation { get; set; }
 
         /// <summary>
         ///  Is a positive integer between 1 and 256 (inclusive)
         /// that identifies the specific component of the data stream for
         /// which this is a candidate.
         /// </summary>
-        public RTCIceComponent component { get; private set; } = RTCIceComponent.rtp;
+        public RTCIceComponent component { get; set; } = RTCIceComponent.rtp;
 
         /// <summary>
         /// A positive integer between 1 and (2**31 - 1) inclusive.
@@ -95,38 +95,38 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See specification at https://tools.ietf.org/html/rfc8445#section-5.1.2.
         /// </remarks>
-        public ulong priority { get; private set; }
+        public ulong priority { get; set; }
 
         /// <summary>
         /// The local address for the candidate.
         /// </summary>
-        public string address { get; private set; }
+        public string address { get; set; }
 
         /// <summary>
         /// The transport protocol for the candidate, supported options are UDP and TCP.
         /// </summary>
-        public RTCIceProtocol protocol { get; private set; }
+        public RTCIceProtocol protocol { get; set; }
 
         /// <summary>
         /// The local port the candidate is listening on.
         /// </summary>
-        public ushort port { get; private set; }
+        public ushort port { get; set; }
 
         /// <summary>
         /// The typ of ICE candidate, host, srflx etc.
         /// </summary>
-        public RTCIceCandidateType type { get; private set; }
+        public RTCIceCandidateType type { get; set; }
 
         /// <summary>
         /// For TCP candidates the role they are fulfilling (client, server or both).
         /// </summary>
-        public RTCIceTcpCandidateType tcpType { get; private set; }
+        public RTCIceTcpCandidateType tcpType { get; set; }
 
-        public string relatedAddress { get; private set; }
+        public string relatedAddress { get; set; }
 
-        public ushort relatedPort { get; private set; }
+        public ushort relatedPort { get; set; }
 
-        public string usernameFragment { get; private set; }
+        public string usernameFragment { get; set; }
 
         private RTCIceCandidate()
         { }

@@ -140,7 +140,7 @@ namespace SIPSorcery.Net
         relay
     }
 
-    interface IRTCIceCandidate
+    public interface IRTCIceCandidate
     {
         //constructor(optional RTCIceCandidateInit candidateInitDict = { });
         string candidate { get; }
