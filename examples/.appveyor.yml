@@ -8,7 +8,7 @@ build_script:
 - msbuild examples/sipexamples/sipexamples.sln
 - nuget restore -DisableParallelProcessing examples/webrtcexamples/webrtcexamples.sln
 - msbuild examples/webrtcexamples/webrtcexamples.sln
-- nuget restore -DisableParallelProcessing examples/icemdline/icecmdline.sln
+- nuget restore -DisableParallelProcessing examples/icecmdline/icecmdline.sln
 - msbuild examples/icemdline/icecmdline.sln
 - nuget restore -DisableParallelProcessing examples/sipcmdline/sipcmdline.sln
 - msbuild examples/sipcmdline/sipcmdline.sln
