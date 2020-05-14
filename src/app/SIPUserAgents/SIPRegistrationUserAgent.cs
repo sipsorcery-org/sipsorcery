@@ -33,6 +33,9 @@ namespace SIPSorcery.SIP.App
         //rj2: there are PBX which send new Expires header in SIP OK with value lesser than 60 -> set hardcoded minimum to 10, so registration on PBX does not timeout
         private const int REGISTER_MINIMUM_EXPIRY = 10;              // The minimum interval a registration will be accepted for. Anything less than this interval will use this minimum value.
         private const int DEFAULT_REGISTER_EXPIRY = 600;
+        private const int DEFAULT_MAX_REGISTRATION_ATTEMPT_TIMEOUT = 60;
+        private const int DEFAULT_REGISTER_FAILURE_RETRY_INTERVAL = 300;
+        private const int DEFAULT_MAX_REGISTER_ATTEMPTS= 3;
 
         private static ILogger logger = Log.Logger;
 
@@ -105,9 +108,9 @@ namespace SIPSorcery.SIP.App
             string password,
             string server,
             int expiry,
-            int maxRegistrationAttemptTimeout = 60,
-            int registerFailureRetryInterval = 300,
-            int maxRegisterAttempts = 3)
+            int maxRegistrationAttemptTimeout = DEFAULT_MAX_REGISTRATION_ATTEMPT_TIMEOUT,
+            int registerFailureRetryInterval = DEFAULT_REGISTER_FAILURE_RETRY_INTERVAL,
+            int maxRegisterAttempts = DEFAULT_MAX_REGISTER_ATTEMPTS)
         {
             m_sipTransport = sipTransport;
             m_sipAccountAOR = new SIPURI(username, server, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
@@ -139,9 +142,9 @@ namespace SIPSorcery.SIP.App
             int expiry,
             SIPMonitorLogDelegate logDelegate,
             string[] customHeaders,
-            int maxRegistrationAttemptTimeout = 60,
-            int registerFailureRetryInterval = 300,
-            int maxRegisterAttempts = 3)
+            int maxRegistrationAttemptTimeout = DEFAULT_MAX_REGISTRATION_ATTEMPT_TIMEOUT,
+            int registerFailureRetryInterval = DEFAULT_REGISTER_FAILURE_RETRY_INTERVAL,
+            int maxRegisterAttempts = DEFAULT_MAX_REGISTER_ATTEMPTS)
         {
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
