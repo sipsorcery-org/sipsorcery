@@ -9,7 +9,7 @@ build_script:
 - nuget restore -DisableParallelProcessing examples/webrtcexamples/webrtcexamples.sln
 - msbuild examples/webrtcexamples/webrtcexamples.sln
 - nuget restore -DisableParallelProcessing examples/icecmdline/icecmdline.sln
-- msbuild examples/icemdline/icecmdline.sln
+- msbuild examples/icecmdline/icecmdline.sln
 - nuget restore -DisableParallelProcessing examples/sipcmdline/sipcmdline.sln
 - msbuild examples/sipcmdline/sipcmdline.sln
 - nuget restore -DisableParallelProcessing examples/stunserver/stunserver.sln
