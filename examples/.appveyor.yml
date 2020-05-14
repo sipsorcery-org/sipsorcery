@@ -6,6 +6,8 @@ image: Visual Studio 2019
 build_script:
 - nuget restore -DisableParallelProcessing examples/sipexamples/sipexamples.sln
 - msbuild examples/sipexamples/sipexamples.sln
+- nuget restore -DisableParallelProcessing examples/sipexamples/GetStartedNetFramework/GetStartedNetFramework.sln
+- msbuild examples/sipexamples/GetStartedNetFramework/GetStartedNetFramework.sln
 - nuget restore -DisableParallelProcessing examples/webrtcexamples/webrtcexamples.sln
 - msbuild examples/webrtcexamples/webrtcexamples.sln
 - nuget restore -DisableParallelProcessing examples/icecmdline/icecmdline.sln
