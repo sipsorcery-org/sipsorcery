@@ -64,7 +64,7 @@ namespace WebRTCAspNetMvc.Controllers
 
         [HttpPost]
         [Route("addicecandidate")]
-        public async Task<IActionResult> AddIceCandidate(string id, [FromBody] RTCIceCandidate iceCandidate)
+        public async Task<IActionResult> AddIceCandidate(string id, [FromBody] RTCIceCandidateInit iceCandidate)
         {
             _logger.LogDebug($"SetIceCandidate {id} {iceCandidate?.candidate}.");
 
@@ -83,8 +83,8 @@ namespace WebRTCAspNetMvc.Controllers
             }
             else
             {
-                RTCIceCandidate parsedCandidate = RTCIceCandidate.Parse(iceCandidate.candidate);
-                await _webRTCServer.AddIceCandidate(id, parsedCandidate);
+                //RTCIceCandidate parsedCandidate = RTCIceCandidate.Parse(iceCandidate.candidate);
+                await _webRTCServer.AddIceCandidate(id, iceCandidate);
             }
 
             return Ok();

@@ -156,7 +156,7 @@ namespace WebRTCAspNetMvc
             }
         }
 
-        public async Task AddIceCandidate(string id, RTCIceCandidate iceCandidate)
+        public async Task AddIceCandidate(string id, RTCIceCandidateInit iceCandidate)
         {
             if (!_peerConnections.TryGetValue(id, out var pc))
             {
@@ -165,7 +165,7 @@ namespace WebRTCAspNetMvc
             else
             {
                 _logger.LogDebug("ICE Candidate: " + iceCandidate.candidate);
-                //await pc.addIceCandidate(iceCandidate);
+                await pc.addIceCandidate(iceCandidate);
             }
 
         }

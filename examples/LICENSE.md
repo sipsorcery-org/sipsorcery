@@ -1,4 +1,4 @@
-Copyright (c) 2006-2019, Aaron Clauson
+Copyright (c) 2006-2020, Aaron Clauson
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:

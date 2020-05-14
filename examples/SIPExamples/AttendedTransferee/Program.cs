@@ -23,7 +23,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -73,26 +72,26 @@ namespace SIPSorcery
             var userAgent = new SIPUserAgent(_sipTransport, null);
             userAgent.ServerCallCancelled += (uas) => Log.LogDebug("Incoming call cancelled by remote party.");
             userAgent.OnCallHungup += (dialog) => Log.LogDebug("Call hungup by remote party.");
-            userAgent.OnIncomingCall += async (ua, req) =>
-            {
-                var rtpSession = new RtpAVSession(
-                new AudioOptions
-                {
-                    AudioSource = AudioSourcesEnum.Microphone,
-                    AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA }
-                },
-                null);
+            //userAgent.OnIncomingCall += async (ua, req) =>
+            //{
+            //    var rtpSession = new RtpAVSession(
+            //    new AudioOptions
+            //    {
+            //        AudioSource = AudioSourcesEnum.Microphone,
+            //        AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA }
+            //    },
+            //    null);
 
-                var uas = ua.AcceptCall(req);
-                bool answerResult = await ua.Answer(uas, rtpSession);
+            //    var uas = ua.AcceptCall(req);
+            //    bool answerResult = await ua.Answer(uas, rtpSession);
 
-                Log.LogDebug($"Answer incoming call result {answerResult}.");
+            //    Log.LogDebug($"Answer incoming call result {answerResult}.");
 
-                if (answerResult && ua.IsCallActive)
-                {
-                    await rtpSession.Start();
-                }
-            };
+            //    if (answerResult && ua.IsCallActive)
+            //    {
+            //        await rtpSession.Start();
+            //    }
+            //};
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
