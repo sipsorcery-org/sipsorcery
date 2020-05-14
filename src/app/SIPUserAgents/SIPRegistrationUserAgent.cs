@@ -120,7 +120,7 @@ namespace SIPSorcery.SIP.App
             m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
             m_originalExpiry = m_expiry;
             m_callID = Guid.NewGuid().ToString();
-            m_maxRegisterAttempts = maxRegisterAttempts;
+            m_maxRegisterAttempts = maxRegistrationAttemptTimeout;
             m_registerFailureRetryInterval = registerFailureRetryInterval;
             m_maxRegisterAttempts = maxRegisterAttempts;
 
