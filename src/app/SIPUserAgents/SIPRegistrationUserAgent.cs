@@ -29,13 +29,13 @@ namespace SIPSorcery.SIP.App
     public class SIPRegistrationUserAgent
     {
         private const int MAX_EXPIRY = 7200;
-        private const int MAX_REGISTRATION_ATTEMPT_TIMEOUT = 60;
         private const int REGISTRATION_HEAD_TIME = 5;                // Time in seconds to go to next registration to initiate.
-        private const int REGISTER_FAILURERETRY_INTERVAL = 300;      // Number of seconds between consecutive register requests in the event of failures or timeouts.
         //rj2: there are PBX which send new Expires header in SIP OK with value lesser than 60 -> set hardcoded minimum to 10, so registration on PBX does not timeout
         private const int REGISTER_MINIMUM_EXPIRY = 10;              // The minimum interval a registration will be accepted for. Anything less than this interval will use this minimum value.
         private const int DEFAULT_REGISTER_EXPIRY = 600;
-        private const int MAX_REGISTER_ATTEMPTS = 3;                 // The maximum number of registration attempts that will be made without a failure condition before incurring a temporary failure.
+        private const int DEFAULT_MAX_REGISTRATION_ATTEMPT_TIMEOUT = 60;
+        private const int DEFAULT_REGISTER_FAILURE_RETRY_INTERVAL = 300;
+        private const int DEFAULT_MAX_REGISTER_ATTEMPTS= 3;
 
         private static ILogger logger = Log.Logger;
 
@@ -53,6 +53,9 @@ namespace SIPSorcery.SIP.App
         private SIPURI m_contactURI;
         private int m_expiry;
         private int m_originalExpiry;
+        private int m_registerFailureRetryInterval;      // Number of seconds between consecutive register requests in the event of failures or timeouts.
+        private int m_maxRegistrationAttemptTimeout;
+        private int m_maxRegisterAttempts;                 // The maximum number of registration attempts that will be made without a failure condition before incurring a temporary failure.
 
         private bool m_isRegistered;
         private int m_cseq;
@@ -104,7 +107,10 @@ namespace SIPSorcery.SIP.App
             string username,
             string password,
             string server,
-            int expiry)
+            int expiry,
+            int maxRegistrationAttemptTimeout = DEFAULT_MAX_REGISTRATION_ATTEMPT_TIMEOUT,
+            int registerFailureRetryInterval = DEFAULT_REGISTER_FAILURE_RETRY_INTERVAL,
+            int maxRegisterAttempts = DEFAULT_MAX_REGISTER_ATTEMPTS)
         {
             m_sipTransport = sipTransport;
             m_sipAccountAOR = new SIPURI(username, server, null, SIPSchemesEnum.sip, SIPProtocolsEnum.udp);
@@ -114,6 +120,9 @@ namespace SIPSorcery.SIP.App
             m_expiry = (expiry >= REGISTER_MINIMUM_EXPIRY && expiry <= MAX_EXPIRY) ? expiry : DEFAULT_REGISTER_EXPIRY;
             m_originalExpiry = m_expiry;
             m_callID = Guid.NewGuid().ToString();
+            m_maxRegisterAttempts = maxRegisterAttempts;
+            m_registerFailureRetryInterval = registerFailureRetryInterval;
+            m_maxRegisterAttempts = maxRegisterAttempts;
 
             // Setting the contact to "0.0.0.0" tells the transport layer to populate it at send time.
             m_contactURI = new SIPURI(m_sipAccountAOR.Scheme, IPAddress.Any, 0);
@@ -132,7 +141,10 @@ namespace SIPSorcery.SIP.App
             SIPURI contactURI,
             int expiry,
             SIPMonitorLogDelegate logDelegate,
-            string[] customHeaders)
+            string[] customHeaders,
+            int maxRegistrationAttemptTimeout = DEFAULT_MAX_REGISTRATION_ATTEMPT_TIMEOUT,
+            int registerFailureRetryInterval = DEFAULT_REGISTER_FAILURE_RETRY_INTERVAL,
+            int maxRegisterAttempts = DEFAULT_MAX_REGISTER_ATTEMPTS)
         {
             m_sipTransport = sipTransport;
             m_outboundProxy = outboundProxy;
@@ -146,6 +158,9 @@ namespace SIPSorcery.SIP.App
             m_originalExpiry = m_expiry;
             m_customHeaders = customHeaders;
             m_callID = CallProperties.CreateNewCallId();
+            m_maxRegistrationAttemptTimeout = maxRegistrationAttemptTimeout;
+            m_registerFailureRetryInterval = registerFailureRetryInterval;
+            m_maxRegisterAttempts = maxRegisterAttempts;
 
             if (logDelegate != null)
             {
@@ -193,7 +208,7 @@ namespace SIPSorcery.SIP.App
 
                     SendInitialRegister();
 
-                    if (!m_waitForRegistrationMRE.WaitOne(MAX_REGISTRATION_ATTEMPT_TIMEOUT * 1000))
+                    if (!m_waitForRegistrationMRE.WaitOne(m_maxRegistrationAttemptTimeout * 1000))
                     {
                         m_isRegistered = false;
 
@@ -212,7 +227,7 @@ namespace SIPSorcery.SIP.App
                         }
                         else
                         {
-                            logger.LogDebug("SIPRegistrationUserAgent temporarily failed, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + REGISTER_FAILURERETRY_INTERVAL + "s.");
+                            logger.LogDebug("SIPRegistrationUserAgent temporarily failed, scheduling next registration to " + m_sipAccountAOR.ToString() + " in " + m_registerFailureRetryInterval + "s.");
                             m_registrationTimer.Change((m_expiry - REGISTRATION_HEAD_TIME) * 1000, Timeout.Infinite);
                         }
                     }
@@ -279,7 +294,7 @@ namespace SIPSorcery.SIP.App
         {
             try
             {
-                if (m_attempts >= MAX_REGISTER_ATTEMPTS)
+                if (m_attempts >= m_maxRegisterAttempts)
                 {
                     Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration to " + m_sipAccountAOR.ToString() + " reached the maximum number of allowed attempts without a failure condition.", null));
                     m_isRegistered = false;
@@ -351,7 +366,7 @@ namespace SIPSorcery.SIP.App
                 {
                     if (sipResponse.Header.AuthenticationHeader != null)
                     {
-                        if (m_attempts >= MAX_REGISTER_ATTEMPTS)
+                        if (m_attempts >= m_maxRegisterAttempts)
                         {
                             Log_External(new SIPMonitorConsoleEvent(SIPMonitorServerTypesEnum.UserAgentClient, SIPMonitorEventTypesEnum.ContactRegisterFailed, "Registration to " + m_sipAccountAOR.ToString() + " reached the maximum number of allowed attempts without a failure condition.", null));
                             m_isRegistered = false;
