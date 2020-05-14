@@ -843,7 +843,7 @@ namespace SIPSorcery.SIP.App
                         {
                             // Put the remote party (who has just requested we call a new destination) on hold while we
                             // attempt a call to the referred destination.
-                            //PutOnHold();
+                            PutOnHold();
                         }
 
                         // TODO:
@@ -858,8 +858,10 @@ namespace SIPSorcery.SIP.App
 
                                 logger.LogDebug($"Calling transfer destination URI {referToUri.ToParameterlessString()}.");
 
-                                // TODO: Shouldn't re-use the same media session but it will mean a significant change to the API
-                                // to add something like a media session factory to allow a new one to be created on demand.
+                                // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
+                                SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
+
+                                // Note the media session from the original call gets re-used.
                                 List<string> customHeaders = new List<string>
                                 {
                                     $"{SIPHeaders.SIP_HEADER_REPLACES}: {replaces.CallID};to-tag={replaces.ToTag};from-tag={replaces.FromTag}"
@@ -872,7 +874,7 @@ namespace SIPSorcery.SIP.App
                                    SIPConstants.SIP_DEFAULT_FROMURI,
                                    referToUri.CanonicalAddress,
                                    null,
-                                   customHeaders, 
+                                   customHeaders,
                                    null,
                                    SIPCallDirection.Out,
                                    SDP.SDP_MIME_CONTENTTYPE,
@@ -882,6 +884,16 @@ namespace SIPSorcery.SIP.App
                                 var transferResult = await Call(callDescriptor, MediaSession);
 
                                 logger.LogDebug($"Result of calling transfer destination {transferResult}.");
+
+                                if(transferResult)
+                                {
+                                    // Hanging up original call.
+
+                                    logger.LogDebug("Transfer succeeded, hanging up original call.");
+                                    
+                                    SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_transport, byeRequest, m_outboundProxy);
+                                    byeTransaction.SendRequest();
+                                }
                             }
                             catch (Exception excp)
                             {
@@ -974,8 +986,8 @@ namespace SIPSorcery.SIP.App
                 {
                     // This is a special case of receiving an INVITE request that is part of an attended transfer and
                     // that if successful will replace the existing dialog.
-                    UASInviteTransaction uas = new UASInviteTransaction(m_transport, sipRequest, null);
-                    await uas.SendProvisionalResponse(SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Trying, null));
+                    //UASInviteTransaction uasTx = new UASInviteTransaction(m_transport, sipRequest, null);
+                    var uas = AcceptCall(sipRequest);
 
                     // An attended transfer INVITE should only be accepted if the dialog parameters in the Replaces header 
                     // match the current dialog. But... to be more accepting with only a small increase in risk we only 
@@ -985,15 +997,48 @@ namespace SIPSorcery.SIP.App
 
                     logger.LogDebug($"INVITE for attended transfer received, Replaces CallID {replaces.CallID}, our dialog Call-ID {m_sipDialogue.CallId}.");
 
-                    if(replaces == null || replaces.CallID != m_sipDialogue.CallId)
+                    if (replaces == null || replaces.CallID != m_sipDialogue.CallId)
                     {
                         logger.LogDebug("The attended transfer INVITE's Replaces header did not match the current dialog, rejecting.");
-                        uas.SendFinalResponse(SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.BadRequest, null));
+                        uas.Reject(SIPResponseStatusCodesEnum.BadRequest, null);
                     }
                     else
                     {
-                        logger.LogDebug("Proceeding with attended transfer INVITE.");
-                        uas.SendFinalResponse(SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotImplemented, null));
+                        logger.LogDebug($"Proceeding with attended transfer INVITE received from {remoteEndPoint}.");
+
+                        // The desired experience when accepting an attended transfer is to:
+                        // - If the current call is not already on hold then put it on hold,
+                        // - Automatically answer the new call (maybe some kind of notification should be given but that seems 
+                        //   overkill and annoying since the initial caller would have most likely informed them the transfer
+                        //   was about to take place),
+                        // - Re-use the media session from the initial call but adjust to use new end points and re-select the codecs,
+                        // - If the new call is answered then it now becomes active and a BYE request should be sent to hangup the 
+                        //   original call.
+
+                        if (!IsOnLocalHold)
+                        {
+                            logger.LogDebug("Current call placed on hold.");
+                            PutOnHold();
+                        }
+
+                        // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
+                        SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
+
+                        bool answerResult = await Answer(uas, MediaSession);
+
+                        if (answerResult)
+                        {
+                            logger.LogDebug("Attended transfer was successfully answered, hanging up original call.");
+
+                            // Hanging up original call.
+                            SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_transport, byeRequest, m_outboundProxy);
+                            byeTransaction.SendRequest();
+                        }
+                        else
+                        {
+                            logger.LogDebug("Attended transfer answer failed, taking original call off hold.");
+                            TakeOffHold();
+                        }
                     }
                 }
             }

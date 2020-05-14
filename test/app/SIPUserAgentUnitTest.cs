@@ -775,12 +775,6 @@ a=sendrecv";
             // Give the transfer time to be processed.
             await Task.Delay(2000);
 
-            //userAgentA.Hangup();
-            //userAgentB.Hangup();
-
-            //// Give the hangups time to be processed.
-            //await Task.Delay(1000);
-
             Assert.False(userAgentA.IsCallActive);
             Assert.False(userAgentB.IsCallActive);
             Assert.True(userAgentC.IsCallActive);
