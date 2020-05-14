@@ -82,6 +82,12 @@ namespace SIPSorcery.SIP.App
         private SIPCallDescriptor m_callDescriptor;
 
         /// <summary>
+        /// Used to keep track of received RTP events. An RTP event will typically span
+        /// multiple packets but the application only needs to get informed once per event.
+        /// </summary>
+        private uint _rtpEventSsrc;
+
+        /// <summary>
         /// The media (RTP) session in use for the current call.
         /// </summary>
         public IMediaSession MediaSession { get; private set; }
@@ -174,9 +180,37 @@ namespace SIPSorcery.SIP.App
 
         /// <summary>
         /// Fires when a NOTIFY request is received that contains an update about the 
-        /// status of a transfer.
+        /// status of a transfer. These events will be received by a user agent acting as the
+        /// Transferor but only if the Transferee support the transfer subscription.
         /// </summary>
         public event Action<string> OnTransferNotify;
+
+        /// <summary>
+        /// Fires when a REFER request is received that requests us to place a call to a
+        /// new destination. The REFER request can be a blind transfer or an attended transfer.
+        /// The difference is whether the REFER request includes a Replaces parameter. If it does 
+        /// it's used to inform the transfer target (the transfer destination requested) that 
+        /// if they accept our call it should replace an existing one.
+        /// </summary>
+        /// <remarks>
+        /// Parameters for event delegate:
+        /// SIPUserField: Is the destination that we are being asked to place a call to.
+        /// bool: The boolean result can be returned as false to prevent the transfer. By default
+        /// if no event handler is hooked up the transfer will be accepted.
+        /// </remarks>
+        public event Func<SIPUserField, bool> OnTransferRequested;
+
+        /// <summary>
+        /// Fires when the call placed as a result of a transfer request is successfully answered.
+        /// The SIPUserField contains the destination that was called for the transfer.
+        /// </summary>
+        public event Action<SIPUserField> OnTransferSuccessful;
+
+        /// <summary>
+        /// Fires when the call placed as a result of a transfer request is rejected or fails.
+        /// The SIPUserField contains the destination that was called for the transfer.
+        /// </summary>
+        public event Action<SIPUserField> OnTransferFailed;
 
         /// <summary>	
         /// The remote call party has put us on hold.	
@@ -446,10 +480,10 @@ namespace SIPSorcery.SIP.App
         public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
         {
             // This call is now taking over any existing call.
-            if (IsCallActive)
-            {
-                Hangup();
-            }
+            //if (IsCallActive)
+            //{
+            //    Hangup();
+            //}
 
             if (uas.IsCancelled)
             {
@@ -832,74 +866,96 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        // All checks have passed so go ahead and accept the transfer.
-                        SIPResponse acceptXferResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Accepted, null);
-                        referResponseTx.SendResponse(acceptXferResponse);
+                        bool acceptTransfer = true;
 
-                        // To keep the remote party that requested the transfer up to date with the status and outcome of the REFER request
-                        // we need to create a subscription and send NOTIFY requests.
-
-                        if (!IsOnRemoteHold)
+                        if (OnTransferRequested != null)
                         {
-                            // Put the remote party (who has just requested we call a new destination) on hold while we
-                            // attempt a call to the referred destination.
-                            PutOnHold();
+                            acceptTransfer = OnTransferRequested(referToUserField);
                         }
 
-                        // TODO:
-                        // If norefersub header then.
-                        // Need to create an implicit subscription to keep the remote party that requested the transfer up to date with the 
-                        // status and outcome of the REFER request
-                        _ = Task.Run(async () =>
+                        if (!acceptTransfer)
                         {
-                            try
+                            logger.LogDebug("Transfer request was rejected by application.");
+
+                            SIPResponse rejectXferResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Decline, null);
+                            referResponseTx.SendResponse(rejectXferResponse);
+                        }
+                        else
+                        {
+                            // All checks have passed so go ahead and accept the transfer.
+                            SIPResponse acceptXferResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Accepted, null);
+                            referResponseTx.SendResponse(acceptXferResponse);
+
+                            // To keep the remote party that requested the transfer up to date with the status and outcome of the REFER request
+                            // we need to create a subscription and send NOTIFY requests.
+
+                            if (!IsOnRemoteHold)
                             {
-                                SIPURI referToUri = referToUserField.URI;
+                                // Put the remote party (who has just requested we call a new destination) on hold while we
+                                // attempt a call to the referred destination.
+                                PutOnHold();
+                            }
 
-                                logger.LogDebug($"Calling transfer destination URI {referToUri.ToParameterlessString()}.");
-
-                                // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
-                                SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
-
-                                // Note the media session from the original call gets re-used.
-                                List<string> customHeaders = new List<string>
+                            // TODO:
+                            // If norefersub header then.
+                            // Need to create an implicit subscription to keep the remote party that requested the transfer up to date with the 
+                            // status and outcome of the REFER request
+                            _ = Task.Run(async () =>
+                            {
+                                try
                                 {
-                                    $"{SIPHeaders.SIP_HEADER_REPLACES}: {replaces.CallID};to-tag={replaces.ToTag};from-tag={replaces.FromTag}"
-                                };
+                                    SIPURI referToUri = referToUserField.URI;
 
-                                SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
-                                   SIPConstants.SIP_DEFAULT_USERNAME,
-                                   null,
-                                   referToUri.ToParameterlessString(),
-                                   SIPConstants.SIP_DEFAULT_FROMURI,
-                                   referToUri.CanonicalAddress,
-                                   null,
-                                   customHeaders,
-                                   null,
-                                   SIPCallDirection.Out,
-                                   SDP.SDP_MIME_CONTENTTYPE,
-                                   null,
-                                   null);
+                                    logger.LogDebug($"Calling transfer destination URI {referToUri.ToParameterlessString()}.");
 
-                                var transferResult = await Call(callDescriptor, MediaSession);
+                                    // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
+                                    SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
 
-                                logger.LogDebug($"Result of calling transfer destination {transferResult}.");
+                                    // Note the media session from the original call gets re-used.
+                                    List<string> customHeaders = new List<string>
+                                    {
+                                        $"{SIPHeaders.SIP_HEADER_REPLACES}: {replaces.CallID};to-tag={replaces.ToTag};from-tag={replaces.FromTag}"
+                                    };
 
-                                if(transferResult)
-                                {
-                                    // Hanging up original call.
+                                    SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
+                                       SIPConstants.SIP_DEFAULT_USERNAME,
+                                       null,
+                                       referToUri.ToParameterlessString(),
+                                       SIPConstants.SIP_DEFAULT_FROMURI,
+                                       referToUri.CanonicalAddress,
+                                       null,
+                                       customHeaders,
+                                       null,
+                                       SIPCallDirection.Out,
+                                       SDP.SDP_MIME_CONTENTTYPE,
+                                       null,
+                                       null);
 
-                                    logger.LogDebug("Transfer succeeded, hanging up original call.");
-                                    
-                                    SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_transport, byeRequest, m_outboundProxy);
-                                    byeTransaction.SendRequest();
+                                    var transferResult = await Call(callDescriptor, MediaSession);
+
+                                    logger.LogDebug($"Result of calling transfer destination {transferResult}.");
+
+                                    if (!transferResult)
+                                    {
+                                        OnTransferFailed?.Invoke(referToUserField);
+                                    }
+                                    else
+                                    {
+                                        OnTransferSuccessful?.Invoke(referToUserField);
+                                        // Hanging up original call.
+
+                                        logger.LogDebug("Transfer succeeded, hanging up original call.");
+
+                                        SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_transport, byeRequest, m_outboundProxy);
+                                        byeTransaction.SendRequest();
+                                    }
                                 }
-                            }
-                            catch (Exception excp)
-                            {
-                                logger.LogError($"Exception processing transfer request. {excp.Message}");
-                            }
-                        });
+                                catch (Exception excp)
+                                {
+                                    logger.LogError($"Exception processing transfer request. {excp.Message}");
+                                }
+                            });
+                        }
                     }
                 }
             }
@@ -1024,6 +1080,7 @@ namespace SIPSorcery.SIP.App
                         // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
                         SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
 
+                        
                         bool answerResult = await Answer(uas, MediaSession);
 
                         if (answerResult)
@@ -1311,9 +1368,31 @@ namespace SIPSorcery.SIP.App
         {
             OnRtpEvent?.Invoke(rtpEvent, rtpHeader);
 
-            if (rtpEvent.EndOfEvent)
+            if (OnDtmfTone != null)
             {
-                OnDtmfTone?.Invoke(rtpEvent.EventID, rtpEvent.Duration);
+                if (_rtpEventSsrc == 0)
+                {
+                    if (rtpEvent.EndOfEvent && rtpHeader.MarkerBit == 1)
+                    {
+                        // Full event is contained in a single RTP packet.
+                        //logger.LogDebug($"RTP event {rtpEvent.EventID}.");
+
+                        OnDtmfTone.Invoke(rtpEvent.EventID, rtpEvent.Duration);
+                    }
+                    else if (!rtpEvent.EndOfEvent)
+                    {
+                        //logger.LogDebug($"RTP event {rtpEvent.EventID}.");
+                        _rtpEventSsrc = rtpHeader.SyncSource;
+
+                        OnDtmfTone.Invoke(rtpEvent.EventID, rtpEvent.Duration);
+                    }
+                }
+
+                if (_rtpEventSsrc != 0 && rtpEvent.EndOfEvent)
+                {
+                    //_logger.LogDebug($"RTP end of event {rtpEvent.EventID}.");
+                    _rtpEventSsrc = 0;
+                }
             }
         }
     }
