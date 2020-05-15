@@ -68,25 +68,22 @@ namespace SIPSorcery
                 bool answerResult = await ua.Answer(uas, rtpAudioSession);
                 Log.LogDebug($"Answer incoming call result {answerResult}.");
 
-                await Task.Delay(1000);
-
-                Log.LogDebug($"Sending DTMF sequence {string.Join("", DTMF_SEQUENCEFOR_TRANSFEROR.Select(x => x))}.");
-                foreach (byte dtmf in DTMF_SEQUENCEFOR_TRANSFEROR)
+                _ = Task.Run(async () =>
                 {
-                    Log.LogDebug($"Sending DTMF tone to transferor {dtmf}.");
-                    await ua.SendDtmf(dtmf);
-                }
+                    await Task.Delay(1000);
+
+                    Log.LogDebug($"Sending DTMF sequence {string.Join("", DTMF_SEQUENCEFOR_TRANSFEROR.Select(x => x))}.");
+                    foreach (byte dtmf in DTMF_SEQUENCEFOR_TRANSFEROR)
+                    {
+                        Log.LogDebug($"Sending DTMF tone to transferor {dtmf}.");
+                        await ua.SendDtmf(dtmf);
+                    }
+                });
             };
             userAgent.OnDtmfTone += (key, duration) => Log.LogInformation($"Received DTMF tone {key}.");
 
-            // Ctrl-c will gracefully exit the call at any point.
-            Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
-            {
-                e.Cancel = true;
-                exitCts.Cancel();
-            };
+            Task.Run(() => OnKeyPress(userAgent, exitCts));
 
-            // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
             exitCts.Token.WaitHandle.WaitOne();
 
             #region Cleanup.
@@ -108,6 +105,49 @@ namespace SIPSorcery
             }
 
             #endregion
+        }
+
+        /// <summary>
+        /// Process user key presses.
+        /// </summary>
+        /// <param name="exit">The cancellation token to set if the user requests to quit the application.</param>
+        private static void OnKeyPress(SIPUserAgent userAgent, CancellationTokenSource exitCts)
+        {
+            try
+            {
+                while (!exitCts.IsCancellationRequested)
+                {
+                    var keyProps = Console.ReadKey();
+
+                    if (keyProps.KeyChar == 'h')
+                    {
+                        if (userAgent != null && userAgent.IsCallActive)
+                        {
+                            Log.LogDebug("Hanging up active call.");
+                            userAgent.Hangup();
+                        }
+                        else
+                        {
+                            Log.LogDebug("No active call.");
+                        }
+                    }
+                    else if (keyProps.KeyChar == 'a')
+                    {
+                        Log.LogDebug($"Yes I am alive!");
+                    }
+                    else if (keyProps.KeyChar == 'q')
+                    {
+                        // Quit application.
+                        Log.LogInformation("Quitting");
+                        exitCts.Cancel();
+                        break;
+                    }
+                }
+            }
+            catch (Exception excp)
+            {
+                Log.LogError($"Exception OnKeyPress. {excp.Message}.");
+            }
         }
 
         /// <summary>

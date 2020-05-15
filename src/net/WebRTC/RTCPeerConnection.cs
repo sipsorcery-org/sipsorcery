@@ -264,7 +264,7 @@ namespace SIPSorcery.Net
                 iceConnectionState = state;
                 oniceconnectionstatechange?.Invoke(iceConnectionState);
 
-                if(base.IsSecureContextReady && 
+                if (base.IsSecureContextReady &&
                     iceConnectionState == RTCIceConnectionState.connected &&
                     connectionState != RTCPeerConnectionState.connected)
                 {

@@ -231,7 +231,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             logger.LogDebug($"SupportsDualModeIPv4PacketInfo result for OS {RuntimeInformation.OSDescription} is {supports}.");
 
-            if(RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 Assert.False(supports);
             }

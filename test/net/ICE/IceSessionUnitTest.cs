@@ -40,7 +40,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPSession rtpSession = new RTPSession(true, true, true);
-            
+
             // Add a track to the session in order to initialise the RTPChannel.
             MediaStreamTrack dummyTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             rtpSession.addTrack(dummyTrack);
@@ -66,7 +66,7 @@ namespace SIPSorcery.Net.UnitTests
             rtpSession.addTrack(dummyTrack);
 
             RTPChannel rtpChannel = rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio);
-            
+
             logger.LogDebug($"RTP channel RTP socket local end point {rtpChannel.RTPLocalEndPoint}.");
 
             var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp);
@@ -74,7 +74,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.NotNull(iceSession);
             Assert.NotEmpty(iceSession.Candidates);
 
-            foreach(var hostCandidate in iceSession.Candidates)
+            foreach (var hostCandidate in iceSession.Candidates)
             {
                 logger.LogDebug(hostCandidate.ToString());
             }

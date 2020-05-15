@@ -652,7 +652,7 @@ namespace SIPSorcery.SIP.App
 
                 //if (m_uasTransaction.TransactionState == SIPTransactionStatesEnum.Calling && NoRingTimeout != null)
                 //{
-                    NoRingTimeout?.Invoke(this);
+                NoRingTimeout?.Invoke(this);
                 //}
             }
             catch (Exception excp)

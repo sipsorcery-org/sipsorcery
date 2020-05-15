@@ -630,7 +630,7 @@ namespace SIPSorcery.Net
 
                             // Add the RTP events format if available.
                             var rtpEventsFormat = AudioLocalTrack.Capabilities.FirstOrDefault(y => y.FormatAttribute?.Contains(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true);
-                            if(rtpEventsFormat != null)
+                            if (rtpEventsFormat != null)
                             {
                                 audioCompatibleFormats.Add(rtpEventsFormat);
                             }
@@ -955,7 +955,7 @@ namespace SIPSorcery.Net
                         localEventFormat.FormatID = remoteEventFormat.FormatID;
                     }
                 }
-                else if(localEventFormat != null)
+                else if (localEventFormat != null)
                 {
                     // Remote party does not support RTP events remove our capability.
                     logger.LogWarning("REmote party does not support RTP events.");
@@ -1802,42 +1802,38 @@ namespace SIPSorcery.Net
                             {
                                 rtpMediaType = GetMediaTypeForRtpPacket(rtpPacket.Header);
                             }
+                            else if (HasAudio && !HasVideo)
+                            {
+                                rtpMediaType = SDPMediaTypesEnum.audio;
+                            }
+                            else if (!HasAudio && HasVideo)
+                            {
+                                rtpMediaType = SDPMediaTypesEnum.video;
+                            }
                             else
                             {
                                 rtpMediaType = GetMediaTypeForLocalPort(localPort);
                             }
 
                             // Set the remote track SSRC so that RTCP reports can match the media type.
-                            if (rtpMediaType == SDPMediaTypesEnum.audio && AudioRemoteTrack != null && AudioRemoteTrack.Ssrc == 0)
+                            if (rtpMediaType == SDPMediaTypesEnum.audio && AudioRemoteTrack != null && AudioRemoteTrack.Ssrc == 0 && AudioDestinationEndPoint != null)
                             {
-                                logger.LogDebug($"Set remote audio track SSRC to {rtpPacket.Header.SyncSource}.");
-                                AudioRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
+                                bool isValidSource = AdjustRemoteEndPoint(SDPMediaTypesEnum.audio, rtpPacket.Header.SyncSource, remoteEndPoint);
 
-                                if (AudioDestinationEndPoint == null || !AudioDestinationEndPoint.Address.Equals(remoteEndPoint.Address)
-                                    || AudioDestinationEndPoint.Port != remoteEndPoint.Port)
+                                if (isValidSource)
                                 {
-                                    logger.LogDebug($"Audio end point switched for RTP ssrc {rtpPacket.Header.SyncSource} from {AudioDestinationEndPoint} to {remoteEndPoint}.");
-
-                                    // If the remote end point doesn't match where we are sending then it's likely a private IP address
-                                    // was specified in the SDP. We take the risk that the first packet came from the genuine source and
-                                    // switch the RTP audio end point.
-                                    AudioDestinationEndPoint = remoteEndPoint;
+                                    logger.LogDebug($"Set remote audio track SSRC to {rtpPacket.Header.SyncSource}.");
+                                    AudioRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
                                 }
                             }
-                            else if (rtpMediaType == SDPMediaTypesEnum.video && VideoRemoteTrack != null && VideoRemoteTrack.Ssrc == 0)
+                            else if (rtpMediaType == SDPMediaTypesEnum.video && VideoRemoteTrack != null && VideoRemoteTrack.Ssrc == 0 && VideoDestinationEndPoint != null)
                             {
-                                logger.LogDebug($"Set remote video track SSRC to {rtpPacket.Header.SyncSource}.");
-                                VideoRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
+                                bool isValidSource = AdjustRemoteEndPoint(SDPMediaTypesEnum.video, rtpPacket.Header.SyncSource, remoteEndPoint);
 
-                                if (VideoDestinationEndPoint == null || !VideoDestinationEndPoint.Address.Equals(remoteEndPoint.Address)
-                                    || VideoDestinationEndPoint.Port != remoteEndPoint.Port)
+                                if (isValidSource)
                                 {
-                                    logger.LogDebug($"Video end point switched for RTP ssrc {rtpPacket.Header.SyncSource} from {VideoDestinationEndPoint} to {remoteEndPoint}.");
-
-                                    // If the remote end point doesn't match where we are sending then it's likely a private IP address
-                                    // was specified in the SDP. We take the risk that the first packet came from the genuine source and
-                                    // switch the RTP video end point.
-                                    VideoDestinationEndPoint = remoteEndPoint;
+                                    logger.LogDebug($"Set remote video track SSRC to {rtpPacket.Header.SyncSource}.");
+                                    VideoRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
                                 }
                             }
 
@@ -1860,6 +1856,50 @@ namespace SIPSorcery.Net
                     #endregion
                 }
             }
+        }
+
+        /// <summary>
+        /// Adjusts the expected remote end point for a particular media type.
+        /// </summary>
+        /// <param name="mediaType">The media type of the RTP packet received.</param>
+        /// <param name="ssrc">The SSRC from the RTP packet header.</param>
+        /// <param name="receivedOnEndPoint">The actual remote end point that the RTP packet came from.</param>
+        /// <returns>True if remote end point for this media type was th expected one or it was adjusted. False if
+        /// the remote end point was deemed to be invalid for this media type.</returns>
+        private bool AdjustRemoteEndPoint(SDPMediaTypesEnum mediaType, uint ssrc, IPEndPoint receivedOnEndPoint)
+        {
+            bool isValidSource = false;
+            IPEndPoint expectedEndPoint = (mediaType == SDPMediaTypesEnum.video) ? VideoDestinationEndPoint : AudioDestinationEndPoint;
+
+            if (expectedEndPoint.Address.Equals(receivedOnEndPoint.Address) && expectedEndPoint.Port == receivedOnEndPoint.Port)
+            {
+                // Exact match on actual and expected destination.
+                isValidSource = true;
+            }
+            else if (expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate())
+            {
+                // The end point doesn't match BUT we were supplied a private address and the remote source is a public address
+                // so high probability there's a NAT on the network path. Switch to the remote end point (note this can only happen once
+                // and only if the SSRV is 0, i.e. this is the first packet.
+                logger.LogDebug($"{mediaType} end point switched for RTP ssrc {ssrc} from {expectedEndPoint} to {receivedOnEndPoint}.");
+
+                if (mediaType == SDPMediaTypesEnum.audio)
+                {
+                    AudioDestinationEndPoint = receivedOnEndPoint;
+                }
+                else
+                {
+                    VideoDestinationEndPoint = receivedOnEndPoint;
+                }
+
+                isValidSource = true;
+            }
+            else
+            {
+                logger.LogWarning($"RTP packet with SSRC {ssrc} received from unrecognised end point {receivedOnEndPoint}.");
+            }
+
+            return isValidSource;
         }
 
         /// <summary>

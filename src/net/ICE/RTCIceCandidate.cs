@@ -48,7 +48,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                if (!string.IsNullOrEmpty(address)) 
+                if (!string.IsNullOrEmpty(address))
                 {
                     return IPAddress.Parse(address);
                 }
@@ -287,7 +287,7 @@ namespace SIPSorcery.Net
         {
             int remotePort = (relatedPort != 0) ? relatedPort : port;
 
-            if(relatedAddress != null)
+            if (relatedAddress != null)
             {
                 return new IPEndPoint(IPAddress.Parse(relatedAddress), remotePort);
             }

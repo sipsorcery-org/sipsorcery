@@ -35,7 +35,7 @@ namespace SIPSorcery.SIP.App
         private const int DEFAULT_REGISTER_EXPIRY = 600;
         private const int DEFAULT_MAX_REGISTRATION_ATTEMPT_TIMEOUT = 60;
         private const int DEFAULT_REGISTER_FAILURE_RETRY_INTERVAL = 300;
-        private const int DEFAULT_MAX_REGISTER_ATTEMPTS= 3;
+        private const int DEFAULT_MAX_REGISTER_ATTEMPTS = 3;
 
         private static ILogger logger = Log.Logger;
 

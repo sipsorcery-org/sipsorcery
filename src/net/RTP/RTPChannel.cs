@@ -41,9 +41,10 @@ namespace SIPSorcery.Net
         private byte[] m_recvBuffer;
         private bool m_isClosed;
         private int m_localPort;
+        private AddressFamily m_addressFamily;
 
         /// <summary>
-        /// Fires when a new packet has been received in the UDP socket.
+        /// Fires when a new packet has been received on the UDP socket.
         /// </summary>
         public event PacketReceivedDelegate OnPacketReceived;
 
@@ -57,15 +58,8 @@ namespace SIPSorcery.Net
             m_udpSocket = udpSocket;
             m_localPort = (m_udpSocket.LocalEndPoint as IPEndPoint).Port;
             m_recvBuffer = new byte[RECEIVE_BUFFER_SIZE];
+            m_addressFamily = m_udpSocket.LocalEndPoint.AddressFamily;
         }
-
-        // ToDo: Supposedly the Event Asynchronous Pattern (EAP) can be turned into the Task Asynchronous Pattern (TAP)
-        // with one line. Couldn't make it work as yet.
-        //public Task<int> ReceiveAsync(byte[] buffer, int offset, int count, SocketFlags flags)
-        //{
-        //    return Task<int>.Factory.FromAsync(m_udpSocket.BeginReceive, m_udpSocket.EndReceive,
-        //        buffer, offset, count, flags, null, TaskCreationOptions.None);
-        //}
 
         /// <summary>
         /// Starts the receive. This method returns immediately. An event will be fired in the corresponding "End" event to
@@ -108,14 +102,12 @@ namespace SIPSorcery.Net
                 // When socket is closed the object will be disposed of in the middle of a receive.
                 if (!m_isClosed)
                 {
-                    EndPoint remoteEP = (m_udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork) ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
+                    EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
 
                     int bytesRead = m_udpSocket.EndReceiveFrom(ar, ref remoteEP);
 
                     if (bytesRead > 0)
                     {
-                        IPEndPoint localEndPoint = m_udpSocket.LocalEndPoint as IPEndPoint;
-
                         // During experiments IPPacketInformation wasn't getting set on Linux. Without it the local IP address
                         // cannot be determined when a listener was bound to IPAddress.Any (or IPv6 equivalent). If the caller
                         // is relying on getting the local IP address on Linux then something may fail.
@@ -141,6 +133,7 @@ namespace SIPSorcery.Net
                 // in the BeginReceive method (very handy). Follow-up, this doesn't seem to be the case, the socket exception can occur in 
                 // BeginReceive before any packets have been exchanged. This means it's not safe to close if BeginReceive gets an ICMP 
                 // error since the remote party may not have initialised their socket yet.
+                //logger.LogWarning($"SocketException UdpReceiver.EndReceiveMessage. {sockExcp}");
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
             { }
@@ -292,6 +285,8 @@ namespace SIPSorcery.Net
             if (!m_started)
             {
                 m_started = true;
+
+                logger.LogDebug($"RTPChannel for {RtpSocket.LocalEndPoint} started.");
 
                 m_rtpReceiver = new UdpReceiver(RtpSocket);
                 m_rtpReceiver.OnPacketReceived += OnRTPPacketReceived;

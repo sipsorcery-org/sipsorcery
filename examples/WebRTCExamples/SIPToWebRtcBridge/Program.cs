@@ -359,6 +359,7 @@ namespace SIPSorcery
             loggerFactory.AddSerilog(loggerConfig);
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
         }
+
         /// <summary>
         /// Diagnostic handler to print out our RTCP sender/receiver reports.
         /// </summary>

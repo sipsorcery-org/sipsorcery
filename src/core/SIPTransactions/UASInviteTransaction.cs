@@ -230,7 +230,7 @@ namespace SIPSorcery.SIP
                 okResponse.Header.Server = m_sipServerAgent;
                 okResponse.Header.MaxForwards = Int32.MinValue;
                 okResponse.Header.RecordRoutes = requestHeader.RecordRoutes;
-                okResponse.Header.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB 
+                okResponse.Header.Supported = SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB
                     + ((PrackSupported == true) ? ", " + SIPExtensionHeaders.PRACK : "");
 
                 okResponse.Body = messageBody;

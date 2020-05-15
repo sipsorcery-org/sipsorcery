@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,7 +42,7 @@ namespace SIPSorcery
         private static SIPUserAgent _transfereeCall;
         private static SIPUserAgent _targetCall;
 
-        static async Task Main()
+        static void Main()
         {
             Console.WriteLine("SIPSorcery Attended Transfer Demo: Transferor");
             Console.WriteLine("Start the Transferee and Target programs.");
@@ -58,10 +59,10 @@ namespace SIPSorcery
 
             EnableTraceLogs(_sipTransport);
 
-            var userAgent = new SIPUserAgent(_sipTransport, null);
-
             CancellationTokenSource exitCts = new CancellationTokenSource();
-            await Task.Run(() => OnKeyPress(exitCts.Token));
+            Task.Run(() => OnKeyPress(exitCts));
+
+            exitCts.Token.WaitHandle.WaitOne();
 
             #region Cleanup.
 
@@ -82,62 +83,79 @@ namespace SIPSorcery
         /// Process user key presses.
         /// </summary>
         /// <param name="exit">The cancellation token to set if the user requests to quit the application.</param>
-        private static async Task OnKeyPress(CancellationToken exit)
+        private static void OnKeyPress(CancellationTokenSource exitCts)
         {
             try
             {
-                while (!exit.WaitHandle.WaitOne(0))
+                while (!exitCts.IsCancellationRequested)
                 {
                     var keyProps = Console.ReadKey();
 
                     if (keyProps.KeyChar == 'c')
                     {
-                        string dst = (_transfereeCall == null) ? TRANSFEREE_DST : TARGET_DST;
+                        SIPUserAgent ua = null;
+                        string dst = null;
 
-                        // Place an outgoing call.
-                        var ua = new SIPUserAgent(_sipTransport, null);
-                        ua.ClientCallTrying += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
-                        ua.ClientCallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
-                        ua.ClientCallFailed += (uac, err, resp) => Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}, Status code: {resp?.StatusCode}");
-                        ua.ClientCallAnswered += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                        ua.OnDtmfTone += (key, duration) => Log.LogInformation($"Received DTMF tone {key}.");
-                        //ua.OnRtpEvent += (evt, hdr) => Log.LogDebug($"rtp event {evt.EventID}, duration {evt.Duration}, end of event {evt.EndOfEvent}, timestamp {hdr.Timestamp}, marker {hdr.MarkerBit}.");
-                        ua.OnCallHungup += (dialog) => Log.LogDebug("Call hungup by remote party.");
-
-                        var rtpSession = CreateRtpSession(ua);
-                        var callResult = await ua.Call(dst, null, null, rtpSession);
-
-                        if (!callResult)
+                        if (_transfereeCall == null || !_transfereeCall.IsCallActive)
                         {
-                            Log.LogWarning($"Call to {dst} failed.");
+                            dst = TRANSFEREE_DST;
+                            _transfereeCall = new SIPUserAgent(_sipTransport, null);
+                            ua = _transfereeCall;
+                        }
+                        else if (_targetCall == null || !_targetCall.IsCallActive)
+                        {
+                            dst = TARGET_DST;
+                            _targetCall = new SIPUserAgent(_sipTransport, null);
+                            ua = _targetCall;
+                        }
+
+                        if (ua == null)
+                        {
+                            Log.LogWarning("Cannot place a new call, both the transferee and target user agents are busy.");
                         }
                         else
                         {
-                            Log.LogInformation($"Call to {dst} was successful.");
+                            // Place an outgoing call.
+                            ua.ClientCallTrying += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
+                            ua.ClientCallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
+                            ua.ClientCallFailed += (uac, err, resp) => Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}, Status code: {resp?.StatusCode}");
+                            ua.ClientCallAnswered += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
+                            ua.OnDtmfTone += (key, duration) => Log.LogInformation($"Received DTMF tone {key}.");
+                            //ua.OnRtpEvent += (evt, hdr) => Log.LogDebug($"transferee rtp event {evt.EventID}, ssrc {hdr.SyncSource}, duration {evt.Duration}, end of event {evt.EndOfEvent}, timestamp {hdr.Timestamp}, marker {hdr.MarkerBit}.");
+                            ua.OnCallHungup += (dialog) => Log.LogDebug("Call hungup by remote party.");
 
-                            if (_transfereeCall == null)
+                            Task.Run(async () =>
                             {
-                                _transfereeCall = ua;
-                            }
-                            else
-                            {
-                                _targetCall = ua;
-                            }
+                                var rtpSession = CreateRtpSession();
+                                var callResult = await ua.Call(dst, null, null, rtpSession);
+
+                                if (!callResult)
+                                {
+                                    Log.LogWarning($"Call to {dst} failed.");
+                                }
+                                else
+                                {
+                                    Log.LogInformation($"Call to {dst} was successful.");
+                                }
+                            });
                         }
                     }
-                    else if(keyProps.KeyChar == 'h')
+                    else if (keyProps.KeyChar == 'h')
                     {
-                        if(_transfereeCall != null)
+                        if (_transfereeCall != null)
                         {
                             Log.LogDebug("Hanging up transferee call.");
                             _transfereeCall.Hangup();
                         }
 
-                        if(_targetCall != null)
+                        if (_targetCall != null)
                         {
                             Log.LogDebug("Hanging up target call.");
                             _targetCall.Hangup();
                         }
+
+                        _transfereeCall = null;
+                        _targetCall = null;
                     }
                     else if (keyProps.KeyChar == 't')
                     {
@@ -151,16 +169,29 @@ namespace SIPSorcery
                         }
                         else
                         {
-                            Log.LogInformation("Initiating transfer to the transferee...");
-                            bool transferResult = await _transfereeCall.AttendedTransfer(_targetCall.Dialogue, TimeSpan.FromSeconds(2), exit);
+                            Task.Run(async () =>
+                            {
+                                Log.LogInformation("Initiating transfer to the transferee...");
+                                bool transferResult = await _transfereeCall.AttendedTransfer(_targetCall.Dialogue, TimeSpan.FromSeconds(2), exitCts.Token);
 
-                            Log.LogDebug($"Transfer result {transferResult}.");
+                                Log.LogDebug($"Transfer result {transferResult}.");
+
+                                await Task.Delay(2000);
+
+                                Log.LogDebug($"Transferee call status {_transfereeCall?.IsCallActive}.");
+                                Log.LogDebug($"Target call status {_targetCall?.IsCallActive}.");
+                            });
                         }
+                    }
+                    else if (keyProps.KeyChar == 'a')
+                    {
+                        Log.LogDebug($"Yes I am alive!");
                     }
                     else if (keyProps.KeyChar == 'q')
                     {
                         // Quit application.
                         Log.LogInformation("Quitting");
+                        exitCts.Cancel();
                         break;
                     }
                 }
@@ -178,27 +209,31 @@ namespace SIPSorcery
         /// <param name="dst">THe destination specified on an incoming call. Can be used to
         /// set the audio source.</param>
         /// <returns>A new RTP session object.</returns>
-        private static RtpAudioSession CreateRtpSession(SIPUserAgent ua)
+        private static RtpAudioSession CreateRtpSession()
         {
             List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
             var audioOptions = new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.Silence };
             var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
 
             // Wire up the event handler for RTP packets received from the remote party.
-            rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(ua, type, rtp);
-            rtpAudioSession.OnTimeout += (mediaType) =>
-            {
-                if (ua?.Dialogue != null)
-                {
-                    Log.LogWarning($"RTP timeout on call with {ua.Dialogue.RemoteTarget}, hanging up.");
-                }
-                else
-                {
-                    Log.LogWarning($"RTP timeout on incomplete call, closing RTP session.");
-                }
+            //rtpAudioSession.OnRtpPacketReceived += (type, rtp) => OnRtpPacketReceived(type, rtp);
+            rtpAudioSession.OnRtcpBye += (reason) => Log.LogDebug($"RTCP BYE received.");
+            rtpAudioSession.OnRtpClosed += (reason) => Log.LogDebug("RTP session closed.");
+            rtpAudioSession.OnReceiveReport += RtpSession_OnReceiveReport;
+            rtpAudioSession.OnSendReport += RtpSession_OnSendReport;
+            //rtpAudioSession.OnTimeout += (mediaType) =>
+            //{
+            //    if (ua?.Dialogue != null)
+            //    {
+            //        Log.LogWarning($"RTP timeout on call with {ua.Dialogue.RemoteTarget}, hanging up.");
+            //    }
+            //    else
+            //    {
+            //        Log.LogWarning($"RTP timeout on incomplete call, closing RTP session.");
+            //    }
 
-                ua.Hangup();
-            };
+            //    ua.Hangup();
+            //};
 
             return rtpAudioSession;
         }
@@ -206,12 +241,48 @@ namespace SIPSorcery
         /// <summary>
         /// Event handler for receiving RTP packets.
         /// </summary>
-        /// <param name="ua">The SIP user agent associated with the RTP session.</param>
         /// <param name="type">The media type of the RTP packet (audio or video).</param>
         /// <param name="rtpPacket">The RTP packet received from the remote party.</param>
-        private static void OnRtpPacketReceived(SIPUserAgent ua, SDPMediaTypesEnum type, RTPPacket rtpPacket)
+        private static void OnRtpPacketReceived(SDPMediaTypesEnum type, RTPPacket rtpPacket)
         {
             // The raw audio data is available in rtpPacket.Payload.
+            Log.LogDebug($"rtp pkt received ssrc {rtpPacket.Header.SyncSource} seqnum {rtpPacket.Header.SequenceNumber}.");
+        }
+
+        /// <summary>
+        /// Diagnostic handler to print out our RTCP sender/receiver reports.
+        /// </summary>
+        private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
+        {
+            if (sentRtcpReport.SenderReport != null)
+            {
+                var sr = sentRtcpReport.SenderReport;
+                Log.LogDebug($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+            }
+            else
+            {
+                var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
+                Log.LogDebug($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
+            }
+        }
+
+        /// <summary>
+        /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
+        /// </summary>
+        private static void RtpSession_OnReceiveReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
+        {
+            Log.LogDebug($"RTCP {mediaType} CNAME {recvRtcpReport.SDesReport.CNAME} SSRC {recvRtcpReport.SDesReport.SSRC}.");
+
+            var rr = (recvRtcpReport.SenderReport != null) ? recvRtcpReport.SenderReport.ReceptionReports.FirstOrDefault() : recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
+
+            if (rr != null)
+            {
+                Log.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
+            }
+            else
+            {
+                Log.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
+            }
         }
 
         /// <summary>
