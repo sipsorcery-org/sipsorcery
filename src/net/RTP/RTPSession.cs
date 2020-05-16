@@ -122,6 +122,15 @@ namespace SIPSorcery.Net
         public List<SDPMediaFormat> Capabilities { get; internal set; }
 
         /// <summary>
+        /// Represents the original and default stream status for the track. This is set
+        /// when the track is created and does not change. It allows tracks to be set back to
+        /// their original state after being put on hold etc. For example if a track is
+        /// added as receive only video source then when after on and off hold it needs to
+        /// be known that the track reverts receive only rather than sendrecv.
+        /// </summary>
+        public MediaStreamStatusEnum DefaultStreamStatus { get; private set; }
+
+        /// <summary>
         /// Holds the stream state of the track.
         /// </summary>
         public MediaStreamStatusEnum StreamStatus { get; internal set; }
@@ -153,6 +162,7 @@ namespace SIPSorcery.Net
             IsRemote = isRemote;
             Capabilities = capabilities;
             StreamStatus = streamStatus;
+            DefaultStreamStatus = streamStatus;
 
             if (!isRemote)
             {
