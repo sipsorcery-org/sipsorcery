@@ -1,14 +1,14 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: This example program is part of an Attended Transfer demo. 
-// This program is acting as the Transferee.
+// Description: This example program is part of a Blind Transfer demo. 
+// This program is acting as the Transfer Target.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 14 May 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 15 May 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -31,8 +31,8 @@ namespace SIPSorcery
 {
     class Program
     {
-        private static int SIP_LISTEN_PORT = 6071;
-        private static byte[] DTMF_SEQUENCEFOR_TRANSFEROR = { 6, 0, 7, 1 };
+        private static int SIP_LISTEN_PORT = 6072;
+        private static byte[] DTMF_SEQUENCEFOR_TRANSFEROR = { 6, 0, 7, 2 };
 
         private static SIPTransport _sipTransport;
 
@@ -40,7 +40,7 @@ namespace SIPSorcery
 
         static void Main()
         {
-            Console.WriteLine("SIPSorcery Attended Transfer Demo: Transferee");
+            Console.WriteLine("SIPSorcery Blind Transfer Demo: Transfer Target");
             Console.WriteLine("Waiting for incoming call from Transferor.");
             Console.WriteLine("Press 'q' or ctrl-c to exit.");
 
@@ -69,44 +69,18 @@ namespace SIPSorcery
                 Log.LogDebug($"Answer incoming call result {answerResult}.");
 
                 _ = Task.Run(async () =>
-                  {
-                      await Task.Delay(1000);
-
-                      Log.LogDebug($"Sending DTMF sequence {string.Join("", DTMF_SEQUENCEFOR_TRANSFEROR.Select(x => x))}.");
-                      foreach (byte dtmf in DTMF_SEQUENCEFOR_TRANSFEROR)
-                      {
-                          Log.LogDebug($"Sending DTMF tone to transferor {dtmf}.");
-                          await ua.SendDtmf(dtmf);
-                      }
-                  });
-            };
-            userAgent.OnTransferRequested += (referredTo, referredBy) =>  true;
-            userAgent.OnTransferToTargetSuccessful += (dst) =>
-            {
-                Task.Run(async () =>
                 {
                     await Task.Delay(1000);
 
                     Log.LogDebug($"Sending DTMF sequence {string.Join("", DTMF_SEQUENCEFOR_TRANSFEROR.Select(x => x))}.");
                     foreach (byte dtmf in DTMF_SEQUENCEFOR_TRANSFEROR)
                     {
-                        Log.LogDebug($"Sending DTMF tone to target {dtmf}.");
-                        await userAgent.SendDtmf(dtmf);
+                        Log.LogDebug($"Sending DTMF tone to transferor {dtmf}.");
+                        await ua.SendDtmf(dtmf);
                     }
-
-                    //while(true)
-                    //{
-                    //    await Task.Delay(5000);
-
-                    //    Log.LogDebug($"Sending DTMF sequence {string.Join("", DTMF_SEQUENCEFOR_TRANSFEROR.Select(x => x))}.");
-                    //    foreach (byte dtmf in DTMF_SEQUENCEFOR_TRANSFEROR)
-                    //    {
-                    //        Log.LogDebug($"Sending DTMF tone to target {dtmf}.");
-                    //        await userAgent.SendDtmf(dtmf);
-                    //    }
-                    //}
                 });
             };
+            userAgent.OnDtmfTone += (key, duration) => Log.LogInformation($"Received DTMF tone {key}.");
 
             Task.Run(() => OnKeyPress(userAgent, exitCts));
 
@@ -159,7 +133,7 @@ namespace SIPSorcery
                     }
                     else if (keyProps.KeyChar == 'a')
                     {
-                        Log.LogDebug($"Yes I am alive!");
+                        Log.LogDebug($"Yes I am alive, is call active ? {userAgent?.IsCallActive}.");
                     }
                     else if (keyProps.KeyChar == 'q')
                     {

@@ -144,7 +144,7 @@ namespace SIPSorcery.Net
         private const string ICE_OPTIONS = "ice2,trickle";                   // Supported ICE options.
         private const string NORMAL_CLOSE_REASON = "normal";
 
-        private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.DISABLED_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
+        private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
         private static ILogger logger = Log.Logger;
 
@@ -587,7 +587,7 @@ namespace SIPSorcery.Net
 
                 SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
                  track.Kind,
-                 SDP.DISABLED_RTP_PORT_NUMBER,
+                 SDP.IGNORE_RTP_PORT_NUMBER,
                  (track.Kind == SDPMediaTypesEnum.video) ? videoCapabilities : audioCapabilities);
 
                 announcement.Transport = RTP_MEDIA_PROFILE;

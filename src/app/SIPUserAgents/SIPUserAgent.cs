@@ -89,6 +89,15 @@ namespace SIPSorcery.SIP.App
         private uint _rtpEventSsrc;
 
         /// <summary>
+        /// When a blind and attended transfer is in progress the original call will be placed
+        /// on hold (if not already). To prevent the response from the on hold re-INVITE 
+        /// being applied to the media session while the new transfer call is being made or
+        /// accepted we don't apply session descriptions on requests or responses with the 
+        /// old (original) call ID.
+        /// </summary>
+        private string _oldCallID;
+
+        /// <summary>
         /// The media (RTP) session in use for the current call.
         /// </summary>
         public IMediaSession MediaSession { get; private set; }
@@ -195,11 +204,14 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         /// <remarks>
         /// Parameters for event delegate:
+        /// bool OnTransferRequested(SIPUserField referTo, string referredBy)
         /// SIPUserField: Is the destination that we are being asked to place a call to.
+        /// string referredBy: The Referred-By header from the REFER request that requested 
+        /// we do the transfer.
         /// bool: The boolean result can be returned as false to prevent the transfer. By default
         /// if no event handler is hooked up the transfer will be accepted.
         /// </remarks>
-        public event Func<SIPUserField, bool> OnTransferRequested;
+        public event Func<SIPUserField, string, bool> OnTransferRequested;
 
         /// <summary>
         /// Fires when the call placed as a result of a transfer request is successfully answered.
@@ -480,12 +492,6 @@ namespace SIPSorcery.SIP.App
         /// such as incompatible codecs.</returns>
         public async Task<bool> Answer(SIPServerUserAgent uas, IMediaSession mediaSession, string[] customHeaders)
         {
-            // This call is now taking over any existing call.
-            //if (IsCallActive)
-            //{
-            //    Hangup();
-            //}
-
             if (uas.IsCancelled)
             {
                 logger.LogDebug("The incoming call has been cancelled.");
@@ -682,8 +688,16 @@ namespace SIPSorcery.SIP.App
         private void ApplyHoldAndReinvite()
         {
             var streamStatus = GetStreamStatusForOnHoldState();
-            MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, streamStatus);
-            MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, streamStatus);
+
+            if (MediaSession.HasAudio)
+            {
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, streamStatus);
+            }
+
+            if (MediaSession.HasVideo)
+            {
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, streamStatus);
+            }
 
             var sdp = MediaSession.CreateOffer(null);
             SendReInviteRequest(sdp);
@@ -773,27 +787,39 @@ namespace SIPSorcery.SIP.App
                 try
                 {
                     SDP offer = SDP.ParseSDPDescription(sipRequest.Body);
-                    var setRemoteResult = MediaSession.SetRemoteDescription(offer);
 
-                    if (setRemoteResult != SetDescriptionResultEnum.OK)
+                    if (sipRequest.Header.CallId == _oldCallID)
                     {
-                        logger.LogWarning($"Unable to set remote description from reINVITE request {setRemoteResult}");
-
-                        var notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, setRemoteResult.ToString());
-                        reInviteTransaction.SendFinalResponse(notAcceptableResponse);
+                        // A transfer is in progress and this re-INVITE belongs to the original call. More than likely
+                        // the purpose of the request is to place us on hold. We'll respond with OK but not update any local state.
+                        var answerSdp = MediaSession.CreateAnswer(null);
+                        var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, answerSdp.ToString());
+                        reInviteTransaction.SendFinalResponse(okResponse);
                     }
                     else
                     {
-                        var answerSdp = MediaSession.CreateAnswer(null);
+                        var setRemoteResult = MediaSession.SetRemoteDescription(offer);
 
-                        CheckRemotePartyHoldCondition(MediaSession.RemoteDescription);
+                        if (setRemoteResult != SetDescriptionResultEnum.OK)
+                        {
+                            logger.LogWarning($"Unable to set remote description from reINVITE request {setRemoteResult}");
 
-                        m_sipDialogue.RemoteSDP = sipRequest.Body;
-                        m_sipDialogue.SDP = answerSdp.ToString();
-                        m_sipDialogue.RemoteCSeq = sipRequest.Header.CSeq;
+                            var notAcceptableResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotAcceptable, setRemoteResult.ToString());
+                            reInviteTransaction.SendFinalResponse(notAcceptableResponse);
+                        }
+                        else
+                        {
+                            var answerSdp = MediaSession.CreateAnswer(null);
 
-                        var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, m_sipDialogue.SDP);
-                        reInviteTransaction.SendFinalResponse(okResponse);
+                            CheckRemotePartyHoldCondition(MediaSession.RemoteDescription);
+
+                            m_sipDialogue.RemoteSDP = sipRequest.Body;
+                            m_sipDialogue.SDP = answerSdp.ToString();
+                            m_sipDialogue.RemoteCSeq = sipRequest.Header.CSeq;
+
+                            var okResponse = reInviteTransaction.GetOkResponse(SDP.SDP_MIME_CONTENTTYPE, m_sipDialogue.SDP);
+                            reInviteTransaction.SendFinalResponse(okResponse);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -852,7 +878,7 @@ namespace SIPSorcery.SIP.App
         /// </summary>
         private void ProcessTransferRequest(SIPRequest referRequest)
         {
-            //We use a reliable response to make sure that duplicate REFER requests are ignored.
+            // We use a reliable response to make sure that duplicate REFER requests are ignored.
             SIPNonInviteTransaction referResponseTx = new SIPNonInviteTransaction(m_transport, referRequest, null);
 
             if (referRequest.Header.ReferTo.IsNullOrBlank())
@@ -873,108 +899,124 @@ namespace SIPSorcery.SIP.App
             {
                 // Check that the REFER destination is valid.
                 var referToUserField = SIPUserField.ParseSIPUserField(referRequest.Header.ReferTo);
-                string replacesStr = referToUserField.URI.Headers.Get(SIPHeaderAncillary.SIP_REFER_REPLACES);
-                SIPReplacesParameter replaces = SIPReplacesParameter.Parse(replacesStr);
+                string referredBy = referRequest.Header.ReferredBy;
 
-                if (string.IsNullOrWhiteSpace(replaces.CallID) ||
-                   string.IsNullOrWhiteSpace(replaces.FromTag) ||
-                   string.IsNullOrWhiteSpace(replaces.ToTag))
+                logger.LogDebug($"Transfer request received, referred by {referredBy}, refer to {referToUserField}.");
+
+                bool acceptTransfer = true;
+
+                // The calling application can optionally decide whether to accept transfers or not.
+                if (OnTransferRequested != null)
                 {
-                    logger.LogWarning($"A REFER request was received from {referRequest.RemoteSIPEndPoint} with one or more missing 'Replaces' parameters.");
-                    SIPResponse badReplacesResponse = SIPResponse.GetResponse(referRequest, SIPResponseStatusCodesEnum.BadRequest, null);
-                    referResponseTx.SendResponse(badReplacesResponse);
+                    acceptTransfer = OnTransferRequested(referToUserField, referredBy);
+                }
+
+                if (!acceptTransfer)
+                {
+                    logger.LogDebug("Transfer request was rejected by application.");
+
+                    SIPResponse rejectXferResponse = SIPResponse.GetResponse(referRequest, SIPResponseStatusCodesEnum.Decline, null);
+                    referResponseTx.SendResponse(rejectXferResponse);
                 }
                 else
                 {
-                    bool acceptTransfer = true;
+                    // All checks have passed so go ahead and accept the transfer.
+                    SIPResponse acceptXferResponse = SIPResponse.GetResponse(referRequest, SIPResponseStatusCodesEnum.Accepted, null);
+                    referResponseTx.SendResponse(acceptXferResponse);
 
-                    if (OnTransferRequested != null)
+                    // While we process the transfer request we flag the original call so that any subsequent re-INVITE 
+                    // requests or response (most likely relating to on/off hold) don't get applied to the media session.
+                    _oldCallID = referRequest.Header.CallId;
+
+                    // To keep the remote party that requested the transfer up to date with the status and outcome of the REFER request
+                    // we need to create a subscription and send NOTIFY requests.
+
+                    if (!IsOnRemoteHold)
                     {
-                        acceptTransfer = OnTransferRequested(referToUserField);
+                        // Put the remote party (who has just requested we call a new destination) on hold while we
+                        // attempt a call to the referred destination.
+                        PutOnHold();
                     }
 
-                    if (!acceptTransfer)
+                    if (MediaSession.HasAudio)
                     {
-                        logger.LogDebug("Transfer request was rejected by application.");
-
-                        SIPResponse rejectXferResponse = SIPResponse.GetResponse(referRequest, SIPResponseStatusCodesEnum.Decline, null);
-                        referResponseTx.SendResponse(rejectXferResponse);
+                        MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, MediaStreamStatusEnum.SendRecv);
                     }
-                    else
+
+                    if (MediaSession.HasVideo)
                     {
-                        // All checks have passed so go ahead and accept the transfer.
-                        SIPResponse acceptXferResponse = SIPResponse.GetResponse(referRequest, SIPResponseStatusCodesEnum.Accepted, null);
-                        referResponseTx.SendResponse(acceptXferResponse);
-                        // To keep the remote party that requested the transfer up to date with the status and outcome of the REFER request
-                        // we need to create a subscription and send NOTIFY requests.
+                        MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, MediaStreamStatusEnum.SendRecv);
+                    }
 
-                        if (!IsOnRemoteHold)
+                    // The norefersub supported header means am event subscription is not expected.
+                    // TODO: Add support for the event subscription for cases where norefersub is not applicable.
+                    // Need to create an implicit subscription to keep the remote party that requested the transfer up to date with the 
+                    // status and outcome of the REFER request
+                    _ = Task.Run(async () =>
+                    {
+                        try
                         {
-                            // Put the remote party (who has just requested we call a new destination) on hold while we
-                            // attempt a call to the referred destination.
-                            PutOnHold();
-                        }
+                            SIPURI referToUri = referToUserField.URI;
 
-                        // TODO:
-                        // If norefersub header then.
-                        // Need to create an implicit subscription to keep the remote party that requested the transfer up to date with the 
-                        // status and outcome of the REFER request
-                        _ = Task.Run(async () =>
-                        {
-                            try
+                            logger.LogDebug($"Calling transfer destination URI {referToUri.ToParameterlessString()}.");
+
+                            // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
+                            SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
+
+                            List<string> customHeaders = null;
+
+                            // Attended transfers will specify a dialog that is being replaced on the transfer Target.
+                            // Blind transfers do not include a Replaces header.
+                            if (referToUserField.URI.Headers.Has(SIPHeaderAncillary.SIP_REFER_REPLACES))
                             {
-                                SIPURI referToUri = referToUserField.URI;
-
-                                logger.LogDebug($"Calling transfer destination URI {referToUri.ToParameterlessString()}.");
-
-                                // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
-                                SIPRequest byeRequest = m_sipDialogue.GetInDialogRequest(SIPMethodsEnum.BYE);
-
-                                // Note the media session from the original call gets re-used.
-                                List<string> customHeaders = new List<string>
+                                string replacesStr = referToUserField.URI.Headers.Get(SIPHeaderAncillary.SIP_REFER_REPLACES);
+                                SIPReplacesParameter replaces = SIPReplacesParameter.Parse(replacesStr);
+                                customHeaders = new List<string>
                                 {
                                     $"{SIPHeaders.SIP_HEADER_REPLACES}: {replaces.CallID};to-tag={replaces.ToTag};from-tag={replaces.FromTag}"
                                 };
-
-                                SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
-                                   SIPConstants.SIP_DEFAULT_USERNAME,
-                                   null,
-                                   referToUri.ToParameterlessString(),
-                                   SIPConstants.SIP_DEFAULT_FROMURI,
-                                   referToUri.CanonicalAddress,
-                                   null,
-                                   customHeaders,
-                                   null,
-                                   SIPCallDirection.Out,
-                                   SDP.SDP_MIME_CONTENTTYPE,
-                                   null,
-                                   null);
-
-                                var transferResult = await Call(callDescriptor, MediaSession);
-
-                                logger.LogDebug($"Result of calling transfer destination {transferResult}.");
-
-                                if (!transferResult)
-                                {
-                                    OnTransferToTargetFailed?.Invoke(referToUserField);
-                                }
-                                else
-                                {
-                                    OnTransferToTargetSuccessful?.Invoke(referToUserField);
-                                    // Hanging up original call.
-
-                                    logger.LogDebug("Transfer succeeded, hanging up original call.");
-
-                                    SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_transport, byeRequest, m_outboundProxy);
-                                    byeTransaction.SendRequest();
-                                }
                             }
-                            catch (Exception excp)
+
+                            SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
+                               SIPConstants.SIP_DEFAULT_USERNAME,
+                               null,
+                               referToUri.ToParameterlessString(),
+                               SIPConstants.SIP_DEFAULT_FROMURI,
+                               referToUri.ToParameterlessString(),
+                               null,
+                               customHeaders,
+                               null,
+                               SIPCallDirection.Out,
+                               SDP.SDP_MIME_CONTENTTYPE,
+                               null,
+                               null);
+
+                            var transferResult = await Call(callDescriptor, MediaSession);
+
+                            logger.LogDebug($"Result of calling transfer destination {transferResult}.");
+
+                            if (!transferResult)
                             {
-                                logger.LogError($"Exception processing transfer request. {excp.Message}");
+                                _oldCallID = null;
+                                OnTransferToTargetFailed?.Invoke(referToUserField);
+                                TakeOffHold();
                             }
-                        }).ConfigureAwait(false);
-                    }
+                            else
+                            {
+                                OnTransferToTargetSuccessful?.Invoke(referToUserField);
+                                // Hanging up original call.
+
+                                logger.LogDebug("Transfer succeeded, hanging up original call.");
+
+                                SIPNonInviteTransaction byeTransaction = new SIPNonInviteTransaction(m_transport, byeRequest, m_outboundProxy);
+                                byeTransaction.SendRequest();
+                            }
+                        }
+                        catch (Exception excp)
+                        {
+                            logger.LogError($"Exception processing transfer request. {excp.Message}");
+                        }
+                    }).ConfigureAwait(false);
                 }
             }
         }
@@ -1099,13 +1141,29 @@ namespace SIPSorcery.SIP.App
             // - If the new call is answered then it now becomes active and a BYE request should be sent to hangup the 
             //   original call.
 
+            // While we process the transfer request we flag the original call so that any subsequent re-INVITE 
+            // requests or response (most likely relating to on/off hold) don't get applied to the media session.
+            _oldCallID = uas.ClientTransaction.TransactionRequest.Header.CallId;
+
             if (!IsOnLocalHold)
             {
                 logger.LogDebug("Current call placed on hold.");
                 PutOnHold();
 
-                // Give the on hold request time to get received to avoid a potential race with the hangup.
-                await Task.Delay(WAIT_ONHOLD_TIMEOUT).ConfigureAwait(false);
+                // Pause to give the hold request time to get processed. Otherwise the BYE request can get sent
+                // before the hold request which will be interpreted as an missing dialog on the transferor and
+                // which can be confusing.
+                await Task.Delay(WAIT_ONHOLD_TIMEOUT);
+            }
+
+            if (MediaSession.HasAudio)
+            {
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.audio, MediaStreamStatusEnum.SendRecv);
+            }
+
+            if (MediaSession.HasVideo)
+            {
+                MediaSession.SetMediaStreamStatus(SDPMediaTypesEnum.video, MediaStreamStatusEnum.SendRecv);
             }
 
             // Get the BYE request for the original dialog so it can be sent if answering the transfer call succeeds.
@@ -1123,6 +1181,7 @@ namespace SIPSorcery.SIP.App
             }
             else
             {
+                _oldCallID = null;
                 logger.LogDebug("Attended transfer answer failed, taking original call off hold.");
                 TakeOffHold();
             }
@@ -1139,9 +1198,19 @@ namespace SIPSorcery.SIP.App
         {
             if (sipResponse.Status == SIPResponseStatusCodesEnum.Ok)
             {
-                // Update the remote party's SDP.
-                m_sipDialogue.RemoteSDP = sipResponse.Body;
-                MediaSession.SetRemoteDescription(SDP.ParseSDPDescription(sipResponse.Body));
+                if (sipResponse.Header.CallId == _oldCallID)
+                {
+                    // A transfer is in progress and this re-INVITE response belongs to the original call. More than likely
+                    // it's the response to our on hold re-INVITE request. We don't want to update the media session state
+                    // with this response.
+                    logger.LogDebug($"Re-INVITE response received for original Call-ID, disregarding.");
+                }
+                else
+                {
+                    // Update the remote party's SDP.
+                    m_sipDialogue.RemoteSDP = sipResponse.Body;
+                    MediaSession.SetRemoteDescription(SDP.ParseSDPDescription(sipResponse.Body));
+                }
             }
             else
             {
@@ -1366,12 +1435,13 @@ namespace SIPSorcery.SIP.App
             {
                 streamStatus = MediaStreamStatusEnum.SendRecv;
             }
-            else
+            else if (IsOnLocalHold)
             {
-                streamStatus =
-                    IsOnLocalHold
-                        ? MediaStreamStatusEnum.SendOnly
-                        : MediaStreamStatusEnum.RecvOnly;
+                streamStatus = MediaStreamStatusEnum.SendOnly;
+            }
+            else if (IsOnRemoteHold)
+            {
+                streamStatus = MediaStreamStatusEnum.RecvOnly;
             }
 
             return streamStatus;

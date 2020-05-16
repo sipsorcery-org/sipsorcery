@@ -1,14 +1,14 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: This example program is part of an Attended Transfer demo. 
+// Description: This example program is part of a Blind Transfer demo. 
 // This program is acting as the Transferor.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 // 
 // History:
-// 14 May 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 15 May 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -40,14 +40,12 @@ namespace SIPSorcery
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
         private static SIPUserAgent _transfereeCall;
-        private static SIPUserAgent _targetCall;
 
         static void Main()
         {
-            Console.WriteLine("SIPSorcery Attended Transfer Demo: Transferor");
+            Console.WriteLine("SIPSorcery Blind Transfer Demo: Transferor");
             Console.WriteLine("Start the Transferee and Target programs.");
             Console.WriteLine("Press c to place call to Transferee.");
-            Console.WriteLine("Press c again to place call to Target.");
             Console.WriteLine("Press t to initiate the transfer.");
             Console.WriteLine("Press 'q' or ctrl-c to exit.");
 
@@ -93,52 +91,39 @@ namespace SIPSorcery
 
                     if (keyProps.KeyChar == 'c')
                     {
-                        SIPUserAgent ua = null;
-                        string dst = null;
-
-                        if (_transfereeCall == null)
+                        if (_transfereeCall == null || !_transfereeCall.IsCallActive)
                         {
-                            dst = TRANSFEREE_DST;
                             _transfereeCall = new SIPUserAgent(_sipTransport, null);
-                            ua = _transfereeCall;
-                        }
-                        else if (_targetCall == null)
-                        {
-                            dst = TARGET_DST;
-                            _targetCall = new SIPUserAgent(_sipTransport, null);
-                            ua = _targetCall;
-                        }
 
-                        if (ua == null)
-                        {
-                            Log.LogWarning("Cannot place a new call, both the transferee and target user agents are busy.");
-                        }
-                        else
-                        {
                             // Place an outgoing call.
-                            ua.ClientCallTrying += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
-                            ua.ClientCallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
-                            ua.ClientCallFailed += (uac, err, resp) => Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}, Status code: {resp?.StatusCode}");
-                            ua.ClientCallAnswered += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
-                            ua.OnDtmfTone += (key, duration) => Log.LogInformation($"Received DTMF tone {key}.");
+                            _transfereeCall.ClientCallTrying += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
+                            _transfereeCall.ClientCallRinging += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Ringing: {resp.StatusCode} {resp.ReasonPhrase}.");
+                            _transfereeCall.ClientCallFailed += (uac, err, resp) => Log.LogWarning($"{uac.CallDescriptor.To} Failed: {err}, Status code: {resp?.StatusCode}");
+                            _transfereeCall.ClientCallAnswered += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
+                            _transfereeCall.OnDtmfTone += (key, duration) => Log.LogInformation($"Received DTMF tone {key}.");
                             //ua.OnRtpEvent += (evt, hdr) => Log.LogDebug($"transferee rtp event {evt.EventID}, ssrc {hdr.SyncSource}, duration {evt.Duration}, end of event {evt.EndOfEvent}, timestamp {hdr.Timestamp}, marker {hdr.MarkerBit}.");
-                            ua.OnCallHungup += (dialog) => Log.LogDebug("Call hungup by remote party.");
+                            _transfereeCall.OnCallHungup += (dialog) => Log.LogDebug("Call hungup by remote party.");
 
                             Task.Run(async () =>
                             {
                                 var rtpSession = CreateRtpSession();
-                                var callResult = await ua.Call(dst, null, null, rtpSession);
+                                var callResult = await _transfereeCall.Call(TRANSFEREE_DST, null, null, rtpSession);
 
                                 if (!callResult)
                                 {
-                                    Log.LogWarning($"Call to {dst} failed.");
+                                    Log.LogWarning($"Call to {TRANSFEREE_DST} failed.");
                                 }
                                 else
                                 {
-                                    Log.LogInformation($"Call to {dst} was successful.");
+                                    Log.LogInformation($"Call to {TRANSFEREE_DST} was successful.");
                                 }
                             });
                         }
+                        else
+                        {
+                            Log.LogWarning("Cannot place a new call, the transferee user agent is busy.");
+                        }
+                                
                     }
                     else if (keyProps.KeyChar == 'h')
                     {
@@ -148,14 +133,7 @@ namespace SIPSorcery
                             _transfereeCall.Hangup();
                         }
 
-                        if (_targetCall != null)
-                        {
-                            Log.LogDebug("Hanging up target call.");
-                            _targetCall.Hangup();
-                        }
-
                         _transfereeCall = null;
-                        _targetCall = null;
                     }
                     else if (keyProps.KeyChar == 't')
                     {
@@ -163,29 +141,24 @@ namespace SIPSorcery
                         {
                             Log.LogWarning("The call to the transferee is not established.");
                         }
-                        else if (_targetCall == null)
-                        {
-                            Log.LogWarning("The call to the target is not established.");
-                        }
                         else
                         {
                             Task.Run(async () =>
                             {
                                 Log.LogInformation("Initiating transfer to the transferee...");
-                                bool transferResult = await _transfereeCall.AttendedTransfer(_targetCall.Dialogue, TimeSpan.FromSeconds(2), exitCts.Token);
+                                bool transferResult = await _transfereeCall.BlindTransfer(SIPURI.ParseSIPURI(TARGET_DST), TimeSpan.FromSeconds(2), exitCts.Token);
 
                                 Log.LogDebug($"Transfer result {transferResult}.");
 
                                 await Task.Delay(2000);
 
                                 Log.LogDebug($"Transferee call status {_transfereeCall?.IsCallActive}.");
-                                Log.LogDebug($"Target call status {_targetCall?.IsCallActive}.");
                             });
                         }
                     }
                     else if (keyProps.KeyChar == 'a')
                     {
-                        Log.LogDebug($"Yes I am alive!");
+                        Log.LogDebug($"Yes I am alive, transferee is call active ? {_transfereeCall?.IsCallActive}!");
                     }
                     else if (keyProps.KeyChar == 'q')
                     {
