@@ -77,13 +77,13 @@ namespace WebRTCAspNetMvc.Controllers
                 return BadRequest("The candidate field cannot be empty in AddIceCandidate.");
             }
 
+            // TODO: Handle .local addresses.
             if (iceCandidate.candidate.Contains(".local"))
             {
                 _logger.LogWarning("ICE candidates with .local addresses are currently not supported, coming soon.");
             }
             else
             {
-                //RTCIceCandidate parsedCandidate = RTCIceCandidate.Parse(iceCandidate.candidate);
                 await _webRTCServer.AddIceCandidate(id, iceCandidate);
             }
 
