@@ -65,7 +65,7 @@ namespace SIPSorcery.Net
         /// Starts the receive. This method returns immediately. An event will be fired in the corresponding "End" event to
         /// return any data received.
         /// </summary>
-        public void BeginReceive()
+        public void BeginReceiveFrom()
         {
             try
             {
@@ -83,8 +83,8 @@ namespace SIPSorcery.Net
             }
             catch (Exception excp)
             {
-                // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3056
-                // the BeginReceiveMessageFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
+                // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3262
+                // the BeginReceiveFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
                 // case the socket can be considered to be unusable and there's no point trying another receive.
                 logger.LogError($"Exception UdpReceiver.BeginReceive. {excp.Message}");
                 Close(excp.Message);
@@ -146,7 +146,7 @@ namespace SIPSorcery.Net
             {
                 if (!m_isClosed)
                 {
-                    BeginReceive();
+                    BeginReceiveFrom();
                 }
             }
         }
@@ -291,14 +291,14 @@ namespace SIPSorcery.Net
                 m_rtpReceiver = new UdpReceiver(RtpSocket);
                 m_rtpReceiver.OnPacketReceived += OnRTPPacketReceived;
                 m_rtpReceiver.OnClosed += Close;
-                m_rtpReceiver.BeginReceive();
+                m_rtpReceiver.BeginReceiveFrom();
 
                 if (m_controlSocket != null)
                 {
                     m_controlReceiver = new UdpReceiver(m_controlSocket);
                     m_controlReceiver.OnPacketReceived += OnControlPacketReceived;
                     m_controlReceiver.OnClosed += Close;
-                    m_controlReceiver.BeginReceive();
+                    m_controlReceiver.BeginReceiveFrom();
                 }
             }
         }

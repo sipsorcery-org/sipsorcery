@@ -1,9 +1,10 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SIPUserAgent.cs
 //
-// Description: A "full" SIP user agent that encompasses both client and server user agents.
-// It is also able to manage in dialog operations after the call is established 
-// (the client and server user agents don't handle in dialog operations).
+// Description: A "full" SIP user agent that encompasses both client and server 
+// user agents. It is also able to manage in dialog operations after the call 
+// is established (the client and server user agents don't handle in dialog 
+// operations).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -11,8 +12,11 @@
 // History:
 // 26 Nov 2019	Aaron Clauson   Created, Dublin, Ireland.
 // rj2: added overload for Answer with customHeader
-// 10 May 2020  Aaron Clauson   Added handling for REFER requests as per https://tools.ietf.org/html/rfc3515
+// 10 May 2020  Aaron Clauson   Added handling for REFER requests as per 
+//                              https://tools.ietf.org/html/rfc3515
 //                              and https://tools.ietf.org/html/rfc5589.
+// 17 May 2020  Aaron Clauson   Added exclusive transport option to simplify
+//                              incoming call handling.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -64,6 +68,12 @@ namespace SIPSorcery.SIP.App
         /// The SIP transport layer for sending requests and responses.
         /// </summary>
         private SIPTransport m_transport;
+
+        /// <summary>
+        /// If true indicates the SIP transport instance is specific to this user agent and
+        /// is not being shared.
+        /// </summary>
+        private readonly bool m_isTransportExclusive;
 
         /// <summary>
         /// If set all communications are sent to this address irrespective of what the 
@@ -264,16 +274,33 @@ namespace SIPSorcery.SIP.App
         public event SIPTransactionTraceMessageDelegate OnTransactionTraceMessage;
 
         /// <summary>
-        /// Creates a new SIP client and server combination user agent.
+        /// Creates a new instance where the user agent has exclusive control of the SIP transport.
+        /// This is significant for incoming requests. WIth exclusive control the agent knows that
+        /// any request are for it and can handle accordingly. If the transport needs to be shared 
+        /// amongst multiple user agents use the alternative constructor.
+        /// </summary>
+        public SIPUserAgent()
+        {
+            m_transport = new SIPTransport();
+            m_transport.SIPTransportRequestReceived += SIPTransportRequestReceived;
+            m_isTransportExclusive = true;
+        }
+
+        /// <summary>
+        /// Creates a new SIP client and server combination user agent with a shared SIP transport instance.
+        /// With a shared transport outgoing calls and registrations work the same but for incoming calls
+        /// and requests the destination needs to be co-ordinated externally.
         /// </summary>
         /// <param name="transport">The transport layer to use for requests and responses.</param>
         /// <param name="outboundProxy">Optional. If set all requests and responses will be forwarded to this
         /// end point irrespective of their headers.</param>
-        public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy)
+        /// <param name="isTransportExclusive">True is the SIP transport instance is for the exclusive use of 
+        /// this user agent or false if it's being shared amongst multiple agents.</param>
+        public SIPUserAgent(SIPTransport transport, SIPEndPoint outboundProxy, bool isTransportExclusive = false)
         {
             m_transport = transport;
             m_outboundProxy = outboundProxy;
-
+            m_isTransportExclusive = isTransportExclusive;
             m_transport.SIPTransportRequestReceived += SIPTransportRequestReceived;
         }
 
@@ -1119,9 +1146,33 @@ namespace SIPSorcery.SIP.App
             {
                 logger.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint}, uri:{sipRequest.URI}.");
 
-                // If there is no handler for an incoming call request it gets ignored. The SIP transport layer can have 
-                // multiple handlers for incoming requests and it's likely a different handler is processing incoming calls.
-                OnIncomingCall?.Invoke(this, sipRequest);
+                if (!m_isTransportExclusive)
+                {
+                    // If there is no handler for an incoming call request it gets ignored. The SIP transport layer can have 
+                    // multiple handlers for incoming requests and it's likely a different handler is processing incoming calls.
+                    OnIncomingCall?.Invoke(this, sipRequest);
+                }
+                else
+                {
+                    if(OnIncomingCall != null)
+                    {
+                        OnIncomingCall(this, sipRequest);
+                    }
+                    else
+                    {
+                        // This user agent has exclusive control of the transport and no incoming call handler was provided.
+                        var uas = new UASInviteTransaction(m_transport, sipRequest, m_outboundProxy);
+                        var notFoundResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, null);
+                        uas.SendFinalResponse(notFoundResponse);
+                    }
+                }
+            }
+            else if(m_isTransportExclusive)
+            {
+                // If the transport is exclusive this is the only user agent listening and if it's not handling the request
+                // nothing is.
+                var notSupportedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                await m_transport.SendResponseAsync(notSupportedResponse).ConfigureAwait(false);
             }
         }
 
@@ -1496,6 +1547,11 @@ namespace SIPSorcery.SIP.App
             }
 
             m_transport.SIPTransportRequestReceived -= SIPTransportRequestReceived;
+
+            if(m_isTransportExclusive)
+            {
+                m_transport.Shutdown();
+            }
         }
     }
 }

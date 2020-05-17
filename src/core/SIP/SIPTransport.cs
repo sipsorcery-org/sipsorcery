@@ -33,7 +33,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
-    public class SIPTransport
+    public class SIPTransport : IDisposable
     {
         private const int MAX_QUEUEWAIT_PERIOD = 200;              // Maximum time to wait to check the message received queue if no events are received.
         private const int MAX_INMESSAGE_QUEUECOUNT = 5000;          // The maximum number of messages that can be stored in the incoming message queue.
@@ -1149,5 +1149,10 @@ namespace SIPSorcery.SIP
         }
 
         #endregion
+
+        public void Dispose()
+        {
+            Shutdown();
+        }
     }
 }
