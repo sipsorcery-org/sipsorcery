@@ -40,6 +40,7 @@ namespace SIPSorcery
     class Program
     {
         private static string TARGET_DST = "sip:127.0.0.1";
+        private static int TIMEOUT_MILLISECONDS = 5000;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
 
@@ -90,7 +91,7 @@ namespace SIPSorcery
             #endregion
         }
 
-        private static async Task<bool> PlaceCall(CancellationToken cancel)
+        private static Task<bool> PlaceCall(CancellationToken cancel)
         {
             // Set up a default SIP transport.
             var sipTransport = new SIPTransport();
@@ -103,7 +104,7 @@ namespace SIPSorcery
             SIPUserAgent ua = new SIPUserAgent(sipTransport, null, true);
             CallRecord cr = new CallRecord { UA = ua, RequestedDtmfCode = requestedDtmfCode, ReceivedDtmfCode = "" };
 
-            TaskCompletionSource<bool> dtmfComplete = new TaskCompletionSource<bool>(TaskCreationOptions.None);
+            TaskCompletionSource<bool> dtmfComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             // Place an outgoing call.
             ua.ClientCallTrying += (uac, resp) => Log.LogInformation($"{uac.CallDescriptor.To} Trying: {resp.StatusCode} {resp.ReasonPhrase}.");
@@ -124,10 +125,12 @@ namespace SIPSorcery
             ua.OnCallHungup += (dialog) => Log.LogDebug("Call hungup by remote party.");
 
             var rtpSession = CreateRtpSession();
-            var callResult = await ua.Call(targetUri.ToString(), null, null, rtpSession);
+            var callTask = ua.Call(targetUri.ToString(), null, null, rtpSession);
             bool dtmfResult = false;
 
-            if (!callResult)
+            bool didComplete = Task.WaitAll(new Task[] { callTask }, TIMEOUT_MILLISECONDS, cancel);
+
+            if (!didComplete || !callTask.Result)
             {
                 Log.LogWarning($"Call to {targetUri} failed.");
             }
@@ -136,9 +139,7 @@ namespace SIPSorcery
                 Log.LogInformation($"Call to {targetUri} was successful.");
                 _calls.TryAdd(ua.Dialogue.CallId, cr);
 
-                rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio).Start();
-
-                if (Task.WaitAll(new Task[] { dtmfComplete.Task }, 10000, cancel))
+                if (Task.WaitAll(new Task[] { dtmfComplete.Task }, TIMEOUT_MILLISECONDS, cancel))
                 {
                     dtmfResult = dtmfComplete.Task.Result;
                 }
@@ -150,7 +151,8 @@ namespace SIPSorcery
                 ua.Hangup();
             }
 
-            return dtmfResult;
+            return Task.FromResult(dtmfResult);
+            //return Task.FromResult(true);
         }
 
         /// <summary>

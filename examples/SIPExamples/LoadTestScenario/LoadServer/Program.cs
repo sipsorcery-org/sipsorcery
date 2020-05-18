@@ -276,7 +276,15 @@ namespace SIPSorcery
 
                                     Log.LogDebug($"Sending DTMF {dtmfByte} to caller.");
 
-                                    await ua.SendDtmf(dtmfByte);
+                                    if (!ua.IsCallActive)
+                                    {
+                                        Log.LogWarning($"Client call no longer active.");
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        await ua.SendDtmf(dtmfByte);
+                                    }
 
                                     dtmfCode /= 10;
                                 }

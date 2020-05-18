@@ -49,6 +49,11 @@
 // Generate client call load:
 // Server: sipp -sn uas
 // Client: dotnet run -- -d 127.0.0.1 -c 1000 -x 10 -s uac -b true # Test attempts 10 concurrent calls and a total of 1000.
+//
+// Results:
+// 18 May 2020:
+// dotnet run -- -d 127.0.0.1 -c 10000 -x 25 -s uac -b true
+// [19:17:03 INF] => Command completed task count 10000 success count 10000 duration 189.21
 //-----------------------------------------------------------------------------
 
 using System;
@@ -434,7 +439,6 @@ namespace SIPSorcery
                 var rtpAudioSession = new RtpAudioSession(audioOptions, new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
 
                 var result = await ua.Call(dst.ToString(), null, null, rtpAudioSession);
-                await rtpAudioSession.Start();
 
                 ua.Hangup();
 

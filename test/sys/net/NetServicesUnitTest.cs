@@ -13,6 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -172,7 +173,6 @@ namespace SIPSorcery.Sys.UnitTests
             Socket rtpSocket = null;
             Socket controlSocket = null;
 
-            //NetServices.CreateRtpSocket(10000, 20000, 13677, true, null, out rtpSocket, out controlSocket);
             NetServices.CreateRtpSocket(true, null, out rtpSocket, out controlSocket);
 
             Assert.NotNull(rtpSocket);
@@ -183,10 +183,58 @@ namespace SIPSorcery.Sys.UnitTests
         }
 
         /// <summary>
-        /// Tests that RTP and control listeners can be created when the start of the port range is duplicated.
+        /// Tests that RTP and control listeners can be created with a pseudo-random port assignment
+        /// on the wildcard IPv4 address.
         /// </summary>
         [Fact]
-        public void CreateRtpAndControlSocketsDuplicateStartPortUnitTest()
+        public void CreateRtpAndControlSocketsOnIP4AnyUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            Socket rtpSocket = null;
+            Socket controlSocket = null;
+
+            NetServices.CreateRtpSocket(true, IPAddress.Any, out rtpSocket, out controlSocket);
+
+            Assert.NotNull(rtpSocket);
+            Assert.NotNull(controlSocket);
+
+            rtpSocket.Close();
+            controlSocket.Close();
+        }
+
+        /// <summary>
+        /// Tests that RTP and control listeners can be created with a pseudo-random port assignment
+        /// on the wildcard IPv6 address.
+        /// </summary>
+        [Fact]
+        public void CreateRtpAndControlSocketsOnIP6AnyUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            if (Socket.OSSupportsIPv6)
+            {
+                Socket rtpSocket = null;
+                Socket controlSocket = null;
+
+                NetServices.CreateRtpSocket(true, IPAddress.IPv6Any, out rtpSocket, out controlSocket);
+
+                Assert.NotNull(rtpSocket);
+                Assert.NotNull(controlSocket);
+
+                rtpSocket.Close();
+                controlSocket.Close();
+            }
+        }
+
+        /// <summary>
+        /// Tests that multiple RTP and control bound sockets can be created with correctly allocated
+        /// port numbers.
+        /// </summary>
+        [Fact]
+        public void CreateRtpAndControlMultipleSocketsUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -239,6 +287,77 @@ namespace SIPSorcery.Sys.UnitTests
             {
                 Assert.True(supports);
             }
+        }
+
+        /// <summary>
+        /// Checks that when two sockets are bound on the same port but with different address specifiers
+        /// the magic cookie send test is able to detect the unusable socket.
+        /// Workaround for bug: https://github.com/dotnet/runtime/issues/36618
+        /// </summary>
+        [Fact]
+        public void CheckCreateSocketFailsForInUseSocketUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var socket4Any = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket4Any.Bind(new IPEndPoint(IPAddress.Any, 0));
+            IPEndPoint anyEP = socket4Any.LocalEndPoint as IPEndPoint;
+
+            var socketIP6Any = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+            socketIP6Any.DualMode = true;
+            socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port));
+
+            Assert.True(NetServices.DoTestReceive(socket4Any, null));
+            Assert.False(NetServices.DoTestReceive(socketIP6Any, null));
+        }
+
+        /// <summary>
+        /// Checks that a bind attempt fails if the socket is already bound on IPv4 0.0.0.0 and an
+        /// attempt is made to use the same port on IPv6 [::].
+        /// </summary>
+        [Fact]
+        public void CheckFailsOnDuplicateForIP4AnyThenIPv6AnyUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            Socket rtpSocket = null;
+            Socket controlSocket = null;
+
+            NetServices.CreateRtpSocket(true, IPAddress.Any, out rtpSocket, out controlSocket);
+
+            Assert.NotNull(rtpSocket);
+            Assert.NotNull(controlSocket);
+
+            Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint  as IPEndPoint).Port, IPAddress.IPv6Any));
+
+            rtpSocket.Close();
+            controlSocket.Close();
+        }
+
+        /// <summary>
+        /// Checks that a bind attempt fails if the socket is already bound on IPv6 [::] and an
+        /// attempt is made to use the same port on IPv4 0.0.0.0.
+        /// </summary>
+        [Fact]
+        public void CheckFailsOnDuplicateForIP6AnyThenIPv4AnyUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            Socket rtpSocket = null;
+            Socket controlSocket = null;
+
+            NetServices.CreateRtpSocket(true, IPAddress.IPv6Any, out rtpSocket, out controlSocket);
+
+            Assert.NotNull(rtpSocket);
+            Assert.NotNull(controlSocket);
+
+            Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint as IPEndPoint).Port, IPAddress.Any));
+
+            rtpSocket.Close();
+            controlSocket.Close();
         }
     }
 }

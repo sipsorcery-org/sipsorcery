@@ -30,6 +30,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
@@ -66,8 +67,10 @@ namespace SIPSorcery.SIP
             IsReliable = false;
             m_cts = new CancellationTokenSource();
 
-            m_udpSocket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-            m_udpSocket.Bind(endPoint);
+            //m_udpSocket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+            //m_udpSocket.Bind(endPoint);
+
+            m_udpSocket = NetServices.CreateBoundUdpSocket(endPoint.Port, endPoint.Address);
             if (endPoint.Port == 0)
             {
                 Port = (m_udpSocket.LocalEndPoint as IPEndPoint).Port;

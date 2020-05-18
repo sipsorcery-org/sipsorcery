@@ -970,7 +970,7 @@ namespace SIPSorcery.Net
                 else if (localEventFormat != null)
                 {
                     // Remote party does not support RTP events remove our capability.
-                    logger.LogWarning("REmote party does not support RTP events.");
+                    logger.LogWarning("Remote party does not support RTP events.");
                     AudioLocalTrack.Capabilities.Remove(localEventFormat);
                 }
             }

@@ -27,7 +27,7 @@ namespace SIPSorcery.Register
     {
         private const string USERNAME = "softphonesample";
         private const string PASSWORD = "password";
-        private const string DOMAIN = "sipsorcery.com";
+        private const string DOMAIN = "sipsorcery.com;transport=tcp";
         private const int EXPIRY = 120;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
