@@ -260,7 +260,7 @@ namespace SIPSorcery.Sys
         /// Common instantiation logic for creating a new UDP socket.
         /// </summary>
         /// <param name="addressFamily">The address family for the new socket, IPv4 or IPv6.</param>
-        /// <returns>A new socket instnace.</returns>
+        /// <returns>A new socket instance.</returns>
         private static Socket CreateUdpSocket(AddressFamily addressFamily)
         {
             var sock = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
