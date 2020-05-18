@@ -697,7 +697,7 @@ namespace SIPSorcery.Sys
         //}
 
         /// <summary>
-        /// This method utilises the OS routing table to determine the local IP address to connection to a destination end point.
+        /// This method utilises the OS routing table to determine the local IP address to connect to a destination end point.
         /// It selects the correct local IP address, on a potentially multi-honed host, to communicate with a destination IP address.
         /// See https://github.com/sipsorcery/sipsorcery/issues/97 for elaboration.
         /// </summary>

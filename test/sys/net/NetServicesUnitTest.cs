@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
@@ -104,11 +105,23 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("fe80::54a9:d238:b2ee:abc"));
+            var ipv6LinkLocal = NetServices.LocalIPAddresses.Where(x => x.IsIPv6LinkLocal).FirstOrDefault();
 
-            Assert.NotNull(localAddress);
+            if (ipv6LinkLocal == null)
+            {
+                logger.LogDebug("No IPv6 link local address available.");
+            }
+            else
+            {
+                logger.LogDebug($"IPv6 link local address for this host {ipv6LinkLocal}.");
+                
+                var localAddress = NetServices.GetLocalAddressForRemote(ipv6LinkLocal);
 
-            logger.LogDebug($"Local address {localAddress}.");
+                Assert.NotNull(localAddress);
+                Assert.Equal(ipv6LinkLocal, localAddress);
+
+                logger.LogDebug($"Local address {localAddress}.");
+            }
         }
 
         /// <summary>
