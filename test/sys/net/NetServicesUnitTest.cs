@@ -317,7 +317,10 @@ namespace SIPSorcery.Sys.UnitTests
             // Since it will be useful to detect if this behaviour ever changes add different asserts for the
             // different Operating Systems.
 
-            if (Environment.OSVersion.Platform == PlatformID.Unix)
+            logger.LogDebug($"Environment.OSVersion: {Environment.OSVersion}");
+            logger.LogDebug($"Environment.OSVersion.Platform: {Environment.OSVersion.Platform}");
+
+            if (Environment.OSVersion.Platform == PlatformID.Unix && NetServices.SupportsDualModeIPv4PacketInfo)
             {
                 Assert.Throws<SocketException>(() => socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port)));
             }
