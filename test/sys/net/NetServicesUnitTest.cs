@@ -293,6 +293,13 @@ namespace SIPSorcery.Sys.UnitTests
         /// Checks that when two sockets are bound on the same port but with different address specifiers
         /// the magic cookie send test is able to detect the unusable socket.
         /// Workaround for bug: https://github.com/dotnet/runtime/issues/36618
+        /// The behaviour for this test is different on Windows and Ubuntu:
+        ///  - On Windows the IPv4 bound socket can receive the IPv6 one can't,
+        ///  - On Ubuntu the duplicate bind causes an exception, which is the correct behaviour,
+        ///  - On Mac this library does not create dual mode IPv6 sockets as they can be used
+        ///    with the required "receive from" methods. Which means the attempt to receive
+        ///    on a socket bound to [::] by sending to 127.0.0.1 fails but in this case because
+        ///    it's not created as dual mode rather than because of the bug on Windows.
         /// </summary>
         [Fact]
         public void CheckCreateSocketFailsForInUseSocketUnitTest()
@@ -306,7 +313,20 @@ namespace SIPSorcery.Sys.UnitTests
 
             var socketIP6Any = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
             socketIP6Any.DualMode = true;
-            socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port));
+
+            // Since it will be useful to detect if this behaviour ever changes add different asserts for the
+            // different Operating Systems.
+
+            if (Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                Assert.Throws<SocketException>(() => socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port)));
+            }
+            else
+            {
+                // No exception on Windows and no duplication on Mac since IPv6 sockets are deliberately
+                // created with dual mode set to false.
+                socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port));
+            }
 
             Assert.True(NetServices.DoTestReceive(socket4Any, null));
             Assert.False(NetServices.DoTestReceive(socketIP6Any, null));

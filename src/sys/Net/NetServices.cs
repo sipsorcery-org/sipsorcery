@@ -375,14 +375,15 @@ namespace SIPSorcery.Sys
 
         /// <summary>
         /// Checks that a bound socket is able to receive. The need for this test arose when it was found
-        /// that the OS was allocating the same port if a bind was attempted on 0.0.0.0:0 and then [::]:0.
+        /// that Windows was allocating the same port if a bind was attempted on 0.0.0.0:0 and then [::]:0.
         /// Only one of the two sockets could then receive packets to the OS allocated port.
-        /// Workaround for bug: https://github.com/dotnet/runtime/issues/36618
+        /// This check is an attempt to work around the behaviour, see
+        /// https://github.com/dotnet/runtime/issues/36618
         /// </summary>
         /// <param name="socket">The bound socket to check for a receive.</param>
         /// <param name="bindAddress">Optional. If the socket was bound to a single specific address
         /// this parameter needs to be set so the test can send to it. If not set the test will send to 
-        /// the loopback addresses.</param>
+        /// the IPv4 loopback addresses.</param>
         /// <returns>True is the receive was successful and the socket is usable. False if not.</returns>
         public static bool DoTestReceive(Socket socket, IPAddress bindAddress)
         {
@@ -429,12 +430,12 @@ namespace SIPSorcery.Sys
                     // The receive worked. Check that the magic cookie was received.
                     if (bytesRead != MAGIC_COOKIE.Length)
                     {
-                        logger.LogDebug("Bytes read was wrong length for magic cookie when attempting to create a new UDP socket.");
+                        logger.LogDebug("Bytes read was wrong length for magic cookie in DoTestReceive.");
                         return false;
                     }
                     else if (Encoding.ASCII.GetString(buffer) != Encoding.ASCII.GetString(MAGIC_COOKIE))
                     {
-                        logger.LogDebug("The bytes read did not match the magic cookie when attempting to create a new UDP socket.");
+                        logger.LogDebug("The bytes read did not match the magic cookie in DoTestReceive.");
                         return false;
                     }
                     else
@@ -444,7 +445,7 @@ namespace SIPSorcery.Sys
                 }
                 else
                 {
-                    logger.LogDebug("Timed out waiting for magic cookie when attempting to create a new UDP socket.");
+                    logger.LogDebug("Timed out waiting for magic cookie in DoTestReceive.");
                     return false;
                 }
             }
