@@ -320,32 +320,39 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var socket4Any = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            socket4Any.Bind(new IPEndPoint(IPAddress.Any, 0));
-            IPEndPoint anyEP = socket4Any.LocalEndPoint as IPEndPoint;
-
-            var socketIP6Any = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-            socketIP6Any.DualMode = true;
-
-            // Since it will be useful to detect if this behaviour ever changes add different asserts for the
-            // different Operating Systems.
-
-            logger.LogDebug($"Environment.OSVersion: {Environment.OSVersion}");
-            logger.LogDebug($"Environment.OSVersion.Platform: {Environment.OSVersion.Platform}");
-
-            if (Environment.OSVersion.Platform == PlatformID.Unix && NetServices.SupportsDualModeIPv4PacketInfo)
+            if (!Socket.OSSupportsIPv6)
             {
-                Assert.Throws<SocketException>(() => socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port)));
+                logger.LogDebug("Test not executed as no IPv6 support.");
             }
             else
             {
-                // No exception on Windows and no duplication on Mac since IPv6 sockets are deliberately
-                // created with dual mode set to false.
-                socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port));
-            }
+                var socket4Any = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                socket4Any.Bind(new IPEndPoint(IPAddress.Any, 0));
+                IPEndPoint anyEP = socket4Any.LocalEndPoint as IPEndPoint;
 
-            Assert.True(NetServices.DoTestReceive(socket4Any, null));
-            Assert.False(NetServices.DoTestReceive(socketIP6Any, null));
+                var socketIP6Any = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                socketIP6Any.DualMode = true;
+
+                // Since it will be useful to detect if this behaviour ever changes add different asserts for the
+                // different Operating Systems.
+
+                logger.LogDebug($"Environment.OSVersion: {Environment.OSVersion}");
+                logger.LogDebug($"Environment.OSVersion.Platform: {Environment.OSVersion.Platform}");
+
+                if (Environment.OSVersion.Platform == PlatformID.Unix && NetServices.SupportsDualModeIPv4PacketInfo)
+                {
+                    Assert.Throws<SocketException>(() => socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port)));
+                }
+                else
+                {
+                    // No exception on Windows and no duplication on Mac since IPv6 sockets are deliberately
+                    // created with dual mode set to false.
+                    socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port));
+                }
+
+                Assert.True(NetServices.DoTestReceive(socket4Any, null));
+                Assert.False(NetServices.DoTestReceive(socketIP6Any, null));
+            }
         }
 
         /// <summary>
