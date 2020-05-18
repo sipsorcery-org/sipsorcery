@@ -142,7 +142,7 @@ namespace SIPSorcery.Net.UnitTests
                     channel2.Start();
 
                     // Give the socket receive tasks time to fire up.
-                    await Task.Delay(100);
+                    await Task.Delay(1000);
 
                     IPAddress channel2Address = (channel2.RTPLocalEndPoint.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Loopback : IPAddress.Loopback;
                     IPEndPoint channel2Dst = new IPEndPoint(channel2Address, channel2.RTPPort);
@@ -166,7 +166,7 @@ namespace SIPSorcery.Net.UnitTests
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            Assert.True(Task.WaitAll(tasks.ToArray(), 5000, cts.Token));
+            Assert.True(Task.WaitAll(tasks.ToArray(), 10000, cts.Token));
 
             logger.LogDebug($"Test complete.");
         }

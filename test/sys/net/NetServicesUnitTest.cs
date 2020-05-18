@@ -339,6 +339,9 @@ namespace SIPSorcery.Sys.UnitTests
         /// <summary>
         /// Checks that a bind attempt fails if the socket is already bound on IPv6 [::] and an
         /// attempt is made to use the same port on IPv4 0.0.0.0.
+        /// 
+        /// This test should be excluded on MacOS since dual mode with receiver from is currently not supported
+        /// by the OS.
         /// </summary>
         [Fact]
         public void CheckFailsOnDuplicateForIP6AnyThenIPv4AnyUnitTest()
