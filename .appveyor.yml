@@ -27,7 +27,7 @@ on_success:
         {
             git remote -v
             git config --global credential.helper store
-            Add-Content "$HOME\.git-credentials" "https://test:x-oauth-basic@github.com`n"
+            Add-Content "$HOME\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`n" -NoNewline
             git config --global user.email "aaron@sipsorcery.com"
             git config --global user.name "Aaron Clauson"
             git fetch
