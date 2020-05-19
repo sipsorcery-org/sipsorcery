@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Namespace SIPSorcery.Net
    ">
-    <meta name="generator" content="docfx 2.52.0.0">
+    <meta name="generator" content="docfx 2.53.1.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -289,7 +289,8 @@ server to send the Binding Response with a different port than the
 one the Binding Request was received on.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNClient.html">STUNClient</a></h4>
-      <section></section>
+      <section><p>Methods to resolve the public IP address and port information of the client.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNHeader.html">STUNHeader</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNListener.html">STUNListener</a></h4>
@@ -325,6 +326,10 @@ THe reason for this is to stop NAT application layer gateways from doing string 
       <h4><a class="xref" href="SIPSorcery.Net.TurnServer.html">TurnServer</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.Utility.html">Utility</a></h4>
+      <section></section>
+    <h3 id="interfaces">Interfaces
+  </h3>
+      <h4><a class="xref" href="SIPSorcery.Net.IRTCIceCandidate.html">IRTCIceCandidate</a></h4>
       <section></section>
     <h3 id="enums">Enums
   </h3>
@@ -367,7 +372,14 @@ See <a href="https://tools.ietf.org/html/rfc4566#section-6">https://tools.ietf.o
       <section><p>Determines which ICE candidates can be used for a peer connection.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPeerConnectionState.html">RTCPeerConnectionState</a></h4>
-      <section><p>The states a peer connection transitions through.</p>
+      <section><p>The states a peer connection transitions through.
+The difference between the IceConnectionState and the PeerConnectionState is somewhat subtle:</p>
+<ul>
+<li>IceConnectionState: applies to the connection checks amongst ICE candidates and is
+set as completed as soon as a local and remote candidate have set their nominated candidate,</li>
+<li>PeerConnectionState: takes into account the IceConnectionState but also includes the DTLS
+handshake and actions at the application layer such as a request to close the peer connection.</li>
+</ul>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPReportTypesEnum.html">RTCPReportTypesEnum</a></h4>
       <section><p>The different types of RTCP packets as defined in RFC3550.</p>

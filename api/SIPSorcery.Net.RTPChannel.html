@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class RTPChannel
    ">
-    <meta name="generator" content="docfx 2.52.0.0">
+    <meta name="generator" content="docfx 2.53.1.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -121,20 +121,20 @@ functions.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPEndPoint_System_Net_IPEndPoint_System_Int32_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.%23ctor(System.Boolean%2CSystem.Net.IPEndPoint%2CSystem.Net.IPEndPoint%2CSystem.Int32%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.%23ctor(System.Boolean%2CSystem.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L251">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L260">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel__ctor_" data-uid="SIPSorcery.Net.RTPChannel.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPEndPoint_System_Net_IPEndPoint_System_Int32_System_Int32_" data-uid="SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPEndPoint,System.Net.IPEndPoint,System.Int32,System.Int32)">RTPChannel(Boolean, IPEndPoint, IPEndPoint, Int32, Int32)</h4>
+  <h4 id="SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_" data-uid="SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress)">RTPChannel(Boolean, IPAddress)</h4>
   <div class="markdown level1 summary"><p>Creates a new RTP channel. The RTP and optionally RTCP sockets will be bound in the constructor.
 They do not start receiving until the Start method is called.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public RTPChannel(bool createControlSocket, IPEndPoint rtpRemoteEndPoint = null, IPEndPoint controlEndPoint = null, int mediaStartPort = 10000, int mediaEndPort = 20000)</code></pre>
+    <pre><code class="lang-csharp hljs">public RTPChannel(bool createControlSocket, IPAddress bindAddress)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -154,27 +154,11 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
-        <td><span class="parametername">rtpRemoteEndPoint</span></td>
-        <td><p>The remote end point that the RTP socket is sending to.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
-        <td><span class="parametername">controlEndPoint</span></td>
-        <td><p>The remote end point that the RTCP control socket is sending to.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td><span class="parametername">mediaStartPort</span></td>
-        <td><p>The media start port.</p>
-</td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td><span class="parametername">mediaEndPort</span></td>
-        <td><p>The media end port.</p>
+        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="parametername">bindAddress</span></td>
+        <td><p>Optional. An IP address belonging to a local interface that will be used to bind
+the RTP and control sockets to. If left empty then the IPv6 any address will be used if IPv6 is supported
+and fallback to the IPv4 any address.</p>
 </td>
       </tr>
     </tbody>
@@ -186,7 +170,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_ControlLocalEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.ControlLocalEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L230">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L221">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_ControlLocalEndPoint_" data-uid="SIPSorcery.Net.RTPChannel.ControlLocalEndPoint*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_ControlLocalEndPoint" data-uid="SIPSorcery.Net.RTPChannel.ControlLocalEndPoint">ControlLocalEndPoint</h4>
@@ -217,7 +201,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_ControlPort.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.ControlPort%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L225">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L216">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_ControlPort_" data-uid="SIPSorcery.Net.RTPChannel.ControlPort*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_ControlPort" data-uid="SIPSorcery.Net.RTPChannel.ControlPort">ControlPort</h4>
@@ -248,7 +232,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_IsClosed.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.IsClosed%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L232">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L242">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_IsClosed_" data-uid="SIPSorcery.Net.RTPChannel.IsClosed*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_IsClosed" data-uid="SIPSorcery.Net.RTPChannel.IsClosed">IsClosed</h4>
@@ -275,10 +259,40 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_IsDualMode.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.IsDualMode%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L227">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPChannel_IsDualMode_" data-uid="SIPSorcery.Net.RTPChannel.IsDualMode*"></a>
+  <h4 id="SIPSorcery_Net_RTPChannel_IsDualMode" data-uid="SIPSorcery.Net.RTPChannel.IsDualMode">IsDualMode</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsDualMode { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_RTPLocalEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.RTPLocalEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L220">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L211">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_RTPLocalEndPoint_" data-uid="SIPSorcery.Net.RTPChannel.RTPLocalEndPoint*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_RTPLocalEndPoint" data-uid="SIPSorcery.Net.RTPChannel.RTPLocalEndPoint">RTPLocalEndPoint</h4>
@@ -309,7 +323,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_RTPPort.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.RTPPort%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L215">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L206">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_RTPPort_" data-uid="SIPSorcery.Net.RTPChannel.RTPPort*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_RTPPort" data-uid="SIPSorcery.Net.RTPChannel.RTPPort">RTPPort</h4>
@@ -340,7 +354,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_RtpSocket.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.RtpSocket%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L193">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L184">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_RtpSocket_" data-uid="SIPSorcery.Net.RTPChannel.RtpSocket*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_RtpSocket" data-uid="SIPSorcery.Net.RTPChannel.RtpSocket">RtpSocket</h4>
@@ -372,7 +386,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L297">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L309">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_Close_" data-uid="SIPSorcery.Net.RTPChannel.Close*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_Close_System_String_" data-uid="SIPSorcery.Net.RTPChannel.Close(System.String)">Close(String)</h4>
@@ -405,7 +419,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_Dispose.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.Dispose%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L442">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L461">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_Dispose_" data-uid="SIPSorcery.Net.RTPChannel.Dispose*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_Dispose" data-uid="SIPSorcery.Net.RTPChannel.Dispose">Dispose()</h4>
@@ -420,7 +434,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_Dispose_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.Dispose(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L437">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L456">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_Dispose_" data-uid="SIPSorcery.Net.RTPChannel.Dispose*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_Dispose_System_Boolean_" data-uid="SIPSorcery.Net.RTPChannel.Dispose(System.Boolean)">Dispose(Boolean)</h4>
@@ -452,7 +466,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum%2CSystem.Net.IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L320">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L339">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_SendAsync_" data-uid="SIPSorcery.Net.RTPChannel.SendAsync*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___" data-uid="SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])">SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])</h4>
@@ -509,7 +523,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_Start.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.Start%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L273">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L283">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_Start_" data-uid="SIPSorcery.Net.RTPChannel.Start*"></a>
   <h4 id="SIPSorcery_Net_RTPChannel_Start" data-uid="SIPSorcery.Net.RTPChannel.Start">Start()</h4>
@@ -527,7 +541,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_OnClosed.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.OnClosed%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L239">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L249">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTPChannel_OnClosed" data-uid="SIPSorcery.Net.RTPChannel.OnClosed">OnClosed</h4>
   <div class="markdown level1 summary"></div>
@@ -556,14 +570,14 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_OnControlDataReceived.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.OnControlDataReceived%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L238">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L248">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTPChannel_OnControlDataReceived" data-uid="SIPSorcery.Net.RTPChannel.OnControlDataReceived">OnControlDataReceived</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public event Action&lt;IPEndPoint, IPEndPoint, byte[]&gt; OnControlDataReceived</code></pre>
+    <pre><code class="lang-csharp hljs">public event Action&lt;int, IPEndPoint, byte[]&gt; OnControlDataReceived</code></pre>
   </div>
   <h5 class="eventType">Event Type</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -575,7 +589,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Int32</span>, <span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -585,14 +599,14 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_OnRTPDataReceived.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.OnRTPDataReceived%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L237">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L247">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_RTPChannel_OnRTPDataReceived" data-uid="SIPSorcery.Net.RTPChannel.OnRTPDataReceived">OnRTPDataReceived</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public event Action&lt;IPEndPoint, IPEndPoint, byte[]&gt; OnRTPDataReceived</code></pre>
+    <pre><code class="lang-csharp hljs">public event Action&lt;int, IPEndPoint, byte[]&gt; OnRTPDataReceived</code></pre>
   </div>
   <h5 class="eventType">Event Type</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -604,7 +618,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Int32</span>, <span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -624,7 +638,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L186" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L180" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>
