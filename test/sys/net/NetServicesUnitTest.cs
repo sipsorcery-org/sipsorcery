@@ -348,10 +348,10 @@ namespace SIPSorcery.Sys.UnitTests
                     // No exception on Windows and no duplication on Mac since IPv6 sockets are deliberately
                     // created with dual mode set to false.
                     socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port));
-                }
 
-                Assert.True(NetServices.DoTestReceive(socket4Any, null));
-                Assert.False(NetServices.DoTestReceive(socketIP6Any, null));
+                    Assert.True(NetServices.DoTestReceive(socket4Any, null));
+                    Assert.False(NetServices.DoTestReceive(socketIP6Any, null));
+                }
             }
         }
 
