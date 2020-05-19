@@ -21,27 +21,27 @@ build:
 #    except:
 #    - transport
 #    - txintegration
-# on_success:
-#  - ps: |
-#        if($env:APPVEYOR_REPO_BRANCH -eq "master" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)
-#        {
-#           git config --global credential.helper store
-#            Add-Content "$HOME\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`n"
-#            git config --global user.email "aaron@sipsorcery.com"
-#            git config --global user.name "Aaron Clauson"
-#            git fetch
-#            git checkout gh-pages -q
-#            git merge master
-#            choco install docfx -y
-#            & docfx docfx\docfx.json
-#            if ($lastexitcode -ne 0){
-#              throw [System.Exception] "docfx build failed with exit code $lastexitcode."
-#            }
-#            git status
-#            git add -A
-#            git commit -am "Appveyor CI updates"
-#            git push origin gh-pages -q
-#        }
+ on_success:
+  - ps: |
+        if($env:APPVEYOR_REPO_BRANCH -eq "master" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)
+        {
+           git config --global credential.helper store
+            Add-Content "$HOME\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`n"
+            git config --global user.email "aaron@sipsorcery.com"
+            git config --global user.name "Aaron Clauson"
+            git fetch
+            git checkout gh-pages -q
+            git merge master
+            choco install docfx -y
+            & docfx docfx\docfx.json
+            if ($lastexitcode -ne 0){
+              throw [System.Exception] "docfx build failed with exit code $lastexitcode."
+            }
+            git status
+            git add -A
+            git commit -am "Appveyor CI updates"
+            git push origin gh-pages -q
+        }
 deploy:
   - provider: NuGet
     server:                  # remove to push to NuGet.org
