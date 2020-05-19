@@ -221,7 +221,7 @@ namespace SIPSorcery.Net
         public IPEndPoint ControlLocalEndPoint { get; private set; }
 
         /// <summary>
-        /// Returns true if the RTP socket supports dual mode IPv4 & IPv6. If the control
+        /// Returns true if the RTP socket supports dual mode IPv4 and IPv6. If the control
         /// socket exists it will be the same.
         /// </summary>
         public bool IsDualMode
