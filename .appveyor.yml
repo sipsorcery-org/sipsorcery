@@ -31,7 +31,7 @@ on_success:
             git config --global user.name "Aaron Clauson"
             git fetch
             git checkout gh-pages -q
-            git merge master
+            git merge origin/master
             choco install docfx -y
             & docfx docfx\docfx.json
             if ($lastexitcode -ne 0){
@@ -40,7 +40,7 @@ on_success:
             git status
             git add -A
             git commit -am "Appveyor CI updates"
-            git push origin gh-pages -q
+            git push origin gh-pages
         }
 deploy:
   - provider: NuGet
