@@ -25,8 +25,9 @@ on_success:
   - ps: |
         if($env:APPVEYOR_REPO_BRANCH -eq "docfxci" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)
         {
+            git remote -v
             git config --global credential.helper store
-            Add-Content "$HOME\.git-credentials" "https://$($env:access_token):x-oauth-basic@github.com`r`n"
+            Add-Content "$HOME\.git-credentials" "https://test:x-oauth-basic@github.com`n"
             git config --global user.email "aaron@sipsorcery.com"
             git config --global user.name "Aaron Clauson"
             git fetch
