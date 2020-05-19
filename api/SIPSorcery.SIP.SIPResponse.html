@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class SIPResponse
    ">
-    <meta name="generator" content="docfx 2.47.0.0">
+    <meta name="generator" content="docfx 2.53.1.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -117,6 +117,24 @@
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPMessageBase.html#SIPSorcery_SIP_SIPMessageBase_SendFromHintConnectionID">SIPMessageBase.SendFromHintConnectionID</a>
     </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.html">SIPSorcery.SIP</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
@@ -180,7 +198,8 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPResponse(SIPResponseStatusCodesEnum responseStatus, string reasonPhrase, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)</code></pre>
+    <pre><code class="lang-csharp hljs">[Obsolete(&quot;The local and remote SIP end points are now only for recording receiving sockets. Use the new send from hint proprties.&quot;, true)]
+public SIPResponse(SIPResponseStatusCodesEnum responseStatus, string reasonPhrase, SIPEndPoint localSIPEndPoint, SIPEndPoint remoteSIPEndPoint)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -712,6 +731,8 @@ received on.</p>
       </tr>
     </tbody>
   </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.ToString()</span></div>
 </article>
           </div>
           
