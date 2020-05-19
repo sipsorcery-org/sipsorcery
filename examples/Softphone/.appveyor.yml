@@ -1,10 +1,8 @@
 version: 1.0.{build}
 branches:
   except:
-    - docfxci
-branches:
-  except:
     - mac-ci
+    - docfxci
 image: Visual Studio 2019
 before_build:
 - cmd: nuget restore -DisableParallelProcessing examples\Softphone\SIPSorcery.SoftPhone.sln
