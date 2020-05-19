@@ -1,6 +1,9 @@
 version: 1.0.{build}
 branches:
   except:
+    - docfxci
+branches:
+  except:
     - mac-ci
 image: Visual Studio 2019
 build_script:
