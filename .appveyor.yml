@@ -21,7 +21,7 @@ build:
 #    except:
 #    - transport
 #    - txintegration
- on_success:
+on_success:
   - ps: |
         if($env:APPVEYOR_REPO_BRANCH -eq "docfxci" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)
         {
