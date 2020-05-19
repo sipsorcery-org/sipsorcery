@@ -28,12 +28,12 @@ namespace SIPSorcery.Sys
     public class IPSocket
     {
         /// <summary>
-        /// Specifies the minimum acceptable value for the <see cref='System.Net.IPEndPoint.Port'/> property.
+        /// Specifies the minimum acceptable value for the <see cref='System.Net.IPEndPoint/> Port property.
         /// </summary>
         public const int MinPort = 0x00000000;
 
         /// <summary>
-        /// Specifies the maximum acceptable value for the <see cref='System.Net.IPEndPoint.Port'/> property.
+        /// Specifies the maximum acceptable value for the <see cref='System.Net.IPEndPoint'/> Port property.
         /// </summary>
         public const int MaxPort = 0x0000FFFF;
 
@@ -217,8 +217,8 @@ namespace SIPSorcery.Sys
         /// <param name="host">host-portion of <paramref name="endpointstring"/>, if host can be parsed as IPAddress, then <paramref name="host"/> is IPAddress.ToString</param>
         /// <param name="port">port-portion of <paramref name="endpointstring"/></param>
         /// <returns>true if host-portion of endpoint string is valid ip-address</returns>
-        /// <exception cref="ArgumentException">if <paramref name="endpointstring"/> is null/empty </exception>
-        /// <exception cref="FormatException">if host looks like ip-address but can't be parsed</exception>
+        /// <exception cref="System.ArgumentException">if <paramref name="endpointstring"/> is null/empty </exception>
+        /// <exception cref="System.FormatException">if host looks like ip-address but can't be parsed</exception>
         public static bool Parse(string endpointstring, out string host, out int port)
         {
             bool rc = false;
