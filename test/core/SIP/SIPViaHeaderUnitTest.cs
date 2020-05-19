@@ -255,14 +255,14 @@ namespace SIPSorcery.SIP.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            string noPortViaHeader = "SIP/2.0/UDP 194.213.29.100:5060;branch=z9hG4bK5feb18267ce40fb05969b4ba843681dbfc9ffcff, SIP/2.0/UDP 194.213.29.54:5061;branch=z9hG4bK52b6a8b7";
+            string noPortViaHeader = "SIP/2.0/UDP 194.213.29.100:5060;branch=z9hG4bK5feb18267ce40fb05969b4ba843681dbfc9ffcff, SIP/2.0/UDP 127.0.0.1:5061;branch=z9hG4bK52b6a8b7";
 
             SIPViaHeader[] sipViaHeaders = SIPViaHeader.ParseSIPViaHeader(noPortViaHeader);
 
             Assert.True(sipViaHeaders[0].Host == "194.213.29.100", "The first Via header host was not parsed correctly");
             Assert.True("194.213.29.100:5060" == sipViaHeaders[0].ContactAddress, "The first Via header contact address was not correctly parsed, " + sipViaHeaders[0].ContactAddress + ".");
-            Assert.True(sipViaHeaders[1].Host == "194.213.29.54", "The second Via header host was not parsed correctly");
-            Assert.True("194.213.29.54:5061" == sipViaHeaders[1].ContactAddress, "The second Via header contact address was not correctly parsed, " + sipViaHeaders[1].ContactAddress + ".");
+            Assert.True(sipViaHeaders[1].Host == "127.0.0.1", "The second Via header host was not parsed correctly");
+            Assert.True("127.0.0.1:5061" == sipViaHeaders[1].ContactAddress, "The second Via header contact address was not correctly parsed, " + sipViaHeaders[1].ContactAddress + ".");
 
             logger.LogDebug("---------------------------------------------------");
         }

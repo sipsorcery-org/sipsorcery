@@ -159,7 +159,7 @@ namespace SIPSorcery.SIP.UnitTests
                     logger.LogWarning($"Tasks timed out");
                 }
 
-                Assert.True(clientTransaction.TransactionState == SIPTransactionStatesEnum.Completed, "Client transaction in incorrect state.");
+                Assert.True(clientTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed, "Client transaction in incorrect state.");
                 Assert.True(serverTransaction.TransactionState == SIPTransactionStatesEnum.Confirmed, "Server transaction in incorrect state.");
             }
             finally

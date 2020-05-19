@@ -1,0 +1,15 @@
+version: 1.0.{build}
+image: ubuntu
+environment:
+  APPVEYOR_SSH_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOgZaR7bVAJCsBs/yDlzNbHTvhicc1C7SeyEuVwN+Q0l
+init:
+  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+build_script:
+- uname -a
+- dotnet --version
+- dotnet build src/SIPSorcery.sln --framework netcoreapp3.1
+test_script:
+- dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release
+#on_finish:
+#  - sh: export APPVEYOR_SSH_BLOCK=true
+#  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -

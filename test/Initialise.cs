@@ -15,7 +15,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -200,7 +199,7 @@ namespace SIPSorcery.UnitTests
 
         public void SetMediaStreamStatus(SDPMediaTypesEnum kind, MediaStreamStatusEnum status)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         public Task SendDtmf(byte tone, CancellationToken ct)

@@ -33,7 +33,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
-    public class SIPTransport
+    public class SIPTransport : IDisposable
     {
         private const int MAX_QUEUEWAIT_PERIOD = 200;              // Maximum time to wait to check the message received queue if no events are received.
         private const int MAX_INMESSAGE_QUEUECOUNT = 5000;          // The maximum number of messages that can be stored in the incoming message queue.
@@ -860,7 +860,10 @@ namespace SIPSorcery.SIP
                                             UASInviteTransaction inviteTransaction = (UASInviteTransaction)GetTransaction(SIPTransaction.GetRequestTransactionId(sipRequest.Header.Vias.TopViaHeader.Branch, SIPMethodsEnum.INVITE));
                                             if (inviteTransaction != null)
                                             {
+                                                // Note: this will generate the INVITE request response.
                                                 inviteTransaction.CancelCall();
+
+                                                // Note: this will generate the CANCEL request response.
                                                 SIPResponse okResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.Ok, null);
                                                 okResponse.Header.To.ToTag = inviteTransaction.LocalTag;
                                                 return SendResponseAsync(okResponse);
@@ -1146,5 +1149,10 @@ namespace SIPSorcery.SIP
         }
 
         #endregion
+
+        public void Dispose()
+        {
+            Shutdown();
+        }
     }
 }

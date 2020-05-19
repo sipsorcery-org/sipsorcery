@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -30,7 +28,7 @@ namespace SIPSorcery.UnitTests.app.SIPUserAgents
             transport.AddSIPChannel(channel);
             SIPClientUserAgent userAgent = new SIPClientUserAgent(
                 transport,
-                new SIPEndPoint(new IPEndPoint(new IPAddress(new byte[] {192, 168, 11, 50}),5060 )),
+                new SIPEndPoint(new IPEndPoint(new IPAddress(new byte[] { 192, 168, 11, 50 }), 5060)),
                 "owner",
                 "admin",
                 null);

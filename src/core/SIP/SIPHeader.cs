@@ -1345,6 +1345,7 @@ namespace SIPSorcery.SIP
         public string ReferSub;                             // RFC 4488 If set to false indicates the implicit REFER subscription should not be created.
         public string ReferTo;                              // RFC 3515 "The Session Initiation Protocol (SIP) Refer Method"
         public string ReplyTo;
+        public string Replaces;
         public string Require;
         public string RetryAfter;
         public int RSeq = -1;                               // RFC3262 reliable provisional response sequence number.
@@ -1757,6 +1758,12 @@ namespace SIPSorcery.SIP
                             sipHeader.ReferredBy = headerValue;
                         }
                         #endregion
+                        #region Replaces.
+                        else if (headerNameLower == SIPHeaders.SIP_HEADER_REPLACES.ToLower())
+                        {
+                            sipHeader.Replaces = headerValue;
+                        }
+                        #endregion
                         #region Require.
                         else if (headerNameLower == SIPHeaders.SIP_HEADER_REQUIRE.ToLower())
                         {
@@ -2128,6 +2135,7 @@ namespace SIPSorcery.SIP
                 headersBuilder.Append((ReferSub != null) ? SIPHeaders.SIP_HEADER_REFERSUB + ": " + ReferSub + m_CRLF : null);
                 headersBuilder.Append((ReferTo != null) ? SIPHeaders.SIP_HEADER_REFERTO + ": " + ReferTo + m_CRLF : null);
                 headersBuilder.Append((ReferredBy != null) ? SIPHeaders.SIP_HEADER_REFERREDBY + ": " + ReferredBy + m_CRLF : null);
+                headersBuilder.Append((Replaces != null) ? SIPHeaders.SIP_HEADER_REPLACES + ": " + Replaces + m_CRLF : null);
                 headersBuilder.Append((Reason != null) ? SIPHeaders.SIP_HEADER_REASON + ": " + Reason + m_CRLF : null);
                 headersBuilder.Append((RSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_SEQ + ": " + RSeq + m_CRLF : null);
                 headersBuilder.Append((RAckRSeq != -1) ? SIPHeaders.SIP_HEADER_RELIABLE_ACK + ": " + RAckRSeq + " " + RAckCSeq + " " + RAckCSeqMethod + m_CRLF : null);

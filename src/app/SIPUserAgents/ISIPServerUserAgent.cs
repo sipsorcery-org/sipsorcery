@@ -28,6 +28,7 @@ namespace SIPSorcery.SIP.App
     {
         SIPCallDirection CallDirection { get; }
         SIPDialogue SIPDialogue { get; }
+        UASInviteTransaction ClientTransaction { get; }
         SIPAccount SIPAccount { get; set; }
         bool IsAuthenticated { get; set; }
         bool IsB2B { get; }

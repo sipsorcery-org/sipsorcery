@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 
 namespace SIPSorcery.Sys
 {
@@ -167,5 +168,10 @@ namespace SIPSorcery.Sys
             value = tuple.Value;
         }
 #endif
+
+        public static bool IsPrivate(this IPAddress address)
+        {
+            return IPSocket.IsPrivateAddress(address.ToString());
+        }
     }
 }

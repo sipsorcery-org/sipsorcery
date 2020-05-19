@@ -211,7 +211,10 @@ namespace SIPSorcery.Examples
 
                         if (dtlsResult)
                         {
-                            peerConnection.SetDestination(SDPMediaTypesEnum.audio, peerConnection.IceSession.ConnectedRemoteEndPoint, peerConnection.IceSession.ConnectedRemoteEndPoint);
+                            var remoteEndPoint = peerConnection.IceSession.NominatedCandidate.GetEndPoint();
+                            peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEndPoint, remoteEndPoint);
+
+                            logger.LogDebug($"RTP remote end point set to {remoteEndPoint}.");
                         }
                         else
                         {
@@ -230,7 +233,8 @@ namespace SIPSorcery.Examples
             {
                 if(peerConnection.localDescription == null)
                 {
-                    logger.LogDebug("Offer SDP: " + message);
+                    //logger.LogDebug("Offer SDP: " + message);
+                    logger.LogDebug("Offer SDP received.");
 
                     // Add local media tracks depending on what was offered. Also add local tracks with the same media ID as 
                     // the remote tracks so that the media announcement in the SDP answer are in the same order.

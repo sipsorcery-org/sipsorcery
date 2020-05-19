@@ -38,7 +38,7 @@ namespace SIPSorcery.SIP
 
         protected static ILogger logger = Log.Logger;
 
-        protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for (typically 10 mins).    
+        protected static readonly int m_maxRingTime = SIPTimings.MAX_RING_TIME; // Max time an INVITE will be left ringing for.    
 
         private bool m_isClosed = false;
         private SIPTransport m_sipTransport;
@@ -333,7 +333,7 @@ namespace SIPSorcery.SIP
                                     }
                                     else
                                     {
-                                        transaction.Expire();
+                                        transaction.Expire(DateTime.Now);
                                     }
                                 }
                                 else
@@ -587,6 +587,8 @@ namespace SIPSorcery.SIP
                         if (transaction.TransactionState == SIPTransactionStatesEnum.Confirmed)
                         {
                             // Need to wait until the transaction timeout period is reached in case any ACK re-transmits are received.
+                            // No proactive actions need to be undertaken in the Confirmed state. If any ACK requests are received
+                            // we use this tx to ensure they get matched and not detected as orphans.
                             if (now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
                             {
                                 expiredTransactionIds.Add(transaction.TransactionId);
@@ -594,43 +596,56 @@ namespace SIPSorcery.SIP
                         }
                         else if (transaction.TransactionState == SIPTransactionStatesEnum.Completed)
                         {
+                            // If a server INVITE transaction is in the following state:
+                            // - Completed it means we sent a final response but did not receive an ACK 
+                            //   (which is what transitions the tx to the Confirmed state).
                             if (now.Subtract(transaction.CompletedAt).TotalMilliseconds >= m_t6)
                             {
+                                // It's important that an un-Confirmed server INVITE tx fires the event to
+                                // inform the application that the tx timed out. This allows it to make a decision
+                                // on whether to clean up resources such as RTP and media or whether to give the
+                                // caller the benefit of the doubt and see if it was an ACK only problem and 
+                                // give them a chance to send RTP.
+                                transaction.Expire(now);
                                 expiredTransactionIds.Add(transaction.TransactionId);
                             }
                         }
-                        else if (transaction.HasTimedOut)
-                        {
-                            // For INVITES need to give timed out transactions time to send the reliable responses and receive the ACKs.
-                            if (now.Subtract(transaction.TimedOutAt).TotalSeconds >= m_t6)
-                            {
-                                expiredTransactionIds.Add(transaction.TransactionId);
-                            }
-                        }
+                        //else if (transaction.HasTimedOut)
+                        //{
+                        //    // For INVITES need to give timed out transactions time to send the reliable responses and receive the ACKs.
+                        //    if (now.Subtract(transaction.TimedOutAt).TotalSeconds >= m_t6)
+                        //    {
+                        //        expiredTransactionIds.Add(transaction.TransactionId);
+                        //    }
+                        //}
                         else if (transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
                         {
                             if (now.Subtract(transaction.Created).TotalMilliseconds >= m_maxRingTime)
                             {
-                                // INVITE requests that have been ringing too long.
-                                transaction.HasTimedOut = true;
-                                transaction.TimedOutAt = now;
-                                transaction.DeliveryPending = false;
-                                transaction.DeliveryFailed = true;
-                                transaction.FireTransactionTimedOut();
+                                // INVITE requests that have been ringing too long. This can apply to both
+                                // client and server INVITE transactions.
+                                transaction.Expire(now);
+                                expiredTransactionIds.Add(transaction.TransactionId);
                             }
                         }
                         else if (now.Subtract(transaction.Created).TotalMilliseconds >= m_t6)
                         {
                             //logger.LogDebug("INVITE transaction (" + transaction.TransactionId + ") " + transaction.TransactionRequestURI.ToString() + " in " + transaction.TransactionState + " has been alive for " + DateTime.Now.Subtract(transaction.Created).TotalSeconds.ToString("0") + ".");
 
+                            // If a client INVITE transaction is in the following states:
+                            // - Calling: it means no response of any kind (provisional or final) was received from the server in time.
+                            // - Trying: it means all we got was a "100 Trying" response without any follow up progress indications or final response.
+
                             if (transaction.TransactionState == SIPTransactionStatesEnum.Calling ||
                                 transaction.TransactionState == SIPTransactionStatesEnum.Trying)
                             {
-                                transaction.HasTimedOut = true;
-                                transaction.TimedOutAt = now;
-                                transaction.DeliveryPending = false;
-                                transaction.DeliveryFailed = true;
-                                transaction.FireTransactionTimedOut();
+                                transaction.Expire(now);
+                                expiredTransactionIds.Add(transaction.TransactionId);
+                            }
+                            else
+                            {
+                                // The INVITE transaction has ended up in some other state and should be removed.
+                                expiredTransactionIds.Add(transaction.TransactionId);
                             }
                         }
                     }
@@ -645,11 +660,7 @@ namespace SIPSorcery.SIP
                            transaction.TransactionState == SIPTransactionStatesEnum.Proceeding)
                         {
                             //logger.LogWarning("Timed out transaction in SIPTransactionEngine, should have been timed out in the SIP Transport layer. " + transaction.TransactionRequest.Method + ".");
-                            transaction.DeliveryPending = false;
-                            transaction.DeliveryFailed = true;
-                            transaction.TimedOutAt = now;
-                            transaction.HasTimedOut = true;
-                            transaction.FireTransactionTimedOut();
+                            transaction.Expire(now);
                         }
 
                         expiredTransactionIds.Add(transaction.TransactionId);

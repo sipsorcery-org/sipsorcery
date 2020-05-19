@@ -197,8 +197,8 @@ namespace SIPSorcery.SoftPhone
                 var sipRequest = m_pendingIncomingCall.ClientTransaction.TransactionRequest;
 
                 SDP offerSDP = SDP.ParseSDPDescription(sipRequest.Body);
-                bool hasAudio = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio);
-                bool hasVideo = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video);
+                bool hasAudio = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.audio && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
+                bool hasVideo = offerSDP.Media.Any(x => x.Media == SDPMediaTypesEnum.video && x.MediaStreamStatus != MediaStreamStatusEnum.Inactive);
 
                 AudioOptions audioOpts = new AudioOptions { AudioSource = AudioSourcesEnum.None };
                 if (hasAudio)

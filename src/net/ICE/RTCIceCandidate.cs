@@ -21,6 +21,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -37,18 +38,11 @@ namespace SIPSorcery.Net
         /// </summary>
         public IPAddress BaseAddress { get; private set; }
 
-        /// <summary>
-        /// Whether the candidate is UDP or TCP.
-        /// </summary>
-        //public ProtocolType TransportProtocol { get; private set; }
-
         public string StunServerAddress { get; private set; }
 
         public string TurnServerAddress { get; private set; }
 
-
-
-        public string candidate { get; private set; }
+        public string candidate { get; set; }
 
         public IPAddress CandidateAddress
         {
@@ -65,9 +59,14 @@ namespace SIPSorcery.Net
             }
         }
 
-        public string sdpMid { get; private set; }
+        public AddressFamily addressFamily
+        {
+            get { return CandidateAddress.AddressFamily; }
+        }
 
-        public ushort sdpMLineIndex { get; private set; }
+        public string sdpMid { get; set; }
+
+        public ushort sdpMLineIndex { get; set; }
 
         /// <summary>
         /// Composed of 1 to 32 chars. It is an
@@ -78,14 +77,14 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See https://tools.ietf.org/html/rfc8445#section-5.1.1.3.
         /// </remarks>
-        public string foundation { get; private set; }
+        public string foundation { get; set; }
 
         /// <summary>
         ///  Is a positive integer between 1 and 256 (inclusive)
         /// that identifies the specific component of the data stream for
         /// which this is a candidate.
         /// </summary>
-        public RTCIceComponent component { get; private set; } = RTCIceComponent.rtp;
+        public RTCIceComponent component { get; set; } = RTCIceComponent.rtp;
 
         /// <summary>
         /// A positive integer between 1 and (2**31 - 1) inclusive.
@@ -96,65 +95,38 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See specification at https://tools.ietf.org/html/rfc8445#section-5.1.2.
         /// </remarks>
-        public ulong priority { get; private set; }
+        public ulong priority { get; set; }
 
         /// <summary>
         /// The local address for the candidate.
         /// </summary>
-        public string address { get; private set; }
+        public string address { get; set; }
 
         /// <summary>
         /// The transport protocol for the candidate, supported options are UDP and TCP.
         /// </summary>
-        public RTCIceProtocol protocol { get; private set; }
+        public RTCIceProtocol protocol { get; set; }
 
         /// <summary>
         /// The local port the candidate is listening on.
         /// </summary>
-        public ushort port { get; private set; }
+        public ushort port { get; set; }
 
         /// <summary>
         /// The typ of ICE candidate, host, srflx etc.
         /// </summary>
-        public RTCIceCandidateType type { get; private set; }
+        public RTCIceCandidateType type { get; set; }
 
         /// <summary>
         /// For TCP candidates the role they are fulfilling (client, server or both).
         /// </summary>
-        public RTCIceTcpCandidateType tcpType { get; private set; }
+        public RTCIceTcpCandidateType tcpType { get; set; }
 
-        public string relatedAddress { get; private set; }
+        public string relatedAddress { get; set; }
 
-        public ushort relatedPort { get; private set; }
+        public ushort relatedPort { get; set; }
 
-        public string usernameFragment { get; private set; }
-
-
-        public TurnServer TurnServer;
-        public bool IsGatheringComplete;
-        public int TurnAllocateAttempts;
-        public IPEndPoint StunRflxIPEndPoint;
-        public IPEndPoint TurnRelayIPEndPoint;
-        //public IPEndPoint RemoteRtpEndPoint;
-        //public bool IsDisconnected;
-        //public string DisconnectionMessage;
-        public DateTime LastSTUNSendAt;
-        public DateTime LastStunRequestReceivedAt;
-        public DateTime LastStunResponseReceivedAt;
-        public bool IsStunLocalExchangeComplete;      // This is the authenticated STUN request sent by us to the remote WebRTC peer.
-        public bool IsStunRemoteExchangeComplete;     // This is the authenticated STUN request sent by the remote WebRTC peer to us.
-        public int StunConnectionRequestAttempts = 0;
-        public DateTime LastCommunicationAt;
-        public bool HasConnectionError;
-
-        //public string Transport;
-        //public string NetworkAddress;
-        ////public int Port;
-        ////public RTCIceCandidateType CandidateType;
-        //public string RemoteAddress;
-        //public int RemotePort;
-        //public string RawString;
-        //public Task InitialStunBindingCheck;
+        public string usernameFragment { get; set; }
 
         private RTCIceCandidate()
         { }
@@ -270,7 +242,7 @@ namespace SIPSorcery.Net
                 address,
                 port);
 
-            if (StunRflxIPEndPoint != null)
+            if (relatedAddress != null)
             {
                 candidateStr += String.Format("{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0",
                     foundation,
@@ -303,6 +275,50 @@ namespace SIPSorcery.Net
         public RTCIceCandidateInit toJSON()
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Gets the IP end point corresponding to the ICE candidate. This will typically
+        /// be called on the remote nominated candidate to identify the remote end point
+        /// to use subsequent to a successful ICE negotiation.
+        /// </summary>
+        /// <returns>An IP end point.</returns>
+        public IPEndPoint GetEndPoint()
+        {
+            int remotePort = (relatedPort != 0) ? relatedPort : port;
+
+            if (relatedAddress != null)
+            {
+                return new IPEndPoint(IPAddress.Parse(relatedAddress), remotePort);
+            }
+            else
+            {
+                return new IPEndPoint(IPAddress.Parse(address), remotePort);
+            }
+        }
+
+        /// <summary>
+        /// Checks the candidate to identify whether it is equivalent to the specified
+        /// protocol and IP end point. Primary use case is to check whether a candidate
+        /// is a match for a remote end point that a message has been received from.
+        /// </summary>
+        /// <param name="epProtocol">The protocol to check equivalence for.</param>
+        /// <param name="ep">The IP end point to check equivalence for.</param>
+        /// <returns>True if the candidate is deemed equivalent or false if not.</returns>
+        public bool IsEquivalentEndPoint(RTCIceProtocol epPotocol, IPEndPoint ep)
+        {
+            if (protocol == epPotocol &&
+                (
+                 (!string.IsNullOrEmpty(address) && ep.Address.Equals(IPAddress.Parse(address)) && port == ep.Port) ||
+                 (!string.IsNullOrEmpty(relatedAddress) && ep.Address.Equals(IPAddress.Parse(relatedAddress)) && relatedPort == ep.Port)
+                 ))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

@@ -17,4 +17,9 @@ jobs:
       with:
         dotnet-version: 3.1.100
     - name: Build with dotnet
-      run: dotnet build examples/AllExamples.sln --framework netcoreapp3.1 --configuration Release
+      run: |
+        dotnet build examples/sipexamples/sipexamples.sln --framework netcoreapp3.1 --configuration Release
+        dotnet build examples/webrtcexamples/webrtcexamples.sln --framework netcoreapp3.1 --configuration Release
+        dotnet build examples/icecmdline/icecmdline.sln --framework netcoreapp3.1 --configuration Release
+        dotnet build examples/sipcmdline/sipcmdline.sln --framework netcoreapp3.1 --configuration Release
+        dotnet build examples/stunserver/stunserver.sln --framework netcoreapp3.1 --configuration Release

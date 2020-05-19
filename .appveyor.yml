@@ -1,4 +1,7 @@
 version: 1.0.{build}
+branches:
+  except:
+    - mac-ci
 environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
   access_token:
@@ -13,11 +16,11 @@ build:
   publish_nuget: true
   publish_nuget_symbols: true
   verbosity: quiet
-test:
-  categories:
-    except:
-    - transport
-    - txintegration
+#test:
+#  categories:
+#    except:
+#    - transport
+#    - txintegration
 on_success:
   - ps: |
         if($env:APPVEYOR_REPO_BRANCH -eq "master" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)

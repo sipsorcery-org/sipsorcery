@@ -14,13 +14,25 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Xunit;
+using SIPSorcery.Media;
+using SIPSorcery.Net;
+
+/* Unmerged change from project 'SIPSorcery.UnitTests (net46)'
+Before:
+using System.Net.Sockets;
+After:
 using SIPSorcery.UnitTests;
+*/
+using SIPSorcery.UnitTests;
+using Xunit;
 
 namespace SIPSorcery.SIP.App.UnitTests
 {
@@ -316,13 +328,468 @@ a=rtpmap:101 telephone-event/8000
 a=fmtp:101 0-16
 a=sendrecv" + m_CRLF + m_CRLF;
 
-                
+
                 uas.ClientTransaction.ACKReceived(dummySep, dummySep, SIPRequest.ParseSIPRequest(ackReqStr));
             });
 
             await userAgent.Answer(uas, mediaSession);
 
             Assert.True(userAgent.IsCallActive);
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent can correctly answer an audio only call and set the remote description.
+        /// </summary>
+        [Fact]
+        public async Task AnswerAudioOnlyUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport transport = new SIPTransport();
+            SIPUserAgent userAgent = new SIPUserAgent(transport, null);
+
+            string inviteReqStr = @"INVITE sip:dummy@0.0.0.0 SIP/2.0
+Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bK57441c4980b94e1686a06ae080be2935;rport
+To: <sip:dummy@0.0.0.0>
+From: <sip:0.0.0.0:0>;tag=MYILIYPHQD
+Call-ID: ddf0e5a9687b4745925438da9000445d
+CSeq: 1 INVITE
+Max-Forwards: 70
+Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE
+Content-Length: 0
+
+v=0
+o=- 1838015445 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 19762 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=sendrecv";
+
+            SIPEndPoint dummySipEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummySipEndPoint, dummySipEndPoint);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+
+            var uas = userAgent.AcceptCall(inviteReq);
+            var result = await userAgent.Answer(uas, CreateMediaSession());
+
+            Assert.True(result);
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent can correctly place an audio only call and sets the remote description.
+        /// </summary>
+        [Fact]
+        public async Task PlaceCallUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport serverTransport = new SIPTransport();
+            SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
+            serverTransport.AddSIPChannel(udpChannel);
+
+            // Set up two user agents: one to answer the test call and one to place it.
+            SIPUserAgent userAgentServer = new SIPUserAgent(serverTransport, null);
+            SIPUserAgent userAgentClient = new SIPUserAgent(new SIPTransport(), null);
+
+            serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            {
+                logger.LogDebug("Request received: " + req.StatusLine);
+
+                var uas = userAgentServer.AcceptCall(req);
+                RtpAudioSession serverAudioSession = new RtpAudioSession(
+                    new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.None },
+                    new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
+                var answerResult = await userAgentServer.Answer(uas, serverAudioSession);
+
+                logger.LogDebug($"Server agent answer result {answerResult}.");
+
+                Assert.True(answerResult);
+            };
+
+            var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+
+            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+
+            RtpAudioSession clientAudioSession = new RtpAudioSession(
+                new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.None },
+                new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
+            var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientAudioSession);
+
+            logger.LogDebug($"Client agent answer result {callResult }.");
+
+            Assert.True(callResult);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentClient.Dialogue.DialogueState);
+            Assert.Equal(SIPDialogueStateEnum.Confirmed, userAgentServer.Dialogue.DialogueState);
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent can correctly deal with a call failure due to a mismatched audio codec.
+        /// </summary>
+        [Fact]
+        public async Task PlaceCallMismatchedCapabilitiesUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport serverTransport = new SIPTransport();
+            SIPUDPChannel udpChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
+            serverTransport.AddSIPChannel(udpChannel);
+
+            // Set up two user agents: one to answer the test call and one to place it.
+            SIPUserAgent userAgentServer = new SIPUserAgent(serverTransport, null);
+            SIPUserAgent userAgentClient = new SIPUserAgent(new SIPTransport(), null);
+
+            serverTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+            {
+                logger.LogDebug("Request received: " + req.StatusLine);
+
+                var uas = userAgentServer.AcceptCall(req);
+                RtpAudioSession serverAudioSession = new RtpAudioSession(
+                    new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.None },
+                    new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
+                var answerResult = await userAgentServer.Answer(uas, serverAudioSession);
+
+                logger.LogDebug($"Server agent answer result {answerResult}.");
+
+                Assert.False(answerResult);
+            };
+
+            var dstUri = udpChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+
+            logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
+
+            RtpAudioSession clientAudioSession = new RtpAudioSession(
+                new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.None },
+                new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.G722 });
+            var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientAudioSession);
+
+            logger.LogDebug($"Client agent answer result {callResult }.");
+
+            Assert.False(callResult);
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent can correctly handle the condition where no local audio track has
+        /// been added to the RTP session when an answer is attempted.
+        /// </summary>
+        [Fact]
+        public async Task HandleMissingAudioTrackOnAnswerUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport transport = new SIPTransport();
+            SIPUserAgent userAgent = new SIPUserAgent(transport, null);
+
+            string inviteReqStr = @"INVITE sip:dummy@0.0.0.0 SIP/2.0
+Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bK57441c4980b94e1686a06ae080be2935;rport
+To: <sip:dummy@0.0.0.0>
+From: <sip:0.0.0.0:0>;tag=MYILIYPHQD
+Call-ID: ddf0e5a9687b4745925438da9000445d
+CSeq: 1 INVITE
+Max-Forwards: 70
+Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE
+Content-Length: 0
+
+v=0
+o=- 1838015445 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 19762 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=sendrecv";
+
+            SIPEndPoint dummySipEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummySipEndPoint, dummySipEndPoint);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+
+            var uas = userAgent.AcceptCall(inviteReq);
+            RTPSession rtpSession = new RTPSession(false, false, false);
+            var result = await userAgent.Answer(uas, rtpSession);
+
+            Assert.False(result);
+
+            rtpSession.Close("normal");
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent can correctly handle the condition where the port number
+        /// supplied in the remote SDP is invalid.
+        /// </summary>
+        [Fact]
+        public async Task HandleInvalidSdpPortOnAnswerUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPTransport transport = new SIPTransport();
+            SIPUserAgent userAgent = new SIPUserAgent(transport, null);
+
+            string inviteReqStr = @"INVITE sip:dummy@0.0.0.0 SIP/2.0
+Via: SIP/2.0/UDP 0.0.0.0;branch=z9hG4bK57441c4980b94e1686a06ae080be2935;rport
+To: <sip:dummy@0.0.0.0>
+From: <sip:0.0.0.0:0>;tag=MYILIYPHQD 
+Call-ID: ddf0e5a9687b4745925438da9000445d
+CSeq: 1 INVITE
+Max-Forwards: 70
+Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE
+Content-Length: 0
+
+v=0
+o=- 1838015445 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 79762 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=sendrecv";
+
+            SIPEndPoint dummySipEndPoint = new SIPEndPoint(new IPEndPoint(IPAddress.Any, 0));
+            SIPMessageBuffer sipMessageBuffer = SIPMessageBuffer.ParseSIPMessage(inviteReqStr, dummySipEndPoint, dummySipEndPoint);
+            SIPRequest inviteReq = SIPRequest.ParseSIPRequest(sipMessageBuffer);
+
+            var uas = userAgent.AcceptCall(inviteReq);
+
+            RTPSession rtpSession = new RTPSession(false, false, false);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            rtpSession.addTrack(audioTrack);
+
+            var result = await userAgent.Answer(uas, rtpSession);
+
+            Assert.False(result);
+
+            rtpSession.Close("normal");
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent can correctly place a call.
+        /// </summary>
+        [Fact]
+        public async Task CheckCanPlaceCallUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // This transport will act as the call receiver. It allows the test to provide a 
+            // tailored response to an incoming call.
+            SIPTransport calleeTransport = new SIPTransport();
+
+            // This transport will be used by the SIPUserAgent being tested to place the call.
+            SIPTransport callerTransport = new SIPTransport();
+            RTPSession rtpSession = new RTPSession(false, false, false);
+
+            try
+            {
+                calleeTransport.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
+                calleeTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+                {
+                    if (req.Method != SIPMethodsEnum.INVITE)
+                    {
+                        SIPResponse notAllowedResponse = SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                        await calleeTransport.SendResponseAsync(notAllowedResponse);
+                    }
+                    else
+                    {
+                        UASInviteTransaction uasTransaction = new UASInviteTransaction(calleeTransport, req, null);
+                        var uas = new SIPServerUserAgent(calleeTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
+                        uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+                        uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
+
+                        var answerSdp = @"
+v=0
+o=- 1838015445 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 19762 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=sendrecv";
+                        uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp, null, SIPDialogueTransferModesEnum.NotAllowed);
+                    }
+                };
+
+                SIPUserAgent userAgent = new SIPUserAgent(callerTransport, null);
+
+                MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+                rtpSession.addTrack(audioTrack);
+
+                SIPURI dstUri = new SIPURI(SIPSchemesEnum.sip, calleeTransport.GetSIPChannels().First().ListeningSIPEndPoint);
+                var result = await userAgent.Call(dstUri.ToString(), null, null, rtpSession);
+                Assert.True(result);
+            }
+            finally
+            {
+                rtpSession?.Close("normal");
+                callerTransport?.Shutdown();
+                calleeTransport?.Shutdown();
+            }
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent can correctly handle the condition where the port number
+        /// supplied in the remote SDP is invalid when a call attempt is made.
+        /// </summary>
+        [Fact]
+        public async Task HandleInvalidSdpPortOnPlaceCallUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // This transport will act as the call receiver. It allows the test to provide a 
+            // tailored response to an incoming call.
+            SIPTransport calleeTransport = new SIPTransport();
+
+            // This transport will be used by the SIPUserAgent being tested to place the call.
+            SIPTransport callerTransport = new SIPTransport();
+            RTPSession rtpSession = new RTPSession(false, false, false);
+
+            try
+            {
+                calleeTransport.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
+                calleeTransport.SIPTransportRequestReceived += async (lep, rep, req) =>
+                {
+                    if (req.Method != SIPMethodsEnum.INVITE)
+                    {
+                        SIPResponse notAllowedResponse = SIPResponse.GetResponse(req, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
+                        await calleeTransport.SendResponseAsync(notAllowedResponse);
+                    }
+                    else
+                    {
+                        UASInviteTransaction uasTransaction = new UASInviteTransaction(calleeTransport, req, null);
+                        var uas = new SIPServerUserAgent(calleeTransport, null, null, null, SIPCallDirection.In, null, null, null, uasTransaction);
+                        uas.Progress(SIPResponseStatusCodesEnum.Trying, null, null, null, null);
+                        uas.Progress(SIPResponseStatusCodesEnum.Ringing, null, null, null, null);
+
+                        var answerSdp = @"
+v=0
+o=- 1838015445 0 IN IP4 127.0.0.1
+s=-
+c=IN IP4 127.0.0.1
+t=0 0
+m=audio 79762 RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=sendrecv";
+                        uas.Answer(SDP.SDP_MIME_CONTENTTYPE, answerSdp, null, SIPDialogueTransferModesEnum.NotAllowed);
+                    }
+                };
+
+                SIPUserAgent userAgent = new SIPUserAgent(callerTransport, null);
+
+                MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+                rtpSession.addTrack(audioTrack);
+
+                SIPURI dstUri = new SIPURI(SIPSchemesEnum.sip, calleeTransport.GetSIPChannels().First().ListeningSIPEndPoint);
+                var result = await userAgent.Call(dstUri.ToString(), null, null, rtpSession);
+                Assert.False(result);
+            }
+            finally
+            {
+                rtpSession?.Close("normal");
+                callerTransport?.Shutdown();
+                calleeTransport?.Shutdown();
+            }
+        }
+
+        /// <summary>
+        /// Tests that the SIPUserAgent can correctly place be the recipient of an attended transfer
+        /// REFER request.
+        /// </summary>
+        /// <remarks>
+        /// This test requires 4 SIPUserAgent instances:
+        ///  - User Agent A is the original caller and transferrer.
+        ///  - User Agent B calls User Agent D to create the call leg that will be replaced by the transfer.
+        ///    This call leg would represent the original caller putting one call leg on hold and then
+        ///    calling and talking to the transfer destination before completing the transfer,
+        ///  - User Agent C receives and answers call from A and then at a later point gets a REFER 
+        ///    request, also from A, to initiate the transfer,
+        ///  - User Agent D receives and answer call from A and then at a later point receives a second
+        ///    call from B that replaces the call with A.
+        /// </remarks>
+        [Fact]
+        public async Task AttendedTransfereeUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            // User agents A and B can use the same transport as they don't auto-answer incoming calls.
+            SIPTransport sipTransportCaller = new SIPTransport();
+            sipTransportCaller.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
+            var userAgentA = new SIPUserAgent(sipTransportCaller, null);
+            var userAgentB = new SIPUserAgent(sipTransportCaller, null);
+
+            SIPTransport sipTransportC = new SIPTransport();
+            sipTransportC.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
+            var userAgentC = new SIPUserAgent(sipTransportC, null);
+
+            SIPTransport sipTransportD = new SIPTransport();
+            sipTransportD.AddSIPChannel(new SIPUDPChannel(IPAddress.Loopback, 0));
+            var userAgentD = new SIPUserAgent(sipTransportD, null);
+
+            logger.LogDebug($"sip transport for UA's A and B listening on: {sipTransportCaller.GetSIPChannels()[0].ListeningSIPEndPoint}.");
+            logger.LogDebug($"sip transport for UA C listening on: {sipTransportC.GetSIPChannels()[0].ListeningSIPEndPoint}.");
+            logger.LogDebug($"sip transport for UA D listening on: {sipTransportD.GetSIPChannels()[0].ListeningSIPEndPoint}.");
+
+            // Set up auto-answer for UA's C and D:
+            foreach (var userAgent in new List<SIPUserAgent> { userAgentC, userAgentD })
+            {
+                userAgent.ServerCallCancelled += (uas) => logger.LogDebug("Incoming call cancelled by remote party.");
+                userAgent.OnCallHungup += (dialog) => logger.LogDebug("Call hungup by remote party.");
+                userAgent.OnIncomingCall += async (ua, req) =>
+                {
+                    var uas = ua.AcceptCall(req);
+                    bool answerResult = await ua.Answer(uas, CreateMediaSession());
+                    logger.LogDebug($"Answer incoming call result {answerResult}.");
+                };
+            }
+
+            // Place the two calls from A to C and B to D.
+            var dstUriC = sipTransportC.GetSIPChannels()[0].GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+            logger.LogDebug($"UA-A attempting call UA-C on {dstUriC}.");
+            var callResultAtoC = await userAgentA.Call(dstUriC.ToString(), null, null, CreateMediaSession());
+            logger.LogDebug($"Client agent answer result for A to C {callResultAtoC}.");
+
+            Assert.True(callResultAtoC);
+
+            var dstUriD = sipTransportD.GetSIPChannels()[0].GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0)));
+            logger.LogDebug($"UA-B attempting call UA-D on {dstUriD}.");
+            var callResultBtoD = await userAgentB.Call(dstUriD.ToString(), null, null, CreateMediaSession());
+            logger.LogDebug($"Client agent answer result for B to D {callResultBtoD}.");
+
+            Assert.True(callResultBtoD);
+
+            Assert.True(userAgentA.IsCallActive);
+            Assert.True(userAgentB.IsCallActive);
+            Assert.True(userAgentC.IsCallActive);
+            Assert.True(userAgentD.IsCallActive);
+
+            // Initiate attended transfer. A sends REFER request to C such that:
+            // - A sends a REFER request to C,
+            // - The REFER request Refer-To header tells C who to call and what to put in its INVITE request Replaces header,
+            // - The INVITE from C to D tells D this new call from C replaces its call with B,
+            // - When D answers it hangs up its call with B,
+            // - When C gets the Ok response from C it hangs up its call with A.
+            CancellationTokenSource cts = new CancellationTokenSource();
+            bool transferResult = await userAgentA.AttendedTransfer(userAgentB.Dialogue, TimeSpan.FromSeconds(2), cts.Token);
+
+            // This means the REFER request was accepted but the transfer still needs to be actioned.
+            Assert.True(transferResult);
+
+            // Give the transfer time to be processed.
+            await Task.Delay(2000);
+
+            Assert.False(userAgentA.IsCallActive);
+            Assert.False(userAgentB.IsCallActive);
+            Assert.True(userAgentC.IsCallActive);
+            Assert.True(userAgentD.IsCallActive);
+
+            sipTransportCaller.Shutdown();
+            sipTransportC.Shutdown();
+            sipTransportD.Shutdown();
         }
 
         private IMediaSession CreateMediaSession()

@@ -58,15 +58,18 @@ namespace SIPSorcery.SIP.UnitTests
             var clientChannel = new SIPUDPChannel(IPAddress.IPv6Loopback, 0);
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(
-                clientChannel, 
-                serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.IPv6Loopback, 0))), 
-                testComplete, 
-                cancelServer, 
-                serverReadyEvent); });
+            var clientTask = Task.Run(async () =>
+            {
+                await RunClient(
+clientChannel,
+serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
+testComplete,
+cancelServer,
+serverReadyEvent);
+            });
 
-            serverReadyEvent.Wait(); 
-            if (!Task.WhenAny(new Task[] { serverTask, clientTask}).Wait(TRANSPORT_TEST_TIMEOUT))
+            serverReadyEvent.Wait();
+            if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
                 logger.LogWarning($"Tasks timed out");
             }
@@ -99,14 +102,17 @@ namespace SIPSorcery.SIP.UnitTests
             var clientChannel = new SIPUDPChannel(IPAddress.Loopback, 0);
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(
-                clientChannel, 
-                serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0))), 
-                testComplete, 
-                cancelServer, 
-                serverReadyEvent); });
+            var clientTask = Task.Run(async () =>
+            {
+                await RunClient(
+clientChannel,
+serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.udp, new IPEndPoint(IPAddress.Loopback, 0))),
+testComplete,
+cancelServer,
+serverReadyEvent);
+            });
 
-            serverReadyEvent.Wait(); 
+            serverReadyEvent.Wait();
             if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
                 logger.LogWarning($"Tasks timed out");
@@ -144,15 +150,18 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(
-                clientChannel, 
-                serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.IPv6Loopback, 0))), 
-                testComplete, 
-                cancelServer, 
-                serverReadyEvent); });
+            var clientTask = Task.Run(async () =>
+            {
+                await RunClient(
+clientChannel,
+serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
+testComplete,
+cancelServer,
+serverReadyEvent);
+            });
 
-            serverReadyEvent.Wait(); 
-            if (!Task.WhenAny(new Task[] { serverTask, clientTask}).Wait(TRANSPORT_TEST_TIMEOUT))
+            serverReadyEvent.Wait();
+            if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
                 logger.LogWarning($"Tasks timed out");
             }
@@ -187,14 +196,17 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(
-                clientChannel, 
-                serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Loopback, 0))), 
-                testComplete, 
-                cancelServer, 
-                serverReadyEvent); });
+            var clientTask = Task.Run(async () =>
+            {
+                await RunClient(
+clientChannel,
+serverChannel.GetContactURI(SIPSchemesEnum.sip, new SIPEndPoint(SIPProtocolsEnum.tcp, new IPEndPoint(IPAddress.Loopback, 0))),
+testComplete,
+cancelServer,
+serverReadyEvent);
+            });
 
-            serverReadyEvent.Wait(); 
+            serverReadyEvent.Wait();
             if (!Task.WhenAny(new Task[] { clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
                 logger.LogWarning($"Tasks timed out");
@@ -248,7 +260,7 @@ namespace SIPSorcery.SIP.UnitTests
 
                     var clientTask = Task.Run(async () => { await RunClient(clientChannel, serverUri, testComplete, cancelServer, serverReadyEvent); });
 
-                    serverReadyEvent.Wait(); 
+                    serverReadyEvent.Wait();
                     if (!Task.WhenAny(new Task[] { clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
                     {
                         logger.LogWarning($"Tasks timed out");
@@ -297,12 +309,15 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(
-                clientChannel, 
-                serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.IPv6Loopback, 0))), 
-                testComplete, 
-                cancelServer, 
-                serverReadyEvent); });
+            var clientTask = Task.Run(async () =>
+            {
+                await RunClient(
+clientChannel,
+serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.IPv6Loopback, 0))),
+testComplete,
+cancelServer,
+serverReadyEvent);
+            });
 
             if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
@@ -345,14 +360,17 @@ namespace SIPSorcery.SIP.UnitTests
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
-            var clientTask = Task.Run(async () => { await RunClient(
-                clientChannel, 
-                serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.Loopback, 0))), 
-                testComplete, 
-                cancelServer, 
-                serverReadyEvent); });
+            var clientTask = Task.Run(async () =>
+            {
+                await RunClient(
+clientChannel,
+serverChannel.GetContactURI(SIPSchemesEnum.sips, new SIPEndPoint(SIPProtocolsEnum.tls, new IPEndPoint(IPAddress.Loopback, 0))),
+testComplete,
+cancelServer,
+serverReadyEvent);
+            });
 
-            if(!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
+            if (!Task.WhenAny(new Task[] { serverTask, clientTask }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
                 logger.LogWarning($"Tasks timed out");
             }
@@ -455,14 +473,14 @@ namespace SIPSorcery.SIP.UnitTests
                 return Task.FromResult(0);
             };
 
-            if(!tcpChannel.ConnectClientAsync(actualEP, null, null).Wait(TimeSpan.FromMilliseconds(TRANSPORT_TEST_TIMEOUT)))
+            if (!tcpChannel.ConnectClientAsync(actualEP, null, null).Wait(TimeSpan.FromMilliseconds(TRANSPORT_TEST_TIMEOUT)))
             {
                 logger.LogWarning($"ConnectClientAsync timed out");
             }
 
             logger.LogDebug("Test client connected.");
 
-            if(!Task.WhenAny(new Task[] { testComplete.Task }).Wait(TRANSPORT_TEST_TIMEOUT))
+            if (!Task.WhenAny(new Task[] { testComplete.Task }).Wait(TRANSPORT_TEST_TIMEOUT))
             {
                 logger.LogWarning($"Tasks timed out");
             }
@@ -591,8 +609,8 @@ namespace SIPSorcery.SIP.UnitTests
         /// <param name="serverReadyEvent">Used to notify the client task that the server task is 
         /// ready for the unit test to commence.</param>
         private void RunServer(
-            SIPChannel testServerChannel, 
-            CancellationTokenSource cts, 
+            SIPChannel testServerChannel,
+            CancellationTokenSource cts,
             ManualResetEventSlim serverReadyEvent)
         {
             logger.LogDebug($"RunServer test channel created on {testServerChannel.ListeningSIPEndPoint}.");
@@ -655,9 +673,9 @@ namespace SIPSorcery.SIP.UnitTests
         /// <param name="serverReadyEvent">Event to notify when the server thread is ready for the test to commence.</param>
         private async Task RunClient(
             SIPChannel testClientChannel,
-            SIPURI serverUri, 
-            TaskCompletionSource<bool> tcs, 
-            CancellationTokenSource cts, 
+            SIPURI serverUri,
+            TaskCompletionSource<bool> tcs,
+            CancellationTokenSource cts,
             ManualResetEventSlim serverReadyEvent)
         {
             logger.LogDebug($"RunClient Starting client task for {testClientChannel.ListeningSIPEndPoint}.");

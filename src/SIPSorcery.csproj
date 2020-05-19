@@ -31,13 +31,16 @@
 
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.44-pre</Version>
+	<Version>4.0.49-pre</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
 	<Title>SIPSorcery</Title>
-	<Summary>A cross platform C# .NET library for SIP and WebRTC.</Summary>
-	<Description>This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol (SIP) and partial support for WebRTC.</Description>
+	<Summary>A cross platform C# .NET library for SIP, VoIP and WebRTC.</Summary>
+	<Description>This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol (SIP) and related protocols plus experimental support for WebRTC.
+This library is largely a .Net implementation and not a wrapper for a 3rd party library. The exceptions being DTLS, SRTP and media device integrations which are in the separate SIPSorceryMedia
+library.
+  </Description>
 	<Company>SIP Sorcery PTY LTD</Company>
 	<Product>SIPSorcery</Product>
 	<PackageId>SIPSorcery</PackageId>
@@ -51,7 +54,11 @@
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP WebRTC RTP SDP STUN SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- Version 4.0.44-pre: Minor change to RTP codec clock rate methods to support G722.
+	<PackageReleaseNotes>- v4.0.49-pre: Enhanced handling for blind and attended transfers.
+ - v4.0.47-pre: Fixed bug negotiating RTP event format. Added experimental support for REFER processing to SIPUserAgent.
+- v4.0.46-pre: Added optional bindAddress parameter to RTPSession constructor for RTP sockets.
+- Version 4.0.45-pre: RTPSession public interface changed to conform to IMediaSession.
+- Version 4.0.44-pre: Minor change to RTP codec clock rate methods to support G722.
 - Version 4.0.43-pre: Bug fix not updating SDP version when changing RTP stream status.
 - Version 4.0.42-pre: Added mulaw and alaw decoders to dummy audio RTP session.
 - Version 4.0.41-pre: Added workaround for UDP packet info not being set on Linux.
@@ -74,8 +81,8 @@
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
 </PackageReleaseNotes>
 	<NeutralLanguage>en-GB</NeutralLanguage>
-	<AssemblyVersion>4.0.44.0</AssemblyVersion>
-	<FileVersion>4.0.44.0</FileVersion>
+	<AssemblyVersion>4.0.49.0</AssemblyVersion>
+	<FileVersion>4.0.49.0</FileVersion>
   </PropertyGroup>    
 
 </Project>

@@ -53,10 +53,10 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTCIceCandidateInit
     {
-        public string candidate;
-        public string sdpMid;
-        public ushort sdpMLineIndex;
-        public string usernameFragment;
+        public string candidate { get; set; }
+        public string sdpMid { get; set; }
+        public ushort sdpMLineIndex { get; set; }
+        public string usernameFragment { get; set; }
     }
 
     /// <summary>
@@ -140,7 +140,7 @@ namespace SIPSorcery.Net
         relay
     }
 
-    interface IRTCIceCandidate
+    public interface IRTCIceCandidate
     {
         //constructor(optional RTCIceCandidateInit candidateInitDict = { });
         string candidate { get; }

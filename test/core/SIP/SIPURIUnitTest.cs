@@ -640,5 +640,22 @@ namespace SIPSorcery.SIP.UnitTests
 
             logger.LogDebug("-----------------------------------------");
         }
+
+        /// <summary>
+        /// Tests that a SIP URI supplied in a REFER request Refer-To header can be parsed.
+        /// </summary>
+        [Fact]
+        public void ParseReplacesHeaderUriUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            SIPURI referToUri = SIPURI.ParseSIPURI("sip:1@127.0.0.1?Replaces=84929ZTg0Zjk1Y2UyM2Q1OWJjYWNlZmYyYTI0Njg1YjgwMzI%3Bto-tag%3D8787f9cc94bb4bb19c089af17e5a94f7%3Bfrom-tag%3Dc2b89404");
+
+            Assert.NotNull(referToUri);
+            Assert.Equal("sip:1@127.0.0.1", referToUri.ToParameterlessString());
+
+            logger.LogDebug("-----------------------------------------");
+        }
     }
 }

@@ -361,11 +361,11 @@ namespace SIPSorcery.SIP.UnitTests
 
             string sipMsg =
                 "SIP/2.0 200 OK" + m_CRLF +
-                "Via: SIP/2.0/UDP 194.213.29.100:5060;branch=z9hG4bK5feb18267ce40fb05969b4ba843681dbfc9ffcff, SIP/2.0/UDP 194.213.29.54:5061;branch=z9hG4bK52b6a8b7" + m_CRLF +
+                "Via: SIP/2.0/UDP 194.213.29.100:5060;branch=z9hG4bK5feb18267ce40fb05969b4ba843681dbfc9ffcff, SIP/2.0/UDP 127.0.0.1:5061;branch=z9hG4bK52b6a8b7" + m_CRLF +
                 "Record-Route: <sip:194.213.29.100:5060;lr>" + m_CRLF +
-                "From: Unknown <sip:Unknown@194.213.29.54:5061>;tag=as58cbdbd1" + m_CRLF +
+                "From: Unknown <sip:Unknown@127.0.0.1:5061>;tag=as58cbdbd1" + m_CRLF +
                 "To: <sip:designersink01@10.10.49.155:5060>;tag=1144090013" + m_CRLF +
-                "Call-ID: 40741a72794b85ed197e1e020bf42bb9@194.213.29.54" + m_CRLF +
+                "Call-ID: 40741a72794b85ed197e1e020bf42bb9@127.0.0.1" + m_CRLF +
                 "CSeq: 102 INVITE" + m_CRLF +
                 "Contact: <sip:xxxxxxx1@10.10.49.155:5060>" + m_CRLF +
                 "Server: Patton SN4634 3BIS 00A0BA04469B R5.3 2009-01-15 H323 SIP BRI M5T SIP Stack/4.0.28.28" + m_CRLF +

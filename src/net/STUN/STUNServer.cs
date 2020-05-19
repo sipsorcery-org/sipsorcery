@@ -52,8 +52,16 @@ namespace SIPSorcery.Net
             m_secondaryEndPoint = secondaryEndPoint;
             m_secondarySend = secondarySend;
 
-            m_primaryDiffPortSocket = NetServices.CreateRandomUDPListener(m_primaryEndPoint.Address, out m_primaryDiffPortEndPoint);
-            m_secondaryDiffPortSocket = NetServices.CreateRandomUDPListener(m_secondaryEndPoint.Address, out m_secondaryDiffPortEndPoint);
+            //m_primaryDiffPortSocket = NetServices.CreateRandomUDPListener(m_primaryEndPoint.Address, out m_primaryDiffPortEndPoint);
+            //m_secondaryDiffPortSocket = NetServices.CreateRandomUDPListener(m_secondaryEndPoint.Address, out m_secondaryDiffPortEndPoint);
+
+            m_primaryDiffPortSocket = new UdpClient();
+            m_primaryDiffPortSocket.Client = NetServices.CreateBoundUdpSocket(0, m_primaryEndPoint.Address);
+            m_primaryDiffPortEndPoint = m_primaryDiffPortSocket.Client.LocalEndPoint as IPEndPoint;
+
+            m_secondaryDiffPortSocket = new UdpClient();
+            m_secondaryDiffPortSocket.Client = NetServices.CreateBoundUdpSocket(0, m_primaryEndPoint.Address);
+            m_secondaryDiffPortEndPoint = m_secondaryDiffPortSocket.Client.LocalEndPoint as IPEndPoint;
 
             logger.LogDebug("STUN Server additional sockets, primary=" + IPSocket.GetSocketString(m_primaryDiffPortEndPoint) + ", secondary=" + IPSocket.GetSocketString(m_secondaryDiffPortEndPoint) + ".");
         }

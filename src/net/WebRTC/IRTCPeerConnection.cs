@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace SIPSorcery.Net
@@ -173,6 +174,14 @@ namespace SIPSorcery.Net
         /// Size of the pre-fetched ICE pool. Defaults to 0.
         /// </summary>
         public int iceCandidatePoolSize = 0;
+
+        /// <summary>
+        /// Optional. If specified this address will be used as the bind address for any RTP
+        /// and control sockets created. Generally this address does not need to be set. The default behaviour
+        /// is to bind to [::] or 0.0.0.0,d depending on system support, which minimises network routing
+        /// causing connection issues.
+        /// </summary>
+        public IPAddress X_BindAddress;
     }
 
     /// <summary>
@@ -193,6 +202,11 @@ namespace SIPSorcery.Net
 
     /// <summary>
     /// The states a peer connection transitions through.
+    /// The difference between the IceConnectionState and the PeerConnectionState is somewhat subtle:
+    /// - IceConnectionState: applies to the connection checks amongst ICE candidates and is
+    ///   set as completed as soon as a local and remote candidate have set their nominated candidate,
+    /// - PeerConnectionState: takes into account the IceConnectionState but also includes the DTLS
+    ///   handshake and actions at the application layer such as a request to close the peer connection.
     /// </summary>
     /// <remarks>
     /// As specified in https://www.w3.org/TR/webrtc/#rtcpeerconnectionstate-enum.

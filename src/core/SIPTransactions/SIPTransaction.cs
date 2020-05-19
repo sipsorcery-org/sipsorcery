@@ -388,7 +388,7 @@ namespace SIPSorcery.SIP
                     }
 
                     sipResponse.Header.RSeq = RSeq;
-                    sipResponse.Header.Require += SIPExtensionHeaders.PRACK;
+                    sipResponse.Header.Require += SIPExtensionHeaders.REPLACES + ", " + SIPExtensionHeaders.NO_REFER_SUB + ", " + SIPExtensionHeaders.PRACK;
 
                     // If reliable provisional responses are supported then need to send this response reliably.
                     if (ReliableProvisionalResponse != null)
@@ -559,11 +559,11 @@ namespace SIPSorcery.SIP
         /// Marks a transaction as expired and prevents anymore delivery attempts of outstanding 
         /// requests of responses.
         /// </summary>
-        internal void Expire()
+        internal void Expire(DateTime now)
         {
             DeliveryPending = false;
             DeliveryFailed = true;
-            TimedOutAt = DateTime.Now;
+            TimedOutAt = now;
             HasTimedOut = true;
             UpdateTransactionState(SIPTransactionStatesEnum.Terminated);
             FireTransactionTimedOut();

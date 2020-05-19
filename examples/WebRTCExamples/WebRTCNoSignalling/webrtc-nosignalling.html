@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+
+    <script type="text/javascript">
+
+        var pc;
+
+	// Paste the SDP offer from the dotnet console into the "offerSDP" value below.
+	// The offer should look similar to the one below but with different IP addresses etc.
+
+	var offerSDP = 
+`v=0
+o=- 74941 0 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE 0
+m=video 9 RTP/SAVP 100
+c=IN IP4 0.0.0.0
+a=ice-ufrag:DXJS
+a=ice-pwd:SHJCVCLKETCMHGYVJNBZZEDM
+a=fingerprint:sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD
+a=candidate:2306 1 udp 659136 fe80::910e:8bfe:e7e3:7919%52 57437 typ host generation 0
+a=candidate:2337 1 udp 659136 172.20.16.1 57437 typ host generation 0
+a=candidate:2441 1 udp 659136 fe80::54a9:d238:b2ee:ceb%21 57437 typ host generation 0
+a=candidate:2944 1 udp 659136 192.168.11.50 57437 typ host generation 0
+a=ice-options:ice2,trickle
+a=mid:0
+a=rtpmap:100 VP8/90000
+a=rtcp-mux
+a=rtcp:9 IN IP4 0.0.0.0
+a=setup:actpass
+a=sendonly
+`;
+
+		function start() {
+		
+			console.log(offerSDP);
+	
+			let videoControl = document.querySelector('#videoCtl');
+			
+			pc = new RTCPeerConnection(null);
+
+            pc.ontrack = ({ track, streams: [stream] }) => {
+                track.onunmute = () => {
+                    videoControl.srcObject = stream;
+                };
+            };
+
+            pc.onicegatheringstatechange = function () {
+                console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+            }
+
+            pc.oniceconnectionstatechange = function () {
+                console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+            }
+
+            pc.onsignalingstatechange = function () {
+                console.log("onsignalingstatechange: " + pc.signalingState);
+            }
+
+            pc.onicecandidate = function (event) {
+                if (event.candidate) {
+                    console.log('new-ice-candidate:');
+                    console.log(event.candidate.candidate);
+                    console.log(event.candidate);
+                }
+            };
+			
+			pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: offerSDP }));
+
+			// Create the answer SDP.
+			pc.createAnswer().then(function (answer) {
+				console.log("answer SDP: " + answer.sdp)
+				pc.setLocalDescription(answer);
+			});	
+		};	
+
+        function closePeer() {
+            if (pc != null) {
+                console.log("close peer");
+                pc.close();
+            }
+        };
+
+    </script>
+</head>
+<body>
+
+    <video controls autoplay="autoplay" id="videoCtl" width="640" height="480"></video>
+	
+	<div>
+		<button type="button" class="btn btn-success" onclick="start();">Start</button>
+		<button type="button" class="btn btn-success" onclick="closePeer();">Close</button>
+	</div>
+
+</body>

@@ -13,8 +13,12 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -101,11 +105,23 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("fe80::54a9:d238:b2ee:abc"));
+            var ipv6LinkLocal = NetServices.LocalIPAddresses.Where(x => x.IsIPv6LinkLocal).FirstOrDefault();
 
-            Assert.NotNull(localAddress);
+            if (ipv6LinkLocal == null)
+            {
+                logger.LogDebug("No IPv6 link local address available.");
+            }
+            else
+            {
+                logger.LogDebug($"IPv6 link local address for this host {ipv6LinkLocal}.");
+                
+                var localAddress = NetServices.GetLocalAddressForRemote(ipv6LinkLocal);
 
-            logger.LogDebug($"Local address {localAddress}.");
+                Assert.NotNull(localAddress);
+                Assert.Equal(ipv6LinkLocal, localAddress);
+
+                logger.LogDebug($"Local address {localAddress}.");
+            }
         }
 
         /// <summary>
@@ -170,10 +186,224 @@ namespace SIPSorcery.Sys.UnitTests
             Socket rtpSocket = null;
             Socket controlSocket = null;
 
-            NetServices.CreateRtpSocket(10000, 20000, 13677, true, null, out rtpSocket, out controlSocket);
+            NetServices.CreateRtpSocket(true, null, out rtpSocket, out controlSocket);
 
             Assert.NotNull(rtpSocket);
             Assert.NotNull(controlSocket);
+
+            rtpSocket.Close();
+            controlSocket.Close();
+        }
+
+        /// <summary>
+        /// Tests that RTP and control listeners can be created with a pseudo-random port assignment
+        /// on the wildcard IPv4 address.
+        /// </summary>
+        [Fact]
+        public void CreateRtpAndControlSocketsOnIP4AnyUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            Socket rtpSocket = null;
+            Socket controlSocket = null;
+
+            NetServices.CreateRtpSocket(true, IPAddress.Any, out rtpSocket, out controlSocket);
+
+            Assert.NotNull(rtpSocket);
+            Assert.NotNull(controlSocket);
+
+            rtpSocket.Close();
+            controlSocket.Close();
+        }
+
+        /// <summary>
+        /// Tests that RTP and control listeners can be created with a pseudo-random port assignment
+        /// on the wildcard IPv6 address.
+        /// </summary>
+        [Fact]
+        public void CreateRtpAndControlSocketsOnIP6AnyUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            if (Socket.OSSupportsIPv6)
+            {
+                Socket rtpSocket = null;
+                Socket controlSocket = null;
+
+                NetServices.CreateRtpSocket(true, IPAddress.IPv6Any, out rtpSocket, out controlSocket);
+
+                Assert.NotNull(rtpSocket);
+                Assert.NotNull(controlSocket);
+
+                rtpSocket.Close();
+                controlSocket.Close();
+            }
+        }
+
+        /// <summary>
+        /// Tests that multiple RTP and control bound sockets can be created with correctly allocated
+        /// port numbers.
+        /// </summary>
+        [Fact]
+        public void CreateRtpAndControlMultipleSocketsUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            List<Socket> sockets = new List<Socket>();
+
+            for (int i = 0; i < 20; i++)
+            {
+                Socket rtpSocket = null;
+                Socket controlSocket = null;
+
+                //NetServices.CreateRtpSocket(49152, 65534, 51277, true, null, out rtpSocket, out controlSocket);
+                NetServices.CreateRtpSocket(true, null, out rtpSocket, out controlSocket);
+
+                Assert.NotNull(rtpSocket);
+                Assert.NotNull(controlSocket);
+                Assert.True((rtpSocket.LocalEndPoint as IPEndPoint).Port % 2 == 0);
+                Assert.False((controlSocket.LocalEndPoint as IPEndPoint).Port % 2 == 0);
+
+                sockets.Add(rtpSocket);
+                sockets.Add(controlSocket);
+            }
+
+            foreach (var socket in sockets)
+            {
+                socket.Close();
+            }
+        }
+
+        /// <summary>
+        /// Runs the check to determine whether the underlying OS supports dual mode 
+        /// sockets WITH packet info (needed to get remote end point). The only OS currently
+        /// known not to is Mac OSX.
+        /// </summary>
+        [Fact]
+        public void CheckSupportsDualModeIPv4PacketInfoUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            bool supports = NetServices.SupportsDualModeIPv4PacketInfo;
+
+            logger.LogDebug($"SupportsDualModeIPv4PacketInfo result for OS {RuntimeInformation.OSDescription} is {supports}.");
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Assert.False(supports);
+            }
+            else
+            {
+                Assert.True(supports);
+            }
+        }
+
+        /// <summary>
+        /// Checks that when two sockets are bound on the same port but with different address specifiers
+        /// the magic cookie send test is able to detect the unusable socket.
+        /// Workaround for bug: https://github.com/dotnet/runtime/issues/36618
+        /// The behaviour for this test is different on Windows and Ubuntu:
+        ///  - On Windows the IPv4 bound socket can receive the IPv6 one can't,
+        ///  - On Ubuntu the duplicate bind causes an exception, which is the correct behaviour,
+        ///  - On Mac this library does not create dual mode IPv6 sockets as they can be used
+        ///    with the required "receive from" methods. Which means the attempt to receive
+        ///    on a socket bound to [::] by sending to 127.0.0.1 fails but in this case because
+        ///    it's not created as dual mode rather than because of the bug on Windows.
+        /// </summary>
+        [Fact]
+        public void CheckCreateSocketFailsForInUseSocketUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            if (!Socket.OSSupportsIPv6)
+            {
+                logger.LogDebug("Test not executed as no IPv6 support.");
+            }
+            else
+            {
+                var socket4Any = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                socket4Any.Bind(new IPEndPoint(IPAddress.Any, 0));
+                IPEndPoint anyEP = socket4Any.LocalEndPoint as IPEndPoint;
+
+                var socketIP6Any = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                socketIP6Any.DualMode = true;
+
+                // Since it will be useful to detect if this behaviour ever changes add different asserts for the
+                // different Operating Systems.
+
+                logger.LogDebug($"Environment.OSVersion: {Environment.OSVersion}");
+                logger.LogDebug($"Environment.OSVersion.Platform: {Environment.OSVersion.Platform}");
+
+                if (Environment.OSVersion.Platform == PlatformID.Unix && NetServices.SupportsDualModeIPv4PacketInfo)
+                {
+                    Assert.Throws<SocketException>(() => socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port)));
+                }
+                else
+                {
+                    // No exception on Windows and no duplication on Mac since IPv6 sockets are deliberately
+                    // created with dual mode set to false.
+                    socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port));
+
+                    Assert.True(NetServices.DoTestReceive(socket4Any, null));
+                    Assert.False(NetServices.DoTestReceive(socketIP6Any, null));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks that a bind attempt fails if the socket is already bound on IPv4 0.0.0.0 and an
+        /// attempt is made to use the same port on IPv6 [::].
+        /// </summary>
+        [Fact]
+        public void CheckFailsOnDuplicateForIP4AnyThenIPv6AnyUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            Socket rtpSocket = null;
+            Socket controlSocket = null;
+
+            NetServices.CreateRtpSocket(true, IPAddress.Any, out rtpSocket, out controlSocket);
+
+            Assert.NotNull(rtpSocket);
+            Assert.NotNull(controlSocket);
+
+            Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint  as IPEndPoint).Port, IPAddress.IPv6Any));
+
+            rtpSocket.Close();
+            controlSocket.Close();
+        }
+
+        /// <summary>
+        /// Checks that a bind attempt fails if the socket is already bound on IPv6 [::] and an
+        /// attempt is made to use the same port on IPv4 0.0.0.0.
+        /// 
+        /// This test should be excluded on MacOS since dual mode with receiver from is currently not supported
+        /// by the OS.
+        /// </summary>
+        [Fact]
+        public void CheckFailsOnDuplicateForIP6AnyThenIPv4AnyUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            Socket rtpSocket = null;
+            Socket controlSocket = null;
+
+            NetServices.CreateRtpSocket(true, IPAddress.IPv6Any, out rtpSocket, out controlSocket);
+
+            Assert.NotNull(rtpSocket);
+            Assert.NotNull(controlSocket);
+
+            Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint as IPEndPoint).Port, IPAddress.Any));
+
+            rtpSocket.Close();
+            controlSocket.Close();
         }
     }
 }
