@@ -20,7 +20,6 @@ using System.Threading.Tasks;
 
 namespace SIPSorcery.Net
 {
-
     public enum RTCSdpType
     {
         answer = 0,
@@ -251,5 +250,53 @@ namespace SIPSorcery.Net
         event Action<RTCIceConnectionState> oniceconnectionstatechange;
         event Action<RTCIceGatheringState> onicegatheringstatechange;
         event Action<RTCPeerConnectionState> onconnectionstatechange;
-    }
+
+        // TODO: Extensions for the RTCMediaAPI
+        // https://www.w3.org/TR/webrtc/#rtcpeerconnection-interface-extensions.
+        List<IRTCRtpSender> getSenders();
+        List<IRTCRtpReceiver> getReceivers();
+        //List<RTCRtpTransceiver> getTransceivers();
+        //RTCRtpSender addTrack(MediaStreamTrack track, param MediaStream[] streams);
+        //void removeTrack(RTCRtpSender sender);
+        //RTCRtpTransceiver addTransceiver((MediaStreamTrack or DOMString) trackOrKind,
+        ////optional RTCRtpTransceiverInit init = {});
+        //event ontrack;
+    };
+
+    /// <summary>
+    /// The RTCRtpSender interface allows an application to control how a given MediaStreamTrack 
+    /// is encoded and transmitted to a remote peer. When setParameters is called on an 
+    /// RTCRtpSender object, the encoding is changed appropriately.
+    /// </summary>
+    /// <remarks>
+    /// As specified at https://www.w3.org/TR/webrtc/#rtcrtpsender-interface.
+    /// </remarks>
+    public interface IRTCRtpSender
+    {
+        MediaStreamTrack track { get; }
+        //readonly attribute RTCDtlsTransport? transport;
+        //static RTCRtpCapabilities? getCapabilities(DOMString kind);
+        //Task setParameters(RTCRtpSendParameters parameters);
+        //RTCRtpSendParameters getParameters();
+        //Task replaceTrack(MediaStreamTrack withTrack);
+        //void setStreams(MediaStream... streams);
+        //Task<RTCStatsReport> getStats();
+    };
+
+    /// <summary>
+    /// The RTCRtpReceiver interface allows an application to inspect the receipt of a MediaStreamTrack.
+    /// </summary>
+    /// <remarks>
+    /// As specified at https://www.w3.org/TR/webrtc/#rtcrtpreceiver-interface.
+    /// </remarks>
+    public interface IRTCRtpReceiver
+    {
+        MediaStreamTrack track { get; }
+        //readonly attribute RTCDtlsTransport? transport;
+        //static RTCRtpCapabilities? getCapabilities(DOMString kind);
+        //RTCRtpReceiveParameters getParameters();
+        //sequence<RTCRtpContributingSource> getContributingSources();
+        //sequence<RTCRtpSynchronizationSource> getSynchronizationSources();
+        //Task<RTCStatsReport> getStats();
+    };
 }
