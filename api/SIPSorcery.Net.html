@@ -159,6 +159,14 @@ Only the mandatory CNAME item is supported.</p>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPSenderReport.html">RTCPSenderReport</a></h4>
       <section><p>An RTCP sender report is for use by active RTP senders.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCRtpReceiver.html">RTCRtpReceiver</a></h4>
+      <section><p>This class represents a remote real-time sourced stream. It can be thought of
+as the destination for a media stream being received from a remote party.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCRtpSender.html">RTCRtpSender</a></h4>
+      <section><p>This class represents the source for a real-time  stream. It can be thought
+of as a source stream for any media that is being sent to a remote party.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCSessionDescription.html">RTCSessionDescription</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCSessionDescriptionInit.html">RTCSessionDescriptionInit</a></h4>
@@ -331,6 +339,14 @@ THe reason for this is to stop NAT application layer gateways from doing string 
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.IRTCIceCandidate.html">IRTCIceCandidate</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.IRTCRtpReceiver.html">IRTCRtpReceiver</a></h4>
+      <section><p>The RTCRtpReceiver interface allows an application to inspect the receipt of a MediaStreamTrack.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.IRTCRtpSender.html">IRTCRtpSender</a></h4>
+      <section><p>The RTCRtpSender interface allows an application to control how a given MediaStreamTrack
+is encoded and transmitted to a remote peer. When setParameters is called on an
+RTCRtpSender object, the encoding is changed appropriately.</p>
+</section>
     <h3 id="enums">Enums
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.CaptureProtocolTypeEnum.html">CaptureProtocolTypeEnum</a></h4>
