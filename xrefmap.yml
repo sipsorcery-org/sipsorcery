@@ -24213,12 +24213,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPAddress,System.Int32)
   fullName: SIPSorcery.SIP.SIPUDPChannel.SIPUDPChannel(System.Net.IPAddress, System.Int32)
   nameWithType: SIPUDPChannel.SIPUDPChannel(IPAddress, Int32)
-- uid: SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPEndPoint)
-  name: SIPUDPChannel(IPEndPoint)
-  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel__ctor_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPEndPoint)
-  fullName: SIPSorcery.SIP.SIPUDPChannel.SIPUDPChannel(System.Net.IPEndPoint)
-  nameWithType: SIPUDPChannel.SIPUDPChannel(IPEndPoint)
+- uid: SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPEndPoint,System.Boolean)
+  name: SIPUDPChannel(IPEndPoint, Boolean)
+  href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel__ctor_System_Net_IPEndPoint_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPUDPChannel.#ctor(System.Net.IPEndPoint,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPUDPChannel.SIPUDPChannel(System.Net.IPEndPoint, System.Boolean)
+  nameWithType: SIPUDPChannel.SIPUDPChannel(IPEndPoint, Boolean)
 - uid: SIPSorcery.SIP.SIPUDPChannel.#ctor*
   name: SIPUDPChannel
   href: api/SIPSorcery.SIP.SIPUDPChannel.html#SIPSorcery_SIP_SIPUDPChannel__ctor_
@@ -26566,12 +26566,12 @@ references:
   commentId: T:SIPSorcery.Sys.NetServices
   fullName: SIPSorcery.Sys.NetServices
   nameWithType: NetServices
-- uid: SIPSorcery.Sys.NetServices.CreateBoundUdpSocket(System.Int32,System.Net.IPAddress,System.Boolean)
-  name: CreateBoundUdpSocket(Int32, IPAddress, Boolean)
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateBoundUdpSocket_System_Int32_System_Net_IPAddress_System_Boolean_
-  commentId: M:SIPSorcery.Sys.NetServices.CreateBoundUdpSocket(System.Int32,System.Net.IPAddress,System.Boolean)
-  fullName: SIPSorcery.Sys.NetServices.CreateBoundUdpSocket(System.Int32, System.Net.IPAddress, System.Boolean)
-  nameWithType: NetServices.CreateBoundUdpSocket(Int32, IPAddress, Boolean)
+- uid: SIPSorcery.Sys.NetServices.CreateBoundUdpSocket(System.Int32,System.Net.IPAddress,System.Boolean,System.Boolean)
+  name: CreateBoundUdpSocket(Int32, IPAddress, Boolean, Boolean)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateBoundUdpSocket_System_Int32_System_Net_IPAddress_System_Boolean_System_Boolean_
+  commentId: M:SIPSorcery.Sys.NetServices.CreateBoundUdpSocket(System.Int32,System.Net.IPAddress,System.Boolean,System.Boolean)
+  fullName: SIPSorcery.Sys.NetServices.CreateBoundUdpSocket(System.Int32, System.Net.IPAddress, System.Boolean, System.Boolean)
+  nameWithType: NetServices.CreateBoundUdpSocket(Int32, IPAddress, Boolean, Boolean)
 - uid: SIPSorcery.Sys.NetServices.CreateBoundUdpSocket*
   name: CreateBoundUdpSocket
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_CreateBoundUdpSocket_

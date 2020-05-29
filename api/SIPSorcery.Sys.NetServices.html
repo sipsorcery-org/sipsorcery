@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class NetServices
    ">
-    <meta name="generator" content="docfx 2.53.1.0">
+    <meta name="generator" content="docfx 2.54.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -269,22 +269,21 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_NetServices_CreateBoundUdpSocket_System_Int32_System_Net_IPAddress_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.NetServices.CreateBoundUdpSocket(System.Int32%2CSystem.Net.IPAddress%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_NetServices_CreateBoundUdpSocket_System_Int32_System_Net_IPAddress_System_Boolean_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.NetServices.CreateBoundUdpSocket(System.Int32%2CSystem.Net.IPAddress%2CSystem.Boolean%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L149">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_NetServices_CreateBoundUdpSocket_" data-uid="SIPSorcery.Sys.NetServices.CreateBoundUdpSocket*"></a>
-  <h4 id="SIPSorcery_Sys_NetServices_CreateBoundUdpSocket_System_Int32_System_Net_IPAddress_System_Boolean_" data-uid="SIPSorcery.Sys.NetServices.CreateBoundUdpSocket(System.Int32,System.Net.IPAddress,System.Boolean)">CreateBoundUdpSocket(Int32, IPAddress, Boolean)</h4>
-  <div class="markdown level1 summary"><p>Attempts to create and bind a UDP socket. This method will also verify that the socket can be used to do a single
-magic cookie receive to verify the underlying System did in fact provide a usable socket. The additional check
-is to accommodate a bug where Windows 10 was observed to allow the same port to be bound to two different
+  <h4 id="SIPSorcery_Sys_NetServices_CreateBoundUdpSocket_System_Int32_System_Net_IPAddress_System_Boolean_System_Boolean_" data-uid="SIPSorcery.Sys.NetServices.CreateBoundUdpSocket(System.Int32,System.Net.IPAddress,System.Boolean,System.Boolean)">CreateBoundUdpSocket(Int32, IPAddress, Boolean, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Attempts to create and bind a UDP socket. The socket is always created with the ExclusiveAddressUse socket option
+set to accommodate a Windows 10 .Net Core socket bug where the same port can be bound to two different
 sockets, see <a href="https://github.com/dotnet/runtime/issues/36618">https://github.com/dotnet/runtime/issues/36618</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Socket CreateBoundUdpSocket(int port, IPAddress bindAddress, bool requireEvenPort = false)</code></pre>
+    <pre><code class="lang-csharp hljs">public static Socket CreateBoundUdpSocket(int port, IPAddress bindAddress, bool requireEvenPort = false, bool useDualMode = true)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -316,6 +315,12 @@ If not specified the broadest possible address will be chosen. Either IPAddress.
 even numbered port.</p>
 </td>
       </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">useDualMode</span></td>
+        <td><p>If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</p>
+</td>
+      </tr>
     </tbody>
   </table>
   <h5 class="returns">Returns</h5>
@@ -339,7 +344,7 @@ even numbered port.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_IPAddress_System_Net_Sockets_Socket__System_Net_Sockets_Socket__.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean%2CSystem.Net.IPAddress%2CSystem.Net.Sockets.Socket%40%2CSystem.Net.Sockets.Socket%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L287">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L295">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_NetServices_CreateRtpSocket_" data-uid="SIPSorcery.Sys.NetServices.CreateRtpSocket*"></a>
   <h4 id="SIPSorcery_Sys_NetServices_CreateRtpSocket_System_Boolean_System_Net_IPAddress_System_Net_Sockets_Socket__System_Net_Sockets_Socket__" data-uid="SIPSorcery.Sys.NetServices.CreateRtpSocket(System.Boolean,System.Net.IPAddress,System.Net.Sockets.Socket@,System.Net.Sockets.Socket@)">CreateRtpSocket(Boolean, IPAddress, out Socket, out Socket)</h4>
@@ -396,7 +401,7 @@ will be made to bind the RTP and optionally control listeners on it.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_NetServices_DoTestReceive_System_Net_Sockets_Socket_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.NetServices.DoTestReceive(System.Net.Sockets.Socket%2CSystem.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L388">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L396">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_NetServices_DoTestReceive_" data-uid="SIPSorcery.Sys.NetServices.DoTestReceive*"></a>
   <h4 id="SIPSorcery_Sys_NetServices_DoTestReceive_System_Net_Sockets_Socket_System_Net_IPAddress_" data-uid="SIPSorcery.Sys.NetServices.DoTestReceive(System.Net.Sockets.Socket,System.Net.IPAddress)">DoTestReceive(Socket, IPAddress)</h4>
@@ -458,7 +463,7 @@ the IPv4 loopback addresses.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Sys_NetServices_GetLocalAddressForRemote_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Sys.NetServices.GetLocalAddressForRemote(System.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L706">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/sys/Net/NetServices.cs/#L714">View Source</a>
   </span>
   <a id="SIPSorcery_Sys_NetServices_GetLocalAddressForRemote_" data-uid="SIPSorcery.Sys.NetServices.GetLocalAddressForRemote*"></a>
   <h4 id="SIPSorcery_Sys_NetServices_GetLocalAddressForRemote_System_Net_IPAddress_" data-uid="SIPSorcery.Sys.NetServices.GetLocalAddressForRemote(System.Net.IPAddress)">GetLocalAddressForRemote(IPAddress)</h4>
