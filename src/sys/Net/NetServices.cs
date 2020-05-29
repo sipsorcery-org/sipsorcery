@@ -126,18 +126,17 @@ namespace SIPSorcery.Sys
         {
             if (bindAddress != null && bindAddress.AddressFamily == AddressFamily.InterNetworkV6 && !Socket.OSSupportsIPv6)
             {
-                throw new ApplicationException("An RTP socket cannot be created on an IPv6 address due to lack of OS support.");
+                throw new ApplicationException("A UDP socket cannot be created on an IPv6 address due to lack of OS support.");
             }
             else if (bindAddress != null && bindAddress.AddressFamily == AddressFamily.InterNetwork && !Socket.OSSupportsIPv4)
             {
-                throw new ApplicationException("An RTP socket cannot be created on an IPv4 address due to lack of OS support.");
+                throw new ApplicationException("A UDP socket cannot be created on an IPv4 address due to lack of OS support.");
             }
         }
 
         /// <summary>
-        /// Attempts to create and bind a UDP socket. This method will also verify that the socket can be used to do a single
-        /// magic cookie receive to verify the underlying System did in fact provide a usable socket. The additional check
-        /// is to accommodate a bug where Windows 10 was observed to allow the same port to be bound to two different
+        /// Attempts to create and bind a UDP socket. The socket is always created with the ExclusiveAddressUse socket option
+        /// set to accommodate a Windows 10 .Net Core socket bug where the same port can be bound to two different
         /// sockets, see https://github.com/dotnet/runtime/issues/36618.
         /// </summary>
         /// <param name="port">The port to attempt to bind on. Set to 0 to request the underlying OS to select a port.</param>
@@ -145,8 +144,9 @@ namespace SIPSorcery.Sys
         /// If not specified the broadest possible address will be chosen. Either IPAddress.Any or IPAddress.IPv6Any.</param>
         /// <param name="requireEvenPort">If true the method will only return successfully if it is able to bind on an
         /// even numbered port.</param>
+        /// <param name="useDualMode">If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</param>
         /// <returns>A bound socket if successful or throws an ApplicationException if unable to bind.</returns>
-        public static Socket CreateBoundUdpSocket(int port, IPAddress bindAddress, bool requireEvenPort = false)
+        public static Socket CreateBoundUdpSocket(int port, IPAddress bindAddress, bool requireEvenPort = false, bool useDualMode = true)
         {
             if (requireEvenPort && port != 0)
             {
@@ -172,7 +172,7 @@ namespace SIPSorcery.Sys
             {
                 try
                 {
-                    socket = CreateUdpSocket(addressFamily);
+                    socket = CreateUdpSocket(addressFamily, useDualMode);
                     socket.Bind(new IPEndPoint(bindAddress, port));
 
                     int boundPort = (socket.LocalEndPoint as IPEndPoint).Port;
@@ -190,7 +190,7 @@ namespace SIPSorcery.Sys
 
                             // Close the socket, create a new one and try binding on the next consecutive port.
                             socket.Close();
-                            socket = CreateUdpSocket(addressFamily);
+                            socket = CreateUdpSocket(addressFamily, useDualMode);
                             socket.Bind(new IPEndPoint(bindAddress, boundPort + 1));
                         }
                         else
@@ -260,14 +260,22 @@ namespace SIPSorcery.Sys
         /// Common instantiation logic for creating a new UDP socket.
         /// </summary>
         /// <param name="addressFamily">The address family for the new socket, IPv4 or IPv6.</param>
+        /// <param name="useDualMode">If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</param>
         /// <returns>A new socket instance.</returns>
-        private static Socket CreateUdpSocket(AddressFamily addressFamily)
+        private static Socket CreateUdpSocket(AddressFamily addressFamily, bool useDualMode = true)
         {
             var sock = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
             sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, true);
             if (addressFamily == AddressFamily.InterNetworkV6)
             {
-                sock.DualMode = SupportsDualModeIPv4PacketInfo;
+                if (!useDualMode)
+                {
+                    sock.DualMode = false;
+                }
+                else
+                {
+                    sock.DualMode = SupportsDualModeIPv4PacketInfo;
+                }
             }
             return sock;
         }

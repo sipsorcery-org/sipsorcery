@@ -158,10 +158,6 @@ namespace SIPSorcery.Media
                         throw new ApplicationException("Cannot start audio session without a remote audio track being available.");
                     }
 
-                    // Choose which codec to use.
-                    //_sendingFormat = AudioLocalTrack.Capabilities
-                    //    .Where(x => x.FormatID != DTMF_EVENT_PAYLOAD_ID.ToString() && int.TryParse(x.FormatID, out _))
-                    //    .OrderBy(x => int.Parse(x.FormatID)).First();
                     _sendingFormat = base.GetSendingFormat(SDPMediaTypesEnum.audio);
 
                     Log.LogDebug($"RTP audio session selected sending codec {_sendingFormat.FormatCodec}.");
