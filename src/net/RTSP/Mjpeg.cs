@@ -83,13 +83,15 @@ namespace SIPSorcery.Net
             public const byte StartOfScan = 0xda;
         }
 
-        static byte[] lum_dc_codelens = { 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
+        //static byte[] dc_luminance = { 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
+        static byte[] bits_dc_luminance = { 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0 };
 
-        static byte[] lum_dc_symbols = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+        static byte[] val_dc = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
-        static byte[] lum_ac_codelens = { 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d };
+        //static byte[] lum_ac_codelens = { 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d };
+        static byte[] bits_ac_luminance = { 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d };
 
-        static byte[] lum_ac_symbols =
+        static byte[] val_ac_luminance =
         {
             0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,
             0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
@@ -114,13 +116,15 @@ namespace SIPSorcery.Net
             0xf9, 0xfa
         };
 
-        static byte[] chm_dc_codelens = { 0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 };
+        //static byte[] dc_chrominance = { 0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 };
+        static byte[] bits_dc_chrominance = { 0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 };
 
         static byte[] chm_dc_symbols = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
-        static byte[] chm_ac_codelens = { 0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 0x77 };
+        //static byte[] bits_ac_chrominance = { 0, 0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 0x77 };
+        static byte[] bits_ac_chrominance = { 0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 0x77 };
 
-        static byte[] chm_ac_symbols = {
+        static byte[] val_ac_chrominance = {
             0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21,
             0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71,
             0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91,
@@ -206,6 +210,22 @@ namespace SIPSorcery.Net
             //Quantization Tables
             result.AddRange(CreateQuantizationTablesMarker(tables, precision));
 
+            //Huffman Tables
+            ushort huffmanLength = (ushort)(6 +
+                bits_dc_luminance.Length + val_dc.Length + 
+                bits_dc_chrominance.Length + val_dc.Length +
+                bits_ac_luminance.Length + val_ac_luminance.Length +
+                bits_ac_chrominance.Length + val_ac_chrominance.Length);
+
+            result.Add(Tags.Prefix);
+            result.Add(Tags.HuffmanTable);
+            result.Add((byte)(huffmanLength >> 8));
+            result.Add((byte)huffmanLength);
+            result.AddRange(CreateHuffmanTableMarker(bits_dc_luminance, val_dc, 0, 0));
+            result.AddRange(CreateHuffmanTableMarker(bits_dc_chrominance, val_dc, 0, 1));
+            result.AddRange(CreateHuffmanTableMarker(bits_ac_luminance, val_ac_luminance, 1, 0));
+            result.AddRange(CreateHuffmanTableMarker(bits_ac_chrominance, val_ac_chrominance, 1, 1));
+
             //Start Of Frame
             result.Add(Tags.Prefix);
             result.Add(Tags.StartOfFrame);//SOF
@@ -218,27 +238,22 @@ namespace SIPSorcery.Net
             result.Add((byte)width);
 
             result.Add(0x03);//Number of components
-            result.Add(0x00);//Component Number
+            result.Add(0x01);//Component Number
             result.Add((byte)(type > 0 ? 0x22 : 0x21)); //Horizontal or Vertical Sample  
 
             result.Add(0x00);//Matrix Number (Quant Table Id)?
-            result.Add(0x01);//Component Number
-            result.Add(0x11);//Horizontal or Vertical Sample
-
-            //ToDo - Handle 16 Bit Precision
-            result.Add(1);//Matrix Number
-
             result.Add(0x02);//Component Number
             result.Add(0x11);//Horizontal or Vertical Sample
 
             //ToDo - Handle 16 Bit Precision
-            result.Add(1);//Matrix Number      
+            result.Add(0);//Matrix Number
 
-            //Huffman Tables
-            result.AddRange(CreateHuffmanTableMarker(lum_dc_codelens, lum_dc_symbols, 0, 0));
-            result.AddRange(CreateHuffmanTableMarker(lum_ac_codelens, lum_ac_symbols, 0, 1));
-            result.AddRange(CreateHuffmanTableMarker(chm_dc_codelens, chm_dc_symbols, 1, 0));
-            result.AddRange(CreateHuffmanTableMarker(chm_ac_codelens, chm_ac_symbols, 1, 1));
+            result.Add(0x03);//Component Number
+            result.Add(0x11);//Horizontal or Vertical Sample
+
+            //ToDo - Handle 16 Bit Precision
+            //result.Add(1);//Matrix Number      
+            result.Add(0);//Matrix Number      
 
             //Start Of Scan
             result.Add(Tags.Prefix);
@@ -246,11 +261,11 @@ namespace SIPSorcery.Net
             result.Add(0x00); //Length
             result.Add(0x0c); //Length - 12
             result.Add(0x03); //Number of components
-            result.Add(0x00); //Component Number
-            result.Add(0x00); //Matrix Number
             result.Add(0x01); //Component Number
-            result.Add(0x11); //Horizontal or Vertical Sample
+            result.Add(0x00); //Matrix Number
             result.Add(0x02); //Component Number
+            result.Add(0x11); //Horizontal or Vertical Sample
+            result.Add(0x03); //Component Number
             result.Add(0x11); //Horizontal or Vertical Sample
             result.Add(0x00); //Start of spectral
             result.Add(0x3f); //End of spectral (63)
@@ -348,14 +363,14 @@ namespace SIPSorcery.Net
             return result;
         }
 
-        static byte[] CreateHuffmanTableMarker(byte[] codeLens, byte[] symbols, int tableNo, int tableClass)
+        static byte[] CreateHuffmanTableMarker(byte[] codeLens, byte[] symbols, int tableClass, int tableID)
         {
             List<byte> result = new List<byte>();
-            result.Add(Tags.Prefix);
-            result.Add(Tags.HuffmanTable);
-            result.Add(0x00); //Length
-            result.Add((byte)(3 + codeLens.Length + symbols.Length)); //Length
-            result.Add((byte)((tableClass << 4) | tableNo)); //Id
+            //result.Add(Tags.Prefix);
+            //result.Add(Tags.HuffmanTable);
+            //result.Add(0x00); //Length
+            //result.Add((byte)(3 + codeLens.Length + symbols.Length)); //Length
+            result.Add((byte)((tableClass << 4) | tableID)); //Id
             result.AddRange(codeLens);//Data
             result.AddRange(symbols);
             return result.ToArray();
@@ -615,9 +630,9 @@ namespace SIPSorcery.Net
                 //In short, for a lifetime of an Image constructed from a stream, the stream must not be destroyed.
                 //Image = new System.Drawing.Bitmap(System.Drawing.Image.FromStream(Buffer, true, true));
                 //DO NOT USE THE EMBEDDED COLOR MANGEMENT
-                // Image = System.Drawing.Image.FromStream(Buffer, false, true);
+                //Image = System.Drawing.Image.FromStream(Buffer, false, true);
 
-                return Buffer.GetBuffer();
+                return Buffer.ToArray();
             }
         }
     }

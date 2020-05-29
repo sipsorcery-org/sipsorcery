@@ -54,7 +54,8 @@ namespace SIPSorcery.SIP
         /// Creates a SIP channel to listen for and send SIP messages over UDP.
         /// </summary>
         /// <param name="endPoint">The IP end point to listen on and send from.</param>
-        public SIPUDPChannel(IPEndPoint endPoint) : base()
+        /// <param name="useDualMode">If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</param>
+        public SIPUDPChannel(IPEndPoint endPoint, bool useDualMode = false) : base()
         {
             if (endPoint == null)
             {
@@ -70,7 +71,7 @@ namespace SIPSorcery.SIP
             //m_udpSocket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             //m_udpSocket.Bind(endPoint);
 
-            m_udpSocket = NetServices.CreateBoundUdpSocket(endPoint.Port, endPoint.Address);
+            m_udpSocket = NetServices.CreateBoundUdpSocket(endPoint.Port, endPoint.Address, false, useDualMode);
             if (endPoint.Port == 0)
             {
                 Port = (m_udpSocket.LocalEndPoint as IPEndPoint).Port;

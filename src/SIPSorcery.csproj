@@ -16,6 +16,7 @@
   <ItemGroup>
     <None Remove="core\SIPEvents\Dialog\EventDialogSchema.xsd" />
     <None Remove="core\SIPEvents\Presence\PIDFSchema.xsd" />
+    <None Remove="net\RTSP\Mjpeg.old" />
     <None Include="icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
