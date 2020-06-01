@@ -24,7 +24,8 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "time@sipsorcery.com";
+        //private static string DESTINATION = "time@sipsorcery.com";
+        private static string DESTINATION = "3@127.0.0.1";
 
         static async Task Main()
         {
@@ -34,7 +35,7 @@ namespace demo
 
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new NAudioRtpSession();
+            var rtpSession = new WindowsAudioRtpSession();
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);

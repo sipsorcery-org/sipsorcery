@@ -435,7 +435,7 @@ namespace SIPSorcery
                 ua.ClientCallFailed += (uac, err, resp) => logger.LogWarning($"{uac.CallDescriptor.To} Failed: {err}");
                 ua.ClientCallAnswered += (uac, resp) => logger.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                var audioOptions = new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.Silence };
+                var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
                 var rtpAudioSession = new RtpAudioSession(audioOptions, new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
 
                 var result = await ua.Call(dst.ToString(), null, null, rtpAudioSession);

@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPCallResampleAudio", "SIP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AttendedTransferee", "AttendedTransferee\AttendedTransferee.csproj", "{2D3F9FAF-F102-45C2-8BCF-B866B70F106F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\src\SIPSorcery.csproj", "{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -223,6 +225,18 @@ Global
 		{2D3F9FAF-F102-45C2-8BCF-B866B70F106F}.Release|x64.Build.0 = Release|Any CPU
 		{2D3F9FAF-F102-45C2-8BCF-B866B70F106F}.Release|x86.ActiveCfg = Release|Any CPU
 		{2D3F9FAF-F102-45C2-8BCF-B866B70F106F}.Release|x86.Build.0 = Release|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Debug|x64.Build.0 = Debug|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Debug|x86.Build.0 = Debug|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Release|x64.ActiveCfg = Release|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Release|x64.Build.0 = Release|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Release|x86.ActiveCfg = Release|Any CPU
+		{84CF1605-2539-43BF-A5EA-5FE1F0BD578A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

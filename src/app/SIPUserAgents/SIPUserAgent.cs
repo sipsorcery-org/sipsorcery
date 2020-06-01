@@ -108,6 +108,12 @@ namespace SIPSorcery.SIP.App
         private string _oldCallID;
 
         /// <summary>
+        /// Gets set to true if the SIP user agent has been explicitly closed and is no longer
+        /// required.
+        /// </summary>
+        private bool _isClosed;
+
+        /// <summary>
         /// The media (RTP) session in use for the current call.
         /// </summary>
         public IMediaSession MediaSession { get; private set; }
@@ -1115,65 +1121,69 @@ namespace SIPSorcery.SIP.App
                         logger.LogError(excp, $"Exception SIPUserAgent.SIPTransportRequestReceived. {excp.Message}");
                     }
                 }
-                else if (sipRequest.Method == SIPMethodsEnum.INVITE && !string.IsNullOrWhiteSpace(sipRequest.Header.Replaces))
+                else if (!_isClosed)
                 {
-                    // This is a special case of receiving an INVITE request that is part of an attended transfer and
-                    // that if successful will replace the existing dialog.
-                    //UASInviteTransaction uasTx = new UASInviteTransaction(m_transport, sipRequest, null);
-                    var uas = AcceptCall(sipRequest);
-
-                    // An attended transfer INVITE should only be accepted if the dialog parameters in the Replaces header 
-                    // match the current dialog. But... to be more accepting with only a small increase in risk we only 
-                    // require a match on the Call-ID (only small increase in risk as if a malicious party can get 1
-                    // of the three required headers they can almost certainly get all 3).
-                    SIPReplacesParameter replaces = SIPReplacesParameter.Parse(sipRequest.Header.Replaces);
-
-                    logger.LogDebug($"INVITE for attended transfer received, Replaces CallID {replaces.CallID}, our dialog Call-ID {m_sipDialogue.CallId}.");
-
-                    if (replaces == null || replaces.CallID != m_sipDialogue.CallId)
+                    if (sipRequest.Method == SIPMethodsEnum.INVITE && !string.IsNullOrWhiteSpace(sipRequest.Header.Replaces))
                     {
-                        logger.LogDebug("The attended transfer INVITE's Replaces header did not match the current dialog, rejecting.");
-                        uas.Reject(SIPResponseStatusCodesEnum.BadRequest, null);
+                        // This is a special case of receiving an INVITE request that is part of an attended transfer and
+                        // that if successful will replace the existing dialog.
+                        //UASInviteTransaction uasTx = new UASInviteTransaction(m_transport, sipRequest, null);
+                        var uas = AcceptCall(sipRequest);
+
+                        // An attended transfer INVITE should only be accepted if the dialog parameters in the Replaces header 
+                        // match the current dialog. But... to be more accepting with only a small increase in risk we only 
+                        // require a match on the Call-ID (only small increase in risk as if a malicious party can get 1
+                        // of the three required headers they can almost certainly get all 3).
+                        SIPReplacesParameter replaces = SIPReplacesParameter.Parse(sipRequest.Header.Replaces);
+
+                        logger.LogDebug($"INVITE for attended transfer received, Replaces CallID {replaces.CallID}, our dialog Call-ID {m_sipDialogue.CallId}.");
+
+                        if (replaces == null || replaces.CallID != m_sipDialogue.CallId)
+                        {
+                            logger.LogDebug("The attended transfer INVITE's Replaces header did not match the current dialog, rejecting.");
+                            uas.Reject(SIPResponseStatusCodesEnum.BadRequest, null);
+                        }
+                        else
+                        {
+                            logger.LogDebug($"Proceeding with attended transfer INVITE received from {remoteEndPoint}.");
+                            await AcceptAttendedTransfer(uas).ConfigureAwait(false);
+                        }
+                    }
+                }
+                else if (sipRequest.Method == SIPMethodsEnum.INVITE)
+                {
+                    logger.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint}, uri:{sipRequest.URI}.");
+
+                    if (!m_isTransportExclusive)
+                    {
+                        // If there is no handler for an incoming call request it gets ignored. The SIP transport layer can have 
+                        // multiple handlers for incoming requests and it's likely a different handler is processing incoming calls.
+                        OnIncomingCall?.Invoke(this, sipRequest);
                     }
                     else
                     {
-                        logger.LogDebug($"Proceeding with attended transfer INVITE received from {remoteEndPoint}.");
-                        await AcceptAttendedTransfer(uas).ConfigureAwait(false);
+                        if (OnIncomingCall != null)
+                        {
+                            OnIncomingCall(this, sipRequest);
+                        }
+                        else
+                        {
+                            // This user agent has exclusive control of the transport and no incoming call handler was provided.
+                            var uas = new UASInviteTransaction(m_transport, sipRequest, m_outboundProxy);
+                            var notFoundResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, null);
+                            uas.SendFinalResponse(notFoundResponse);
+                        }
                     }
                 }
             }
-            else if (sipRequest.Method == SIPMethodsEnum.INVITE)
-            {
-                logger.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint}, uri:{sipRequest.URI}.");
-
-                if (!m_isTransportExclusive)
-                {
-                    // If there is no handler for an incoming call request it gets ignored. The SIP transport layer can have 
-                    // multiple handlers for incoming requests and it's likely a different handler is processing incoming calls.
-                    OnIncomingCall?.Invoke(this, sipRequest);
-                }
-                else
-                {
-                    if(OnIncomingCall != null)
-                    {
-                        OnIncomingCall(this, sipRequest);
-                    }
-                    else
-                    {
-                        // This user agent has exclusive control of the transport and no incoming call handler was provided.
-                        var uas = new UASInviteTransaction(m_transport, sipRequest, m_outboundProxy);
-                        var notFoundResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.NotFound, null);
-                        uas.SendFinalResponse(notFoundResponse);
-                    }
-                }
-            }
-            else if(m_isTransportExclusive)
+            else if (m_isTransportExclusive)
             {
                 // If the transport is exclusive this is the only user agent listening and if it's not handling the request
                 // nothing is.
                 var notSupportedResponse = SIPResponse.GetResponse(sipRequest, SIPResponseStatusCodesEnum.MethodNotAllowed, null);
                 await m_transport.SendResponseAsync(notSupportedResponse).ConfigureAwait(false);
             }
+
         }
 
         /// <summary>
@@ -1537,6 +1547,17 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// Calling close indicates the SIP user agent is no longer required and it should not
+        /// respond to any NEW requests. It will still respond to BYE in-dialog requests in order
+        /// to correctly deal with re-transmits.
+        /// </summary>
+        public void Close()
+        {
+            _isClosed = true;
+            m_transport.SIPTransportRequestReceived -= SIPTransportRequestReceived;
+        }
+
+        /// <summary>
         /// Final cleanup if instance is being discarded.
         /// </summary>
         public void Dispose()
@@ -1548,7 +1569,7 @@ namespace SIPSorcery.SIP.App
 
             m_transport.SIPTransportRequestReceived -= SIPTransportRequestReceived;
 
-            if(m_isTransportExclusive)
+            if (m_isTransportExclusive)
             {
                 m_transport.Shutdown();
             }
