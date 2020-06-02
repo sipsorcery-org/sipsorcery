@@ -108,6 +108,12 @@ namespace SIPSorcery.SIP.App
         private string _oldCallID;
 
         /// <summary>
+        /// Gets set to true if the SIP user agent has been explicitly closed and is no longer
+        /// required.
+        /// </summary>
+        private bool _isClosed;
+
+        /// <summary>
         /// The media (RTP) session in use for the current call.
         /// </summary>
         public IMediaSession MediaSession { get; private set; }
@@ -1142,7 +1148,7 @@ namespace SIPSorcery.SIP.App
                     }
                 }
             }
-            else if (sipRequest.Method == SIPMethodsEnum.INVITE)
+            else if (!_isClosed && sipRequest.Method == SIPMethodsEnum.INVITE)
             {
                 logger.LogInformation($"Incoming call request: {localSIPEndPoint}<-{remoteEndPoint}, uri:{sipRequest.URI}.");
 
@@ -1154,7 +1160,7 @@ namespace SIPSorcery.SIP.App
                 }
                 else
                 {
-                    if(OnIncomingCall != null)
+                    if (OnIncomingCall != null)
                     {
                         OnIncomingCall(this, sipRequest);
                     }
@@ -1167,7 +1173,7 @@ namespace SIPSorcery.SIP.App
                     }
                 }
             }
-            else if(m_isTransportExclusive)
+            else if (!_isClosed && m_isTransportExclusive)
             {
                 // If the transport is exclusive this is the only user agent listening and if it's not handling the request
                 // nothing is.
@@ -1537,6 +1543,17 @@ namespace SIPSorcery.SIP.App
         }
 
         /// <summary>
+        /// Calling close indicates the SIP user agent is no longer required and it should not
+        /// respond to any NEW requests. It will still respond to BYE in-dialog requests in order
+        /// to correctly deal with re-transmits.
+        /// </summary>
+        public void Close()
+        {
+            _isClosed = true;
+            m_transport.SIPTransportRequestReceived -= SIPTransportRequestReceived;
+        }
+
+        /// <summary>
         /// Final cleanup if instance is being discarded.
         /// </summary>
         public void Dispose()
@@ -1548,7 +1565,7 @@ namespace SIPSorcery.SIP.App
 
             m_transport.SIPTransportRequestReceived -= SIPTransportRequestReceived;
 
-            if(m_isTransportExclusive)
+            if (m_isTransportExclusive)
             {
                 m_transport.Shutdown();
             }

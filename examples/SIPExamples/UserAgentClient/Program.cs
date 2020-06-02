@@ -72,7 +72,7 @@ namespace SIPSorcery
             // Initialise an RTP session to receive the RTP packets from the remote SIP server.
             var audioOptions = new AudioOptions
             {
-                AudioSource = AudioSourcesEnum.Microphone,
+                AudioSource = AudioSourcesEnum.CaptureDevice,
                 AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.PCMU },
                 OutputDeviceIndex = AudioOptions.DEFAULT_OUTPUTDEVICE_INDEX
             };

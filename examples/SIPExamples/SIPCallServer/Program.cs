@@ -296,14 +296,14 @@ namespace SIPSorcery
         {
             List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
 
-            var audioSource = DummyAudioSourcesEnum.SineWave;
-            if (string.IsNullOrEmpty(dst) || !Enum.TryParse<DummyAudioSourcesEnum>(dst, out audioSource))
+            var audioSource = AudioSourcesEnum.SineWave;
+            if (string.IsNullOrEmpty(dst) || !Enum.TryParse<AudioSourcesEnum>(dst, out audioSource))
             {
-                audioSource = DummyAudioSourcesEnum.Silence;
+                audioSource = AudioSourcesEnum.Silence;
             }
 
-            var audioOptions = new DummyAudioOptions { AudioSource = audioSource };
-            if (audioSource == DummyAudioSourcesEnum.Music)
+            var audioOptions = new AudioSourceOptions { AudioSource = audioSource };
+            if (audioSource == AudioSourcesEnum.Music)
             {
                 audioOptions.SourceFiles = new Dictionary<SDPMediaFormatsEnum, string>();
                 if (codecs.Contains(SDPMediaFormatsEnum.PCMA)) { audioOptions.SourceFiles.Add(SDPMediaFormatsEnum.PCMA, MUSIC_FILE_PCMA); }
@@ -435,7 +435,12 @@ namespace SIPSorcery
                 string callID = dialogue.CallId;
                 if (_calls.ContainsKey(callID))
                 {
-                    _calls.TryRemove(callID, out _);
+                    if(_calls.TryRemove(callID, out var ua))
+                    {
+                        // This app only uses each SIP user agent once so here the agent is 
+                        // explicitly closed to prevent is responding to any new SIP requests.
+                        ua.Close();
+                    }
                 }
             }
         }

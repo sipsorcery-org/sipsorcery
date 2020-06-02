@@ -303,8 +303,6 @@ namespace SIPSorcery.Net
         private IPAddress m_bindAddress = null;         // If set the address to use for binding the RTP and control sockets.
         private bool m_rtpEventInProgress;              // Gets set to true when an RTP event is being sent and the normal stream is interrupted.
         private uint m_lastRtpTimestamp;                // The last timestamp used in an RTP packet.    
-        private bool m_isClosed;
-        private bool m_isStarted;
 
         private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
@@ -410,7 +408,13 @@ namespace SIPSorcery.Net
         /// Indicates whether the session has been closed. Once a session is closed it cannot
         /// be restarted.
         /// </summary>
-        public bool IsClosed { get => m_isClosed; }
+        public bool IsClosed { get; private set; }
+
+        /// <summary>
+        /// Indicates whether the session has been started. Starting a session tells the RTP 
+        /// socket to start receiving,
+        /// </summary>
+        public bool IsStarted { get; private set; }
 
         /// <summary>
         /// Indicates whether this session is using audio.
@@ -1274,9 +1278,9 @@ namespace SIPSorcery.Net
         /// </summary>
         public virtual Task Start()
         {
-            if (!m_isStarted)
+            if (!IsStarted)
             {
-                m_isStarted = true;
+                IsStarted = true;
 
                 if (HasAudio && AudioRtcpSession != null && AudioLocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                 {
@@ -1352,7 +1356,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The audio payload to send.</param>
         public void SendAudioFrame(uint duration, int payloadTypeID, byte[] buffer)
         {
-            if (m_isClosed || m_rtpEventInProgress || AudioDestinationEndPoint == null)
+            if (IsClosed || m_rtpEventInProgress || AudioDestinationEndPoint == null)
             {
                 return;
             }
@@ -1412,7 +1416,7 @@ namespace SIPSorcery.Net
         {
             var dstEndPoint = m_isMediaMultiplexed ? AudioDestinationEndPoint : VideoDestinationEndPoint;
 
-            if (m_isClosed || m_rtpEventInProgress || dstEndPoint == null)
+            if (IsClosed || m_rtpEventInProgress || dstEndPoint == null)
             {
                 return;
             }
@@ -1474,7 +1478,7 @@ namespace SIPSorcery.Net
         {
             var dstEndPoint = m_isMediaMultiplexed ? AudioDestinationEndPoint : VideoDestinationEndPoint;
 
-            if (m_isClosed || m_rtpEventInProgress || dstEndPoint == null)
+            if (IsClosed || m_rtpEventInProgress || dstEndPoint == null)
             {
                 return;
             }
@@ -1526,7 +1530,7 @@ namespace SIPSorcery.Net
         {
             var dstEndPoint = m_isMediaMultiplexed ? AudioDestinationEndPoint : VideoDestinationEndPoint;
 
-            if (m_isClosed || m_rtpEventInProgress || dstEndPoint == null)
+            if (IsClosed || m_rtpEventInProgress || dstEndPoint == null)
             {
                 return;
             }
@@ -1621,7 +1625,7 @@ namespace SIPSorcery.Net
         {
             var dstEndPoint = AudioDestinationEndPoint;
 
-            if (m_isClosed || m_rtpEventInProgress == true || dstEndPoint == null)
+            if (IsClosed || m_rtpEventInProgress == true || dstEndPoint == null)
             {
                 logger.LogWarning("SendDtmfEvent request ignored as an RTP event is already in progress.");
             }
@@ -1719,9 +1723,9 @@ namespace SIPSorcery.Net
         /// </summary>
         public virtual void Close(string reason)
         {
-            if (!m_isClosed)
+            if (!IsClosed)
             {
-                m_isClosed = true;
+                IsClosed = true;
 
                 AudioRtcpSession?.Close(reason);
                 VideoRtcpSession?.Close(reason);
@@ -1804,7 +1808,7 @@ namespace SIPSorcery.Net
                                 VideoRtcpSession?.RemoveReceptionReport(rtcpPkt.Bye.SSRC);
                             }
                         }
-                        else if (!m_isClosed)
+                        else if (!IsClosed)
                         {
                             var rtcpSession = GetRtcpSession(rtcpPkt);
                             if (rtcpSession != null)
@@ -1853,7 +1857,7 @@ namespace SIPSorcery.Net
                 {
                     #region RTP packet.
 
-                    if (!m_isClosed)
+                    if (!IsClosed)
                     {
                         if (m_srtpUnprotect != null)
                         {
@@ -1962,11 +1966,17 @@ namespace SIPSorcery.Net
                 // Exact match on actual and expected destination.
                 isValidSource = true;
             }
-            else if (expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate())
+            else if ((expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate()) ||
+               (
+                (IPAddress.Loopback.Equals(receivedOnEndPoint.Address) || IPAddress.IPv6Loopback.Equals(receivedOnEndPoint.Address)) 
+                && expectedEndPoint.Port == receivedOnEndPoint.Port)
+               )
             {
                 // The end point doesn't match BUT we were supplied a private address and the remote source is a public address
                 // so high probability there's a NAT on the network path. Switch to the remote end point (note this can only happen once
                 // and only if the SSRV is 0, i.e. this is the first packet.
+                // If the remote end point is a loopback address AND the port matches then it's likely that this is a test/development 
+                // scenario and the source can be trusted.
                 logger.LogDebug($"{mediaType} end point switched for RTP ssrc {ssrc} from {expectedEndPoint} to {receivedOnEndPoint}.");
 
                 if (mediaType == SDPMediaTypesEnum.audio)

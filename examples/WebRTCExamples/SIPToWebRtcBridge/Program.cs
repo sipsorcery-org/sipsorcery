@@ -157,9 +157,8 @@ namespace SIPSorcery
                         Log.LogInformation($"Incoming call request from {remoteEndPoint}: {sipRequest.StatusLine}.");
                         var incomingCall = userAgent.AcceptCall(sipRequest);
 
-                        rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+                        rtpAVSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, null);
                         await userAgent.Answer(incomingCall, rtpAVSession);
-                        //rtpAVSession.OnRtpPacketReceived += (mediaType, rtpPacket) => OnMediaFromSIPSampleReady?.Invoke(mediaType, (uint)rtpPacket.Payload.Length, rtpPacket.Payload);
                         rtpAVSession.OnRtpPacketReceived += (mediaType, rtpPacket) => ForwardMedia(mediaType, rtpPacket);
 
                         Log.LogInformation($"Answered incoming call from {sipRequest.Header.From.FriendlyDescription()} at {remoteEndPoint}.");

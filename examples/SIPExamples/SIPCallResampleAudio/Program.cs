@@ -59,7 +59,7 @@ namespace demo
 
             //EnableTraceLogs(sipTransport);
 
-            var audioOptions = new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.Silence };
+            var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
             var audioFormats = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU };
             var rtpSession = new RtpAudioSession(audioOptions, audioFormats);
             rtpSession.OnRtpPacketReceived += RtpSession_OnRtpPacketReceived;
