@@ -38,16 +38,12 @@ namespace demo
 
             AddConsoleLogger();
 
-            IPAddress localAddress = IPAddress.Parse("192.168.0.105");
-
             var sipTransport = new SIPTransport();
-            var udpChannel = new SIPUDPChannel(localAddress, 0);
-            sipTransport.AddSIPChannel(udpChannel);
 
             EnableTraceLogs(sipTransport);
 
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice}, null, localAddress);
+            var rtpSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice}, null);
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
