@@ -9,7 +9,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.ALawDecoder.html",
-          "hash": "Kg2fFd6vxfy19ttZ5p099Q=="
+          "hash": "CQ0VE7e9wvtS9IwzXUDlhw=="
         }
       },
       "is_incremental": false,
@@ -21,7 +21,43 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.ALawEncoder.html",
-          "hash": "v/R/xgaFH5gfIiOc4R8cpA=="
+          "hash": "bd6rWN1vu0adzfL4AW+ljw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.AudioExternalSamplingRatesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.AudioExternalSamplingRatesEnum.html",
+          "hash": "GnikvT+eAgMAPEdpMEb85Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.AudioSourceOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.AudioSourceOptions.html",
+          "hash": "65m0yhDPY764vWeoMl1qLQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Media.AudioSourcesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Media.AudioSourcesEnum.html",
+          "hash": "B1QAIE/a24aNybdldRaVSw=="
         }
       },
       "is_incremental": false,
@@ -33,31 +69,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.Band.html",
-          "hash": "AxNb68O5C0GUYOZ5oasZsw=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Media.DummyAudioOptions.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Media.DummyAudioOptions.html",
-          "hash": "ifxRlBdsK+8+kUUGApvDIg=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Media.DummyAudioSourcesEnum.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Media.DummyAudioSourcesEnum.html",
-          "hash": "iQSSyIIMuuOpqrWMGPrSsw=="
+          "hash": "QjPSz464cS8fpJRbq4jsNw=="
         }
       },
       "is_incremental": false,
@@ -69,7 +81,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.G722Codec.html",
-          "hash": "bnF9h65AW2u8WU29NY8Kkg=="
+          "hash": "i4lrdIzYTM2n1uvqnv2zAA=="
         }
       },
       "is_incremental": false,
@@ -81,7 +93,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.G722CodecState.html",
-          "hash": "OmlCzCBJ+HTNqr6lE9DWDw=="
+          "hash": "fep1lEtdeto/VJMIITAgiA=="
         }
       },
       "is_incremental": false,
@@ -93,7 +105,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.G722Flags.html",
-          "hash": "GpJOeWGVpDdekEIF/uP0uQ=="
+          "hash": "ZNOPXSJINlWStHPUDhtrzw=="
         }
       },
       "is_incremental": false,
@@ -105,7 +117,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.MuLawDecoder.html",
-          "hash": "BYJ17neqjBnUzmeYq7NPog=="
+          "hash": "ku7ddNi9J+RTHuTBdk4oYQ=="
         }
       },
       "is_incremental": false,
@@ -117,7 +129,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.MuLawEncoder.html",
-          "hash": "GZY3lvL+vVqQ4rwZ6qEwRw=="
+          "hash": "HOObVTaLRHdUu4h+5cfZIQ=="
         }
       },
       "is_incremental": false,
@@ -129,7 +141,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.RtpAudioSession.html",
-          "hash": "C1W9wb/pFIVJf9OC+tJ8nA=="
+          "hash": "NAPXsFriDKEVDCHT7U4UnA=="
         }
       },
       "is_incremental": false,
@@ -153,7 +165,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.SignalGenerator.html",
-          "hash": "tYAJcuWSHp5GkH97mxugxg=="
+          "hash": "prUJNphqIfIZlS+z2mTYuQ=="
         }
       },
       "is_incremental": false,
@@ -165,7 +177,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.SignalGeneratorType.html",
-          "hash": "Xfk2Ck+9FgJXcs13WLV3Pw=="
+          "hash": "mhBeGOG1Uios22sSIeQYng=="
         }
       },
       "is_incremental": false,
@@ -177,7 +189,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.html",
-          "hash": "hEaMZkeEKXAv8engRLxYYA=="
+          "hash": "A17q+hDbQAa2OUaPTEFSsg=="
         }
       },
       "is_incremental": false,
@@ -705,7 +717,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnection.html",
-          "hash": "3Btg4pISgoZAnDbx/5kEPw=="
+          "hash": "la+h6HpN8fKJ6UREwrGqSw=="
         }
       },
       "is_incremental": false,
@@ -873,7 +885,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTPSession.html",
-          "hash": "KgpMolaR3sSKTmw4jQpNrQ=="
+          "hash": "8qPUbIbcvoQ2nAGMwIZ6jQ=="
         }
       },
       "is_incremental": false,
@@ -2289,7 +2301,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPUserAgent.html",
-          "hash": "rzH2tYUZqStHQtg7592/bw=="
+          "hash": "V8W+cyZFK5os4C8axJk04w=="
         }
       },
       "is_incremental": false,
@@ -3873,7 +3885,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "OcwdL5EK2epzekI7X7yt8Q=="
+          "hash": "a06MuR2JLzQ81GAEOdJYXg=="
         }
       },
       "is_incremental": false,
@@ -4126,7 +4138,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 321,
+          "total_file_count": 322,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {

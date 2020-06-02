@@ -45,6 +45,96 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.ALawEncoder.LinearToALawSample
   nameWithType: ALawEncoder.LinearToALawSample
+- uid: SIPSorcery.Media.AudioExternalSamplingRatesEnum
+  name: AudioExternalSamplingRatesEnum
+  href: api/SIPSorcery.Media.AudioExternalSamplingRatesEnum.html
+  commentId: T:SIPSorcery.Media.AudioExternalSamplingRatesEnum
+  fullName: SIPSorcery.Media.AudioExternalSamplingRatesEnum
+  nameWithType: AudioExternalSamplingRatesEnum
+- uid: SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate16KHz
+  name: SampleRate16KHz
+  href: api/SIPSorcery.Media.AudioExternalSamplingRatesEnum.html#SIPSorcery_Media_AudioExternalSamplingRatesEnum_SampleRate16KHz
+  commentId: F:SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate16KHz
+  fullName: SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate16KHz
+  nameWithType: AudioExternalSamplingRatesEnum.SampleRate16KHz
+- uid: SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate8KHz
+  name: SampleRate8KHz
+  href: api/SIPSorcery.Media.AudioExternalSamplingRatesEnum.html#SIPSorcery_Media_AudioExternalSamplingRatesEnum_SampleRate8KHz
+  commentId: F:SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate8KHz
+  fullName: SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate8KHz
+  nameWithType: AudioExternalSamplingRatesEnum.SampleRate8KHz
+- uid: SIPSorcery.Media.AudioSourceOptions
+  name: AudioSourceOptions
+  href: api/SIPSorcery.Media.AudioSourceOptions.html
+  commentId: T:SIPSorcery.Media.AudioSourceOptions
+  fullName: SIPSorcery.Media.AudioSourceOptions
+  nameWithType: AudioSourceOptions
+- uid: SIPSorcery.Media.AudioSourceOptions.AudioSource
+  name: AudioSource
+  href: api/SIPSorcery.Media.AudioSourceOptions.html#SIPSorcery_Media_AudioSourceOptions_AudioSource
+  commentId: F:SIPSorcery.Media.AudioSourceOptions.AudioSource
+  fullName: SIPSorcery.Media.AudioSourceOptions.AudioSource
+  nameWithType: AudioSourceOptions.AudioSource
+- uid: SIPSorcery.Media.AudioSourceOptions.ExternalSourceSampleRate
+  name: ExternalSourceSampleRate
+  href: api/SIPSorcery.Media.AudioSourceOptions.html#SIPSorcery_Media_AudioSourceOptions_ExternalSourceSampleRate
+  commentId: F:SIPSorcery.Media.AudioSourceOptions.ExternalSourceSampleRate
+  fullName: SIPSorcery.Media.AudioSourceOptions.ExternalSourceSampleRate
+  nameWithType: AudioSourceOptions.ExternalSourceSampleRate
+- uid: SIPSorcery.Media.AudioSourceOptions.SourceFiles
+  name: SourceFiles
+  href: api/SIPSorcery.Media.AudioSourceOptions.html#SIPSorcery_Media_AudioSourceOptions_SourceFiles
+  commentId: F:SIPSorcery.Media.AudioSourceOptions.SourceFiles
+  fullName: SIPSorcery.Media.AudioSourceOptions.SourceFiles
+  nameWithType: AudioSourceOptions.SourceFiles
+- uid: SIPSorcery.Media.AudioSourcesEnum
+  name: AudioSourcesEnum
+  href: api/SIPSorcery.Media.AudioSourcesEnum.html
+  commentId: T:SIPSorcery.Media.AudioSourcesEnum
+  fullName: SIPSorcery.Media.AudioSourcesEnum
+  nameWithType: AudioSourcesEnum
+- uid: SIPSorcery.Media.AudioSourcesEnum.CaptureDevice
+  name: CaptureDevice
+  href: api/SIPSorcery.Media.AudioSourcesEnum.html#SIPSorcery_Media_AudioSourcesEnum_CaptureDevice
+  commentId: F:SIPSorcery.Media.AudioSourcesEnum.CaptureDevice
+  fullName: SIPSorcery.Media.AudioSourcesEnum.CaptureDevice
+  nameWithType: AudioSourcesEnum.CaptureDevice
+- uid: SIPSorcery.Media.AudioSourcesEnum.Music
+  name: Music
+  href: api/SIPSorcery.Media.AudioSourcesEnum.html#SIPSorcery_Media_AudioSourcesEnum_Music
+  commentId: F:SIPSorcery.Media.AudioSourcesEnum.Music
+  fullName: SIPSorcery.Media.AudioSourcesEnum.Music
+  nameWithType: AudioSourcesEnum.Music
+- uid: SIPSorcery.Media.AudioSourcesEnum.None
+  name: None
+  href: api/SIPSorcery.Media.AudioSourcesEnum.html#SIPSorcery_Media_AudioSourcesEnum_None
+  commentId: F:SIPSorcery.Media.AudioSourcesEnum.None
+  fullName: SIPSorcery.Media.AudioSourcesEnum.None
+  nameWithType: AudioSourcesEnum.None
+- uid: SIPSorcery.Media.AudioSourcesEnum.PinkNoise
+  name: PinkNoise
+  href: api/SIPSorcery.Media.AudioSourcesEnum.html#SIPSorcery_Media_AudioSourcesEnum_PinkNoise
+  commentId: F:SIPSorcery.Media.AudioSourcesEnum.PinkNoise
+  fullName: SIPSorcery.Media.AudioSourcesEnum.PinkNoise
+  nameWithType: AudioSourcesEnum.PinkNoise
+- uid: SIPSorcery.Media.AudioSourcesEnum.Silence
+  name: Silence
+  href: api/SIPSorcery.Media.AudioSourcesEnum.html#SIPSorcery_Media_AudioSourcesEnum_Silence
+  commentId: F:SIPSorcery.Media.AudioSourcesEnum.Silence
+  fullName: SIPSorcery.Media.AudioSourcesEnum.Silence
+  nameWithType: AudioSourcesEnum.Silence
+- uid: SIPSorcery.Media.AudioSourcesEnum.SineWave
+  name: SineWave
+  href: api/SIPSorcery.Media.AudioSourcesEnum.html#SIPSorcery_Media_AudioSourcesEnum_SineWave
+  commentId: F:SIPSorcery.Media.AudioSourcesEnum.SineWave
+  fullName: SIPSorcery.Media.AudioSourcesEnum.SineWave
+  nameWithType: AudioSourcesEnum.SineWave
+- uid: SIPSorcery.Media.AudioSourcesEnum.WhiteNoise
+  name: WhiteNoise
+  href: api/SIPSorcery.Media.AudioSourcesEnum.html#SIPSorcery_Media_AudioSourcesEnum_WhiteNoise
+  commentId: F:SIPSorcery.Media.AudioSourcesEnum.WhiteNoise
+  fullName: SIPSorcery.Media.AudioSourcesEnum.WhiteNoise
+  nameWithType: AudioSourcesEnum.WhiteNoise
 - uid: SIPSorcery.Media.Band
   name: Band
   href: api/SIPSorcery.Media.Band.html
@@ -129,66 +219,6 @@ references:
   commentId: F:SIPSorcery.Media.Band.sz
   fullName: SIPSorcery.Media.Band.sz
   nameWithType: Band.sz
-- uid: SIPSorcery.Media.DummyAudioOptions
-  name: DummyAudioOptions
-  href: api/SIPSorcery.Media.DummyAudioOptions.html
-  commentId: T:SIPSorcery.Media.DummyAudioOptions
-  fullName: SIPSorcery.Media.DummyAudioOptions
-  nameWithType: DummyAudioOptions
-- uid: SIPSorcery.Media.DummyAudioOptions.AudioSource
-  name: AudioSource
-  href: api/SIPSorcery.Media.DummyAudioOptions.html#SIPSorcery_Media_DummyAudioOptions_AudioSource
-  commentId: F:SIPSorcery.Media.DummyAudioOptions.AudioSource
-  fullName: SIPSorcery.Media.DummyAudioOptions.AudioSource
-  nameWithType: DummyAudioOptions.AudioSource
-- uid: SIPSorcery.Media.DummyAudioOptions.SourceFiles
-  name: SourceFiles
-  href: api/SIPSorcery.Media.DummyAudioOptions.html#SIPSorcery_Media_DummyAudioOptions_SourceFiles
-  commentId: F:SIPSorcery.Media.DummyAudioOptions.SourceFiles
-  fullName: SIPSorcery.Media.DummyAudioOptions.SourceFiles
-  nameWithType: DummyAudioOptions.SourceFiles
-- uid: SIPSorcery.Media.DummyAudioSourcesEnum
-  name: DummyAudioSourcesEnum
-  href: api/SIPSorcery.Media.DummyAudioSourcesEnum.html
-  commentId: T:SIPSorcery.Media.DummyAudioSourcesEnum
-  fullName: SIPSorcery.Media.DummyAudioSourcesEnum
-  nameWithType: DummyAudioSourcesEnum
-- uid: SIPSorcery.Media.DummyAudioSourcesEnum.Music
-  name: Music
-  href: api/SIPSorcery.Media.DummyAudioSourcesEnum.html#SIPSorcery_Media_DummyAudioSourcesEnum_Music
-  commentId: F:SIPSorcery.Media.DummyAudioSourcesEnum.Music
-  fullName: SIPSorcery.Media.DummyAudioSourcesEnum.Music
-  nameWithType: DummyAudioSourcesEnum.Music
-- uid: SIPSorcery.Media.DummyAudioSourcesEnum.None
-  name: None
-  href: api/SIPSorcery.Media.DummyAudioSourcesEnum.html#SIPSorcery_Media_DummyAudioSourcesEnum_None
-  commentId: F:SIPSorcery.Media.DummyAudioSourcesEnum.None
-  fullName: SIPSorcery.Media.DummyAudioSourcesEnum.None
-  nameWithType: DummyAudioSourcesEnum.None
-- uid: SIPSorcery.Media.DummyAudioSourcesEnum.PinkNoise
-  name: PinkNoise
-  href: api/SIPSorcery.Media.DummyAudioSourcesEnum.html#SIPSorcery_Media_DummyAudioSourcesEnum_PinkNoise
-  commentId: F:SIPSorcery.Media.DummyAudioSourcesEnum.PinkNoise
-  fullName: SIPSorcery.Media.DummyAudioSourcesEnum.PinkNoise
-  nameWithType: DummyAudioSourcesEnum.PinkNoise
-- uid: SIPSorcery.Media.DummyAudioSourcesEnum.Silence
-  name: Silence
-  href: api/SIPSorcery.Media.DummyAudioSourcesEnum.html#SIPSorcery_Media_DummyAudioSourcesEnum_Silence
-  commentId: F:SIPSorcery.Media.DummyAudioSourcesEnum.Silence
-  fullName: SIPSorcery.Media.DummyAudioSourcesEnum.Silence
-  nameWithType: DummyAudioSourcesEnum.Silence
-- uid: SIPSorcery.Media.DummyAudioSourcesEnum.SineWave
-  name: SineWave
-  href: api/SIPSorcery.Media.DummyAudioSourcesEnum.html#SIPSorcery_Media_DummyAudioSourcesEnum_SineWave
-  commentId: F:SIPSorcery.Media.DummyAudioSourcesEnum.SineWave
-  fullName: SIPSorcery.Media.DummyAudioSourcesEnum.SineWave
-  nameWithType: DummyAudioSourcesEnum.SineWave
-- uid: SIPSorcery.Media.DummyAudioSourcesEnum.WhiteNoise
-  name: WhiteNoise
-  href: api/SIPSorcery.Media.DummyAudioSourcesEnum.html#SIPSorcery_Media_DummyAudioSourcesEnum_WhiteNoise
-  commentId: F:SIPSorcery.Media.DummyAudioSourcesEnum.WhiteNoise
-  fullName: SIPSorcery.Media.DummyAudioSourcesEnum.WhiteNoise
-  nameWithType: DummyAudioSourcesEnum.WhiteNoise
 - uid: SIPSorcery.Media.G722Codec
   name: G722Codec
   href: api/SIPSorcery.Media.G722Codec.html
@@ -444,15 +474,15 @@ references:
   commentId: T:SIPSorcery.Media.RtpAudioSession
   fullName: SIPSorcery.Media.RtpAudioSession
   nameWithType: RtpAudioSession
-- uid: SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.DummyAudioOptions,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Net.IPAddress)
-  name: RtpAudioSession(DummyAudioOptions, List<SDPMediaFormatsEnum>, IPAddress)
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession__ctor_SIPSorcery_Media_DummyAudioOptions_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormatsEnum__System_Net_IPAddress_
-  commentId: M:SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.DummyAudioOptions,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Net.IPAddress)
-  name.vb: RtpAudioSession(DummyAudioOptions, List(Of SDPMediaFormatsEnum), IPAddress)
-  fullName: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(SIPSorcery.Media.DummyAudioOptions, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormatsEnum>, System.Net.IPAddress)
-  fullName.vb: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(SIPSorcery.Media.DummyAudioOptions, System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormatsEnum), System.Net.IPAddress)
-  nameWithType: RtpAudioSession.RtpAudioSession(DummyAudioOptions, List<SDPMediaFormatsEnum>, IPAddress)
-  nameWithType.vb: RtpAudioSession.RtpAudioSession(DummyAudioOptions, List(Of SDPMediaFormatsEnum), IPAddress)
+- uid: SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.AudioSourceOptions,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Net.IPAddress)
+  name: RtpAudioSession(AudioSourceOptions, List<SDPMediaFormatsEnum>, IPAddress)
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession__ctor_SIPSorcery_Media_AudioSourceOptions_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormatsEnum__System_Net_IPAddress_
+  commentId: M:SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.AudioSourceOptions,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Net.IPAddress)
+  name.vb: RtpAudioSession(AudioSourceOptions, List(Of SDPMediaFormatsEnum), IPAddress)
+  fullName: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(SIPSorcery.Media.AudioSourceOptions, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormatsEnum>, System.Net.IPAddress)
+  fullName.vb: SIPSorcery.Media.RtpAudioSession.RtpAudioSession(SIPSorcery.Media.AudioSourceOptions, System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormatsEnum), System.Net.IPAddress)
+  nameWithType: RtpAudioSession.RtpAudioSession(AudioSourceOptions, List<SDPMediaFormatsEnum>, IPAddress)
+  nameWithType.vb: RtpAudioSession.RtpAudioSession(AudioSourceOptions, List(Of SDPMediaFormatsEnum), IPAddress)
 - uid: SIPSorcery.Media.RtpAudioSession.#ctor*
   name: RtpAudioSession
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession__ctor_
@@ -473,6 +503,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.RtpAudioSession.Close
   nameWithType: RtpAudioSession.Close
+- uid: SIPSorcery.Media.RtpAudioSession.OnRemote16KHzPcmSampleReady
+  name: OnRemote16KHzPcmSampleReady
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_OnRemote16KHzPcmSampleReady
+  commentId: E:SIPSorcery.Media.RtpAudioSession.OnRemote16KHzPcmSampleReady
+  fullName: SIPSorcery.Media.RtpAudioSession.OnRemote16KHzPcmSampleReady
+  nameWithType: RtpAudioSession.OnRemote16KHzPcmSampleReady
+- uid: SIPSorcery.Media.RtpAudioSession.OnRemote8KHzPcmSampleReady
+  name: OnRemote8KHzPcmSampleReady
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_OnRemote8KHzPcmSampleReady
+  commentId: E:SIPSorcery.Media.RtpAudioSession.OnRemote8KHzPcmSampleReady
+  fullName: SIPSorcery.Media.RtpAudioSession.OnRemote8KHzPcmSampleReady
+  nameWithType: RtpAudioSession.OnRemote8KHzPcmSampleReady
 - uid: SIPSorcery.Media.RtpAudioSession.RtpPacketsReceived
   name: RtpPacketsReceived
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_RtpPacketsReceived
@@ -499,6 +541,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.RtpAudioSession.RtpPacketsSent
   nameWithType: RtpAudioSession.RtpPacketsSent
+- uid: SIPSorcery.Media.RtpAudioSession.SendExternalSample(System.Byte[],System.Int32,System.Int32)
+  name: SendExternalSample(Byte[], Int32, Int32)
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendExternalSample_System_Byte___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Media.RtpAudioSession.SendExternalSample(System.Byte[],System.Int32,System.Int32)
+  name.vb: SendExternalSample(Byte(), Int32, Int32)
+  fullName: SIPSorcery.Media.RtpAudioSession.SendExternalSample(System.Byte[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Media.RtpAudioSession.SendExternalSample(System.Byte(), System.Int32, System.Int32)
+  nameWithType: RtpAudioSession.SendExternalSample(Byte[], Int32, Int32)
+  nameWithType.vb: RtpAudioSession.SendExternalSample(Byte(), Int32, Int32)
+- uid: SIPSorcery.Media.RtpAudioSession.SendExternalSample*
+  name: SendExternalSample
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendExternalSample_
+  commentId: Overload:SIPSorcery.Media.RtpAudioSession.SendExternalSample
+  isSpec: "True"
+  fullName: SIPSorcery.Media.RtpAudioSession.SendExternalSample
+  nameWithType: RtpAudioSession.SendExternalSample
 - uid: SIPSorcery.Media.RtpAudioSession.Start
   name: Start()
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_Start
@@ -5281,6 +5339,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.IsSecureContextReady
   nameWithType: RTPSession.IsSecureContextReady
+- uid: SIPSorcery.Net.RTPSession.IsStarted
+  name: IsStarted
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsStarted
+  commentId: P:SIPSorcery.Net.RTPSession.IsStarted
+  fullName: SIPSorcery.Net.RTPSession.IsStarted
+  nameWithType: RTPSession.IsStarted
+- uid: SIPSorcery.Net.RTPSession.IsStarted*
+  name: IsStarted
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_IsStarted_
+  commentId: Overload:SIPSorcery.Net.RTPSession.IsStarted
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.IsStarted
+  nameWithType: RTPSession.IsStarted
 - uid: SIPSorcery.Net.RTPSession.OnReceiveReport
   name: OnReceiveReport
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceiveReport
@@ -14809,6 +14880,19 @@ references:
   commentId: E:SIPSorcery.SIP.App.SIPUserAgent.ClientCallTrying
   fullName: SIPSorcery.SIP.App.SIPUserAgent.ClientCallTrying
   nameWithType: SIPUserAgent.ClientCallTrying
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Close
+  name: Close()
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Close
+  commentId: M:SIPSorcery.SIP.App.SIPUserAgent.Close
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Close()
+  nameWithType: SIPUserAgent.Close()
+- uid: SIPSorcery.SIP.App.SIPUserAgent.Close*
+  name: Close
+  href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Close_
+  commentId: Overload:SIPSorcery.SIP.App.SIPUserAgent.Close
+  isSpec: "True"
+  fullName: SIPSorcery.SIP.App.SIPUserAgent.Close
+  nameWithType: SIPUserAgent.Close
 - uid: SIPSorcery.SIP.App.SIPUserAgent.Dialogue
   name: Dialogue
   href: api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_Dialogue
