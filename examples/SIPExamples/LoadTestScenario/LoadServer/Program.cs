@@ -176,7 +176,7 @@ namespace SIPSorcery
         private static RtpAudioSession CreateRtpSession(SIPUserAgent ua)
         {
             List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
-            var audioOptions = new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.Silence };
+            var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
             var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
 
             // Wire up the event handler for RTP packets received from the remote party.
