@@ -61,7 +61,7 @@ namespace SIPSorcery
             userAgent.OnIncomingCall += async (ua, req) =>
             {
                 List<SDPMediaFormatsEnum> codecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 };
-                var audioOptions = new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.Silence };
+                var audioOptions = new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence };
                 var rtpAudioSession = new RtpAudioSession(audioOptions, codecs);
 
                 var uas = ua.AcceptCall(req);
