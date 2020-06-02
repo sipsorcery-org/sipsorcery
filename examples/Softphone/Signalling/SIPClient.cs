@@ -145,7 +145,7 @@ namespace SIPSorcery.SoftPhone
 
                 var audioSrcOpts = new AudioOptions
                 {
-                    AudioSource = AudioSourcesEnum.Microphone,
+                    AudioSource = AudioSourcesEnum.CaptureDevice,
                     OutputDeviceIndex = m_audioOutDeviceIndex
                 };
                 var videoSrcOpts = new VideoOptions
@@ -205,7 +205,7 @@ namespace SIPSorcery.SoftPhone
                 {
                     audioOpts = new AudioOptions
                     {
-                        AudioSource = AudioSourcesEnum.Microphone,
+                        AudioSource = AudioSourcesEnum.CaptureDevice,
                         OutputDeviceIndex = m_audioOutDeviceIndex,
                         AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA  }
                     };
@@ -305,7 +305,7 @@ namespace SIPSorcery.SoftPhone
 
             AudioOptions audioOnHold = (!hasAudio) ? null : new AudioOptions
             {
-                AudioSource = AudioSourcesEnum.Microphone,
+                AudioSource = AudioSourcesEnum.CaptureDevice,
                 OutputDeviceIndex = m_audioOutDeviceIndex
             };
             VideoOptions videoOnHold = (!hasVideo) ? null : new VideoOptions

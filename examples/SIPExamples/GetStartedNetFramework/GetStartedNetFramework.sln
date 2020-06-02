@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.30002.166
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GetStartedNetFramework", "GetStartedNetFramework.csproj", "{203B98E3-ED46-469E-BCB4-61BE9AB6B66E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "..\..\..\src\SIPSorcery.csproj", "{62CA60D6-F262-4AAD-BA05-ED0C2E4C6CCA}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{203B98E3-ED46-469E-BCB4-61BE9AB6B66E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{203B98E3-ED46-469E-BCB4-61BE9AB6B66E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{203B98E3-ED46-469E-BCB4-61BE9AB6B66E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{62CA60D6-F262-4AAD-BA05-ED0C2E4C6CCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{62CA60D6-F262-4AAD-BA05-ED0C2E4C6CCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{62CA60D6-F262-4AAD-BA05-ED0C2E4C6CCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{62CA60D6-F262-4AAD-BA05-ED0C2E4C6CCA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

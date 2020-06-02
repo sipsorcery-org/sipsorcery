@@ -26,7 +26,8 @@ namespace demo
 {
     public class WindowsAudioRtpSession : RtpAudioSession
     {
-        private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 30;
+        private const int AUDIO_SAMPLE_PERIOD_MILLISECONDS = 20;
+        private const int AUDIO_INPUTDEVICE_INDEX = -1;
         private const int AUDIO_OUTPUTDEVICE_INDEX = -1;
 
         private static ILogger Log = SIPSorcery.Sys.Log.Logger;
@@ -48,14 +49,11 @@ namespace demo
         /// </summary>
         private WaveInEvent _waveInEvent;
 
-        private bool _isStarted = false;
-        private bool _isClosed = false;
-
         /// <summary>
         /// Creates a new basic RTP session that captures and renders audio to/from the default system devices.
         /// </summary>
         public WindowsAudioRtpSession()
-            : base(new AudioSourceOptions { AudioSource = AudioSourcesEnum.External },
+            : base(new AudioSourceOptions { AudioSource = AudioSourcesEnum.CaptureDevice },
                   new List<SIPSorcery.Net.SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA, SDPMediaFormatsEnum.G722 })
         { }
 
@@ -64,10 +62,8 @@ namespace demo
         /// </summary>
         public override async Task Start()
         {
-            if (!_isStarted)
+            if (!IsStarted)
             {
-                _isStarted = true;
-
                 await base.Start();
 
                 // Render device.
@@ -84,7 +80,7 @@ namespace demo
                     _waveInEvent = new WaveInEvent();
                     _waveInEvent.BufferMilliseconds = AUDIO_SAMPLE_PERIOD_MILLISECONDS;
                     _waveInEvent.NumberOfBuffers = 1;
-                    _waveInEvent.DeviceNumber = 0;
+                    _waveInEvent.DeviceNumber = AUDIO_INPUTDEVICE_INDEX;
                     _waveInEvent.WaveFormat = _waveFormat;
                     _waveInEvent.DataAvailable += LocalAudioSampleAvailable;
 
@@ -104,7 +100,7 @@ namespace demo
         /// </summary>
         private void LocalAudioSampleAvailable(object sender, WaveInEventArgs args)
         {
-            base.SendExternalSample(args.Buffer, AUDIO_SAMPLE_PERIOD_MILLISECONDS);
+            base.SendExternalSample(args.Buffer, args.BytesRecorded, AUDIO_SAMPLE_PERIOD_MILLISECONDS);
         }
 
         /// <summary>
@@ -122,9 +118,9 @@ namespace demo
         /// <param name="reason">Reason for the closure.</param>
         public override void Close(string reason)
         {
-            if (!_isClosed)
+            if (!IsClosed)
             {
-                _isClosed = true;
+                base.Close(reason);
 
                 base.OnRemote8KHzPcmSampleReady -= RemoteAudioSampleAvailable;
 
@@ -135,8 +131,6 @@ namespace demo
                     _waveInEvent.DataAvailable -= LocalAudioSampleAvailable;
                     _waveInEvent.StopRecording();
                 }
-
-                base.Close(reason);
             }
         }
     }

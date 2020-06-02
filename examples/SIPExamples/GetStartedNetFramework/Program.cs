@@ -24,8 +24,7 @@ namespace demo
 {
     class Program
     {
-        //private static string DESTINATION = "time@sipsorcery.com";
-        private static string DESTINATION = "3@127.0.0.1";
+        private static string DESTINATION = "time@sipsorcery.com";
 
         static async Task Main()
         {
@@ -63,7 +62,7 @@ namespace demo
             var loggerFactory = new Microsoft.Extensions.Logging.LoggerFactory();
             var loggerConfig = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Information)
+                .MinimumLevel.Is(Serilog.Events.LogEventLevel.Debug)
                 .WriteTo.Console()
                 .CreateLogger();
             loggerFactory.AddSerilog(loggerConfig);

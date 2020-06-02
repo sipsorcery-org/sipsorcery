@@ -47,7 +47,7 @@ namespace demo
             var rtpSession = new RtpAVSession(
                 new AudioOptions
                 {
-                    AudioSource = AudioSourcesEnum.Microphone,
+                    AudioSource = AudioSourcesEnum.CaptureDevice,
                     AudioCodecs = new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU, SDPMediaFormatsEnum.PCMA }
                 },
                 null);

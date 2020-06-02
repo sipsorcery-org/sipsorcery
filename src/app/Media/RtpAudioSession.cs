@@ -67,7 +67,7 @@ namespace SIPSorcery.Media
         /// <summary>
         /// Use this option for audio capture devices such as a microphone.
         /// </summary>
-        External = 6,
+        CaptureDevice = 6,
     }
 
     /// <summary>
@@ -122,7 +122,6 @@ namespace SIPSorcery.Media
         private SDPMediaFormat _sendingFormat;          // The codec that we've selected to send with (must be supported by remote party).
         private int _sendingAudioSampleRate;            // 8KHz for G711, 16KHz for G722.
         private int _sendingAudioRtpRate;               // 8Khz for both G711 and G722. Calculation included for clarity.
-        private bool _isStarted = false;
 
         private G722Codec _g722Codec;
         private G722CodecState _g722CodecState;
@@ -210,10 +209,8 @@ namespace SIPSorcery.Media
         {
             lock (this)
             {
-                if (!_isStarted)
+                if (!IsStarted)
                 {
-                    _isStarted = true;
-
                     if (AudioLocalTrack == null || AudioLocalTrack.Capabilities == null || AudioLocalTrack.Capabilities.Count == 0)
                     {
                         throw new ApplicationException("Cannot start audio session without a local audio track being available.");
@@ -300,42 +297,75 @@ namespace SIPSorcery.Media
         /// Sends the an externally generated sample. This is the method to call to
         /// transmit samples generated from an audio capture device such as a microphone.
         /// </summary>
-        /// <param name="pcmSample">The PCM encoded sample to send.</param>
-        public void SendExternalSample(byte[] pcmSample, int durationMilliseconds)
+        /// <param name="sample">The PCM encoded sample to send.</param>
+        public void SendExternalSample(byte[] sample, int sampleLength, int durationMilliseconds)
         {
-            int outputBufferSize = _sendingAudioRtpRate / 1000 * durationMilliseconds;
+            byte[] encodedSample = null;
 
-            byte[] encodedSample = new byte[outputBufferSize];
+            short[] pcm = new short[sampleLength / 2];
+            for (int i = 0; i < pcm.Length; i++)
+            {
+                pcm[i] = BitConverter.ToInt16(sample, i * 2);
+            }
 
             if (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.G722)
             {
                 if (_audioOpts.ExternalSourceSampleRate == AudioExternalSamplingRatesEnum.SampleRate16KHz)
                 {
-                    short[] pcm = new short[pcmSample.Length / 2];
-                    for(int i=0; i< pcm.Length; i++)
+                    // No up sampling required.
+                    int outputBufferSize = pcm.Length;
+                    encodedSample = new byte[outputBufferSize];
+                    _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
+                }
+                else
+                {
+                    // Up sample the supplied PCM signal by doubling each sample.
+                    int outputBufferSize = pcm.Length * 2;
+                    encodedSample = new byte[outputBufferSize];
+
+                    short[] pcmUpsampled = new short[pcm.Length * 2];
+                    for(int i=0; i<pcm.Length; i++)
                     {
-                        pcm[i] = BitConverter.ToInt16(pcmSample, i * 2);
+                        pcmUpsampled[i * 2] = pcm[i];
+                        pcmUpsampled[i * 2 + 1] = pcm[i];
                     }
 
-                    // No down sampling required.
-                    _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
+                    _g722Codec.Encode(_g722CodecState, encodedSample, pcmUpsampled, pcmUpsampled.Length);
                 }
             }
             else
-            {
+            { 
+                Func<short, byte> encode = (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMA) ?
+                       (Func<short, byte>)ALawEncoder.LinearToALawSample : MuLawEncoder.LinearToMuLawSample;
+
                 if (_audioOpts.ExternalSourceSampleRate == AudioExternalSamplingRatesEnum.SampleRate8KHz)
                 {
-                    Func<short, byte> encode = (_sendingFormat.FormatCodec == SDPMediaFormatsEnum.PCMA) ?
-                           (Func<short, byte>)ALawEncoder.LinearToALawSample : MuLawEncoder.LinearToMuLawSample;
+                    // No down sampling required.
+                    int outputBufferSize = pcm.Length;
+                    encodedSample = new byte[outputBufferSize];
 
-                    for (int index = 0; index < pcmSample.Length; index++)
+                    for (int index = 0; index < pcm.Length; index++)
                     {
-                        encodedSample[index] = encode(pcmSample[index]);
+                        encodedSample[index] = encode(pcm[index]);
+                    }
+                }
+                else
+                {
+                    // Down sample the supplied PCM signal by skipping every second sample.
+                    int outputBufferSize = pcm.Length / 2;
+                    encodedSample = new byte[outputBufferSize];
+                    int encodedIndex = 0;
+
+                    // Skip every second sample.
+                    for (int index = 0; index < pcm.Length; index+=2)
+                    {
+                        encodedSample[encodedIndex++] = encode(pcm[index]);
                     }
                 }
             }
 
-            SendAudioFrame((uint)outputBufferSize, (int)_sendingFormat.FormatCodec, encodedSample);
+            int rtpTimestampDuration = _sendingAudioRtpRate / 1000 * durationMilliseconds;
+            SendAudioFrame((uint)rtpTimestampDuration, (int)_sendingFormat.FormatCodec, encodedSample);
         }
 
         /// <summary>

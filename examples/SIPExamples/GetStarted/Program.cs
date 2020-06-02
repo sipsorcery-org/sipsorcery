@@ -42,7 +42,7 @@ namespace demo
             EnableTraceLogs(sipTransport);
 
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.Microphone}, null);
+            var rtpSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice}, null);
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);

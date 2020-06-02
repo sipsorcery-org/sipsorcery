@@ -401,7 +401,7 @@ a=sendrecv";
 
                 var uas = userAgentServer.AcceptCall(req);
                 RtpAudioSession serverAudioSession = new RtpAudioSession(
-                    new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.None },
+                    new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
                     new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
                 var answerResult = await userAgentServer.Answer(uas, serverAudioSession);
 
@@ -415,7 +415,7 @@ a=sendrecv";
             logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
 
             RtpAudioSession clientAudioSession = new RtpAudioSession(
-                new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.None },
+                new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
                 new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
             var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientAudioSession);
 
@@ -449,7 +449,7 @@ a=sendrecv";
 
                 var uas = userAgentServer.AcceptCall(req);
                 RtpAudioSession serverAudioSession = new RtpAudioSession(
-                    new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.None },
+                    new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
                     new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.PCMU });
                 var answerResult = await userAgentServer.Answer(uas, serverAudioSession);
 
@@ -463,7 +463,7 @@ a=sendrecv";
             logger.LogDebug($"Attempting call to {dstUri.ToString()}.");
 
             RtpAudioSession clientAudioSession = new RtpAudioSession(
-                new DummyAudioOptions { AudioSource = DummyAudioSourcesEnum.None },
+                new AudioSourceOptions { AudioSource = AudioSourcesEnum.None },
                 new List<SDPMediaFormatsEnum> { SDPMediaFormatsEnum.G722 });
             var callResult = await userAgentClient.Call(dstUri.ToString(), null, null, clientAudioSession);
 
