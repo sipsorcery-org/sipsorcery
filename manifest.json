@@ -29,11 +29,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Media.AudioExternalSamplingRatesEnum.yml",
+      "source_relative_path": "api/SIPSorcery.Media.AudioSamplingRatesEnum.yml",
       "output": {
         ".html": {
-          "relative_path": "api/SIPSorcery.Media.AudioExternalSamplingRatesEnum.html",
-          "hash": "GnikvT+eAgMAPEdpMEb85Q=="
+          "relative_path": "api/SIPSorcery.Media.AudioSamplingRatesEnum.html",
+          "hash": "eM7hKmDeK+t6i454pYjMzA=="
         }
       },
       "is_incremental": false,
@@ -45,7 +45,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.AudioSourceOptions.html",
-          "hash": "65m0yhDPY764vWeoMl1qLQ=="
+          "hash": "K9ko2qW9PmD0c0lbtzyAFw=="
         }
       },
       "is_incremental": false,
@@ -141,7 +141,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.RtpAudioSession.html",
-          "hash": "NAPXsFriDKEVDCHT7U4UnA=="
+          "hash": "u/sgdbIMIxW4lEin0XFj7A=="
         }
       },
       "is_incremental": false,
@@ -189,7 +189,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.html",
-          "hash": "A17q+hDbQAa2OUaPTEFSsg=="
+          "hash": "Z9Qzmc3JV8cHgLNmovd28g=="
         }
       },
       "is_incremental": false,
@@ -3885,7 +3885,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "a06MuR2JLzQ81GAEOdJYXg=="
+          "hash": "PZK8I4UuHPpz/LD/w/4HgA=="
         }
       },
       "is_incremental": false,

@@ -45,24 +45,24 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.ALawEncoder.LinearToALawSample
   nameWithType: ALawEncoder.LinearToALawSample
-- uid: SIPSorcery.Media.AudioExternalSamplingRatesEnum
-  name: AudioExternalSamplingRatesEnum
-  href: api/SIPSorcery.Media.AudioExternalSamplingRatesEnum.html
-  commentId: T:SIPSorcery.Media.AudioExternalSamplingRatesEnum
-  fullName: SIPSorcery.Media.AudioExternalSamplingRatesEnum
-  nameWithType: AudioExternalSamplingRatesEnum
-- uid: SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate16KHz
+- uid: SIPSorcery.Media.AudioSamplingRatesEnum
+  name: AudioSamplingRatesEnum
+  href: api/SIPSorcery.Media.AudioSamplingRatesEnum.html
+  commentId: T:SIPSorcery.Media.AudioSamplingRatesEnum
+  fullName: SIPSorcery.Media.AudioSamplingRatesEnum
+  nameWithType: AudioSamplingRatesEnum
+- uid: SIPSorcery.Media.AudioSamplingRatesEnum.SampleRate16KHz
   name: SampleRate16KHz
-  href: api/SIPSorcery.Media.AudioExternalSamplingRatesEnum.html#SIPSorcery_Media_AudioExternalSamplingRatesEnum_SampleRate16KHz
-  commentId: F:SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate16KHz
-  fullName: SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate16KHz
-  nameWithType: AudioExternalSamplingRatesEnum.SampleRate16KHz
-- uid: SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate8KHz
+  href: api/SIPSorcery.Media.AudioSamplingRatesEnum.html#SIPSorcery_Media_AudioSamplingRatesEnum_SampleRate16KHz
+  commentId: F:SIPSorcery.Media.AudioSamplingRatesEnum.SampleRate16KHz
+  fullName: SIPSorcery.Media.AudioSamplingRatesEnum.SampleRate16KHz
+  nameWithType: AudioSamplingRatesEnum.SampleRate16KHz
+- uid: SIPSorcery.Media.AudioSamplingRatesEnum.SampleRate8KHz
   name: SampleRate8KHz
-  href: api/SIPSorcery.Media.AudioExternalSamplingRatesEnum.html#SIPSorcery_Media_AudioExternalSamplingRatesEnum_SampleRate8KHz
-  commentId: F:SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate8KHz
-  fullName: SIPSorcery.Media.AudioExternalSamplingRatesEnum.SampleRate8KHz
-  nameWithType: AudioExternalSamplingRatesEnum.SampleRate8KHz
+  href: api/SIPSorcery.Media.AudioSamplingRatesEnum.html#SIPSorcery_Media_AudioSamplingRatesEnum_SampleRate8KHz
+  commentId: F:SIPSorcery.Media.AudioSamplingRatesEnum.SampleRate8KHz
+  fullName: SIPSorcery.Media.AudioSamplingRatesEnum.SampleRate8KHz
+  nameWithType: AudioSamplingRatesEnum.SampleRate8KHz
 - uid: SIPSorcery.Media.AudioSourceOptions
   name: AudioSourceOptions
   href: api/SIPSorcery.Media.AudioSourceOptions.html
@@ -75,12 +75,12 @@ references:
   commentId: F:SIPSorcery.Media.AudioSourceOptions.AudioSource
   fullName: SIPSorcery.Media.AudioSourceOptions.AudioSource
   nameWithType: AudioSourceOptions.AudioSource
-- uid: SIPSorcery.Media.AudioSourceOptions.ExternalSourceSampleRate
-  name: ExternalSourceSampleRate
-  href: api/SIPSorcery.Media.AudioSourceOptions.html#SIPSorcery_Media_AudioSourceOptions_ExternalSourceSampleRate
-  commentId: F:SIPSorcery.Media.AudioSourceOptions.ExternalSourceSampleRate
-  fullName: SIPSorcery.Media.AudioSourceOptions.ExternalSourceSampleRate
-  nameWithType: AudioSourceOptions.ExternalSourceSampleRate
+- uid: SIPSorcery.Media.AudioSourceOptions.CaptureDeviceSampleRate
+  name: CaptureDeviceSampleRate
+  href: api/SIPSorcery.Media.AudioSourceOptions.html#SIPSorcery_Media_AudioSourceOptions_CaptureDeviceSampleRate
+  commentId: F:SIPSorcery.Media.AudioSourceOptions.CaptureDeviceSampleRate
+  fullName: SIPSorcery.Media.AudioSourceOptions.CaptureDeviceSampleRate
+  nameWithType: AudioSourceOptions.CaptureDeviceSampleRate
 - uid: SIPSorcery.Media.AudioSourceOptions.SourceFiles
   name: SourceFiles
   href: api/SIPSorcery.Media.AudioSourceOptions.html#SIPSorcery_Media_AudioSourceOptions_SourceFiles
@@ -490,6 +490,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.RtpAudioSession.RtpAudioSession
   nameWithType: RtpAudioSession.RtpAudioSession
+- uid: SIPSorcery.Media.RtpAudioSession.CancelSendAudioFromStream
+  name: CancelSendAudioFromStream()
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_CancelSendAudioFromStream
+  commentId: M:SIPSorcery.Media.RtpAudioSession.CancelSendAudioFromStream
+  fullName: SIPSorcery.Media.RtpAudioSession.CancelSendAudioFromStream()
+  nameWithType: RtpAudioSession.CancelSendAudioFromStream()
+- uid: SIPSorcery.Media.RtpAudioSession.CancelSendAudioFromStream*
+  name: CancelSendAudioFromStream
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_CancelSendAudioFromStream_
+  commentId: Overload:SIPSorcery.Media.RtpAudioSession.CancelSendAudioFromStream
+  isSpec: "True"
+  fullName: SIPSorcery.Media.RtpAudioSession.CancelSendAudioFromStream
+  nameWithType: RtpAudioSession.CancelSendAudioFromStream
 - uid: SIPSorcery.Media.RtpAudioSession.Close(System.String)
   name: Close(String)
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_Close_System_String_
@@ -509,12 +522,18 @@ references:
   commentId: E:SIPSorcery.Media.RtpAudioSession.OnRemote16KHzPcmSampleReady
   fullName: SIPSorcery.Media.RtpAudioSession.OnRemote16KHzPcmSampleReady
   nameWithType: RtpAudioSession.OnRemote16KHzPcmSampleReady
-- uid: SIPSorcery.Media.RtpAudioSession.OnRemote8KHzPcmSampleReady
-  name: OnRemote8KHzPcmSampleReady
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_OnRemote8KHzPcmSampleReady
-  commentId: E:SIPSorcery.Media.RtpAudioSession.OnRemote8KHzPcmSampleReady
-  fullName: SIPSorcery.Media.RtpAudioSession.OnRemote8KHzPcmSampleReady
-  nameWithType: RtpAudioSession.OnRemote8KHzPcmSampleReady
+- uid: SIPSorcery.Media.RtpAudioSession.OnRemoteAudioSampleReady
+  name: OnRemoteAudioSampleReady
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_OnRemoteAudioSampleReady
+  commentId: E:SIPSorcery.Media.RtpAudioSession.OnRemoteAudioSampleReady
+  fullName: SIPSorcery.Media.RtpAudioSession.OnRemoteAudioSampleReady
+  nameWithType: RtpAudioSession.OnRemoteAudioSampleReady
+- uid: SIPSorcery.Media.RtpAudioSession.OnSendFromAudioStreamComplete
+  name: OnSendFromAudioStreamComplete
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_OnSendFromAudioStreamComplete
+  commentId: E:SIPSorcery.Media.RtpAudioSession.OnSendFromAudioStreamComplete
+  fullName: SIPSorcery.Media.RtpAudioSession.OnSendFromAudioStreamComplete
+  nameWithType: RtpAudioSession.OnSendFromAudioStreamComplete
 - uid: SIPSorcery.Media.RtpAudioSession.RtpPacketsReceived
   name: RtpPacketsReceived
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_RtpPacketsReceived
@@ -541,22 +560,48 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Media.RtpAudioSession.RtpPacketsSent
   nameWithType: RtpAudioSession.RtpPacketsSent
-- uid: SIPSorcery.Media.RtpAudioSession.SendExternalSample(System.Byte[],System.Int32,System.Int32)
-  name: SendExternalSample(Byte[], Int32, Int32)
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendExternalSample_System_Byte___System_Int32_System_Int32_
-  commentId: M:SIPSorcery.Media.RtpAudioSession.SendExternalSample(System.Byte[],System.Int32,System.Int32)
-  name.vb: SendExternalSample(Byte(), Int32, Int32)
-  fullName: SIPSorcery.Media.RtpAudioSession.SendExternalSample(System.Byte[], System.Int32, System.Int32)
-  fullName.vb: SIPSorcery.Media.RtpAudioSession.SendExternalSample(System.Byte(), System.Int32, System.Int32)
-  nameWithType: RtpAudioSession.SendExternalSample(Byte[], Int32, Int32)
-  nameWithType.vb: RtpAudioSession.SendExternalSample(Byte(), Int32, Int32)
-- uid: SIPSorcery.Media.RtpAudioSession.SendExternalSample*
-  name: SendExternalSample
-  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendExternalSample_
-  commentId: Overload:SIPSorcery.Media.RtpAudioSession.SendExternalSample
+- uid: SIPSorcery.Media.RtpAudioSession.SendAudioFromStream(System.IO.Stream,SIPSorcery.Media.AudioSamplingRatesEnum)
+  name: SendAudioFromStream(Stream, AudioSamplingRatesEnum)
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendAudioFromStream_System_IO_Stream_SIPSorcery_Media_AudioSamplingRatesEnum_
+  commentId: M:SIPSorcery.Media.RtpAudioSession.SendAudioFromStream(System.IO.Stream,SIPSorcery.Media.AudioSamplingRatesEnum)
+  fullName: SIPSorcery.Media.RtpAudioSession.SendAudioFromStream(System.IO.Stream, SIPSorcery.Media.AudioSamplingRatesEnum)
+  nameWithType: RtpAudioSession.SendAudioFromStream(Stream, AudioSamplingRatesEnum)
+- uid: SIPSorcery.Media.RtpAudioSession.SendAudioFromStream*
+  name: SendAudioFromStream
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendAudioFromStream_
+  commentId: Overload:SIPSorcery.Media.RtpAudioSession.SendAudioFromStream
   isSpec: "True"
-  fullName: SIPSorcery.Media.RtpAudioSession.SendExternalSample
-  nameWithType: RtpAudioSession.SendExternalSample
+  fullName: SIPSorcery.Media.RtpAudioSession.SendAudioFromStream
+  nameWithType: RtpAudioSession.SendAudioFromStream
+- uid: SIPSorcery.Media.RtpAudioSession.SendAudioFromStreamAsync(System.IO.Stream,SIPSorcery.Media.AudioSamplingRatesEnum)
+  name: SendAudioFromStreamAsync(Stream, AudioSamplingRatesEnum)
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendAudioFromStreamAsync_System_IO_Stream_SIPSorcery_Media_AudioSamplingRatesEnum_
+  commentId: M:SIPSorcery.Media.RtpAudioSession.SendAudioFromStreamAsync(System.IO.Stream,SIPSorcery.Media.AudioSamplingRatesEnum)
+  fullName: SIPSorcery.Media.RtpAudioSession.SendAudioFromStreamAsync(System.IO.Stream, SIPSorcery.Media.AudioSamplingRatesEnum)
+  nameWithType: RtpAudioSession.SendAudioFromStreamAsync(Stream, AudioSamplingRatesEnum)
+- uid: SIPSorcery.Media.RtpAudioSession.SendAudioFromStreamAsync*
+  name: SendAudioFromStreamAsync
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendAudioFromStreamAsync_
+  commentId: Overload:SIPSorcery.Media.RtpAudioSession.SendAudioFromStreamAsync
+  isSpec: "True"
+  fullName: SIPSorcery.Media.RtpAudioSession.SendAudioFromStreamAsync
+  nameWithType: RtpAudioSession.SendAudioFromStreamAsync
+- uid: SIPSorcery.Media.RtpAudioSession.SendAudioSample(System.Byte[],System.Int32,System.Int32)
+  name: SendAudioSample(Byte[], Int32, Int32)
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendAudioSample_System_Byte___System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Media.RtpAudioSession.SendAudioSample(System.Byte[],System.Int32,System.Int32)
+  name.vb: SendAudioSample(Byte(), Int32, Int32)
+  fullName: SIPSorcery.Media.RtpAudioSession.SendAudioSample(System.Byte[], System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Media.RtpAudioSession.SendAudioSample(System.Byte(), System.Int32, System.Int32)
+  nameWithType: RtpAudioSession.SendAudioSample(Byte[], Int32, Int32)
+  nameWithType.vb: RtpAudioSession.SendAudioSample(Byte(), Int32, Int32)
+- uid: SIPSorcery.Media.RtpAudioSession.SendAudioSample*
+  name: SendAudioSample
+  href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_SendAudioSample_
+  commentId: Overload:SIPSorcery.Media.RtpAudioSession.SendAudioSample
+  isSpec: "True"
+  fullName: SIPSorcery.Media.RtpAudioSession.SendAudioSample
+  nameWithType: RtpAudioSession.SendAudioSample
 - uid: SIPSorcery.Media.RtpAudioSession.Start
   name: Start()
   href: api/SIPSorcery.Media.RtpAudioSession.html#SIPSorcery_Media_RtpAudioSession_Start
