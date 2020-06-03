@@ -69,6 +69,9 @@ namespace demo
                 userAgent.Hangup();
             }
 
+            // Give the hangup a chance to complete.
+            await Task.Delay(1000);
+
             // Clean up.
             sipTransport.Shutdown();
             SIPSorcery.Net.DNSManager.Stop();

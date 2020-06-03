@@ -370,7 +370,12 @@ namespace SIPSorcery.Media
             {
                 TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-                Action handler = () => tcs.SetResult(true);
+                Action handler = null;
+                handler = () =>
+                {
+                    tcs.SetResult(true);
+                    OnSendFromAudioStreamComplete -= handler;
+                };
                 OnSendFromAudioStreamComplete += handler;
 
                 SendAudioFromStreamAsync(audioStream, streamSampleRate);
@@ -397,6 +402,8 @@ namespace SIPSorcery.Media
         {
             byte[] encodedSample = null;
 
+            // Convert buffer into a PCM sample (array of signed shorts) that's
+            // suitable for input into the chosen encoder.
             short[] pcm = new short[sampleLength / 2];
             for (int i = 0; i < pcm.Length; i++)
             {
@@ -408,14 +415,14 @@ namespace SIPSorcery.Media
                 if (sampleRate == AudioSamplingRatesEnum.SampleRate16KHz)
                 {
                     // No up sampling required.
-                    int outputBufferSize = pcm.Length;
+                    int outputBufferSize = pcm.Length / 2;
                     encodedSample = new byte[outputBufferSize];
-                    _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
+                    int res = _g722Codec.Encode(_g722CodecState, encodedSample, pcm, pcm.Length);
                 }
                 else
                 {
                     // Up sample the supplied PCM signal by doubling each sample.
-                    int outputBufferSize = pcm.Length * 2;
+                    int outputBufferSize = pcm.Length;
                     encodedSample = new byte[outputBufferSize];
 
                     short[] pcmUpsampled = new short[pcm.Length * 2];
@@ -463,7 +470,7 @@ namespace SIPSorcery.Media
             int durationMilliseconds = (sample.Length * 1000) / (sampleRateTicks * 2);
             int rtpTimestampDuration = _sendingAudioRtpRate / 1000 * durationMilliseconds;
 
-            Log.LogDebug($"send audio frame sample rate {sampleRateTicks}, duration ms {durationMilliseconds}, rtp timestamp duration {rtpTimestampDuration}.");
+            //Log.LogDebug($"send audio frame sample rate {sampleRateTicks}, duration ms {durationMilliseconds}, rtp timestamp duration {rtpTimestampDuration}.");
 
             SendAudioFrame((uint)rtpTimestampDuration, (int)_sendingFormat.FormatCodec, encodedSample);
         }
@@ -681,7 +688,7 @@ namespace SIPSorcery.Media
 
                 if (bytesRead > 0)
                 {
-                    Log.LogDebug($"Audio stream reader bytes read {bytesRead}, position {_audioPcmStreamReader.BaseStream.Position}, length {_audioPcmStreamReader.BaseStream.Length}.");
+                    //Log.LogDebug($"Audio stream reader bytes read {bytesRead}, position {_audioPcmStreamReader.BaseStream.Position}, length {_audioPcmStreamReader.BaseStream.Length}.");
 
                     if (bytesRead < sample.Length)
                     {
