@@ -211,6 +211,7 @@ namespace SIPSorcery.Media
 
             _audioStreamTimer?.Dispose();
             _audioStreamReader?.Close();
+            StopSendFromAudioStream();
         }
 
         /// <summary>
@@ -339,7 +340,6 @@ namespace SIPSorcery.Media
 
                 lock (_audioPcmStreamTimer)
                 {
-
                     Log.LogDebug($"Sending audio stream length {audioStream.Length}.");
 
                     _streamSendInProgress = true;

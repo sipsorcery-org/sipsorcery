@@ -4,6 +4,9 @@
 // Description: An example program to play pre-recorded sound files on a SIP
 // call.
 //
+// Note: See the TextToPcm example in the AzureExamples for a demonstration
+// of how to generate suitable audio files.
+//
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
@@ -16,7 +19,6 @@
 
 using System;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Media;
@@ -27,10 +29,11 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "1@127.0.0.1"; //"time@sipsorcery.com";
+        private static string DESTINATION = "1@127.0.0.1";
 
-        private static string WELCOME_SOUND_FILE_8K = "Sounds/hellowelcome8k.raw";
-        private static string WELCOME_SOUND_FILE_16K = "Sounds/hellowelcome16k.raw";
+        //private static string WELCOME_8K = "Sounds/hellowelcome8k.raw";
+        private static string WELCOME_16K = "Sounds/hellowelcome16k.raw";
+        private static string GOODBYE_16K = "Sounds/goodbye16k.raw";
 
         static async Task Main()
         {
@@ -49,15 +52,12 @@ namespace demo
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
             Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
 
-            CancellationTokenSource cts = new CancellationTokenSource();
-
             if (callResult)
             {
-                userAgent.OnCallHungup += (dialog) => cts.Cancel();
-                await Task.Delay(1000, cts.Token);
-                //rtpSession.SendAudioFromStream(new FileStream(WELCOME_SOUND_FILE_8K, FileMode.Open), AudioSamplingRatesEnum.SampleRate8KHz);
-                await rtpSession.SendAudioFromStream(new FileStream(WELCOME_SOUND_FILE_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
-                Console.WriteLine("Stream task complete.");
+                await Task.Delay(1000);
+                await rtpSession.SendAudioFromStream(new FileStream(WELCOME_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
+                await Task.Delay(1000);
+                await rtpSession.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
             }
 
             Console.WriteLine("press any key to exit...");
