@@ -91,7 +91,7 @@ namespace demo
                     Log.LogWarning("No audio capture devices are available. No audio stream will be sent.");
                 }
 
-                base.OnRemote8KHzPcmSampleReady += RemoteAudioSampleAvailable;
+                base.OnRemoteAudioSampleReady += RemoteAudioSampleAvailable;
             }
         }
 
@@ -100,7 +100,7 @@ namespace demo
         /// </summary>
         private void LocalAudioSampleAvailable(object sender, WaveInEventArgs args)
         {
-            base.SendExternalSample(args.Buffer, args.BytesRecorded, AUDIO_SAMPLE_PERIOD_MILLISECONDS);
+            base.SendAudioSample(args.Buffer, args.BytesRecorded, AUDIO_SAMPLE_PERIOD_MILLISECONDS);
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace demo
             {
                 base.Close(reason);
 
-                base.OnRemote8KHzPcmSampleReady -= RemoteAudioSampleAvailable;
+                base.OnRemoteAudioSampleReady -= RemoteAudioSampleAvailable;
 
                 _waveOutEvent?.Stop();
 

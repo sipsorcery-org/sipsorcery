@@ -43,7 +43,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="WindowsAudioRtpSession.cs" />
+    <Compile Include="..\Common\Devices\WindowsAudioRtpSession.cs">
+      <Link>WindowsAudioRtpSession.cs</Link>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
