@@ -1,22 +1,24 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: A getting started program to demonstrate how to use the SIPSorcery
-// library to place a call.
+// Description: An example program to play pre-recorded sound files on a SIP
+// call.
+//
+// Note: See the TextToPcm example in the AzureExamples for a demonstration
+// of how to generate suitable audio files.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 13 Oct 2019	Aaron Clauson	Created, Dublin, Ireland.
-// 31 Dec 2019  Aaron Clauson   Changed from an OPTIONS example to a call example.
-// 20 Feb 2020  Aaron Clauson   Switched to RtpAVSession and simplified.
+// 03 Jun 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Serilog;
 using SIPSorcery.Media;
@@ -27,11 +29,15 @@ namespace demo
 {
     class Program
     {
-        private static string DESTINATION = "time@sipsorcery.com";
+        private static string DESTINATION = "1@127.0.0.1";
+
+        //private static string WELCOME_8K = "Sounds/hellowelcome8k.raw";
+        private static string WELCOME_16K = "Sounds/hellowelcome16k.raw";
+        private static string GOODBYE_16K = "Sounds/goodbye16k.raw";
 
         static async Task Main()
         {
-            Console.WriteLine("SIPSorcery Getting Started Demo");
+            Console.WriteLine("SIPSorcery Play Sounds Demo");
 
             AddConsoleLogger();
 
@@ -46,6 +52,14 @@ namespace demo
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
             Console.WriteLine($"Call result {((callResult) ? "success" : "failure")}.");
 
+            if (callResult)
+            {
+                await Task.Delay(1000);
+                await rtpSession.SendAudioFromStream(new FileStream(WELCOME_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
+                await Task.Delay(1000);
+                await rtpSession.SendAudioFromStream(new FileStream(GOODBYE_16K, FileMode.Open), AudioSamplingRatesEnum.SampleRate16KHz);
+            }
+
             Console.WriteLine("press any key to exit...");
             Console.Read();
 
@@ -54,6 +68,9 @@ namespace demo
                 Console.WriteLine("Hanging up.");
                 userAgent.Hangup();
             }
+
+            // Give the hangup a chance to complete.
+            await Task.Delay(1000);
 
             // Clean up.
             sipTransport.Shutdown();
