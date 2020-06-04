@@ -1,0 +1,55 @@
+﻿/* See: https://github.com/jitsi/libjitsi
+ * 
+ * Converted to C# from Java (from C)
+ * The following transformations have been used...
+ * 
+// Replace "extends" with ":" in class declaration
+// Remove all "throws" declarations
+// Remove all "package" lines
+// Remove all "import" lines
+// Remove all "@Override" qualifiers
+// Remove all "final" qualifiers in declarations
+// Change "0." shorthand to "0.0" for float assignments
+// In method signatures, move the array "[]" declarations from the variable to the type
+// Fix all scope issues (lots default to private and need changing to public)
+// Import System.Math where prompted, and rename the library function called (just capitalize the first letter!) 
+// Remove all "@SuppressWarnings("resource")" lines
+// ".length" to ".Length" for arrays
+// "System.out.printf" to "Console.Write"
+// Replace "System.exit" with "Environment.Exit"
+// Can't do a labelled break in C# :(  replace with a "goto"!!
+// "InputStream" and "OutputStream" to "Stream" in method declarations
+// "new FileInputStream(args[0])" to "new FileStream(args[0], FileMode.Open)"
+// "new FileOutputStream(args[1])" to "new FileStream(args[1], FileMode.Create)"
+// ".close" to ".Close" for FileStreams
+// Can't do "new float[Ld8k.MA_NP][Ld8k.M];", need "new float[Ld8k.MA_NP][];" instead, then add an initialize in the constructor as:
+//    public Lspdec()
+//    {
+//        // need this to initialize freq_prev
+//        for (var i = 0; i < freq_prev.Length; i++ )
+//            freq_prev[i] = new float[M];
+//    }
+// Variable named 'in' renamed to 'in_' as 'in' is a reserved word in C#
+// Variable named 'out' renamed to 'out_' as 'out' is a reserved word in C#
+// Replace Map<,> with Dictionary<,>, Map.get with Dictionary.TryGetValue 
+// Integer.parse becomes Int32.Parse
+// System.arraycopy to Array.Copy
+// Arrays.fill - new static method to implement:
+//    public static void Fill<T>(T[] array, int start, int end, T value)
+//    {
+//        for (int i = start; i < end; i++)
+//        {
+//            array[i] = value;
+//        }
+//    }
+// The java shift right operator with zero fill is not available in c#; replace with:
+//    private static int ZFRS(int i, int j)
+//    {
+//        bool maskIt = (i < 0);
+//        i = i >> j;
+//        if (maskIt)
+//            i &= 0x7FFFFFFF;
+//        return i;
+//    }
+// Multi-dimensional static array declarations need lots of extra "new float[] { }" things adding 
+*/
