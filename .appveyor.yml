@@ -23,8 +23,16 @@ build:
 #    - txintegration
 after_test:
 # If unit tests pass on native Windows build and run tests on WSL.
-- cmd: wsl pwd
-- cmd: wsl dotnet test src/SIPSorcery.sln --framework netcoreapp3.1
+- cmd: |
+       wsl pwd
+       wsl whoami
+       wsl wget https://packages.microsoft.com/config/ubuntu/19.10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+       wsl sudo dpkg -i packages-microsoft-prod.deb
+       wsl sudo apt-get update -y
+       wsl sudo apt-get install -y apt-transport-https
+       wsl sudo apt-get update -y
+       wsl sudo apt-get install -y dotnet-sdk-3.1
+       wsl dotnet test src/SIPSorcery.sln --framework netcoreapp3.1
 on_success:
   - ps: |
         if($env:APPVEYOR_REPO_BRANCH -eq "master" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)
