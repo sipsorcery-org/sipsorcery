@@ -260,15 +260,14 @@ namespace SIPSorcery.Sys
 
         private static void BindUdpSocket(Socket socket, IPAddress bindAddress, int port)
         {
-            socket.Bind(new IPEndPoint(bindAddress, port));
-
             // Nasty warning. On Windows Subsystem for Linux (WSL) on Windows 10
             // the OS lets a socket bind on an IPv6 dual mode port even if there
             // is an IPv4 socket bound to the same port. To prevent this occurring 
             // a test IPv4 socket bind is carried out.
             // This happen even if the exclusive address socket option is set.
             // See https://github.com/dotnet/runtime/issues/36618.
-            if (socket.AddressFamily == AddressFamily.InterNetworkV6 &&
+            if (port != 0 &&
+                socket.AddressFamily == AddressFamily.InterNetworkV6 &&
                 socket.DualMode && IPAddress.IPv6Any.Equals(bindAddress) &&
                 Environment.OSVersion.Platform == PlatformID.Unix &&
                 RuntimeInformation.OSDescription.Contains("Microsoft"))
@@ -288,6 +287,8 @@ namespace SIPSorcery.Sys
                     }
                 }
             }
+
+            socket.Bind(new IPEndPoint(bindAddress, port));
         }
 
         /// <summary>
