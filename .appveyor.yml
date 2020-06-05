@@ -21,6 +21,10 @@ build:
 #    except:
 #    - transport
 #    - txintegration
+after_test:
+# If unit tests pass on native Windows build and run tests on WSL.
+- cmd: wsl pwd
+- cmd: wsl dotnet test src/SIPSorcery.sln --framework netcoreapp3.1
 on_success:
   - ps: |
         if($env:APPVEYOR_REPO_BRANCH -eq "master" -and -Not $env:APPVEYOR_PULL_REQUEST_TITLE)
