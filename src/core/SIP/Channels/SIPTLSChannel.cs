@@ -31,14 +31,20 @@ namespace SIPSorcery.SIP
 
         override protected string ProtDescr { get; } = "TLS";
 
-        public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
-            : base(endPoint, SIPProtocolsEnum.tls)
+        public SIPTLSChannel(IPEndPoint endPoint)
+            : base(endPoint, SIPProtocolsEnum.tls, false)
         {
-            if (serverCertificate == null)
+            if (endPoint == null)
             {
-                throw new ArgumentNullException("serverCertificate", "An X509 certificate must be supplied for a SIP TLS channel.");
+                throw new ArgumentNullException("endPoint", "An IP end point must be supplied for a SIP TLS channel.");
             }
 
+            IsSecure = true;
+        }
+
+        public SIPTLSChannel(X509Certificate2 serverCertificate, IPEndPoint endPoint)
+            : base(endPoint, SIPProtocolsEnum.tls, serverCertificate != null)
+        {
             if (endPoint == null)
             {
                 throw new ArgumentNullException("endPoint", "An IP end point must be supplied for a SIP TLS channel.");

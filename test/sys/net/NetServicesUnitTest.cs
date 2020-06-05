@@ -19,6 +19,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -303,8 +304,7 @@ namespace SIPSorcery.Sys.UnitTests
         }
 
         /// <summary>
-        /// Checks that when two sockets are bound on the same port but with different address specifiers
-        /// the magic cookie send test is able to detect the unusable socket.
+        /// Checks that when two sockets are bound on the same port but with different address specifiers.
         /// Workaround for bug: https://github.com/dotnet/runtime/issues/36618
         /// The behaviour for this test is different on Windows and Ubuntu:
         ///  - On Windows the IPv4 bound socket can receive the IPv6 one can't,
@@ -319,7 +319,7 @@ namespace SIPSorcery.Sys.UnitTests
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
-
+ 
             if (!Socket.OSSupportsIPv6)
             {
                 logger.LogDebug("Test not executed as no IPv6 support.");
@@ -336,10 +336,15 @@ namespace SIPSorcery.Sys.UnitTests
                 // Since it will be useful to detect if this behaviour ever changes add different asserts for the
                 // different Operating Systems.
 
-                logger.LogDebug($"Environment.OSVersion: {Environment.OSVersion}");
-                logger.LogDebug($"Environment.OSVersion.Platform: {Environment.OSVersion.Platform}");
+                logger.LogDebug($"Environment.OSVersion: {Environment.OSVersion}.");
+                logger.LogDebug($"Environment.OSVersion.Platform: {Environment.OSVersion.Platform}.");
+                logger.LogDebug($"RuntimeInformation.OSDescription: {RuntimeInformation.OSDescription}.");
 
-                if (Environment.OSVersion.Platform == PlatformID.Unix && NetServices.SupportsDualModeIPv4PacketInfo)
+                // Note Ubuntu on Windows Subsystem for Linux (WSL2) does NOT throw a binding exception and allows
+                // the duplicate binding the same as Windows.
+                if (Environment.OSVersion.Platform == PlatformID.Unix &&
+                    !RuntimeInformation.OSDescription.Contains("Microsoft") // This line is to filter out WSL.
+                    && NetServices.SupportsDualModeIPv4PacketInfo)
                 {
                     Assert.Throws<SocketException>(() => socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port)));
                 }
@@ -373,7 +378,7 @@ namespace SIPSorcery.Sys.UnitTests
             Assert.NotNull(rtpSocket);
             Assert.NotNull(controlSocket);
 
-            Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint  as IPEndPoint).Port, IPAddress.IPv6Any));
+            Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint  as IPEndPoint).Port, IPAddress.IPv6Any, false, true));
 
             rtpSocket.Close();
             controlSocket.Close();
