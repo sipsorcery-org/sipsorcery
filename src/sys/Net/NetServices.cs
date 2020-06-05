@@ -276,13 +276,11 @@ namespace SIPSorcery.Sys
                 // to check the port isn't already in use.
                 if(Socket.OSSupportsIPv4)
                 {
-                    int checkPort = (socket.LocalEndPoint as IPEndPoint).Port;
-
-                    logger.LogDebug($"WSL detected, carrying out bind check on 0.0.0.0:{checkPort}.");
+                    logger.LogDebug($"WSL detected, carrying out bind check on 0.0.0.0:{port}.");
 
                     using (Socket testSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
                     {
-                        testSocket.Bind(new IPEndPoint(IPAddress.Any, checkPort));
+                        testSocket.Bind(new IPEndPoint(IPAddress.Any, port));
                         testSocket.Close();
                     }
                 }
