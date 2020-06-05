@@ -93,10 +93,17 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.IPv6Loopback);
-            Assert.Equal(IPAddress.IPv6Loopback, localAddress);
+            if (Socket.OSSupportsIPv6)
+            {
+                var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.IPv6Loopback);
+                Assert.Equal(IPAddress.IPv6Loopback, localAddress);
 
-            logger.LogDebug($"Local address {localAddress}.");
+                logger.LogDebug($"Local address {localAddress}.");
+            }
+            else
+            {
+                logger.LogDebug("Test skipped as OS does not support IPv6.");
+            }
         }
 
         /// <summary>
@@ -109,40 +116,62 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var ipv6LinkLocal = NetServices.LocalIPAddresses.Where(x => x.IsIPv6LinkLocal).FirstOrDefault();
-
-            if (ipv6LinkLocal == null)
+            if (Socket.OSSupportsIPv6)
             {
-                logger.LogDebug("No IPv6 link local address available.");
+                var ipv6LinkLocal = NetServices.LocalIPAddresses.Where(x => x.IsIPv6LinkLocal).FirstOrDefault();
+
+                if (ipv6LinkLocal == null)
+                {
+                    logger.LogDebug("No IPv6 link local address available.");
+                }
+                else
+                {
+                    logger.LogDebug($"IPv6 link local address for this host {ipv6LinkLocal}.");
+
+                    var localAddress = NetServices.GetLocalAddressForRemote(ipv6LinkLocal);
+
+                    Assert.NotNull(localAddress);
+                    Assert.Equal(ipv6LinkLocal, localAddress);
+
+                    logger.LogDebug($"Local address {localAddress}.");
+                }
             }
             else
             {
-                logger.LogDebug($"IPv6 link local address for this host {ipv6LinkLocal}.");
-                
-                var localAddress = NetServices.GetLocalAddressForRemote(ipv6LinkLocal);
-
-                Assert.NotNull(localAddress);
-                Assert.Equal(ipv6LinkLocal, localAddress);
-
-                logger.LogDebug($"Local address {localAddress}.");
+                logger.LogDebug("Test skipped as OS does not support IPv6.");
             }
         }
 
         /// <summary>
         /// Tests that the a local address is returned for an Internet IPv6 destination.
         /// </summary>
-        [Fact(Skip = "Only works if machine running the test has a public IPv6 address assigned.")]
+        //[Fact(Skip = "Only works if machine running the test has a public IPv6 address assigned.")]
+        [Fact]
         [Trait("Category", "IPv6")]
-        //[Ignore] // Only works if machine running the test has a public IPv6 address assigned.
         public void GetLocalForInternetIPv6AdressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("2606:db00:0:62b::2"));
-            Assert.NotNull(localAddress);
+            if (Socket.OSSupportsIPv6)
+            {
+                if (NetServices.LocalIPAddresses.Any(x => x.AddressFamily == AddressFamily.InterNetworkV6 &&
+                    !x.IsIPv6LinkLocal && !x.IsIPv6SiteLocal && !x.IsIPv6Teredo && !IPAddress.IsLoopback(x)))
+                {
+                    var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("2606:db00:0:62b::2"));
+                    Assert.NotNull(localAddress);
 
-            logger.LogDebug($"Local address {localAddress}.");
+                    logger.LogDebug($"Local address {localAddress}.");
+                }
+                else
+                {
+                    logger.LogDebug("Test skipped as no public IPv6 address available.");
+                }
+            }
+            else
+            {
+                logger.LogDebug("Test skipped as OS does not support IPv6.");
+            }
         }
 
         /// <summary>
@@ -155,7 +184,7 @@ namespace SIPSorcery.Sys.UnitTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddresses = NetServices.LocalIPAddresses;
-            Assert.NotNull(localAddresses);
+            Assert.NotEmpty(localAddresses);
 
             foreach (var localAddress in localAddresses)
             {
@@ -322,7 +351,7 @@ namespace SIPSorcery.Sys.UnitTests
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
- 
+
             if (!Socket.OSSupportsIPv6)
             {
                 logger.LogDebug("Test not executed as no IPv6 support.");
@@ -381,7 +410,7 @@ namespace SIPSorcery.Sys.UnitTests
             Assert.NotNull(rtpSocket);
             Assert.NotNull(controlSocket);
 
-            Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint  as IPEndPoint).Port, IPAddress.IPv6Any, false, true));
+            Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint as IPEndPoint).Port, IPAddress.IPv6Any, false, true));
 
             rtpSocket.Close();
             controlSocket.Close();

@@ -168,7 +168,6 @@ namespace SIPSorcery.Sys
                 {
                     socket = CreateUdpSocket(addressFamily, useDualMode);
                     BindUdpSocket(socket, bindAddress, port);
-
                     int boundPort = (socket.LocalEndPoint as IPEndPoint).Port;
 
                     if (requireEvenPort && boundPort % 2 != 0 && boundPort == IPEndPoint.MaxPort)
@@ -178,6 +177,8 @@ namespace SIPSorcery.Sys
                     }
                     else
                     {
+
+
                         if (requireEvenPort && boundPort % 2 != 0)
                         {
                             logger.LogDebug($"CreateBoundUdpSocket even port required, closing socket on {socket.LocalEndPoint} and retrying on {boundPort + 1}.");
@@ -259,6 +260,8 @@ namespace SIPSorcery.Sys
 
         private static void BindUdpSocket(Socket socket, IPAddress bindAddress, int port)
         {
+            socket.Bind(new IPEndPoint(bindAddress, port));
+
             // Nasty warning. On Windows Subsystem for Linux (WSL) on Windows 10
             // the OS lets a socket bind on an IPv6 dual mode port even if there
             // is an IPv4 socket bound to the same port. To prevent this occurring 
@@ -274,15 +277,17 @@ namespace SIPSorcery.Sys
                 // to check the port isn't already in use.
                 if(Socket.OSSupportsIPv4)
                 {
+                    int checkPort = (socket.LocalEndPoint as IPEndPoint).Port;
+
+                    logger.LogDebug($"WSL detected, carrying out bind check on 0.0.0.0:{checkPort}.");
+
                     using (Socket testSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
                     {
-                        testSocket.Bind(new IPEndPoint(IPAddress.Any, port));
+                        testSocket.Bind(new IPEndPoint(IPAddress.Any, checkPort));
                         testSocket.Close();
                     }
                 }
             }
-
-            socket.Bind(new IPEndPoint(bindAddress, port));
         }
 
         /// <summary>
@@ -528,7 +533,8 @@ namespace SIPSorcery.Sys
             NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
             foreach (NetworkInterface n in adapters)
             {
-                if (n.OperationalStatus == OperationalStatus.Up)
+                // AC 5 Jun 2020: Network interface status is reported as Unknown on WSL.
+                if (n.OperationalStatus == OperationalStatus.Up || n.OperationalStatus == OperationalStatus.Unknown)
                 {
                     IPInterfaceProperties ipProps = n.GetIPProperties();
                     foreach (var unicastAddr in ipProps.UnicastAddresses)
