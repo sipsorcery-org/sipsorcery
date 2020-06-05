@@ -305,7 +305,7 @@ serverReadyEvent);
 
             var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.IPv6Loopback, 0);
             serverChannel.DisableLocalTCPSocketsCheck = true;
-            var clientChannel = new SIPTLSChannel(serverCertificate, IPAddress.IPv6Loopback, 0);
+            var clientChannel = new SIPTLSChannel(new IPEndPoint(IPAddress.IPv6Loopback, 0));
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });
@@ -356,7 +356,7 @@ serverReadyEvent);
 
             var serverChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 0);
             serverChannel.DisableLocalTCPSocketsCheck = true;
-            var clientChannel = new SIPTLSChannel(serverCertificate, IPAddress.Loopback, 0);
+            var clientChannel = new SIPTLSChannel(new IPEndPoint(IPAddress.Loopback, 0));
             clientChannel.DisableLocalTCPSocketsCheck = true;
 
             var serverTask = Task.Run(() => { RunServer(serverChannel, cancelServer, serverReadyEvent); });

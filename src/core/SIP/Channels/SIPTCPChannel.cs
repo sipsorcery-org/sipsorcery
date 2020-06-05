@@ -57,9 +57,9 @@ namespace SIPSorcery.SIP
 {
     public class SIPTCPChannel : SIPChannel
     {
-        private const int MAX_TCP_CONNECTIONS = 1000;               // Maximum number of connections for the TCP listener.
-        private const int PRUNE_CONNECTIONS_INTERVAL = 60000;        // The period at which to prune the connections.
-        private const int PRUNE_NOTRANSMISSION_MINUTES = 70;         // The number of minutes after which if no transmissions are sent or received a connection will be pruned.
+        private const int MAX_TCP_CONNECTIONS = 1000;           // Maximum number of connections for the TCP listener.
+        private const int PRUNE_CONNECTIONS_INTERVAL = 60000;  // The period at which to prune the connections.
+        private const int PRUNE_NOTRANSMISSION_MINUTES = 70;   // The number of minutes after which if no transmissions are sent or received a connection will be pruned.
 
         /// <summary>
         /// This is the main object managed by this class. It is the socket listening for incoming connections.
@@ -102,7 +102,9 @@ namespace SIPSorcery.SIP
         /// </summary>
         /// <param name="endPoint">The IP end point to listen on and send from.</param>
         /// <param name="protocol">Whether the channel is being used with TCP or TLS (TLS channels get upgraded once connected).</param>
-        public SIPTCPChannel(IPEndPoint endPoint, SIPProtocolsEnum protocol) : base()
+        /// <param name="canListen">Indicates whether the channel is capable of listening for new client connections.
+        /// A TLS channel without a certificate cannot listen.</param>
+        public SIPTCPChannel(IPEndPoint endPoint, SIPProtocolsEnum protocol, bool canListen = true) : base()
         {
             if (endPoint == null)
             {
@@ -113,7 +115,11 @@ namespace SIPSorcery.SIP
             Port = endPoint.Port;
             SIPProtocol = protocol;
             IsReliable = true;
-            Initialise(endPoint);
+
+            if (canListen)
+            {
+                StartListening(endPoint);
+            }
         }
 
         public SIPTCPChannel(IPEndPoint endPoint)
@@ -127,7 +133,7 @@ namespace SIPSorcery.SIP
         /// <summary>
         /// Initialises the SIP channel's socket listener.
         /// </summary>
-        private void Initialise(IPEndPoint listenEndPoint)
+        private void StartListening(IPEndPoint listenEndPoint)
         {
             try
             {

@@ -195,7 +195,14 @@ namespace SIPSorcery.Sys
                         }
                         else
                         {
-                            logger.LogDebug($"CreateBoundUdpSocket successfully bound on {socket.LocalEndPoint}.");
+                            if (addressFamily == AddressFamily.InterNetworkV6)
+                            {
+                                logger.LogDebug($"CreateBoundUdpSocket successfully bound on {socket.LocalEndPoint}, dual mode {socket.DualMode}.");
+                            }
+                            else
+                            {
+                                logger.LogDebug($"CreateBoundUdpSocket successfully bound on {socket.LocalEndPoint}.");
+                            }
                         }
 
                         success = true;
