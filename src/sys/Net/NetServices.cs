@@ -268,7 +268,7 @@ namespace SIPSorcery.Sys
             if (socket.AddressFamily == AddressFamily.InterNetworkV6 &&
                 socket.DualMode && IPAddress.IPv6Any.Equals(bindAddress) &&
                 Environment.OSVersion.Platform == PlatformID.Unix &&
-                !RuntimeInformation.OSDescription.Contains("Microsoft"))
+                RuntimeInformation.OSDescription.Contains("Microsoft"))
             {
                 // Create a dummy IPv4 socket and attempt to bind it to the same port
                 // to check the port isn't already in use.
