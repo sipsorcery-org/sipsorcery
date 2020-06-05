@@ -26730,19 +26730,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket
   nameWithType: NetServices.CreateRtpSocket
-- uid: SIPSorcery.Sys.NetServices.DoTestReceive(System.Net.Sockets.Socket,System.Net.IPAddress)
-  name: DoTestReceive(Socket, IPAddress)
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_DoTestReceive_System_Net_Sockets_Socket_System_Net_IPAddress_
-  commentId: M:SIPSorcery.Sys.NetServices.DoTestReceive(System.Net.Sockets.Socket,System.Net.IPAddress)
-  fullName: SIPSorcery.Sys.NetServices.DoTestReceive(System.Net.Sockets.Socket, System.Net.IPAddress)
-  nameWithType: NetServices.DoTestReceive(Socket, IPAddress)
-- uid: SIPSorcery.Sys.NetServices.DoTestReceive*
-  name: DoTestReceive
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_DoTestReceive_
-  commentId: Overload:SIPSorcery.Sys.NetServices.DoTestReceive
-  isSpec: "True"
-  fullName: SIPSorcery.Sys.NetServices.DoTestReceive
-  nameWithType: NetServices.DoTestReceive
 - uid: SIPSorcery.Sys.NetServices.GetLocalAddressForRemote(System.Net.IPAddress)
   name: GetLocalAddressForRemote(IPAddress)
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressForRemote_System_Net_IPAddress_
@@ -26795,18 +26782,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.SupportsDualModeIPv4PacketInfo
   nameWithType: NetServices.SupportsDualModeIPv4PacketInfo
-- uid: SIPSorcery.Sys.NetServices.UDP_PORT_END
-  name: UDP_PORT_END
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_UDP_PORT_END
-  commentId: F:SIPSorcery.Sys.NetServices.UDP_PORT_END
-  fullName: SIPSorcery.Sys.NetServices.UDP_PORT_END
-  nameWithType: NetServices.UDP_PORT_END
-- uid: SIPSorcery.Sys.NetServices.UDP_PORT_START
-  name: UDP_PORT_START
-  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_UDP_PORT_START
-  commentId: F:SIPSorcery.Sys.NetServices.UDP_PORT_START
-  fullName: SIPSorcery.Sys.NetServices.UDP_PORT_START
-  nameWithType: NetServices.UDP_PORT_START
 - uid: SIPSorcery.Sys.NullLogger
   name: NullLogger
   href: api/SIPSorcery.Sys.NullLogger.html
