@@ -19,6 +19,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -28,6 +29,8 @@ namespace SIPSorcery.Sys.UnitTests
     [Trait("Category", "unit")]
     public class NetServicesUnitTest
     {
+        private static byte[] MAGIC_COOKIE = new byte[] { 0x41, 0x42, 0x41, 0x42, 0x41 };
+
         private Microsoft.Extensions.Logging.ILogger logger = null;
 
         public NetServicesUnitTest(Xunit.Abstractions.ITestOutputHelper output)
@@ -90,10 +93,17 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.IPv6Loopback);
-            Assert.Equal(IPAddress.IPv6Loopback, localAddress);
+            if (Socket.OSSupportsIPv6)
+            {
+                var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.IPv6Loopback);
+                Assert.Equal(IPAddress.IPv6Loopback, localAddress);
 
-            logger.LogDebug($"Local address {localAddress}.");
+                logger.LogDebug($"Local address {localAddress}.");
+            }
+            else
+            {
+                logger.LogDebug("Test skipped as OS does not support IPv6.");
+            }
         }
 
         /// <summary>
@@ -106,40 +116,62 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var ipv6LinkLocal = NetServices.LocalIPAddresses.Where(x => x.IsIPv6LinkLocal).FirstOrDefault();
-
-            if (ipv6LinkLocal == null)
+            if (Socket.OSSupportsIPv6)
             {
-                logger.LogDebug("No IPv6 link local address available.");
+                var ipv6LinkLocal = NetServices.LocalIPAddresses.Where(x => x.IsIPv6LinkLocal).FirstOrDefault();
+
+                if (ipv6LinkLocal == null)
+                {
+                    logger.LogDebug("No IPv6 link local address available.");
+                }
+                else
+                {
+                    logger.LogDebug($"IPv6 link local address for this host {ipv6LinkLocal}.");
+
+                    var localAddress = NetServices.GetLocalAddressForRemote(ipv6LinkLocal);
+
+                    Assert.NotNull(localAddress);
+                    Assert.Equal(ipv6LinkLocal, localAddress);
+
+                    logger.LogDebug($"Local address {localAddress}.");
+                }
             }
             else
             {
-                logger.LogDebug($"IPv6 link local address for this host {ipv6LinkLocal}.");
-                
-                var localAddress = NetServices.GetLocalAddressForRemote(ipv6LinkLocal);
-
-                Assert.NotNull(localAddress);
-                Assert.Equal(ipv6LinkLocal, localAddress);
-
-                logger.LogDebug($"Local address {localAddress}.");
+                logger.LogDebug("Test skipped as OS does not support IPv6.");
             }
         }
 
         /// <summary>
         /// Tests that the a local address is returned for an Internet IPv6 destination.
         /// </summary>
-        [Fact(Skip = "Only works if machine running the test has a public IPv6 address assigned.")]
+        //[Fact(Skip = "Only works if machine running the test has a public IPv6 address assigned.")]
+        [Fact]
         [Trait("Category", "IPv6")]
-        //[Ignore] // Only works if machine running the test has a public IPv6 address assigned.
         public void GetLocalForInternetIPv6AdressUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("2606:db00:0:62b::2"));
-            Assert.NotNull(localAddress);
+            if (Socket.OSSupportsIPv6)
+            {
+                if (NetServices.LocalIPAddresses.Any(x => x.AddressFamily == AddressFamily.InterNetworkV6 &&
+                    !x.IsIPv6LinkLocal && !x.IsIPv6SiteLocal && !x.IsIPv6Teredo && !IPAddress.IsLoopback(x)))
+                {
+                    var localAddress = NetServices.GetLocalAddressForRemote(IPAddress.Parse("2606:db00:0:62b::2"));
+                    Assert.NotNull(localAddress);
 
-            logger.LogDebug($"Local address {localAddress}.");
+                    logger.LogDebug($"Local address {localAddress}.");
+                }
+                else
+                {
+                    logger.LogDebug("Test skipped as no public IPv6 address available.");
+                }
+            }
+            else
+            {
+                logger.LogDebug("Test skipped as OS does not support IPv6.");
+            }
         }
 
         /// <summary>
@@ -152,7 +184,7 @@ namespace SIPSorcery.Sys.UnitTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             var localAddresses = NetServices.LocalIPAddresses;
-            Assert.NotNull(localAddresses);
+            Assert.NotEmpty(localAddresses);
 
             foreach (var localAddress in localAddresses)
             {
@@ -319,7 +351,7 @@ namespace SIPSorcery.Sys.UnitTests
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
- 
+
             if (!Socket.OSSupportsIPv6)
             {
                 logger.LogDebug("Test not executed as no IPv6 support.");
@@ -354,8 +386,8 @@ namespace SIPSorcery.Sys.UnitTests
                     // created with dual mode set to false.
                     socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port));
 
-                    Assert.True(NetServices.DoTestReceive(socket4Any, null));
-                    Assert.False(NetServices.DoTestReceive(socketIP6Any, null));
+                    Assert.True(DoTestReceive(socket4Any, null));
+                    Assert.False(DoTestReceive(socketIP6Any, null));
                 }
             }
         }
@@ -378,7 +410,7 @@ namespace SIPSorcery.Sys.UnitTests
             Assert.NotNull(rtpSocket);
             Assert.NotNull(controlSocket);
 
-            Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint  as IPEndPoint).Port, IPAddress.IPv6Any, false, true));
+            Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint as IPEndPoint).Port, IPAddress.IPv6Any, false, true));
 
             rtpSocket.Close();
             controlSocket.Close();
@@ -409,6 +441,89 @@ namespace SIPSorcery.Sys.UnitTests
 
             rtpSocket.Close();
             controlSocket.Close();
+        }
+
+        /// <summary>
+        /// Checks that a bound socket is able to receive. The need for this test arose when it was found
+        /// that Windows was allocating the same port if a bind was attempted on 0.0.0.0:0 and then [::]:0.
+        /// Only one of the two sockets could then receive packets to the OS allocated port.
+        /// This check is an attempt to work around the behaviour, see
+        /// https://github.com/dotnet/runtime/issues/36618
+        /// </summary>
+        /// <param name="socket">The bound socket to check for a receive.</param>
+        /// <param name="bindAddress">Optional. If the socket was bound to a single specific address
+        /// this parameter needs to be set so the test can send to it. If not set the test will send to 
+        /// the IPv4 loopback addresses.</param>
+        /// <returns>True is the receive was successful and the socket is usable. False if not.</returns>
+        private bool DoTestReceive(Socket socket, IPAddress bindAddress)
+        {
+            try
+            {
+                logger.LogDebug($"DoTestReeceive for {socket.LocalEndPoint} and bind address {bindAddress}.");
+
+                byte[] buffer = new byte[MAGIC_COOKIE.Length];
+                ManualResetEvent mre = new ManualResetEvent(false);
+                int bytesRead = 0;
+
+                void endReceive(IAsyncResult ar)
+                {
+                    try
+                    {
+                        if (socket != null)
+                        {
+                            bytesRead = socket.EndReceive(ar);
+                        }
+                    }
+                    catch (Exception) { }
+                    mre.Set();
+                };
+
+                socket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, endReceive, null);
+
+                int sendToPort = (socket.LocalEndPoint as IPEndPoint).Port;
+
+                IPAddress sendToAddress = bindAddress ?? IPAddress.Loopback;
+                if (IPAddress.IPv6Any.Equals(sendToAddress))
+                {
+                    sendToAddress = IPAddress.IPv6Loopback;
+                }
+                else if (IPAddress.Any.Equals(sendToAddress))
+                {
+                    sendToAddress = IPAddress.Loopback;
+                }
+
+                IPEndPoint sendTo = new IPEndPoint(sendToAddress, sendToPort);
+                socket.SendTo(MAGIC_COOKIE, sendTo);
+
+                if (mre.WaitOne(TimeSpan.FromMilliseconds(500), false))
+                {
+                    // The receive worked. Check that the magic cookie was received.
+                    if (bytesRead != MAGIC_COOKIE.Length)
+                    {
+                        logger.LogDebug("Bytes read was wrong length for magic cookie in DoTestReceive.");
+                        return false;
+                    }
+                    else if (Encoding.ASCII.GetString(buffer) != Encoding.ASCII.GetString(MAGIC_COOKIE))
+                    {
+                        logger.LogDebug("The bytes read did not match the magic cookie in DoTestReceive.");
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    logger.LogDebug("Timed out waiting for magic cookie in DoTestReceive.");
+                    return false;
+                }
+            }
+            catch (Exception excp)
+            {
+                logger.LogWarning($"DoTestReceive received failed with exception {excp.Message}");
+                return false;
+            }
         }
     }
 }
