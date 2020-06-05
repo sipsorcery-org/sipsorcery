@@ -22754,12 +22754,12 @@ references:
   commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint)
   fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint)
   nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint)
-- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
-  name: SIPTCPChannel(IPEndPoint, SIPProtocolsEnum)
-  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_
-  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum)
-  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum)
-  nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint, SIPProtocolsEnum)
+- uid: SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,System.Boolean)
+  name: SIPTCPChannel(IPEndPoint, SIPProtocolsEnum, Boolean)
+  href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_System_Net_IPEndPoint_SIPSorcery_SIP_SIPProtocolsEnum_System_Boolean_
+  commentId: M:SIPSorcery.SIP.SIPTCPChannel.#ctor(System.Net.IPEndPoint,SIPSorcery.SIP.SIPProtocolsEnum,System.Boolean)
+  fullName: SIPSorcery.SIP.SIPTCPChannel.SIPTCPChannel(System.Net.IPEndPoint, SIPSorcery.SIP.SIPProtocolsEnum, System.Boolean)
+  nameWithType: SIPTCPChannel.SIPTCPChannel(IPEndPoint, SIPProtocolsEnum, Boolean)
 - uid: SIPSorcery.SIP.SIPTCPChannel.#ctor*
   name: SIPTCPChannel
   href: api/SIPSorcery.SIP.SIPTCPChannel.html#SIPSorcery_SIP_SIPTCPChannel__ctor_
@@ -23014,6 +23014,12 @@ references:
   commentId: T:SIPSorcery.SIP.SIPTLSChannel
   fullName: SIPSorcery.SIP.SIPTLSChannel
   nameWithType: SIPTLSChannel
+- uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint)
+  name: SIPTLSChannel(IPEndPoint)
+  href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Net_IPEndPoint_
+  commentId: M:SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Net.IPEndPoint)
+  fullName: SIPSorcery.SIP.SIPTLSChannel.SIPTLSChannel(System.Net.IPEndPoint)
+  nameWithType: SIPTLSChannel.SIPTLSChannel(IPEndPoint)
 - uid: SIPSorcery.SIP.SIPTLSChannel.#ctor(System.Security.Cryptography.X509Certificates.X509Certificate2,System.Net.IPAddress,System.Int32)
   name: SIPTLSChannel(X509Certificate2, IPAddress, Int32)
   href: api/SIPSorcery.SIP.SIPTLSChannel.html#SIPSorcery_SIP_SIPTLSChannel__ctor_System_Security_Cryptography_X509Certificates_X509Certificate2_System_Net_IPAddress_System_Int32_
