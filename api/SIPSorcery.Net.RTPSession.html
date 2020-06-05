@@ -89,37 +89,13 @@ classes and for child classes to add audio and video processing logic.</p>
   <div classs="implements">
     <h5>Implements</h5>
     <div><a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a></div>
-    <div><span class="xref">System.IDisposable</span></div>
-  </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ToString()</span>
-    </div>
+    <div><span class="xref">IDisposable</span></div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_RTPSession_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class RTPSession : IMediaSession, IDisposable</code></pre>
+    <pre><code class="lang-csharp hljs">public class RTPSession : object, IMediaSession, IDisposable</code></pre>
   </div>
   <h5 id="SIPSorcery_Net_RTPSession_remarks"><strong>Remarks</strong></h5>
   <div class="markdown level0 remarks"><p>The setting up of an RTP stream involved the exchange of Session Descriptions
@@ -146,13 +122,13 @@ f. Call Start to commence RTCP reporting.</li>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession__ctor_System_Boolean_System_Boolean_System_Boolean_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.%23ctor(System.Boolean%2CSystem.Boolean%2CSystem.Boolean%2CSystem.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession__ctor_System_Boolean_System_Boolean_System_Boolean_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.%23ctor(System.Boolean%2CSystem.Boolean%2CSystem.Boolean%2CIPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L500">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession__ctor_" data-uid="SIPSorcery.Net.RTPSession.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_RTPSession__ctor_System_Boolean_System_Boolean_System_Boolean_System_Net_IPAddress_" data-uid="SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean,System.Net.IPAddress)">RTPSession(Boolean, Boolean, Boolean, IPAddress)</h4>
+  <h4 id="SIPSorcery_Net_RTPSession__ctor_System_Boolean_System_Boolean_System_Boolean_IPAddress_" data-uid="SIPSorcery.Net.RTPSession.#ctor(System.Boolean,System.Boolean,System.Boolean,IPAddress)">RTPSession(Boolean, Boolean, Boolean, IPAddress)</h4>
   <div class="markdown level1 summary"><p>Creates a new RTP session. The synchronisation source and sequence number are initialised to
 pseudo random values.</p>
 </div>
@@ -195,7 +171,7 @@ is explicitly set as complete.</p>
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="xref">IPAddress</span></td>
         <td><span class="parametername">bindAddress</span></td>
         <td><p>Optional. If specified this address will be used as the bind address for any RTP
 and control sockets created. Generally this address does not need to be set. The default behaviour
@@ -219,7 +195,7 @@ causing connection issues.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int DEFAULT_DTMF_EVENT_PAYLOAD_ID = 101</code></pre>
+    <pre><code class="lang-csharp hljs">public const int DEFAULT_DTMF_EVENT_PAYLOAD_ID = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -248,7 +224,7 @@ causing connection issues.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const SDPMediaTypesEnum DEFAULT_MEDIA_TYPE = SDPMediaTypesEnum.audio</code></pre>
+    <pre><code class="lang-csharp hljs">public const SDPMediaTypesEnum DEFAULT_MEDIA_TYPE = default(SDPMediaTypesEnum)</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -277,7 +253,7 @@ causing connection issues.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int DTMF_EVENT_DURATION = 1200</code></pre>
+    <pre><code class="lang-csharp hljs">public const int DTMF_EVENT_DURATION = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -306,7 +282,7 @@ causing connection issues.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int DTMF_EVENT_PAYLOAD_ID = 101</code></pre>
+    <pre><code class="lang-csharp hljs">public const int DTMF_EVENT_PAYLOAD_ID = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -335,7 +311,7 @@ causing connection issues.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int H264_RTP_HEADER_LENGTH = 2</code></pre>
+    <pre><code class="lang-csharp hljs">public const int H264_RTP_HEADER_LENGTH = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -364,7 +340,7 @@ causing connection issues.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS = 50</code></pre>
+    <pre><code class="lang-csharp hljs">public const int RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -393,7 +369,7 @@ causing connection issues.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string RTP_MEDIA_PROFILE = &quot;RTP/AVP&quot;</code></pre>
+    <pre><code class="lang-csharp hljs">public const string RTP_MEDIA_PROFILE = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -436,7 +412,7 @@ the buffer that holds the RTCP packet.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int SRTP_MAX_PREFIX_LENGTH = 148</code></pre>
+    <pre><code class="lang-csharp hljs">public const int SRTP_MAX_PREFIX_LENGTH = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -482,7 +458,7 @@ for the audio stream to.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="xref">IPEndPoint</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -513,7 +489,7 @@ for the audio stream to.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="xref">IPEndPoint</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -798,7 +774,7 @@ for the video stream to.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="xref">IPEndPoint</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -829,7 +805,7 @@ for the video stream to.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="xref">IPEndPoint</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -924,13 +900,13 @@ we're receiving).</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_CreateAnswer_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.CreateAnswer(System.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_CreateAnswer_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.CreateAnswer(IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L580">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_CreateAnswer_" data-uid="SIPSorcery.Net.RTPSession.CreateAnswer*"></a>
-  <h4 id="SIPSorcery_Net_RTPSession_CreateAnswer_System_Net_IPAddress_" data-uid="SIPSorcery.Net.RTPSession.CreateAnswer(System.Net.IPAddress)">CreateAnswer(IPAddress)</h4>
+  <h4 id="SIPSorcery_Net_RTPSession_CreateAnswer_IPAddress_" data-uid="SIPSorcery.Net.RTPSession.CreateAnswer(IPAddress)">CreateAnswer(IPAddress)</h4>
   <div class="markdown level1 summary"><p>Generates an SDP answer in response to an offer. The remote description MUST be set
 prior to calling this method.</p>
 </div>
@@ -950,7 +926,7 @@ prior to calling this method.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="xref">IPAddress</span></td>
         <td><span class="parametername">connectionAddress</span></td>
         <td><p>Optional. If set this address will be used as
 the SDP Connection address. If not specified the Operating System routing table
@@ -976,7 +952,7 @@ from the remote offer.</p>
       </tr>
     </tbody>
   </table>
-  <h5 id="SIPSorcery_Net_RTPSession_CreateAnswer_System_Net_IPAddress__remarks">Remarks</h5>
+  <h5 id="SIPSorcery_Net_RTPSession_CreateAnswer_IPAddress__remarks">Remarks</h5>
   <div class="markdown level1 remarks"><p>As specified in <a href="https://tools.ietf.org/html/rfc3264#section-6.1">https://tools.ietf.org/html/rfc3264#section-6.1</a>.
 &quot;If the answerer has no media formats in common for a particular
 offered stream, the answerer MUST reject that media stream by setting
@@ -984,13 +960,13 @@ the port to zero.&quot;</p>
 </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_CreateOffer_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.CreateOffer(System.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_CreateOffer_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.CreateOffer(IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L551">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_CreateOffer_" data-uid="SIPSorcery.Net.RTPSession.CreateOffer*"></a>
-  <h4 id="SIPSorcery_Net_RTPSession_CreateOffer_System_Net_IPAddress_" data-uid="SIPSorcery.Net.RTPSession.CreateOffer(System.Net.IPAddress)">CreateOffer(IPAddress)</h4>
+  <h4 id="SIPSorcery_Net_RTPSession_CreateOffer_IPAddress_" data-uid="SIPSorcery.Net.RTPSession.CreateOffer(IPAddress)">CreateOffer(IPAddress)</h4>
   <div class="markdown level1 summary"><p>Generates the SDP for an offer that can be made to a remote user agent.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -1009,7 +985,7 @@ the port to zero.&quot;</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="xref">IPAddress</span></td>
         <td><span class="parametername">connectionAddress</span></td>
         <td><p>Optional. If specified this IP address
 will be used as the address advertised in the SDP offer. If not provided
@@ -1109,7 +1085,7 @@ Local tracks represent an audio or video source that we are sending to the remot
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.MediaStreamTrack.html">MediaStreamTrack</a>&gt;</td>
+        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.Net.MediaStreamTrack.html">MediaStreamTrack</a>&gt;</td>
         <td><p>A list of the local tracks that have been added to this session.</p>
 </td>
       </tr>
@@ -1141,7 +1117,7 @@ Local tracks represent an audio or video source that we are sending to the remot
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.IRTCRtpReceiver.html">IRTCRtpReceiver</a>&gt;</td>
+        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.Net.IRTCRtpReceiver.html">IRTCRtpReceiver</a>&gt;</td>
         <td><p>A list of the RTP receivers for this session.</p>
 </td>
       </tr>
@@ -1222,7 +1198,7 @@ If media multiplexing is being used there will only a single RTP channel.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.IRTCRtpSender.html">IRTCRtpSender</a>&gt;</td>
+        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.Net.IRTCRtpSender.html">IRTCRtpSender</a>&gt;</td>
         <td><p>A list of the RTP senders for this session.</p>
 </td>
       </tr>
@@ -1327,13 +1303,13 @@ gets added onto the timestamp being set in the RTP header.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendDtmf_System_Byte_System_Threading_CancellationToken_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendDtmf(System.Byte%2CSystem.Threading.CancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendDtmf_System_Byte_CancellationToken_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendDtmf(System.Byte%2CCancellationToken)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L1605">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_SendDtmf_" data-uid="SIPSorcery.Net.RTPSession.SendDtmf*"></a>
-  <h4 id="SIPSorcery_Net_RTPSession_SendDtmf_System_Byte_System_Threading_CancellationToken_" data-uid="SIPSorcery.Net.RTPSession.SendDtmf(System.Byte,System.Threading.CancellationToken)">SendDtmf(Byte, CancellationToken)</h4>
+  <h4 id="SIPSorcery_Net_RTPSession_SendDtmf_System_Byte_CancellationToken_" data-uid="SIPSorcery.Net.RTPSession.SendDtmf(System.Byte,CancellationToken)">SendDtmf(Byte, CancellationToken)</h4>
   <div class="markdown level1 summary"><p>Sends a DTMF tone as an RTP event to the remote party.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -1358,7 +1334,7 @@ gets added onto the timestamp being set in the RTP header.</p>
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="xref">CancellationToken</span></td>
         <td><span class="parametername">ct</span></td>
         <td><p>RTP events can span multiple RTP packets. This token can
 be used to cancel the send.</p>
@@ -1376,20 +1352,20 @@ be used to cancel the send.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td><span class="xref">Task</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationToken_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent%2CSystem.Threading.CancellationToken%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_CancellationToken_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent%2CCancellationToken%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L1621">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_SendDtmfEvent_" data-uid="SIPSorcery.Net.RTPSession.SendDtmfEvent*"></a>
-  <h4 id="SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationToken_System_Int32_" data-uid="SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent,System.Threading.CancellationToken,System.Int32)">SendDtmfEvent(RTPEvent, CancellationToken, Int32)</h4>
+  <h4 id="SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_CancellationToken_System_Int32_" data-uid="SIPSorcery.Net.RTPSession.SendDtmfEvent(SIPSorcery.Net.RTPEvent,CancellationToken,System.Int32)">SendDtmfEvent(RTPEvent, CancellationToken, Int32)</h4>
   <div class="markdown level1 summary"><p>Sends an RTP event for a DTMF tone as per RFC2833. Sending the event requires multiple packets to be sent.
 This method will hold onto the socket until all the packets required for the event have been sent. The send
 can be cancelled using the cancellation token.</p>
@@ -1397,7 +1373,7 @@ can be cancelled using the cancellation token.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Task SendDtmfEvent(RTPEvent rtpEvent, CancellationToken cancellationToken, int clockRate = 8000)</code></pre>
+    <pre><code class="lang-csharp hljs">public Task SendDtmfEvent(RTPEvent rtpEvent, CancellationToken cancellationToken, int clockRate = null)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1416,7 +1392,7 @@ can be cancelled using the cancellation token.</p>
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="xref">CancellationToken</span></td>
         <td><span class="parametername">cancellationToken</span></td>
         <td><p>CancellationToken to allow the operation to be cancelled prematurely.</p>
 </td>
@@ -1439,7 +1415,7 @@ can be cancelled using the cancellation token.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td><span class="xref">Task</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -1599,13 +1575,13 @@ quality image is required since the header used in this method does not support 
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_System_Net_IPEndPoint_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SetDestination(SIPSorcery.Net.SDPMediaTypesEnum%2CSystem.Net.IPEndPoint%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_IPEndPoint_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SetDestination(SIPSorcery.Net.SDPMediaTypesEnum%2CIPEndPoint%2CIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L1262">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_SetDestination_" data-uid="SIPSorcery.Net.RTPSession.SetDestination*"></a>
-  <h4 id="SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_System_Net_IPEndPoint_System_Net_IPEndPoint_" data-uid="SIPSorcery.Net.RTPSession.SetDestination(SIPSorcery.Net.SDPMediaTypesEnum,System.Net.IPEndPoint,System.Net.IPEndPoint)">SetDestination(SDPMediaTypesEnum, IPEndPoint, IPEndPoint)</h4>
+  <h4 id="SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_IPEndPoint_IPEndPoint_" data-uid="SIPSorcery.Net.RTPSession.SetDestination(SIPSorcery.Net.SDPMediaTypesEnum,IPEndPoint,IPEndPoint)">SetDestination(SDPMediaTypesEnum, IPEndPoint, IPEndPoint)</h4>
   <div class="markdown level1 summary"><p>Sets the remote end points for a media type supported by this RTP session.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -1630,13 +1606,13 @@ quality image is required since the header used in this method does not support 
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="xref">IPEndPoint</span></td>
         <td><span class="parametername">rtpEndPoint</span></td>
         <td><p>The remote end point for RTP packets corresponding to the media type.</p>
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="xref">IPEndPoint</span></td>
         <td><span class="parametername">rtcpEndPoint</span></td>
         <td><p>The remote end point for RTCP packets corresponding to the media type.</p>
 </td>
@@ -1811,7 +1787,7 @@ quality image is required since the header used in this method does not support 
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td><span class="xref">Task</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -1843,7 +1819,7 @@ quality image is required since the header used in this method does not support 
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>, <a class="xref" href="SIPSorcery.Net.RTCPCompoundPacket.html">RTCPCompoundPacket</a>&gt;</td>
+        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>, <a class="xref" href="SIPSorcery.Net.RTCPCompoundPacket.html">RTCPCompoundPacket</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1878,7 +1854,7 @@ take when n RTCP BYE is received.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1908,7 +1884,7 @@ take when n RTCP BYE is received.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1938,7 +1914,7 @@ take when n RTCP BYE is received.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTPEvent.html">RTPEvent</a>, <a class="xref" href="SIPSorcery.Net.RTPHeader.html">RTPHeader</a>&gt;</td>
+        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTPEvent.html">RTPEvent</a>, <a class="xref" href="SIPSorcery.Net.RTPHeader.html">RTPHeader</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1968,7 +1944,7 @@ take when n RTCP BYE is received.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>, <a class="xref" href="SIPSorcery.Net.RTPPacket.html">RTPPacket</a>&gt;</td>
+        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>, <a class="xref" href="SIPSorcery.Net.RTPPacket.html">RTPPacket</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1998,7 +1974,7 @@ take when n RTCP BYE is received.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>, <a class="xref" href="SIPSorcery.Net.RTCPCompoundPacket.html">RTCPCompoundPacket</a>&gt;</td>
+        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>, <a class="xref" href="SIPSorcery.Net.RTCPCompoundPacket.html">RTCPCompoundPacket</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -2029,7 +2005,7 @@ receiving any RTP or RTCP packets within the given period.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>&gt;</td>
+        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -2039,7 +2015,7 @@ receiving any RTP or RTCP packets within the given period.</p>
       <a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a>
   </div>
   <div>
-      <span class="xref">System.IDisposable</span>
+      <span class="xref">IDisposable</span>
   </div>
 </article>
           </div>

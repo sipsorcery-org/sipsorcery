@@ -80,34 +80,6 @@
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">SIPTransport</span></div>
   </div>
-  <div classs="implements">
-    <h5>Implements</h5>
-    <div><span class="xref">System.IDisposable</span></div>
-  </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ToString()</span>
-    </div>
-  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.html">SIPSorcery.SIP</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_SIPTransport_syntax">Syntax</h5>
@@ -201,7 +173,7 @@ all messages to an upstream SIP server irrespective of the URI.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="xref">IPAddress</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -262,7 +234,7 @@ sipRequest.Header.Contact = new List&lt;SIPContactHeader>() { SIPContactHeader.G
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string m_allowedSIPMethods = &quot;ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, PRACK, REFER, REGISTER, SUBSCRIBE&quot;</code></pre>
+    <pre><code class="lang-csharp hljs">public const string m_allowedSIPMethods = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -319,6 +291,39 @@ created manually.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_AddSIPChannel_List_SIPSorcery_SIP_SIPChannel__.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.AddSIPChannel(List%7BSIPSorcery.SIP.SIPChannel%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L158">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPTransport_AddSIPChannel_" data-uid="SIPSorcery.SIP.SIPTransport.AddSIPChannel*"></a>
+  <h4 id="SIPSorcery_SIP_SIPTransport_AddSIPChannel_List_SIPSorcery_SIP_SIPChannel__" data-uid="SIPSorcery.SIP.SIPTransport.AddSIPChannel(List{SIPSorcery.SIP.SIPChannel})">AddSIPChannel(List&lt;SIPChannel&gt;)</h4>
+  <div class="markdown level1 summary"><p>Adds additional SIP Channels to the transport layer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void AddSIPChannel(List&lt;SIPChannel&gt; sipChannels)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPChannel.html">SIPChannel</a>&gt;</td>
+        <td><span class="parametername">sipChannels</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_AddSIPChannel_SIPSorcery_SIP_SIPChannel_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.AddSIPChannel(SIPSorcery.SIP.SIPChannel)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
@@ -346,39 +351,6 @@ created manually.</p>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPChannel.html">SIPChannel</a></td>
         <td><span class="parametername">sipChannel</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPTransport_AddSIPChannel_System_Collections_Generic_List_SIPSorcery_SIP_SIPChannel__.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPTransport.AddSIPChannel(System.Collections.Generic.List%7BSIPSorcery.SIP.SIPChannel%7D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPTransport.cs/#L158">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_SIPTransport_AddSIPChannel_" data-uid="SIPSorcery.SIP.SIPTransport.AddSIPChannel*"></a>
-  <h4 id="SIPSorcery_SIP_SIPTransport_AddSIPChannel_System_Collections_Generic_List_SIPSorcery_SIP_SIPChannel__" data-uid="SIPSorcery.SIP.SIPTransport.AddSIPChannel(System.Collections.Generic.List{SIPSorcery.SIP.SIPChannel})">AddSIPChannel(List&lt;SIPChannel&gt;)</h4>
-  <div class="markdown level1 summary"><p>Adds additional SIP Channels to the transport layer.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void AddSIPChannel(List&lt;SIPChannel&gt; sipChannels)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPChannel.html">SIPChannel</a>&gt;</td>
-        <td><span class="parametername">sipChannels</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -569,7 +541,7 @@ be sent to.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPChannel.html">SIPChannel</a>&gt;</td>
+        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPChannel.html">SIPChannel</a>&gt;</td>
         <td><p>A list of SIP channels.</p>
 </td>
       </tr>
@@ -743,7 +715,7 @@ up to 10s.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td><span class="xref">Task</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -841,7 +813,7 @@ the SIP transports channels.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
+        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -897,7 +869,7 @@ local SIP channel in this SIP transport to send the request on.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
+        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -947,7 +919,7 @@ local SIP channel to send the request on.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
+        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1002,7 +974,7 @@ local SIP channel to send the request on.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
+        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1066,7 +1038,7 @@ move onto the next step,</li>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
+        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1444,10 +1416,6 @@ If no response is received then periodic retransmits are made for up to T1 x 64 
       </tr>
     </tbody>
   </table>
-  <h3 id="implements">Implements</h3>
-  <div>
-      <span class="xref">System.IDisposable</span>
-  </div>
 </article>
           </div>
           

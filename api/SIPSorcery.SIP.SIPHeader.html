@@ -80,32 +80,11 @@
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">SIPHeader</span></div>
   </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.html">SIPSorcery.SIP</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_SIPHeader_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class SIPHeader</code></pre>
+    <pre><code class="lang-csharp hljs">public class SIPHeader : object</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -124,6 +103,58 @@
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public SIPHeader()</code></pre>
   </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPHeader__ctor_List_SIPSorcery_SIP_SIPContactHeader__SIPSorcery_SIP_SIPFromHeader_SIPSorcery_SIP_SIPToHeader_System_Int32_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPHeader.%23ctor(List%7BSIPSorcery.SIP.SIPContactHeader%7D%2CSIPSorcery.SIP.SIPFromHeader%2CSIPSorcery.SIP.SIPToHeader%2CSystem.Int32%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPHeader.cs/#L1414">View Source</a>
+  </span>
+  <a id="SIPSorcery_SIP_SIPHeader__ctor_" data-uid="SIPSorcery.SIP.SIPHeader.#ctor*"></a>
+  <h4 id="SIPSorcery_SIP_SIPHeader__ctor_List_SIPSorcery_SIP_SIPContactHeader__SIPSorcery_SIP_SIPFromHeader_SIPSorcery_SIP_SIPToHeader_System_Int32_System_String_" data-uid="SIPSorcery.SIP.SIPHeader.#ctor(List{SIPSorcery.SIP.SIPContactHeader},SIPSorcery.SIP.SIPFromHeader,SIPSorcery.SIP.SIPToHeader,System.Int32,System.String)">SIPHeader(List&lt;SIPContactHeader&gt;, SIPFromHeader, SIPToHeader, Int32, String)</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public SIPHeader(List&lt;SIPContactHeader&gt; contactList, SIPFromHeader from, SIPToHeader to, int cseq, string callId)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPContactHeader.html">SIPContactHeader</a>&gt;</td>
+        <td><span class="parametername">contactList</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPFromHeader.html">SIPFromHeader</a></td>
+        <td><span class="parametername">from</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.SIP.SIPToHeader.html">SIPToHeader</a></td>
+        <td><span class="parametername">to</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">cseq</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">callId</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPHeader__ctor_SIPSorcery_SIP_SIPContactHeader_SIPSorcery_SIP_SIPFromHeader_SIPSorcery_SIP_SIPToHeader_System_Int32_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPHeader.%23ctor(SIPSorcery.SIP.SIPContactHeader%2CSIPSorcery.SIP.SIPFromHeader%2CSIPSorcery.SIP.SIPToHeader%2CSystem.Int32%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
@@ -201,58 +232,6 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.SIPFromHeader.html">SIPFromHeader</a></td>
-        <td><span class="parametername">from</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="SIPSorcery.SIP.SIPToHeader.html">SIPToHeader</a></td>
-        <td><span class="parametername">to</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.Int32</span></td>
-        <td><span class="parametername">cseq</span></td>
-        <td></td>
-      </tr>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">callId</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPHeader__ctor_System_Collections_Generic_List_SIPSorcery_SIP_SIPContactHeader__SIPSorcery_SIP_SIPFromHeader_SIPSorcery_SIP_SIPToHeader_System_Int32_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPHeader.%23ctor(System.Collections.Generic.List%7BSIPSorcery.SIP.SIPContactHeader%7D%2CSIPSorcery.SIP.SIPFromHeader%2CSIPSorcery.SIP.SIPToHeader%2CSystem.Int32%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/SIPHeader.cs/#L1414">View Source</a>
-  </span>
-  <a id="SIPSorcery_SIP_SIPHeader__ctor_" data-uid="SIPSorcery.SIP.SIPHeader.#ctor*"></a>
-  <h4 id="SIPSorcery_SIP_SIPHeader__ctor_System_Collections_Generic_List_SIPSorcery_SIP_SIPContactHeader__SIPSorcery_SIP_SIPFromHeader_SIPSorcery_SIP_SIPToHeader_System_Int32_System_String_" data-uid="SIPSorcery.SIP.SIPHeader.#ctor(System.Collections.Generic.List{SIPSorcery.SIP.SIPContactHeader},SIPSorcery.SIP.SIPFromHeader,SIPSorcery.SIP.SIPToHeader,System.Int32,System.String)">SIPHeader(List&lt;SIPContactHeader&gt;, SIPFromHeader, SIPToHeader, Int32, String)</h4>
-  <div class="markdown level1 summary"></div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPHeader(List&lt;SIPContactHeader&gt; contactList, SIPFromHeader from, SIPToHeader to, int cseq, string callId)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPContactHeader.html">SIPContactHeader</a>&gt;</td>
-        <td><span class="parametername">contactList</span></td>
-        <td></td>
-      </tr>
       <tr>
         <td><a class="xref" href="SIPSorcery.SIP.SIPFromHeader.html">SIPFromHeader</a></td>
         <td><span class="parametername">from</span></td>
@@ -690,7 +669,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPContactHeader.html">SIPContactHeader</a>&gt;</td>
+        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPContactHeader.html">SIPContactHeader</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1026,7 +1005,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const int DEFAULT_CSEQ = 100</code></pre>
+    <pre><code class="lang-csharp hljs">public const int DEFAULT_CSEQ = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -1821,7 +1800,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPExtensions.html">SIPExtensions</a>&gt;</td>
+        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPExtensions.html">SIPExtensions</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -2053,7 +2032,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPExtensions.html">SIPExtensions</a>&gt;</td>
+        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPExtensions.html">SIPExtensions</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -2140,7 +2119,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Collections.Generic.List</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">List</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>

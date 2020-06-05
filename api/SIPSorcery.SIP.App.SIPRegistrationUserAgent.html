@@ -80,35 +80,11 @@
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">SIPRegistrationUserAgent</span></div>
   </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ToString()</span>
-    </div>
-  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.App.html">SIPSorcery.SIP.App</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_App_SIPRegistrationUserAgent_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class SIPRegistrationUserAgent</code></pre>
+    <pre><code class="lang-csharp hljs">public class SIPRegistrationUserAgent : object</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -125,7 +101,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPRegistrationUserAgent(SIPTransport sipTransport, SIPEndPoint outboundProxy, SIPURI sipAccountAOR, string authUsername, string password, string realm, string registrarHost, SIPURI contactURI, int expiry, SIPMonitorLogDelegate logDelegate, string[] customHeaders, int maxRegistrationAttemptTimeout = 60, int registerFailureRetryInterval = 300, int maxRegisterAttempts = 3)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPRegistrationUserAgent(SIPTransport sipTransport, SIPEndPoint outboundProxy, SIPURI sipAccountAOR, string authUsername, string password, string realm, string registrarHost, SIPURI contactURI, int expiry, SIPMonitorLogDelegate logDelegate, string[] customHeaders, int maxRegistrationAttemptTimeout = null, int registerFailureRetryInterval = null, int maxRegisterAttempts = null)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -226,7 +202,7 @@ returned by the server.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public SIPRegistrationUserAgent(SIPTransport sipTransport, string username, string password, string server, int expiry, int maxRegistrationAttemptTimeout = 60, int registerFailureRetryInterval = 300, int maxRegisterAttempts = 3)</code></pre>
+    <pre><code class="lang-csharp hljs">public SIPRegistrationUserAgent(SIPTransport sipTransport, string username, string password, string server, int expiry, int maxRegistrationAttemptTimeout = null, int registerFailureRetryInterval = null, int maxRegisterAttempts = null)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -313,7 +289,7 @@ by the server.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPRequest.html">SIPRequest</a>, <a class="xref" href="SIPSorcery.SIP.SIPRequest.html">SIPRequest</a>&gt;</td>
+        <td><span class="xref">Func</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPRequest.html">SIPRequest</a>, <a class="xref" href="SIPSorcery.SIP.SIPRequest.html">SIPRequest</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -435,7 +411,7 @@ by the server.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.DateTime</span></td>
+        <td><span class="xref">DateTime</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -532,7 +508,7 @@ by the server.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a>, <span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a>, <span class="xref">System.String</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -561,7 +537,7 @@ by the server.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a>&gt;</td>
+        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -590,7 +566,7 @@ by the server.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a>&gt;</td>
+        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -619,7 +595,7 @@ by the server.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a>, <span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPURI.html">SIPURI</a>, <span class="xref">System.String</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>

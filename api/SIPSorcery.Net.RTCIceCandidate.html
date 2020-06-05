@@ -84,32 +84,11 @@
     <h5>Implements</h5>
     <div><a class="xref" href="SIPSorcery.Net.IRTCIceCandidate.html">IRTCIceCandidate</a></div>
   </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_RTCIceCandidate_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class RTCIceCandidate : IRTCIceCandidate</code></pre>
+    <pre><code class="lang-csharp hljs">public class RTCIceCandidate : object, IRTCIceCandidate</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -159,7 +138,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string m_CRLF = &quot;\r\n&quot;</code></pre>
+    <pre><code class="lang-csharp hljs">public const string m_CRLF = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -188,7 +167,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string REMOTE_ADDRESS_KEY = &quot;raddr&quot;</code></pre>
+    <pre><code class="lang-csharp hljs">public const string REMOTE_ADDRESS_KEY = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -217,7 +196,7 @@
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string REMOTE_PORT_KEY = &quot;rport&quot;</code></pre>
+    <pre><code class="lang-csharp hljs">public const string REMOTE_PORT_KEY = null</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -292,7 +271,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.Sockets.AddressFamily</span></td>
+        <td><span class="xref">AddressFamily</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -324,7 +303,7 @@ candidate address could be different depending on the ICE candidate type.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="xref">IPAddress</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -384,7 +363,7 @@ candidate address could be different depending on the ICE candidate type.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="xref">IPAddress</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -860,7 +839,7 @@ to use subsequent to a successful ICE negotiation.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="xref">IPEndPoint</span></td>
         <td><p>An IP end point.</p>
 </td>
       </tr>
@@ -868,13 +847,13 @@ to use subsequent to a successful ICE negotiation.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCIceCandidate_IsEquivalentEndPoint_SIPSorcery_Net_RTCIceProtocol_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCIceCandidate.IsEquivalentEndPoint(SIPSorcery.Net.RTCIceProtocol%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCIceCandidate_IsEquivalentEndPoint_SIPSorcery_Net_RTCIceProtocol_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCIceCandidate.IsEquivalentEndPoint(SIPSorcery.Net.RTCIceProtocol%2CIPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RTCIceCandidate.cs/#L308">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCIceCandidate_IsEquivalentEndPoint_" data-uid="SIPSorcery.Net.RTCIceCandidate.IsEquivalentEndPoint*"></a>
-  <h4 id="SIPSorcery_Net_RTCIceCandidate_IsEquivalentEndPoint_SIPSorcery_Net_RTCIceProtocol_System_Net_IPEndPoint_" data-uid="SIPSorcery.Net.RTCIceCandidate.IsEquivalentEndPoint(SIPSorcery.Net.RTCIceProtocol,System.Net.IPEndPoint)">IsEquivalentEndPoint(RTCIceProtocol, IPEndPoint)</h4>
+  <h4 id="SIPSorcery_Net_RTCIceCandidate_IsEquivalentEndPoint_SIPSorcery_Net_RTCIceProtocol_IPEndPoint_" data-uid="SIPSorcery.Net.RTCIceCandidate.IsEquivalentEndPoint(SIPSorcery.Net.RTCIceProtocol,IPEndPoint)">IsEquivalentEndPoint(RTCIceProtocol, IPEndPoint)</h4>
   <div class="markdown level1 summary"><p>Checks the candidate to identify whether it is equivalent to the specified
 protocol and IP end point. Primary use case is to check whether a candidate
 is a match for a remote end point that a message has been received from.</p>
@@ -900,7 +879,7 @@ is a match for a remote end point that a message has been received from.</p>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="xref">IPEndPoint</span></td>
         <td><span class="parametername">ep</span></td>
         <td><p>The IP end point to check equivalence for.</p>
 </td>
@@ -972,13 +951,13 @@ is a match for a remote end point that a message has been received from.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCIceCandidate_SetAddressProperties_SIPSorcery_Net_RTCIceProtocol_System_Net_IPAddress_System_UInt16_SIPSorcery_Net_RTCIceCandidateType_System_Net_IPAddress_System_UInt16_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCIceCandidate.SetAddressProperties(SIPSorcery.Net.RTCIceProtocol%2CSystem.Net.IPAddress%2CSystem.UInt16%2CSIPSorcery.Net.RTCIceCandidateType%2CSystem.Net.IPAddress%2CSystem.UInt16)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTCIceCandidate_SetAddressProperties_SIPSorcery_Net_RTCIceProtocol_IPAddress_System_UInt16_SIPSorcery_Net_RTCIceCandidateType_IPAddress_System_UInt16_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTCIceCandidate.SetAddressProperties(SIPSorcery.Net.RTCIceProtocol%2CIPAddress%2CSystem.UInt16%2CSIPSorcery.Net.RTCIceCandidateType%2CIPAddress%2CSystem.UInt16)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RTCIceCandidate.cs/#L154">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTCIceCandidate_SetAddressProperties_" data-uid="SIPSorcery.Net.RTCIceCandidate.SetAddressProperties*"></a>
-  <h4 id="SIPSorcery_Net_RTCIceCandidate_SetAddressProperties_SIPSorcery_Net_RTCIceProtocol_System_Net_IPAddress_System_UInt16_SIPSorcery_Net_RTCIceCandidateType_System_Net_IPAddress_System_UInt16_" data-uid="SIPSorcery.Net.RTCIceCandidate.SetAddressProperties(SIPSorcery.Net.RTCIceProtocol,System.Net.IPAddress,System.UInt16,SIPSorcery.Net.RTCIceCandidateType,System.Net.IPAddress,System.UInt16)">SetAddressProperties(RTCIceProtocol, IPAddress, UInt16, RTCIceCandidateType, IPAddress, UInt16)</h4>
+  <h4 id="SIPSorcery_Net_RTCIceCandidate_SetAddressProperties_SIPSorcery_Net_RTCIceProtocol_IPAddress_System_UInt16_SIPSorcery_Net_RTCIceCandidateType_IPAddress_System_UInt16_" data-uid="SIPSorcery.Net.RTCIceCandidate.SetAddressProperties(SIPSorcery.Net.RTCIceProtocol,IPAddress,System.UInt16,SIPSorcery.Net.RTCIceCandidateType,IPAddress,System.UInt16)">SetAddressProperties(RTCIceProtocol, IPAddress, UInt16, RTCIceCandidateType, IPAddress, UInt16)</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -1001,7 +980,7 @@ is a match for a remote end point that a message has been received from.</p>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="xref">IPAddress</span></td>
         <td><span class="parametername">cAddress</span></td>
         <td></td>
       </tr>
@@ -1016,7 +995,7 @@ is a match for a remote end point that a message has been received from.</p>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="xref">IPAddress</span></td>
         <td><span class="parametername">cRelatedAddress</span></td>
         <td></td>
       </tr>
@@ -1091,8 +1070,6 @@ description.</p>
       </tr>
     </tbody>
   </table>
-  <h5 class="overrides">Overrides</h5>
-  <div><span class="xref">System.Object.ToString()</span></div>
   <h5 id="SIPSorcery_Net_RTCIceCandidate_ToString_remarks">Remarks</h5>
   <div class="markdown level1 remarks"><p>The specification regarding how an ICE candidate should be serialised in SDP is at
 <a href="https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-5.1">https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-5.1</a>.</p>
