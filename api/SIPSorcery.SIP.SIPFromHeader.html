@@ -80,11 +80,32 @@
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">SIPFromHeader</span></div>
   </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.html">SIPSorcery.SIP</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_SIPFromHeader_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class SIPFromHeader : object</code></pre>
+    <pre><code class="lang-csharp hljs">public class SIPFromHeader</code></pre>
   </div>
   <h5 id="SIPSorcery_SIP_SIPFromHeader_remarks"><strong>Remarks</strong></h5>
   <div class="markdown level0 remarks"><p>The From header only has parameters, no headers. Parameters of from ...;name=value;name2=value2.
@@ -148,7 +169,7 @@ Specific parameters: tag.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string DEFAULT_FROM_URI = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const string DEFAULT_FROM_URI = &quot;sip:thisis@anonymous.invalid&quot;</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -177,7 +198,7 @@ Specific parameters: tag.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string PARAMETER_TAG = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const string PARAMETER_TAG = &quot;tag&quot;</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -507,6 +528,8 @@ one with IP end point details that reflect the socket the request or response wa
       </tr>
     </tbody>
   </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.ToString()</span></div>
 </article>
           </div>
           

@@ -80,11 +80,33 @@
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">SIPContactHeader</span></div>
   </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.html">SIPSorcery.SIP</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_SIPContactHeader_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class SIPContactHeader : object</code></pre>
+    <pre><code class="lang-csharp hljs">[DataContract]
+public class SIPContactHeader</code></pre>
   </div>
   <h5 id="SIPSorcery_SIP_SIPContactHeader_remarks"><strong>Remarks</strong></h5>
   <div class="markdown level0 remarks"><p>The Contact header only has parameters, no headers. Parameters of from ...;name=value;name2=value2
@@ -175,7 +197,7 @@ Specific parameters: q, expires.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string EXPIRES_PARAMETER_KEY = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const string EXPIRES_PARAMETER_KEY = &quot;expires&quot;</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -204,7 +226,7 @@ Specific parameters: q, expires.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string QVALUE_PARAMETER_KEY = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const string QVALUE_PARAMETER_KEY = &quot;q&quot;</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -529,7 +551,7 @@ Specific parameters: q, expires.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPContactHeader.html">SIPContactHeader</a>&gt;</td>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPContactHeader.html">SIPContactHeader</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -608,7 +630,7 @@ one with IP end point details that reflect the socket the request or response wa
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPContactHeader.html">SIPContactHeader</a>&gt;</td>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.SIP.SIPContactHeader.html">SIPContactHeader</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -643,6 +665,8 @@ one with IP end point details that reflect the socket the request or response wa
       </tr>
     </tbody>
   </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.ToString()</span></div>
 </article>
           </div>
           

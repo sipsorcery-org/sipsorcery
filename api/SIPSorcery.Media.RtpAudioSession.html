@@ -85,7 +85,7 @@ ignored and this class does NOT use any audio devices on the system for capture 
   </div>
   <div classs="implements">
     <h5>Implements</h5>
-    <div><span class="xref">IDisposable</span></div>
+    <div><span class="xref">System.IDisposable</span></div>
     <div><a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a></div>
   </div>
   <div class="inheritedMembers">
@@ -178,10 +178,10 @@ ignored and this class does NOT use any audio devices on the system for capture 
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addTrack_SIPSorcery_Net_MediaStreamTrack_">RTPSession.addTrack(MediaStreamTrack)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateOffer_IPAddress_">RTPSession.CreateOffer(IPAddress)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateOffer_System_Net_IPAddress_">RTPSession.CreateOffer(IPAddress)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateAnswer_IPAddress_">RTPSession.CreateAnswer(IPAddress)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateAnswer_System_Net_IPAddress_">RTPSession.CreateAnswer(IPAddress)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetRemoteDescription_SIPSorcery_Net_SDP_">RTPSession.SetRemoteDescription(SDP)</a>
@@ -205,7 +205,7 @@ ignored and this class does NOT use any audio devices on the system for capture 
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetLocalTracks">RTPSession.GetLocalTracks()</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_IPEndPoint_IPEndPoint_">RTPSession.SetDestination(SDPMediaTypesEnum, IPEndPoint, IPEndPoint)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_System_Net_IPEndPoint_System_Net_IPEndPoint_">RTPSession.SetDestination(SDPMediaTypesEnum, IPEndPoint, IPEndPoint)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetSendingFormat_SIPSorcery_Net_SDPMediaTypesEnum_">RTPSession.GetSendingFormat(SDPMediaTypesEnum)</a>
@@ -223,16 +223,37 @@ ignored and this class does NOT use any audio devices on the system for capture 
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendH264Frame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendH264Frame(UInt32, Int32, Byte[])</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmf_System_Byte_CancellationToken_">RTPSession.SendDtmf(Byte, CancellationToken)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmf_System_Byte_System_Threading_CancellationToken_">RTPSession.SendDtmf(Byte, CancellationToken)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_CancellationToken_System_Int32_">RTPSession.SendDtmfEvent(RTPEvent, CancellationToken, Int32)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationToken_System_Int32_">RTPSession.SendDtmfEvent(RTPEvent, CancellationToken, Int32)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Dispose_System_Boolean_">RTPSession.Dispose(Boolean)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Dispose">RTPSession.Dispose()</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
     </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Media.html">SIPSorcery.Media</a></h6>
@@ -245,13 +266,13 @@ ignored and this class does NOT use any audio devices on the system for capture 
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_RtpAudioSession__ctor_SIPSorcery_Media_AudioSourceOptions_List_SIPSorcery_Net_SDPMediaFormatsEnum__IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.RtpAudioSession.%23ctor(SIPSorcery.Media.AudioSourceOptions%2CList%7BSIPSorcery.Net.SDPMediaFormatsEnum%7D%2CIPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_RtpAudioSession__ctor_SIPSorcery_Media_AudioSourceOptions_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormatsEnum__System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.RtpAudioSession.%23ctor(SIPSorcery.Media.AudioSourceOptions%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.SDPMediaFormatsEnum%7D%2CSystem.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RtpAudioSession.cs/#L176">View Source</a>
   </span>
   <a id="SIPSorcery_Media_RtpAudioSession__ctor_" data-uid="SIPSorcery.Media.RtpAudioSession.#ctor*"></a>
-  <h4 id="SIPSorcery_Media_RtpAudioSession__ctor_SIPSorcery_Media_AudioSourceOptions_List_SIPSorcery_Net_SDPMediaFormatsEnum__IPAddress_" data-uid="SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.AudioSourceOptions,List{SIPSorcery.Net.SDPMediaFormatsEnum},IPAddress)">RtpAudioSession(AudioSourceOptions, List&lt;SDPMediaFormatsEnum&gt;, IPAddress)</h4>
+  <h4 id="SIPSorcery_Media_RtpAudioSession__ctor_SIPSorcery_Media_AudioSourceOptions_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormatsEnum__System_Net_IPAddress_" data-uid="SIPSorcery.Media.RtpAudioSession.#ctor(SIPSorcery.Media.AudioSourceOptions,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormatsEnum},System.Net.IPAddress)">RtpAudioSession(AudioSourceOptions, List&lt;SDPMediaFormatsEnum&gt;, IPAddress)</h4>
   <div class="markdown level1 summary"><p>Creates an audio only RTP session that can supply an audio stream to the caller.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -277,13 +298,13 @@ type of audio sources are music, silence, white noise etc.</p>
 </td>
       </tr>
       <tr>
-        <td><span class="xref">List</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaFormatsEnum.html">SDPMediaFormatsEnum</a>&gt;</td>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.SDPMediaFormatsEnum.html">SDPMediaFormatsEnum</a>&gt;</td>
         <td><span class="parametername">audioCodecs</span></td>
         <td><p>The audio codecs to support.</p>
 </td>
       </tr>
       <tr>
-        <td><span class="xref">IPAddress</span></td>
+        <td><span class="xref">System.Net.IPAddress</span></td>
         <td><span class="parametername">bindAddress</span></td>
         <td><p>Optional. If specified this address will be used as the bind address for any RTP
 and control sockets created. Generally this address does not need to be set. The default behaviour
@@ -409,13 +430,13 @@ causing connection issues.</p>
   <div><a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Close_System_String_">RTPSession.Close(String)</a></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_RtpAudioSession_SendAudioFromStream_Stream_SIPSorcery_Media_AudioSamplingRatesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.RtpAudioSession.SendAudioFromStream(Stream%2CSIPSorcery.Media.AudioSamplingRatesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_RtpAudioSession_SendAudioFromStream_System_IO_Stream_SIPSorcery_Media_AudioSamplingRatesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.RtpAudioSession.SendAudioFromStream(System.IO.Stream%2CSIPSorcery.Media.AudioSamplingRatesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RtpAudioSession.cs/#L363">View Source</a>
   </span>
   <a id="SIPSorcery_Media_RtpAudioSession_SendAudioFromStream_" data-uid="SIPSorcery.Media.RtpAudioSession.SendAudioFromStream*"></a>
-  <h4 id="SIPSorcery_Media_RtpAudioSession_SendAudioFromStream_Stream_SIPSorcery_Media_AudioSamplingRatesEnum_" data-uid="SIPSorcery.Media.RtpAudioSession.SendAudioFromStream(Stream,SIPSorcery.Media.AudioSamplingRatesEnum)">SendAudioFromStream(Stream, AudioSamplingRatesEnum)</h4>
+  <h4 id="SIPSorcery_Media_RtpAudioSession_SendAudioFromStream_System_IO_Stream_SIPSorcery_Media_AudioSamplingRatesEnum_" data-uid="SIPSorcery.Media.RtpAudioSession.SendAudioFromStream(System.IO.Stream,SIPSorcery.Media.AudioSamplingRatesEnum)">SendAudioFromStream(Stream, AudioSamplingRatesEnum)</h4>
   <div class="markdown level1 summary"><p>Same as the async method of the same name but returns a task that waits for the
 stream send to complete.</p>
 </div>
@@ -435,7 +456,7 @@ stream send to complete.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Stream</span></td>
+        <td><span class="xref">System.IO.Stream</span></td>
         <td><span class="parametername">audioStream</span></td>
         <td><p>The stream containing the 16 bit PCM sampled at either 8 or 16 Khz
 to send to the remote party.</p>
@@ -460,7 +481,7 @@ to send to the remote party.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span></td>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
         <td><p>A task that completes once the stream has been fully sent.</p>
 </td>
       </tr>
@@ -468,13 +489,13 @@ to send to the remote party.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_RtpAudioSession_SendAudioFromStreamAsync_Stream_SIPSorcery_Media_AudioSamplingRatesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.RtpAudioSession.SendAudioFromStreamAsync(Stream%2CSIPSorcery.Media.AudioSamplingRatesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Media_RtpAudioSession_SendAudioFromStreamAsync_System_IO_Stream_SIPSorcery_Media_AudioSamplingRatesEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.Media.RtpAudioSession.SendAudioFromStreamAsync(System.IO.Stream%2CSIPSorcery.Media.AudioSamplingRatesEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/app/Media/RtpAudioSession.cs/#L329">View Source</a>
   </span>
   <a id="SIPSorcery_Media_RtpAudioSession_SendAudioFromStreamAsync_" data-uid="SIPSorcery.Media.RtpAudioSession.SendAudioFromStreamAsync*"></a>
-  <h4 id="SIPSorcery_Media_RtpAudioSession_SendAudioFromStreamAsync_Stream_SIPSorcery_Media_AudioSamplingRatesEnum_" data-uid="SIPSorcery.Media.RtpAudioSession.SendAudioFromStreamAsync(Stream,SIPSorcery.Media.AudioSamplingRatesEnum)">SendAudioFromStreamAsync(Stream, AudioSamplingRatesEnum)</h4>
+  <h4 id="SIPSorcery_Media_RtpAudioSession_SendAudioFromStreamAsync_System_IO_Stream_SIPSorcery_Media_AudioSamplingRatesEnum_" data-uid="SIPSorcery.Media.RtpAudioSession.SendAudioFromStreamAsync(System.IO.Stream,SIPSorcery.Media.AudioSamplingRatesEnum)">SendAudioFromStreamAsync(Stream, AudioSamplingRatesEnum)</h4>
   <div class="markdown level1 summary"><p>Sends a stream containing 16 bit PCM audio to the remote party. Calling this method
 will pause the existing audio source until the stream has been sent.</p>
 </div>
@@ -494,7 +515,7 @@ will pause the existing audio source until the stream has been sent.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Stream</span></td>
+        <td><span class="xref">System.IO.Stream</span></td>
         <td><span class="parametername">audioStream</span></td>
         <td><p>The stream containing the 16 bit PCM sampled at either 8 or 16 Khz
 to send to the remote party.</p>
@@ -580,7 +601,7 @@ transmit samples generated from an audio capture device such as a microphone.</p
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span></td>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -616,7 +637,7 @@ so only one or the other should be handled.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Byte</span>[]&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -647,7 +668,7 @@ of the default 8KHz PCM.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Byte</span>[]&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -679,14 +700,14 @@ as interruptions to the primary audio stream.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span></td>
+        <td><span class="xref">System.Action</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <h3 id="implements">Implements</h3>
   <div>
-      <span class="xref">IDisposable</span>
+      <span class="xref">System.IDisposable</span>
   </div>
   <div>
       <a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a>

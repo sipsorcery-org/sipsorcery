@@ -84,6 +84,10 @@ server should use a single instance of this class.</p>
     <div class="level1"><a class="xref" href="SIPSorcery.SIP.SIPChannel.html">SIPChannel</a></div>
     <div class="level2"><span class="xref">SIPClientWebSocketChannel</span></div>
   </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.IDisposable</span></div>
+  </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
     <div>
@@ -126,17 +130,38 @@ server should use a single instance of this class.</p>
       <a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SIPMessageReceived">SIPChannel.SIPMessageReceived</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_GetLocalIPAddressForDestination_IPAddress_">SIPChannel.GetLocalIPAddressForDestination(IPAddress)</a>
+      <a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_GetLocalIPAddressForDestination_System_Net_IPAddress_">SIPChannel.GetLocalIPAddressForDestination(IPAddress)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_GetContactURI_SIPSorcery_SIP_SIPSchemesEnum_SIPSorcery_SIP_SIPEndPoint_">SIPChannel.GetContactURI(SIPSchemesEnum, SIPEndPoint)</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
     </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.html">SIPSorcery.SIP</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_SIPClientWebSocketChannel_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class SIPClientWebSocketChannel : SIPChannel</code></pre>
+    <pre><code class="lang-csharp hljs">public class SIPClientWebSocketChannel : SIPChannel, IDisposable</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -171,7 +196,7 @@ over a web socket communications layer.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string SIP_Sec_WebSocket_Protocol = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const string SIP_Sec_WebSocket_Protocol = &quot;sip&quot;</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -200,7 +225,7 @@ over a web socket communications layer.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string WEB_SOCKET_SECURE_URI_PREFIX = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const string WEB_SOCKET_SECURE_URI_PREFIX = &quot;wss://&quot;</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -229,7 +254,7 @@ over a web socket communications layer.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string WEB_SOCKET_URI_PREFIX = null</code></pre>
+    <pre><code class="lang-csharp hljs">public const string WEB_SOCKET_URI_PREFIX = &quot;ws://&quot;</code></pre>
   </div>
   <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -388,13 +413,13 @@ over a web socket communications layer.</p>
   <div><a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_HasConnection_System_String_">SIPChannel.HasConnection(String)</a></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_Uri_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection(Uri)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_System_Uri_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection(System.Uri)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L257">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection*"></a>
-  <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_Uri_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection(Uri)">HasConnection(Uri)</h4>
+  <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_HasConnection_System_Uri_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.HasConnection(System.Uri)">HasConnection(Uri)</h4>
   <div class="markdown level1 summary"><p>Checks whether there is an existing client web socket connection for a remote end point.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -413,7 +438,7 @@ over a web socket communications layer.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Uri</span></td>
+        <td><span class="xref">System.Uri</span></td>
         <td><span class="parametername">serverUri</span></td>
         <td><p>The server URI to check for an existing connection.</p>
 </td>
@@ -437,16 +462,16 @@ over a web socket communications layer.</p>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_HasConnection_Uri_">SIPChannel.HasConnection(Uri)</a></div>
+  <div><a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_HasConnection_System_Uri_">SIPChannel.HasConnection(Uri)</a></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_IsAddressFamilySupported_AddressFamily_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.IsAddressFamilySupported(AddressFamily)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_IsAddressFamilySupported_System_Net_Sockets_AddressFamily_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.IsAddressFamilySupported(System.Net.Sockets.AddressFamily)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/core/SIP/Channels/SIPClientWebSocketChannel.cs/#L267">View Source</a>
   </span>
   <a id="SIPSorcery_SIP_SIPClientWebSocketChannel_IsAddressFamilySupported_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.IsAddressFamilySupported*"></a>
-  <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_IsAddressFamilySupported_AddressFamily_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.IsAddressFamilySupported(AddressFamily)">IsAddressFamilySupported(AddressFamily)</h4>
+  <h4 id="SIPSorcery_SIP_SIPClientWebSocketChannel_IsAddressFamilySupported_System_Net_Sockets_AddressFamily_" data-uid="SIPSorcery.SIP.SIPClientWebSocketChannel.IsAddressFamilySupported(System.Net.Sockets.AddressFamily)">IsAddressFamilySupported(AddressFamily)</h4>
   <div class="markdown level1 summary"><p>Checks whether the specified address family is supported.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -465,7 +490,7 @@ over a web socket communications layer.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">AddressFamily</span></td>
+        <td><span class="xref">System.Net.Sockets.AddressFamily</span></td>
         <td><span class="parametername">addresFamily</span></td>
         <td><p>The address family to check.</p>
 </td>
@@ -489,7 +514,7 @@ over a web socket communications layer.</p>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
-  <div><a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_IsAddressFamilySupported_AddressFamily_">SIPChannel.IsAddressFamilySupported(AddressFamily)</a></div>
+  <div><a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_IsAddressFamilySupported_System_Net_Sockets_AddressFamily_">SIPChannel.IsAddressFamilySupported(AddressFamily)</a></div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_SIP_SIPClientWebSocketChannel_IsProtocolSupported_SIPSorcery_SIP_SIPProtocolsEnum_.md&amp;value=---%0Auid%3A%20SIPSorcery.SIP.SIPClientWebSocketChannel.IsProtocolSupported(SIPSorcery.SIP.SIPProtocolsEnum)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
@@ -600,7 +625,7 @@ requested remote end point and use it.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
         <td><p>If no errors SocketError.Success otherwise an error value.</p>
 </td>
       </tr>
@@ -666,13 +691,17 @@ requested remote end point and use it.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
   </table>
   <h5 class="overrides">Overrides</h5>
   <div><a class="xref" href="SIPSorcery.SIP.SIPChannel.html#SIPSorcery_SIP_SIPChannel_SendSecureAsync_SIPSorcery_SIP_SIPEndPoint_System_Byte___System_String_System_String_">SIPChannel.SendSecureAsync(SIPEndPoint, Byte[], String, String)</a></div>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.IDisposable</span>
+  </div>
 </article>
           </div>
           

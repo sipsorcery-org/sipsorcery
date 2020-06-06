@@ -85,7 +85,7 @@
   <div classs="implements">
     <h5>Implements</h5>
     <div><a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a></div>
-    <div><span class="xref">IDisposable</span></div>
+    <div><span class="xref">System.IDisposable</span></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
@@ -177,10 +177,10 @@
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_addTrack_SIPSorcery_Net_MediaStreamTrack_">RTPSession.addTrack(MediaStreamTrack)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateOffer_IPAddress_">RTPSession.CreateOffer(IPAddress)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateOffer_System_Net_IPAddress_">RTPSession.CreateOffer(IPAddress)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateAnswer_IPAddress_">RTPSession.CreateAnswer(IPAddress)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateAnswer_System_Net_IPAddress_">RTPSession.CreateAnswer(IPAddress)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetRemoteDescription_SIPSorcery_Net_SDP_">RTPSession.SetRemoteDescription(SDP)</a>
@@ -201,7 +201,7 @@
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_GetLocalTracks">RTPSession.GetLocalTracks()</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_IPEndPoint_IPEndPoint_">RTPSession.SetDestination(SDPMediaTypesEnum, IPEndPoint, IPEndPoint)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SetDestination_SIPSorcery_Net_SDPMediaTypesEnum_System_Net_IPEndPoint_System_Net_IPEndPoint_">RTPSession.SetDestination(SDPMediaTypesEnum, IPEndPoint, IPEndPoint)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Start">RTPSession.Start()</a>
@@ -222,16 +222,37 @@
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendH264Frame_System_UInt32_System_Int32_System_Byte___">RTPSession.SendH264Frame(UInt32, Int32, Byte[])</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmf_System_Byte_CancellationToken_">RTPSession.SendDtmf(Byte, CancellationToken)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmf_System_Byte_System_Threading_CancellationToken_">RTPSession.SendDtmf(Byte, CancellationToken)</a>
     </div>
     <div>
-      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_CancellationToken_System_Int32_">RTPSession.SendDtmfEvent(RTPEvent, CancellationToken, Int32)</a>
+      <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendDtmfEvent_SIPSorcery_Net_RTPEvent_System_Threading_CancellationToken_System_Int32_">RTPSession.SendDtmfEvent(RTPEvent, CancellationToken, Int32)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Dispose_System_Boolean_">RTPSession.Dispose(Boolean)</a>
     </div>
     <div>
       <a class="xref" href="SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Dispose">RTPSession.Dispose()</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
     </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
@@ -731,7 +752,7 @@ that we were able to connect to for the WebRTC session.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -842,7 +863,7 @@ that we were able to connect to for the WebRTC session.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span></td>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -944,7 +965,7 @@ controls over the generated answer SDP.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCSessionDescriptionInit.html">RTCSessionDescriptionInit</a>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCSessionDescriptionInit.html">RTCSessionDescriptionInit</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -998,7 +1019,7 @@ controls over the generated offer SDP.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCSessionDescriptionInit.html">RTCSessionDescriptionInit</a>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCSessionDescriptionInit.html">RTCSessionDescriptionInit</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1172,7 +1193,7 @@ controls over the generated offer SDP.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span></td>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -1229,7 +1250,7 @@ If they are not available there's no point carrying on.</li>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span></td>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -1312,7 +1333,7 @@ suitable for media packets can be exchanged.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCPeerConnectionState.html">RTCPeerConnectionState</a>&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCPeerConnectionState.html">RTCPeerConnectionState</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1342,7 +1363,7 @@ suitable for media packets can be exchanged.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a>&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1372,7 +1393,7 @@ suitable for media packets can be exchanged.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span></td>
+        <td><span class="xref">System.Action</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -1402,7 +1423,7 @@ suitable for media packets can be exchanged.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceConnectionState.html">RTCIceConnectionState</a>&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceConnectionState.html">RTCIceConnectionState</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1432,7 +1453,7 @@ suitable for media packets can be exchanged.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceGatheringState.html">RTCIceGatheringState</a>&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceGatheringState.html">RTCIceGatheringState</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1463,7 +1484,7 @@ followed by setLocalDescription).</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span></td>
+        <td><span class="xref">System.Action</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -1494,7 +1515,7 @@ setRemoteDescription being invoked.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span></td>
+        <td><span class="xref">System.Action</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -1504,7 +1525,7 @@ setRemoteDescription being invoked.</p>
       <a class="xref" href="SIPSorcery.SIP.App.IMediaSession.html">IMediaSession</a>
   </div>
   <div>
-      <span class="xref">IDisposable</span>
+      <span class="xref">System.IDisposable</span>
   </div>
 </article>
           </div>

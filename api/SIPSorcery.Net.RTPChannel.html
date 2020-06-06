@@ -83,6 +83,34 @@ functions.</p>
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">RTPChannel</span></div>
   </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.IDisposable</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_RTPChannel_syntax">Syntax</h5>
@@ -93,13 +121,13 @@ functions.</p>
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel__ctor_System_Boolean_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.%23ctor(System.Boolean%2CIPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.%23ctor(System.Boolean%2CSystem.Net.IPAddress)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L260">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel__ctor_" data-uid="SIPSorcery.Net.RTPChannel.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_RTPChannel__ctor_System_Boolean_IPAddress_" data-uid="SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,IPAddress)">RTPChannel(Boolean, IPAddress)</h4>
+  <h4 id="SIPSorcery_Net_RTPChannel__ctor_System_Boolean_System_Net_IPAddress_" data-uid="SIPSorcery.Net.RTPChannel.#ctor(System.Boolean,System.Net.IPAddress)">RTPChannel(Boolean, IPAddress)</h4>
   <div class="markdown level1 summary"><p>Creates a new RTP channel. The RTP and optionally RTCP sockets will be bound in the constructor.
 They do not start receiving until the Start method is called.</p>
 </div>
@@ -126,7 +154,7 @@ RTCP are being multiplexed (as they are for WebRTC) there's no need to a separat
 </td>
       </tr>
       <tr>
-        <td><span class="xref">IPAddress</span></td>
+        <td><span class="xref">System.Net.IPAddress</span></td>
         <td><span class="parametername">bindAddress</span></td>
         <td><p>Optional. An IP address belonging to a local interface that will be used to bind
 the RTP and control sockets to. If left empty then the IPv6 any address will be used if IPv6 is supported
@@ -163,7 +191,7 @@ and fallback to the IPv4 any address.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -287,7 +315,7 @@ socket exists it will be the same.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -348,7 +376,7 @@ socket exists it will be the same.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Socket</span></td>
+        <td><span class="xref">System.Net.Sockets.Socket</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -437,13 +465,13 @@ socket exists it will be the same.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum%2CIPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum%2CSystem.Net.IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
     <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L339">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPChannel_SendAsync_" data-uid="SIPSorcery.Net.RTPChannel.SendAsync*"></a>
-  <h4 id="SIPSorcery_Net_RTPChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_IPEndPoint_System_Byte___" data-uid="SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,IPEndPoint,System.Byte[])">SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])</h4>
+  <h4 id="SIPSorcery_Net_RTPChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___" data-uid="SIPSorcery.Net.RTPChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])">SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])</h4>
   <div class="markdown level1 summary"></div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -466,7 +494,7 @@ socket exists it will be the same.</p>
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">IPEndPoint</span></td>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
         <td><span class="parametername">dstEndPoint</span></td>
         <td></td>
       </tr>
@@ -487,7 +515,7 @@ socket exists it will be the same.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">SocketError</span></td>
+        <td><span class="xref">System.Net.Sockets.SocketError</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -534,7 +562,7 @@ socket exists it will be the same.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -563,7 +591,7 @@ socket exists it will be the same.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<span class="xref">System.Int32</span>, <span class="xref">IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Int32</span>, <span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -592,11 +620,15 @@ socket exists it will be the same.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Action</span>&lt;<span class="xref">System.Int32</span>, <span class="xref">IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Int32</span>, <span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
         <td></td>
       </tr>
     </tbody>
   </table>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.IDisposable</span>
+  </div>
 </article>
           </div>
           

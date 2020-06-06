@@ -84,11 +84,35 @@
       <div class="level2"><a class="xref" href="SIPSorcery.SIP.UACInviteTransaction.html">UACInviteTransaction</a></div>
       <div class="level2"><a class="xref" href="SIPSorcery.SIP.UASInviteTransaction.html">UASInviteTransaction</a></div>
   </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.SIP.html">SIPSorcery.SIP</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_SIP_SIPTransaction_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class SIPTransaction : object</code></pre>
+    <pre><code class="lang-csharp hljs">public class SIPTransaction</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -223,7 +247,7 @@ they expire as T6 after this.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -252,7 +276,7 @@ they expire as T6 after this.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -341,7 +365,7 @@ time the request will be marked as failed.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -370,7 +394,7 @@ time the request will be marked as failed.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -399,7 +423,7 @@ time the request will be marked as failed.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">ILogger</span></td>
+        <td><span class="xref">Microsoft.Extensions.Logging.ILogger</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -780,7 +804,7 @@ provisional responses.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">DateTime</span></td>
+        <td><span class="xref">System.DateTime</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -1482,7 +1506,7 @@ are being used then this response needs to be sent reliably in the same manner a
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1652,7 +1676,7 @@ are being used then this response needs to be sent reliably in the same manner a
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -1717,7 +1741,7 @@ This is suitable for requests like ACK which do not get a response.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">Task</span>&lt;<span class="xref">SocketError</span>&gt;</td>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Net.Sockets.SocketError</span>&gt;</td>
         <td><p>Success if no errors occurred sending the request or an error indication if there were.</p>
 </td>
       </tr>
