@@ -1,6 +1,7 @@
 version: 4.0.{build}
 branches:
   except:
+    - gh-pages
     - mac-ci
     - ubuntu-ci
     - wsl-ci
