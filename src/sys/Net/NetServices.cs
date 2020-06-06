@@ -260,7 +260,7 @@ namespace SIPSorcery.Sys
 
         private static void BindUdpSocket(Socket socket, IPAddress bindAddress, int port)
         {
-            // Nasty warning. On Windows Subsystem for Linux (WSL) on Windows 10
+            // Nasty code warning. On Windows Subsystem for Linux (WSL) on Windows 10
             // the OS lets a socket bind on an IPv6 dual mode port even if there
             // is an IPv4 socket bound to the same port. To prevent this occurring 
             // a test IPv4 socket bind is carried out.

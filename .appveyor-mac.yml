@@ -3,6 +3,7 @@ branches:
   except:
     - ubuntu-ci
     - win-ci
+    - wsl-ci
 image: macos
 environment:
   APPVEYOR_SSH_KEY: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOgZaR7bVAJCsBs/yDlzNbHTvhicc1C7SeyEuVwN+Q0l
