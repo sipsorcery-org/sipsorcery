@@ -1,7 +1,8 @@
-version: 1.0.{build}
+version: 4.0.{build}
 branches:
   except:
     - mac-ci
+    - ubuntu-ci
 environment:
   APPVEYOR_SAVE_CACHE_ON_ERROR: true
   access_token:

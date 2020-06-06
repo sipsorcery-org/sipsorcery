@@ -1,7 +1,8 @@
-version: 1.0.{build}
+version: 4.0.{build}
 branches:
   except:
     - mac-ci
+    - ubuntu-ci
     - win-ci
 image: Visual Studio 2019
 build_script:

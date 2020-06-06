@@ -1,6 +1,7 @@
-version: 1.0.{build}
+version: 4.0.{build}
 branches:
   except:
+    - ubuntu-ci
     - win-ci
 image: macos
 environment:
