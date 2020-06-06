@@ -211,9 +211,13 @@ namespace SIPSorcery.Net.UnitTests
             iceSession.SetRemoteCredentials("CI7o", "xxxxxxxxxxxx");
             iceSession.StartGathering();
 
-            await Task.Delay(1000);
+            await Task.Delay(2000);
 
-            Assert.Equal(IceSession.ChecklistEntryState.InProgress, iceSession._checklist.Single().State);
+            var checklistEntry = iceSession._checklist.Single();
+
+            logger.LogDebug($"Checklist entry state {checklistEntry.State}, last check sent at {checklistEntry.LastCheckSentAt}.");
+
+            Assert.Equal(IceSession.ChecklistEntryState.InProgress, checklistEntry.State);
         }
 
         /// <summary>

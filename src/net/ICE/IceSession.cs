@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------------
+﻿ //-----------------------------------------------------------------------------
 // Filename: IceSession.cs
 //
 // Description: Represents a ICE Session as described in the Interactive
