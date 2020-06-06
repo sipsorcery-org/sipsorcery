@@ -1,8 +1,10 @@
-version: 1.0.{build}
+version: 4.0.{build}
 branches:
   except:
     - mac-ci
+    - ubuntu-ci
     - win-ci
+    - wsl-ci
 image: Visual Studio 2019
 build_script:
 - nuget restore -DisableParallelProcessing examples/sipexamples/sipexamples.sln
