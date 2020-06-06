@@ -1,0 +1,22 @@
+version: 4.0.{build}
+branches:
+  except:
+    - gh-pages
+    - mac-ci
+    - ubuntu-ci
+    - win-ci
+environment:
+  APPVEYOR_SAVE_CACHE_ON_ERROR: true
+image: Visual Studio 2019
+build_script:
+# Install dotnet on WSL and then build and run tests.
+- cmd: |
+       wsl pwd
+       wsl whoami
+       wsl wget https://packages.microsoft.com/config/ubuntu/19.10/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+       wsl sudo dpkg -i packages-microsoft-prod.deb
+       wsl sudo apt-get update -y
+       wsl sudo apt-get install -y apt-transport-https
+       wsl sudo apt-get update -y
+       wsl sudo apt-get install -y dotnet-sdk-3.1
+       wsl dotnet test src/SIPSorcery.sln --framework netcoreapp3.1
