@@ -267,73 +267,28 @@ SDPSecurityDescription desc = SDPSecurityDescription.Parse(crypto);</code></pre>
       <h4><a class="xref" href="SIPSorcery.Net.SDPSecurityDescription.SessionParameter.html">SDPSecurityDescription.SessionParameter</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAddressAttribute.html">STUNAddressAttribute</a></h4>
-      <section><p>MAPPED-ADDRESS, RESPONSE-ADDRESS, CHANGED-ADDRESS, SOURCE-ADDRESS attributes use this format.
-The Send Keep Alive STUN request also uses an attribute with this format to specify the socket to send
-the Keep Alive to.</p>
-<p>0                   1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|x x x x x x x x|    Family     |           Port                |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                             Address                           |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</p>
-</section>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAttribute.html">STUNAttribute</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.STUNAttributeConstants.html">STUNAttributeConstants</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAttributeTypes.html">STUNAttributeTypes</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNChangeRequestAttribute.html">STUNChangeRequestAttribute</a></h4>
-      <section><p>0                   1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 A B 0|
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</p>
-<p>The meaning of the flags is:</p>
-<p>A: This is the &quot;change IP&quot; flag.  If true, it requests the server
-to send the Binding Response with a different IP address than the
-one the Binding Request was received on.</p>
-<p>B: This is the &quot;change port&quot; flag.  If true, it requests the
-server to send the Binding Response with a different port than the
-one the Binding Request was received on.</p>
-</section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNClient.html">STUNClient</a></h4>
-      <section><p>Methods to resolve the public IP address and port information of the client.</p>
-</section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNHeader.html">STUNHeader</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNListener.html">STUNListener</a></h4>
+      <h4><a class="xref" href="SIPSorcery.Net.STUNErrorCodeAttribute.html">STUNErrorCodeAttribute</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.STUNHeader.html">STUNHeader</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNMessage.html">STUNMessage</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNMessageTypes.html">STUNMessageTypes</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNServer.html">STUNServer</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2AddressAttribute.html">STUNv2AddressAttribute</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2Attribute.html">STUNv2Attribute</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2AttributeConstants.html">STUNv2AttributeConstants</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2AttributeTypes.html">STUNv2AttributeTypes</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2ChangeRequestAttribute.html">STUNv2ChangeRequestAttribute</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2ErrorCodeAttribute.html">STUNv2ErrorCodeAttribute</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2Header.html">STUNv2Header</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2Message.html">STUNv2Message</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2MessageTypes.html">STUNv2MessageTypes</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2XORAddressAttribute.html">STUNv2XORAddressAttribute</a></h4>
+      <h4><a class="xref" href="SIPSorcery.Net.STUNXORAddressAttribute.html">STUNXORAddressAttribute</a></h4>
       <section><p>This attribute is the same as the mapped address attribute except the address details are XOR'ed with the STUN magic cookie.
 THe reason for this is to stop NAT application layer gateways from doing string replacements of private IP addresses and ports.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.TurnServer.html">TurnServer</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.Utility.html">Utility</a></h4>
       <section></section>
     <h3 id="interfaces">Interfaces
   </h3>
@@ -442,28 +397,16 @@ there is no qualifying format attribute provided.</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAttributeTypesEnum.html">STUNAttributeTypesEnum</a></h4>
       <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNMessageTypesEnum.html">STUNMessageTypesEnum</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2AttributeTypesEnum.html">STUNv2AttributeTypesEnum</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2ClassTypesEnum.html">STUNv2ClassTypesEnum</a></h4>
+      <h4><a class="xref" href="SIPSorcery.Net.STUNClassTypesEnum.html">STUNClassTypesEnum</a></h4>
       <section><p>Could not work out how the class and message type encoding work despite re-reading the paragraph in the RFC a dozen times!</p>
 </section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNv2MessageTypesEnum.html">STUNv2MessageTypesEnum</a></h4>
+      <h4><a class="xref" href="SIPSorcery.Net.STUNMessageTypesEnum.html">STUNMessageTypesEnum</a></h4>
       <section></section>
     <h3 id="delegates">Delegates
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.DoDtlsHandshakeDelegate.html">DoDtlsHandshakeDelegate</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNMessageReceived.html">STUNMessageReceived</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNSendMessageDelegate.html">STUNSendMessageDelegate</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNServerRequestInTraceDelegate.html">STUNServerRequestInTraceDelegate</a></h4>
-      <section></section>
-      <h4><a class="xref" href="SIPSorcery.Net.STUNServerResponseOutTraceDelegate.html">STUNServerResponseOutTraceDelegate</a></h4>
       <section></section>
 </article>
           </div>

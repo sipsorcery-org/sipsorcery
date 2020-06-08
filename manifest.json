@@ -309,7 +309,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IRTCRtpReceiver.html",
-          "hash": "Jp7G86GhByvj91hnl4/yKA=="
+          "hash": "BYSyL0tacGB2Cu9RQIRWzA=="
         }
       },
       "is_incremental": false,
@@ -321,7 +321,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IRTCRtpSender.html",
-          "hash": "5jgjG/DwqiCivG6bB792UA=="
+          "hash": "5Iro19sBM7Qw42NxaMI9lg=="
         }
       },
       "is_incremental": false,
@@ -333,7 +333,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IceSession.html",
-          "hash": "3VVp76shNh8GEoYRoCkERQ=="
+          "hash": "jlagTR5k+khz3sGmsYPErQ=="
         }
       },
       "is_incremental": false,
@@ -429,7 +429,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCBundlePolicy.html",
-          "hash": "vnRbW07rnFGLNOW874Q07g=="
+          "hash": "QlJ63QX6WXmKdsUyhH+4AQ=="
         }
       },
       "is_incremental": false,
@@ -441,7 +441,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCCertificate.html",
-          "hash": "VSw1ZtZ8F/xylyMXceLDjw=="
+          "hash": "GTIJICmXmnkgls6X2HHb9Q=="
         }
       },
       "is_incremental": false,
@@ -453,7 +453,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCConfiguration.html",
-          "hash": "esUoFmAQNmMO/xUJgWqVRg=="
+          "hash": "ouOyWot8KGQe9KTkjdbOtw=="
         }
       },
       "is_incremental": false,
@@ -465,7 +465,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCDtlsFingerprint.html",
-          "hash": "CUe0UO1ZNJgppzeJM6Uttw=="
+          "hash": "GpIxUaMo0q6YtvkJR/vSww=="
         }
       },
       "is_incremental": false,
@@ -573,7 +573,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceServer.html",
-          "hash": "YBExrtfHmS0y57c21oGZIQ=="
+          "hash": "YtiP0MkkL7zHtrsC4TQYkw=="
         }
       },
       "is_incremental": false,
@@ -597,7 +597,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCIceTransportPolicy.html",
-          "hash": "JMQ4fj82uG3H65a7TcM/WA=="
+          "hash": "OwykGbbzv+sVa2sQ1qvp3A=="
         }
       },
       "is_incremental": false,
@@ -717,7 +717,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnection.html",
-          "hash": "la+h6HpN8fKJ6UREwrGqSw=="
+          "hash": "+R4y5o5j1PxeCqIryoJROw=="
         }
       },
       "is_incremental": false,
@@ -729,7 +729,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnectionState.html",
-          "hash": "/yYw5DQq99jNEr2P0xzBUg=="
+          "hash": "QZ2bG5/mxarcocSoLReCMA=="
         }
       },
       "is_incremental": false,
@@ -741,7 +741,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCRtcpMuxPolicy.html",
-          "hash": "dr5XA8fBboKPXBmt1WxcDw=="
+          "hash": "cHNLAubHfN5fHya1mv/3hw=="
         }
       },
       "is_incremental": false,
@@ -813,7 +813,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCSignalingState.html",
-          "hash": "ORValHJ3/BeNaYcjWSZbIw=="
+          "hash": "ExtndOHAqrBkPYX5YNrcsQ=="
         }
       },
       "is_incremental": false,
@@ -1305,7 +1305,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.STUNAddressAttribute.html",
-          "hash": "5OzwDz0dUvchpDRqd7ebsg=="
+          "hash": "NUjD4J6LWgi40nr5Vn3fEA=="
         }
       },
       "is_incremental": false,
@@ -1317,7 +1317,19 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.STUNAttribute.html",
-          "hash": "bIZr49ZYL9Uubiy0Efy9LQ=="
+          "hash": "9RMQl4p2LQRIzFC1Fv5MtQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNAttributeConstants.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNAttributeConstants.html",
+          "hash": "3IOMkXx5Tp9HTVk5/Jy49w=="
         }
       },
       "is_incremental": false,
@@ -1329,7 +1341,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.STUNAttributeTypes.html",
-          "hash": "CdClP10fZkj8gtaQJZ6cqQ=="
+          "hash": "EO2SXUVa6gvI1/F5ILf6Lw=="
         }
       },
       "is_incremental": false,
@@ -1341,7 +1353,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.STUNAttributeTypesEnum.html",
-          "hash": "C4AoNueiYYo71ftF1s57Fg=="
+          "hash": "g6sqVTkg+1JaHi2AC72Vhw=="
         }
       },
       "is_incremental": false,
@@ -1353,7 +1365,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.STUNChangeRequestAttribute.html",
-          "hash": "Xkg39rchfCg7YS1j5E2NaQ=="
+          "hash": "5thY7HACHTMhpKRcOxihFg=="
         }
       },
       "is_incremental": false,
@@ -1361,11 +1373,23 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNClient.yml",
+      "source_relative_path": "api/SIPSorcery.Net.STUNClassTypesEnum.yml",
       "output": {
         ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNClient.html",
-          "hash": "wNHMFzw7sN12ZdPTzmdM/g=="
+          "relative_path": "api/SIPSorcery.Net.STUNClassTypesEnum.html",
+          "hash": "HVuZ5nwnhxIzbbIzffniAQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNErrorCodeAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNErrorCodeAttribute.html",
+          "hash": "W5pDcEDZ6vmqIUIDLj1JgA=="
         }
       },
       "is_incremental": false,
@@ -1377,19 +1401,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.STUNHeader.html",
-          "hash": "FZp1IQ4NrBHjJlSiPdiwzg=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNListener.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNListener.html",
-          "hash": "Izo4sQvlg6+3tQ07B5AT1w=="
+          "hash": "fwNwyz3jFsyu9Bs6sPfLUQ=="
         }
       },
       "is_incremental": false,
@@ -1401,19 +1413,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.STUNMessage.html",
-          "hash": "OceFDsLVpiIxpv4l4kqaJQ=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNMessageReceived.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNMessageReceived.html",
-          "hash": "mtJrPvzqRSTUGkPb+FhTEg=="
+          "hash": "nqn95y52vxeN2luJ2cV/SQ=="
         }
       },
       "is_incremental": false,
@@ -1425,7 +1425,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.STUNMessageTypes.html",
-          "hash": "VaEAkSSwsGo9v644uB0SAQ=="
+          "hash": "PNAaQHuXvfPlZEAV4pN72g=="
         }
       },
       "is_incremental": false,
@@ -1437,7 +1437,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.STUNMessageTypesEnum.html",
-          "hash": "B4lI4vCc7rT1bDAr4LQVSg=="
+          "hash": "WdfoV8t/BaoL/5z8X1o2VA=="
         }
       },
       "is_incremental": false,
@@ -1445,203 +1445,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNSendMessageDelegate.yml",
+      "source_relative_path": "api/SIPSorcery.Net.STUNXORAddressAttribute.yml",
       "output": {
         ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNSendMessageDelegate.html",
-          "hash": "NzRyBDgcx5jlgNj1tI+2ig=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNServer.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNServer.html",
-          "hash": "BpVBz74DBT0z9j9ljQpnug=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNServerRequestInTraceDelegate.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNServerRequestInTraceDelegate.html",
-          "hash": "wsWLfTfZfhdkIJ10+2t+MQ=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNServerResponseOutTraceDelegate.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNServerResponseOutTraceDelegate.html",
-          "hash": "O6uo72pfKjQLSwf/1F9jrA=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2AddressAttribute.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2AddressAttribute.html",
-          "hash": "q9DMr6i2Tih1ZG5UlLDGdg=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2Attribute.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2Attribute.html",
-          "hash": "TW3AWFkj0WrD/Dh9+8L+1g=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2AttributeConstants.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2AttributeConstants.html",
-          "hash": "MnqzY7OXh74SpN529nRYOw=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2AttributeTypes.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2AttributeTypes.html",
-          "hash": "xPPIYbIpxAsYTnQrosNwww=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2AttributeTypesEnum.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2AttributeTypesEnum.html",
-          "hash": "5KLoCqEtDFGmSSyOqFNZuQ=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2ChangeRequestAttribute.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2ChangeRequestAttribute.html",
-          "hash": "Dd94MOoeVyUwlfe4k8PzKA=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2ClassTypesEnum.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2ClassTypesEnum.html",
-          "hash": "PRgC62c8tUBxhFGKE177Dg=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2ErrorCodeAttribute.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2ErrorCodeAttribute.html",
-          "hash": "qcn3qFxLI9M8tEIbJU3hzA=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2Header.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2Header.html",
-          "hash": "F/EJhfYQbWbDnF7REBR9UQ=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2Message.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2Message.html",
-          "hash": "MBoHFqiTPX2b8Z8vtOt89A=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2MessageTypes.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2MessageTypes.html",
-          "hash": "ZHJ3eEXOvx+PvTE1ycV81w=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2MessageTypesEnum.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2MessageTypesEnum.html",
-          "hash": "PRRes5KuYfLNB/pr0BpXWQ=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.STUNv2XORAddressAttribute.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.STUNv2XORAddressAttribute.html",
-          "hash": "MTX9WO4eFuX+iM126dCsOA=="
+          "relative_path": "api/SIPSorcery.Net.STUNXORAddressAttribute.html",
+          "hash": "an9HPjBNVsdogv01kQltFg=="
         }
       },
       "is_incremental": false,
@@ -1673,23 +1481,11 @@
     },
     {
       "type": "ManagedReference",
-      "source_relative_path": "api/SIPSorcery.Net.Utility.yml",
-      "output": {
-        ".html": {
-          "relative_path": "api/SIPSorcery.Net.Utility.html",
-          "hash": "nQqmjcBQm4UaMGJaptITmQ=="
-        }
-      },
-      "is_incremental": false,
-      "version": ""
-    },
-    {
-      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.yml",
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "fmSTv61Yl01uAydaMG6oSQ=="
+          "hash": "NEAKRUizLvweagNtSewXWA=="
         }
       },
       "is_incremental": false,
@@ -2505,7 +2301,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPDNSLookupEndPoint.html",
-          "hash": "lvoqc+lPTs5UvxSFBncrBw=="
+          "hash": "HLQJaD01RPeZTgkUjsqAuA=="
         }
       },
       "is_incremental": false,
@@ -2517,7 +2313,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPDNSLookupResult.html",
-          "hash": "Y1VbBocus5dyKjzH63k4Mg=="
+          "hash": "/my1eXYWLFnFEEsXAENYMg=="
         }
       },
       "is_incremental": false,
@@ -2529,7 +2325,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.SIPDNSServiceResult.html",
-          "hash": "2uCWi1AdDzRwcqWqAV4zgQ=="
+          "hash": "ioE+546Bj0PN0a/C475flQ=="
         }
       },
       "is_incremental": false,
@@ -3885,7 +3681,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "PZK8I4UuHPpz/LD/w/4HgA=="
+          "hash": "BKaWol1N3noK0vB4b/7ckA=="
         }
       },
       "is_incremental": false,
@@ -4138,7 +3934,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 322,
+          "total_file_count": 305,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
