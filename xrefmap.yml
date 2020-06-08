@@ -9422,6 +9422,49 @@ references:
   commentId: F:SIPSorcery.Net.STUNClassTypesEnum.SuccesResponse
   fullName: SIPSorcery.Net.STUNClassTypesEnum.SuccesResponse
   nameWithType: STUNClassTypesEnum.SuccesResponse
+- uid: SIPSorcery.Net.STUNConstants
+  name: STUNConstants
+  href: api/SIPSorcery.Net.STUNConstants.html
+  commentId: T:SIPSorcery.Net.STUNConstants
+  fullName: SIPSorcery.Net.STUNConstants
+  nameWithType: STUNConstants
+- uid: SIPSorcery.Net.STUNConstants.DEFAULT_STUN_PORT
+  name: DEFAULT_STUN_PORT
+  href: api/SIPSorcery.Net.STUNConstants.html#SIPSorcery_Net_STUNConstants_DEFAULT_STUN_PORT
+  commentId: F:SIPSorcery.Net.STUNConstants.DEFAULT_STUN_PORT
+  fullName: SIPSorcery.Net.STUNConstants.DEFAULT_STUN_PORT
+  nameWithType: STUNConstants.DEFAULT_STUN_PORT
+- uid: SIPSorcery.Net.STUNConstants.DEFAULT_STUN_TLS_PORT
+  name: DEFAULT_STUN_TLS_PORT
+  href: api/SIPSorcery.Net.STUNConstants.html#SIPSorcery_Net_STUNConstants_DEFAULT_STUN_TLS_PORT
+  commentId: F:SIPSorcery.Net.STUNConstants.DEFAULT_STUN_TLS_PORT
+  fullName: SIPSorcery.Net.STUNConstants.DEFAULT_STUN_TLS_PORT
+  nameWithType: STUNConstants.DEFAULT_STUN_TLS_PORT
+- uid: SIPSorcery.Net.STUNConstants.DEFAULT_TURN_PORT
+  name: DEFAULT_TURN_PORT
+  href: api/SIPSorcery.Net.STUNConstants.html#SIPSorcery_Net_STUNConstants_DEFAULT_TURN_PORT
+  commentId: F:SIPSorcery.Net.STUNConstants.DEFAULT_TURN_PORT
+  fullName: SIPSorcery.Net.STUNConstants.DEFAULT_TURN_PORT
+  nameWithType: STUNConstants.DEFAULT_TURN_PORT
+- uid: SIPSorcery.Net.STUNConstants.DEFAULT_TURN_TLS_PORT
+  name: DEFAULT_TURN_TLS_PORT
+  href: api/SIPSorcery.Net.STUNConstants.html#SIPSorcery_Net_STUNConstants_DEFAULT_TURN_TLS_PORT
+  commentId: F:SIPSorcery.Net.STUNConstants.DEFAULT_TURN_TLS_PORT
+  fullName: SIPSorcery.Net.STUNConstants.DEFAULT_TURN_TLS_PORT
+  nameWithType: STUNConstants.DEFAULT_TURN_TLS_PORT
+- uid: SIPSorcery.Net.STUNConstants.GetPortForScheme(SIPSorcery.Net.STUNSchemesEnum)
+  name: GetPortForScheme(STUNSchemesEnum)
+  href: api/SIPSorcery.Net.STUNConstants.html#SIPSorcery_Net_STUNConstants_GetPortForScheme_SIPSorcery_Net_STUNSchemesEnum_
+  commentId: M:SIPSorcery.Net.STUNConstants.GetPortForScheme(SIPSorcery.Net.STUNSchemesEnum)
+  fullName: SIPSorcery.Net.STUNConstants.GetPortForScheme(SIPSorcery.Net.STUNSchemesEnum)
+  nameWithType: STUNConstants.GetPortForScheme(STUNSchemesEnum)
+- uid: SIPSorcery.Net.STUNConstants.GetPortForScheme*
+  name: GetPortForScheme
+  href: api/SIPSorcery.Net.STUNConstants.html#SIPSorcery_Net_STUNConstants_GetPortForScheme_
+  commentId: Overload:SIPSorcery.Net.STUNConstants.GetPortForScheme
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNConstants.GetPortForScheme
+  nameWithType: STUNConstants.GetPortForScheme
 - uid: SIPSorcery.Net.STUNErrorCodeAttribute
   name: STUNErrorCodeAttribute
   href: api/SIPSorcery.Net.STUNErrorCodeAttribute.html
@@ -9876,6 +9919,234 @@ references:
   commentId: F:SIPSorcery.Net.STUNMessageTypesEnum.Send
   fullName: SIPSorcery.Net.STUNMessageTypesEnum.Send
   nameWithType: STUNMessageTypesEnum.Send
+- uid: SIPSorcery.Net.STUNProtocolsEnum
+  name: STUNProtocolsEnum
+  href: api/SIPSorcery.Net.STUNProtocolsEnum.html
+  commentId: T:SIPSorcery.Net.STUNProtocolsEnum
+  fullName: SIPSorcery.Net.STUNProtocolsEnum
+  nameWithType: STUNProtocolsEnum
+- uid: SIPSorcery.Net.STUNProtocolsEnum.dtls
+  name: dtls
+  href: api/SIPSorcery.Net.STUNProtocolsEnum.html#SIPSorcery_Net_STUNProtocolsEnum_dtls
+  commentId: F:SIPSorcery.Net.STUNProtocolsEnum.dtls
+  fullName: SIPSorcery.Net.STUNProtocolsEnum.dtls
+  nameWithType: STUNProtocolsEnum.dtls
+- uid: SIPSorcery.Net.STUNProtocolsEnum.tcp
+  name: tcp
+  href: api/SIPSorcery.Net.STUNProtocolsEnum.html#SIPSorcery_Net_STUNProtocolsEnum_tcp
+  commentId: F:SIPSorcery.Net.STUNProtocolsEnum.tcp
+  fullName: SIPSorcery.Net.STUNProtocolsEnum.tcp
+  nameWithType: STUNProtocolsEnum.tcp
+- uid: SIPSorcery.Net.STUNProtocolsEnum.tls
+  name: tls
+  href: api/SIPSorcery.Net.STUNProtocolsEnum.html#SIPSorcery_Net_STUNProtocolsEnum_tls
+  commentId: F:SIPSorcery.Net.STUNProtocolsEnum.tls
+  fullName: SIPSorcery.Net.STUNProtocolsEnum.tls
+  nameWithType: STUNProtocolsEnum.tls
+- uid: SIPSorcery.Net.STUNProtocolsEnum.udp
+  name: udp
+  href: api/SIPSorcery.Net.STUNProtocolsEnum.html#SIPSorcery_Net_STUNProtocolsEnum_udp
+  commentId: F:SIPSorcery.Net.STUNProtocolsEnum.udp
+  fullName: SIPSorcery.Net.STUNProtocolsEnum.udp
+  nameWithType: STUNProtocolsEnum.udp
+- uid: SIPSorcery.Net.STUNSchemesEnum
+  name: STUNSchemesEnum
+  href: api/SIPSorcery.Net.STUNSchemesEnum.html
+  commentId: T:SIPSorcery.Net.STUNSchemesEnum
+  fullName: SIPSorcery.Net.STUNSchemesEnum
+  nameWithType: STUNSchemesEnum
+- uid: SIPSorcery.Net.STUNSchemesEnum.stun
+  name: stun
+  href: api/SIPSorcery.Net.STUNSchemesEnum.html#SIPSorcery_Net_STUNSchemesEnum_stun
+  commentId: F:SIPSorcery.Net.STUNSchemesEnum.stun
+  fullName: SIPSorcery.Net.STUNSchemesEnum.stun
+  nameWithType: STUNSchemesEnum.stun
+- uid: SIPSorcery.Net.STUNSchemesEnum.stuns
+  name: stuns
+  href: api/SIPSorcery.Net.STUNSchemesEnum.html#SIPSorcery_Net_STUNSchemesEnum_stuns
+  commentId: F:SIPSorcery.Net.STUNSchemesEnum.stuns
+  fullName: SIPSorcery.Net.STUNSchemesEnum.stuns
+  nameWithType: STUNSchemesEnum.stuns
+- uid: SIPSorcery.Net.STUNSchemesEnum.turn
+  name: turn
+  href: api/SIPSorcery.Net.STUNSchemesEnum.html#SIPSorcery_Net_STUNSchemesEnum_turn
+  commentId: F:SIPSorcery.Net.STUNSchemesEnum.turn
+  fullName: SIPSorcery.Net.STUNSchemesEnum.turn
+  nameWithType: STUNSchemesEnum.turn
+- uid: SIPSorcery.Net.STUNSchemesEnum.turns
+  name: turns
+  href: api/SIPSorcery.Net.STUNSchemesEnum.html#SIPSorcery_Net_STUNSchemesEnum_turns
+  commentId: F:SIPSorcery.Net.STUNSchemesEnum.turns
+  fullName: SIPSorcery.Net.STUNSchemesEnum.turns
+  nameWithType: STUNSchemesEnum.turns
+- uid: SIPSorcery.Net.STUNUri
+  name: STUNUri
+  href: api/SIPSorcery.Net.STUNUri.html
+  commentId: T:SIPSorcery.Net.STUNUri
+  fullName: SIPSorcery.Net.STUNUri
+  nameWithType: STUNUri
+- uid: SIPSorcery.Net.STUNUri.#ctor(SIPSorcery.Net.STUNSchemesEnum,System.String,System.Int32)
+  name: STUNUri(STUNSchemesEnum, String, Int32)
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri__ctor_SIPSorcery_Net_STUNSchemesEnum_System_String_System_Int32_
+  commentId: M:SIPSorcery.Net.STUNUri.#ctor(SIPSorcery.Net.STUNSchemesEnum,System.String,System.Int32)
+  fullName: SIPSorcery.Net.STUNUri.STUNUri(SIPSorcery.Net.STUNSchemesEnum, System.String, System.Int32)
+  nameWithType: STUNUri.STUNUri(STUNSchemesEnum, String, Int32)
+- uid: SIPSorcery.Net.STUNUri.#ctor*
+  name: STUNUri
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri__ctor_
+  commentId: Overload:SIPSorcery.Net.STUNUri.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNUri.STUNUri
+  nameWithType: STUNUri.STUNUri
+- uid: SIPSorcery.Net.STUNUri.AreEqual(SIPSorcery.Net.STUNUri,SIPSorcery.Net.STUNUri)
+  name: AreEqual(STUNUri, STUNUri)
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_AreEqual_SIPSorcery_Net_STUNUri_SIPSorcery_Net_STUNUri_
+  commentId: M:SIPSorcery.Net.STUNUri.AreEqual(SIPSorcery.Net.STUNUri,SIPSorcery.Net.STUNUri)
+  fullName: SIPSorcery.Net.STUNUri.AreEqual(SIPSorcery.Net.STUNUri, SIPSorcery.Net.STUNUri)
+  nameWithType: STUNUri.AreEqual(STUNUri, STUNUri)
+- uid: SIPSorcery.Net.STUNUri.AreEqual*
+  name: AreEqual
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_AreEqual_
+  commentId: Overload:SIPSorcery.Net.STUNUri.AreEqual
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNUri.AreEqual
+  nameWithType: STUNUri.AreEqual
+- uid: SIPSorcery.Net.STUNUri.DefaultSTUNScheme
+  name: DefaultSTUNScheme
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_DefaultSTUNScheme
+  commentId: F:SIPSorcery.Net.STUNUri.DefaultSTUNScheme
+  fullName: SIPSorcery.Net.STUNUri.DefaultSTUNScheme
+  nameWithType: STUNUri.DefaultSTUNScheme
+- uid: SIPSorcery.Net.STUNUri.Equals(System.Object)
+  name: Equals(Object)
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_Equals_System_Object_
+  commentId: M:SIPSorcery.Net.STUNUri.Equals(System.Object)
+  fullName: SIPSorcery.Net.STUNUri.Equals(System.Object)
+  nameWithType: STUNUri.Equals(Object)
+- uid: SIPSorcery.Net.STUNUri.Equals*
+  name: Equals
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_Equals_
+  commentId: Overload:SIPSorcery.Net.STUNUri.Equals
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNUri.Equals
+  nameWithType: STUNUri.Equals
+- uid: SIPSorcery.Net.STUNUri.GetHashCode
+  name: GetHashCode()
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_GetHashCode
+  commentId: M:SIPSorcery.Net.STUNUri.GetHashCode
+  fullName: SIPSorcery.Net.STUNUri.GetHashCode()
+  nameWithType: STUNUri.GetHashCode()
+- uid: SIPSorcery.Net.STUNUri.GetHashCode*
+  name: GetHashCode
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_GetHashCode_
+  commentId: Overload:SIPSorcery.Net.STUNUri.GetHashCode
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNUri.GetHashCode
+  nameWithType: STUNUri.GetHashCode
+- uid: SIPSorcery.Net.STUNUri.Host
+  name: Host
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_Host
+  commentId: F:SIPSorcery.Net.STUNUri.Host
+  fullName: SIPSorcery.Net.STUNUri.Host
+  nameWithType: STUNUri.Host
+- uid: SIPSorcery.Net.STUNUri.op_Equality(SIPSorcery.Net.STUNUri,SIPSorcery.Net.STUNUri)
+  name: Equality(STUNUri, STUNUri)
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_op_Equality_SIPSorcery_Net_STUNUri_SIPSorcery_Net_STUNUri_
+  commentId: M:SIPSorcery.Net.STUNUri.op_Equality(SIPSorcery.Net.STUNUri,SIPSorcery.Net.STUNUri)
+  fullName: SIPSorcery.Net.STUNUri.Equality(SIPSorcery.Net.STUNUri, SIPSorcery.Net.STUNUri)
+  nameWithType: STUNUri.Equality(STUNUri, STUNUri)
+- uid: SIPSorcery.Net.STUNUri.op_Equality*
+  name: Equality
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_op_Equality_
+  commentId: Overload:SIPSorcery.Net.STUNUri.op_Equality
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNUri.Equality
+  nameWithType: STUNUri.Equality
+- uid: SIPSorcery.Net.STUNUri.op_Inequality(SIPSorcery.Net.STUNUri,SIPSorcery.Net.STUNUri)
+  name: Inequality(STUNUri, STUNUri)
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_op_Inequality_SIPSorcery_Net_STUNUri_SIPSorcery_Net_STUNUri_
+  commentId: M:SIPSorcery.Net.STUNUri.op_Inequality(SIPSorcery.Net.STUNUri,SIPSorcery.Net.STUNUri)
+  fullName: SIPSorcery.Net.STUNUri.Inequality(SIPSorcery.Net.STUNUri, SIPSorcery.Net.STUNUri)
+  nameWithType: STUNUri.Inequality(STUNUri, STUNUri)
+- uid: SIPSorcery.Net.STUNUri.op_Inequality*
+  name: Inequality
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_op_Inequality_
+  commentId: Overload:SIPSorcery.Net.STUNUri.op_Inequality
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNUri.Inequality
+  nameWithType: STUNUri.Inequality
+- uid: SIPSorcery.Net.STUNUri.ParseSTUNUri(System.String)
+  name: ParseSTUNUri(String)
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_ParseSTUNUri_System_String_
+  commentId: M:SIPSorcery.Net.STUNUri.ParseSTUNUri(System.String)
+  fullName: SIPSorcery.Net.STUNUri.ParseSTUNUri(System.String)
+  nameWithType: STUNUri.ParseSTUNUri(String)
+- uid: SIPSorcery.Net.STUNUri.ParseSTUNUri*
+  name: ParseSTUNUri
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_ParseSTUNUri_
+  commentId: Overload:SIPSorcery.Net.STUNUri.ParseSTUNUri
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNUri.ParseSTUNUri
+  nameWithType: STUNUri.ParseSTUNUri
+- uid: SIPSorcery.Net.STUNUri.Port
+  name: Port
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_Port
+  commentId: F:SIPSorcery.Net.STUNUri.Port
+  fullName: SIPSorcery.Net.STUNUri.Port
+  nameWithType: STUNUri.Port
+- uid: SIPSorcery.Net.STUNUri.Scheme
+  name: Scheme
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_Scheme
+  commentId: F:SIPSorcery.Net.STUNUri.Scheme
+  fullName: SIPSorcery.Net.STUNUri.Scheme
+  nameWithType: STUNUri.Scheme
+- uid: SIPSorcery.Net.STUNUri.SCHEME_ADDR_SEPARATOR
+  name: SCHEME_ADDR_SEPARATOR
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_SCHEME_ADDR_SEPARATOR
+  commentId: F:SIPSorcery.Net.STUNUri.SCHEME_ADDR_SEPARATOR
+  fullName: SIPSorcery.Net.STUNUri.SCHEME_ADDR_SEPARATOR
+  nameWithType: STUNUri.SCHEME_ADDR_SEPARATOR
+- uid: SIPSorcery.Net.STUNUri.SCHEME_MAX_LENGTH
+  name: SCHEME_MAX_LENGTH
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_SCHEME_MAX_LENGTH
+  commentId: F:SIPSorcery.Net.STUNUri.SCHEME_MAX_LENGTH
+  fullName: SIPSorcery.Net.STUNUri.SCHEME_MAX_LENGTH
+  nameWithType: STUNUri.SCHEME_MAX_LENGTH
+- uid: SIPSorcery.Net.STUNUri.ToString
+  name: ToString()
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_ToString
+  commentId: M:SIPSorcery.Net.STUNUri.ToString
+  fullName: SIPSorcery.Net.STUNUri.ToString()
+  nameWithType: STUNUri.ToString()
+- uid: SIPSorcery.Net.STUNUri.ToString*
+  name: ToString
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_ToString_
+  commentId: Overload:SIPSorcery.Net.STUNUri.ToString
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNUri.ToString
+  nameWithType: STUNUri.ToString
+- uid: SIPSorcery.Net.STUNUri.Transport
+  name: Transport
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_Transport
+  commentId: F:SIPSorcery.Net.STUNUri.Transport
+  fullName: SIPSorcery.Net.STUNUri.Transport
+  nameWithType: STUNUri.Transport
+- uid: SIPSorcery.Net.STUNUri.TryParse(System.String,SIPSorcery.Net.STUNUri@)
+  name: TryParse(String, out STUNUri)
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_TryParse_System_String_SIPSorcery_Net_STUNUri__
+  commentId: M:SIPSorcery.Net.STUNUri.TryParse(System.String,SIPSorcery.Net.STUNUri@)
+  name.vb: TryParse(String, ByRef STUNUri)
+  fullName: SIPSorcery.Net.STUNUri.TryParse(System.String, out SIPSorcery.Net.STUNUri)
+  fullName.vb: SIPSorcery.Net.STUNUri.TryParse(System.String, ByRef SIPSorcery.Net.STUNUri)
+  nameWithType: STUNUri.TryParse(String, out STUNUri)
+  nameWithType.vb: STUNUri.TryParse(String, ByRef STUNUri)
+- uid: SIPSorcery.Net.STUNUri.TryParse*
+  name: TryParse
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_TryParse_
+  commentId: Overload:SIPSorcery.Net.STUNUri.TryParse
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNUri.TryParse
+  nameWithType: STUNUri.TryParse
 - uid: SIPSorcery.Net.STUNXORAddressAttribute
   name: STUNXORAddressAttribute
   href: api/SIPSorcery.Net.STUNXORAddressAttribute.html

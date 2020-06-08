@@ -1385,6 +1385,18 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNConstants.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNConstants.html",
+          "hash": "2WflNBn/vUO2q77tGxgRVQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.STUNErrorCodeAttribute.yml",
       "output": {
         ".html": {
@@ -1445,6 +1457,42 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNProtocolsEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNProtocolsEnum.html",
+          "hash": "ynvTZe9rNrAsL1FeqKlG/A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNSchemesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNSchemesEnum.html",
+          "hash": "w31mEdbhygPtKpJclkZDBA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNUri.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNUri.html",
+          "hash": "ms556bBQ082TRfLEM0cOHg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.STUNXORAddressAttribute.yml",
       "output": {
         ".html": {
@@ -1485,7 +1533,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "NEAKRUizLvweagNtSewXWA=="
+          "hash": "S8j4k9gPz3GaLJTV/179cQ=="
         }
       },
       "is_incremental": false,
@@ -3681,7 +3729,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "BKaWol1N3noK0vB4b/7ckA=="
+          "hash": "nXwZwyVq2LmO4L7xFgvbyw=="
         }
       },
       "is_incremental": false,
@@ -3934,7 +3982,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 305,
+          "total_file_count": 309,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
