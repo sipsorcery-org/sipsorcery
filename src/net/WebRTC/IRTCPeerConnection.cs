@@ -77,6 +77,7 @@ namespace SIPSorcery.Net
         public string urls;
         public string username;
         public RTCIceCredentialType credentialType;
+        public string credential;
     }
 
     /// <summary>
@@ -177,7 +178,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Optional. If specified this address will be used as the bind address for any RTP
         /// and control sockets created. Generally this address does not need to be set. The default behaviour
-        /// is to bind to [::] or 0.0.0.0,d depending on system support, which minimises network routing
+        /// is to bind to [::] or 0.0.0.0, depending on system support, which minimises network routing
         /// causing connection issues.
         /// </summary>
         public IPAddress X_BindAddress;

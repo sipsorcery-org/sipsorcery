@@ -1,56 +1,70 @@
 //-----------------------------------------------------------------------------
 // Filename: STUNHeader.cs
 //
-// Description: Implements STUN header as defined in RFC3489.
+// Description: Implements STUN header as defined in RFC5389.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 27 Dec 2006	Aaron Clauson	Created  (aaron@sipsorcery.com), SIP Sorcery PTY LTD, Hobart, Australia (www.sipsorcery.com).
-// 04 Jan 2007  Aaron Clauson   Added Send Keep Alive request message type.
+// 26 Nov 2010	Aaron Clauson	Create,d Hobart, Australia.
 //
 // Notes:
 //
-// 11.1  Message Header
+//   All STUN messages MUST start with a 20-byte header followed by zero
+//   or more Attributes.  The STUN header contains a STUN message type,
+//   magic cookie, transaction ID, and message length.
 //
-// All STUN messages consist of a 20 byte header:
+//       0                   1                   2                   3
+//       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//      |0 0|     STUN Message Type     |         Message Length        |
+//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//      |                         Magic Cookie                          |
+//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//      |                                                               |
+//      |                     Transaction ID (96 bits)                  |
+//      |                                                               |
+//      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
-//  0                   1                   2                   3
-//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |      STUN Message Type        |         Message Length        |
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//                  Figure 2: Format of STUN Message Header
 //
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//                          Transaction ID
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//                                                                 |
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   The most significant 2 bits of every STUN message MUST be zeroes.
+//   This can be used to differentiate STUN packets from other protocols
+//   when STUN is multiplexed with other protocols on the same port.
 //
-// The Message Types can take on the following values:
+// .....
+// 
+//   The message type field is decomposed further into the following
+//   structure:
 //
-//    0x0001  :  Binding Request
-//    0x0101  :  Binding Response
-//    0x0111  :  Binding Error Response
-//    0x0112  :  Send Keep Alive Request.   (Extension)
-//    0x0002  :  Shared Secret Request
-//    0x0102  :  Shared Secret Response
-//    0x0112  :  Shared Secret Error Response
+//                        0                 1
+//                        2  3  4 5 6 7 8 9 0 1 2 3 4 5
 //
-// The message length is the count, in bytes, of the size of the
-// message, not including the 20 byte header.
+//                       +--+--+-+-+-+-+-+-+-+-+-+-+-+-+
+//                       |M |M |M|M|M|C|M|M|M|C|M|M|M|M|
+//                       |11|10|9|8|7|1|6|5|4|0|3|2|1|0|
+//                       +--+--+-+-+-+-+-+-+-+-+-+-+-+-+
 //
-// The transaction ID is a 128 bit identifier.  It also serves as salt
-// to randomize the request and the response.  All responses carry the
-// same identifier as the request they correspond to.
+//                Figure 3: Format of STUN Message Type Field
 //
-// Adding custom request to allow server agents to request NAT Keep Alives be sent to clients.
+//   Here the bits in the message type field are shown as most significant
+//   (M11) through least significant (M0).  M11 through M0 represent a 12-
+//   bit encoding of the method.  C1 and C0 represent a 2-bit encoding of
+//   the class.  A class of 0b00 is a request, a class of 0b01 is an
+//   indication, a class of 0b10 is a success response, and a class of
+//   0b11 is an error response.  This specification defines a single
+//   method, Binding.  The method and class are orthogonal, so that for
+//   each method, a request, success response, error response, and
+//   indication are possible for that method.  Extensions defining new
+//   methods MUST indicate which classes are permitted for that method.
 //
-// Message Type:
-//    0x0112 : Send Keep Alive Request.
+//   For example, a Binding request has class=0b00 (request) and
+//   method=0b000000000001 (Binding) and is encoded into the first 16 bits
+//   as 0x0001.  A Binding response has class=0b10 (success response) and
+//   method=0b000000000001, and is encoded into the first 16 bits as
+//   0x0101.
+//
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -63,16 +77,41 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public enum STUNMessageTypesEnum
+    public enum STUNMessageTypesEnum : ushort
     {
-        Unknown = 0,
-        BindingRequest = 1,
-        SharedSecretRequest = 2,
-        BindingResponse = 257,
-        SendKeepAlive = 258,
-        SharedSecretResponse = 258,
-        BindingErrorResponse = 272,
-        SharedSecretErrorResponse = 273,
+        BindingRequest = 0x0001,
+        BindingSuccessResponse = 0x0101,
+        BindingErrorResponse = 0x0111,
+
+        // New methods defined in TURN (RFC5766).
+        Allocate = 0x0003,
+        Refresh = 0x0004,
+        Send = 0x0006,
+        Data = 0x0007,
+        CreatePermission = 0x0008,
+        ChannelBind = 0x0009,
+
+        DataIndication = 0x0017,
+
+        AllocateSuccessResponse = 0x0103,
+        RefreshSuccessResponse = 0x0104,
+        CreatePermissionSuccessResponse = 0x0108,
+        ChannelBindSuccessResponse = 0x0109,
+        AllocateErrorResponse = 0x0113,
+        RefreshErrorResponse = 0x0114,
+        CreatePermissionErrorResponse = 0x0118,
+        ChannelBindErrorResponse = 0x0119,
+    }
+
+    /// <summary>
+    /// Could not work out how the class and message type encoding work despite re-reading the paragraph in the RFC a dozen times!
+    /// </summary>
+    public enum STUNClassTypesEnum : ushort
+    {
+        Request = 0x0b00,
+        Indication = 0x0b01,
+        SuccesResponse = 0x0b10,
+        ErrorResponse = 0x0b11,
     }
 
     public class STUNMessageTypes
@@ -85,12 +124,14 @@ namespace SIPSorcery.Net
 
     public class STUNHeader
     {
+        public const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
         public const int STUN_HEADER_LENGTH = 20;
-        public const int TRANSACTION_ID_LENGTH = 16;
+        public const UInt32 MAGIC_COOKIE = 0x2112A442;
+        public const int TRANSACTION_ID_LENGTH = 12;
 
         private static ILogger logger = Log.Logger;
 
-        public STUNMessageTypesEnum MessageType = STUNMessageTypesEnum.Unknown;
+        public STUNMessageTypesEnum MessageType = STUNMessageTypesEnum.BindingRequest;
         public UInt16 MessageLength;
         public byte[] TransactionId = new byte[TRANSACTION_ID_LENGTH];
 
@@ -100,11 +141,16 @@ namespace SIPSorcery.Net
         public STUNHeader(STUNMessageTypesEnum messageType)
         {
             MessageType = messageType;
-            TransactionId = GenerateNewTransactionID();
+            TransactionId = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString().Substring(0, TRANSACTION_ID_LENGTH));
         }
 
         public static STUNHeader ParseSTUNHeader(byte[] buffer)
         {
+            if ((buffer[0] & STUN_INITIAL_BYTE_MASK) != 0)
+            {
+                throw new ApplicationException("The STUN header did not begin with 0x00.");
+            }
+
             if (buffer != null && buffer.Length > 0 && buffer.Length >= STUN_HEADER_LENGTH)
             {
                 STUNHeader stunHeader = new STUNHeader();
@@ -114,14 +160,13 @@ namespace SIPSorcery.Net
 
                 if (BitConverter.IsLittleEndian)
                 {
-                    stunTypeValue = Utility.ReverseEndian(stunTypeValue);
-                    stunMessageLength = Utility.ReverseEndian(stunMessageLength);
+                    stunTypeValue = NetConvert.DoReverseEndian(stunTypeValue);
+                    stunMessageLength = NetConvert.DoReverseEndian(stunMessageLength);
                 }
 
                 stunHeader.MessageType = STUNMessageTypes.GetSTUNMessageTypeForId(stunTypeValue);
                 stunHeader.MessageLength = stunMessageLength;
-                //stunHeader.TransactionId = BitConverter.ToString(buffer, 4, TRANSACTION_ID_LENGTH);
-                Buffer.BlockCopy(buffer, 4, stunHeader.TransactionId, 0, TRANSACTION_ID_LENGTH);
+                Buffer.BlockCopy(buffer, 8, stunHeader.TransactionId, 0, TRANSACTION_ID_LENGTH);
 
                 return stunHeader;
             }
@@ -129,27 +174,9 @@ namespace SIPSorcery.Net
             return null;
         }
 
-        public static byte[] GenerateNewTransactionID()
-        {
-            return Encoding.ASCII.GetBytes(Guid.NewGuid().ToString().Substring(0, TRANSACTION_ID_LENGTH));
-        }
-
         public string GetTransactionId()
         {
-            string transId = null;
-            foreach (byte transByte in TransactionId)
-            {
-                string byteStr = transByte.ToString("X");
-
-                if (byteStr.Length < 2)
-                {
-                    byteStr = "0" + byteStr;
-                }
-
-                transId += byteStr;
-            }
-
-            return transId;
+            return BitConverter.ToString(TransactionId);
         }
     }
 }

@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Filename: STUNv2ErrorCodeAttribute.cs
+// Filename: STUNErrorCodeAttribute.cs
 //
 // Description: Implements STUN error attribute as defined in RFC5389.
 //
@@ -18,7 +18,7 @@ using System.Text;
 
 namespace SIPSorcery.Net
 {
-    public class STUNv2ErrorCodeAttribute : STUNv2Attribute
+    public class STUNErrorCodeAttribute : STUNAttribute
     {
         public byte ErrorClass;             // The hundreds value of the error code must be between 3 and 6.
         public byte ErrorNumber;            // The units value of the error code must be between 0 and 99.
@@ -32,16 +32,16 @@ namespace SIPSorcery.Net
             }
         }
 
-        public STUNv2ErrorCodeAttribute(byte[] attributeValue)
-            : base(STUNv2AttributeTypesEnum.ErrorCode, attributeValue)
+        public STUNErrorCodeAttribute(byte[] attributeValue)
+            : base(STUNAttributeTypesEnum.ErrorCode, attributeValue)
         {
             ErrorClass = (byte)BitConverter.ToChar(attributeValue, 2);
             ErrorNumber = (byte)BitConverter.ToChar(attributeValue, 3);
             ReasonPhrase = Encoding.UTF8.GetString(attributeValue, 4, attributeValue.Length - 4);
         }
 
-        public STUNv2ErrorCodeAttribute(int errorCode, string reasonPhrase)
-            : base(STUNv2AttributeTypesEnum.ErrorCode, null)
+        public STUNErrorCodeAttribute(int errorCode, string reasonPhrase)
+            : base(STUNAttributeTypesEnum.ErrorCode, null)
         {
             ErrorClass = errorCode < 700 ? Convert.ToByte(ErrorCode / 100) : (byte)0x00;
             ErrorNumber = Convert.ToByte(errorCode % 100);
@@ -58,12 +58,12 @@ namespace SIPSorcery.Net
             byte[] reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
             Buffer.BlockCopy(reasonPhraseBytes, 0, buffer, startIndex + 4, reasonPhraseBytes.Length);
 
-            return STUNv2Attribute.STUNATTRIBUTE_HEADER_LENGTH + 4 + reasonPhraseBytes.Length;
+            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + 4 + reasonPhraseBytes.Length;
         }
 
         public override string ToString()
         {
-            string attrDescrStr = "STUNv2 ERROR_CODE_ADDRESS Attribute: error code=" + ErrorCode + ", reason phrase=" + ReasonPhrase + ".";
+            string attrDescrStr = "STUN ERROR_CODE_ADDRESS Attribute: error code=" + ErrorCode + ", reason phrase=" + ReasonPhrase + ".";
 
             return attrDescrStr;
         }

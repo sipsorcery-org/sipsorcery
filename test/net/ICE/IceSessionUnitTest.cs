@@ -70,6 +70,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"RTP channel RTP socket local end point {rtpChannel.RTPLocalEndPoint}.");
 
             var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp);
+            iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
             Assert.NotEmpty(iceSession.Candidates);
@@ -102,6 +103,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"RTP channel RTP socket local end point {rtpChannel.RTPLocalEndPoint}.");
 
             var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp);
+            iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
             Assert.NotEmpty(iceSession.Candidates);
@@ -128,6 +130,7 @@ namespace SIPSorcery.Net.UnitTests
             rtpSession.addTrack(dummyTrack);
 
             var iceSession = new IceSession(rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio), RTCIceComponent.rtp);
+            iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
             Assert.NotEmpty(iceSession.Candidates);
@@ -161,6 +164,7 @@ namespace SIPSorcery.Net.UnitTests
             RTPChannel rtpChannel = new RTPChannel(false, null);
 
             var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp);
+            iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
             Assert.NotEmpty(iceSession.Candidates);
@@ -196,6 +200,7 @@ namespace SIPSorcery.Net.UnitTests
             RTPChannel rtpChannel = new RTPChannel(false, null);
 
             var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp);
+            iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
             Assert.NotEmpty(iceSession.Candidates);
@@ -232,6 +237,7 @@ namespace SIPSorcery.Net.UnitTests
             RTPChannel rtpChannel = new RTPChannel(false, null);
 
             var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp);
+            iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
             Assert.NotEmpty(iceSession.Candidates);
