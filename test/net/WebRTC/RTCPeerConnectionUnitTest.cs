@@ -42,6 +42,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPeerConnection pc = new RTCPeerConnection(null);
+            pc.IceSession.StartGathering();
             var offer = await pc.createOffer(new RTCOfferOptions());
 
             Assert.NotNull(offer);
@@ -68,6 +69,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTCPeerConnection pc = new RTCPeerConnection(null);
+            pc.IceSession.StartGathering();
             var audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             pc.addTrack(audioTrack);
             var offer = await pc.createOffer(new RTCOfferOptions());

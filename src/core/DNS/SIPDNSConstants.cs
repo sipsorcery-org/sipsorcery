@@ -4,10 +4,10 @@
 // Description: Holds constant fields related to SIP DNS resolution.
 //
 // Author(s):
-// Aaron Clauson
+// Aaron Clauson (aaron@sipsorcery.com)
 //
 // History:
-// 19 Jun 2010	Aaron Clauson	Created (aaron@sipsorcery.com), SIP Sorcery Ltd, Hobart, Australia (www.sipsorcery.com).
+// 19 Jun 2010	Aaron Clauson	Created, Hobart, Australia.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.

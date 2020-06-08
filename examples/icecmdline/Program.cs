@@ -61,6 +61,8 @@ namespace SIPSorcery.Examples
         private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
         private const int WEBSOCKET_PORT = 8081;
         private const int TEST_DTLS_HANDSHAKE_TIMEOUT = 10000;
+        private const string SIPSORCERY_STUN_SERVER = "67.222.131.149:3478";
+        //private const string SIPSORCERY_STUN_SERVER = "stun:stun.sipsorcery.com";
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -94,7 +96,7 @@ namespace SIPSorcery.Examples
             DtlsHandshake.InitialiseOpenSSL();
             Srtp.InitialiseLibSrtp();
 
-            Task.Run(DoDtlsHandshakeLoopbackTest).Wait();
+            //Task.Run(DoDtlsHandshakeLoopbackTest).Wait();
 
             Console.WriteLine("Test DTLS handshake complete.");
 
@@ -117,6 +119,9 @@ namespace SIPSorcery.Examples
             _webSocketServer.Start();
 
             Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
+
+            var peerConnection = CreatePeerConnection();
+            peerConnection.IceSession.StartGathering();
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
@@ -174,13 +179,19 @@ namespace SIPSorcery.Examples
                         X_KeyPath = DTLS_KEY_PATH,
                         X_Fingerprint = DTLS_CERTIFICATE_FINGERPRINT
                     }
-                }
+                },
+                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = SIPSORCERY_STUN_SERVER } }
             };
 
             var peerConnection = new RTCPeerConnection(pcConfiguration);
 
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
+
+            peerConnection.onicecandidate += (candidate) =>
+            {
+                logger.LogDebug($"ICE candidate discovered: {candidate}.");
+            };
 
             peerConnection.onconnectionstatechange += (state) =>
             {

@@ -1,7 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SIPDNSLocation.cs
 //
-// Description: Used to hold the results of the various DNS lookups required to resolve a SIP hostname.
+// Description: Used to hold the results of the various DNS lookups required 
+// to resolve a SIP hostname.
 //
 // Author(s):
 // Aaron Clauson

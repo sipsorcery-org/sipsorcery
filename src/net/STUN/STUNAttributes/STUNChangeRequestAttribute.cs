@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Filename: STUNv2ChangeRequestAttribute.cs
+// Filename: STUNChangeRequestAttribute.cs
 //
 // Description: Implements STUN change request attribute as defined in RFC5389.
 //
@@ -17,7 +17,7 @@ using System;
 
 namespace SIPSorcery.Net
 {
-    public class STUNv2ChangeRequestAttribute : STUNv2Attribute
+    public class STUNChangeRequestAttribute : STUNAttribute
     {
         public const UInt16 CHANGEREQUEST_ATTRIBUTE_LENGTH = 4;
 
@@ -31,8 +31,8 @@ namespace SIPSorcery.Net
 
         private byte m_changeRequestByte;
 
-        public STUNv2ChangeRequestAttribute(byte[] attributeValue)
-            : base(STUNv2AttributeTypesEnum.ChangeRequest, attributeValue)
+        public STUNChangeRequestAttribute(byte[] attributeValue)
+            : base(STUNAttributeTypesEnum.ChangeRequest, attributeValue)
         {
             m_changeRequestByte = attributeValue[3];
 
@@ -53,7 +53,7 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            string attrDescrStr = "STUNv2 Attribute: " + STUNAttributeTypesEnum.ChangeRequest.ToString() + ", key byte=" + m_changeRequestByte.ToString("X") + ", change address=" + ChangeAddress + ", change port=" + ChangePort + ".";
+            string attrDescrStr = "STUN Attribute: " + STUNAttributeTypesEnum.ChangeRequest.ToString() + ", key byte=" + m_changeRequestByte.ToString("X") + ", change address=" + ChangeAddress + ", change port=" + ChangePort + ".";
 
             return attrDescrStr;
         }

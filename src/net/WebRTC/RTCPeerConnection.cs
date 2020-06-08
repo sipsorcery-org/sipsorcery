@@ -243,16 +243,18 @@ namespace SIPSorcery.Net
                 _currentCertificate = _configuration.certificates.First();
             }
 
-            //_offerAddresses = offerAddresses;
-            //_turnServerEndPoint = turnServerEndPoint;
-
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
 
             // Request the underlying RTP session to create the RTP channel.
             addSingleTrack();
 
-            IceSession = new IceSession(GetRtpChannel(SDPMediaTypesEnum.audio), RTCIceComponent.rtp);
+            IceSession = new IceSession(
+                GetRtpChannel(SDPMediaTypesEnum.audio), 
+                RTCIceComponent.rtp, 
+                configuration?.iceServers, 
+                configuration != null ? configuration.iceTransportPolicy : RTCIceTransportPolicy.all);
+
             IceSession.OnIceCandidate += (candidate) => onicecandidate?.Invoke(candidate);
             IceSession.OnIceConnectionStateChange += (state) =>
             {
@@ -275,6 +277,9 @@ namespace SIPSorcery.Net
             };
             IceSession.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
             IceSession.OnIceCandidateError += onicecandidateerror;
+
+            var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
+            rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
@@ -300,9 +305,6 @@ namespace SIPSorcery.Net
             {
                 IceSession.IsController = true;
             }
-
-            var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
-            rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
 
             // This is the point the ICE session potentially starts contacting STUN and TURN servers.
             IceSession.StartGathering();
@@ -602,7 +604,7 @@ namespace SIPSorcery.Net
                 announcement.IceOptions = ICE_OPTIONS;
                 announcement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
 
-                if (iceCandidatesAdded == false)
+                if (iceCandidatesAdded == false && IceSession.Candidates?.Count > 0)
                 {
                     announcement.IceCandidates = new List<string>();
 
@@ -645,7 +647,7 @@ namespace SIPSorcery.Net
                     if (buffer[0] == 0x00 || buffer[0] == 0x01)
                     {
                         // STUN packet.
-                        var stunMessage = STUNv2Message.ParseSTUNMessage(buffer, buffer.Length);
+                        var stunMessage = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
                         IceSession?.ProcessStunMessage(stunMessage, remoteEP);
                     }
                     else if (buffer[0] >= 128 && buffer[0] <= 191)
@@ -691,9 +693,12 @@ namespace SIPSorcery.Net
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Restarts the ICE session gathering and connection checks.
+        /// </summary>
         public void restartIce()
         {
-            throw new NotImplementedException();
+            IceSession.Restart();
         }
 
         public RTCConfiguration getConfiguration()
