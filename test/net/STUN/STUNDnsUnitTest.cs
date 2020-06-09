@@ -61,7 +61,16 @@ namespace SIPSorcery.Net.UnitTests
             var result = await STUNDns.Resolve(stunUri, true);
 
             Assert.NotNull(result);
-            Assert.Equal(IPAddress.IPv6Loopback, result.Address);
+
+            if (Socket.OSSupportsIPv6)
+            {
+
+                Assert.Equal(IPAddress.IPv6Loopback, result.Address);
+            }
+            else
+            {
+                Assert.Equal(IPAddress.Loopback, result.Address);
+            }
 
             logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
         }
@@ -149,7 +158,15 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
 
             Assert.NotNull(result);
-            Assert.Equal(AddressFamily.InterNetworkV6, result.AddressFamily);
+
+            if (Socket.OSSupportsIPv6)
+            {
+                Assert.Equal(AddressFamily.InterNetworkV6, result.AddressFamily);
+            }
+            else
+            {
+                Assert.Equal(AddressFamily.InterNetwork, result.AddressFamily);
+            }
         }
 
         /// <summary>
