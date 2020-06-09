@@ -62,17 +62,16 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.NotNull(result);
 
+            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+
             if (Socket.OSSupportsIPv6)
             {
-
                 Assert.Equal(IPAddress.IPv6Loopback, result.Address);
             }
             else
             {
                 Assert.Equal(IPAddress.Loopback, result.Address);
             }
-
-            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
         }
 
         /// <summary>
@@ -115,6 +114,8 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.NotNull(result);
 
+            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+
             if (Socket.OSSupportsIPv6)
             {
                 Assert.Equal(AddressFamily.InterNetworkV6, result.AddressFamily);
@@ -123,8 +124,6 @@ namespace SIPSorcery.Net.UnitTests
             {
                 Assert.Equal(AddressFamily.InterNetwork, result.AddressFamily);
             }
-
-            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
         }
 
         /// <summary>
