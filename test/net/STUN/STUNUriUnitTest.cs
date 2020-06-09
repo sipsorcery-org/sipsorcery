@@ -43,6 +43,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(STUNSchemesEnum.stun, stunUri.Scheme);
             Assert.Equal("stun.sipsorcery.com", stunUri.Host);
             Assert.Equal(STUNConstants.DEFAULT_STUN_PORT, stunUri.Port);
+            Assert.False(stunUri.ExplicitPort);
         }
 
         /// <summary>
@@ -60,6 +61,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(STUNSchemesEnum.stun, stunUri.Scheme);
             Assert.Equal("stun.sipsorcery.com", stunUri.Host);
             Assert.Equal(4478, stunUri.Port);
+            Assert.True(stunUri.ExplicitPort);
         }
 
         /// <summary>
@@ -77,6 +79,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(STUNSchemesEnum.stuns, stunUri.Scheme);
             Assert.Equal("stun.sipsorcery.com", stunUri.Host);
             Assert.Equal(4478, stunUri.Port);
+            Assert.True(stunUri.ExplicitPort);
         }
 
         /// <summary>
@@ -94,6 +97,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(STUNSchemesEnum.stuns, stunUri.Scheme);
             Assert.Equal("192.168.0.100", stunUri.Host);
             Assert.Equal(4478, stunUri.Port);
+            Assert.True(stunUri.ExplicitPort);
         }
 
         /// <summary>
@@ -111,6 +115,7 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(STUNSchemesEnum.turn, stunUri.Scheme);
             Assert.Equal("[::1]", stunUri.Host);
             Assert.Equal(14478, stunUri.Port);
+            Assert.True(stunUri.ExplicitPort);
         }
     }
 }
