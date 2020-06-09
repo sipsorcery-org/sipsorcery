@@ -9465,6 +9465,31 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNConstants.GetPortForScheme
   nameWithType: STUNConstants.GetPortForScheme
+- uid: SIPSorcery.Net.STUNDns
+  name: STUNDns
+  href: api/SIPSorcery.Net.STUNDns.html
+  commentId: T:SIPSorcery.Net.STUNDns
+  fullName: SIPSorcery.Net.STUNDns
+  nameWithType: STUNDns
+- uid: SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri,DnsClient.QueryType)
+  name: Resolve(STUNUri, QueryType)
+  href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_Resolve_SIPSorcery_Net_STUNUri_DnsClient_QueryType_
+  commentId: M:SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri,DnsClient.QueryType)
+  fullName: SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri, DnsClient.QueryType)
+  nameWithType: STUNDns.Resolve(STUNUri, QueryType)
+- uid: SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri,System.Boolean)
+  name: Resolve(STUNUri, Boolean)
+  href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_Resolve_SIPSorcery_Net_STUNUri_System_Boolean_
+  commentId: M:SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri,System.Boolean)
+  fullName: SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri, System.Boolean)
+  nameWithType: STUNDns.Resolve(STUNUri, Boolean)
+- uid: SIPSorcery.Net.STUNDns.Resolve*
+  name: Resolve
+  href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_Resolve_
+  commentId: Overload:SIPSorcery.Net.STUNDns.Resolve
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNDns.Resolve
+  nameWithType: STUNDns.Resolve
 - uid: SIPSorcery.Net.STUNErrorCodeAttribute
   name: STUNErrorCodeAttribute
   href: api/SIPSorcery.Net.STUNErrorCodeAttribute.html
@@ -10030,6 +10055,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNUri.Equals
   nameWithType: STUNUri.Equals
+- uid: SIPSorcery.Net.STUNUri.ExplicitPort
+  name: ExplicitPort
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_ExplicitPort
+  commentId: F:SIPSorcery.Net.STUNUri.ExplicitPort
+  fullName: SIPSorcery.Net.STUNUri.ExplicitPort
+  nameWithType: STUNUri.ExplicitPort
 - uid: SIPSorcery.Net.STUNUri.GetHashCode
   name: GetHashCode()
   href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_GetHashCode
@@ -10094,6 +10125,19 @@ references:
   commentId: F:SIPSorcery.Net.STUNUri.Port
   fullName: SIPSorcery.Net.STUNUri.Port
   nameWithType: STUNUri.Port
+- uid: SIPSorcery.Net.STUNUri.Protocol
+  name: Protocol
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_Protocol
+  commentId: P:SIPSorcery.Net.STUNUri.Protocol
+  fullName: SIPSorcery.Net.STUNUri.Protocol
+  nameWithType: STUNUri.Protocol
+- uid: SIPSorcery.Net.STUNUri.Protocol*
+  name: Protocol
+  href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_Protocol_
+  commentId: Overload:SIPSorcery.Net.STUNUri.Protocol
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNUri.Protocol
+  nameWithType: STUNUri.Protocol
 - uid: SIPSorcery.Net.STUNUri.Scheme
   name: Scheme
   href: api/SIPSorcery.Net.STUNUri.html#SIPSorcery_Net_STUNUri_Scheme

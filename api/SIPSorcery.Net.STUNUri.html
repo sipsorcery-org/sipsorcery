@@ -108,7 +108,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNUri__ctor_SIPSorcery_Net_STUNSchemesEnum_System_String_System_Int32_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNUri.%23ctor(SIPSorcery.Net.STUNSchemesEnum%2CSystem.String%2CSystem.Int32)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L98">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L123">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNUri__ctor_" data-uid="SIPSorcery.Net.STUNUri.#ctor*"></a>
   <h4 id="SIPSorcery_Net_STUNUri__ctor_SIPSorcery_Net_STUNSchemesEnum_System_String_System_Int32_" data-uid="SIPSorcery.Net.STUNUri.#ctor(SIPSorcery.Net.STUNSchemesEnum,System.String,System.Int32)">STUNUri(STUNSchemesEnum, String, Int32)</h4>
@@ -172,6 +172,38 @@
     <tbody>
       <tr>
         <td><a class="xref" href="SIPSorcery.Net.STUNSchemesEnum.html">STUNSchemesEnum</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNUri_ExplicitPort.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNUri.ExplicitPort%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L100">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_STUNUri_ExplicitPort" data-uid="SIPSorcery.Net.STUNUri.ExplicitPort">ExplicitPort</h4>
+  <div class="markdown level1 summary"><p>If the port is specified in a URI it affects the way a DNS lookup occurs.
+An explicit port means to lookup the A or AAAA record directly without
+checking for SRV records.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool ExplicitPort</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
         <td></td>
       </tr>
     </tbody>
@@ -350,6 +382,39 @@
       </tr>
     </tbody>
   </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNUri_Protocol.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNUri.Protocol%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L105">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_STUNUri_Protocol_" data-uid="SIPSorcery.Net.STUNUri.Protocol*"></a>
+  <h4 id="SIPSorcery_Net_STUNUri_Protocol" data-uid="SIPSorcery.Net.STUNUri.Protocol">Protocol</h4>
+  <div class="markdown level1 summary"><p>The network protocol for this URI type.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ProtocolType Protocol { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.Sockets.ProtocolType</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="methods">Methods
   </h3>
   <span class="small pull-right mobile-hide">
@@ -357,7 +422,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNUri_AreEqual_SIPSorcery_Net_STUNUri_SIPSorcery_Net_STUNUri_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNUri.AreEqual(SIPSorcery.Net.STUNUri%2CSIPSorcery.Net.STUNUri)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L202">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L229">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNUri_AreEqual_" data-uid="SIPSorcery.Net.STUNUri.AreEqual*"></a>
   <h4 id="SIPSorcery_Net_STUNUri_AreEqual_SIPSorcery_Net_STUNUri_SIPSorcery_Net_STUNUri_" data-uid="SIPSorcery.Net.STUNUri.AreEqual(SIPSorcery.Net.STUNUri,SIPSorcery.Net.STUNUri)">AreEqual(STUNUri, STUNUri)</h4>
@@ -409,7 +474,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNUri_Equals_System_Object_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNUri.Equals(System.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L207">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L234">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNUri_Equals_" data-uid="SIPSorcery.Net.STUNUri.Equals*"></a>
   <h4 id="SIPSorcery_Net_STUNUri_Equals_System_Object_" data-uid="SIPSorcery.Net.STUNUri.Equals(System.Object)">Equals(Object)</h4>
@@ -458,7 +523,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNUri_GetHashCode.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNUri.GetHashCode%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L247">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L278">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNUri_GetHashCode_" data-uid="SIPSorcery.Net.STUNUri.GetHashCode*"></a>
   <h4 id="SIPSorcery_Net_STUNUri_GetHashCode" data-uid="SIPSorcery.Net.STUNUri.GetHashCode">GetHashCode()</h4>
@@ -490,7 +555,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNUri_ParseSTUNUri_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNUri.ParseSTUNUri(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L105">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L130">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNUri_ParseSTUNUri_" data-uid="SIPSorcery.Net.STUNUri.ParseSTUNUri*"></a>
   <h4 id="SIPSorcery_Net_STUNUri_ParseSTUNUri_System_String_" data-uid="SIPSorcery.Net.STUNUri.ParseSTUNUri(System.String)">ParseSTUNUri(String)</h4>
@@ -537,7 +602,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNUri_ToString.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNUri.ToString%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L187">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L214">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNUri_ToString_" data-uid="SIPSorcery.Net.STUNUri.ToString*"></a>
   <h4 id="SIPSorcery_Net_STUNUri_ToString" data-uid="SIPSorcery.Net.STUNUri.ToString">ToString()</h4>
@@ -569,7 +634,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNUri_TryParse_System_String_SIPSorcery_Net_STUNUri__.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNUri.TryParse(System.String%2CSIPSorcery.Net.STUNUri%40)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L173">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L200">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNUri_TryParse_" data-uid="SIPSorcery.Net.STUNUri.TryParse*"></a>
   <h4 id="SIPSorcery_Net_STUNUri_TryParse_System_String_SIPSorcery_Net_STUNUri__" data-uid="SIPSorcery.Net.STUNUri.TryParse(System.String,SIPSorcery.Net.STUNUri@)">TryParse(String, out STUNUri)</h4>
@@ -623,7 +688,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNUri_op_Equality_SIPSorcery_Net_STUNUri_SIPSorcery_Net_STUNUri_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNUri.op_Equality(SIPSorcery.Net.STUNUri%2CSIPSorcery.Net.STUNUri)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L212">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L239">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNUri_op_Equality_" data-uid="SIPSorcery.Net.STUNUri.op_Equality*"></a>
   <h4 id="SIPSorcery_Net_STUNUri_op_Equality_SIPSorcery_Net_STUNUri_SIPSorcery_Net_STUNUri_" data-uid="SIPSorcery.Net.STUNUri.op_Equality(SIPSorcery.Net.STUNUri,SIPSorcery.Net.STUNUri)">Equality(STUNUri, STUNUri)</h4>
@@ -675,7 +740,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNUri_op_Inequality_SIPSorcery_Net_STUNUri_SIPSorcery_Net_STUNUri_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNUri.op_Inequality(SIPSorcery.Net.STUNUri%2CSIPSorcery.Net.STUNUri)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L242">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNUri.cs/#L273">View Source</a>
   </span>
   <a id="SIPSorcery_Net_STUNUri_op_Inequality_" data-uid="SIPSorcery.Net.STUNUri.op_Inequality*"></a>
   <h4 id="SIPSorcery_Net_STUNUri_op_Inequality_SIPSorcery_Net_STUNUri_SIPSorcery_Net_STUNUri_" data-uid="SIPSorcery.Net.STUNUri.op_Inequality(SIPSorcery.Net.STUNUri,SIPSorcery.Net.STUNUri)">Inequality(STUNUri, STUNUri)</h4>

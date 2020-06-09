@@ -333,7 +333,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IceSession.html",
-          "hash": "jlagTR5k+khz3sGmsYPErQ=="
+          "hash": "SlfE3r29/zstQTmq4qja1w=="
         }
       },
       "is_incremental": false,
@@ -1397,6 +1397,18 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.STUNDns.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.STUNDns.html",
+          "hash": "xyDLBDKiT002mQHucg57EQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.STUNErrorCodeAttribute.yml",
       "output": {
         ".html": {
@@ -1485,7 +1497,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.STUNUri.html",
-          "hash": "ms556bBQ082TRfLEM0cOHg=="
+          "hash": "VaLuU7pakgy3QVu+rtPV1Q=="
         }
       },
       "is_incremental": false,
@@ -1533,7 +1545,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "S8j4k9gPz3GaLJTV/179cQ=="
+          "hash": "m31A4LFIPkTeJjFhJVgKRg=="
         }
       },
       "is_incremental": false,
@@ -1869,7 +1881,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.SIP.App.SIPDNSManager.html",
-          "hash": "BF+AF8JGmooj6T83e1VtbQ=="
+          "hash": "gFRE8I43D3OeXHR89ro3cQ=="
         }
       },
       "is_incremental": false,
@@ -3729,7 +3741,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "nXwZwyVq2LmO4L7xFgvbyw=="
+          "hash": "VN0VCNRG2T7LQOuOzOfMhQ=="
         }
       },
       "is_incremental": false,
@@ -3982,7 +3994,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 309,
+          "total_file_count": 310,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
