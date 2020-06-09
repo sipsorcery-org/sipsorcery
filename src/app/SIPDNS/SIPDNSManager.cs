@@ -206,7 +206,6 @@ namespace SIPSorcery.SIP.App
                     {
                         // If target is a hostname with an explicit port then SIP lookup rules state to use DNS lookup for A or AAAA record.
                         string hostOnly = IPSocket.ParseHostFromSocket(host);
-                        //return DNSARecordLookup(hostOnly, port, async, sipURI);
                         return DNSNameRecordLookup(hostOnly, port, async, sipURI, null, preferIPv6);
                     }
                     else

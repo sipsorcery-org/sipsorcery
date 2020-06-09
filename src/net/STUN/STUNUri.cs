@@ -92,6 +92,31 @@ namespace SIPSorcery.Net
         public string Host;
         public int Port;
 
+        /// <summary>
+        /// If the port is specified in a URI it affects the way a DNS lookup occurs.
+        /// An explicit port means to lookup the A or AAAA record directly without
+        /// checking for SRV records.
+        /// </summary>
+        public bool ExplicitPort;
+
+        /// <summary>
+        /// The network protocol for this URI type.
+        /// </summary>
+        public ProtocolType Protocol
+        {
+            get
+            {
+                if(Transport == STUNProtocolsEnum.tcp || Transport == STUNProtocolsEnum.tls)
+                {
+                    return ProtocolType.Tcp;
+                }
+                else
+                {
+                    return ProtocolType.Udp;
+                }
+            }
+        }
+
         private STUNUri()
         { }
 
@@ -138,11 +163,13 @@ namespace SIPSorcery.Net
 
                 if (uri.IndexOf(':') != -1)
                 {
+                    stunUri.ExplicitPort = true;
+
                     if (IPSocket.TryParseIPEndPoint(uri, out var ipEndPoint))
                     {
                         if (ipEndPoint.AddressFamily == AddressFamily.InterNetworkV6)
                         {
-                            stunUri.Host = $"[{ipEndPoint.Address.ToString()}]";
+                            stunUri.Host = $"[{ipEndPoint.Address}]";
                         }
                         else
                         {
@@ -235,6 +262,10 @@ namespace SIPSorcery.Net
             {
                 return false;
             }
+            else if(uri1.ExplicitPort != uri2.ExplicitPort)
+            {
+                return false;
+            }
 
             return true;
         }
@@ -246,7 +277,11 @@ namespace SIPSorcery.Net
 
         public override int GetHashCode()
         {
-            return Scheme.GetHashCode() + Transport.GetHashCode() + ((Host != null) ? Host.GetHashCode() : 0) + Port;
+            return Scheme.GetHashCode() 
+                + Transport.GetHashCode() 
+                + ((Host != null) ? Host.GetHashCode() : 0) 
+                + Port 
+                + ((ExplicitPort) ? 1 : 0);
         }
     }
 }
