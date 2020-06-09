@@ -64,7 +64,9 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
 
-            if (Socket.OSSupportsIPv6)
+            // Using System.Net.Dns.GetHostEntry on non Windows platforms doesn't return IPv6 results
+            // even when there is an IPv6 address assigned. AC 09 Jun 2020.
+            if (Socket.OSSupportsIPv6 && System.Environment.OSVersion.Platform == System.PlatformID.Win32NT)
             {
                 Assert.Equal(IPAddress.IPv6Loopback, result.Address);
             }
@@ -116,7 +118,9 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
 
-            if (Socket.OSSupportsIPv6)
+            // Using System.Net.Dns.GetHostEntry on non Windows platforms doesn't return IPv6 results
+            // even when there is an IPv6 address assigned. AC 09 Jun 2020.
+            if (Socket.OSSupportsIPv6 && System.Environment.OSVersion.Platform == System.PlatformID.Win32NT)
             {
                 Assert.Equal(AddressFamily.InterNetworkV6, result.AddressFamily);
             }
