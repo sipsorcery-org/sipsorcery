@@ -103,24 +103,42 @@ namespace SIPSorcery.Net
                     // main DNS client can be configured to use external DNS servers that won't
                     // be able to lookup this hostname.
 
-                    var addressList = Dns.GetHostEntry(uri.Host).AddressList;
+                    IPHostEntry hostEntry = null;
 
-                    if (addressList?.Length == 0)
+                    try
                     {
-                        logger.LogWarning($"Operating System DNS lookup failed for {uri.Host}.");
-                        return null;
+                       hostEntry = Dns.GetHostEntry(uri.Host);
                     }
-                    else
+                    catch (SocketException)
+                    { 
+                        // Socket exception gets thrown for failed lookups,
+                    }
+
+                    if (hostEntry != null)
                     {
-                        if (addressList.Any(x => x.AddressFamily == family))
+                        var addressList = hostEntry.AddressList;
+
+                        if (addressList?.Length == 0)
                         {
-                            var addressResult = addressList.First(x => x.AddressFamily == family);
-                            return Task.FromResult(new IPEndPoint(addressResult, uri.Port));
+                            logger.LogWarning($"Operating System DNS lookup failed for {uri.Host}.");
+                            return Task.FromResult<IPEndPoint>(null);
                         }
                         else
                         {
-                            return null;
+                            if (addressList.Any(x => x.AddressFamily == family))
+                            {
+                                var addressResult = addressList.First(x => x.AddressFamily == family);
+                                return Task.FromResult(new IPEndPoint(addressResult, uri.Port));
+                            }
+                            else
+                            {
+                                return Task.FromResult<IPEndPoint>(null);
+                            }
                         }
+                    }
+                    else
+                    {
+                        return Task.FromResult<IPEndPoint>(null);
                     }
                 }
                 else

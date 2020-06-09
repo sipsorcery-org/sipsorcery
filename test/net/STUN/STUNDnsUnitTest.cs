@@ -107,9 +107,10 @@ namespace SIPSorcery.Net.UnitTests
 
             string localHostname = Dns.GetHostName();
 
-            logger.LogDebug($"Attempting DNS lookup for {localHostname}.");
-
             STUNUri.TryParse(localHostname, out var stunUri);
+
+            logger.LogDebug($"Attempting DNS lookup for {stunUri}.");
+
             var result = await STUNDns.Resolve(stunUri, true);
 
             Assert.NotNull(result);
@@ -204,6 +205,40 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(AddressFamily.InterNetwork, result.AddressFamily);
 
             logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+        }
+
+        /// <summary>
+        /// Tests that looking up a non-existent local network host returns null.
+        /// </summary>
+        [Fact]
+        public async void LookupNonExistentHostTestMethod()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            STUNUri.TryParse("idontexist", out var stunUri);
+            var result = await STUNDns.Resolve(stunUri, true);
+
+            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+
+            Assert.Null(result);
+        }
+
+        /// <summary>
+        /// Tests that looking up a non-existent canonical hostname returns null.
+        /// </summary>
+        [Fact]
+        public async void LookupNonExistentCanoncialHostTestMethod()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            STUNUri.TryParse("somehost.fsdfergerw.com", out var stunUri);
+            var result = await STUNDns.Resolve(stunUri, true);
+
+            logger.LogDebug($"STUN DNS lookup for {stunUri} {result}.");
+
+            Assert.Null(result);
         }
     }
 }
