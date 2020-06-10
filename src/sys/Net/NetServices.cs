@@ -177,8 +177,6 @@ namespace SIPSorcery.Sys
                     }
                     else
                     {
-
-
                         if (requireEvenPort && boundPort % 2 != 0)
                         {
                             logger.LogDebug($"CreateBoundUdpSocket even port required, closing socket on {socket.LocalEndPoint} and retrying on {boundPort + 1}.");
