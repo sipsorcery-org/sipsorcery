@@ -30,6 +30,7 @@ namespace SIPSorcery.Sys.UnitTests
     public class NetServicesUnitTest
     {
         private static byte[] MAGIC_COOKIE = new byte[] { 0x41, 0x42, 0x41, 0x42, 0x41 };
+        private static int TEST_RECEIVE_TIMEOUT_MILLISECONDS = 1000;
 
         private Microsoft.Extensions.Logging.ILogger logger = null;
 
@@ -365,8 +366,8 @@ namespace SIPSorcery.Sys.UnitTests
                 var socketIP6Any = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
                 socketIP6Any.DualMode = true;
 
-                // Since it will be useful to detect if this behaviour ever changes add different asserts for the
-                // different Operating Systems.
+                // It will be useful to detect if this behaviour ever changes hence the different asserts for
+                // the different Operating Systems.
 
                 logger.LogDebug($"Environment.OSVersion: {Environment.OSVersion}.");
                 logger.LogDebug($"Environment.OSVersion.Platform: {Environment.OSVersion.Platform}.");
@@ -375,15 +376,13 @@ namespace SIPSorcery.Sys.UnitTests
                 // Note Ubuntu on Windows Subsystem for Linux (WSL2) does NOT throw a binding exception and allows
                 // the duplicate binding the same as Windows.
                 if (Environment.OSVersion.Platform == PlatformID.Unix &&
-                    !RuntimeInformation.OSDescription.Contains("Microsoft") // This line is to filter out WSL.
-                    && NetServices.SupportsDualModeIPv4PacketInfo)
+                    !RuntimeInformation.OSDescription.Contains("Microsoft")) // This line is to filter out WSL.
                 {
                     Assert.Throws<SocketException>(() => socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port)));
                 }
                 else
                 {
-                    // No exception on Windows and no duplication on Mac since IPv6 sockets are deliberately
-                    // created with dual mode set to false.
+                    // No exception on Windows.
                     socketIP6Any.Bind(new IPEndPoint(IPAddress.IPv6Any, anyEP.Port));
 
                     Assert.True(DoTestReceive(socket4Any, null));
@@ -459,7 +458,14 @@ namespace SIPSorcery.Sys.UnitTests
         {
             try
             {
-                logger.LogDebug($"DoTestReeceive for {socket.LocalEndPoint} and bind address {bindAddress}.");
+                if (bindAddress != null)
+                {
+                    logger.LogDebug($"DoTestReceive for {socket.LocalEndPoint} and bind address {bindAddress}.");
+                }
+                else
+                {
+                    logger.LogDebug($"DoTestReceive for {socket.LocalEndPoint}.");
+                }
 
                 byte[] buffer = new byte[MAGIC_COOKIE.Length];
                 ManualResetEvent mre = new ManualResetEvent(false);
@@ -495,7 +501,7 @@ namespace SIPSorcery.Sys.UnitTests
                 IPEndPoint sendTo = new IPEndPoint(sendToAddress, sendToPort);
                 socket.SendTo(MAGIC_COOKIE, sendTo);
 
-                if (mre.WaitOne(TimeSpan.FromMilliseconds(500), false))
+                if (mre.WaitOne(TimeSpan.FromMilliseconds(TEST_RECEIVE_TIMEOUT_MILLISECONDS), false))
                 {
                     // The receive worked. Check that the magic cookie was received.
                     if (bytesRead != MAGIC_COOKIE.Length)
