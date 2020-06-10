@@ -9471,6 +9471,12 @@ references:
   commentId: T:SIPSorcery.Net.STUNDns
   fullName: SIPSorcery.Net.STUNDns
   nameWithType: STUNDns
+- uid: SIPSorcery.Net.STUNDns.MDNS_TLD
+  name: MDNS_TLD
+  href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_MDNS_TLD
+  commentId: F:SIPSorcery.Net.STUNDns.MDNS_TLD
+  fullName: SIPSorcery.Net.STUNDns.MDNS_TLD
+  nameWithType: STUNDns.MDNS_TLD
 - uid: SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri,DnsClient.QueryType)
   name: Resolve(STUNUri, QueryType)
   href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_Resolve_SIPSorcery_Net_STUNUri_DnsClient_QueryType_
@@ -12364,6 +12370,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.SIP.App.SIPDNSManager.DNSSRVRecordLookup
   nameWithType: SIPDNSManager.DNSSRVRecordLookup
+- uid: SIPSorcery.SIP.App.SIPDNSManager.MDNS_TLD
+  name: MDNS_TLD
+  href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_MDNS_TLD
+  commentId: F:SIPSorcery.SIP.App.SIPDNSManager.MDNS_TLD
+  fullName: SIPSorcery.SIP.App.SIPDNSManager.MDNS_TLD
+  nameWithType: SIPDNSManager.MDNS_TLD
 - uid: SIPSorcery.SIP.App.SIPDNSManager.PreferIPv6NameResolution
   name: PreferIPv6NameResolution
   href: api/SIPSorcery.SIP.App.SIPDNSManager.html#SIPSorcery_SIP_App_SIPDNSManager_PreferIPv6NameResolution
