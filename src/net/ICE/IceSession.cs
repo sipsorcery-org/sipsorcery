@@ -27,6 +27,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -227,15 +228,48 @@ namespace SIPSorcery.Net
         /// </summary>
         internal class IceServerConnectionState
         {
-            private STUNUri _uri;
-            private string _username;
-            private string _password;
+            /// <summary>
+            /// The maximum number of requests to send to an ICE server without getting 
+            /// a response.
+            /// </summary>
+            internal const int MAX_REQUESTS = 6;
+
+            internal STUNUri _uri;
+            internal string _username;
+            internal string _password;
+
+            /// <summary>
+            /// The end point for this STUN or TURN server. Will be set asynchronously once
+            /// any required DNS lookup completes.
+            /// </summary>
+            internal IPEndPoint ServerEndPoint { get; set; }
 
             /// <summary>
             /// The transaction ID to use in STUN requests. It is used to match responses
             /// with connection checks for this ICE serve entry.
             /// </summary>
-            public string TransactionID { get; private set; }
+            internal string TransactionID { get; private set; }
+
+            /// <summary>
+            /// The number of requests that have been sent to the server.
+            /// </summary>
+            internal int RequestsSent { get; set; }
+
+            /// <summary>
+            /// The timestamp the most recent binding request was sent at.
+            /// </summary>
+            internal DateTime LastRequestSentAt { get; set; }
+
+            /// <summary>
+            /// The timestamp of the most recent response received from the ICE server.
+            /// </summary>
+            internal DateTime LastResponseReceivedAt { get; set; } = DateTime.MinValue;
+
+            /// <summary>
+            /// Records the failure message if there was an error configuring or contacting
+            /// the STUN or TURN server.
+            /// </summary>
+            internal SocketError Error { get; set; } = SocketError.Success;
 
             /// <summary>
             /// Default constructor.
@@ -243,7 +277,7 @@ namespace SIPSorcery.Net
             /// <param name="uri">The STUN or TURN server URI the connection is being attempted to.</param>
             /// <param name="username">Optional. If authentication is required the username to use.</param>
             /// <param name="password">Optional. If authentication is required the password to use.</param>
-            public IceServerConnectionState(STUNUri uri, string username, string password)
+            internal IceServerConnectionState(STUNUri uri, string username, string password)
             {
                 _uri = uri;
                 _username = username;
@@ -334,7 +368,7 @@ namespace SIPSorcery.Net
         public RTCIceCandidate NominatedCandidate { get; private set; }
 
         /// <summary>
-        /// If the session has successfully connected this returns the remote ned point of
+        /// If the session has successfully connected this returns the remote end point of
         /// the nominate candidate.
         /// </summary>
         public IPEndPoint ConnectedRemoteEndPoint
@@ -370,6 +404,7 @@ namespace SIPSorcery.Net
 
         private bool _closed = false;
         private Timer _processChecklistTimer;
+        private Timer _processIceServersTimer;
 
         public event Action<RTCIceCandidate> OnIceCandidate;
         public event Action<RTCIceConnectionState> OnIceConnectionStateChange;
@@ -442,8 +477,8 @@ namespace SIPSorcery.Net
 
                     if (_iceServers != null)
                     {
-                        _iceServerConnections = new Dictionary<STUNUri, IceServerConnectionState>();
-                        _ = Task.Run(() => GatherServerRelexiveCandidates(_iceServers));
+                        InitialiseIceServers(_iceServers);
+                        _processIceServersTimer = new Timer(CheckIceServers, null, 0, Ta);
                     }
 
                     _processChecklistTimer = new Timer(ProcessChecklist, null, 0, Ta);
@@ -480,6 +515,7 @@ namespace SIPSorcery.Net
             {
                 _closed = true;
                 _processChecklistTimer?.Dispose();
+                _processIceServersTimer?.Dispose();
             }
         }
 
@@ -589,12 +625,15 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Attempts to get a list of server-reflexive candidates using the local "host" candidates
-        /// and a STUN or TURN server.
+        /// Initialises the ICE servers if any were provided in the initial configuration.
+        /// ICE servers are STUN and TURN servers and are used to gather "server reflexive"
+        /// and "relay" candidates.
         /// </summary>
         /// <remarks>See https://tools.ietf.org/html/rfc8445#section-5.1.1.2</remarks>
-        private async Task GatherServerRelexiveCandidates(List<RTCIceServer> iceServers)
+        private void InitialiseIceServers(List<RTCIceServer> iceServers)
         {
+            _iceServerConnections = new Dictionary<STUNUri, IceServerConnectionState>();
+
             // Send STUN binding requests to each of the STUN servers.
             foreach (var iceServer in iceServers)
             {
@@ -613,27 +652,80 @@ namespace SIPSorcery.Net
                                 var iceServerState = new IceServerConnectionState(stunUri, iceServer.username, iceServer.credential);
                                 _iceServerConnections.Add(stunUri, iceServerState);
 
-                                logger.LogDebug($"Sending STUN binding request from {_rtpChannel.RTPLocalEndPoint} to server at {stunUri.Host}.");
+                                logger.LogDebug($"Attempting to resolve STUN server URI {stunUri}.");
 
-                                IPAddress stunServerIPAddress = null;
-                                if (!IPAddress.TryParse(stunUri.Host, out stunServerIPAddress))
+                                STUNDns.Resolve(stunUri).ContinueWith(x =>
                                 {
-                                    // DNS lookup.
-                                    //SIPDNSManager.ResolveSIPService(uri, async, null);
-                                }
-
-                                STUNMessage stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
-                                stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServerState.TransactionID);
-                                byte[] stunReqBytes = stunRequest.ToByteBuffer(null, false);
-
-                                var sendResult = _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, new IPEndPoint(stunServerIPAddress, stunUri.Port), stunReqBytes);
-
-                                await Task.Delay(Ta);
+                                    if(x.Result != null)
+                                    {
+                                        logger.LogDebug($"ICE server {stunUri} successfully resolved to {x.Result}.");
+                                        iceServerState.ServerEndPoint = x.Result;
+                                    }
+                                    else
+                                    {
+                                        logger.LogWarning($"Unable to resolve ICE server end point for {stunUri}.");
+                                        iceServerState.Error = SocketError.HostNotFound;
+                                    }
+                                });
                             }
                         }
                         else
                         {
                             logger.LogWarning($"ICESession could not parse ICE server URL {url}.");
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks the list of ICE servers to perform STUN binding or TURN reservation requests.
+        /// </summary>
+        private void CheckIceServers(Object state)
+        {
+            lock (_iceServerConnections)
+            {
+                if (_iceServerConnections.Count(x => x.Value.Error == SocketError.Success) == 0)
+                {
+                    logger.LogWarning("ICESession there are no ICE servers left to check, closing check ICE servers timer.");
+                    _processIceServersTimer.Dispose();
+                }
+                else
+                {
+                    foreach (var entry in _iceServerConnections.OrderBy(x => x.Value.RequestsSent))
+                    {
+                        if (entry.Value.Error == SocketError.Success &&
+                            entry.Value.ServerEndPoint != null &&
+                            DateTime.Now.Subtract(entry.Value.LastRequestSentAt).TotalMilliseconds > Ta)
+                        {
+                            var iceServerState = entry.Value;
+
+                            if (iceServerState.LastResponseReceivedAt == DateTime.MinValue &&
+                                iceServerState.RequestsSent >= IceServerConnectionState.MAX_REQUESTS)
+                            {
+                                logger.LogWarning($"Connection attempt to ICE server {entry.Key} timed out after {iceServerState.RequestsSent} requests.");
+                                iceServerState.Error = SocketError.TimedOut;
+                            }
+                            else
+                            {
+                                iceServerState.RequestsSent += 1;
+                                iceServerState.LastRequestSentAt = DateTime.Now;
+
+                                STUNMessage stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
+                                stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServerState.TransactionID);
+                                byte[] stunReqBytes = stunRequest.ToByteBuffer(null, false);
+
+                                var sendResult = _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceServerState.ServerEndPoint, stunReqBytes);
+
+                                if (sendResult != SocketError.Success)
+                                {
+                                    logger.LogWarning($"Error sending STUN server binding request {iceServerState.RequestsSent} for {entry.Key} to {iceServerState.ServerEndPoint}. {sendResult}.");
+                                    iceServerState.Error = sendResult;
+                                }
+
+                                // Only send one request per callback.
+                                break;
+                            }
                         }
                     }
                 }
