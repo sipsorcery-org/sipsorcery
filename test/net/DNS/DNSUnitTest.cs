@@ -180,13 +180,24 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            logger.LogDebug($"Current host name {System.Net.Dns.GetHostName()}");
+            string localHostname = System.Net.Dns.GetHostName();
 
-            var addressList = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList;
+            logger.LogDebug($"Current host name {localHostname}");
 
-            addressList.ToList().ForEach(x => logger.LogDebug(x.ToString()));
+            if (localHostname.EndsWith(STUNDns.MDNS_TLD))
+            {
+                // TODO: Look into why DNS calls on macos cannot resolve domains ending in ".local"
+                // RFC6762 domains.
+                logger.LogWarning("Skipping unit test LookupCurrentHostNameMethod due to RFC6762 domain.");
+            }
+            else
+            {
+                var addressList = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList;
 
-            Assert.True(addressList.Count() > 0, "No address results were returned for a local hostname lookup.");
+                addressList.ToList().ForEach(x => logger.LogDebug(x.ToString()));
+
+                Assert.True(addressList.Count() > 0, "No address results were returned for a local hostname lookup.");
+            }
         }
     }
 }
