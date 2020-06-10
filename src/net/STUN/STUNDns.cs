@@ -6,13 +6,18 @@
 // but without the use of NAPTR records.
 // 
 // The abbreviated procedure is:
-// 1. Lookup a SRV record that matches the STUN URI, e.g\:
+// 1. Lookup a SRV record that matches the STUN URI, e.g:
 //   a. For "stun" URI's:   _stun._udp.sipsorcery.com
 //   b. For "stuns" URI's:  _stuns._tcp.sipsorcery.com
 //   c. Likewise for "turn" and "turns" URI's.
 // 2. Lookup the A or AAAA record specified by the SRV lookup result or
 //    if no SRV result available lookup the hostname directly.
-// 
+//
+// It seems likely that STUN lookups will only ever need to return IPv4 results 
+// with A records since any host that can use IPv6 shouldn't need to use STUN
+// as a NAT workaround. An option to return IPv6 results with AAAA records
+// is provided for completeness.
+//
 // Notes:
 // Relevant RFC's:
 // https://tools.ietf.org/html/rfc7064: URI Scheme for the Session Traversal Utilities for NAT (STUN) Protocol
