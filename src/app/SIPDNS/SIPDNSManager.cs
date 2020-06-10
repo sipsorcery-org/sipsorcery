@@ -52,6 +52,7 @@ namespace SIPSorcery.SIP.App
     /// </remarks>
     public class SIPDNSManager
     {
+        public const string MDNS_TLD = "local"; // Top Level Domain name for multicast lookups as per RFC6762.
         private const int DNS_LOOKUP_TIMEOUT = 5;                       // 2 second timeout for DNS lookups.
         private const int DNS_A_RECORD_LOOKUP_TIMEOUT = 15;              // 5 second timeout for critical A record DNS lookups.
 
@@ -175,7 +176,7 @@ namespace SIPSorcery.SIP.App
                         port = sipURI.Protocol != SIPProtocolsEnum.tls ? m_defaultSIPPort : m_defaultSIPSPort;
                     }
 
-                    if (host.Contains(".") == false)
+                    if (host.Contains(".") == false || IPSocket.ParseHostFromSocket(host).EndsWith(MDNS_TLD))
                     {
                         string hostOnly = IPSocket.ParseHostFromSocket(host);
 
@@ -346,7 +347,7 @@ namespace SIPSorcery.SIP.App
                         port = sipURI.Protocol != SIPProtocolsEnum.tls ? m_defaultSIPPort : m_defaultSIPSPort;
                     }
 
-                    if (host.Contains(".") == false)
+                    if (host.Contains(".") == false || IPSocket.ParseHostFromSocket(host).EndsWith(MDNS_TLD))
                     {
                         string hostOnly = IPSocket.ParseHostFromSocket(host);
 

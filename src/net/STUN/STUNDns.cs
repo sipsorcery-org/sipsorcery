@@ -23,6 +23,7 @@
 // https://tools.ietf.org/html/rfc7064: URI Scheme for the Session Traversal Utilities for NAT (STUN) Protocol
 // https://tools.ietf.org/html/rfc7065: Traversal Using Relays around NAT (TURN) Uniform Resource Identifiers
 // https://tools.ietf.org/html/rfc5389#section-9: Session Traversal Utilities for NAT (STUN)
+// https://tools.ietf.org/html/rfc6762: Multicast DNS (for ".local" Top Level Domain lookups on macos)
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -48,6 +49,8 @@ namespace SIPSorcery.Net
 {
     public class STUNDns
     {
+        public const string MDNS_TLD = "local"; // Top Level Domain name for multicast lookups as per RFC6762.
+
         private static readonly ILogger logger = Log.Logger;
 
         private static LookupClient _lookupClient;
@@ -99,7 +102,7 @@ namespace SIPSorcery.Net
             }
             else
             {
-                if (!uri.Host.Contains("."))
+                if (!uri.Host.Contains(".") || uri.Host.EndsWith(MDNS_TLD))
                 {
                     AddressFamily family = (queryType == QueryType.AAAA) ? AddressFamily.InterNetworkV6 :
                         AddressFamily.InterNetwork;
