@@ -20,4 +20,4 @@ jobs:
     - name: Unit tests
       #run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release --filter "Category!=IPv6&Category!=transport&Category!=txintegration"
       #run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release --filter "FullyQualifiedName!~IPv4TlsLoopbackSendReceiveTest&FullyQualifiedName!~LookupLocalHostnameTest&Category!=IPv6&Category!=txintegration"
-      run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release --filter "FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv4TlsLoopbackSendReceiveTest&FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv6TlsLoopbackSendReceiveTest"
+      run: dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 --filter "FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv4TlsLoopbackSendReceiveTest&FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv6TlsLoopbackSendReceiveTest"
