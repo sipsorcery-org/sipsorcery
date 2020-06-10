@@ -395,6 +395,10 @@ namespace SIPSorcery.Sys.UnitTests
         /// <summary>
         /// Checks that a bind attempt fails if the socket is already bound on IPv4 0.0.0.0 and an
         /// attempt is made to use the same port on IPv6 [::].
+        ///
+        /// This test should be excluded on MacOS (or any other OS that can't be used with dual mode IPv6 sockets 
+        /// coupled with the "receivefrom" methods need to get packet information i.e get the sending socket).
+        /// AC 10 Jun 2020.
         /// </summary>
         [Fact]
         public void CheckFailsOnDuplicateForIP4AnyThenIPv6AnyUnitTest()
@@ -402,26 +406,33 @@ namespace SIPSorcery.Sys.UnitTests
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            Socket rtpSocket = null;
-            Socket controlSocket = null;
+            if (Socket.OSSupportsIPv6 && NetServices.SupportsDualModeIPv4PacketInfo)
+            {
+                Socket rtpSocket = null;
+                Socket controlSocket = null;
 
-            NetServices.CreateRtpSocket(true, IPAddress.Any, out rtpSocket, out controlSocket);
+                NetServices.CreateRtpSocket(true, IPAddress.Any, out rtpSocket, out controlSocket);
 
-            Assert.NotNull(rtpSocket);
-            Assert.NotNull(controlSocket);
+                Assert.NotNull(rtpSocket);
+                Assert.NotNull(controlSocket);
 
-            Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint as IPEndPoint).Port, IPAddress.IPv6Any, false, true));
+                Assert.Throws<ApplicationException>(() => NetServices.CreateBoundUdpSocket((rtpSocket.LocalEndPoint as IPEndPoint).Port, IPAddress.IPv6Any, false, true));
 
-            rtpSocket.Close();
-            controlSocket.Close();
+                rtpSocket.Close();
+                controlSocket.Close();
+            }
+            else
+            {
+                logger.LogDebug("Test skipped as IPv6 dual mode sockets are not in use on this OS.");
+            }
         }
 
         /// <summary>
         /// Checks that a bind attempt fails if the socket is already bound on IPv6 [::] and an
         /// attempt is made to use the same port on IPv4 0.0.0.0.
         /// 
-        /// This test should be excluded on MacOS (or any other OS that can't be used with dual mode IPv6 sockets) 
-        /// since dual mode with "receivefrom" methods need to get packet information are not supported by the OS.
+        /// This test should be excluded on MacOS (or any other OS that can't be used with dual mode IPv6 sockets 
+        /// coupled with the "receivefrom" methods need to get packet information i.e get the sending socket).
         /// AC 10 Jun 2020.
         /// </summary>
         [Fact]
