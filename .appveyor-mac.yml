@@ -17,7 +17,7 @@ build_script:
 test_script:
 # TODO: Track down why macos throws an exception when attempting to load the X509 certificates.
 - dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release --filter "FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv4TlsLoopbackSendReceiveTest&FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv6TlsLoopbackSendReceiveTest"
-on_finish:
-  - sh: export APPVEYOR_SSH_BLOCK=true
-  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+#on_finish:
+#  - sh: export APPVEYOR_SSH_BLOCK=true
+#  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 
