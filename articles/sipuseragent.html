@@ -144,7 +144,7 @@ await userAgent.PutOnHold();
 await userAgent.TakeOffHold();
 </code></pre>
 <h4 id="blind-transfer">Blind Transfer</h4>
-<p>A Blind Transfer is where the callee is sent a SIP REFER request (see <a href="callholdtransfer.html#blind-transfer">call flow</a>) specifying a new destination for the call. The call party initiating the transfer does not interact with the transfer destination. The <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_BlindTransfer_SIPSorcery_SIP_SIPURI_System_TimeSpan_System_Threading_CancellationToken_">BlindTransfer(SIPURI, TimeSpan, CancellationToken)</a> method is used to carry out a Blind Transfer on an established call.</p>
+<p>A Blind Transfer is where the callee is sent a SIP REFER request (see <a href="callholdtransfer.html#blind-transfer">call flow</a>) specifying a new destination for the call. The call party initiating the transfer does not interact with the transfer destination. The @&quot;SIPSorcery.SIP.App.SIPUserAgent.BlindTransfer(SIPSorcery.SIP.SIPURI,System.TimeSpan,System.Threading.CancellationToken)&quot; method is used to carry out a Blind Transfer on an established call.</p>
 <pre><code class="lang-csharp">bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
 
 var transferURI = SIPURI.ParseSIPURI(TRANSFER_DESTINATION_SIP_URI);
@@ -169,7 +169,7 @@ else
 <li>A second call to the transfer destination is established,</li>
 <li>The original callee and the transferee are bridged together. The transferring call party has their call leg terminated.</li>
 </ul>
-<p>The <a class="xref" href="../api/SIPSorcery.SIP.App.SIPUserAgent.html#SIPSorcery_SIP_App_SIPUserAgent_AttendedTransfer_SIPSorcery_SIP_SIPDialogue_System_TimeSpan_System_Threading_CancellationToken_">AttendedTransfer(SIPDialogue, TimeSpan, CancellationToken)</a> method is used to carry out an Attended Transfer on two established calls.</p>
+<p>The @&quot;SIPSorcery.SIP.App.SIPUserAgent.AttendedTransfer(SIPSorcery.SIP.SIPDialogue,System.TimeSpan,System.Threading.CancellationToken)&quot; method is used to carry out an Attended Transfer on two established calls.</p>
 <pre><code class="lang-csharp">bool callResult1 = await userAgent1.Call(DESTINATION, null, null, rtpSession);
 await userAgent1.PutOnHold();
 
