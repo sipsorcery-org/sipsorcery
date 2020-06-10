@@ -147,6 +147,8 @@ namespace SIPSorcery.Sys.UnitTests
         /// Tests that the a local address is returned for an Internet IPv6 destination.
         /// </summary>
         //[Fact(Skip = "Only works if machine running the test has a public IPv6 address assigned.")]
+        // TODO: This test sporadically fails on appveyor macos jobs. Try and determine if it's due
+        // to the vm having a different network configuration, IPv6 set up etc.
         [Fact]
         [Trait("Category", "IPv6")]
         public void GetLocalForInternetIPv6AdressUnitTest()
