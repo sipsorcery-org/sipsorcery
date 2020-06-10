@@ -15,7 +15,8 @@ build_script:
 - dotnet --version
 - dotnet build src/SIPSorcery.sln --framework netcoreapp3.1
 test_script:
-- dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release
-#on_finish:
-#  - sh: export APPVEYOR_SSH_BLOCK=true
-#  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+- dotnet test src/SIPSorcery.sln --framework netcoreapp3.1 -c Release --filter "Category!=IPv6&FullyQualifiedName!=SIPSorcery.SIP.UnitTests.SIPTransportUnitTest.IPv4TlsLoopbackSendReceiveTest&FullyQualifiedName!=SIPSorcery.Net.UnitTests.DNSUnitTest.LookupAAAARecordMethod&FullyQualifiedName!=SIPSorcery.Sys.UnitTests.NetServicesUnitTest.CheckFailsOnDuplicateForIP6AnyThenIPv4AnyUnitTest&FullyQualifiedName!=SIPSorcery.Sys.UnitTests.NetServicesUnitTest.CheckFailsOnDuplicateForIP4AnyThenIPv6AnyUnitTest"
+on_finish:
+  - sh: export APPVEYOR_SSH_BLOCK=true
+  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+
