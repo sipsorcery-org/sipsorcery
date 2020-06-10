@@ -167,14 +167,8 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.NotNull(result);
 
-            if (Socket.OSSupportsIPv6)
-            {
-                Assert.Equal(AddressFamily.InterNetworkV6, result.AddressFamily);
-            }
-            else
-            {
-                Assert.Equal(AddressFamily.InterNetwork, result.AddressFamily);
-            }
+           // There's no guarantee that a particular DNS server will have AAAA records for
+           // a particular hostname so can't check which result type was returned.
         }
 
         /// <summary>
