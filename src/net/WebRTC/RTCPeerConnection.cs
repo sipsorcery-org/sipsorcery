@@ -252,6 +252,7 @@ namespace SIPSorcery.Net
             IceSession = new IceSession(
                 GetRtpChannel(SDPMediaTypesEnum.audio), 
                 RTCIceComponent.rtp, 
+                configuration?.X_RemoteSignallingAddress,
                 configuration?.iceServers, 
                 configuration != null ? configuration.iceTransportPolicy : RTCIceTransportPolicy.all);
 

@@ -182,6 +182,17 @@ namespace SIPSorcery.Net
         /// causing connection issues.
         /// </summary>
         public IPAddress X_BindAddress;
+
+        /// <summary>
+        /// Optional. If the remote signalling address is known at the time of creating the peer
+        /// connection it can be used to select the interface that host ICE candidates will be
+        /// gathered on. Restricting the host candidate IP addresses to a single interface is 
+        /// as per the recommendation at:
+        /// https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2.
+        /// If this is not set then the default is to use the Internet facing interface as
+        /// returned by the OS routing table.
+        /// </summary>
+        public IPAddress X_RemoteSignallingAddress;
     }
 
     /// <summary>

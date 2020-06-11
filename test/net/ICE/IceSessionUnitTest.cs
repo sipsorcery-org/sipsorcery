@@ -45,7 +45,7 @@ namespace SIPSorcery.Net.UnitTests
             MediaStreamTrack dummyTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             rtpSession.addTrack(dummyTrack);
 
-            var iceSession = new IceSession(rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio), RTCIceComponent.rtp);
+            var iceSession = new IceSession(rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio), RTCIceComponent.rtp, null);
 
             Assert.NotNull(iceSession);
         }
@@ -69,7 +69,7 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug($"RTP channel RTP socket local end point {rtpChannel.RTPLocalEndPoint}.");
 
-            var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp);
+            var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp, null);
             iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
@@ -102,7 +102,7 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug($"RTP channel RTP socket local end point {rtpChannel.RTPLocalEndPoint}.");
 
-            var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp);
+            var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp, null);
             iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
@@ -120,7 +120,7 @@ namespace SIPSorcery.Net.UnitTests
         /// in priority sorted order.
         /// </summary>
         [Fact]
-        public void SortChecklistUnitTest()
+        public async void SortChecklistUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -129,7 +129,7 @@ namespace SIPSorcery.Net.UnitTests
             MediaStreamTrack dummyTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             rtpSession.addTrack(dummyTrack);
 
-            var iceSession = new IceSession(rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio), RTCIceComponent.rtp);
+            var iceSession = new IceSession(rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio), RTCIceComponent.rtp, null);
             iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
@@ -141,10 +141,10 @@ namespace SIPSorcery.Net.UnitTests
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            iceSession.AddRemoteCandidate(remoteCandidate);
+            await iceSession.AddRemoteCandidate(remoteCandidate);
 
             var remoteCandidate2 = RTCIceCandidate.Parse("candidate:408132417 1 udp 2113937150 192.168.11.51 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            iceSession.AddRemoteCandidate(remoteCandidate2);
+            await iceSession.AddRemoteCandidate(remoteCandidate2);
 
             foreach (var entry in iceSession._checklist)
             {
@@ -156,14 +156,14 @@ namespace SIPSorcery.Net.UnitTests
         /// Tests that checklist entries get added correctly and duplicates are excluded.
         /// </summary>
         [Fact]
-        public void ChecklistConstructionUnitTest()
+        public async void ChecklistConstructionUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPChannel rtpChannel = new RTPChannel(false, null);
 
-            var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp);
+            var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp, null);
             iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
@@ -175,10 +175,10 @@ namespace SIPSorcery.Net.UnitTests
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            iceSession.AddRemoteCandidate(remoteCandidate);
+            await iceSession.AddRemoteCandidate(remoteCandidate);
 
             var remoteCandidate2 = RTCIceCandidate.Parse("candidate:408132417 1 udp 2113937150 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            iceSession.AddRemoteCandidate(remoteCandidate2);
+            await iceSession.AddRemoteCandidate(remoteCandidate2);
 
             foreach (var entry in iceSession._checklist)
             {
@@ -199,7 +199,7 @@ namespace SIPSorcery.Net.UnitTests
 
             RTPChannel rtpChannel = new RTPChannel(false, null);
 
-            var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp);
+            var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp, null);
             iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
@@ -211,7 +211,7 @@ namespace SIPSorcery.Net.UnitTests
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            iceSession.AddRemoteCandidate(remoteCandidate);
+            await iceSession.AddRemoteCandidate(remoteCandidate);
 
             iceSession.SetRemoteCredentials("CI7o", "xxxxxxxxxxxx");
             iceSession.StartGathering();
@@ -236,7 +236,7 @@ namespace SIPSorcery.Net.UnitTests
 
             RTPChannel rtpChannel = new RTPChannel(false, null);
 
-            var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp);
+            var iceSession = new IceSession(rtpChannel, RTCIceComponent.rtp, null);
             iceSession.StartGathering();
 
             Assert.NotNull(iceSession);
@@ -248,7 +248,7 @@ namespace SIPSorcery.Net.UnitTests
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            iceSession.AddRemoteCandidate(remoteCandidate);
+            await iceSession.AddRemoteCandidate(remoteCandidate);
 
             iceSession.SetRemoteCredentials("CI7o", "xxxxxxxxxxxx");
             iceSession.StartGathering();

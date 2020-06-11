@@ -35,7 +35,7 @@ namespace SIPSorcery.Sys
         private const int RTP_RECEIVE_BUFFER_SIZE = 1000000;
         private const int RTP_SEND_BUFFER_SIZE = 1000000;
         private const int MAXIMUM_UDP_PORT_BIND_ATTEMPTS = 25;          // The maximum number of re-attempts that will be made when trying to bind a UDP socket.
-        private const string INTERNET_IPADDRESS = "1.1.1.1";              // IP address to use when getting default IP address from OS. No connection is established.
+        private const string INTERNET_IPADDRESS = "8.8.8.8";              // IP address to use when getting default IP address from OS. No connection is established.
         private const int NETWORK_TEST_PORT = 5060;                       // Port to use when doing a Udp.Connect to determine local IP address (port 0 does not work on MacOS).
         private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;   // The amount of time to leave the result of a local IP address determination in the cache.
 
@@ -519,10 +519,51 @@ namespace SIPSorcery.Sys
         /// Gets the default local address for this machine for communicating with the Internet.
         /// </summary>
         /// <returns>The local address this machine should use for communicating with the Internet.</returns>
-        private static IPAddress GetLocalAddressForInternet()
+        public static IPAddress GetLocalAddressForInternet()
         {
             var internetAddress = IPAddress.Parse(INTERNET_IPADDRESS);
             return GetLocalAddressForRemote(internetAddress);
+        }
+
+        /// <summary>
+        /// Determines the local IP address to use to connection a remote address and
+        /// returns all the local addresses (IPv4 and IPv6) that are bound to the same 
+        /// interface. The main (and probably sole) use case for this method is 
+        /// gathering host candidates for a WebRTC ICE session. Rather than selecting
+        /// ALL local IP addresses only those on the interface needed to connect to
+        /// the destination are returned.
+        /// </summary>
+        /// <param name="destination">Optional. If not specified the interface that
+        /// connect to the Internet will be used.</param>
+        /// <returns>A list of local IP addresses on the identified interface.</returns>
+        public static List<IPAddress> GetLocalAddressesOnInterfaceForRemote(IPAddress destination)
+        {
+            IPAddress localAddress = GetLocalAddressForRemote(destination);
+
+            List<IPAddress> localAddresses = new List<IPAddress>();
+
+            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (NetworkInterface n in adapters)
+            {
+                // AC 5 Jun 2020: Network interface status is reported as Unknown on WSL.
+                if (n.OperationalStatus == OperationalStatus.Up || n.OperationalStatus == OperationalStatus.Unknown)
+                {
+                    IPInterfaceProperties ipProps = n.GetIPProperties();
+
+                    // Use this interface if it has the local IP address for the destination.
+                    // If the local address couldn't be determined use the first available interface.
+                    if (localAddress == null || ipProps.UnicastAddresses.Any(x => x.Address.Equals(localAddress)))
+                    {
+                        foreach (var unicastAddr in ipProps.UnicastAddresses)
+                        {
+                            localAddresses.Add(unicastAddr.Address);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            return localAddresses;
         }
 
         /// <summary>

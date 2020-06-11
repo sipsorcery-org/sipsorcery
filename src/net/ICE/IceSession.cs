@@ -10,6 +10,22 @@
 //    https://tools.ietf.org/html/draft-ietf-ice-trickle-21.
 // - "WebRTC IP Address Handling Requirements" as per draft RFC
 //   https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12
+//   SECURITY NOTE: See https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2
+//   for recommendations on how a WebRTC application should expose a
+//   hosts IP address information. This implementation is using Mode 2.
+//
+// Notes:
+// The source from Chromium that performs the equivalent of this IceSession class
+// (and much more) is:
+// https://chromium.googlesource.com/external/webrtc/+/refs/heads/master/p2p/base/p2p_transport_channel.cc
+//
+// Multicast DNS: Chromium (and possibly other WebRTC stacks) make use of *.local
+// DNS hostnames. Support for such hostnames is currently NOT implemented in
+// this library as it would mean introducing another dependency for what is
+// currently deemed to be a narrow edge case. Windows 10 has recently introduced a level
+// of support for these domains so perhaps it will make it into the .Net Core
+// plumbing in the not too distant future.
+// https://tools.ietf.org/html/rfc6762: Multicast DNS (for ".local" Top Level Domain lookups on macos)
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -32,7 +48,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.SIP;
 using SIPSorcery.Sys;
 
 [assembly: InternalsVisibleToAttribute("SIPSorcery.UnitTests")]
@@ -298,6 +313,7 @@ namespace SIPSorcery.Net
         private const int ICE_UFRAG_LENGTH = 4;
         private const int ICE_PASSWORD_LENGTH = 24;
         private const int MAX_CHECKLIST_ENTRIES = 25;   // Maximum number of entries that can be added to the checklist of candidate pairs.
+        private const string MDNS_TLD = "local";         // Top Level Domain name for multicast lookups as per RFC6762.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
@@ -317,6 +333,7 @@ namespace SIPSorcery.Net
         private static readonly ILogger logger = Log.Logger;
 
         private RTPChannel _rtpChannel;
+        private IPAddress _remoteSignallingAddress;
         private List<RTCIceServer> _iceServers;
         private RTCIceTransportPolicy _policy;
         private ConcurrentDictionary<STUNUri, IceServerConnectionState> _iceServerConnections;
@@ -429,10 +446,18 @@ namespace SIPSorcery.Net
         /// will need to initiate all the connectivity checks on.</param>
         /// <param name="component">The component (RTP or RTCP) the channel is being used for. Note
         /// for cases where RTP and RTCP are multiplexed the component is set to RTP.</param>
+        /// <param name="remoteSignallingAddress"> Optional. If supplied this address will 
+        /// dictate which local interface host ICE candidates will be gathered from.
+        /// Restricting the host candidate IP addresses to a single interface is 
+        /// as per the recommendation at:
+        /// https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2.
+        /// If this is not set then the default is to use the Internet facing interface as
+        /// returned by the OS routing table.</param>
         /// <param name="iceServers">A list of STUN or TURN servers that can be used by this ICE agent.</param>
         /// <param name="policy">Determines which ICE candidates can be used in this ICE session.</param>
         public IceSession(RTPChannel rtpChannel,
             RTCIceComponent component,
+            IPAddress remoteSignallingAddress,
             List<RTCIceServer> iceServers = null,
             RTCIceTransportPolicy policy = RTCIceTransportPolicy.all)
         {
@@ -448,6 +473,7 @@ namespace SIPSorcery.Net
 
             _rtpChannel = rtpChannel;
             Component = component;
+            _remoteSignallingAddress = remoteSignallingAddress;
             _iceServers = iceServers;
             _policy = policy;
 
@@ -586,6 +612,29 @@ namespace SIPSorcery.Net
         /// - If a non-location tracking IPv6 address is available use it and do not included 
         ///   location tracking enabled IPv6 addresses (i.e. prefer temporary IPv6 addresses over 
         ///   permanent addresses), see RFC6724.
+        ///
+        /// SECURITY NOTE: https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2
+        /// Makes recommendations about how host IP address information should be exposed.
+        /// Of particular relevance are:
+        /// 
+        ///   Mode 1:  Enumerate all addresses: WebRTC MUST use all network
+        ///   interfaces to attempt communication with STUN servers, TURN
+        ///   servers, or peers.This will converge on the best media
+        ///   path, and is ideal when media performance is the highest
+        ///   priority, but it discloses the most information.
+        ///    
+        ///   Mode 2:  Default route + associated local addresses: WebRTC MUST
+        ///   follow the kernel routing table rules, which will typically
+        ///   cause media packets to take the same route as the
+        ///   application's HTTP traffic.  If an enterprise TURN server is
+        ///   present, the preferred route MUST be through this TURN
+        ///   server.Once an interface has been chosen, the private IPv4
+        ///   and IPv6 addresses associated with this interface MUST be
+        ///   discovered and provided to the application as host
+        ///   candidates.This ensures that direct connections can still
+        ///   be established in this mode.
+        ///   
+        /// This implementation implements Mode 2.
         /// </summary>
         /// <remarks>See https://tools.ietf.org/html/rfc8445#section-5.1.1.1</remarks>
         /// <returns>A list of "host" ICE candidates for the local machine.</returns>
@@ -603,21 +652,22 @@ namespace SIPSorcery.Net
                 if (_rtpChannel.RtpSocket.DualMode)
                 {
                     // IPv6 dual mode listening on [::] means we can use all valid local addresses.
-                    localAddresses = NetServices.LocalIPAddresses.Where(x =>
-                        !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal).ToList();
+                    localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(_remoteSignallingAddress)
+                        .Where(x => !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal).ToList();
                 }
                 else
                 {
                     // IPv6 but not dual mode on [::] means can use all valid local IPv6 addresses.
-                    localAddresses = NetServices.LocalIPAddresses.Where(x => x.AddressFamily == AddressFamily.InterNetworkV6
+                    localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(_remoteSignallingAddress)
+                        .Where(x => x.AddressFamily == AddressFamily.InterNetworkV6
                         && !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal).ToList();
                 }
             }
             else if (IPAddress.Any.Equals(rtpBindAddress))
             {
                 // IPv4 on 0.0.0.0 means can use all valid local IPv4 addresses.
-                localAddresses = NetServices.LocalIPAddresses.Where(x => x.AddressFamily == AddressFamily.InterNetwork
-                        && !IPAddress.IsLoopback(x)).ToList();
+                localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(_remoteSignallingAddress)
+                    .Where(x => x.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(x)).ToList();
             }
             else
             {
@@ -779,15 +829,14 @@ namespace SIPSorcery.Net
 
             if (!IPAddress.TryParse(remoteAddress, out var remoteCandidateIPAddr))
             {
-                // The candidate string can be a hostname or an IP address.
-                //var lookupResult = await _dnsLookupClient.QueryAsync(remoteAddress, DnsClient.QueryType.A);
-
-                try
+                if (!remoteAddress.Trim().ToLower().EndsWith(MDNS_TLD))
                 {
-                    var hostEntry = await Dns.GetHostAddressesAsync(remoteAddress);
-                    if(hostEntry != null && hostEntry.Length > 0)
+                    // The candidate string can be a hostname or an IP address.
+                    var lookupResult = await _dnsLookupClient.QueryAsync(remoteAddress, DnsClient.QueryType.A);
+
+                    if (lookupResult.Answers.Count > 0)
                     {
-                        remoteCandidateIPAddr = hostEntry.First();
+                        remoteCandidateIPAddr = lookupResult.Answers.AddressRecords().FirstOrDefault()?.Address;
                         logger.LogDebug($"ICE session resolved remote candidate {remoteAddress} to {remoteCandidateIPAddr}.");
                     }
                     else
@@ -795,21 +844,10 @@ namespace SIPSorcery.Net
                         logger.LogDebug($"ICE session failed to resolve remote candidate {remoteAddress}.");
                     }
                 }
-                catch (SocketException sockExcp)
+                else
                 {
-                    // Socket exception gets thrown for failed lookups.
-                    logger.LogDebug($"ICE session received an error attempting to resolve remote candidate {remoteAddress}. {sockExcp.Message}");
+                    logger.LogWarning("ICE session ignoring a remote candidate with an MDNS hostname, not currently supported.");
                 }
-
-                //if (lookupResult.Answers.Count > 0)
-                //{
-                //    remoteCandidateIPAddr = lookupResult.Answers.AddressRecords().FirstOrDefault()?.Address;
-                //    logger.LogDebug($"ICE session resolved remote candidate {remoteAddress} to {remoteCandidateIPAddr}.");
-                //}
-                //else
-                //{
-                //    logger.LogDebug($"ICE session failed to resolve remote candidate {remoteAddress}.");
-                //}
             }
 
             if (remoteCandidateIPAddr != null)

@@ -164,6 +164,7 @@ namespace SIPSorcery.Examples
                         X_Fingerprint = DTLS_CERTIFICATE_FINGERPRINT
                     }
                 },
+                X_RemoteSignallingAddress = context.UserEndPoint.Address,
                 iceServers = new List<RTCIceServer> { new RTCIceServer { urls = SIPSORCERY_STUN_SERVER } }
             };
 
