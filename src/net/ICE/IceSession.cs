@@ -780,16 +780,36 @@ namespace SIPSorcery.Net
             if (!IPAddress.TryParse(remoteAddress, out var remoteCandidateIPAddr))
             {
                 // The candidate string can be a hostname or an IP address.
-                var lookupResult = await _dnsLookupClient.QueryAsync(remoteAddress, DnsClient.QueryType.A);
-                if(lookupResult.Answers.Count > 0)
+                //var lookupResult = await _dnsLookupClient.QueryAsync(remoteAddress, DnsClient.QueryType.A);
+
+                try
                 {
-                    remoteCandidateIPAddr = lookupResult.Answers.AddressRecords().FirstOrDefault()?.Address;
-                    logger.LogDebug($"ICE session resolved remote candidate {remoteAddress} to {remoteCandidateIPAddr}.");
+                    var hostEntry = await Dns.GetHostAddressesAsync(remoteAddress);
+                    if(hostEntry != null && hostEntry.Length > 0)
+                    {
+                        remoteCandidateIPAddr = hostEntry.First();
+                        logger.LogDebug($"ICE session resolved remote candidate {remoteAddress} to {remoteCandidateIPAddr}.");
+                    }
+                    else
+                    {
+                        logger.LogDebug($"ICE session failed to resolve remote candidate {remoteAddress}.");
+                    }
                 }
-                else
+                catch (SocketException sockExcp)
                 {
-                    logger.LogDebug($"ICE session failed to resolve remote candidate {remoteAddress}.");
+                    // Socket exception gets thrown for failed lookups.
+                    logger.LogDebug($"ICE session received an error attempting to resolve remote candidate {remoteAddress}. {sockExcp.Message}");
                 }
+
+                //if (lookupResult.Answers.Count > 0)
+                //{
+                //    remoteCandidateIPAddr = lookupResult.Answers.AddressRecords().FirstOrDefault()?.Address;
+                //    logger.LogDebug($"ICE session resolved remote candidate {remoteAddress} to {remoteCandidateIPAddr}.");
+                //}
+                //else
+                //{
+                //    logger.LogDebug($"ICE session failed to resolve remote candidate {remoteAddress}.");
+                //}
             }
 
             if (remoteCandidateIPAddr != null)
@@ -1021,6 +1041,8 @@ namespace SIPSorcery.Net
             {
                 if (stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingRequest)
                 {
+                    #region STUN Binding Requests.
+
                     // TODO: The integrity check method needs to be implemented (currently just returns true).
                     bool result = stunMessage.CheckIntegrity(System.Text.Encoding.UTF8.GetBytes(LocalIcePassword), LocalIceUser, RemoteIceUser);
 
@@ -1061,13 +1083,6 @@ namespace SIPSorcery.Net
                         {
                             logger.LogWarning("ICE session STUN request matched a remote candidate but NOT a checklist entry.");
                         }
-                        //else
-                        //{
-                        //    if (!IsController)
-                        //    {
-                        //        matchingChecklistEntry.State = ChecklistEntryState.Succeeded;
-                        //    }
-                        //}
 
                         // The UseCandidate attribute is only meant to be set by the "Controller" peer. This implementation
                         // will accept it irrespective of the peer roles. If the remote peer wants us to use a certain remote
@@ -1099,9 +1114,13 @@ namespace SIPSorcery.Net
                         byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(localIcePassword, true);
                         _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunRespBytes);
                     }
+
+                    #endregion
                 }
                 else if (stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
                 {
+                    #region STUN Binding Success Responses
+
                     // Correlate with request using transaction ID as per https://tools.ietf.org/html/rfc8445#section-7.2.5.
 
                     // Actions to take on a successful STUN response https://tools.ietf.org/html/rfc8445#section-7.2.5.3
@@ -1123,7 +1142,7 @@ namespace SIPSorcery.Net
 
                         lock (_checklist)
                         {
-                            _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
+                            matchingChecklistEntry = _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
                         }
 
                         if (matchingChecklistEntry == null)
@@ -1155,9 +1174,13 @@ namespace SIPSorcery.Net
                             }
                         }
                     }
+
+                    #endregion
                 }
                 else if (stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)
                 {
+                    #region STUN Binding Error Responses
+
                     logger.LogWarning($"A STUN binding error response was received from {remoteEndPoint}.");
 
                     // Attempt to find the checklist entry for this transaction ID.
@@ -1179,6 +1202,8 @@ namespace SIPSorcery.Net
                         logger.LogWarning($"ICE session check list entry set to failed: {matchingChecklistEntry.RemoteCandidate}");
                         matchingChecklistEntry.State = ChecklistEntryState.Failed;
                     }
+
+                    #endregion
                 }
                 else
                 {
