@@ -85,19 +85,20 @@ namespace SIPSorcery.Sys
             get
             {
                 // TODO: Reset if the local network interfaces change.
-                //if (_localIPAddresses == null)
-                //{
-                //    _localIPAddresses = NetServices.GetAllLocalIPAddresses();
-                //}
+                if (_localIPAddresses == null)
+                {
+                    _localIPAddresses = NetServices.GetAllLocalIPAddresses();
+                }
 
-                //return _localIPAddresses;
+                return _localIPAddresses;
 
                 // Using this call seems to be the recommended way to get the local IP addresses.
                 // https://docs.microsoft.com/en-us/dotnet/api/system.net.dns.gethostaddresses?view=netcore-3.1
-                return Dns.GetHostAddresses(string.Empty).ToList();
+                // Unfortunately this does not work on WSL2 see https://github.com/microsoft/WSL/issues/5387
+                //return Dns.GetHostAddresses(string.Empty).ToList();
             }
         }
-        //private static List<IPAddress> _localIPAddresses = null;
+        private static List<IPAddress> _localIPAddresses = null;
 
         /// <summary>
         /// The local IP address this machine uses to communicate with the Internet.
@@ -528,25 +529,25 @@ namespace SIPSorcery.Sys
         /// Gets all the IP addresses for all active interfaces on the machine.
         /// </summary>
         /// <returns>A list of all local IP addresses.</returns>
-        //private static List<IPAddress> GetAllLocalIPAddresses()
-        //{
-        //    List<IPAddress> localAddresses = new List<IPAddress>();
+        private static List<IPAddress> GetAllLocalIPAddresses()
+        {
+            List<IPAddress> localAddresses = new List<IPAddress>();
 
-        //    NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
-        //    foreach (NetworkInterface n in adapters)
-        //    {
-        //        // AC 5 Jun 2020: Network interface status is reported as Unknown on WSL.
-        //        if (n.OperationalStatus == OperationalStatus.Up || n.OperationalStatus == OperationalStatus.Unknown)
-        //        {
-        //            IPInterfaceProperties ipProps = n.GetIPProperties();
-        //            foreach (var unicastAddr in ipProps.UnicastAddresses)
-        //            {
-        //                localAddresses.Add(unicastAddr.Address);
-        //            }
-        //        }
-        //    }
+            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (NetworkInterface n in adapters)
+            {
+                // AC 5 Jun 2020: Network interface status is reported as Unknown on WSL.
+                if (n.OperationalStatus == OperationalStatus.Up || n.OperationalStatus == OperationalStatus.Unknown)
+                {
+                    IPInterfaceProperties ipProps = n.GetIPProperties();
+                    foreach (var unicastAddr in ipProps.UnicastAddresses)
+                    {
+                        localAddresses.Add(unicastAddr.Address);
+                    }
+                }
+            }
 
-        //    return localAddresses;
-        //}
+            return localAddresses;
+        }
     }
 }
