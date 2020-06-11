@@ -21,7 +21,6 @@
 using System;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -39,21 +38,6 @@ namespace SIPSorcery.Net
         public STUNUri IceServerUri { get; internal set; }
 
         public string candidate { get; set; }
-
-        //public IPAddress CandidateAddress
-        //{
-        //    get
-        //    {
-        //        if (!string.IsNullOrEmpty(address))
-        //        {
-        //            return IPAddress.Parse(address);
-        //        }
-        //        else
-        //        {
-        //            return null;
-        //        }
-        //    }
-        //}
 
         public string sdpMid { get; set; }
 
@@ -259,9 +243,13 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// Sets the remote end point for a remote candidate.
+        /// </summary>
+        /// <param name="destinationEP">The resolved end point for the candidate.</param>
         public void SetDestinationEndPoint(IPEndPoint destinationEP)
         {
-
+            DestinationEndPoint = destinationEP;
         }
 
         private string GetFoundation()
@@ -283,26 +271,6 @@ namespace SIPSorcery.Net
         {
             throw new NotImplementedException();
         }
-
-        /// <summary>
-        /// Gets the IP end point corresponding to the ICE candidate. This will typically
-        /// be called on the remote nominated candidate to identify the remote end point
-        /// to use subsequent to a successful ICE negotiation.
-        /// </summary>
-        /// <returns>An IP end point.</returns>
-        //public IPEndPoint GetEndPoint()
-        //{
-        //    int remotePort = (relatedPort != 0) ? relatedPort : port;
-
-        //    if (relatedAddress != null)
-        //    {
-        //        return new IPEndPoint(IPAddress.Parse(relatedAddress), remotePort);
-        //    }
-        //    else
-        //    {
-        //        return new IPEndPoint(IPAddress.Parse(address), remotePort);
-        //    }
-        //}
 
         /// <summary>
         /// Checks the candidate to identify whether it is equivalent to the specified

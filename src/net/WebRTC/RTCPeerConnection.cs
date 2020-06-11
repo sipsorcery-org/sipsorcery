@@ -307,7 +307,7 @@ namespace SIPSorcery.Net
             }
 
             // This is the point the ICE session potentially starts contacting STUN and TURN servers.
-            IceSession.StartGathering();
+            //IceSession.StartGathering();
 
             signalingState = RTCSignalingState.have_local_offer;
             onsignalingstatechange?.Invoke();

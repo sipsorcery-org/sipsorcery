@@ -298,6 +298,8 @@ namespace SIPSorcery.Net
         private const int ICE_UFRAG_LENGTH = 4;
         private const int ICE_PASSWORD_LENGTH = 24;
         private const int MAX_CHECKLIST_ENTRIES = 25;   // Maximum number of entries that can be added to the checklist of candidate pairs.
+        public const string SDP_MID = "0";
+        public const int SDP_MLINE_INDEX = 0;
 
         /// <summary>
         /// ICE transaction spacing interval in milliseconds.
@@ -452,7 +454,11 @@ namespace SIPSorcery.Net
             LocalIceUser = Crypto.GetRandomString(ICE_UFRAG_LENGTH);
             LocalIcePassword = Crypto.GetRandomString(ICE_PASSWORD_LENGTH);
 
-            _localChecklistCandidate = new RTCIceCandidate(new RTCIceCandidateInit { sdpMid = "0", sdpMLineIndex = 0, usernameFragment = LocalIceUser });
+            _localChecklistCandidate = new RTCIceCandidate(new RTCIceCandidateInit { 
+                sdpMid = SDP_MID, 
+                sdpMLineIndex = SDP_MLINE_INDEX, 
+                usernameFragment = LocalIceUser });
+
             _localChecklistCandidate.SetAddressProperties(
                 RTCIceProtocol.udp,
                 _rtpChannel.RTPLocalEndPoint.Address,
@@ -626,7 +632,7 @@ namespace SIPSorcery.Net
                 hostCandidate.SetAddressProperties(RTCIceProtocol.udp, localAddress, (ushort)_rtpChannel.RTPPort, RTCIceCandidateType.host, null, 0);
 
                 // We currently only support a single multiplexed connection for all data streams and RTCP.
-                if (hostCandidate.component == RTCIceComponent.rtp && hostCandidate.sdpMLineIndex == 0)
+                if (hostCandidate.component == RTCIceComponent.rtp && hostCandidate.sdpMLineIndex == SDP_MLINE_INDEX)
                 {
                     hostCandidates.Add(hostCandidate);
 
@@ -1044,7 +1050,12 @@ namespace SIPSorcery.Net
                         }
 
                         // Find the checklist entry for this remote candidate and update its status.
-                        var matchingChecklistEntry = _checklist.Where(x => x.RemoteCandidate.foundation == matchingCandidate.foundation).FirstOrDefault();
+                        ChecklistEntry matchingChecklistEntry = null;
+
+                        lock (_checklist)
+                        {
+                            matchingChecklistEntry = _checklist.Where(x => x.RemoteCandidate.foundation == matchingCandidate.foundation).FirstOrDefault();
+                        }
 
                         if (matchingChecklistEntry == null)
                         {
@@ -1108,7 +1119,12 @@ namespace SIPSorcery.Net
                         string txID = Encoding.ASCII.GetString(stunMessage.Header.TransactionId);
 
                         // Attempt to find the checklist entry for this transaction ID.
-                        var matchingChecklistEntry = _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
+                        ChecklistEntry matchingChecklistEntry = null;
+
+                        lock (_checklist)
+                        {
+                            _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
+                        }
 
                         if (matchingChecklistEntry == null)
                         {
@@ -1147,7 +1163,12 @@ namespace SIPSorcery.Net
                     // Attempt to find the checklist entry for this transaction ID.
                     string txID = Encoding.ASCII.GetString(stunMessage.Header.TransactionId);
 
-                    var matchingChecklistEntry = _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
+                    ChecklistEntry matchingChecklistEntry = null;
+
+                    lock (_checklist)
+                    {
+                        _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
+                    }
 
                     if (matchingChecklistEntry == null)
                     {
