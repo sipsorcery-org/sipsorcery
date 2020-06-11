@@ -119,8 +119,8 @@ namespace SIPSorcery.Examples
 
             Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
 
-            var peerConnection = CreatePeerConnection();
-            peerConnection.IceSession.StartGathering();
+            //var peerConnection = CreatePeerConnection();
+            //peerConnection.IceSession.StartGathering();
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
@@ -140,6 +140,7 @@ namespace SIPSorcery.Examples
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, waiting for offer...");
 
             var peerConnection = CreatePeerConnection();
+            peerConnection.IceSession.StartGathering();
 
             return Task.FromResult(peerConnection);
         }
@@ -221,7 +222,7 @@ namespace SIPSorcery.Examples
 
                         if (dtlsResult)
                         {
-                            var remoteEndPoint = peerConnection.IceSession.NominatedCandidate.GetEndPoint();
+                            var remoteEndPoint = peerConnection.IceSession.NominatedCandidate.DestinationEndPoint;
                             peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEndPoint, remoteEndPoint);
 
                             logger.LogDebug($"RTP remote end point set to {remoteEndPoint}.");
@@ -233,6 +234,8 @@ namespace SIPSorcery.Examples
                     });
                 }
             };
+
+            peerConnection.IceSession.StartGathering();
 
             return peerConnection;
         }
