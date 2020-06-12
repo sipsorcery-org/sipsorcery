@@ -324,7 +324,7 @@ namespace SIPSorcery.Net
         /// If they are not available there's no point carrying on.
         /// </summary>
         /// <param name="sessionDescription">The answer/offer SDP from the remote party.</param>
-        public Task setRemoteDescription(RTCSessionDescriptionInit init)
+        public async Task setRemoteDescription(RTCSessionDescriptionInit init)
         {
             RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
             remoteDescription = description;
@@ -371,31 +371,29 @@ namespace SIPSorcery.Net
                     IceSession.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
                 }
 
-                //// All browsers seem to have gone to trickling ICE candidates now but just
-                //// in case one or more are given we can start the STUN dance immediately.
-                //if (remoteSdp.IceCandidates != null)
-                //{
-                //    foreach (var iceCandidate in remoteSdp.IceCandidates)
-                //    {
-                //        AppendRemoteIceCandidate(iceCandidate);
-                //    }
-                //}
+                // All browsers seem to have gone to trickling ICE candidates now but just
+                // in case one or more are given we can start the STUN dance immediately.
+                if (remoteSdp.IceCandidates != null)
+                {
+                    foreach (var iceCandidate in remoteSdp.IceCandidates)
+                    {
+                        await addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
+                    }
+                }
 
-                //foreach (var media in remoteSdp.Media)
-                //{
-                //    if (media.IceCandidates != null)
-                //    {
-                //        foreach (var iceCandidate in media.IceCandidates)
-                //        {
-                //            AppendRemoteIceCandidate(iceCandidate);
-                //        }
-                //    }
-                //}
+                foreach (var media in remoteSdp.Media)
+                {
+                    if (media.IceCandidates != null)
+                    {
+                        foreach (var iceCandidate in media.IceCandidates)
+                        {
+                            await addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
+                        }
+                    }
+                }
 
                 signalingState = RTCSignalingState.have_remote_offer;
                 onsignalingstatechange?.Invoke();
-
-                return Task.CompletedTask;
             }
         }
 

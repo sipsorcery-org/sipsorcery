@@ -16,7 +16,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -132,12 +131,6 @@ namespace SIPSorcery.Examples
 
             var peerConnection = CreatePeerConnection(context);
 
-            // Offer audio and video.
-            MediaStreamTrack audioTrack = new MediaStreamTrack("0", SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.SendRecv);
-            peerConnection.addTrack(audioTrack);
-            MediaStreamTrack videoTrack = new MediaStreamTrack("1", SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.SendRecv);
-            peerConnection.addTrack(videoTrack);
-
             var offerInit = await peerConnection.createOffer(null);
             await peerConnection.setLocalDescription(offerInit);
 
@@ -167,13 +160,21 @@ namespace SIPSorcery.Examples
 
             var peerConnection = new RTCPeerConnection(pcConfiguration);
 
-            peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
-            peerConnection.OnSendReport += RtpSession_OnSendReport;
+            // Add inactive audio and video tracks.
+            MediaStreamTrack audioTrack = new MediaStreamTrack("0", SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.Inactive);
+            peerConnection.addTrack(audioTrack);
+            MediaStreamTrack videoTrack = new MediaStreamTrack("1", SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.Inactive);
+            peerConnection.addTrack(videoTrack);
 
             peerConnection.onicecandidate += (candidate) =>
             {
                 logger.LogDebug($"ICE candidate discovered: {candidate}.");
-                //context.WebSocket.Send($"candidate:{candidate}");
+                
+                // Host candidates are included in the SDP we send.
+                if (candidate.type != RTCIceCandidateType.host)
+                {
+                    context.WebSocket.Send($"candidate:{candidate}");
+                }
             };
 
             peerConnection.onconnectionstatechange += (state) =>
@@ -209,23 +210,6 @@ namespace SIPSorcery.Examples
                     // Add local media tracks depending on what was offered. Also add local tracks with the same media ID as 
                     // the remote tracks so that the media announcement in the SDP answer are in the same order.
                     SDP remoteSdp = SDP.ParseSDPDescription(message);
-
-                    var remoteAudioAnn = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
-                    var remoteVideoAnn = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
-
-                    if (remoteAudioAnn != null)
-                    {
-                        MediaStreamTrack audioTrack = new MediaStreamTrack(remoteAudioAnn.MediaID, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
-                        peerConnection.addTrack(audioTrack);
-                    }
-                    
-                    if (remoteVideoAnn != null)
-                    {
-                        MediaStreamTrack videoTrack = new MediaStreamTrack(remoteVideoAnn.MediaID, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.RecvOnly);
-                        peerConnection.addTrack(videoTrack);
-                    }
-
-                    // After local media tracks have been added the remote description can be set.
                     await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
 
                     var answer = await peerConnection.createAnswer(null);
@@ -255,57 +239,6 @@ namespace SIPSorcery.Examples
             catch (Exception excp)
             {
                 logger.LogError("Exception WebSocketMessageReceived. " + excp.Message);
-            }
-        }
-
-        /// <summary>
-        /// Diagnostic handler to print out our RTCP sender/receiver reports.
-        /// </summary>
-        private static void RtpSession_OnSendReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket sentRtcpReport)
-        {
-            try
-            {
-                if (sentRtcpReport.SenderReport != null)
-                {
-                    var sr = sentRtcpReport.SenderReport;
-                    logger.LogDebug($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
-                }
-                else if (sentRtcpReport.ReceiverReport != null && sentRtcpReport.ReceiverReport.ReceptionReports?.Count > 0)
-                {
-                    var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
-                    logger.LogDebug($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
-                }
-                else
-                {
-                    logger.LogDebug($"RTCP report (empty sender and receiver reports) SDES CNAME {sentRtcpReport.SDesReport.CNAME}.");
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.LogWarning($"Exception RtpSession_OnSendReport. {excp.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Diagnostic handler to print out our RTCP reports from the remote WebRTC peer.
-        /// </summary>
-        private static void RtpSession_OnReceiveReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket recvRtcpReport)
-        {
-            try
-            {
-                var rr = recvRtcpReport.ReceiverReport.ReceptionReports.FirstOrDefault();
-                if (rr != null)
-                {
-                    logger.LogDebug($"RTCP {mediaType} Receiver Report: SSRC {rr.SSRC}, pkts lost {rr.PacketsLost}, delay since SR {rr.DelaySinceLastSenderReport}.");
-                }
-                else
-                {
-                    logger.LogDebug($"RTCP {mediaType} Receiver Report: empty.");
-                }
-            }
-            catch (Exception excp)
-            {
-                logger.LogWarning($"Exception RtpSession_OnReceiveReport. {excp.Message}");
             }
         }
 
