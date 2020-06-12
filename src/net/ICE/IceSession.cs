@@ -7,12 +7,15 @@
 // Additionally support for the following standards or proposed standards 
 // is included:
 // - "Trickle ICE" as per draft RFC
-//    https://tools.ietf.org/html/draft-ietf-ice-trickle-21.
+//   https://tools.ietf.org/html/draft-ietf-ice-trickle-21.
 // - "WebRTC IP Address Handling Requirements" as per draft RFC
 //   https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12
 //   SECURITY NOTE: See https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2
 //   for recommendations on how a WebRTC application should expose a
 //   hosts IP address information. This implementation is using Mode 2.
+// - Traversal Using Relays around NAT (TURN): Relay Extensions to 
+//   Session Traversal Utilities for NAT(STUN)
+//   https://tools.ietf.org/html/rfc5766
 //
 // Notes:
 // The source from Chromium that performs the equivalent of this IceSession class
@@ -313,7 +316,7 @@ namespace SIPSorcery.Net
         private const int ICE_UFRAG_LENGTH = 4;
         private const int ICE_PASSWORD_LENGTH = 24;
         private const int MAX_CHECKLIST_ENTRIES = 25;   // Maximum number of entries that can be added to the checklist of candidate pairs.
-        private const string MDNS_TLD = "local";         // Top Level Domain name for multicast lookups as per RFC6762.
+        private const string MDNS_TLD = ".local";         // Top Level Domain name for multicast lookups as per RFC6762.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
@@ -572,7 +575,7 @@ namespace SIPSorcery.Net
         /// <param name="candidate">An ICE candidate from the remote party.</param>
         public async Task AddRemoteCandidate(RTCIceCandidate candidate)
         {
-            if(candidate == null || string.IsNullOrWhiteSpace(candidate.address))
+            if (candidate == null || string.IsNullOrWhiteSpace(candidate.address))
             {
                 // Note that the way ICE signals the end of the gathering stage is to send
                 // an empty candidate or "end-of-candidates" SDP attribute.
@@ -584,7 +587,7 @@ namespace SIPSorcery.Net
                 // It will offer the same ICE candidates separately for the audio and video announcements.
                 logger.LogWarning($"ICE session omitting remote candidate with unsupported component: {candidate}.");
             }
-            else if(candidate.protocol != RTCIceProtocol.udp)
+            else if (candidate.protocol != RTCIceProtocol.udp)
             {
                 // This implementation currently only supports UDP for RTP communications.
                 logger.LogWarning($"ICE session omitting remote candidate with unsupported transport protocol: {candidate.protocol}.");
@@ -596,7 +599,7 @@ namespace SIPSorcery.Net
                 logger.LogWarning($"ICE session omitting remote candidate with unsupported MDNS hostname: {candidate.address}");
             }
             else
-            { 
+            {
                 // Have a remote candidate. Connectivity checks can start. Note because we support ICE trickle
                 // we may also still be gathering candidates. Connectivity checks and gathering can be done in parallel.
 
@@ -1365,67 +1368,37 @@ namespace SIPSorcery.Net
             }
         }
 
-        //private void AllocateTurn(IceCandidate iceCandidate)
-        //{
-        //    try
-        //    {
-        //        var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
+        /// <summary>
+        /// Gets an allocate request for a TURN server.
+        /// </summary>
+        /// <param name="iceServerState">The TURN server configuration to get the request for.</param>
+        private STUNMessage GetTurnAllocateRequest(IceServerConnectionState iceServerState)
+        {
+            STUNMessage allocateRequest = new STUNMessage(STUNMessageTypesEnum.Allocate);
+            allocateRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServerState.TransactionID);
+            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, 3600));
+            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.RequestedTransport, STUNAttributeConstants.UdpTransportType));
 
-        //        if (iceCandidate.TurnAllocateAttempts >= MAXIMUM_TURN_ALLOCATE_ATTEMPTS)
-        //        {
-        //            logger.LogDebug("TURN allocation for local socket " + iceCandidate.NetworkAddress + " failed after " + iceCandidate.TurnAllocateAttempts + " attempts.");
+            return allocateRequest;
+        }
 
-        //            iceCandidate.IsGatheringComplete = true;
-        //        }
-        //        else
-        //        {
-        //            iceCandidate.TurnAllocateAttempts++;
+        private STUNMessage GetTurnPermissionsRequest(IceServerConnectionState iceServerState)
+        {
+            // Send create permission request
+            STUNMessage turnPermissionRequest = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
+            turnPermissionRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServerState.TransactionID);
+            //turnBindRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.ChannelNumber, (ushort)3000));
+            turnPermissionRequest.Attributes.Add(new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORPeerAddress, iceServerState._uri.Port, iceServerState.ServerEndPoint.Address));
+            turnPermissionRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Username, Encoding.UTF8.GetBytes(iceServerState._username)));
+            //turnPermissionRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce, Encoding.UTF8.GetBytes(localTurnIceCandidate.TurnServer.Nonce)));
+            //turnPermissionRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm, Encoding.UTF8.GetBytes(localTurnIceCandidate.TurnServer.Realm)));
 
-        //            //logger.LogDebug("Sending STUN connectivity check to client " + client.SocketAddress + ".");
+            //MD5 md5 = new MD5CryptoServiceProvider();
+            //byte[] hmacKey = md5.ComputeHash(Encoding.UTF8.GetBytes(localTurnIceCandidate.TurnServer.Username + ":" + localTurnIceCandidate.TurnServer.Realm + ":" + localTurnIceCandidate.TurnServer.Password));
 
-        //            STUNv2Message stunRequest = new STUNv2Message(STUNv2MessageTypesEnum.Allocate);
-        //            stunRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
-        //            stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Lifetime, 3600));
-        //            stunRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.RequestedTransport, STUNv2AttributeConstants.UdpTransportType));   // UDP
-        //            byte[] stunReqBytes = stunRequest.ToByteBuffer(null, false);
-        //            rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceCandidate.TurnServer.ServerEndPoint, stunReqBytes);
-        //        }
-        //    }
-        //    catch (Exception excp)
-        //    {
-        //        logger.LogError("Exception AllocateTurn. " + excp);
-        //    }
-        //}
+            //byte[] turnPermissionReqBytes = turnPermissionRequest.ToByteBuffer(hmacKey, false);
 
-        //private void CreateTurnPermissions()
-        //{
-        //    try
-        //    {
-        //        var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
-
-        //        var localTurnIceCandidate = (from cand in LocalIceCandidates where cand.TurnRelayIPEndPoint != null select cand).First();
-        //        var remoteTurnCandidate = (from cand in RemoteIceCandidates where cand.type == RTCIceCandidateType.relay select cand).First();
-
-        //        // Send create permission request
-        //        STUNv2Message turnPermissionRequest = new STUNv2Message(STUNv2MessageTypesEnum.CreatePermission);
-        //        turnPermissionRequest.Header.TransactionId = Guid.NewGuid().ToByteArray().Take(12).ToArray();
-        //        //turnBindRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.ChannelNumber, (ushort)3000));
-        //        turnPermissionRequest.Attributes.Add(new STUNv2XORAddressAttribute(STUNv2AttributeTypesEnum.XORPeerAddress, remoteTurnCandidate.port, IPAddress.Parse(remoteTurnCandidate.NetworkAddress)));
-        //        turnPermissionRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Username, Encoding.UTF8.GetBytes(localTurnIceCandidate.TurnServer.Username)));
-        //        turnPermissionRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Nonce, Encoding.UTF8.GetBytes(localTurnIceCandidate.TurnServer.Nonce)));
-        //        turnPermissionRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.Realm, Encoding.UTF8.GetBytes(localTurnIceCandidate.TurnServer.Realm)));
-
-        //        MD5 md5 = new MD5CryptoServiceProvider();
-        //        byte[] hmacKey = md5.ComputeHash(Encoding.UTF8.GetBytes(localTurnIceCandidate.TurnServer.Username + ":" + localTurnIceCandidate.TurnServer.Realm + ":" + localTurnIceCandidate.TurnServer.Password));
-
-        //        byte[] turnPermissionReqBytes = turnPermissionRequest.ToByteBuffer(hmacKey, false);
-        //        //localTurnIceCandidate.LocalRtpSocket.SendTo(turnPermissionReqBytes, localTurnIceCandidate.TurnServer.ServerEndPoint);
-        //        rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, localTurnIceCandidate.TurnServer.ServerEndPoint, turnPermissionReqBytes);
-        //    }
-        //    catch (Exception excp)
-        //    {
-        //        logger.LogError("Exception CreateTurnPermissions. " + excp);
-        //    }
-        //}
+            return turnPermissionRequest;
+        }
     }
 }

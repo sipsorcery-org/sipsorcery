@@ -578,7 +578,7 @@ namespace SIPSorcery.Media
             {
                 lock (_audioStreamTimer)
                 {
-                    int sampleRate = SDPMediaFormatInfo.GetClockRate(_sendingFormat.FormatCodec);
+                    int sampleRate = SDPMediaFormatInfo.GetRtpClockRate(_sendingFormat.FormatCodec);
                     int sampleSize = sampleRate / 1000 * AUDIO_SAMPLE_PERIOD_MILLISECONDS;
                     byte[] sample = new byte[sampleSize];
 
