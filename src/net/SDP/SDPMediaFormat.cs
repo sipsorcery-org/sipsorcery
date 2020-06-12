@@ -180,7 +180,7 @@ namespace SIPSorcery.Net
             {
                 FormatCodec = (SDPMediaFormatsEnum)Enum.Parse(typeof(SDPMediaFormatsEnum), formatID.ToString(), true);
                 Name = FormatCodec.ToString();
-                ClockRate = SDPMediaFormatInfo.GetClockRate(FormatCodec);
+                ClockRate = SDPMediaFormatInfo.GetRtpClockRate(FormatCodec);
                 //IsStandardAttribute = (formatID < DYNAMIC_ATTRIBUTES_START);
             }
             FormatAttribute = (ClockRate == 0) ? Name : Name + "/" + ClockRate;
