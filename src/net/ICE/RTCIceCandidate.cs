@@ -21,7 +21,6 @@
 using System;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -33,36 +32,12 @@ namespace SIPSorcery.Net
         public const string REMOTE_PORT_KEY = "rport";
 
         /// <summary>
-        /// The base address is the local address on this host for the candidate. The 
-        /// candidate address could be different depending on the ICE candidate type.
+        /// If this candidate was generated from an ICE server (STUN or TURN) this
+        /// is the URI of the server.
         /// </summary>
-        public IPAddress BaseAddress { get; private set; }
-
-        public string StunServerAddress { get; private set; }
-
-        public string TurnServerAddress { get; private set; }
+        public STUNUri IceServerUri { get; internal set; }
 
         public string candidate { get; set; }
-
-        public IPAddress CandidateAddress
-        {
-            get
-            {
-                if (!string.IsNullOrEmpty(address))
-                {
-                    return IPAddress.Parse(address);
-                }
-                else
-                {
-                    return null;
-                }
-            }
-        }
-
-        public AddressFamily addressFamily
-        {
-            get { return CandidateAddress.AddressFamily; }
-        }
 
         public string sdpMid { get; set; }
 
@@ -98,7 +73,7 @@ namespace SIPSorcery.Net
         public ulong priority { get; set; }
 
         /// <summary>
-        /// The local address for the candidate.
+        /// The address or hostname for the candidate.
         /// </summary>
         public string address { get; set; }
 
@@ -127,6 +102,13 @@ namespace SIPSorcery.Net
         public ushort relatedPort { get; set; }
 
         public string usernameFragment { get; set; }
+
+        /// <summary>
+        /// This is the end point to use for a remote candidate. The address supplied for an ICE
+        /// candidate could be a hostname or IP address. This field will be set before the candidate
+        /// is used.
+        /// </summary>
+        public IPEndPoint DestinationEndPoint { get; private set; }
 
         private RTCIceCandidate()
         { }
@@ -235,33 +217,48 @@ namespace SIPSorcery.Net
         /// description.</returns>
         public override string ToString()
         {
-            var candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ host generation 0",
+            if (relatedAddress == null)
+            {
+                string candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} generation 0",
                 foundation,
                 component.GetHashCode(),
                 priority,
                 address,
-                port);
+                port,
+                type);
 
-            if (relatedAddress != null)
-            {
-                candidateStr += String.Format("{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0",
-                    foundation,
-                    component.GetHashCode(),
-                    priority,
-                    relatedAddress,
-                    relatedPort,
-                    address,
-                    port);
+                return candidateStr;
             }
+            else
+            {
+                string candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} raddr {6} rport {7} generation 0",
+                     foundation,
+                     component.GetHashCode(),
+                     priority,
+                     relatedAddress,
+                     relatedPort,
+                     type,
+                     address,
+                     port);
 
-            return candidateStr;
+                return candidateStr;
+            }
+        }
+
+        /// <summary>
+        /// Sets the remote end point for a remote candidate.
+        /// </summary>
+        /// <param name="destinationEP">The resolved end point for the candidate.</param>
+        public void SetDestinationEndPoint(IPEndPoint destinationEP)
+        {
+            DestinationEndPoint = destinationEP;
         }
 
         private string GetFoundation()
         {
             int addressVal = !String.IsNullOrEmpty(address) ? Crypto.GetSHAHash(address).Sum(x => (byte)x) : 0;
             int svrVal = (type == RTCIceCandidateType.relay || type == RTCIceCandidateType.srflx) ?
-                Crypto.GetSHAHash(StunServerAddress, TurnServerAddress).Sum(x => (byte)x) : 0;
+                Crypto.GetSHAHash(IceServerUri != null ? IceServerUri.ToString() : "").Sum(x => (byte)x) : 0;
             return (type.GetHashCode() + addressVal + svrVal + protocol.GetHashCode()).ToString();
         }
 
@@ -278,26 +275,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Gets the IP end point corresponding to the ICE candidate. This will typically
-        /// be called on the remote nominated candidate to identify the remote end point
-        /// to use subsequent to a successful ICE negotiation.
-        /// </summary>
-        /// <returns>An IP end point.</returns>
-        public IPEndPoint GetEndPoint()
-        {
-            int remotePort = (relatedPort != 0) ? relatedPort : port;
-
-            if (relatedAddress != null)
-            {
-                return new IPEndPoint(IPAddress.Parse(relatedAddress), remotePort);
-            }
-            else
-            {
-                return new IPEndPoint(IPAddress.Parse(address), remotePort);
-            }
-        }
-
-        /// <summary>
         /// Checks the candidate to identify whether it is equivalent to the specified
         /// protocol and IP end point. Primary use case is to check whether a candidate
         /// is a match for a remote end point that a message has been received from.
@@ -307,11 +284,8 @@ namespace SIPSorcery.Net
         /// <returns>True if the candidate is deemed equivalent or false if not.</returns>
         public bool IsEquivalentEndPoint(RTCIceProtocol epPotocol, IPEndPoint ep)
         {
-            if (protocol == epPotocol &&
-                (
-                 (!string.IsNullOrEmpty(address) && ep.Address.Equals(IPAddress.Parse(address)) && port == ep.Port) ||
-                 (!string.IsNullOrEmpty(relatedAddress) && ep.Address.Equals(IPAddress.Parse(relatedAddress)) && relatedPort == ep.Port)
-                 ))
+            if (protocol == epPotocol && DestinationEndPoint != null &&
+               ep.Address.Equals(DestinationEndPoint.Address) && DestinationEndPoint.Port == ep.Port)
             {
                 return true;
             }

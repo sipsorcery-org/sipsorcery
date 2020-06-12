@@ -252,6 +252,7 @@ namespace SIPSorcery.Net
             IceSession = new IceSession(
                 GetRtpChannel(SDPMediaTypesEnum.audio), 
                 RTCIceComponent.rtp, 
+                configuration?.X_RemoteSignallingAddress,
                 configuration?.iceServers, 
                 configuration != null ? configuration.iceTransportPolicy : RTCIceTransportPolicy.all);
 
@@ -260,7 +261,7 @@ namespace SIPSorcery.Net
             {
                 if (state == RTCIceConnectionState.connected && IceSession.NominatedCandidate != null)
                 {
-                    RemoteEndPoint = IceSession.NominatedCandidate.GetEndPoint();
+                    RemoteEndPoint = IceSession.NominatedCandidate.DestinationEndPoint;
                 }
 
                 iceConnectionState = state;
@@ -307,7 +308,7 @@ namespace SIPSorcery.Net
             }
 
             // This is the point the ICE session potentially starts contacting STUN and TURN servers.
-            IceSession.StartGathering();
+            //IceSession.StartGathering();
 
             signalingState = RTCSignalingState.have_local_offer;
             onsignalingstatechange?.Invoke();
@@ -668,7 +669,7 @@ namespace SIPSorcery.Net
                 }
                 catch (Exception excp)
                 {
-                    logger.LogError($"Exception WebRtcSession.OnRTPDataReceived {excp.Message}.");
+                    logger.LogError($"Exception RTCPeerConnection.OnRTPDataReceived {excp.Message}");
                 }
             }
         }
@@ -677,20 +678,18 @@ namespace SIPSorcery.Net
         /// Adds a remote ICE candidate to the list this peer is attempting to connect against.
         /// </summary>
         /// <param name="candidateInit">The remote candidate to add.</param>
-        public Task addIceCandidate(RTCIceCandidateInit candidateInit)
+        public async Task addIceCandidate(RTCIceCandidateInit candidateInit)
         {
             RTCIceCandidate candidate = new RTCIceCandidate(candidateInit);
 
             if (IceSession.Component == candidate.component)
             {
-                IceSession.AddRemoteCandidate(candidate);
+                await IceSession.AddRemoteCandidate(candidate);
             }
             else
             {
                 logger.LogWarning($"Remote ICE candidate not added as no available ICE session for component {candidate.component}.");
             }
-
-            return Task.CompletedTask;
         }
 
         /// <summary>

@@ -1178,7 +1178,7 @@ namespace SIPSorcery.Net
         /// <returns>A new RTPChannel instance.</returns>
         private RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
         {
-            // If RTCP is multiplexed we don't need a control socket. If not we do.
+            // If RTCP is multiplexed we don't need a control socket.
             var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress);
             m_rtpChannels.Add(mediaType, rtpChannel);
 

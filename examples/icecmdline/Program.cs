@@ -18,13 +18,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Net;
-using SIPSorceryMedia;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
@@ -60,15 +58,11 @@ namespace SIPSorcery.Examples
         private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
         private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
         private const int WEBSOCKET_PORT = 8081;
-        private const int TEST_DTLS_HANDSHAKE_TIMEOUT = 10000;
         private const string SIPSORCERY_STUN_SERVER = "stun.sipsorcery.com";
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private static WebSocketServer _webSocketServer;
-
-        private delegate void MediaSampleReadyDelegate(SDPMediaTypesEnum mediaType, uint timestamp, byte[] sample);
-        private static event MediaSampleReadyDelegate OnMediaSampleReady;
 
         static void Main()
         {
@@ -90,15 +84,6 @@ namespace SIPSorcery.Examples
 
             AddConsoleLogger();
 
-            // Initialise OpenSSL & libsrtp, saves a couple of seconds for the first client connection.
-            Console.WriteLine("Initialising OpenSSL and libsrtp...");
-            DtlsHandshake.InitialiseOpenSSL();
-            Srtp.InitialiseLibSrtp();
-
-            //Task.Run(DoDtlsHandshakeLoopbackTest).Wait();
-
-            Console.WriteLine("Test DTLS handshake complete.");
-
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
             _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
@@ -119,9 +104,6 @@ namespace SIPSorcery.Examples
 
             Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
 
-            var peerConnection = CreatePeerConnection();
-            peerConnection.IceSession.StartGathering();
-
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
             {
@@ -139,7 +121,7 @@ namespace SIPSorcery.Examples
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, waiting for offer...");
 
-            var peerConnection = CreatePeerConnection();
+            var peerConnection = CreatePeerConnection(context);
 
             return Task.FromResult(peerConnection);
         }
@@ -148,7 +130,7 @@ namespace SIPSorcery.Examples
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, sending offer.");
 
-            var peerConnection = CreatePeerConnection();
+            var peerConnection = CreatePeerConnection(context);
 
             // Offer audio and video.
             MediaStreamTrack audioTrack = new MediaStreamTrack("0", SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.SendRecv);
@@ -166,7 +148,7 @@ namespace SIPSorcery.Examples
             return peerConnection;
         }
 
-        private static RTCPeerConnection CreatePeerConnection()
+        private static RTCPeerConnection CreatePeerConnection(WebSocketContext context)
         {
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
@@ -179,6 +161,7 @@ namespace SIPSorcery.Examples
                         X_Fingerprint = DTLS_CERTIFICATE_FINGERPRINT
                     }
                 },
+                X_RemoteSignallingAddress = context.UserEndPoint.Address,
                 iceServers = new List<RTCIceServer> { new RTCIceServer { urls = SIPSORCERY_STUN_SERVER } }
             };
 
@@ -190,49 +173,26 @@ namespace SIPSorcery.Examples
             peerConnection.onicecandidate += (candidate) =>
             {
                 logger.LogDebug($"ICE candidate discovered: {candidate}.");
+                //context.WebSocket.Send($"candidate:{candidate}");
             };
 
             peerConnection.onconnectionstatechange += (state) =>
             {
-                if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
-                {
-                    OnMediaSampleReady -= peerConnection.SendMedia;
-                    peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
-                    peerConnection.OnSendReport -= RtpSession_OnSendReport;
-                }
-                else if (state == RTCPeerConnectionState.connected)
-                {
-                    logger.LogDebug("Peer connection connected.");
-                    OnMediaSampleReady += peerConnection.SendMedia;
-                }
+                logger.LogDebug($"Peer connection state change to {state}.");
             };
 
             peerConnection.oniceconnectionstatechange += (state) =>
             {
+                logger.LogDebug($"ICE connection state change to {state}.");
+
                 if (state == RTCIceConnectionState.connected)
                 {
-                    logger.LogDebug("Starting DTLS handshake task.");
-
-                    bool dtlsResult = false;
-                    Task.Run(() => dtlsResult = DoDtlsHandshake(peerConnection))
-                    .ContinueWith((t) =>
-                    {
-                        logger.LogDebug($"dtls handshake result {dtlsResult}.");
-
-                        if (dtlsResult)
-                        {
-                            var remoteEndPoint = peerConnection.IceSession.NominatedCandidate.GetEndPoint();
-                            peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEndPoint, remoteEndPoint);
-
-                            logger.LogDebug($"RTP remote end point set to {remoteEndPoint}.");
-                        }
-                        else
-                        {
-                            peerConnection.Close("dtls handshake failed.");
-                        }
-                    });
+                    var remoteEndPoint = peerConnection.IceSession.NominatedCandidate.DestinationEndPoint;
+                    logger.LogInformation($"ICE connected to remote end point {remoteEndPoint}.");
                 }
             };
+
+            peerConnection.IceSession.StartGathering();
 
             return peerConnection;
         }
@@ -281,50 +241,20 @@ namespace SIPSorcery.Examples
                 else
                 {
                     logger.LogDebug("ICE Candidate: " + message);
-                    await peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
+
+                    if (string.IsNullOrWhiteSpace(message) || message.Trim().ToLower() == SDP.END_ICE_CANDIDATES_ATTRIBUTE)
+                    {
+                        logger.LogDebug("End of candidates message received.");
+                    }
+                    else
+                    {
+                        await peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
+                    }
                 }
             }
             catch (Exception excp)
             {
                 logger.LogError("Exception WebSocketMessageReceived. " + excp.Message);
-            }
-        }
-
-        /// <summary>
-        /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
-        /// </summary>
-        /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
-        /// <returns>True if the handshake completed successfully or false otherwise.</returns>
-        private static bool DoDtlsHandshake(RTCPeerConnection peerConnection)
-        {
-            logger.LogDebug("DoDtlsHandshake started.");
-
-            var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-
-            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
-
-            logger.LogDebug("DtlsContext initialisation result=" + res);
-
-            if (dtls.IsHandshakeComplete())
-            {
-                logger.LogDebug("DTLS negotiation complete.");
-
-                var srtpSendContext = new Srtp(dtls, false);
-                var srtpReceiveContext = new Srtp(dtls, true);
-
-                peerConnection.SetSecurityContext(
-                    srtpSendContext.ProtectRTP,
-                    srtpReceiveContext.UnprotectRTP,
-                    srtpSendContext.ProtectRTCP,
-                    srtpReceiveContext.UnprotectRTCP);
-
-                dtls.Shutdown();
-                return true;
-            }
-            else
-            {
-                dtls.Shutdown();
-                return false;
             }
         }
 
@@ -338,16 +268,16 @@ namespace SIPSorcery.Examples
                 if (sentRtcpReport.SenderReport != null)
                 {
                     var sr = sentRtcpReport.SenderReport;
-                    Console.WriteLine($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
+                    logger.LogDebug($"RTCP sent SR {mediaType}, ssrc {sr.SSRC}, pkts {sr.PacketCount}, bytes {sr.OctetCount}.");
                 }
                 else if (sentRtcpReport.ReceiverReport != null && sentRtcpReport.ReceiverReport.ReceptionReports?.Count > 0)
                 {
                     var rrSample = sentRtcpReport.ReceiverReport.ReceptionReports.First();
-                    Console.WriteLine($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
+                    logger.LogDebug($"RTCP sent RR {mediaType}, ssrc {rrSample.SSRC}, seqnum {rrSample.ExtendedHighestSequenceNumber}.");
                 }
                 else
                 {
-                    Console.WriteLine($"RTCP report (empty sender and receiver reports) SDES CNAME {sentRtcpReport.SDesReport.CNAME}.");
+                    logger.LogDebug($"RTCP report (empty sender and receiver reports) SDES CNAME {sentRtcpReport.SDesReport.CNAME}.");
                 }
             }
             catch (Exception excp)
@@ -377,38 +307,6 @@ namespace SIPSorcery.Examples
             {
                 logger.LogWarning($"Exception RtpSession_OnReceiveReport. {excp.Message}");
             }
-        }
-
-        /// <summary>
-        /// Runs a DTLS handshake test between two threads on a loopback address. The main motivation for
-        /// this test was that the first DTLS handshake between this application and a client browser
-        /// was often substantially slower and occasionally failed. By doing a loopback test the idea 
-        /// is that the internal OpenSSL state is initialised.
-        /// </summary>
-        private static void DoDtlsHandshakeLoopbackTest()
-        {
-            IPAddress testAddr = IPAddress.Loopback;
-
-            Socket svrSock = new Socket(testAddr.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-            svrSock.Bind(new IPEndPoint(testAddr, 9000));
-            int svrPort = ((IPEndPoint)svrSock.LocalEndPoint).Port;
-            DtlsHandshake svrHandshake = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-            //svrHandshake.Debug = true;
-            var svrTask = Task.Run(() => svrHandshake.DoHandshakeAsServer((ulong)svrSock.Handle));
-
-            Socket cliSock = new Socket(testAddr.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-            cliSock.Bind(new IPEndPoint(testAddr, 0));
-            cliSock.Connect(testAddr, svrPort);
-            DtlsHandshake cliHandshake = new DtlsHandshake();
-            //cliHandshake.Debug = true;
-            var cliTask = Task.Run(() => cliHandshake.DoHandshakeAsClient((ulong)cliSock.Handle, (short)testAddr.AddressFamily, testAddr.GetAddressBytes(), (ushort)svrPort));
-
-            bool result = Task.WaitAll(new Task[] { svrTask, cliTask }, TEST_DTLS_HANDSHAKE_TIMEOUT);
-
-            cliHandshake.Shutdown();
-            svrHandshake.Shutdown();
-            cliSock.Close();
-            svrSock.Close();
         }
 
         /// <summary>

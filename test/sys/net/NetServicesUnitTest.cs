@@ -465,6 +465,24 @@ namespace SIPSorcery.Sys.UnitTests
         }
 
         /// <summary>
+        /// Tests that the local IP addresses for a single interface can be obtained.
+        /// </summary>
+        [Fact]
+        public void GetIPAddressesForInterfaceUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var localAddresses = NetServices.GetLocalAddressesOnInterface(null);
+            Assert.NotEmpty(localAddresses);
+
+            foreach (var localAddress in localAddresses)
+            {
+                logger.LogDebug($"Local address {localAddress}.");
+            }
+        }
+
+        /// <summary>
         /// Checks that a bound socket is able to receive. The need for this test arose when it was found
         /// that Windows was allocating the same port if a bind was attempted on 0.0.0.0:0 and then [::]:0.
         /// Only one of the two sockets could then receive packets to the OS allocated port.
