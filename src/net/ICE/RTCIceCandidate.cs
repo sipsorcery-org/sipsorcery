@@ -219,23 +219,25 @@ namespace SIPSorcery.Net
         {
             if (relatedAddress == null)
             {
-                string candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ host generation 0",
+                string candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} generation 0",
                 foundation,
                 component.GetHashCode(),
                 priority,
                 address,
-                port);
+                port,
+                type);
 
                 return candidateStr;
             }
             else
             {
-                string candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ srflx raddr {5} rport {6} generation 0",
+                string candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} raddr {6} rport {7} generation 0",
                      foundation,
                      component.GetHashCode(),
                      priority,
                      relatedAddress,
                      relatedPort,
+                     type,
                      address,
                      port);
 

@@ -480,10 +480,12 @@ namespace SIPSorcery.Net
             LocalIceUser = Crypto.GetRandomString(ICE_UFRAG_LENGTH);
             LocalIcePassword = Crypto.GetRandomString(ICE_PASSWORD_LENGTH);
 
-            _localChecklistCandidate = new RTCIceCandidate(new RTCIceCandidateInit { 
-                sdpMid = SDP_MID, 
-                sdpMLineIndex = SDP_MLINE_INDEX, 
-                usernameFragment = LocalIceUser });
+            _localChecklistCandidate = new RTCIceCandidate(new RTCIceCandidateInit
+            {
+                sdpMid = SDP_MID,
+                sdpMLineIndex = SDP_MLINE_INDEX,
+                usernameFragment = LocalIceUser
+            });
 
             _localChecklistCandidate.SetAddressProperties(
                 RTCIceProtocol.udp,
@@ -570,21 +572,38 @@ namespace SIPSorcery.Net
         /// <param name="candidate">An ICE candidate from the remote party.</param>
         public async Task AddRemoteCandidate(RTCIceCandidate candidate)
         {
-            if (candidate.component == Component)
+            if(candidate == null || string.IsNullOrWhiteSpace(candidate.address))
             {
-                // Have a remote candidate. Connectivity checks can start. Note because we support ICE trickle
-                // we may also still be gathering candidates. Connectivity checks and gathering can be done in parallel.
-
-                logger.LogDebug($"ICE session adding remote candidate: {candidate}");
-
-                _remoteCandidates.Add(candidate);
-                await UpdateChecklist(candidate);
+                // Note that the way ICE signals the end of the gathering stage is to send
+                // an empty candidate or "end-of-candidates" SDP attribute.
+                logger.LogWarning($"ICE session omitting empty remote candidate.");
             }
-            else
+            else if (candidate.component != Component)
             {
                 // This occurs if the remote party made an offer and assumed we couldn't multiplex the audio and video streams.
                 // It will offer the same ICE candidates separately for the audio and video announcements.
-                logger.LogWarning($"ICE session omitting remote candidate with unsupported component: {candidate.ToString()}");
+                logger.LogWarning($"ICE session omitting remote candidate with unsupported component: {candidate}.");
+            }
+            else if(candidate.protocol != RTCIceProtocol.udp)
+            {
+                // This implementation currently only supports UDP for RTP communications.
+                logger.LogWarning($"ICE session omitting remote candidate with unsupported transport protocol: {candidate.protocol}.");
+            }
+            else if (candidate.address.Trim().ToLower().EndsWith(MDNS_TLD))
+            {
+                // Supporting MDNS lookups means an additional nuget dependency. Hopefully
+                // support is coming to .Net Core soon (AC 12 Jun 2020).
+                logger.LogWarning($"ICE session omitting remote candidate with unsupported MDNS hostname: {candidate.address}");
+            }
+            else
+            { 
+                // Have a remote candidate. Connectivity checks can start. Note because we support ICE trickle
+                // we may also still be gathering candidates. Connectivity checks and gathering can be done in parallel.
+
+                logger.LogDebug($"ICE session received remote candidate: {candidate}");
+
+                _remoteCandidates.Add(candidate);
+                await UpdateChecklist(candidate);
             }
         }
 
@@ -643,6 +662,21 @@ namespace SIPSorcery.Net
             List<RTCIceCandidate> hostCandidates = new List<RTCIceCandidate>();
             RTCIceCandidateInit init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
 
+            IPAddress addressOfDesiredInterface = _remoteSignallingAddress;
+
+            // RFC8445 states that loopback addresses should not be included in
+            // host candidates. If the provided signalling address is a loopback
+            // address it means no host candidates will be gathered. To avoid this
+            // set the desired interface address to the Internet facing address
+            // in the event a loopback address was specified.
+            if (addressOfDesiredInterface != null &&
+                (IPAddress.IsLoopback(addressOfDesiredInterface) ||
+                IPAddress.Any.Equals(addressOfDesiredInterface) ||
+                IPAddress.IPv6Any.Equals(addressOfDesiredInterface)))
+            {
+                addressOfDesiredInterface = NetServices.GetLocalAddressForInternet();
+            }
+
             var rtpBindAddress = _rtpChannel.RTPLocalEndPoint.Address;
 
             // We get a list of local addresses that can be used with the address the RTP socket is bound on.
@@ -652,13 +686,13 @@ namespace SIPSorcery.Net
                 if (_rtpChannel.RtpSocket.DualMode)
                 {
                     // IPv6 dual mode listening on [::] means we can use all valid local addresses.
-                    localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(_remoteSignallingAddress)
+                    localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(addressOfDesiredInterface)
                         .Where(x => !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal).ToList();
                 }
                 else
                 {
                     // IPv6 but not dual mode on [::] means can use all valid local IPv6 addresses.
-                    localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(_remoteSignallingAddress)
+                    localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(addressOfDesiredInterface)
                         .Where(x => x.AddressFamily == AddressFamily.InterNetworkV6
                         && !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal).ToList();
                 }
@@ -666,7 +700,7 @@ namespace SIPSorcery.Net
             else if (IPAddress.Any.Equals(rtpBindAddress))
             {
                 // IPv4 on 0.0.0.0 means can use all valid local IPv4 addresses.
-                localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(_remoteSignallingAddress)
+                localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(addressOfDesiredInterface)
                     .Where(x => x.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(x)).ToList();
             }
             else
@@ -740,7 +774,7 @@ namespace SIPSorcery.Net
                         }
                         else
                         {
-                            logger.LogWarning($"ICESession could not parse ICE server URL {url}.");
+                            logger.LogWarning($"ICE session could not parse ICE server URL {url}.");
                         }
                     }
                 }
@@ -757,7 +791,7 @@ namespace SIPSorcery.Net
             {
                 if (_iceServerConnections.Count(x => x.Value.Error == SocketError.Success && x.Value.Candidate == null) == 0)
                 {
-                    logger.LogDebug("ICESession there are no ICE servers left to check, closing check ICE servers timer.");
+                    logger.LogDebug("ICE session there are no ICE servers left to check, closing check ICE servers timer.");
                     _processIceServersTimer.Dispose();
                 }
                 else
@@ -829,24 +863,17 @@ namespace SIPSorcery.Net
 
             if (!IPAddress.TryParse(remoteAddress, out var remoteCandidateIPAddr))
             {
-                if (!remoteAddress.Trim().ToLower().EndsWith(MDNS_TLD))
-                {
-                    // The candidate string can be a hostname or an IP address.
-                    var lookupResult = await _dnsLookupClient.QueryAsync(remoteAddress, DnsClient.QueryType.A);
+                // The candidate string can be a hostname or an IP address.
+                var lookupResult = await _dnsLookupClient.QueryAsync(remoteAddress, DnsClient.QueryType.A);
 
-                    if (lookupResult.Answers.Count > 0)
-                    {
-                        remoteCandidateIPAddr = lookupResult.Answers.AddressRecords().FirstOrDefault()?.Address;
-                        logger.LogDebug($"ICE session resolved remote candidate {remoteAddress} to {remoteCandidateIPAddr}.");
-                    }
-                    else
-                    {
-                        logger.LogDebug($"ICE session failed to resolve remote candidate {remoteAddress}.");
-                    }
+                if (lookupResult.Answers.Count > 0)
+                {
+                    remoteCandidateIPAddr = lookupResult.Answers.AddressRecords().FirstOrDefault()?.Address;
+                    logger.LogDebug($"ICE session resolved remote candidate {remoteAddress} to {remoteCandidateIPAddr}.");
                 }
                 else
                 {
-                    logger.LogWarning("ICE session ignoring a remote candidate with an MDNS hostname, not currently supported.");
+                    logger.LogDebug($"ICE session failed to resolve remote candidate {remoteAddress}.");
                 }
             }
 
@@ -902,7 +929,7 @@ namespace SIPSorcery.Net
 
             var entryRemoteEP = entry.RemoteCandidate.DestinationEndPoint;
 
-            var existingEntry = _checklist.Where(x => x.RemoteCandidate.DestinationEndPoint != null 
+            var existingEntry = _checklist.Where(x => x.RemoteCandidate.DestinationEndPoint != null
                 && x.RemoteCandidate.DestinationEndPoint.Address.Equals(entryRemoteEP.Address)
                 && x.RemoteCandidate.DestinationEndPoint.Port == entryRemoteEP.Port
                 && x.RemoteCandidate.protocol == entry.RemoteCandidate.protocol).SingleOrDefault();

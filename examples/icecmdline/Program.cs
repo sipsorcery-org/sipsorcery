@@ -64,9 +64,6 @@ namespace SIPSorcery.Examples
 
         private static WebSocketServer _webSocketServer;
 
-        private delegate void MediaSampleReadyDelegate(SDPMediaTypesEnum mediaType, uint timestamp, byte[] sample);
-        private static event MediaSampleReadyDelegate OnMediaSampleReady;
-
         static void Main()
         {
             Console.WriteLine("ICE Console Test Program");
@@ -181,17 +178,7 @@ namespace SIPSorcery.Examples
 
             peerConnection.onconnectionstatechange += (state) =>
             {
-                if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
-                {
-                    OnMediaSampleReady -= peerConnection.SendMedia;
-                    peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
-                    peerConnection.OnSendReport -= RtpSession_OnSendReport;
-                }
-                else if (state == RTCPeerConnectionState.connected)
-                {
-                    logger.LogDebug("Peer connection connected.");
-                    OnMediaSampleReady += peerConnection.SendMedia;
-                }
+                logger.LogDebug($"Peer connection state change to {state}.");
             };
 
             peerConnection.oniceconnectionstatechange += (state) =>
@@ -254,7 +241,15 @@ namespace SIPSorcery.Examples
                 else
                 {
                     logger.LogDebug("ICE Candidate: " + message);
-                    await peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
+
+                    if (string.IsNullOrWhiteSpace(message) || message.Trim().ToLower() == SDP.END_ICE_CANDIDATES_ATTRIBUTE)
+                    {
+                        logger.LogDebug("End of candidates message received.");
+                    }
+                    else
+                    {
+                        await peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
+                    }
                 }
             }
             catch (Exception excp)

@@ -94,7 +94,7 @@ namespace SIPSorcery.Sys
 
                 // Using this call seems to be the recommended way to get the local IP addresses.
                 // https://docs.microsoft.com/en-us/dotnet/api/system.net.dns.gethostaddresses?view=netcore-3.1
-                // Unfortunately this does not work on WSL2 see https://github.com/microsoft/WSL/issues/5387
+                // Unfortunately this does not work on WSL2 prior to .net5.0 see https://github.com/dotnet/runtime/issues/37785
                 //return Dns.GetHostAddresses(string.Empty).ToList();
             }
         }
