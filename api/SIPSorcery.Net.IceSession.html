@@ -126,19 +126,19 @@ data stream. If an additional use case occurs then multiple checklists could be 
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession__ctor_SIPSorcery_Net_RTPChannel_SIPSorcery_Net_RTCIceComponent_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.%23ctor(SIPSorcery.Net.RTPChannel%2CSIPSorcery.Net.RTCIceComponent%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.RTCIceServer%7D%2CSIPSorcery.Net.RTCIceTransportPolicy)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession__ctor_SIPSorcery_Net_RTPChannel_SIPSorcery_Net_RTCIceComponent_System_Net_IPAddress_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.%23ctor(SIPSorcery.Net.RTPChannel%2CSIPSorcery.Net.RTCIceComponent%2CSystem.Net.IPAddress%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.RTCIceServer%7D%2CSIPSorcery.Net.RTCIceTransportPolicy)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L424">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L458">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession__ctor_" data-uid="SIPSorcery.Net.IceSession.#ctor*"></a>
-  <h4 id="SIPSorcery_Net_IceSession__ctor_SIPSorcery_Net_RTPChannel_SIPSorcery_Net_RTCIceComponent_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_" data-uid="SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)">IceSession(RTPChannel, RTCIceComponent, List&lt;RTCIceServer&gt;, RTCIceTransportPolicy)</h4>
+  <h4 id="SIPSorcery_Net_IceSession__ctor_SIPSorcery_Net_RTPChannel_SIPSorcery_Net_RTCIceComponent_System_Net_IPAddress_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_" data-uid="SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel,SIPSorcery.Net.RTCIceComponent,System.Net.IPAddress,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)">IceSession(RTPChannel, RTCIceComponent, IPAddress, List&lt;RTCIceServer&gt;, RTCIceTransportPolicy)</h4>
   <div class="markdown level1 summary"><p>Creates a new instance of an ICE session.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public IceSession(RTPChannel rtpChannel, RTCIceComponent component, List&lt;RTCIceServer&gt; iceServers = null, RTCIceTransportPolicy policy = RTCIceTransportPolicy.all)</code></pre>
+    <pre><code class="lang-csharp hljs">public IceSession(RTPChannel rtpChannel, RTCIceComponent component, IPAddress remoteSignallingAddress, List&lt;RTCIceServer&gt; iceServers = null, RTCIceTransportPolicy policy = RTCIceTransportPolicy.all)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -166,6 +166,18 @@ for cases where RTP and RTCP are multiplexed the component is set to RTP.</p>
 </td>
       </tr>
       <tr>
+        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="parametername">remoteSignallingAddress</span></td>
+        <td><p>Optional. If supplied this address will
+dictate which local interface host ICE candidates will be gathered from.
+Restricting the host candidate IP addresses to a single interface is
+as per the recommendation at:
+<a href="https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2">https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2</a>.
+If this is not set then the default is to use the Internet facing interface as
+returned by the OS routing table.</p>
+</td>
+      </tr>
+      <tr>
         <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceServer.html">RTCIceServer</a>&gt;</td>
         <td><span class="parametername">iceServers</span></td>
         <td><p>A list of STUN or TURN servers that can be used by this ICE agent.</p>
@@ -186,7 +198,7 @@ for cases where RTP and RTCP are multiplexed the component is set to RTP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_LocalIcePassword.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.LocalIcePassword%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L401">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L428">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_IceSession_LocalIcePassword" data-uid="SIPSorcery.Net.IceSession.LocalIcePassword">LocalIcePassword</h4>
   <div class="markdown level1 summary"></div>
@@ -215,7 +227,7 @@ for cases where RTP and RTCP are multiplexed the component is set to RTP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_LocalIceUser.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.LocalIceUser%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L400">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L427">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_IceSession_LocalIceUser" data-uid="SIPSorcery.Net.IceSession.LocalIceUser">LocalIceUser</h4>
   <div class="markdown level1 summary"></div>
@@ -239,6 +251,64 @@ for cases where RTP and RTCP are multiplexed the component is set to RTP.</p>
       </tr>
     </tbody>
   </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_SDP_MID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.SDP_MID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L317">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_IceSession_SDP_MID" data-uid="SIPSorcery.Net.IceSession.SDP_MID">SDP_MID</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const string SDP_MID = &quot;0&quot;</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_SDP_MLINE_INDEX.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.SDP_MLINE_INDEX%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L318">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_IceSession_SDP_MLINE_INDEX" data-uid="SIPSorcery.Net.IceSession.SDP_MLINE_INDEX">SDP_MLINE_INDEX</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int SDP_MLINE_INDEX = 0</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="properties">Properties
   </h3>
   <span class="small pull-right mobile-hide">
@@ -246,7 +316,7 @@ for cases where RTP and RTCP are multiplexed the component is set to RTP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_Candidates.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.Candidates%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L329">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L356">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_Candidates_" data-uid="SIPSorcery.Net.IceSession.Candidates*"></a>
   <h4 id="SIPSorcery_Net_IceSession_Candidates" data-uid="SIPSorcery.Net.IceSession.Candidates">Candidates</h4>
@@ -277,7 +347,7 @@ for cases where RTP and RTCP are multiplexed the component is set to RTP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_Component.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.Component%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L314">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L341">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_Component_" data-uid="SIPSorcery.Net.IceSession.Component*"></a>
   <h4 id="SIPSorcery_Net_IceSession_Component" data-uid="SIPSorcery.Net.IceSession.Component">Component</h4>
@@ -307,7 +377,7 @@ for cases where RTP and RTCP are multiplexed the component is set to RTP.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_ConnectedRemoteEndPoint.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.ConnectedRemoteEndPoint%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L374">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L401">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_ConnectedRemoteEndPoint_" data-uid="SIPSorcery.Net.IceSession.ConnectedRemoteEndPoint*"></a>
   <h4 id="SIPSorcery_Net_IceSession_ConnectedRemoteEndPoint" data-uid="SIPSorcery.Net.IceSession.ConnectedRemoteEndPoint">ConnectedRemoteEndPoint</h4>
@@ -339,7 +409,7 @@ the nominate candidate.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_ConnectionState.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.ConnectionState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L318">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L345">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_ConnectionState_" data-uid="SIPSorcery.Net.IceSession.ConnectionState*"></a>
   <h4 id="SIPSorcery_Net_IceSession_ConnectionState" data-uid="SIPSorcery.Net.IceSession.ConnectionState">ConnectionState</h4>
@@ -369,7 +439,7 @@ the nominate candidate.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_GatheringState.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.GatheringState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L316">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L343">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_GatheringState_" data-uid="SIPSorcery.Net.IceSession.GatheringState*"></a>
   <h4 id="SIPSorcery_Net_IceSession_GatheringState" data-uid="SIPSorcery.Net.IceSession.GatheringState">GatheringState</h4>
@@ -399,7 +469,7 @@ the nominate candidate.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_IsController.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.IsController%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L324">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L351">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_IsController_" data-uid="SIPSorcery.Net.IceSession.IsController*"></a>
   <h4 id="SIPSorcery_Net_IceSession_IsController" data-uid="SIPSorcery.Net.IceSession.IsController">IsController</h4>
@@ -431,7 +501,7 @@ false if we are the &quot;controlled&quot; agent.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_NominatedCandidate.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.NominatedCandidate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L368">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L395">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_NominatedCandidate_" data-uid="SIPSorcery.Net.IceSession.NominatedCandidate*"></a>
   <h4 id="SIPSorcery_Net_IceSession_NominatedCandidate" data-uid="SIPSorcery.Net.IceSession.NominatedCandidate">NominatedCandidate</h4>
@@ -463,7 +533,7 @@ remote candidate.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_RemoteIcePassword.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.RemoteIcePassword%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L403">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L430">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_RemoteIcePassword_" data-uid="SIPSorcery.Net.IceSession.RemoteIcePassword*"></a>
   <h4 id="SIPSorcery_Net_IceSession_RemoteIcePassword" data-uid="SIPSorcery.Net.IceSession.RemoteIcePassword">RemoteIcePassword</h4>
@@ -493,7 +563,7 @@ remote candidate.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_RemoteIceUser.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.RemoteIceUser%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L402">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L429">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_RemoteIceUser_" data-uid="SIPSorcery.Net.IceSession.RemoteIceUser*"></a>
   <h4 id="SIPSorcery_Net_IceSession_RemoteIceUser" data-uid="SIPSorcery.Net.IceSession.RemoteIceUser">RemoteIceUser</h4>
@@ -525,7 +595,7 @@ remote candidate.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_AddRemoteCandidate_SIPSorcery_Net_RTCIceCandidate_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L526">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L573">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_AddRemoteCandidate_" data-uid="SIPSorcery.Net.IceSession.AddRemoteCandidate*"></a>
   <h4 id="SIPSorcery_Net_IceSession_AddRemoteCandidate_SIPSorcery_Net_RTCIceCandidate_" data-uid="SIPSorcery.Net.IceSession.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)">AddRemoteCandidate(RTCIceCandidate)</h4>
@@ -534,7 +604,7 @@ remote candidate.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void AddRemoteCandidate(RTCIceCandidate candidate)</code></pre>
+    <pre><code class="lang-csharp hljs">public Task AddRemoteCandidate(RTCIceCandidate candidate)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -554,12 +624,27 @@ remote candidate.</p>
       </tr>
     </tbody>
   </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L512">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L559">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_Close_" data-uid="SIPSorcery.Net.IceSession.Close*"></a>
   <h4 id="SIPSorcery_Net_IceSession_Close_System_String_" data-uid="SIPSorcery.Net.IceSession.Close(System.String)">Close(String)</h4>
@@ -593,7 +678,7 @@ remote candidate.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_ProcessStunMessage_SIPSorcery_Net_STUNMessage_System_Net_IPEndPoint_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.ProcessStunMessage(SIPSorcery.Net.STUNMessage%2CSystem.Net.IPEndPoint)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L947">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L1084">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_ProcessStunMessage_" data-uid="SIPSorcery.Net.IceSession.ProcessStunMessage*"></a>
   <h4 id="SIPSorcery_Net_IceSession_ProcessStunMessage_SIPSorcery_Net_STUNMessage_System_Net_IPEndPoint_" data-uid="SIPSorcery.Net.IceSession.ProcessStunMessage(SIPSorcery.Net.STUNMessage,System.Net.IPEndPoint)">ProcessStunMessage(STUNMessage, IPEndPoint)</h4>
@@ -633,7 +718,7 @@ remote candidate.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_Restart.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.Restart%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L549">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L613">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_Restart_" data-uid="SIPSorcery.Net.IceSession.Restart*"></a>
   <h4 id="SIPSorcery_Net_IceSession_Restart" data-uid="SIPSorcery.Net.IceSession.Restart">Restart()</h4>
@@ -649,7 +734,7 @@ remote candidate.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_SetRemoteCredentials_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.SetRemoteCredentials(System.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L495">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L542">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_SetRemoteCredentials_" data-uid="SIPSorcery.Net.IceSession.SetRemoteCredentials*"></a>
   <h4 id="SIPSorcery_Net_IceSession_SetRemoteCredentials_System_String_System_String_" data-uid="SIPSorcery.Net.IceSession.SetRemoteCredentials(System.String,System.String)">SetRemoteCredentials(String, String)</h4>
@@ -690,7 +775,7 @@ are set the connectivity checks should be able to commence.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_StartGathering.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.StartGathering%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L458">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L505">View Source</a>
   </span>
   <a id="SIPSorcery_Net_IceSession_StartGathering_" data-uid="SIPSorcery.Net.IceSession.StartGathering*"></a>
   <h4 id="SIPSorcery_Net_IceSession_StartGathering" data-uid="SIPSorcery.Net.IceSession.StartGathering">StartGathering()</h4>
@@ -711,7 +796,7 @@ state.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_OnIceCandidate.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.OnIceCandidate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L409">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L436">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_IceSession_OnIceCandidate" data-uid="SIPSorcery.Net.IceSession.OnIceCandidate">OnIceCandidate</h4>
   <div class="markdown level1 summary"></div>
@@ -740,7 +825,7 @@ state.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_OnIceCandidateError.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.OnIceCandidateError%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L412">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L439">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_IceSession_OnIceCandidateError" data-uid="SIPSorcery.Net.IceSession.OnIceCandidateError">OnIceCandidateError</h4>
   <div class="markdown level1 summary"></div>
@@ -769,7 +854,7 @@ state.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_OnIceConnectionStateChange.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.OnIceConnectionStateChange%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L410">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L437">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_IceSession_OnIceConnectionStateChange" data-uid="SIPSorcery.Net.IceSession.OnIceConnectionStateChange">OnIceConnectionStateChange</h4>
   <div class="markdown level1 summary"></div>
@@ -798,7 +883,7 @@ state.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession_OnIceGatheringStateChange.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession.OnIceGatheringStateChange%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L411">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L438">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_IceSession_OnIceGatheringStateChange" data-uid="SIPSorcery.Net.IceSession.OnIceGatheringStateChange">OnIceGatheringStateChange</h4>
   <div class="markdown level1 summary"></div>
@@ -833,7 +918,7 @@ state.</p>
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_IceSession.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.IceSession%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L54" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceSession.cs/#L69" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

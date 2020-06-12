@@ -1310,15 +1310,15 @@ references:
   commentId: T:SIPSorcery.Net.IceSession
   fullName: SIPSorcery.Net.IceSession
   nameWithType: IceSession
-- uid: SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)
-  name: IceSession(RTPChannel, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy)
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession__ctor_SIPSorcery_Net_RTPChannel_SIPSorcery_Net_RTCIceComponent_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_
-  commentId: M:SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)
-  name.vb: IceSession(RTPChannel, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy)
-  fullName: SIPSorcery.Net.IceSession.IceSession(SIPSorcery.Net.RTPChannel, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List<SIPSorcery.Net.RTCIceServer>, SIPSorcery.Net.RTCIceTransportPolicy)
-  fullName.vb: SIPSorcery.Net.IceSession.IceSession(SIPSorcery.Net.RTPChannel, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List(Of SIPSorcery.Net.RTCIceServer), SIPSorcery.Net.RTCIceTransportPolicy)
-  nameWithType: IceSession.IceSession(RTPChannel, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy)
-  nameWithType.vb: IceSession.IceSession(RTPChannel, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy)
+- uid: SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel,SIPSorcery.Net.RTCIceComponent,System.Net.IPAddress,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)
+  name: IceSession(RTPChannel, RTCIceComponent, IPAddress, List<RTCIceServer>, RTCIceTransportPolicy)
+  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession__ctor_SIPSorcery_Net_RTPChannel_SIPSorcery_Net_RTCIceComponent_System_Net_IPAddress_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_
+  commentId: M:SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel,SIPSorcery.Net.RTCIceComponent,System.Net.IPAddress,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)
+  name.vb: IceSession(RTPChannel, RTCIceComponent, IPAddress, List(Of RTCIceServer), RTCIceTransportPolicy)
+  fullName: SIPSorcery.Net.IceSession.IceSession(SIPSorcery.Net.RTPChannel, SIPSorcery.Net.RTCIceComponent, System.Net.IPAddress, System.Collections.Generic.List<SIPSorcery.Net.RTCIceServer>, SIPSorcery.Net.RTCIceTransportPolicy)
+  fullName.vb: SIPSorcery.Net.IceSession.IceSession(SIPSorcery.Net.RTPChannel, SIPSorcery.Net.RTCIceComponent, System.Net.IPAddress, System.Collections.Generic.List(Of SIPSorcery.Net.RTCIceServer), SIPSorcery.Net.RTCIceTransportPolicy)
+  nameWithType: IceSession.IceSession(RTPChannel, RTCIceComponent, IPAddress, List<RTCIceServer>, RTCIceTransportPolicy)
+  nameWithType.vb: IceSession.IceSession(RTPChannel, RTCIceComponent, IPAddress, List(Of RTCIceServer), RTCIceTransportPolicy)
 - uid: SIPSorcery.Net.IceSession.#ctor*
   name: IceSession
   href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession__ctor_
@@ -1531,6 +1531,18 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.IceSession.Restart
   nameWithType: IceSession.Restart
+- uid: SIPSorcery.Net.IceSession.SDP_MID
+  name: SDP_MID
+  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_SDP_MID
+  commentId: F:SIPSorcery.Net.IceSession.SDP_MID
+  fullName: SIPSorcery.Net.IceSession.SDP_MID
+  nameWithType: IceSession.SDP_MID
+- uid: SIPSorcery.Net.IceSession.SDP_MLINE_INDEX
+  name: SDP_MLINE_INDEX
+  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_SDP_MLINE_INDEX
+  commentId: F:SIPSorcery.Net.IceSession.SDP_MLINE_INDEX
+  fullName: SIPSorcery.Net.IceSession.SDP_MLINE_INDEX
+  nameWithType: IceSession.SDP_MLINE_INDEX
 - uid: SIPSorcery.Net.IceSession.SetRemoteCredentials(System.String,System.String)
   name: SetRemoteCredentials(String, String)
   href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_SetRemoteCredentials_System_String_System_String_
@@ -2548,6 +2560,12 @@ references:
   commentId: F:SIPSorcery.Net.RTCConfiguration.X_BindAddress
   fullName: SIPSorcery.Net.RTCConfiguration.X_BindAddress
   nameWithType: RTCConfiguration.X_BindAddress
+- uid: SIPSorcery.Net.RTCConfiguration.X_RemoteSignallingAddress
+  name: X_RemoteSignallingAddress
+  href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_X_RemoteSignallingAddress
+  commentId: F:SIPSorcery.Net.RTCConfiguration.X_RemoteSignallingAddress
+  fullName: SIPSorcery.Net.RTCConfiguration.X_RemoteSignallingAddress
+  nameWithType: RTCConfiguration.X_RemoteSignallingAddress
 - uid: SIPSorcery.Net.RTCDtlsFingerprint
   name: RTCDtlsFingerprint
   href: api/SIPSorcery.Net.RTCDtlsFingerprint.html
@@ -2598,32 +2616,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidate.address
   nameWithType: RTCIceCandidate.address
-- uid: SIPSorcery.Net.RTCIceCandidate.addressFamily
-  name: addressFamily
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_addressFamily
-  commentId: P:SIPSorcery.Net.RTCIceCandidate.addressFamily
-  fullName: SIPSorcery.Net.RTCIceCandidate.addressFamily
-  nameWithType: RTCIceCandidate.addressFamily
-- uid: SIPSorcery.Net.RTCIceCandidate.addressFamily*
-  name: addressFamily
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_addressFamily_
-  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.addressFamily
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTCIceCandidate.addressFamily
-  nameWithType: RTCIceCandidate.addressFamily
-- uid: SIPSorcery.Net.RTCIceCandidate.BaseAddress
-  name: BaseAddress
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_BaseAddress
-  commentId: P:SIPSorcery.Net.RTCIceCandidate.BaseAddress
-  fullName: SIPSorcery.Net.RTCIceCandidate.BaseAddress
-  nameWithType: RTCIceCandidate.BaseAddress
-- uid: SIPSorcery.Net.RTCIceCandidate.BaseAddress*
-  name: BaseAddress
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_BaseAddress_
-  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.BaseAddress
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTCIceCandidate.BaseAddress
-  nameWithType: RTCIceCandidate.BaseAddress
 - uid: SIPSorcery.Net.RTCIceCandidate.candidate
   name: candidate
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_candidate
@@ -2637,19 +2629,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidate.candidate
   nameWithType: RTCIceCandidate.candidate
-- uid: SIPSorcery.Net.RTCIceCandidate.CandidateAddress
-  name: CandidateAddress
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_CandidateAddress
-  commentId: P:SIPSorcery.Net.RTCIceCandidate.CandidateAddress
-  fullName: SIPSorcery.Net.RTCIceCandidate.CandidateAddress
-  nameWithType: RTCIceCandidate.CandidateAddress
-- uid: SIPSorcery.Net.RTCIceCandidate.CandidateAddress*
-  name: CandidateAddress
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_CandidateAddress_
-  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.CandidateAddress
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTCIceCandidate.CandidateAddress
-  nameWithType: RTCIceCandidate.CandidateAddress
 - uid: SIPSorcery.Net.RTCIceCandidate.component
   name: component
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_component
@@ -2663,6 +2642,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidate.component
   nameWithType: RTCIceCandidate.component
+- uid: SIPSorcery.Net.RTCIceCandidate.DestinationEndPoint
+  name: DestinationEndPoint
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_DestinationEndPoint
+  commentId: P:SIPSorcery.Net.RTCIceCandidate.DestinationEndPoint
+  fullName: SIPSorcery.Net.RTCIceCandidate.DestinationEndPoint
+  nameWithType: RTCIceCandidate.DestinationEndPoint
+- uid: SIPSorcery.Net.RTCIceCandidate.DestinationEndPoint*
+  name: DestinationEndPoint
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_DestinationEndPoint_
+  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.DestinationEndPoint
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCIceCandidate.DestinationEndPoint
+  nameWithType: RTCIceCandidate.DestinationEndPoint
 - uid: SIPSorcery.Net.RTCIceCandidate.foundation
   name: foundation
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_foundation
@@ -2676,19 +2668,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidate.foundation
   nameWithType: RTCIceCandidate.foundation
-- uid: SIPSorcery.Net.RTCIceCandidate.GetEndPoint
-  name: GetEndPoint()
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_GetEndPoint
-  commentId: M:SIPSorcery.Net.RTCIceCandidate.GetEndPoint
-  fullName: SIPSorcery.Net.RTCIceCandidate.GetEndPoint()
-  nameWithType: RTCIceCandidate.GetEndPoint()
-- uid: SIPSorcery.Net.RTCIceCandidate.GetEndPoint*
-  name: GetEndPoint
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_GetEndPoint_
-  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.GetEndPoint
+- uid: SIPSorcery.Net.RTCIceCandidate.IceServerUri
+  name: IceServerUri
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_IceServerUri
+  commentId: P:SIPSorcery.Net.RTCIceCandidate.IceServerUri
+  fullName: SIPSorcery.Net.RTCIceCandidate.IceServerUri
+  nameWithType: RTCIceCandidate.IceServerUri
+- uid: SIPSorcery.Net.RTCIceCandidate.IceServerUri*
+  name: IceServerUri
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_IceServerUri_
+  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.IceServerUri
   isSpec: "True"
-  fullName: SIPSorcery.Net.RTCIceCandidate.GetEndPoint
-  nameWithType: RTCIceCandidate.GetEndPoint
+  fullName: SIPSorcery.Net.RTCIceCandidate.IceServerUri
+  nameWithType: RTCIceCandidate.IceServerUri
 - uid: SIPSorcery.Net.RTCIceCandidate.IsEquivalentEndPoint(SIPSorcery.Net.RTCIceProtocol,System.Net.IPEndPoint)
   name: IsEquivalentEndPoint(RTCIceProtocol, IPEndPoint)
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_IsEquivalentEndPoint_SIPSorcery_Net_RTCIceProtocol_System_Net_IPEndPoint_
@@ -2837,19 +2829,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidate.SetAddressProperties
   nameWithType: RTCIceCandidate.SetAddressProperties
-- uid: SIPSorcery.Net.RTCIceCandidate.StunServerAddress
-  name: StunServerAddress
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_StunServerAddress
-  commentId: P:SIPSorcery.Net.RTCIceCandidate.StunServerAddress
-  fullName: SIPSorcery.Net.RTCIceCandidate.StunServerAddress
-  nameWithType: RTCIceCandidate.StunServerAddress
-- uid: SIPSorcery.Net.RTCIceCandidate.StunServerAddress*
-  name: StunServerAddress
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_StunServerAddress_
-  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.StunServerAddress
+- uid: SIPSorcery.Net.RTCIceCandidate.SetDestinationEndPoint(System.Net.IPEndPoint)
+  name: SetDestinationEndPoint(IPEndPoint)
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_SetDestinationEndPoint_System_Net_IPEndPoint_
+  commentId: M:SIPSorcery.Net.RTCIceCandidate.SetDestinationEndPoint(System.Net.IPEndPoint)
+  fullName: SIPSorcery.Net.RTCIceCandidate.SetDestinationEndPoint(System.Net.IPEndPoint)
+  nameWithType: RTCIceCandidate.SetDestinationEndPoint(IPEndPoint)
+- uid: SIPSorcery.Net.RTCIceCandidate.SetDestinationEndPoint*
+  name: SetDestinationEndPoint
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_SetDestinationEndPoint_
+  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.SetDestinationEndPoint
   isSpec: "True"
-  fullName: SIPSorcery.Net.RTCIceCandidate.StunServerAddress
-  nameWithType: RTCIceCandidate.StunServerAddress
+  fullName: SIPSorcery.Net.RTCIceCandidate.SetDestinationEndPoint
+  nameWithType: RTCIceCandidate.SetDestinationEndPoint
 - uid: SIPSorcery.Net.RTCIceCandidate.tcpType
   name: tcpType
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_tcpType
@@ -2889,19 +2881,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidate.ToString
   nameWithType: RTCIceCandidate.ToString
-- uid: SIPSorcery.Net.RTCIceCandidate.TurnServerAddress
-  name: TurnServerAddress
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_TurnServerAddress
-  commentId: P:SIPSorcery.Net.RTCIceCandidate.TurnServerAddress
-  fullName: SIPSorcery.Net.RTCIceCandidate.TurnServerAddress
-  nameWithType: RTCIceCandidate.TurnServerAddress
-- uid: SIPSorcery.Net.RTCIceCandidate.TurnServerAddress*
-  name: TurnServerAddress
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_TurnServerAddress_
-  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.TurnServerAddress
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTCIceCandidate.TurnServerAddress
-  nameWithType: RTCIceCandidate.TurnServerAddress
 - uid: SIPSorcery.Net.RTCIceCandidate.type
   name: type
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_type
@@ -26215,6 +26194,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.NetServices.CreateRtpSocket
   nameWithType: NetServices.CreateRtpSocket
+- uid: SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface(System.Net.IPAddress)
+  name: GetLocalAddressesOnInterface(IPAddress)
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressesOnInterface_System_Net_IPAddress_
+  commentId: M:SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface(System.Net.IPAddress)
+  fullName: SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface(System.Net.IPAddress)
+  nameWithType: NetServices.GetLocalAddressesOnInterface(IPAddress)
+- uid: SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface*
+  name: GetLocalAddressesOnInterface
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressesOnInterface_
+  commentId: Overload:SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetServices.GetLocalAddressesOnInterface
+  nameWithType: NetServices.GetLocalAddressesOnInterface
+- uid: SIPSorcery.Sys.NetServices.GetLocalAddressForInternet
+  name: GetLocalAddressForInternet()
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressForInternet
+  commentId: M:SIPSorcery.Sys.NetServices.GetLocalAddressForInternet
+  fullName: SIPSorcery.Sys.NetServices.GetLocalAddressForInternet()
+  nameWithType: NetServices.GetLocalAddressForInternet()
+- uid: SIPSorcery.Sys.NetServices.GetLocalAddressForInternet*
+  name: GetLocalAddressForInternet
+  href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressForInternet_
+  commentId: Overload:SIPSorcery.Sys.NetServices.GetLocalAddressForInternet
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.NetServices.GetLocalAddressForInternet
+  nameWithType: NetServices.GetLocalAddressForInternet
 - uid: SIPSorcery.Sys.NetServices.GetLocalAddressForRemote(System.Net.IPAddress)
   name: GetLocalAddressForRemote(IPAddress)
   href: api/SIPSorcery.Sys.NetServices.html#SIPSorcery_Sys_NetServices_GetLocalAddressForRemote_System_Net_IPAddress_
