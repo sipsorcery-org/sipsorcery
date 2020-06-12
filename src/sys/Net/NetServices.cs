@@ -534,11 +534,11 @@ namespace SIPSorcery.Sys
         /// the destination are returned.
         /// </summary>
         /// <param name="destination">Optional. If not specified the interface that
-        /// connect to the Internet will be used.</param>
+        /// connects to the Internet will be used.</param>
         /// <returns>A list of local IP addresses on the identified interface.</returns>
-        public static List<IPAddress> GetLocalAddressesOnInterfaceForRemote(IPAddress destination)
+        public static List<IPAddress> GetLocalAddressesOnInterface(IPAddress destination)
         {
-            IPAddress localAddress = GetLocalAddressForRemote(destination);
+            IPAddress localAddress = GetLocalAddressForRemote(destination ?? IPAddress.Parse(INTERNET_IPADDRESS));
 
             List<IPAddress> localAddresses = new List<IPAddress>();
 

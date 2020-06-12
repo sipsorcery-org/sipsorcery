@@ -662,19 +662,20 @@ namespace SIPSorcery.Net
             List<RTCIceCandidate> hostCandidates = new List<RTCIceCandidate>();
             RTCIceCandidateInit init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
 
-            IPAddress addressOfDesiredInterface = _remoteSignallingAddress;
+            IPAddress signallingDstAddress = _remoteSignallingAddress;
 
             // RFC8445 states that loopback addresses should not be included in
             // host candidates. If the provided signalling address is a loopback
             // address it means no host candidates will be gathered. To avoid this
             // set the desired interface address to the Internet facing address
             // in the event a loopback address was specified.
-            if (addressOfDesiredInterface != null &&
-                (IPAddress.IsLoopback(addressOfDesiredInterface) ||
-                IPAddress.Any.Equals(addressOfDesiredInterface) ||
-                IPAddress.IPv6Any.Equals(addressOfDesiredInterface)))
+            if (signallingDstAddress != null &&
+                (IPAddress.IsLoopback(signallingDstAddress) ||
+                IPAddress.Any.Equals(signallingDstAddress) ||
+                IPAddress.IPv6Any.Equals(signallingDstAddress)))
             {
-                addressOfDesiredInterface = NetServices.GetLocalAddressForInternet();
+                // By setting to null means the default Internet facing interface will be used.
+                signallingDstAddress = null;
             }
 
             var rtpBindAddress = _rtpChannel.RTPLocalEndPoint.Address;
@@ -686,13 +687,13 @@ namespace SIPSorcery.Net
                 if (_rtpChannel.RtpSocket.DualMode)
                 {
                     // IPv6 dual mode listening on [::] means we can use all valid local addresses.
-                    localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(addressOfDesiredInterface)
+                    localAddresses = NetServices.GetLocalAddressesOnInterface(signallingDstAddress)
                         .Where(x => !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal).ToList();
                 }
                 else
                 {
                     // IPv6 but not dual mode on [::] means can use all valid local IPv6 addresses.
-                    localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(addressOfDesiredInterface)
+                    localAddresses = NetServices.GetLocalAddressesOnInterface(signallingDstAddress)
                         .Where(x => x.AddressFamily == AddressFamily.InterNetworkV6
                         && !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal).ToList();
                 }
@@ -700,7 +701,7 @@ namespace SIPSorcery.Net
             else if (IPAddress.Any.Equals(rtpBindAddress))
             {
                 // IPv4 on 0.0.0.0 means can use all valid local IPv4 addresses.
-                localAddresses = NetServices.GetLocalAddressesOnInterfaceForRemote(addressOfDesiredInterface)
+                localAddresses = NetServices.GetLocalAddressesOnInterface(signallingDstAddress)
                     .Where(x => x.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(x)).ToList();
             }
             else
