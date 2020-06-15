@@ -217,7 +217,7 @@ namespace SIPSorcery.Net
         /// description.</returns>
         public override string ToString()
         {
-            if (relatedAddress == null)
+            if (type == RTCIceCandidateType.host || type == RTCIceCandidateType.prflx)
             {
                 string candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} generation 0",
                 foundation,
@@ -235,11 +235,11 @@ namespace SIPSorcery.Net
                      foundation,
                      component.GetHashCode(),
                      priority,
-                     relatedAddress,
-                     relatedPort,
-                     type,
                      address,
-                     port);
+                     port,
+                     type,
+                     relatedAddress,
+                     relatedPort);
 
                 return candidateStr;
             }

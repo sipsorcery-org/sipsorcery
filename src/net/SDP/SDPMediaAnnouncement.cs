@@ -21,10 +21,43 @@ using System.Text.RegularExpressions;
 
 namespace SIPSorcery.Net
 {
+    /// <summary>
+    /// An attribute used to defined additional properties about
+    /// a media source and the relationship between them.
+    /// As specified in RFC5576, https://tools.ietf.org/html/rfc5576.
+    /// </summary>
+    public class SDPSsrcAttribute
+    {
+        //public const string MEDIA_SSRC_ATTRIBUE_PREFIX = "ssrc";
+        public const string MEDIA_CNAME_ATTRIBUE_PREFIX = "cname";
+
+        public uint SSRC { get; set; }
+
+        public string Cname { get; set; }
+
+        public string GroupID { get; set; }
+
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
+        /// <param name="ssrc">The SSRC that should match an RTP stream.</param>
+        /// <param name="cname">Optional. The CNAME value to use in RTCP SDES sections.</param>
+        /// <param name="groupID">Optional. If this "ssrc" attribute is part of a 
+        /// group this is the group ID.</param>
+        public SDPSsrcAttribute(uint ssrc, string cname, string groupID)
+        {
+            SSRC = ssrc;
+            Cname = cname;
+            GroupID = groupID;
+        }
+    }
+
     public class SDPMediaAnnouncement
     {
         public const string MEDIA_FORMAT_ATTRIBUE_PREFIX = "a=rtpmap:";
         public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX = "a=fmtp:";
+        public const string MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX = "a=ssrc:";
+        public const string MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX = "a=ssrc-group:";
 
         public const string m_CRLF = "\r\n";
 
@@ -45,6 +78,17 @@ namespace SIPSorcery.Net
         /// Example: a=mid:audio or a=mid:video.
         /// </summary>
         public string MediaID;
+
+        /// <summary>
+        /// The "ssrc" attributes group ID as specified in RFC5576.
+        /// </summary>
+        public string SsrcGroupID;
+
+        /// <summary>
+        /// If the RFC5576 is being used this is the list of "ssrc" attributes
+        /// supplied.
+        /// </summary>
+        public List<SDPSsrcAttribute> SsrcAttributes = new List<SDPSsrcAttribute>();
 
         public List<string> BandwidthAttributes = new List<string>();
         public List<SDPMediaFormat> MediaFormats = new List<SDPMediaFormat>();  // For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
@@ -200,6 +244,31 @@ namespace SIPSorcery.Net
             if (MediaStreamStatus != MediaStreamStatusEnum.None)
             {
                 announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus) + m_CRLF;
+            }
+
+            if(SsrcGroupID != null && SsrcAttributes.Count > 0)
+            {
+                announcement += MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX + SsrcGroupID;
+                foreach(var ssrcAttr in SsrcAttributes)
+                {
+                    announcement += $" {ssrcAttr.SSRC}";
+                }
+                announcement += m_CRLF;
+            }
+
+            if(SsrcAttributes.Count > 0)
+            {
+                foreach (var ssrcAttr in SsrcAttributes)
+                {
+                    if (!string.IsNullOrWhiteSpace(ssrcAttr.Cname))
+                    {
+                        announcement += $"{MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX}{ssrcAttr.SSRC} {SDPSsrcAttribute.MEDIA_CNAME_ATTRIBUE_PREFIX}:{ssrcAttr.Cname}" + m_CRLF;
+                    }
+                    else
+                    {
+                        announcement += $"{MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX}{ssrcAttr.SSRC}" + m_CRLF;
+                    }
+                }
             }
 
             return announcement;

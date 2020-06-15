@@ -424,6 +424,61 @@ namespace SIPSorcery.Net
                                 logger.LogWarning("A media ID can only be set on a media announcement.");
                             }
                         }
+                        else if (sdpLineTrimmed.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX))
+                        {
+                            if (activeAnnouncement != null)
+                            {
+                                string[] fields = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1).Split(' ');
+
+                                // Set the ID.
+                                if (fields.Length > 0)
+                                {
+                                    activeAnnouncement.SsrcGroupID = fields[0];
+                                }
+
+                                // Add attributes for each of the SSRC values.
+                                for (int i = 1; i < fields.Length; i++)
+                                {
+                                    if (uint.TryParse(fields[i], out var ssrc))
+                                    {
+                                        activeAnnouncement.SsrcAttributes.Add(new SDPSsrcAttribute(ssrc, null, activeAnnouncement.SsrcGroupID));
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                logger.LogWarning("A ssrc-group ID can only be set on a media announcement.");
+                            }
+                        }
+                        else if (sdpLineTrimmed.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX))
+                        {
+                            if (activeAnnouncement != null)
+                            {
+                                string[] ssrcFields = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1).Split(' ');
+
+                                if (ssrcFields.Length > 0 && uint.TryParse(ssrcFields[0], out var ssrc))
+                                {
+                                    var ssrcAttribute = activeAnnouncement.SsrcAttributes.FirstOrDefault(x => x.SSRC == ssrc);
+                                    if(ssrcAttribute == null)
+                                    {
+                                        ssrcAttribute = new SDPSsrcAttribute(ssrc, null, null);
+                                        activeAnnouncement.SsrcAttributes.Add(ssrcAttribute);
+                                    }
+
+                                    if (ssrcFields.Length > 1)
+                                    {
+                                        if (ssrcFields[1].StartsWith(SDPSsrcAttribute.MEDIA_CNAME_ATTRIBUE_PREFIX))
+                                        {
+                                            ssrcAttribute.Cname = ssrcFields[1].Substring(ssrcFields[1].IndexOf(':') + 1);
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                logger.LogWarning("A ssrc attribute can only be set on a media announcement.");
+                            }
+                        }
                         else
                         {
                             if (activeAnnouncement != null)

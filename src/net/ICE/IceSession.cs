@@ -368,6 +368,12 @@ namespace SIPSorcery.Net
         private List<RTCIceCandidate> _remoteCandidates = new List<RTCIceCandidate>();
 
         /// <summary>
+        /// A queue of remote ICE candidates that have been added to the session and that
+        /// are waiting to be processed to determine if they will create a new checklist entry.
+        /// </summary>
+        private ConcurrentQueue<RTCIceCandidate> _pendingRemoteCandidates = new ConcurrentQueue<RTCIceCandidate>();
+
+        /// <summary>
         /// The state of the checklist as the ICE checks are carried out.
         /// </summary>
         internal ChecklistState _checklistState = ChecklistState.Running;
@@ -558,8 +564,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Closes the ICE session and stops any further connectivity checks.
         /// </summary>
-        /// <param name="reason">Reason for the close. Informational only.</param>
-        public void Close(string reason)
+        public void Close()
         {
             if (!_closed)
             {
@@ -573,7 +578,7 @@ namespace SIPSorcery.Net
         /// Adds a remote ICE candidate to the ICE session.
         /// </summary>
         /// <param name="candidate">An ICE candidate from the remote party.</param>
-        public async Task AddRemoteCandidate(RTCIceCandidate candidate)
+        public void AddRemoteCandidate(RTCIceCandidate candidate)
         {
             if (candidate == null || string.IsNullOrWhiteSpace(candidate.address))
             {
@@ -598,6 +603,15 @@ namespace SIPSorcery.Net
                 // support is coming to .Net Core soon (AC 12 Jun 2020).
                 logger.LogWarning($"ICE session omitting remote candidate with unsupported MDNS hostname: {candidate.address}");
             }
+            else if(IPAddress.TryParse(candidate.address, out var addr) && 
+                (IPAddress.Any.Equals(addr) || IPAddress.IPv6Any.Equals(addr)))
+            {
+                logger.LogWarning($"ICE session omitting remote candidate with wildcard IP address: {candidate.address}");
+            }
+            else if(candidate.port <= 0 || candidate.port > IPEndPoint.MaxPort)
+            {
+                logger.LogWarning($"ICE session omitting remote candidate with invalid port: {candidate.port}");
+            }
             else
             {
                 // Have a remote candidate. Connectivity checks can start. Note because we support ICE trickle
@@ -606,7 +620,7 @@ namespace SIPSorcery.Net
                 logger.LogDebug($"ICE session received remote candidate: {candidate}");
 
                 _remoteCandidates.Add(candidate);
-                await UpdateChecklist(candidate);
+                _pendingRemoteCandidates.Enqueue(candidate);
             }
         }
 
@@ -863,28 +877,25 @@ namespace SIPSorcery.Net
             bool supportsIPv4 = _rtpChannel.RtpSocket.AddressFamily == AddressFamily.InterNetwork || _rtpChannel.IsDualMode;
             bool supportsIPv6 = _rtpChannel.RtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || _rtpChannel.IsDualMode;
 
-            string remoteAddress = (string.IsNullOrWhiteSpace(remoteCandidate.relatedAddress)) ? remoteCandidate.address : remoteCandidate.relatedAddress;
-
-            if (!IPAddress.TryParse(remoteAddress, out var remoteCandidateIPAddr))
+            if (!IPAddress.TryParse(remoteCandidate.address, out var remoteCandidateIPAddr))
             {
                 // The candidate string can be a hostname or an IP address.
-                var lookupResult = await _dnsLookupClient.QueryAsync(remoteAddress, DnsClient.QueryType.A);
+                var lookupResult = await _dnsLookupClient.QueryAsync(remoteCandidate.address, DnsClient.QueryType.A);
 
                 if (lookupResult.Answers.Count > 0)
                 {
                     remoteCandidateIPAddr = lookupResult.Answers.AddressRecords().FirstOrDefault()?.Address;
-                    logger.LogDebug($"ICE session resolved remote candidate {remoteAddress} to {remoteCandidateIPAddr}.");
+                    logger.LogDebug($"ICE session resolved remote candidate {remoteCandidate.address} to {remoteCandidateIPAddr}.");
                 }
                 else
                 {
-                    logger.LogDebug($"ICE session failed to resolve remote candidate {remoteAddress}.");
+                    logger.LogDebug($"ICE session failed to resolve remote candidate {remoteCandidate.address}.");
                 }
             }
 
             if (remoteCandidateIPAddr != null)
             {
-                var port = (string.IsNullOrWhiteSpace(remoteCandidate.relatedAddress)) ? remoteCandidate.port : remoteCandidate.relatedPort;
-                var remoteEP = new IPEndPoint(remoteCandidateIPAddr, port);
+                var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
                 remoteCandidate.SetDestinationEndPoint(remoteEP);
 
                 lock (_checklist)
@@ -967,9 +978,21 @@ namespace SIPSorcery.Net
         /// </remarks>
         private void ProcessChecklist(Object stateInfo)
         {
-            try
+            while (_pendingRemoteCandidates.Count() > 0)
             {
-                if (ConnectionState == RTCIceConnectionState.checking && _checklist != null && _checklist.Count > 0)
+                if (_pendingRemoteCandidates.TryDequeue(out var candidate))
+                {
+                    // The reason not to wait for this operation is that the ICE candidate can
+                    // contain a hostname and require a DNS lookup. There's nothing that can be done
+                    // if the DNS lookup fails so the initiate the task and then keep going with the
+                    // adding any other pending candidates and move on with processing the check list.
+                    _ = UpdateChecklist(candidate);
+                }
+            }
+
+            if (ConnectionState == RTCIceConnectionState.checking)
+            {
+                if (_checklist.Count > 0)
                 {
                     if (RemoteIceUser == null || RemoteIcePassword == null)
                     {
@@ -1025,10 +1048,6 @@ namespace SIPSorcery.Net
                         }
                     }
                 }
-            }
-            catch (Exception excp)
-            {
-                logger.LogError("Exception ProcessChecklist. " + excp);
             }
         }
 
@@ -1132,10 +1151,14 @@ namespace SIPSorcery.Net
                             // Add a new remote peer reflexive candidate.
                             RTCIceCandidate peerRflxCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
                             peerRflxCandidate.SetAddressProperties(RTCIceProtocol.udp, remoteEndPoint.Address, (ushort)remoteEndPoint.Port, RTCIceCandidateType.prflx, null, 0);
+                            peerRflxCandidate.SetDestinationEndPoint(remoteEndPoint);
                             logger.LogDebug($"Adding peer reflex ICE candidate for {remoteEndPoint}.");
                             _remoteCandidates.Add(peerRflxCandidate);
 
-                            _ = UpdateChecklist(peerRflxCandidate);
+                            // Add a new entry to the check list for the new peer reflexive candidate.
+                            ChecklistEntry entry = new ChecklistEntry(_localChecklistCandidate, peerRflxCandidate, IsController);
+                            entry.State = ChecklistEntryState.Waiting;
+                            AddChecklistEntry(entry);
 
                             matchingCandidate = peerRflxCandidate;
                         }
@@ -1340,8 +1363,8 @@ namespace SIPSorcery.Net
                         // Mark the ICE server check as successful by setting the candidate property on it.
                         RTCIceCandidateInit init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
                         RTCIceCandidate svrRflxCandidate = new RTCIceCandidate(init);
-                        svrRflxCandidate.SetAddressProperties(RTCIceProtocol.udp, NetServices.InternetDefaultAddress, (ushort)_rtpChannel.RTPPort,
-                            RTCIceCandidateType.srflx, mappedAddress, (ushort)mappedPort);
+                        svrRflxCandidate.SetAddressProperties(RTCIceProtocol.udp, mappedAddress, (ushort)mappedPort, 
+                            RTCIceCandidateType.srflx, NetServices.InternetDefaultAddress, (ushort)_rtpChannel.RTPPort);
                         svrRflxCandidate.IceServerUri = iceServerConnection._uri;
                         logger.LogDebug($"Adding server reflex ICE candidate for ICE server {iceServerConnection._uri}.");
 

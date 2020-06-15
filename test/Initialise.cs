@@ -186,7 +186,7 @@ namespace SIPSorcery.UnitTests
             return offerSdp;
         }
 
-        public SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription)
+        public SetDescriptionResultEnum SetRemoteDescription(SdpType type, SDP sessionDescription)
         {
             RemoteDescription = sessionDescription;
             return SetDescriptionResultEnum.OK;

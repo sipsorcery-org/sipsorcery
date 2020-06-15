@@ -61,7 +61,7 @@ namespace SIPSorcery.Net.UnitTests
             MediaStreamTrack remoteAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             remoteSession.addTrack(remoteAudioTrack);
 
-            var result = remoteSession.SetRemoteDescription(offer);
+            var result = remoteSession.SetRemoteDescription(SIP.App.SdpType.offer, offer);
 
             logger.LogDebug($"Set remote description on remote session result {result}.");
 
@@ -73,7 +73,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("Remote answer: " + offer.ToString());
 
             // Provide the answer back to the local session.
-            result = localSession.SetRemoteDescription(answer);
+            result = localSession.SetRemoteDescription(SIP.App.SdpType.answer, answer);
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 
@@ -108,7 +108,7 @@ namespace SIPSorcery.Net.UnitTests
             var offer = remoteSession.CreateOffer(IPAddress.Loopback);
 
             // Give the offer to the local session that is missing any media tracks.
-            var result = localSession.SetRemoteDescription(offer);
+            var result = localSession.SetRemoteDescription(SIP.App.SdpType.offer, offer);
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 
@@ -134,7 +134,7 @@ namespace SIPSorcery.Net.UnitTests
 
             var remoteOffer = new SDP();
 
-            var result = localSession.SetRemoteDescription(remoteOffer);
+            var result = localSession.SetRemoteDescription(SIP.App.SdpType.offer, remoteOffer);
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 
@@ -162,7 +162,7 @@ namespace SIPSorcery.Net.UnitTests
             MediaStreamTrack remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
             remoteSession.addTrack(remoteVideoTrack);
 
-            var result = localSession.SetRemoteDescription(remoteSession.CreateOffer(IPAddress.Loopback));
+            var result = localSession.SetRemoteDescription(SIP.App.SdpType.offer, remoteSession.CreateOffer(IPAddress.Loopback));
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 
@@ -200,7 +200,7 @@ namespace SIPSorcery.Net.UnitTests
 
             remoteOffer.Media.Add(audioAnnouncement);
 
-            var result = localSession.SetRemoteDescription(remoteOffer);
+            var result = localSession.SetRemoteDescription(SIP.App.SdpType.offer, remoteOffer);
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 
@@ -292,7 +292,7 @@ namespace SIPSorcery.Net.UnitTests
             var offer = remoteSession.CreateOffer(IPAddress.Loopback);
 
             // Give the offer to the local session that is missing a video tracks.
-            var result = localSession.SetRemoteDescription(offer);
+            var result = localSession.SetRemoteDescription(SIP.App.SdpType.offer, offer);
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 
@@ -336,7 +336,7 @@ namespace SIPSorcery.Net.UnitTests
             var offer = remoteSession.CreateOffer(IPAddress.Loopback);
 
             // Give the offer to the local session that is missing a video tracks.
-            var result = localSession.SetRemoteDescription(offer);
+            var result = localSession.SetRemoteDescription(SIP.App.SdpType.offer, offer);
 
             logger.LogDebug($"Set remote description on local session result {result}.");
 

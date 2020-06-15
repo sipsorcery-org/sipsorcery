@@ -120,7 +120,7 @@ namespace SIPSorcery.Net.UnitTests
         /// in priority sorted order.
         /// </summary>
         [Fact]
-        public async void SortChecklistUnitTest()
+        public void SortChecklistUnitTest()
         {
             logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
@@ -141,10 +141,10 @@ namespace SIPSorcery.Net.UnitTests
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            await iceSession.AddRemoteCandidate(remoteCandidate);
+            iceSession.AddRemoteCandidate(remoteCandidate);
 
             var remoteCandidate2 = RTCIceCandidate.Parse("candidate:408132417 1 udp 2113937150 192.168.11.51 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            await iceSession.AddRemoteCandidate(remoteCandidate2);
+            iceSession.AddRemoteCandidate(remoteCandidate2);
 
             foreach (var entry in iceSession._checklist)
             {
@@ -175,10 +175,12 @@ namespace SIPSorcery.Net.UnitTests
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            await iceSession.AddRemoteCandidate(remoteCandidate);
+            iceSession.AddRemoteCandidate(remoteCandidate);
 
             var remoteCandidate2 = RTCIceCandidate.Parse("candidate:408132417 1 udp 2113937150 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            await iceSession.AddRemoteCandidate(remoteCandidate2);
+            iceSession.AddRemoteCandidate(remoteCandidate2);
+
+            await Task.Delay(1000);
 
             foreach (var entry in iceSession._checklist)
             {
@@ -211,7 +213,7 @@ namespace SIPSorcery.Net.UnitTests
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            await iceSession.AddRemoteCandidate(remoteCandidate);
+            iceSession.AddRemoteCandidate(remoteCandidate);
 
             iceSession.SetRemoteCredentials("CI7o", "xxxxxxxxxxxx");
             iceSession.StartGathering();
@@ -248,7 +250,7 @@ namespace SIPSorcery.Net.UnitTests
             }
 
             var remoteCandidate = RTCIceCandidate.Parse("candidate:408132416 1 udp 2113937151 192.168.11.50 51268 typ host generation 0 ufrag CI7o network-cost 999");
-            await iceSession.AddRemoteCandidate(remoteCandidate);
+            iceSession.AddRemoteCandidate(remoteCandidate);
 
             iceSession.SetRemoteCredentials("CI7o", "xxxxxxxxxxxx");
             iceSession.StartGathering();

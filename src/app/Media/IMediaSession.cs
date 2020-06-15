@@ -22,6 +22,15 @@ using SIPSorcery.Net;
 namespace SIPSorcery.SIP.App
 {
     /// <summary>
+    /// The type of the SDP packet being set.
+    /// </summary>
+    public enum SdpType
+    {
+        answer = 0,
+        offer = 1
+    }
+
+    /// <summary>
     /// Offering and Answering SDP messages so that it can be
     /// signaled to the other party using the SIPUserAgent.
     /// 
@@ -80,10 +89,11 @@ namespace SIPSorcery.SIP.App
         /// media tracks being disabled if not supported or setting the RTP/RTCP end points
         /// if they are.
         /// </summary>
+        /// <param name="sdpType">Whether the SDP being set is an offer or answer.</param>
         /// <param name="sdp">The SDP description from the remote party.</param>
         /// <returns>If successful an OK enum result. If not an enum result indicating the 
         /// failure cause.</returns>
-        SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription);
+        SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP sessionDescription);
 
         /// <summary>
         /// Generates an SDP answer to an offer based on the local media tracks. Calling
