@@ -1814,6 +1814,38 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Allows additional control for sending raw RTP payloads. No framing or other processing is carried out.
+        /// </summary>
+        /// <param name="mediaType">The media type of the RTP packet being sent. Must be audio or video.</param>
+        /// <param name="payload">The RTP packet payload.</param>
+        /// <param name="timestamp">The timestamp to set on the RTP header.</param>
+        /// <param name="markerBit">The value to set on the RTP header marker bit, should be 0 or 1.</param>
+        /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
+        public void SendRtpRaw(SDPMediaTypesEnum mediaType, byte[] payload, uint timestamp, int markerBit, int payloadTypeID)
+        {
+            if (mediaType == SDPMediaTypesEnum.audio && AudioLocalTrack == null)
+            {
+                logger.LogWarning("SendRtpRaw was called for an audio packet on an RTP session without a local audio stream.");
+            }
+            else if (mediaType == SDPMediaTypesEnum.video && VideoLocalTrack == null)
+            {
+                logger.LogWarning("SendRtpRaw was called for a video packet on an RTP session without a local video stream.");
+            }
+            else
+            {
+                var rtpChannel = GetRtpChannel(mediaType);
+                RTCPSession rtcpSession = (mediaType == SDPMediaTypesEnum.video) ? VideoRtcpSession : AudioRtcpSession;
+                IPEndPoint dstEndPoint = (mediaType == SDPMediaTypesEnum.video) ? VideoDestinationEndPoint : AudioDestinationEndPoint;
+                MediaStreamTrack track = (mediaType == SDPMediaTypesEnum.video) ? VideoLocalTrack : AudioLocalTrack;
+
+                if (dstEndPoint != null)
+                {
+                    SendRtpPacket(rtpChannel, dstEndPoint, payload, timestamp, markerBit, payloadTypeID, track.Ssrc, track.SeqNum++, rtcpSession);
+                }
+            }
+        }
+
+        /// <summary>
         /// Close the session and RTP channel.
         /// </summary>
         public virtual void Close(string reason)
