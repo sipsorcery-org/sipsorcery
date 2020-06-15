@@ -779,6 +779,12 @@ a=sendrecv";
             Assert.Equal("BUNDLE 0 1", rndTripSdp.Group);
             Assert.Single(sdp.Media.First().IceCandidates);
             Assert.Single(rndTripSdp.Media.First().IceCandidates);
+            Assert.Contains(sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().SsrcAttributes, x => x.SSRC == 1676157391U);
+            Assert.Contains(sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 3966011320U);
+            Assert.Contains(sdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 1316862390U);
+            Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single().SsrcAttributes, x => x.SSRC == 1676157391U);
+            Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 3966011320U);
+            Assert.Contains(rndTripSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single().SsrcAttributes, x => x.SSRC == 1316862390U);
         }
     }
 }

@@ -552,7 +552,7 @@ namespace SIPSorcery.SIP.App
                 {
                     // The SDP offer was included in the INVITE request.
                     SDP remoteSdp = SDP.ParseSDPDescription(sipRequest.Body);
-                    var setRemoteResult = MediaSession.SetRemoteDescription(remoteSdp);
+                    var setRemoteResult = MediaSession.SetRemoteDescription(SdpType.offer, remoteSdp);
 
                     if (setRemoteResult != SetDescriptionResultEnum.OK)
                     {
@@ -598,7 +598,7 @@ namespace SIPSorcery.SIP.App
                     {
                         // If the initial INVITE did not contain an offer then the remote description will not yet be set.
                         var remoteSDP = SDP.ParseSDPDescription(m_sipDialogue.RemoteSDP);
-                        var setRemoteResult = MediaSession.SetRemoteDescription(remoteSDP);
+                        var setRemoteResult = MediaSession.SetRemoteDescription(SdpType.offer, remoteSDP);
 
                         if (setRemoteResult != SetDescriptionResultEnum.OK)
                         {
@@ -835,7 +835,7 @@ namespace SIPSorcery.SIP.App
                     }
                     else
                     {
-                        var setRemoteResult = MediaSession.SetRemoteDescription(offer);
+                        var setRemoteResult = MediaSession.SetRemoteDescription(SdpType.offer, offer);
 
                         if (setRemoteResult != SetDescriptionResultEnum.OK)
                         {
@@ -1270,7 +1270,7 @@ namespace SIPSorcery.SIP.App
                 {
                     // Update the remote party's SDP.
                     m_sipDialogue.RemoteSDP = sipResponse.Body;
-                    MediaSession.SetRemoteDescription(SDP.ParseSDPDescription(sipResponse.Body));
+                    MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
                 }
             }
             else
@@ -1354,7 +1354,7 @@ namespace SIPSorcery.SIP.App
             if (sipResponse.StatusCode >= 200 && sipResponse.StatusCode <= 299)
             {
                 // Only set the remote RTP end point if there hasn't already been a packet received on it.
-                var setDescriptionResult = MediaSession.SetRemoteDescription(SDP.ParseSDPDescription(sipResponse.Body));
+                var setDescriptionResult = MediaSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(sipResponse.Body));
 
                 if (setDescriptionResult == SetDescriptionResultEnum.OK)
                 {

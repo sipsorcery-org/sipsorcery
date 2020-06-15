@@ -44,6 +44,25 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug(candidate.ToString());
         }
 
+
+        /// <summary>
+        /// Tests that parsing a server reflexive candidate works correctly.
+        /// </summary>
+        [Fact]
+        public void ParseSvrRflxCandidateUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            var candidate = RTCIceCandidate.Parse("842163049 1 udp 1677729535 8.8.8.8 12767 typ srflx raddr 0.0.0.0 rport 0 generation 0 network-cost 999");
+
+            Assert.NotNull(candidate);
+            Assert.Equal(RTCIceCandidateType.srflx, candidate.type);
+            Assert.Equal(RTCIceProtocol.udp, candidate.protocol);
+
+            logger.LogDebug(candidate.ToString());
+        }
+
         /// <summary>
         /// Tests that the foundation value is the same for equivalent candidates.
         /// </summary>

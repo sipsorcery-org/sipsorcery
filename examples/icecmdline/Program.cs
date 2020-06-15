@@ -131,7 +131,7 @@ namespace SIPSorcery.Examples
 
             var peerConnection = CreatePeerConnection(context);
 
-            var offerInit = await peerConnection.createOffer(null);
+            var offerInit = peerConnection.createOffer(null);
             await peerConnection.setLocalDescription(offerInit);
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
@@ -210,9 +210,9 @@ namespace SIPSorcery.Examples
                     // Add local media tracks depending on what was offered. Also add local tracks with the same media ID as 
                     // the remote tracks so that the media announcement in the SDP answer are in the same order.
                     SDP remoteSdp = SDP.ParseSDPDescription(message);
-                    await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
+                    peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
 
-                    var answer = await peerConnection.createAnswer(null);
+                    var answer = peerConnection.createAnswer(null);
                     await peerConnection.setLocalDescription(answer);
 
                     context.WebSocket.Send(answer.sdp);
@@ -220,7 +220,7 @@ namespace SIPSorcery.Examples
                 else if (peerConnection.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
-                    await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                    peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
                 }
                 else
                 {
@@ -232,7 +232,7 @@ namespace SIPSorcery.Examples
                     }
                     else
                     {
-                        await peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
+                        peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
                     }
                 }
             }

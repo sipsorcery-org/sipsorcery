@@ -25,6 +25,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -89,38 +90,6 @@ namespace SIPSorcery.Net
     //    public void SetStreamStatus(MediaStreamStatusEnum direction)
     //    {
     //        Direction = direction;
-    //    }
-    //}
-
-    ///// <summary>
-    ///// 
-    ///// </summary>
-    ///// <remarks>
-    ///// As specified in https://www.w3.org/TR/webrtc/#rtcsessiondescription-class.
-    ///// </remarks>
-    //public class RTCSessionDescription
-    //{
-    //    /// <summary>
-    //    /// The type of the Session Description.
-    //    /// </summary>
-    //    public RTCSdpType type;
-
-    //    /// <summary>
-    //    /// A string representation of the Session Description.
-    //    /// </summary>
-    //    public string sdp;
-
-    //    /// <summary>
-    //    /// Creates a new session description instance.
-    //    /// </summary>
-    //    /// <param name="init">Optional. Initialisation properties to control the creation of the session object.</param>
-    //    public RTCSessionDescription(RTCSessionDescriptionInit init)
-    //    {
-    //        if (init != null)
-    //        {
-    //            type = init.type;
-    //            sdp = init.sdp;
-    //        }
     //    }
     //}
 
@@ -286,6 +255,8 @@ namespace SIPSorcery.Net
             OnRtcpBye += Close;
 
             onnegotiationneeded?.Invoke();
+
+            IceSession.StartGathering();
         }
 
         /// <summary>
@@ -317,6 +288,25 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// This set remote description overload is a convenience method for SIP/VoIP callers
+        /// instead of WebRTC callers. The method signature better matches what the SIP
+        /// user agent is expecting.
+        /// TODO: Using two very similar overloads could cause confusion. Possibly
+        /// consolidate.
+        /// </summary>
+        /// <param name="sdpType">Whether the remote SDP is an offer or answer.</param>
+        /// <param name="sessionDescription">The SDP from the remote party.</param>
+        /// <returns>The result of attempting to set the remote description.</returns>
+        public override SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP sessionDescription)
+        {
+            RTCSessionDescriptionInit init = new RTCSessionDescriptionInit { 
+                sdp = sessionDescription.ToString(), 
+                type = (sdpType == SdpType.answer) ? RTCSdpType.answer : RTCSdpType.offer };
+
+            return setRemoteDescription(init);
+        }
+
+        /// <summary>
         /// Updates the session after receiving the remote SDP.
         /// At this point check that the codecs match. We currently only support:
         ///  - Audio: PCMU,
@@ -324,20 +314,17 @@ namespace SIPSorcery.Net
         /// If they are not available there's no point carrying on.
         /// </summary>
         /// <param name="sessionDescription">The answer/offer SDP from the remote party.</param>
-        public async Task setRemoteDescription(RTCSessionDescriptionInit init)
+        public SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit init)
         {
             RTCSessionDescription description = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
             remoteDescription = description;
 
             SDP remoteSdp = SDP.ParseSDPDescription(init.sdp);
 
-            var setResult = base.SetRemoteDescription(remoteSdp);
+            SdpType sdpType = (init.type == RTCSdpType.offer) ? SdpType.offer : SdpType.answer;
+            var setResult = base.SetRemoteDescription(sdpType, remoteSdp);
 
-            if (setResult != SetDescriptionResultEnum.OK)
-            {
-                throw new ApplicationException($"Error setting remote description {setResult}.");
-            }
-            else
+            if (setResult == SetDescriptionResultEnum.OK)
             {
                 string remoteIceUser = null;
                 string remoteIcePassword = null;
@@ -377,7 +364,7 @@ namespace SIPSorcery.Net
                 {
                     foreach (var iceCandidate in remoteSdp.IceCandidates)
                     {
-                        await addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
+                         addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
                     }
                 }
 
@@ -387,7 +374,7 @@ namespace SIPSorcery.Net
                     {
                         foreach (var iceCandidate in media.IceCandidates)
                         {
-                            await addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
+                             addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
                         }
                     }
                 }
@@ -395,6 +382,8 @@ namespace SIPSorcery.Net
                 signalingState = RTCSignalingState.have_remote_offer;
                 onsignalingstatechange?.Invoke();
             }
+
+            return setResult;
         }
 
         public override void SetSecurityContext(
@@ -445,7 +434,7 @@ namespace SIPSorcery.Net
         {
             if (!IsClosed)
             {
-                IceSession.Close(reason);
+                IceSession.Close();
                 base.Close(reason);
 
                 connectionState = RTCPeerConnectionState.closed;
@@ -469,7 +458,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be sued to apply additional
         /// controls over the generated offer SDP.</param>
-        public async Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options)
+        public RTCSessionDescriptionInit createOffer(RTCOfferOptions options)
         {
             try
             {
@@ -477,7 +466,7 @@ namespace SIPSorcery.Net
                 var videoCapabilities = VideoLocalTrack?.Capabilities;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
-                var offerSdp = await createBaseSdp(localTracks, audioCapabilities, videoCapabilities).ConfigureAwait(false);
+                var offerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities);
 
                 if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 {
@@ -507,6 +496,24 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
+        /// Convenience overload to suit SIP/VoIP callers.
+        /// TODO: Consolidate with createAnswer.
+        /// </summary>
+        /// <param name="connectionAddress">Not used.</param>
+        /// <returns>An SDP payload to answer an offer from the remote party.</returns>
+        public override SDP CreateAnswer(IPAddress connectionAddress)
+        {
+            var result = createAnswer(null);
+            
+            if(result?.sdp != null)
+            {
+                return SDP.ParseSDPDescription(result.sdp);
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Creates an answer to an SDP offer from a remote peer.
         /// </summary>
         /// <remarks>
@@ -515,7 +522,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be used to apply additional
         /// controls over the generated answer SDP.</param>
-        public async Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options)
+        public RTCSessionDescriptionInit createAnswer(RTCAnswerOptions options)
         {
             if (remoteDescription == null)
             {
@@ -529,7 +536,7 @@ namespace SIPSorcery.Net
                     SDPMediaFormat.GetCompatibleFormats(VideoLocalTrack.Capabilities, VideoRemoteTrack.Capabilities) : null;
 
                 List<MediaStreamTrack> localTracks = GetLocalTracks();
-                var answerSdp = await createBaseSdp(localTracks, audioCapabilities, videoCapabilities).ConfigureAwait(false);
+                var answerSdp = createBaseSdp(localTracks, audioCapabilities, videoCapabilities);
 
                 if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 {
@@ -570,7 +577,7 @@ namespace SIPSorcery.Net
         ///   of "9".  This MUST NOT be considered as a ICE failure by the peer
         ///   agent and the ICE processing MUST continue as usual."
         /// </remarks>
-        private Task<SDP> createBaseSdp(List<MediaStreamTrack> tracks, List<SDPMediaFormat> audioCapabilities, List<SDPMediaFormat> videoCapabilities)
+        private SDP createBaseSdp(List<MediaStreamTrack> tracks, List<SDPMediaFormat> audioCapabilities, List<SDPMediaFormat> videoCapabilities)
         {
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
@@ -582,7 +589,7 @@ namespace SIPSorcery.Net
             offerSdp.Group = BUNDLE_ATTRIBUTE;
 
             // Media announcements must be in the same order in the offer and answer.
-            foreach (var track in tracks.OrderBy(x => x.MID))
+            foreach (var track in tracks.OrderBy(x => x.MLineIndex))
             {
                 offerSdp.Group += $" {track.MID}";
 
@@ -619,7 +626,7 @@ namespace SIPSorcery.Net
                 offerSdp.Media.Add(announcement);
             }
 
-            return Task.FromResult(offerSdp);
+            return offerSdp;
         }
 
         /// <summary>
@@ -676,13 +683,13 @@ namespace SIPSorcery.Net
         /// Adds a remote ICE candidate to the list this peer is attempting to connect against.
         /// </summary>
         /// <param name="candidateInit">The remote candidate to add.</param>
-        public async Task addIceCandidate(RTCIceCandidateInit candidateInit)
+        public void addIceCandidate(RTCIceCandidateInit candidateInit)
         {
             RTCIceCandidate candidate = new RTCIceCandidate(candidateInit);
 
             if (IceSession.Component == candidate.component)
             {
-                await IceSession.AddRemoteCandidate(candidate);
+                IceSession.AddRemoteCandidate(candidate);
             }
             else
             {

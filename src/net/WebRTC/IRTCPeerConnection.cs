@@ -235,17 +235,17 @@ namespace SIPSorcery.Net
     interface IRTCPeerConnection
     {
         //IRTCPeerConnection(RTCConfiguration configuration = null);
-        Task<RTCSessionDescriptionInit> createOffer(RTCOfferOptions options = null);
-        Task<RTCSessionDescriptionInit> createAnswer(RTCAnswerOptions options = null);
-        Task setLocalDescription(RTCSessionDescriptionInit description = null);
+        RTCSessionDescriptionInit createOffer(RTCOfferOptions options = null);
+        RTCSessionDescriptionInit createAnswer(RTCAnswerOptions options = null);
+        Task setLocalDescription(RTCSessionDescriptionInit description);
         RTCSessionDescription localDescription { get; }
         RTCSessionDescription currentLocalDescription { get; }
         RTCSessionDescription pendingLocalDescription { get; }
-        Task setRemoteDescription(RTCSessionDescriptionInit description = null);
+        SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit description);
         RTCSessionDescription remoteDescription { get; }
         RTCSessionDescription currentRemoteDescription { get; }
         RTCSessionDescription pendingRemoteDescription { get; }
-        Task addIceCandidate(RTCIceCandidateInit candidate = null);
+        void addIceCandidate(RTCIceCandidateInit candidate = null);
         RTCSignalingState signalingState { get; }
         RTCIceGatheringState iceGatheringState { get; }
         RTCIceConnectionState iceConnectionState { get; }
