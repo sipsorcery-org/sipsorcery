@@ -5617,6 +5617,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SendJpegFrame
   nameWithType: RTPSession.SendJpegFrame
+- uid: SIPSorcery.Net.RTPSession.SendRtpRaw(SIPSorcery.Net.SDPMediaTypesEnum,System.Byte[],System.UInt32,System.Int32,System.Int32)
+  name: SendRtpRaw(SDPMediaTypesEnum, Byte[], UInt32, Int32, Int32)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtpRaw_SIPSorcery_Net_SDPMediaTypesEnum_System_Byte___System_UInt32_System_Int32_System_Int32_
+  commentId: M:SIPSorcery.Net.RTPSession.SendRtpRaw(SIPSorcery.Net.SDPMediaTypesEnum,System.Byte[],System.UInt32,System.Int32,System.Int32)
+  name.vb: SendRtpRaw(SDPMediaTypesEnum, Byte(), UInt32, Int32, Int32)
+  fullName: SIPSorcery.Net.RTPSession.SendRtpRaw(SIPSorcery.Net.SDPMediaTypesEnum, System.Byte[], System.UInt32, System.Int32, System.Int32)
+  fullName.vb: SIPSorcery.Net.RTPSession.SendRtpRaw(SIPSorcery.Net.SDPMediaTypesEnum, System.Byte(), System.UInt32, System.Int32, System.Int32)
+  nameWithType: RTPSession.SendRtpRaw(SDPMediaTypesEnum, Byte[], UInt32, Int32, Int32)
+  nameWithType.vb: RTPSession.SendRtpRaw(SDPMediaTypesEnum, Byte(), UInt32, Int32, Int32)
+- uid: SIPSorcery.Net.RTPSession.SendRtpRaw*
+  name: SendRtpRaw
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtpRaw_
+  commentId: Overload:SIPSorcery.Net.RTPSession.SendRtpRaw
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.SendRtpRaw
+  nameWithType: RTPSession.SendRtpRaw
 - uid: SIPSorcery.Net.RTPSession.SendVp8Frame(System.UInt32,System.Int32,System.Byte[])
   name: SendVp8Frame(UInt32, Int32, Byte[])
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendVp8Frame_System_UInt32_System_Int32_System_Byte___
