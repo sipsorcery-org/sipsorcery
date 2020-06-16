@@ -1,4 +1,4 @@
-﻿ //-----------------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------------
 // Filename: RTPSession.cs
 //
 // Description: Represents an RTP session constituted of a single media stream. The session
@@ -87,7 +87,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class RTCRtpSender : IRTCRtpSender
     {
-        public MediaStreamTrack track { get; private set;}
+        public MediaStreamTrack track { get; private set; }
 
         public RTCRtpSender(MediaStreamTrack localTrack)
         {
@@ -137,7 +137,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Media ID. Used for setting the "mid" attribute in SDP descriptions.
         /// </summary>
-        public string MID { get; private set; }
+        public string MID { get; internal set; }
 
         /// <summary>
         /// This index controls the order of the media announcements in a serialised SDP
@@ -215,10 +215,11 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Additional constructor that allows the Media ID to be set.
+        /// Additional constructor that allows the Media ID and MLineIndex to be set.
         /// </summary>
-        public MediaStreamTrack(
+        internal MediaStreamTrack(
             string mediaID,
+            int mLineIndex,
             SDPMediaTypesEnum kind,
             bool isRemote,
             List<SDPMediaFormat> Capabilities,
@@ -226,6 +227,7 @@ namespace SIPSorcery.Net
             this(kind, isRemote, Capabilities, streamStatus)
         {
             MID = mediaID;
+            MLineIndex = mLineIndex;
         }
 
         /// <summary>
@@ -245,7 +247,7 @@ namespace SIPSorcery.Net
         public MediaStreamTrack CopyOf()
         {
             List<SDPMediaFormat> capabilitiesCopy = new List<SDPMediaFormat>(Capabilities);
-            var copy = new MediaStreamTrack(MID, Kind, IsRemote, capabilitiesCopy, StreamStatus);
+            var copy = new MediaStreamTrack(MID, MLineIndex, Kind, IsRemote, capabilitiesCopy, StreamStatus);
             copy.Ssrc = Ssrc;
             copy.SeqNum = SeqNum;
             copy.Timestamp = Timestamp;
@@ -666,7 +668,7 @@ namespace SIPSorcery.Net
         public virtual SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP sessionDescription)
         {
             if (sessionDescription == null)
-            { 
+            {
                 throw new ArgumentNullException("sessionDescription", "The session description cannot be null for SetRemoteDescription.");
             }
 
@@ -727,17 +729,16 @@ namespace SIPSorcery.Net
                         logger.LogDebug("Adding remote audio track to session.");
 
                         var audioAnnounce = announcement;
-                        var remoteAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, true, audioAnnounce.MediaFormats, audioAnnounce.MediaStreamStatus);
-                        remoteAudioTrack.MLineIndex = mLineIndex++;
+                        var remoteAudioTrack = new MediaStreamTrack(audioAnnounce.MediaID, mLineIndex++, SDPMediaTypesEnum.audio, true, audioAnnounce.MediaFormats, audioAnnounce.MediaStreamStatus);
                         addTrack(remoteAudioTrack);
 
                         // Add the source attributes from the remote SDP to help match RTP SSRC and RTCP CNAME values against
                         // RTP and RTCP packets received from the remote party.
-                        if(audioAnnounce.SsrcAttributes?.Count > 0)
+                        if (audioAnnounce.SsrcAttributes?.Count > 0)
                         {
-                            foreach(var ssrcAttr in audioAnnounce.SsrcAttributes)
+                            foreach (var ssrcAttr in audioAnnounce.SsrcAttributes)
                             {
-                                if(remoteAudioTrack.SdpSsrc.ContainsKey(ssrcAttr.SSRC))
+                                if (remoteAudioTrack.SdpSsrc.ContainsKey(ssrcAttr.SSRC))
                                 {
                                     remoteAudioTrack.SdpSsrc.Remove(ssrcAttr.SSRC);
                                 }
@@ -749,8 +750,8 @@ namespace SIPSorcery.Net
                         {
                             // We don't have an audio track BUT we must have another track (which has to be video). The choices are
                             // to reject the offer or to set audio stream as inactive and accept the video. We accept the video.
-                            var inactiveLocalAudioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, remoteAudioTrack.Capabilities, MediaStreamStatusEnum.Inactive);
-                            inactiveLocalAudioTrack.MLineIndex = mLineIndex++;
+                            int audioMLineIndex = m_mLineIndex++;
+                            var inactiveLocalAudioTrack = new MediaStreamTrack(audioMLineIndex.ToString(), audioMLineIndex, SDPMediaTypesEnum.audio, false, remoteAudioTrack.Capabilities, MediaStreamStatusEnum.Inactive);
                             addTrack(inactiveLocalAudioTrack);
                         }
                         else
@@ -817,8 +818,7 @@ namespace SIPSorcery.Net
 
                         logger.LogDebug("Adding remote video track to session.");
 
-                        var remoteVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, true, videoAnnounce.MediaFormats, videoAnnounce.MediaStreamStatus);
-                        remoteVideoTrack.MLineIndex = mLineIndex++;
+                        var remoteVideoTrack = new MediaStreamTrack(videoAnnounce.MediaID, mLineIndex++, SDPMediaTypesEnum.video, true, videoAnnounce.MediaFormats, videoAnnounce.MediaStreamStatus);
                         addTrack(remoteVideoTrack);
 
                         // Add the source attributes from the remote SDP to help match RTP SSRC and RTCP CNAME values against
@@ -839,8 +839,8 @@ namespace SIPSorcery.Net
                         {
                             // We don't have a video track BUT we must have another track (which has to be audio). The choices are
                             // to reject the offer or to set video stream as inactive and accept the audio. We accept the audio.
-                            var inactiveVideoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, remoteVideoTrack.Capabilities, MediaStreamStatusEnum.Inactive);
-                            inactiveVideoTrack.MLineIndex = mLineIndex++;
+                            int videoMLineIndex = m_mLineIndex++;
+                            var inactiveVideoTrack = new MediaStreamTrack(videoMLineIndex.ToString(), videoMLineIndex, SDPMediaTypesEnum.video, false, remoteVideoTrack.Capabilities, MediaStreamStatusEnum.Inactive);
                             addTrack(inactiveVideoTrack);
                         }
                         else
@@ -935,7 +935,7 @@ namespace SIPSorcery.Net
         {
             List<IRTCRtpSender> senders = new List<IRTCRtpSender>();
 
-            if(AudioLocalTrack != null)
+            if (AudioLocalTrack != null)
             {
                 senders.Add(new RTCRtpSender(AudioLocalTrack));
             }
@@ -947,7 +947,7 @@ namespace SIPSorcery.Net
 
             return senders;
         }
-        
+
         /// <summary>
         /// Gets a list of the RTP receivers for this session.
         /// </summary>
@@ -956,12 +956,12 @@ namespace SIPSorcery.Net
         {
             List<IRTCRtpReceiver> receivers = new List<IRTCRtpReceiver>();
 
-            if(AudioRemoteTrack != null)
+            if (AudioRemoteTrack != null)
             {
                 receivers.Add(new RTCRtpReceiver(AudioRemoteTrack));
             }
 
-            if(VideoRemoteTrack != null)
+            if (VideoRemoteTrack != null)
             {
                 receivers.Add(new RTCRtpReceiver(VideoRemoteTrack));
             }
@@ -986,7 +986,10 @@ namespace SIPSorcery.Net
                 throw new ApplicationException("A local video track has already been set on this session.");
             }
 
+            // These properties are critical for correctly formed SDP. Rather then requiring the application
+            // to set them they are managed automatically.
             track.MLineIndex = m_mLineIndex++;
+            track.MID = track.MLineIndex.ToString();
 
             if (track.StreamStatus == MediaStreamStatusEnum.Inactive)
             {
@@ -1160,11 +1163,13 @@ namespace SIPSorcery.Net
                 if (AudioLocalTrack != null && AudioRemoteTrack != null)
                 {
                     AudioLocalTrack.MLineIndex = AudioRemoteTrack.MLineIndex;
+                    AudioLocalTrack.MID = AudioLocalTrack.MLineIndex.ToString();
                 }
 
                 if (VideoLocalTrack != null && VideoRemoteTrack != null)
                 {
-                   VideoLocalTrack.MLineIndex = VideoRemoteTrack.MLineIndex;
+                    VideoLocalTrack.MLineIndex = VideoRemoteTrack.MLineIndex;
+                    VideoLocalTrack.MID = VideoLocalTrack.MLineIndex.ToString();
                 }
             }
         }
@@ -2095,7 +2100,7 @@ namespace SIPSorcery.Net
             }
             else if ((expectedEndPoint.Address.IsPrivate() && !receivedOnEndPoint.Address.IsPrivate()) ||
                (
-                (IPAddress.Loopback.Equals(receivedOnEndPoint.Address) || IPAddress.IPv6Loopback.Equals(receivedOnEndPoint.Address)) 
+                (IPAddress.Loopback.Equals(receivedOnEndPoint.Address) || IPAddress.IPv6Loopback.Equals(receivedOnEndPoint.Address))
                 && expectedEndPoint.Port == receivedOnEndPoint.Port)
                )
             {

@@ -70,7 +70,7 @@ namespace SIPSorcery.Net.UnitTests
 
             RTCPeerConnection pc = new RTCPeerConnection(null);
             pc.IceSession.StartGathering();
-            var audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            var audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             pc.addTrack(audioTrack);
             var offer = pc.createOffer(new RTCOfferOptions());
 
