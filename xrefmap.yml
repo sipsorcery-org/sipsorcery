@@ -2053,15 +2053,6 @@ references:
   fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormat), SIPSorcery.Net.MediaStreamStatusEnum)
   nameWithType: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List<SDPMediaFormat>, MediaStreamStatusEnum)
   nameWithType.vb: MediaStreamTrack.MediaStreamTrack(SDPMediaTypesEnum, Boolean, List(Of SDPMediaFormat), MediaStreamStatusEnum)
-- uid: SIPSorcery.Net.MediaStreamTrack.#ctor(System.String,SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum)
-  name: MediaStreamTrack(String, SDPMediaTypesEnum, Boolean, List<SDPMediaFormat>, MediaStreamStatusEnum)
-  href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_System_String_SIPSorcery_Net_SDPMediaTypesEnum_System_Boolean_System_Collections_Generic_List_SIPSorcery_Net_SDPMediaFormat__SIPSorcery_Net_MediaStreamStatusEnum_
-  commentId: M:SIPSorcery.Net.MediaStreamTrack.#ctor(System.String,SIPSorcery.Net.SDPMediaTypesEnum,System.Boolean,System.Collections.Generic.List{SIPSorcery.Net.SDPMediaFormat},SIPSorcery.Net.MediaStreamStatusEnum)
-  name.vb: MediaStreamTrack(String, SDPMediaTypesEnum, Boolean, List(Of SDPMediaFormat), MediaStreamStatusEnum)
-  fullName: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(System.String, SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List<SIPSorcery.Net.SDPMediaFormat>, SIPSorcery.Net.MediaStreamStatusEnum)
-  fullName.vb: SIPSorcery.Net.MediaStreamTrack.MediaStreamTrack(System.String, SIPSorcery.Net.SDPMediaTypesEnum, System.Boolean, System.Collections.Generic.List(Of SIPSorcery.Net.SDPMediaFormat), SIPSorcery.Net.MediaStreamStatusEnum)
-  nameWithType: MediaStreamTrack.MediaStreamTrack(String, SDPMediaTypesEnum, Boolean, List<SDPMediaFormat>, MediaStreamStatusEnum)
-  nameWithType.vb: MediaStreamTrack.MediaStreamTrack(String, SDPMediaTypesEnum, Boolean, List(Of SDPMediaFormat), MediaStreamStatusEnum)
 - uid: SIPSorcery.Net.MediaStreamTrack.#ctor*
   name: MediaStreamTrack
   href: api/SIPSorcery.Net.MediaStreamTrack.html#SIPSorcery_Net_MediaStreamTrack__ctor_
