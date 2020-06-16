@@ -42,7 +42,7 @@ namespace SIPSorcery.Net.UnitTests
             RTPSession rtpSession = new RTPSession(true, true, true);
 
             // Add a track to the session in order to initialise the RTPChannel.
-            MediaStreamTrack dummyTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack dummyTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             rtpSession.addTrack(dummyTrack);
 
             var iceSession = new IceSession(rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio), RTCIceComponent.rtp, null);
@@ -62,7 +62,7 @@ namespace SIPSorcery.Net.UnitTests
             RTPSession rtpSession = new RTPSession(true, true, true);
 
             // Add a track to the session in order to initialise the RTPChannel.
-            MediaStreamTrack dummyTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack dummyTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             rtpSession.addTrack(dummyTrack);
 
             RTPChannel rtpChannel = rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio);
@@ -95,7 +95,7 @@ namespace SIPSorcery.Net.UnitTests
             RTPSession rtpSession = new RTPSession(true, true, true, localAddress);
 
             // Add a track to the session in order to initialise the RTPChannel.
-            MediaStreamTrack dummyTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack dummyTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             rtpSession.addTrack(dummyTrack);
 
             RTPChannel rtpChannel = rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio);
@@ -126,7 +126,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
 
             RTPSession rtpSession = new RTPSession(true, true, true);
-            MediaStreamTrack dummyTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack dummyTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             rtpSession.addTrack(dummyTrack);
 
             var iceSession = new IceSession(rtpSession.GetRtpChannel(SDPMediaTypesEnum.audio), RTCIceComponent.rtp, null);
