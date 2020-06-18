@@ -32,7 +32,7 @@ namespace SIPSorcery.SIP
         override protected string ProtDescr { get; } = "TLS";
 
         public SIPTLSChannel(IPEndPoint endPoint)
-            : base(endPoint, SIPProtocolsEnum.tls, false)
+            : base(endPoint, SIPProtocolsEnum.tls, true)
         {
             if (endPoint == null)
             {
