@@ -101,7 +101,7 @@ namespace SIPSorcery
                 {
                     Log.LogInformation($"{uac.CallDescriptor.To} Answered: {resp.StatusCode} {resp.ReasonPhrase}.");
 
-                    var result = rtpSession.SetRemoteDescription(SDP.ParseSDPDescription(resp.Body));
+                    var result = rtpSession.SetRemoteDescription(SdpType.answer, SDP.ParseSDPDescription(resp.Body));
                     if(result == SetDescriptionResultEnum.OK)
                     {
                         rtpSession.Start();

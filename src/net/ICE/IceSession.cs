@@ -259,6 +259,13 @@ namespace SIPSorcery.Net
             /// </summary>
             internal const int DNS_LOOKUP_TIMEOUT_SECONDS = 3;
 
+            /// <summary>
+            /// The period at which to refresh a successful STUN binding. If the ICE
+            /// server did not get used as the nominated candidate the ICE server 
+            /// checks timer will be stopped.
+            /// </summary>
+            internal const int STUN_BINDING_REQUEST_REFRESH_SECONDS = 180;
+
             internal STUNUri _uri;
             internal string _username;
             internal string _password;
@@ -281,9 +288,10 @@ namespace SIPSorcery.Net
             internal DateTime DnsLookupSentAt { get; set; } = DateTime.MinValue;
 
             /// <summary>
-            /// The number of requests that have been sent to the server.
+            /// The number of requests that have been sent to the server without
+            /// a response.
             /// </summary>
-            internal int RequestsSent { get; set; }
+            internal int OutstandingRequestsSent { get; set; }
 
             /// <summary>
             /// The timestamp the most recent binding request was sent at.
@@ -684,8 +692,10 @@ namespace SIPSorcery.Net
         {
             // Reset the session state.
             _processChecklistTimer?.Dispose();
+            _processIceServersTimer?.Dispose();
             _candidates.Clear();
             _checklist.Clear();
+            _iceServerConnections.Clear();
             GatheringState = RTCIceGatheringState.@new;
             ConnectionState = RTCIceConnectionState.@new;
 
@@ -922,46 +932,40 @@ namespace SIPSorcery.Net
                     _activeIceServer.Error = SocketError.TimedOut;
                 }
                 // Maximum number of requests have been sent to the ICE server without a response.
-                else if (_activeIceServer.RequestsSent >= IceServerConnectionState.MAX_REQUESTS && _activeIceServer.LastResponseReceivedAt == DateTime.MinValue)
+                else if (_activeIceServer.OutstandingRequestsSent >= IceServerConnectionState.MAX_REQUESTS && _activeIceServer.LastResponseReceivedAt == DateTime.MinValue)
                 {
-                    logger.LogWarning($"Connection attempt to ICE server {_activeIceServer._uri} timed out after {_activeIceServer.RequestsSent} requests.");
+                    logger.LogWarning($"Connection attempt to ICE server {_activeIceServer._uri} timed out after {_activeIceServer.OutstandingRequestsSent} requests.");
                     _activeIceServer.Error = SocketError.TimedOut;
                 }
                 // Send STUN binding request.
                 else if (_activeIceServer.ServerReflexiveEndPoint == null && _activeIceServer._uri.Scheme == STUNSchemesEnum.stun)
                 {
-                    _activeIceServer.RequestsSent += 1;
-                    _activeIceServer.LastRequestSentAt = DateTime.Now;
-
-                    // Send a STUN binding request.
-                    STUNMessage stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
-                    stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(_activeIceServer.TransactionID);
-                    byte[] stunReqBytes = stunRequest.ToByteBuffer(null, false);
-
-                    var sendResult = _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, _activeIceServer.ServerEndPoint, stunReqBytes);
-
-                    if (sendResult != SocketError.Success)
-                    {
-                        logger.LogWarning($"Error sending STUN server binding request {_activeIceServer.RequestsSent} for " +
-                            $"{_activeIceServer._uri} to {_activeIceServer.ServerEndPoint}. {sendResult}.");
-
-                        _activeIceServer.Error = sendResult;
-                    }
+                    logger.LogDebug($"Sending STUN binding request to ICE server {_activeIceServer._uri}.");
+                    _activeIceServer.Error = SendStunBindingRequest(_activeIceServer);
                 }
                 // Send TURN binding request.
                 else if (_activeIceServer.ServerReflexiveEndPoint == null && _activeIceServer._uri.Scheme == STUNSchemesEnum.turn)
                 {
-                    logger.LogDebug($"Sending TURN allocation request for {_activeIceServer._uri}.");
-
-                    _activeIceServer.RequestsSent += 1;
-                    _activeIceServer.LastRequestSentAt = DateTime.Now;
+                    logger.LogDebug($"Sending TURN allocate request to ICE server {_activeIceServer._uri}.");
+                    _activeIceServer.Error = SendTurnAllocateRequest(_activeIceServer);
                 }
                 // Periodically re-send the STUN binding request to keep the NAT mapping fresh. Note that if
                 // the server reflexive candidate wasn't used the as the nominated candidate the periodic timer
                 // calling this method will be cancelled.
                 else if (_activeIceServer.ServerReflexiveEndPoint != null && _activeIceServer._uri.Scheme == STUNSchemesEnum.stun)
                 {
+                    int refreshDueIn = IceServerConnectionState.STUN_BINDING_REQUEST_REFRESH_SECONDS -
+                        (int)DateTime.Now.Subtract(_activeIceServer.LastResponseReceivedAt).TotalSeconds;
 
+                    if (refreshDueIn <= 0)
+                    {
+                        _activeIceServer.Error = SendStunBindingRequest(_activeIceServer);
+                    }
+                    else
+                    {
+                        // Set the timer to fire the callback when the next refresh request is due.
+                        _processIceServersTimer.Change(refreshDueIn * 1000, Timeout.Infinite);
+                    }
                 }
                 // Periodically send a TURN Refresh request to keep the relay from closing. Note that if
                 // the relay candidate wasn't used the as the nominated candidate the periodic timer
@@ -1462,11 +1466,12 @@ namespace SIPSorcery.Net
                 throw new ArgumentNullException("stunResponse", "The STUN response parameter cannot be null.");
             }
 
+            // The STUN response is for a check sent to an ICE server.
+            iceServerConnection.LastResponseReceivedAt = DateTime.Now;
+            iceServerConnection.OutstandingRequestsSent = 0;
+
             if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
             {
-                // The STUN response is for a check sent to an ICE server.
-                iceServerConnection.LastResponseReceivedAt = DateTime.Now;
-
                 // If the server reflexive end point is set then this connection check has already been completed.
                 if (iceServerConnection.ServerReflexiveEndPoint == null)
                 {
@@ -1481,9 +1486,7 @@ namespace SIPSorcery.Net
 
                         iceServerConnection.ServerReflexiveEndPoint = new IPEndPoint(mappedIPAddr, mappedPort);
 
-                        // Mark the ICE server check as successful by setting the candidate property on it.
                         RTCIceCandidateInit init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
-
                         RTCIceCandidate svrRflxCandidate = iceServerConnection.GetCandidate(init, RTCIceCandidateType.srflx,
                             NetServices.InternetDefaultAddress, (ushort)_rtpChannel.RTPPort);
 
@@ -1499,11 +1502,47 @@ namespace SIPSorcery.Net
                     }
                 }
             }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateSuccessResponse)
+            {
+                // If the relay end point is set then this connection check has already been completed.
+                if (iceServerConnection.RelayEndPoint == null)
+                {
+                    logger.LogDebug($"TURN allocate success response received for ICE server check to {iceServerConnection._uri}.");
+
+                    var mappedAddr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
+
+                    if (mappedAddr != null)
+                    {
+                        var mappedIPAddr = (mappedAddr as STUNXORAddressAttribute).Address;
+                        int mappedPort = (mappedAddr as STUNXORAddressAttribute).Port;
+
+                        iceServerConnection.ServerReflexiveEndPoint = new IPEndPoint(mappedIPAddr, mappedPort);
+
+                        RTCIceCandidateInit init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
+                        RTCIceCandidate svrRflxCandidate = iceServerConnection.GetCandidate(init, RTCIceCandidateType.srflx,
+                            NetServices.InternetDefaultAddress, (ushort)_rtpChannel.RTPPort);
+
+                        if (svrRflxCandidate != null)
+                        {
+                            logger.LogDebug($"Adding server reflex ICE candidate for ICE server {iceServerConnection._uri}.");
+
+                            // Note server reflexive candidates don't update the checklist pairs since it's merely an
+                            // alternative way to represent an existing host candidate.
+                            _candidates.Add(svrRflxCandidate);
+                            OnIceCandidate?.Invoke(svrRflxCandidate);
+                        }
+                    }
+
+                    // TODO: Send the create channel request at this point?
+
+                    // TODO: get the relay address and send the create permissions requests.
+
+                }
+            }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)
             {
                 logger.LogWarning($"STUN binding error response received for ICE server check to {iceServerConnection._uri}.");
                 // The STUN response is for a check sent to an ICE server.
-                iceServerConnection.LastResponseReceivedAt = DateTime.Now;
                 iceServerConnection.Error = SocketError.ConnectionRefused;
             }
             else
@@ -1513,27 +1552,73 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Gets an allocate request for a TURN server.
+        /// Sends a STUN binding request to an ICE server.
         /// </summary>
-        /// <param name="iceServerState">The TURN server configuration to get the request for.</param>
-        private STUNMessage GetTurnAllocateRequest(IceServerConnectionState iceServerState)
+        /// <param name="iceServer">The ICE server to send the request to.</param>
+        /// <returns>The result of the send attempt. Note this is the return code from the
+        /// socket send call and not the result code from the STUN response.</returns>
+        private SocketError SendStunBindingRequest(IceServerConnectionState iceServer)
         {
-            STUNMessage allocateRequest = new STUNMessage(STUNMessageTypesEnum.Allocate);
-            allocateRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServerState.TransactionID);
-            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, 3600));
-            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.RequestedTransport, STUNAttributeConstants.UdpTransportType));
+            iceServer.OutstandingRequestsSent += 1;
+            iceServer.LastRequestSentAt = DateTime.Now;
 
-            return allocateRequest;
+            // Send a STUN binding request.
+            STUNMessage stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
+            stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
+            byte[] stunReqBytes = stunRequest.ToByteBuffer(null, false);
+
+            var sendResult = _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, stunReqBytes);
+
+            if (sendResult != SocketError.Success)
+            {
+                logger.LogWarning($"Error sending STUN server binding request {iceServer.OutstandingRequestsSent} for " +
+                    $"{iceServer._uri} to {iceServer.ServerEndPoint}. {sendResult}.");
+            }
+
+            return sendResult;
         }
 
-        private STUNMessage GetTurnPermissionsRequest(IceServerConnectionState iceServerState)
+        /// <summary>
+        /// Sends an allocate request to a TURN server.
+        /// </summary>
+        /// <param name="iceServer">The TURN server to send the request to.</param>
+        /// <returns>The result from the socket send (not the response code from the TURN server).</returns>
+        private SocketError SendTurnAllocateRequest(IceServerConnectionState iceServer)
+        {
+            iceServer.OutstandingRequestsSent += 1;
+            iceServer.LastRequestSentAt = DateTime.Now;
+
+            STUNMessage allocateRequest = new STUNMessage(STUNMessageTypesEnum.Allocate);
+            allocateRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
+            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Lifetime, 3600));
+            allocateRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.RequestedTransport, STUNAttributeConstants.UdpTransportType));
+            byte[] allocateReqBytes = allocateRequest.ToByteBuffer(null, false);
+
+            var sendResult = _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
+
+            if (sendResult != SocketError.Success)
+            {
+                logger.LogWarning($"Error sending STUN server binding request {iceServer.OutstandingRequestsSent} for " +
+                    $"{iceServer._uri} to {iceServer.ServerEndPoint}. {sendResult}.");
+            }
+
+            return sendResult;
+        }
+
+        /// <summary>
+        /// Sends a permissions request to a TURN server for a peer end point.
+        /// </summary>
+        /// <param name="iceServer">The ICE server to send the permissions request to.</param>
+        /// <param name="peerEndPoint">The peer end point to request the permissions for.</param>
+        /// <returns>The result from the socket send (not the response code from the TURN server).</returns>
+        private SocketError SendTurnPermissionsRequest(IceServerConnectionState iceServer, IPEndPoint peerEndPoint)
         {
             // Send create permission request
-            STUNMessage turnPermissionRequest = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
-            turnPermissionRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServerState.TransactionID);
+            STUNMessage createPermissionRequest = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
+            createPermissionRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
             //turnBindRequest.Attributes.Add(new STUNv2Attribute(STUNv2AttributeTypesEnum.ChannelNumber, (ushort)3000));
-            turnPermissionRequest.Attributes.Add(new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORPeerAddress, iceServerState._uri.Port, iceServerState.ServerEndPoint.Address));
-            turnPermissionRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Username, Encoding.UTF8.GetBytes(iceServerState._username)));
+            createPermissionRequest.Attributes.Add(new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORPeerAddress, peerEndPoint.Port, peerEndPoint.Address));
+            createPermissionRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Username, Encoding.UTF8.GetBytes(iceServer._username)));
             //turnPermissionRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce, Encoding.UTF8.GetBytes(localTurnIceCandidate.TurnServer.Nonce)));
             //turnPermissionRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm, Encoding.UTF8.GetBytes(localTurnIceCandidate.TurnServer.Realm)));
 
@@ -1541,8 +1626,17 @@ namespace SIPSorcery.Net
             //byte[] hmacKey = md5.ComputeHash(Encoding.UTF8.GetBytes(localTurnIceCandidate.TurnServer.Username + ":" + localTurnIceCandidate.TurnServer.Realm + ":" + localTurnIceCandidate.TurnServer.Password));
 
             //byte[] turnPermissionReqBytes = turnPermissionRequest.ToByteBuffer(hmacKey, false);
+            byte[] createPermissionReqBytes = createPermissionRequest.ToByteBuffer(null, false);
 
-            return turnPermissionRequest;
+            var sendResult = _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, createPermissionReqBytes);
+
+            if (sendResult != SocketError.Success)
+            {
+                logger.LogWarning($"Error sending STUN server binding request {iceServer.OutstandingRequestsSent} for " +
+                    $"{iceServer._uri} to {iceServer.ServerEndPoint}. {sendResult}.");
+            }
+
+            return sendResult;
         }
     }
 }

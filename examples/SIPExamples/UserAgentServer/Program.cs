@@ -159,7 +159,7 @@ namespace SIPSorcery
                                     }
                                 }, null);
 
-                            var setResult = rtpSession.SetRemoteDescription(offerSdp);
+                            var setResult = rtpSession.SetRemoteDescription(SdpType.offer, offerSdp);
 
                             if (setResult != SetDescriptionResultEnum.OK)
                             {

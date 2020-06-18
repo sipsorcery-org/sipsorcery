@@ -13,15 +13,20 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+// If uncommented the logic to do the DTLS handshake will be called.
+#define DTLS_IS_ENABLED
+
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SIPSorcery.Net;
+using SIPSorcery.Sys;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
@@ -57,7 +62,7 @@ namespace SIPSorcery.Examples
         private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
         private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
         private const int WEBSOCKET_PORT = 8081;
-        private const string SIPSORCERY_STUN_SERVER = "stun.sipsorcery.com";
+        private const string SIPSORCERY_STUN_SERVER = ""; //"stun.sipsorcery.com";
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -160,8 +165,13 @@ namespace SIPSorcery.Examples
 
             var peerConnection = new RTCPeerConnection(pcConfiguration);
 
+#if DTLS_IS_ENABLED
+            SIPSorceryMedia.DtlsHandshake dtls = new SIPSorceryMedia.DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
+            //dtls.Debug = true;
+#endif
+
             // Add inactive audio and video tracks.
-            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.Inactive);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
             MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.Inactive);
             peerConnection.addTrack(videoTrack);
@@ -177,11 +187,7 @@ namespace SIPSorcery.Examples
                 }
             };
 
-            peerConnection.onconnectionstatechange += (state) =>
-            {
-                logger.LogDebug($"Peer connection state change to {state}.");
-            };
-
+            // Peer ICE connection state changes are for ICE events such as the STUN checks completing.
             peerConnection.oniceconnectionstatechange += (state) =>
             {
                 logger.LogDebug($"ICE connection state change to {state}.");
@@ -189,9 +195,40 @@ namespace SIPSorcery.Examples
                 if (state == RTCIceConnectionState.connected)
                 {
                     var remoteEndPoint = peerConnection.IceSession.NominatedCandidate.DestinationEndPoint;
+                    //var remoteEndPoint = peerConnection.AudioDestinationEndPoint;
                     logger.LogInformation($"ICE connected to remote end point {remoteEndPoint}.");
+
+#if DTLS_IS_ENABLED
+                    if (peerConnection.IceRole == IceRolesEnum.active)
+                    {
+                        logger.LogDebug("Starting DLS handshake as client task.");
+                        _ = Task.Run(() =>
+                        {
+                            bool handshakedResult = DoDtlsHandshake(peerConnection, dtls, true, peerConnection.RemotePeerDtlsFingerprint);
+                            logger.LogDebug($"DTLS handshake result {handshakedResult}.");
+                        });
+                    }
+                    else
+                    {
+                        logger.LogDebug("Starting DLS handshake as server task.");
+                        _ = Task.Run(() =>
+                        {
+                            bool handshakedResult = DoDtlsHandshake(peerConnection, dtls, false, peerConnection.RemotePeerDtlsFingerprint);
+                            logger.LogDebug($"DTLS handshake result {handshakedResult}.");
+                        });
+                    }
+#endif
                 }
             };
+
+            // Peer connection state changes are for DTLS handshake completing.
+            peerConnection.onconnectionstatechange += (state) =>
+            {
+                logger.LogDebug($"Peer connection state change to {state}.");
+            };
+
+            peerConnection.OnReceiveReport += (type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
+            peerConnection.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {reason}.");
 
             peerConnection.IceSession.StartGathering();
 
@@ -256,5 +293,87 @@ namespace SIPSorcery.Examples
             loggerFactory.AddSerilog(loggerConfig);
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
         }
+
+#if DTLS_IS_ENABLED
+
+        /// <summary>
+        /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
+        /// </summary>
+        /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
+        private static bool DoDtlsHandshake(RTCPeerConnection peerConnection, SIPSorceryMedia.DtlsHandshake dtls, bool isClient, byte[] sdpFingerprint)
+        {
+            logger.LogDebug("DoDtlsHandshake started.");
+
+            if (!File.Exists(DTLS_CERTIFICATE_PATH))
+            {
+                throw new ApplicationException($"The DTLS certificate file could not be found at {DTLS_CERTIFICATE_PATH}.");
+            }
+            else if (!File.Exists(DTLS_KEY_PATH))
+            {
+                throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
+            }
+
+            int res = 0;
+            bool fingerprintMatch = false;
+
+            if (isClient)
+            {
+                IPEndPoint peerEP = peerConnection.IceSession.NominatedCandidate.DestinationEndPoint;
+                logger.LogDebug($"DTLS client handshake starting to {peerEP}.");
+
+                // For the DTLS handshake to work connect must be called on the socket so openssl knows where to send.
+                var rtpSocket = peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket;
+                rtpSocket.Connect(peerEP);
+
+                byte[] fingerprint = null;
+                res = dtls.DoHandshakeAsClient((ulong)rtpSocket.Handle, (short)peerEP.AddressFamily.GetHashCode(), peerEP.Address.GetAddressBytes(), (ushort)peerEP.Port, ref fingerprint);
+                if (fingerprint != null)
+                {
+                    logger.LogDebug($"DTLS server fingerprint {ByteBufferInfo.HexStr(fingerprint)}.");
+                    fingerprintMatch = sdpFingerprint.SequenceEqual(fingerprint);
+                }
+            }
+            else
+            {
+                byte[] fingerprint = null;
+                res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref fingerprint);
+                if (fingerprint != null)
+                {
+                    logger.LogDebug($"DTLS client fingerprint {ByteBufferInfo.HexStr(fingerprint)}.");
+                    fingerprintMatch = sdpFingerprint.SequenceEqual(fingerprint);
+                }
+            }
+
+            logger.LogDebug("DtlsContext initialisation result=" + res);
+
+            if (dtls.IsHandshakeComplete())
+            { 
+                logger.LogDebug("DTLS negotiation complete.");
+
+                if (!fingerprintMatch)
+                {
+                    logger.LogWarning("DTLS fingerprint mismatch.");
+                    return false;
+                }
+                else
+                {
+                    var srtpSendContext = new SIPSorceryMedia.Srtp(dtls, isClient);
+                    var srtpReceiveContext = new SIPSorceryMedia.Srtp(dtls, !isClient);
+
+                    peerConnection.SetSecurityContext(
+                        srtpSendContext.ProtectRTP,
+                        srtpReceiveContext.UnprotectRTP,
+                        srtpSendContext.ProtectRTCP,
+                        srtpReceiveContext.UnprotectRTCP);
+
+                    return true;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+#endif
     }
 }

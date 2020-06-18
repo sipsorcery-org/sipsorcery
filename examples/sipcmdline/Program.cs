@@ -230,33 +230,33 @@ namespace SIPSorcery
 
                 logger.LogDebug($"Destination IP end point {dstEp} and SIP URI {dstUri}");
 
-                IPAddress localAddress = (dstEp.Address.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
-                SIPChannel sipChannel = null;
+                //IPAddress localAddress = (dstEp.Address.AddressFamily == AddressFamily.InterNetworkV6) ? IPAddress.IPv6Any : IPAddress.Any;
+                //SIPChannel sipChannel = null;
 
-                switch (dstEp.Protocol)
-                {
-                    case SIPProtocolsEnum.tcp:
-                        sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
-                        (sipChannel as SIPTCPChannel).DisableLocalTCPSocketsCheck = true; // Allow sends to listeners on this host.
-                        break;
-                    case SIPProtocolsEnum.tls:
-                        var certificate = new X509Certificate2(@"localhost.pfx", "");
-                        sipChannel = new SIPTLSChannel(certificate, new IPEndPoint(localAddress, DEFAULT_SIPS_CLIENT_PORT));
-                        break;
-                    case SIPProtocolsEnum.udp:
-                        sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
-                        break;
-                    case SIPProtocolsEnum.ws:
-                        sipChannel = new SIPClientWebSocketChannel();
-                        break;
-                    case SIPProtocolsEnum.wss:
-                        sipChannel = new SIPClientWebSocketChannel();
-                        break;
-                    default:
-                        throw new ApplicationException($"Don't know how to create SIP channel for transport {dstEp.Protocol}.");
-                }
+                //switch (dstEp.Protocol)
+                //{
+                //    case SIPProtocolsEnum.tcp:
+                //        sipChannel = new SIPTCPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
+                //        (sipChannel as SIPTCPChannel).DisableLocalTCPSocketsCheck = true; // Allow sends to listeners on this host.
+                //        break;
+                //    case SIPProtocolsEnum.tls:
+                //        var certificate = new X509Certificate2(@"localhost.pfx", "");
+                //        sipChannel = new SIPTLSChannel(certificate, new IPEndPoint(localAddress, DEFAULT_SIPS_CLIENT_PORT));
+                //        break;
+                //    case SIPProtocolsEnum.udp:
+                //        sipChannel = new SIPUDPChannel(new IPEndPoint(localAddress, DEFAULT_SIP_CLIENT_PORT));
+                //        break;
+                //    case SIPProtocolsEnum.ws:
+                //        sipChannel = new SIPClientWebSocketChannel();
+                //        break;
+                //    case SIPProtocolsEnum.wss:
+                //        sipChannel = new SIPClientWebSocketChannel();
+                //        break;
+                //    default:
+                //        throw new ApplicationException($"Don't know how to create SIP channel for transport {dstEp.Protocol}.");
+                //}
 
-                sipTransport.AddSIPChannel(sipChannel);
+                //sipTransport.AddSIPChannel(sipChannel);
 
                 Task<bool> task = null;
 

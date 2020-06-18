@@ -33,6 +33,17 @@ namespace SIPSorcery.Net
     public delegate int DoDtlsHandshakeDelegate(RTCPeerConnection rtcPeerConnection);
 
     /// <summary>
+    /// The ICE set up roles that a peer can be in. The role determines how the DTLS
+    /// handshake is performed, i.e. which peer is the client and which is the server.
+    /// </summary>
+    public enum IceRolesEnum
+    {
+        actpass = 0,
+        passive = 1,
+        active = 2
+    }
+
+    /// <summary>
     /// Options for creating the SDP offer.
     /// </summary>
     /// <remarks>
@@ -105,13 +116,14 @@ namespace SIPSorcery.Net
     public class RTCPeerConnection : RTPSession, IRTCPeerConnection
     {
         // SDP constants.
-        private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
+        //private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
+        private new const string RTP_MEDIA_PROFILE = "UDP/TLS/RTP/SAVP";
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
-        private const string ICE_SETUP_OFFER_ATTRIBUTE = "a=setup:actpass";     // Indicates ICE agent can act as either the "controlling" or "controlled" peer.
-        private const string ICE_SETUP_ANSWER_ATTRIBUTE = "a=setup:passive";    // Indicates ICE agent will act as the "controlled" peer.
+        private const string ICE_SETUP_ATTRIBUTE = "a=setup:";     // Indicates ICE agent can act as either the "controlling" or "controlled" peer.
         private const string BUNDLE_ATTRIBUTE = "BUNDLE";
         private const string ICE_OPTIONS = "ice2,trickle";                   // Supported ICE options.
         private const string NORMAL_CLOSE_REASON = "normal";
+        private const string DTLS_FINGERPRINT_DIGEST = "sha-256";    // The digest algorithm for checking a certificate during the DTLS handshake.
 
         private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
@@ -122,6 +134,17 @@ namespace SIPSorcery.Net
         public string LocalSdpSessionID;
 
         public IceSession IceSession { get; private set; }
+
+        /// <summary>
+        /// The ICE role the peer is acting in.
+        /// </summary>
+        public IceRolesEnum IceRole { get; set; } = IceRolesEnum.actpass;
+
+        /// <summary>
+        /// The DTLS fingerprint supplied by the remote peer in their SDP. Needs to be checked
+        /// that the certificate supplied during the DTLS handshake matches.
+        /// </summary>
+        public byte[] RemotePeerDtlsFingerprint { get; private set; }
 
         public bool IsDtlsNegotiationComplete
         {
@@ -231,6 +254,11 @@ namespace SIPSorcery.Net
                 if (state == RTCIceConnectionState.connected && IceSession.NominatedCandidate != null)
                 {
                     RemoteEndPoint = IceSession.NominatedCandidate.DestinationEndPoint;
+
+                    if (!IsSecureContextReady)
+                    {
+                        PauseReceive();
+                    }
                 }
 
                 iceConnectionState = state;
@@ -328,21 +356,24 @@ namespace SIPSorcery.Net
             {
                 string remoteIceUser = null;
                 string remoteIcePassword = null;
+                string dtlsFingerprint = null;
 
                 var audioAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
                 if (audioAnnounce != null)
                 {
                     remoteIceUser = audioAnnounce.IceUfrag;
                     remoteIcePassword = audioAnnounce.IcePwd;
+                    dtlsFingerprint = audioAnnounce.DtlsFingerprint;
                 }
 
                 var videoAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
                 if (videoAnnounce != null)
                 {
-                    if (remoteIceUser == null && remoteIcePassword == null)
+                    if (remoteIceUser == null || remoteIcePassword == null || dtlsFingerprint == null)
                     {
-                        remoteIceUser = videoAnnounce.IceUfrag;
-                        remoteIcePassword = videoAnnounce.IcePwd;
+                        remoteIceUser = remoteIceUser ?? videoAnnounce.IceUfrag;
+                        remoteIcePassword = remoteIcePassword ?? videoAnnounce.IcePwd;
+                        dtlsFingerprint = dtlsFingerprint ?? audioAnnounce.DtlsFingerprint;
                     }
                 }
 
@@ -351,11 +382,45 @@ namespace SIPSorcery.Net
                 if (init.type == RTCSdpType.answer)
                 {
                     IceSession.IsController = true;
+                    // Set DTLS role to be server.
+                    IceRole = IceRolesEnum.passive;
+                }
+                else
+                {
+                    // Set DTLS role to be client.
+                    IceRole = IceRolesEnum.active;
                 }
 
                 if (remoteIceUser != null && remoteIcePassword != null)
                 {
                     IceSession.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
+                }
+
+                if(!string.IsNullOrWhiteSpace(dtlsFingerprint))
+                {
+                    dtlsFingerprint = dtlsFingerprint.Trim().ToLower();
+
+                    if(dtlsFingerprint.Length < DTLS_FINGERPRINT_DIGEST.Length + 1)
+                    {
+                        logger.LogWarning($"The DTLS fingerprint was too short.");
+                        return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
+                    }
+                    else if(!dtlsFingerprint.StartsWith(DTLS_FINGERPRINT_DIGEST))
+                    {
+                        logger.LogWarning($"The DTLS fingerprint was supplied with an unsupported digest function (supported one is {DTLS_FINGERPRINT_DIGEST}): {dtlsFingerprint}.");
+                        return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
+                    }
+                    else
+                    {
+                        dtlsFingerprint = dtlsFingerprint.Substring(DTLS_FINGERPRINT_DIGEST.Length + 1).Trim().Replace(":","").Replace(" ", "");
+                        RemotePeerDtlsFingerprint = ByteBufferInfo.ParseHexStr(dtlsFingerprint);
+                        logger.LogDebug($"The DTLS fingerprint for the remote peer's SDP {ByteBufferInfo.HexStr(RemotePeerDtlsFingerprint)}.");
+                    }
+                }
+                else
+                {
+                    logger.LogWarning("The DTLS fingerprint was missing from the remote party's session description.");
+                    return SetDescriptionResultEnum.DtlsFingerprintMissing;
                 }
 
                 // All browsers seem to have gone to trickling ICE candidates now but just
@@ -401,6 +466,8 @@ namespace SIPSorcery.Net
                 connectionState = RTCPeerConnectionState.connected;
                 onconnectionstatechange?.Invoke(RTCPeerConnectionState.connected);
             }
+
+            ResumeReceive();
         }
 
         /// <summary>
@@ -471,13 +538,13 @@ namespace SIPSorcery.Net
                 if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 {
                     var audioAnnouncement = offerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single();
-                    audioAnnouncement.AddExtra(ICE_SETUP_OFFER_ATTRIBUTE);
+                    audioAnnouncement.AddExtra($"{ICE_SETUP_ATTRIBUTE}{IceRole}");
                 }
 
                 if (offerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
                 {
                     var videoAnnouncement = offerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single();
-                    videoAnnouncement.AddExtra(ICE_SETUP_OFFER_ATTRIBUTE);
+                    videoAnnouncement.AddExtra($"{ICE_SETUP_ATTRIBUTE}{IceRole}");
                 }
 
                 RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
@@ -541,13 +608,13 @@ namespace SIPSorcery.Net
                 if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
                 {
                     var audioAnnouncement = answerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single();
-                    audioAnnouncement.AddExtra(ICE_SETUP_ANSWER_ATTRIBUTE);
+                    audioAnnouncement.AddExtra($"{ICE_SETUP_ATTRIBUTE}{IceRole}");
                 }
 
                 if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
                 {
                     var videoAnnouncement = answerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single();
-                    videoAnnouncement.AddExtra(ICE_SETUP_ANSWER_ATTRIBUTE);
+                    videoAnnouncement.AddExtra($"{ICE_SETUP_ATTRIBUTE}{IceRole}");
                 }
 
                 RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
