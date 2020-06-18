@@ -1304,6 +1304,30 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.HepPacket.GetBytes
   nameWithType: HepPacket.GetBytes
+- uid: SIPSorcery.Net.IceRolesEnum
+  name: IceRolesEnum
+  href: api/SIPSorcery.Net.IceRolesEnum.html
+  commentId: T:SIPSorcery.Net.IceRolesEnum
+  fullName: SIPSorcery.Net.IceRolesEnum
+  nameWithType: IceRolesEnum
+- uid: SIPSorcery.Net.IceRolesEnum.active
+  name: active
+  href: api/SIPSorcery.Net.IceRolesEnum.html#SIPSorcery_Net_IceRolesEnum_active
+  commentId: F:SIPSorcery.Net.IceRolesEnum.active
+  fullName: SIPSorcery.Net.IceRolesEnum.active
+  nameWithType: IceRolesEnum.active
+- uid: SIPSorcery.Net.IceRolesEnum.actpass
+  name: actpass
+  href: api/SIPSorcery.Net.IceRolesEnum.html#SIPSorcery_Net_IceRolesEnum_actpass
+  commentId: F:SIPSorcery.Net.IceRolesEnum.actpass
+  fullName: SIPSorcery.Net.IceRolesEnum.actpass
+  nameWithType: IceRolesEnum.actpass
+- uid: SIPSorcery.Net.IceRolesEnum.passive
+  name: passive
+  href: api/SIPSorcery.Net.IceRolesEnum.html#SIPSorcery_Net_IceRolesEnum_passive
+  commentId: F:SIPSorcery.Net.IceRolesEnum.passive
+  fullName: SIPSorcery.Net.IceRolesEnum.passive
+  nameWithType: IceRolesEnum.passive
 - uid: SIPSorcery.Net.IceSession
   name: IceSession
   href: api/SIPSorcery.Net.IceSession.html
@@ -3466,6 +3490,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.iceGatheringState
   nameWithType: RTCPeerConnection.iceGatheringState
+- uid: SIPSorcery.Net.RTCPeerConnection.IceRole
+  name: IceRole
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_IceRole
+  commentId: P:SIPSorcery.Net.RTCPeerConnection.IceRole
+  fullName: SIPSorcery.Net.RTCPeerConnection.IceRole
+  nameWithType: RTCPeerConnection.IceRole
+- uid: SIPSorcery.Net.RTCPeerConnection.IceRole*
+  name: IceRole
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_IceRole_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.IceRole
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPeerConnection.IceRole
+  nameWithType: RTCPeerConnection.IceRole
 - uid: SIPSorcery.Net.RTCPeerConnection.IceSession
   name: IceSession
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_IceSession
@@ -3605,6 +3642,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.RemoteEndPoint
   nameWithType: RTCPeerConnection.RemoteEndPoint
+- uid: SIPSorcery.Net.RTCPeerConnection.RemotePeerDtlsFingerprint
+  name: RemotePeerDtlsFingerprint
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_RemotePeerDtlsFingerprint
+  commentId: P:SIPSorcery.Net.RTCPeerConnection.RemotePeerDtlsFingerprint
+  fullName: SIPSorcery.Net.RTCPeerConnection.RemotePeerDtlsFingerprint
+  nameWithType: RTCPeerConnection.RemotePeerDtlsFingerprint
+- uid: SIPSorcery.Net.RTCPeerConnection.RemotePeerDtlsFingerprint*
+  name: RemotePeerDtlsFingerprint
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_RemotePeerDtlsFingerprint_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.RemotePeerDtlsFingerprint
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPeerConnection.RemotePeerDtlsFingerprint
+  nameWithType: RTCPeerConnection.RemotePeerDtlsFingerprint
 - uid: SIPSorcery.Net.RTCPeerConnection.restartIce
   name: restartIce()
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_restartIce
@@ -5361,6 +5411,19 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnTimeout
   fullName: SIPSorcery.Net.RTPSession.OnTimeout
   nameWithType: RTPSession.OnTimeout
+- uid: SIPSorcery.Net.RTPSession.PauseReceive
+  name: PauseReceive()
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_PauseReceive
+  commentId: M:SIPSorcery.Net.RTPSession.PauseReceive
+  fullName: SIPSorcery.Net.RTPSession.PauseReceive()
+  nameWithType: RTPSession.PauseReceive()
+- uid: SIPSorcery.Net.RTPSession.PauseReceive*
+  name: PauseReceive
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_PauseReceive_
+  commentId: Overload:SIPSorcery.Net.RTPSession.PauseReceive
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.PauseReceive
+  nameWithType: RTPSession.PauseReceive
 - uid: SIPSorcery.Net.RTPSession.RemoteDescription
   name: RemoteDescription
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteDescription
@@ -5387,6 +5450,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.RemoteRtpEventPayloadID
   nameWithType: RTPSession.RemoteRtpEventPayloadID
+- uid: SIPSorcery.Net.RTPSession.ResumeReceive
+  name: ResumeReceive()
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_ResumeReceive
+  commentId: M:SIPSorcery.Net.RTPSession.ResumeReceive
+  fullName: SIPSorcery.Net.RTPSession.ResumeReceive()
+  nameWithType: RTPSession.ResumeReceive()
+- uid: SIPSorcery.Net.RTPSession.ResumeReceive*
+  name: ResumeReceive
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_ResumeReceive_
+  commentId: Overload:SIPSorcery.Net.RTPSession.ResumeReceive
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.ResumeReceive
+  nameWithType: RTPSession.ResumeReceive
 - uid: SIPSorcery.Net.RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
   name: RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
@@ -8861,6 +8937,24 @@ references:
   commentId: F:SIPSorcery.Net.SetDescriptionResultEnum.AudioIncompatible
   fullName: SIPSorcery.Net.SetDescriptionResultEnum.AudioIncompatible
   nameWithType: SetDescriptionResultEnum.AudioIncompatible
+- uid: SIPSorcery.Net.SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported
+  name: DtlsFingerprintDigestNotSupported
+  href: api/SIPSorcery.Net.SetDescriptionResultEnum.html#SIPSorcery_Net_SetDescriptionResultEnum_DtlsFingerprintDigestNotSupported
+  commentId: F:SIPSorcery.Net.SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported
+  fullName: SIPSorcery.Net.SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported
+  nameWithType: SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported
+- uid: SIPSorcery.Net.SetDescriptionResultEnum.DtlsFingerprintInvalid
+  name: DtlsFingerprintInvalid
+  href: api/SIPSorcery.Net.SetDescriptionResultEnum.html#SIPSorcery_Net_SetDescriptionResultEnum_DtlsFingerprintInvalid
+  commentId: F:SIPSorcery.Net.SetDescriptionResultEnum.DtlsFingerprintInvalid
+  fullName: SIPSorcery.Net.SetDescriptionResultEnum.DtlsFingerprintInvalid
+  nameWithType: SetDescriptionResultEnum.DtlsFingerprintInvalid
+- uid: SIPSorcery.Net.SetDescriptionResultEnum.DtlsFingerprintMissing
+  name: DtlsFingerprintMissing
+  href: api/SIPSorcery.Net.SetDescriptionResultEnum.html#SIPSorcery_Net_SetDescriptionResultEnum_DtlsFingerprintMissing
+  commentId: F:SIPSorcery.Net.SetDescriptionResultEnum.DtlsFingerprintMissing
+  fullName: SIPSorcery.Net.SetDescriptionResultEnum.DtlsFingerprintMissing
+  nameWithType: SetDescriptionResultEnum.DtlsFingerprintMissing
 - uid: SIPSorcery.Net.SetDescriptionResultEnum.Error
   name: Error
   href: api/SIPSorcery.Net.SetDescriptionResultEnum.html#SIPSorcery_Net_SetDescriptionResultEnum_Error
@@ -25331,6 +25425,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Sys.ByteBufferInfo.HexStr
   nameWithType: ByteBufferInfo.HexStr
+- uid: SIPSorcery.Sys.ByteBufferInfo.ParseHexStr(System.String)
+  name: ParseHexStr(String)
+  href: api/SIPSorcery.Sys.ByteBufferInfo.html#SIPSorcery_Sys_ByteBufferInfo_ParseHexStr_System_String_
+  commentId: M:SIPSorcery.Sys.ByteBufferInfo.ParseHexStr(System.String)
+  fullName: SIPSorcery.Sys.ByteBufferInfo.ParseHexStr(System.String)
+  nameWithType: ByteBufferInfo.ParseHexStr(String)
+- uid: SIPSorcery.Sys.ByteBufferInfo.ParseHexStr*
+  name: ParseHexStr
+  href: api/SIPSorcery.Sys.ByteBufferInfo.html#SIPSorcery_Sys_ByteBufferInfo_ParseHexStr_
+  commentId: Overload:SIPSorcery.Sys.ByteBufferInfo.ParseHexStr
+  isSpec: "True"
+  fullName: SIPSorcery.Sys.ByteBufferInfo.ParseHexStr
+  nameWithType: ByteBufferInfo.ParseHexStr
 - uid: SIPSorcery.Sys.Crc32
   name: Crc32
   href: api/SIPSorcery.Sys.Crc32.html

@@ -141,7 +141,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Media.RtpAudioSession.html",
-          "hash": "QaodwjBJf9/aKDnstGZ3EA=="
+          "hash": "QrYd9zQYqQJLEk9EOq6reA=="
         }
       },
       "is_incremental": false,
@@ -305,11 +305,23 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "api/SIPSorcery.Net.IceRolesEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/SIPSorcery.Net.IceRolesEnum.html",
+          "hash": "m3uDrSayT2relp81Tdr5rw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "api/SIPSorcery.Net.IceSession.yml",
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.IceSession.html",
-          "hash": "1Tc7gsJ6dfwAnrMnEDe5iQ=="
+          "hash": "eqzE0DwVKZvtyzTjoJH0BA=="
         }
       },
       "is_incremental": false,
@@ -345,7 +357,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.MediaStreamTrack.html",
-          "hash": "TVu47nE+Dkbqslc9Hyazwg=="
+          "hash": "ZMJn3tcWVIeZYGPYSEJu0A=="
         }
       },
       "is_incremental": false,
@@ -693,7 +705,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCPeerConnection.html",
-          "hash": "5EtB1YQQTB5nv0wD0arKaA=="
+          "hash": "LObuR8FypGx3EKnNTZDUcQ=="
         }
       },
       "is_incremental": false,
@@ -729,7 +741,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCRtpReceiver.html",
-          "hash": "lToSTQc+BFeVdiF2qQjOdw=="
+          "hash": "yLNZRT4QK3bdHtVn0cWh8Q=="
         }
       },
       "is_incremental": false,
@@ -741,7 +753,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCRtpSender.html",
-          "hash": "WgKsUJFNh+w5knPZPQQzBw=="
+          "hash": "Az062eYO0wW+qFkAkkNMZA=="
         }
       },
       "is_incremental": false,
@@ -777,7 +789,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTCSessionDescriptionInit.html",
-          "hash": "cMK+SdK1Sc7C2nNPUbYoSg=="
+          "hash": "kdMY1gGFUxvYWyKRTamgiw=="
         }
       },
       "is_incremental": false,
@@ -801,7 +813,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTPChannel.html",
-          "hash": "C2YvprwRVBwlKOWTdc8XEg=="
+          "hash": "rugAPXAlrYWSwFQzEHbegg=="
         }
       },
       "is_incremental": false,
@@ -813,7 +825,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTPChannelSocketsEnum.html",
-          "hash": "md3gEtilQY9nHCGPCvQr8w=="
+          "hash": "x97bi22okVjqeGfIQP+iUw=="
         }
       },
       "is_incremental": false,
@@ -861,7 +873,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.RTPSession.html",
-          "hash": "Je74pEkvfzFA1s3QBWyFyg=="
+          "hash": "y7WF/BuC1mchlSfB02/Gzg=="
         }
       },
       "is_incremental": false,
@@ -1509,7 +1521,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.SetDescriptionResultEnum.html",
-          "hash": "KZVsyRNHyNjMz17Qmz+1fg=="
+          "hash": "3PX7sY4NSMXlModIPzSbfg=="
         }
       },
       "is_incremental": false,
@@ -1533,7 +1545,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Net.html",
-          "hash": "oxoAY8j59NhsPe5AYmrqiA=="
+          "hash": "rk3WqK+cMQRV8FQ45TUFvg=="
         }
       },
       "is_incremental": false,
@@ -3477,7 +3489,7 @@
       "output": {
         ".html": {
           "relative_path": "api/SIPSorcery.Sys.ByteBufferInfo.html",
-          "hash": "N7UOjq0W+rzrfyZcnWA1Rw=="
+          "hash": "5E6BWpKGr3oo9d9jWfzLzg=="
         }
       },
       "is_incremental": false,
@@ -3741,7 +3753,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "Soj3rC8MdtjWJAd92kydGQ=="
+          "hash": "awJj2YYleUiHo716C7TTcw=="
         }
       },
       "is_incremental": false,
@@ -3994,7 +4006,7 @@
         "ManagedReferenceDocumentProcessor": {
           "can_incremental": false,
           "incrementalPhase": "build",
-          "total_file_count": 310,
+          "total_file_count": 311,
           "skipped_file_count": 0
         },
         "ResourceDocumentProcessor": {
