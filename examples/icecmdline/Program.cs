@@ -179,7 +179,7 @@ namespace SIPSorcery.Examples
             peerConnection.onicecandidate += (candidate) =>
             {
                 logger.LogDebug($"ICE candidate discovered: {candidate}.");
-                
+
                 // Host candidates are included in the SDP we send.
                 if (candidate.type != RTCIceCandidateType.host)
                 {
@@ -198,26 +198,34 @@ namespace SIPSorcery.Examples
                     //var remoteEndPoint = peerConnection.AudioDestinationEndPoint;
                     logger.LogInformation($"ICE connected to remote end point {remoteEndPoint}.");
 
-#if DTLS_IS_ENABLED
-                    if (peerConnection.IceRole == IceRolesEnum.active)
+                    if (peerConnection.RemotePeerDtlsFingerprint == null)
                     {
-                        logger.LogDebug("Starting DLS handshake as client task.");
-                        _ = Task.Run(() =>
-                        {
-                            bool handshakedResult = DoDtlsHandshake(peerConnection, dtls, true, peerConnection.RemotePeerDtlsFingerprint);
-                            logger.LogDebug($"DTLS handshake result {handshakedResult}.");
-                        });
+                        logger.LogWarning("DTLS handshake cannot proceed, no fingerprint was available for the remote peer.");
+                        peerConnection.Close("No DTLS fingerprint.");
                     }
                     else
                     {
-                        logger.LogDebug("Starting DLS handshake as server task.");
-                        _ = Task.Run(() =>
+#if DTLS_IS_ENABLED
+                        if (peerConnection.IceRole == IceRolesEnum.active)
                         {
-                            bool handshakedResult = DoDtlsHandshake(peerConnection, dtls, false, peerConnection.RemotePeerDtlsFingerprint);
-                            logger.LogDebug($"DTLS handshake result {handshakedResult}.");
-                        });
-                    }
+                            logger.LogDebug("Starting DLS handshake as client task.");
+                            _ = Task.Run(() =>
+                            {
+                                bool handshakedResult = DoDtlsHandshake(peerConnection, dtls, true, peerConnection.RemotePeerDtlsFingerprint);
+                                logger.LogDebug($"DTLS handshake result {handshakedResult}.");
+                            });
+                        }
+                        else
+                        {
+                            logger.LogDebug("Starting DLS handshake as server task.");
+                            _ = Task.Run(() =>
+                            {
+                                bool handshakedResult = DoDtlsHandshake(peerConnection, dtls, false, peerConnection.RemotePeerDtlsFingerprint);
+                                logger.LogDebug($"DTLS handshake result {handshakedResult}.");
+                            });
+                        }
 #endif
+                    }
                 }
             };
 
@@ -239,7 +247,7 @@ namespace SIPSorcery.Examples
         {
             try
             {
-                if(peerConnection.localDescription == null)
+                if (peerConnection.localDescription == null)
                 {
                     //logger.LogDebug("Offer SDP: " + message);
                     logger.LogDebug("Offer SDP received.");
@@ -347,7 +355,7 @@ namespace SIPSorcery.Examples
             logger.LogDebug("DtlsContext initialisation result=" + res);
 
             if (dtls.IsHandshakeComplete())
-            { 
+            {
                 logger.LogDebug("DTLS negotiation complete.");
 
                 if (!fingerprintMatch)
