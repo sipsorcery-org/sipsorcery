@@ -354,16 +354,16 @@ namespace SIPSorcery.Net
 
             if (setResult == SetDescriptionResultEnum.OK)
             {
-                string remoteIceUser = null;
-                string remoteIcePassword = null;
-                string dtlsFingerprint = null;
+                string remoteIceUser = remoteSdp.IceUfrag;
+                string remoteIcePassword = remoteSdp.IcePwd;
+                string dtlsFingerprint = remoteSdp.DtlsFingerprint;
 
                 var audioAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).FirstOrDefault();
                 if (audioAnnounce != null)
                 {
-                    remoteIceUser = audioAnnounce.IceUfrag;
-                    remoteIcePassword = audioAnnounce.IcePwd;
-                    dtlsFingerprint = audioAnnounce.DtlsFingerprint;
+                    remoteIceUser = remoteIceUser ?? audioAnnounce.IceUfrag;
+                    remoteIcePassword = remoteIcePassword ?? audioAnnounce.IcePwd;
+                    dtlsFingerprint = dtlsFingerprint ?? audioAnnounce.DtlsFingerprint;
                 }
 
                 var videoAnnounce = remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).FirstOrDefault();
