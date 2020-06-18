@@ -78,7 +78,24 @@ namespace SIPSorcery.Net
         /// <summary>
         /// An unknown error.
         /// </summary>
-        Error
+        Error,
+
+        /// <summary>
+        /// A required DTLS fingerprint was missing from the session description.
+        /// </summary>
+        DtlsFingerprintMissing,
+
+        /// <summary>
+        /// The DTLS fingerprint was present but the format was not recognised.
+        /// </summary>
+        DtlsFingerprintInvalid,
+
+        /// <summary>
+        /// The DTLS fingerprint was provided with an unsupported digest. It won't
+        /// be possible to check that the certificate supplied during the DTLS handshake
+        /// matched the fingerprint.
+        /// </summary>
+        DtlsFingerprintDigestNotSupported,
     }
 
     /// <summary>
@@ -1872,6 +1889,16 @@ namespace SIPSorcery.Net
 
                 OnRtpClosed?.Invoke(reason);
             }
+        }
+
+        public void PauseReceive()
+        {
+            m_rtpChannels[SDPMediaTypesEnum.audio].PauseReceive();
+        }
+
+        public void ResumeReceive()
+        {
+            m_rtpChannels[SDPMediaTypesEnum.audio].ResumeReceive();
         }
 
         /// <summary>

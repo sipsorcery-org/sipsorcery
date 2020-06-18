@@ -13,6 +13,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Text;
 
 namespace SIPSorcery.Sys
@@ -99,6 +100,17 @@ namespace SIPSorcery.Sys
             }
 
             return hexStr;
+        }
+
+        public static byte[] ParseHexStr(string hex)
+        {
+            int NumberChars = hex.Length;
+            byte[] bytes = new byte[NumberChars / 2];
+            for (int i = 0; i < NumberChars; i += 2)
+            {
+                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+            }
+            return bytes;
         }
     }
 }
