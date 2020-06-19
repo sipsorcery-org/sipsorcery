@@ -14,7 +14,7 @@
 //-----------------------------------------------------------------------------
 
 // If uncommented the logic to do the DTLS handshake will be called.
-#define DTLS_IS_ENABLED
+//#define DTLS_IS_ENABLED
 
 using System;
 using System.Collections.Generic;
@@ -62,7 +62,9 @@ namespace SIPSorcery.Examples
         private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
         private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
         private const int WEBSOCKET_PORT = 8081;
-        private const string SIPSORCERY_STUN_SERVER = ""; //"stun.sipsorcery.com";
+        private const string SIPSORCERY_STUN_SERVER = "turn:sipsorcery.com"; //"stun.sipsorcery.com";
+        private const string SIPSORCERY_STUN_SERVER_USERNAME = "aaron"; //"stun.sipsorcery.com";
+        private const string SIPSORCERY_STUN_SERVER_PASSWORD = "password"; //"stun.sipsorcery.com";
 
         private static Microsoft.Extensions.Logging.ILogger logger = SIPSorcery.Sys.Log.Logger;
 
@@ -88,25 +90,35 @@ namespace SIPSorcery.Examples
 
             AddConsoleLogger();
 
-            // Start web socket.
-            Console.WriteLine("Starting web socket server...");
-            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
-            _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
-            _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
-            //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
-            _webSocketServer.AddWebSocketService<WebRtcClient>("/sendoffer", (client) =>
+            RTCConfiguration pcConfiguration = new RTCConfiguration
             {
-                client.WebSocketOpened += SendOffer;
-                client.OnMessageReceived += WebSocketMessageReceived;
-            });
-            _webSocketServer.AddWebSocketService<WebRtcClient>("/receiveoffer", (client) =>
-            {
-                client.WebSocketOpened += ReceiveOffer;
-                client.OnMessageReceived += WebSocketMessageReceived;
-            });
-            _webSocketServer.Start();
+                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = SIPSORCERY_STUN_SERVER, 
+                    username = SIPSORCERY_STUN_SERVER_USERNAME,
+                    credential = SIPSORCERY_STUN_SERVER_PASSWORD,
+                    credentialType = RTCIceCredentialType.password} }
+            };
 
-            Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
+            var peerConnection = new RTCPeerConnection(pcConfiguration);
+
+            // Start web socket.
+            //Console.WriteLine("Starting web socket server...");
+            //_webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
+            //_webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
+            //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
+            ////_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
+            //_webSocketServer.AddWebSocketService<WebRtcClient>("/sendoffer", (client) =>
+            //{
+            //    client.WebSocketOpened += SendOffer;
+            //    client.OnMessageReceived += WebSocketMessageReceived;
+            //});
+            //_webSocketServer.AddWebSocketService<WebRtcClient>("/receiveoffer", (client) =>
+            //{
+            //    client.WebSocketOpened += ReceiveOffer;
+            //    client.OnMessageReceived += WebSocketMessageReceived;
+            //});
+            //_webSocketServer.Start();
+
+            //Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
@@ -118,7 +130,7 @@ namespace SIPSorcery.Examples
             // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
             exitMre.WaitOne();
 
-            _webSocketServer.Stop();
+            //_webSocketServer.Stop();
         }
 
         private static Task<RTCPeerConnection> ReceiveOffer(WebSocketContext context)
@@ -160,7 +172,7 @@ namespace SIPSorcery.Examples
                     }
                 },
                 X_RemoteSignallingAddress = context.UserEndPoint.Address,
-                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = SIPSORCERY_STUN_SERVER } }
+                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = SIPSORCERY_STUN_SERVER  } }
             };
 
             var peerConnection = new RTCPeerConnection(pcConfiguration);
