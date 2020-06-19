@@ -9803,6 +9803,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNMessage.STUNMessage
   nameWithType: STUNMessage.STUNMessage
+- uid: SIPSorcery.Net.STUNMessage.AddNonceAttribute(System.String)
+  name: AddNonceAttribute(String)
+  href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_AddNonceAttribute_System_String_
+  commentId: M:SIPSorcery.Net.STUNMessage.AddNonceAttribute(System.String)
+  fullName: SIPSorcery.Net.STUNMessage.AddNonceAttribute(System.String)
+  nameWithType: STUNMessage.AddNonceAttribute(String)
+- uid: SIPSorcery.Net.STUNMessage.AddNonceAttribute*
+  name: AddNonceAttribute
+  href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_AddNonceAttribute_
+  commentId: Overload:SIPSorcery.Net.STUNMessage.AddNonceAttribute
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNMessage.AddNonceAttribute
+  nameWithType: STUNMessage.AddNonceAttribute
 - uid: SIPSorcery.Net.STUNMessage.AddUsernameAttribute(System.String)
   name: AddUsernameAttribute(String)
   href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_AddUsernameAttribute_System_String_
