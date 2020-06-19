@@ -230,7 +230,7 @@ namespace SIPSorcery.Net
         {
             _configuration = configuration;
 
-            if (_configuration != null && _configuration.certificates.Count > 0)
+            if (_configuration != null && _configuration.certificates?.Count > 0)
             {
                 _currentCertificate = _configuration.certificates.First();
             }

@@ -48,6 +48,12 @@ namespace SIPSorcery.Net
             Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Username, usernameBytes));
         }
 
+        public void AddNonceAttribute(string nonce)
+        {
+            byte[] nonceBytes = Encoding.UTF8.GetBytes(nonce);
+            Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce, nonceBytes));
+        }
+
         public void AddXORMappedAddressAttribute(IPAddress remoteAddress, int remotePort)
         {
             STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, remotePort, remoteAddress);
