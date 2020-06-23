@@ -224,7 +224,7 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug($"Checklist entry state {checklistEntry.State}, last check sent at {checklistEntry.LastCheckSentAt}.");
 
-            Assert.Equal(IceSession.ChecklistEntryState.InProgress, checklistEntry.State);
+            Assert.Equal(ChecklistEntryState.InProgress, checklistEntry.State);
         }
 
         /// <summary>
@@ -260,8 +260,8 @@ namespace SIPSorcery.Net.UnitTests
             // The defaults are 5 STUN requests and for a checklist with one entry they will be 500ms apart.
             await Task.Delay(4000);
 
-            Assert.Equal(IceSession.ChecklistEntryState.Failed, iceSession._checklist.Single().State);
-            Assert.Equal(IceSession.ChecklistState.Failed, iceSession._checklistState);
+            Assert.Equal(ChecklistEntryState.Failed, iceSession._checklist.Single().State);
+            Assert.Equal(ChecklistState.Failed, iceSession._checklistState);
             Assert.Equal(RTCIceConnectionState.failed, iceSession.ConnectionState);
         }
     }
