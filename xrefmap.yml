@@ -1328,6 +1328,12 @@ references:
   commentId: F:SIPSorcery.Net.IceRolesEnum.passive
   fullName: SIPSorcery.Net.IceRolesEnum.passive
   nameWithType: IceRolesEnum.passive
+- uid: SIPSorcery.Net.IceServer
+  name: IceServer
+  href: api/SIPSorcery.Net.IceServer.html
+  commentId: T:SIPSorcery.Net.IceServer
+  fullName: SIPSorcery.Net.IceServer
+  nameWithType: IceServer
 - uid: SIPSorcery.Net.IceSession
   name: IceSession
   href: api/SIPSorcery.Net.IceSession.html
@@ -2587,19 +2593,32 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidate.foundation
   nameWithType: RTCIceCandidate.foundation
-- uid: SIPSorcery.Net.RTCIceCandidate.IceServerUri
-  name: IceServerUri
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_IceServerUri
-  commentId: P:SIPSorcery.Net.RTCIceCandidate.IceServerUri
-  fullName: SIPSorcery.Net.RTCIceCandidate.IceServerUri
-  nameWithType: RTCIceCandidate.IceServerUri
-- uid: SIPSorcery.Net.RTCIceCandidate.IceServerUri*
-  name: IceServerUri
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_IceServerUri_
-  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.IceServerUri
+- uid: SIPSorcery.Net.RTCIceCandidate.GetShortDescription
+  name: GetShortDescription()
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_GetShortDescription
+  commentId: M:SIPSorcery.Net.RTCIceCandidate.GetShortDescription
+  fullName: SIPSorcery.Net.RTCIceCandidate.GetShortDescription()
+  nameWithType: RTCIceCandidate.GetShortDescription()
+- uid: SIPSorcery.Net.RTCIceCandidate.GetShortDescription*
+  name: GetShortDescription
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_GetShortDescription_
+  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.GetShortDescription
   isSpec: "True"
-  fullName: SIPSorcery.Net.RTCIceCandidate.IceServerUri
-  nameWithType: RTCIceCandidate.IceServerUri
+  fullName: SIPSorcery.Net.RTCIceCandidate.GetShortDescription
+  nameWithType: RTCIceCandidate.GetShortDescription
+- uid: SIPSorcery.Net.RTCIceCandidate.IceServer
+  name: IceServer
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_IceServer
+  commentId: P:SIPSorcery.Net.RTCIceCandidate.IceServer
+  fullName: SIPSorcery.Net.RTCIceCandidate.IceServer
+  nameWithType: RTCIceCandidate.IceServer
+- uid: SIPSorcery.Net.RTCIceCandidate.IceServer*
+  name: IceServer
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_IceServer_
+  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.IceServer
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCIceCandidate.IceServer
+  nameWithType: RTCIceCandidate.IceServer
 - uid: SIPSorcery.Net.RTCIceCandidate.IsEquivalentEndPoint(SIPSorcery.Net.RTCIceProtocol,System.Net.IPEndPoint)
   name: IsEquivalentEndPoint(RTCIceProtocol, IPEndPoint)
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_IsEquivalentEndPoint_SIPSorcery_Net_RTCIceProtocol_System_Net_IPEndPoint_
@@ -10354,6 +10373,19 @@ references:
   commentId: F:SIPSorcery.Net.STUNXORAddressAttribute.Family
   fullName: SIPSorcery.Net.STUNXORAddressAttribute.Family
   nameWithType: STUNXORAddressAttribute.Family
+- uid: SIPSorcery.Net.STUNXORAddressAttribute.GetIPEndPoint
+  name: GetIPEndPoint()
+  href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute_GetIPEndPoint
+  commentId: M:SIPSorcery.Net.STUNXORAddressAttribute.GetIPEndPoint
+  fullName: SIPSorcery.Net.STUNXORAddressAttribute.GetIPEndPoint()
+  nameWithType: STUNXORAddressAttribute.GetIPEndPoint()
+- uid: SIPSorcery.Net.STUNXORAddressAttribute.GetIPEndPoint*
+  name: GetIPEndPoint
+  href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute_GetIPEndPoint_
+  commentId: Overload:SIPSorcery.Net.STUNXORAddressAttribute.GetIPEndPoint
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNXORAddressAttribute.GetIPEndPoint
+  nameWithType: STUNXORAddressAttribute.GetIPEndPoint
 - uid: SIPSorcery.Net.STUNXORAddressAttribute.PaddedLength
   name: PaddedLength
   href: api/SIPSorcery.Net.STUNXORAddressAttribute.html#SIPSorcery_Net_STUNXORAddressAttribute_PaddedLength
@@ -10402,48 +10434,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNXORAddressAttribute.ToString
   nameWithType: STUNXORAddressAttribute.ToString
-- uid: SIPSorcery.Net.TurnServer
-  name: TurnServer
-  href: api/SIPSorcery.Net.TurnServer.html
-  commentId: T:SIPSorcery.Net.TurnServer
-  fullName: SIPSorcery.Net.TurnServer
-  nameWithType: TurnServer
-- uid: SIPSorcery.Net.TurnServer.AuthorisationAttempts
-  name: AuthorisationAttempts
-  href: api/SIPSorcery.Net.TurnServer.html#SIPSorcery_Net_TurnServer_AuthorisationAttempts
-  commentId: F:SIPSorcery.Net.TurnServer.AuthorisationAttempts
-  fullName: SIPSorcery.Net.TurnServer.AuthorisationAttempts
-  nameWithType: TurnServer.AuthorisationAttempts
-- uid: SIPSorcery.Net.TurnServer.Nonce
-  name: Nonce
-  href: api/SIPSorcery.Net.TurnServer.html#SIPSorcery_Net_TurnServer_Nonce
-  commentId: F:SIPSorcery.Net.TurnServer.Nonce
-  fullName: SIPSorcery.Net.TurnServer.Nonce
-  nameWithType: TurnServer.Nonce
-- uid: SIPSorcery.Net.TurnServer.Password
-  name: Password
-  href: api/SIPSorcery.Net.TurnServer.html#SIPSorcery_Net_TurnServer_Password
-  commentId: F:SIPSorcery.Net.TurnServer.Password
-  fullName: SIPSorcery.Net.TurnServer.Password
-  nameWithType: TurnServer.Password
-- uid: SIPSorcery.Net.TurnServer.Realm
-  name: Realm
-  href: api/SIPSorcery.Net.TurnServer.html#SIPSorcery_Net_TurnServer_Realm
-  commentId: F:SIPSorcery.Net.TurnServer.Realm
-  fullName: SIPSorcery.Net.TurnServer.Realm
-  nameWithType: TurnServer.Realm
-- uid: SIPSorcery.Net.TurnServer.ServerEndPoint
-  name: ServerEndPoint
-  href: api/SIPSorcery.Net.TurnServer.html#SIPSorcery_Net_TurnServer_ServerEndPoint
-  commentId: F:SIPSorcery.Net.TurnServer.ServerEndPoint
-  fullName: SIPSorcery.Net.TurnServer.ServerEndPoint
-  nameWithType: TurnServer.ServerEndPoint
-- uid: SIPSorcery.Net.TurnServer.Username
-  name: Username
-  href: api/SIPSorcery.Net.TurnServer.html#SIPSorcery_Net_TurnServer_Username
-  commentId: F:SIPSorcery.Net.TurnServer.Username
-  fullName: SIPSorcery.Net.TurnServer.Username
-  nameWithType: TurnServer.Username
 - uid: SIPSorcery.SIP
   name: SIPSorcery.SIP
   href: api/SIPSorcery.SIP.html

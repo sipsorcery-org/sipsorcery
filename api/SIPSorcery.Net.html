@@ -86,6 +86,10 @@
 has only been done to accommodate packet types required by this library (at the time of writing
 the sole type is SIP).</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.IceServer.html">IceServer</a></h4>
+      <section><p>If ICE servers (STUN or TURN) are being used with the session this class is used to track
+the connection state for each server that gets used.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.IceSession.html">IceSession</a></h4>
       <section><p>An ICE session carries out connectivity checks with a remote peer in an
 attempt to determine the best destination end point to communicate with the
@@ -295,8 +299,6 @@ As specified in RFC5576, <a href="https://tools.ietf.org/html/rfc5576">https://t
       <section><p>This attribute is the same as the mapped address attribute except the address details are XOR'ed with the STUN magic cookie.
 THe reason for this is to stop NAT application layer gateways from doing string replacements of private IP addresses and ports.</p>
 </section>
-      <h4><a class="xref" href="SIPSorcery.Net.TurnServer.html">TurnServer</a></h4>
-      <section></section>
     <h3 id="interfaces">Interfaces
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.IRTCIceCandidate.html">IRTCIceCandidate</a></h4>
