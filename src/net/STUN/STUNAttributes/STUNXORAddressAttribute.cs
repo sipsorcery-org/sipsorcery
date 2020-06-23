@@ -100,5 +100,17 @@ namespace SIPSorcery.Net
 
             return attrDescrStr;
         }
+
+        public IPEndPoint GetIPEndPoint()
+        {
+            if(Address != null)
+            {
+                return new IPEndPoint(Address, Port);
+            }
+            else
+            {
+                return null;
+            }
+        }
     }
 }

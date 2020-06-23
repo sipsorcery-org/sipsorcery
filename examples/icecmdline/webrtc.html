@@ -6,6 +6,7 @@
 
         const sendOfferUrl = "wss://localhost:8081/receiveoffer";
         const receiveOfferUrl = "wss://localhost:8081/sendoffer";
+        const stunUrl = "stun:stun.sipsorcery.com"
 
         var pc;
         var ws;
@@ -23,7 +24,13 @@
             ws.onopen = async function () {
                 console.log("web socket onopen.");
 
-                pc = new RTCPeerConnection(null);
+                pc = new RTCPeerConnection({
+                    iceServers: [
+                        {
+                            urls: stunUrl
+                        }
+                    ]
+                });
 
                 localStream.getTracks().forEach(track => {
                     console.log('add local track ' + track.kind + ' to peer connection.');
