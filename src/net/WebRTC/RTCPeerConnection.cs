@@ -255,10 +255,10 @@ namespace SIPSorcery.Net
                 {
                     RemoteEndPoint = IceSession.NominatedCandidate.DestinationEndPoint;
 
-                    if (!IsSecureContextReady)
-                    {
-                        PauseReceive();
-                    }
+                    //if (!IsSecureContextReady)
+                    //{
+                    //    PauseReceive();
+                    //}
                 }
 
                 iceConnectionState = state;
@@ -387,8 +387,11 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    // Set DTLS role to be client.
-                    IceRole = IceRolesEnum.active;
+                    // Set DTLS role to be server.
+                    // As of 20 Jun 2020 the DTLS handshake logic is based on OpenSSL and the mechanism
+                    // used hands over the socket handle to the C++ class. This logic works a lot better
+                    // when acting as the server in the handshake.
+                    IceRole = IceRolesEnum.passive;
                 }
 
                 if (remoteIceUser != null && remoteIcePassword != null)
@@ -684,7 +687,7 @@ namespace SIPSorcery.Net
                     // Add ICE candidates.
                     foreach (var iceCandidate in IceSession.Candidates)
                     {
-                        announcement.IceCandidates.Add(iceCandidate.ToString());
+                        //announcement.IceCandidates.Add(iceCandidate.ToString());
                     }
 
                     iceCandidatesAdded = true;
@@ -717,6 +720,17 @@ namespace SIPSorcery.Net
             {
                 try
                 {
+                    if(buffer[0] == 0x00 && buffer[1] == 0x17)
+                    {
+                        // TURN data indication. Extract the data payload and adjust the end point.
+                        var dataInidication = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
+                        var dataAttribute = dataInidication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.Data).FirstOrDefault();
+                        buffer = dataAttribute?.Value;
+
+                        var peerAddrAttribute = dataInidication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress).FirstOrDefault();
+                        remoteEP = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
+                    }
+
                     if (buffer[0] == 0x00 || buffer[0] == 0x01)
                     {
                         // STUN packet.

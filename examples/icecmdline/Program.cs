@@ -90,35 +90,35 @@ namespace SIPSorcery.Examples
 
             AddConsoleLogger();
 
-            RTCConfiguration pcConfiguration = new RTCConfiguration
-            {
-                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = SIPSORCERY_STUN_SERVER, 
-                    username = SIPSORCERY_STUN_SERVER_USERNAME,
-                    credential = SIPSORCERY_STUN_SERVER_PASSWORD,
-                    credentialType = RTCIceCredentialType.password} }
-            };
+            //RTCConfiguration pcConfiguration = new RTCConfiguration
+            //{
+            //    iceServers = new List<RTCIceServer> { new RTCIceServer { urls = SIPSORCERY_STUN_SERVER,
+            //        username = SIPSORCERY_STUN_SERVER_USERNAME,
+            //        credential = SIPSORCERY_STUN_SERVER_PASSWORD,
+            //        credentialType = RTCIceCredentialType.password} }
+            //};
 
-            var peerConnection = new RTCPeerConnection(pcConfiguration);
+            //var peerConnection = new RTCPeerConnection(pcConfiguration);
 
             // Start web socket.
-            //Console.WriteLine("Starting web socket server...");
-            //_webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
-            //_webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
-            //_webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
-            ////_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
-            //_webSocketServer.AddWebSocketService<WebRtcClient>("/sendoffer", (client) =>
-            //{
-            //    client.WebSocketOpened += SendOffer;
-            //    client.OnMessageReceived += WebSocketMessageReceived;
-            //});
-            //_webSocketServer.AddWebSocketService<WebRtcClient>("/receiveoffer", (client) =>
-            //{
-            //    client.WebSocketOpened += ReceiveOffer;
-            //    client.OnMessageReceived += WebSocketMessageReceived;
-            //});
-            //_webSocketServer.Start();
+            Console.WriteLine("Starting web socket server...");
+            _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
+            _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
+            _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
+            //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
+            _webSocketServer.AddWebSocketService<WebRtcClient>("/sendoffer", (client) =>
+            {
+                client.WebSocketOpened += SendOffer;
+                client.OnMessageReceived += WebSocketMessageReceived;
+            });
+            _webSocketServer.AddWebSocketService<WebRtcClient>("/receiveoffer", (client) =>
+            {
+                client.WebSocketOpened += ReceiveOffer;
+                client.OnMessageReceived += WebSocketMessageReceived;
+            });
+            _webSocketServer.Start();
 
-            //Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
+            Console.WriteLine($"Waiting for browser web socket connection to {_webSocketServer.Address}:{_webSocketServer.Port}...");
 
             // Ctrl-c will gracefully exit the call at any point.
             Console.CancelKeyPress += delegate (object sender, ConsoleCancelEventArgs e)
@@ -130,7 +130,7 @@ namespace SIPSorcery.Examples
             // Wait for a signal saying the call failed, was cancelled with ctrl-c or completed.
             exitMre.WaitOne();
 
-            //_webSocketServer.Stop();
+            _webSocketServer.Stop();
         }
 
         private static Task<RTCPeerConnection> ReceiveOffer(WebSocketContext context)
@@ -172,7 +172,14 @@ namespace SIPSorcery.Examples
                     }
                 },
                 X_RemoteSignallingAddress = context.UserEndPoint.Address,
-                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = SIPSORCERY_STUN_SERVER  } }
+                iceServers = new List<RTCIceServer> {
+                    new RTCIceServer
+                    {
+                        urls = SIPSORCERY_STUN_SERVER,
+                            username = SIPSORCERY_STUN_SERVER_USERNAME,
+                            credential = SIPSORCERY_STUN_SERVER_PASSWORD,
+                            credentialType = RTCIceCredentialType.password}
+                }
             };
 
             var peerConnection = new RTCPeerConnection(pcConfiguration);

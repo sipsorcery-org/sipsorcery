@@ -32,10 +32,10 @@ namespace SIPSorcery.Net
         public const string REMOTE_PORT_KEY = "rport";
 
         /// <summary>
-        /// If this candidate was generated from an ICE server (STUN or TURN) this
-        /// is the URI of the server.
+        /// The ICE server (STUN or TURN) the candidate was generated from.
+        /// Will be null for non-ICE server candidates.
         /// </summary>
-        public STUNUri IceServerUri { get; internal set; }
+        public IceServer IceServer { get; internal set; }
 
         public string candidate { get; set; }
 
@@ -258,7 +258,7 @@ namespace SIPSorcery.Net
         {
             int addressVal = !String.IsNullOrEmpty(address) ? Crypto.GetSHAHash(address).Sum(x => (byte)x) : 0;
             int svrVal = (type == RTCIceCandidateType.relay || type == RTCIceCandidateType.srflx) ?
-                Crypto.GetSHAHash(IceServerUri != null ? IceServerUri.ToString() : "").Sum(x => (byte)x) : 0;
+                Crypto.GetSHAHash(IceServer != null ? IceServer._uri.ToString() : "").Sum(x => (byte)x) : 0;
             return (type.GetHashCode() + addressVal + svrVal + protocol.GetHashCode()).ToString();
         }
 
@@ -292,6 +292,29 @@ namespace SIPSorcery.Net
             else
             {
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Gets a short description for the candidate that's helpful for log messages.
+        /// </summary>
+        /// <returns>A short string describing the key properties of the candidate.</returns>
+        public string GetShortDescription()
+        {
+            string epDescription = $"{address}:{port}";
+            if(IPAddress.TryParse(address, out var ipAddress))
+            {
+                IPEndPoint ep = new IPEndPoint(ipAddress, port);
+                epDescription = ep.ToString();
+            }
+
+            if (type == RTCIceCandidateType.relay)
+            {
+                return $"{epDescription} {protocol} {type}";
+            }
+            else
+            {
+                return $"{epDescription} {protocol} {type}";
             }
         }
     }
