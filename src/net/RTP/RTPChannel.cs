@@ -181,13 +181,13 @@ namespace SIPSorcery.Net
     public class RTPChannel : IDisposable
     {
         private static ILogger logger = Log.Logger;
-
-        public Socket RtpSocket { get; private set; }
         private UdpReceiver m_rtpReceiver;
         private Socket m_controlSocket;
         private UdpReceiver m_controlReceiver;
         private bool m_started = false;
         private bool m_isClosed;
+
+        public Socket RtpSocket { get; private set; }
 
         /// <summary>
         /// The last remote end point an RTP packet was sent to or received from. Used for 
@@ -337,6 +337,14 @@ namespace SIPSorcery.Net
             }
         }
 
+        /// <summary>
+        /// The send method for the RTP channel.
+        /// </summary>
+        /// <param name="sendOn">The socket to send on. Can be the RTP or Control socket.</param>
+        /// <param name="dstEndPoint">The destination end point to send to.</param>
+        /// <param name="buffer">The data to send.</param>
+        /// <returns>The result of initiating the send. This result does not reflect anything about
+        /// whether the remote party received the packet or not.</returns>
         public SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
             if (m_isClosed)

@@ -118,12 +118,12 @@ namespace SIPSorcery.Net
         // SDP constants.
         //private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
         private new const string RTP_MEDIA_PROFILE = "UDP/TLS/RTP/SAVP";
-        private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";       // Indicates the media announcement is using multiplexed RTCP.
+        private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";    // Indicates the media announcement is using multiplexed RTCP.
         private const string ICE_SETUP_ATTRIBUTE = "a=setup:";     // Indicates ICE agent can act as either the "controlling" or "controlled" peer.
         private const string BUNDLE_ATTRIBUTE = "BUNDLE";
-        private const string ICE_OPTIONS = "ice2,trickle";                   // Supported ICE options.
+        private const string ICE_OPTIONS = "ice2,trickle";          // Supported ICE options.
         private const string NORMAL_CLOSE_REASON = "normal";
-        private const string DTLS_FINGERPRINT_DIGEST = "sha-256";    // The digest algorithm for checking a certificate during the DTLS handshake.
+        private const string DTLS_FINGERPRINT_DIGEST = "sha-256";  // The digest algorithm for checking a certificate during the DTLS handshake.
 
         private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
