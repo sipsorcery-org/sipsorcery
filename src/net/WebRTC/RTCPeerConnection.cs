@@ -687,7 +687,7 @@ namespace SIPSorcery.Net
                     // Add ICE candidates.
                     foreach (var iceCandidate in IceSession.Candidates)
                     {
-                        //announcement.IceCandidates.Add(iceCandidate.ToString());
+                        announcement.IceCandidates.Add(iceCandidate.ToString());
                     }
 
                     iceCandidatesAdded = true;

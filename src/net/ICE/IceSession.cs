@@ -481,7 +481,7 @@ namespace SIPSorcery.Net
             if (GatheringState == RTCIceGatheringState.@new)
             {
                 GatheringState = RTCIceGatheringState.gathering;
-                OnIceGatheringStateChange?.Invoke(RTCIceGatheringState.gathering);
+                OnIceGatheringStateChange?.Invoke(GatheringState);
 
                 _candidates = GetHostCandidates();
 
@@ -507,6 +507,9 @@ namespace SIPSorcery.Net
                         GatheringState = RTCIceGatheringState.complete;
                         OnIceGatheringStateChange?.Invoke(GatheringState);
                     }
+
+                    ConnectionState = RTCIceConnectionState.checking;
+                    OnIceConnectionStateChange?.Invoke(ConnectionState);
 
                     _processChecklistTimer = new Timer(ProcessChecklist, null, 0, Ta);
                 }
