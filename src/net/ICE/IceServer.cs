@@ -173,20 +173,20 @@ namespace SIPSorcery.Net
 
         /// <summary>
         /// Gets an ICE candidate for this ICE server once the required server responses have been received.
+        /// Note the related address and port are deliberately not set to avoid leaking information about
+        /// internal network configuration.
         /// </summary>
         /// <param name="init">The initialisation parameters for the ICE candidate (mainly local username).</param>
         /// <param name="type">The type of ICE candidate to get, must be srflx or relay.</param>
-        /// <param name="relatedAddress">The related host address for the candidate.</param>
-        /// <param name="relatedPort">The related host port for the candidate.</param>
         /// <returns>An ICE candidate that can be sent to the remote peer.</returns>
-        internal RTCIceCandidate GetCandidate(RTCIceCandidateInit init, RTCIceCandidateType type, IPAddress relatedAddress, ushort relatedPort)
+        internal RTCIceCandidate GetCandidate(RTCIceCandidateInit init, RTCIceCandidateType type)
         {
             RTCIceCandidate candidate = new RTCIceCandidate(init);
 
             if (type == RTCIceCandidateType.srflx && ServerReflexiveEndPoint != null)
             {
                 candidate.SetAddressProperties(RTCIceProtocol.udp, ServerReflexiveEndPoint.Address, (ushort)ServerReflexiveEndPoint.Port,
-                    type, relatedAddress, relatedPort);
+                                type, null, 0);
                 candidate.IceServer = this;
 
                 return candidate;
@@ -194,7 +194,7 @@ namespace SIPSorcery.Net
             else if (type == RTCIceCandidateType.relay && RelayEndPoint != null)
             {
                 candidate.SetAddressProperties(RTCIceProtocol.udp, RelayEndPoint.Address, (ushort)RelayEndPoint.Port,
-                    type, relatedAddress, relatedPort);
+                    type, null, 0);
                 candidate.IceServer = this;
 
                 return candidate;

@@ -133,7 +133,7 @@ namespace SIPSorcery.Net
         public string SdpSessionID;
         public string LocalSdpSessionID;
 
-        public IceSession IceSession { get; private set; }
+        public RtpIceChannel RtpIceChannel { get; private set; }
 
         /// <summary>
         /// The ICE role the peer is acting in.
@@ -196,7 +196,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// A failure occurred when gathering ICE candidates.
         /// </summary>
-        public event Action onicecandidateerror;
+        public event Action<RTCIceCandidate, string> onicecandidateerror;
 
         /// <summary>
         /// The signaling state has changed. This state change is the result of either setLocalDescription or 
@@ -228,6 +228,13 @@ namespace SIPSorcery.Net
         public RTCPeerConnection(RTCConfiguration configuration) :
             base(true, true, true, configuration?.X_BindAddress)
         {
+            if(_configuration != null &&
+               _configuration.iceTransportPolicy == RTCIceTransportPolicy.relay &&
+               _configuration.iceServers?.Count == 0)
+            {
+                throw new ApplicationException("RTCPeerConnection must have at least one ICE server specified for a relay only transport policy.");
+            }
+
             _configuration = configuration;
 
             if (_configuration != null && _configuration.certificates?.Count > 0)
@@ -241,19 +248,23 @@ namespace SIPSorcery.Net
             // Request the underlying RTP session to create the RTP channel.
             addSingleTrack();
 
-            IceSession = new IceSession(
-                GetRtpChannel(SDPMediaTypesEnum.audio), 
-                RTCIceComponent.rtp, 
-                configuration?.X_RemoteSignallingAddress,
-                configuration?.iceServers, 
-                configuration != null ? configuration.iceTransportPolicy : RTCIceTransportPolicy.all);
+            //RtpIceChannel = new RtpIceChannel(
+            //    false,
+            //    configuration?.X_BindAddress,
+            //    RTCIceComponent.rtp, 
+            //    configuration?.X_RemoteSignallingAddress,
+            //    configuration?.iceServers, 
+            //    configuration != null ? configuration.iceTransportPolicy : RTCIceTransportPolicy.all);
 
-            IceSession.OnIceCandidate += (candidate) => onicecandidate?.Invoke(candidate);
-            IceSession.OnIceConnectionStateChange += (state) =>
+            RtpIceChannel = GetRtpChannel(SDPMediaTypesEnum.audio) as RtpIceChannel;
+            //rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
+
+            RtpIceChannel.OnIceCandidate += (candidate) => onicecandidate?.Invoke(candidate);
+            RtpIceChannel.OnIceConnectionStateChange += (state) =>
             {
-                if (state == RTCIceConnectionState.connected && IceSession.NominatedCandidate != null)
+                if (state == RTCIceConnectionState.connected && RtpIceChannel.NominatedCandidate != null)
                 {
-                    RemoteEndPoint = IceSession.NominatedCandidate.DestinationEndPoint;
+                    RemoteEndPoint = RtpIceChannel.NominatedCandidate.DestinationEndPoint;
 
                     //if (!IsSecureContextReady)
                     //{
@@ -273,18 +284,44 @@ namespace SIPSorcery.Net
                     onconnectionstatechange?.Invoke(RTCPeerConnectionState.connected);
                 }
             };
-            IceSession.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
-            IceSession.OnIceCandidateError += onicecandidateerror;
-
-            var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
-            rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
+            RtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
+            RtpIceChannel.OnIceCandidateError += onicecandidateerror;
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
 
             onnegotiationneeded?.Invoke();
 
-            IceSession.StartGathering();
+            RtpIceChannel.StartGathering();
+        }
+
+        /// <summary>
+        /// Creates a new RTP ICE channel (which manages the UDP socket sending and receiving RTP
+        /// packets) for use with this session.
+        /// </summary>
+        /// <param name="mediaType">The type of media the RTP channel is for. Must be audio or video.</param>
+        /// <returns>A new RTPChannel instance.</returns>
+        protected override RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
+        {
+            // If RTCP is multiplexed we don't need a control socket.
+            //var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress);
+
+            var rtpIceChannel = new RtpIceChannel(
+                _configuration?.X_BindAddress,
+                RTCIceComponent.rtp, 
+                _configuration?.iceServers, 
+                _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all);
+
+            m_rtpChannels.Add(mediaType, rtpIceChannel);
+
+            rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
+            //rtpIceChannel.OnControlDataReceived += OnReceive; // RTCP packets could come on RTP or control socket.
+            //rtpIceChannel.OnClosed += base.OnRTPChannelClosed;
+
+            // Start the RTP, and if required the Control, socket receivers and the RTCP session.
+            rtpIceChannel.Start();
+
+            return rtpIceChannel;
         }
 
         /// <summary>
@@ -303,7 +340,7 @@ namespace SIPSorcery.Net
 
             if (init.type == RTCSdpType.offer)
             {
-                IceSession.IsController = true;
+                RtpIceChannel.IsController = true;
             }
 
             // This is the point the ICE session potentially starts contacting STUN and TURN servers.
@@ -381,7 +418,7 @@ namespace SIPSorcery.Net
 
                 if (init.type == RTCSdpType.answer)
                 {
-                    IceSession.IsController = true;
+                    RtpIceChannel.IsController = true;
                     // Set DTLS role to be server.
                     IceRole = IceRolesEnum.passive;
                 }
@@ -396,7 +433,7 @@ namespace SIPSorcery.Net
 
                 if (remoteIceUser != null && remoteIcePassword != null)
                 {
-                    IceSession.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
+                    RtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
                 }
 
                 if(!string.IsNullOrWhiteSpace(dtlsFingerprint))
@@ -504,7 +541,7 @@ namespace SIPSorcery.Net
         {
             if (!IsClosed)
             {
-                IceSession.Close();
+                RtpIceChannel.Close();
                 base.Close(reason);
 
                 connectionState = RTCPeerConnectionState.closed;
@@ -675,17 +712,17 @@ namespace SIPSorcery.Net
                 announcement.MediaStreamStatus = track.StreamStatus;
                 announcement.MediaID = track.MID;
 
-                announcement.IceUfrag = IceSession.LocalIceUser;
-                announcement.IcePwd = IceSession.LocalIcePassword;
+                announcement.IceUfrag = RtpIceChannel.LocalIceUser;
+                announcement.IcePwd = RtpIceChannel.LocalIcePassword;
                 announcement.IceOptions = ICE_OPTIONS;
                 announcement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
 
-                if (iceCandidatesAdded == false && IceSession.Candidates?.Count > 0)
+                if (iceCandidatesAdded == false && RtpIceChannel.Candidates?.Count > 0)
                 {
                     announcement.IceCandidates = new List<string>();
 
                     // Add ICE candidates.
-                    foreach (var iceCandidate in IceSession.Candidates)
+                    foreach (var iceCandidate in RtpIceChannel.Candidates)
                     {
                         announcement.IceCandidates.Add(iceCandidate.ToString());
                     }
@@ -720,29 +757,7 @@ namespace SIPSorcery.Net
             {
                 try
                 {
-                    if(buffer[0] == 0x00 && buffer[1] == 0x17)
-                    {
-                        // TURN data indication. Extract the data payload and adjust the end point.
-                        var dataInidication = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
-                        var dataAttribute = dataInidication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.Data).FirstOrDefault();
-                        buffer = dataAttribute?.Value;
-
-                        var peerAddrAttribute = dataInidication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress).FirstOrDefault();
-                        remoteEP = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
-                    }
-
-                    if (buffer[0] == 0x00 || buffer[0] == 0x01)
-                    {
-                        // STUN packet.
-                        var stunMessage = STUNMessage.ParseSTUNMessage(buffer, buffer.Length);
-                        IceSession?.ProcessStunMessage(stunMessage, remoteEP);
-                    }
-                    else if (buffer[0] >= 128 && buffer[0] <= 191)
-                    {
-                        // RTP/RTCP packet.
-                        // Do nothing. The RTPSession takes care of these.
-                    }
-                    else if (buffer[0] >= 20 && buffer[0] <= 63)
+                    if (buffer[0] >= 20 && buffer[0] <= 63)
                     {
                         // DTLS packet.
                         // Do nothing. The DTLSContext already has the socket handle and is monitoring
@@ -750,7 +765,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        logger.LogWarning("Unknown packet type received on RTP channel.");
+                        base.OnReceive(localPort, remoteEP, buffer);
                     }
                 }
                 catch (Exception excp)
@@ -768,9 +783,9 @@ namespace SIPSorcery.Net
         {
             RTCIceCandidate candidate = new RTCIceCandidate(candidateInit);
 
-            if (IceSession.Component == candidate.component)
+            if (RtpIceChannel.Component == candidate.component)
             {
-                IceSession.AddRemoteCandidate(candidate);
+                RtpIceChannel.AddRemoteCandidate(candidate);
             }
             else
             {
@@ -783,7 +798,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public void restartIce()
         {
-            IceSession.Restart();
+            RtpIceChannel.Restart();
         }
 
         public RTCConfiguration getConfiguration()

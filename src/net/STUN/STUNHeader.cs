@@ -91,6 +91,7 @@ namespace SIPSorcery.Net
         CreatePermission = 0x0008,
         ChannelBind = 0x0009,
 
+        SendIndication = 0x0016,
         DataIndication = 0x0017,
 
         AllocateSuccessResponse = 0x0103,

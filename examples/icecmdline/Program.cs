@@ -172,14 +172,16 @@ namespace SIPSorcery.Examples
                     }
                 },
                 X_RemoteSignallingAddress = context.UserEndPoint.Address,
-                iceServers = new List<RTCIceServer> {
-                    new RTCIceServer
-                    {
-                        urls = SIPSORCERY_STUN_SERVER,
-                            username = SIPSORCERY_STUN_SERVER_USERNAME,
-                            credential = SIPSORCERY_STUN_SERVER_PASSWORD,
-                            credentialType = RTCIceCredentialType.password}
-                }
+                //iceServers = new List<RTCIceServer> {
+                //    new RTCIceServer
+                //    {
+                //        urls = SIPSORCERY_STUN_SERVER,
+                //        username = SIPSORCERY_STUN_SERVER_USERNAME,
+                //        credential = SIPSORCERY_STUN_SERVER_PASSWORD,
+                //        credentialType = RTCIceCredentialType.password
+                //    }
+                //},
+                iceTransportPolicy = RTCIceTransportPolicy.all
             };
 
             var peerConnection = new RTCPeerConnection(pcConfiguration);
@@ -206,6 +208,8 @@ namespace SIPSorcery.Examples
                 }
             };
 
+            peerConnection.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error}");
+
             // Peer ICE connection state changes are for ICE events such as the STUN checks completing.
             peerConnection.oniceconnectionstatechange += (state) =>
             {
@@ -213,7 +217,7 @@ namespace SIPSorcery.Examples
 
                 if (state == RTCIceConnectionState.connected)
                 {
-                    var remoteEndPoint = peerConnection.IceSession.NominatedCandidate.DestinationEndPoint;
+                    var remoteEndPoint = peerConnection.RtpIceChannel.NominatedCandidate.DestinationEndPoint;
                     //var remoteEndPoint = peerConnection.AudioDestinationEndPoint;
                     logger.LogInformation($"ICE connected to remote end point {remoteEndPoint}.");
 
@@ -257,7 +261,7 @@ namespace SIPSorcery.Examples
             peerConnection.OnReceiveReport += (type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
             peerConnection.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {reason}.");
 
-            peerConnection.IceSession.StartGathering();
+            peerConnection.RtpIceChannel.StartGathering();
 
             return peerConnection;
         }

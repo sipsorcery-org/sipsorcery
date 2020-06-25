@@ -231,6 +231,13 @@ namespace SIPSorcery.Net
             }
             else
             {
+                string relAddr = relatedAddress;
+
+                if (string.IsNullOrWhiteSpace(relAddr))
+                {
+                    relAddr = IPAddress.Any.ToString();
+                }
+
                 string candidateStr = String.Format("{0} {1} udp {2} {3} {4} typ {5} raddr {6} rport {7} generation 0",
                      foundation,
                      component.GetHashCode(),
@@ -238,7 +245,7 @@ namespace SIPSorcery.Net
                      address,
                      port,
                      type,
-                     relatedAddress,
+                     relAddr,
                      relatedPort);
 
                 return candidateStr;
@@ -299,23 +306,16 @@ namespace SIPSorcery.Net
         /// Gets a short description for the candidate that's helpful for log messages.
         /// </summary>
         /// <returns>A short string describing the key properties of the candidate.</returns>
-        public string GetShortDescription()
+        public string ToShortString()
         {
             string epDescription = $"{address}:{port}";
-            if(IPAddress.TryParse(address, out var ipAddress))
+            if (IPAddress.TryParse(address, out var ipAddress))
             {
                 IPEndPoint ep = new IPEndPoint(ipAddress, port);
                 epDescription = ep.ToString();
             }
 
-            if (type == RTCIceCandidateType.relay)
-            {
-                return $"{epDescription} {protocol} {type}";
-            }
-            else
-            {
-                return $"{epDescription} {protocol} {type}";
-            }
+            return $"{protocol}:{epDescription} ({type})";
         }
     }
 }

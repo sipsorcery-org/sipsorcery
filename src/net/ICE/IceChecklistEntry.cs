@@ -14,8 +14,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SIPSorcery.Net
 {
@@ -152,16 +150,18 @@ namespace SIPSorcery.Net
         /// </summary>
         public string RequestTransactionID;
 
-        public ushort TurnChannelNumber { get; private set; }
-
-        public DateTime TurnChannelBindRequestSentAt { get; set; } = DateTime.MinValue;
-
-        public DateTime TurnChannelBindResponseAt { get; set; } = DateTime.MinValue;
+        /// <summary>
+        /// Before a remote peer will be able to use the relay it's IP address needs
+        /// to be authorised by sending a Create Permissions request to the TURN server.
+        /// This field records the number of Create Permissions requests that have been
+        /// sent for this entry.
+        /// </summary>
+        public int TurnPermissionsRequestSent { get; set; } = 0;
 
         /// <summary>
-        /// Gets set to true if a success response is received on the TURN channel bind request.
+        /// This field records the time a Create Permissions response was received.
         /// </summary>
-        public bool TurnChannelBindSuccessResponse { get; set; }
+        public DateTime TurnPermissionsResponseAt { get; set; } = DateTime.MinValue;
 
         /// <summary>
         /// Creates a new entry for the ICE session checklist.
@@ -169,11 +169,10 @@ namespace SIPSorcery.Net
         /// <param name="localCandidate">The local candidate for the checklist pair.</param>
         /// <param name="remoteCandidate">The remote candidate for the checklist pair.</param>
         /// <param name="isLocalController">True if we are acting as the controlling agent in the ICE session.</param>
-        public ChecklistEntry(RTCIceCandidate localCandidate, RTCIceCandidate remoteCandidate, bool isLocalController, ushort turnChannelNumber)
+        public ChecklistEntry(RTCIceCandidate localCandidate, RTCIceCandidate remoteCandidate, bool isLocalController)
         {
             LocalCandidate = localCandidate;
             RemoteCandidate = remoteCandidate;
-            TurnChannelNumber = turnChannelNumber;
 
             var controllingCandidate = (isLocalController) ? localCandidate : remoteCandidate;
             var controlledCandidate = (isLocalController) ? remoteCandidate : localCandidate;
