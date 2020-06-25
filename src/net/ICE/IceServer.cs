@@ -14,8 +14,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -78,6 +80,11 @@ namespace SIPSorcery.Net
         /// checks timer will be stopped.
         /// </summary>
         internal const int STUN_BINDING_REQUEST_REFRESH_SECONDS = 180;
+
+        /// <summary>
+        /// The STUN error code response indicating an authenticated request is required.
+        /// </summary>
+        internal const int STUN_UNAUTHORISED_ERROR_CODE = 401;
 
         internal STUNUri _uri;
         internal string _username;
@@ -227,14 +234,114 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Checks whether a STUN response transaction ID is an exact match for the last request sent
-        /// for this ICE server entry
+        /// Handler for a STUN response received in response to an ICE server connectivity check.
+        /// Note that no STUN requests are expected to be received from an ICE server during the initial
+        /// connection to an ICE server. Requests will only arrive if a TURN relay is used and data
+        /// indications arrive but this will be at a later stage.
         /// </summary>
-        /// <param name="responseTxID">The transaction ID from the STUN response.</param>
-        /// <returns>True if it dos match. False if not.</returns>
-        internal bool IsCurrentTransactionIDMatch(string responseTxID)
+        /// <param name="stunResponse">The STUN response received.</param>
+        /// <param name="remoteEndPoint">The remote end point the STUN response was received from.</param>
+        /// <returns>True if the STUN response resulted in new ICE candidates being available (which
+        /// will be either a "server reflexive" or "relay" candidate.</returns>
+        internal bool GotStunResponse(STUNMessage stunResponse, IPEndPoint remoteEndPoint)
         {
-            return TransactionID == responseTxID;
+            bool candidatesAvailable = false;
+
+            string txID = Encoding.ASCII.GetString(stunResponse.Header.TransactionId);
+
+            // Ignore responses to old requests on the assumption they are retransmits.
+            if (TransactionID == txID)
+            {
+                // The STUN response is for a check sent to an ICE server.
+                LastResponseReceivedAt = DateTime.Now;
+                OutstandingRequestsSent = 0;
+
+                if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateSuccessResponse)
+                {
+                    ErrorResponseCount = 0;
+
+                    // If the relay end point is set then this connection check has already been completed.
+                    if (RelayEndPoint == null)
+                    {
+                        logger.LogDebug($"TURN allocate success response received for ICE server check to {_uri}.");
+
+                        var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
+
+                        if (mappedAddrAttr != null)
+                        {
+                            ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
+                        }
+
+                        var mappedRelayAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress).FirstOrDefault();
+
+                        if (mappedRelayAddrAttr != null)
+                        {
+                            RelayEndPoint = (mappedRelayAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
+                        }
+
+                        candidatesAvailable = true;
+                    }
+                }
+                else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
+                {
+                    ErrorResponseCount++;
+
+                    if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
+                    {
+                        var errCodeAttribute = stunResponse.Attributes.First(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
+
+                        if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE)
+                        {
+                            // Set the authentication properties authenticate.
+                            var nonceAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Nonce);
+                            Nonce = nonceAttribute?.Value;
+
+                            var realmAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Realm);
+                            Realm = realmAttribute?.Value;
+
+                            // Set a new transaction ID.
+                            GenerateNewTransactionID();
+                        }
+                        else
+                        {
+                            logger.LogWarning($"ICE session received an error response for an Allocate request to {_uri}, error {errCodeAttribute.ErrorCode} {errCodeAttribute.ReasonPhrase}.");
+                        }
+                    }
+                }
+                if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+                {
+                    ErrorResponseCount = 0;
+
+                    // If the server reflexive end point is set then this connection check has already been completed.
+                    if (ServerReflexiveEndPoint == null)
+                    {
+                        logger.LogDebug($"STUN binding success response received for ICE server check to {_uri}.");
+
+                        var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
+
+                        if (mappedAddrAttr != null)
+                        {
+                            ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
+                            candidatesAvailable = true;
+                        }
+                    }
+                }
+                else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)
+                {
+                    ErrorResponseCount++;
+
+                    logger.LogWarning($"STUN binding error response received for ICE server check to {_uri}.");
+                    // The STUN response is for a check sent to an ICE server.
+                    Error = SocketError.ConnectionRefused;
+                }
+                else
+                {
+                    logger.LogWarning($"An unrecognised STUN message for an ICE server check was received from {remoteEndPoint}.");
+                    ErrorResponseCount++;
+                }
+            }
+
+            return candidatesAvailable;
         }
     }
 }

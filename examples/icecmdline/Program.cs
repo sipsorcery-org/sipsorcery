@@ -172,16 +172,16 @@ namespace SIPSorcery.Examples
                     }
                 },
                 X_RemoteSignallingAddress = context.UserEndPoint.Address,
-                //iceServers = new List<RTCIceServer> {
-                //    new RTCIceServer
-                //    {
-                //        urls = SIPSORCERY_STUN_SERVER,
-                //        username = SIPSORCERY_STUN_SERVER_USERNAME,
-                //        credential = SIPSORCERY_STUN_SERVER_PASSWORD,
-                //        credentialType = RTCIceCredentialType.password
-                //    }
-                //},
-                iceTransportPolicy = RTCIceTransportPolicy.all
+                iceServers = new List<RTCIceServer> {
+                    new RTCIceServer
+                    {
+                        urls = SIPSORCERY_STUN_SERVER,
+                        username = SIPSORCERY_STUN_SERVER_USERNAME,
+                        credential = SIPSORCERY_STUN_SERVER_PASSWORD,
+                        credentialType = RTCIceCredentialType.password
+                    }
+                },
+                iceTransportPolicy = RTCIceTransportPolicy.relay
             };
 
             var peerConnection = new RTCPeerConnection(pcConfiguration);
@@ -208,7 +208,7 @@ namespace SIPSorcery.Examples
                 }
             };
 
-            peerConnection.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error}");
+            peerConnection.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
 
             // Peer ICE connection state changes are for ICE events such as the STUN checks completing.
             peerConnection.oniceconnectionstatechange += (state) =>

@@ -1,7 +1,8 @@
 //-----------------------------------------------------------------------------
 // Filename: STUNHeader.cs
 //
-// Description: Implements STUN header as defined in RFC5389.
+// Description: Implements STUN header as defined in RFC5389
+// https://tools.ietf.org/html/rfc5389.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -105,14 +106,15 @@ namespace SIPSorcery.Net
     }
 
     /// <summary>
-    /// Could not work out how the class and message type encoding work despite re-reading the paragraph in the RFC a dozen times!
+    /// The class is interpreted from the message type. It does not get explicitly
+    /// set in the STUN header.
     /// </summary>
-    public enum STUNClassTypesEnum : ushort
+    public enum STUNClassTypesEnum
     {
-        Request = 0x0b00,
-        Indication = 0x0b01,
-        SuccesResponse = 0x0b10,
-        ErrorResponse = 0x0b11,
+        Request = 0,
+        Indication = 1,
+        SuccesResponse = 2,
+        ErrorResponse = 3,
     }
 
     public class STUNMessageTypes
@@ -126,6 +128,7 @@ namespace SIPSorcery.Net
     public class STUNHeader
     {
         public const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
+        public const ushort STUN_MESSAGE_CLASS_MASK = 0x0110;
         public const int STUN_HEADER_LENGTH = 20;
         public const UInt32 MAGIC_COOKIE = 0x2112A442;
         public const int TRANSACTION_ID_LENGTH = 12;
@@ -133,6 +136,25 @@ namespace SIPSorcery.Net
         private static ILogger logger = Log.Logger;
 
         public STUNMessageTypesEnum MessageType = STUNMessageTypesEnum.BindingRequest;
+        public STUNClassTypesEnum MessageClass
+        {
+            get
+            {
+                int @class = ((ushort)MessageType >> 8 & 0x01) * 2 | ((ushort)MessageType >> 4 & 0x01);
+                return (STUNClassTypesEnum)@class;
+            }
+
+        //return (STUNClassTypesEnum)((ushort)MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK);
+
+        //if (Enum.IsDefined(typeof(STUNClassTypesEnum), (ushort)(MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK)))
+        //{
+        //    return (STUNClassTypesEnum)((ushort)MessageType.GetHashCode() & STUN_MESSAGE_CLASS_MASK);
+        //}
+        //else
+        //{
+        //    return STUNClassTypesEnum.Request;
+        //}
+        }
         public UInt16 MessageLength;
         public byte[] TransactionId = new byte[TRANSACTION_ID_LENGTH];
 

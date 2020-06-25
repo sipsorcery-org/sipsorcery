@@ -14,6 +14,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Net;
+using System.Text;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -89,6 +93,8 @@ namespace SIPSorcery.Net
     /// </summary>
     internal class ChecklistEntry : IComparable
     {
+        private static readonly ILogger logger = Log.Logger;
+
         public RTCIceCandidate LocalCandidate;
         public RTCIceCandidate RemoteCandidate;
 
@@ -195,6 +201,37 @@ namespace SIPSorcery.Net
             else
             {
                 throw new ApplicationException("CompareTo is not implemented for ChecklistEntry and arbitrary types.");
+            }
+        }
+
+        internal void GotStunResponse(STUNMessage stunResponse, IPEndPoint remoteEndPoint)
+        {
+            if(stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+            {
+                State = ChecklistEntryState.Succeeded;
+                ChecksSent = 0;
+                LastCheckSentAt = DateTime.MinValue;
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)
+            {
+                logger.LogWarning($"ICE RTP channel a STUN binding error response was received from {remoteEndPoint}.");
+                logger.LogWarning($"ICE RTP channel check list entry set to failed: {RemoteCandidate}");
+                State = ChecklistEntryState.Failed;
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionSuccessResponse)
+            {
+                logger.LogDebug($"A TURN Create Permission success response was received from {remoteEndPoint} (TxID: {Encoding.ASCII.GetString(stunResponse.Header.TransactionId)}).");
+                TurnPermissionsResponseAt = DateTime.Now;
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionErrorResponse)
+            {
+                logger.LogWarning($"ICE RTP channel TURN Create Permission error response was received from {remoteEndPoint}.");
+                TurnPermissionsResponseAt = DateTime.Now;
+                State = ChecklistEntryState.Failed;
+            }
+            else
+            {
+                logger.LogWarning($"ICE RTP channel received an unexpected STUN response {stunResponse.Header.MessageType} from {remoteEndPoint}.");
             }
         }
     }

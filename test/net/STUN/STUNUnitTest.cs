@@ -273,7 +273,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that the fingerprint and hmac attributes get generated correctly..
+        /// Tests that the fingerprint and hmac attributes get generated correctly.
         /// </summary>
         [Fact]
         public void GenerateHmacAndFingerprintTestMethod()
@@ -296,6 +296,32 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug(hmac);
 
             logger.LogDebug($"Fingerprint: {buffer[buffer.Length - 4]:X2} {buffer[buffer.Length - 3]:X2} {buffer[buffer.Length - 2]:X2} {buffer[buffer.Length - 1]:X2}.");
+        }
+
+        /// <summary>
+        /// Tests that the STUN header class type is correctly determined from the message type.
+        /// </summary>
+        [Fact]
+        public void CheckCLassForSTUNMessageTypeUnitTest()
+        {
+            Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.BindingRequest).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.Allocate).MessageClass)); 
+            Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.Refresh).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.Send).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.Data).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.CreatePermission).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.Request, (new STUNHeader(STUNMessageTypesEnum.ChannelBind).MessageClass));
+
+            Assert.Equal(STUNClassTypesEnum.SuccesResponse, (new STUNHeader(STUNMessageTypesEnum.BindingSuccessResponse).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.SuccesResponse, (new STUNHeader(STUNMessageTypesEnum.AllocateSuccessResponse).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.SuccesResponse, (new STUNHeader(STUNMessageTypesEnum.CreatePermissionSuccessResponse).MessageClass));
+
+            Assert.Equal(STUNClassTypesEnum.ErrorResponse, (new STUNHeader(STUNMessageTypesEnum.BindingErrorResponse).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.ErrorResponse, (new STUNHeader(STUNMessageTypesEnum.AllocateErrorResponse).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.ErrorResponse, (new STUNHeader(STUNMessageTypesEnum.CreatePermissionErrorResponse).MessageClass));
+
+            Assert.Equal(STUNClassTypesEnum.Indication, (new STUNHeader(STUNMessageTypesEnum.DataIndication).MessageClass));
+            Assert.Equal(STUNClassTypesEnum.Indication, (new STUNHeader(STUNMessageTypesEnum.SendIndication).MessageClass));
         }
     }
 }

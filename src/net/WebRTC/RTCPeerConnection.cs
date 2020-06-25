@@ -285,7 +285,7 @@ namespace SIPSorcery.Net
                 }
             };
             RtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
-            RtpIceChannel.OnIceCandidateError += onicecandidateerror;
+            RtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
