@@ -89,7 +89,7 @@ namespace WebRTCAspNetMvc
             var peerConnection = new RTCPeerConnection(pcConfiguration);
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack("0", SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
 
             //peerConnection.OnRtpPacketReceived += (SDPMediaTypesEnum media, RTPPacket rtpPkt) => _logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}, SeqNum {rtpPkt.Header.SequenceNumber}.");
@@ -124,8 +124,8 @@ namespace WebRTCAspNetMvc
 
                 if (t.Result)
                 {
-                    var remoteEP = peerConnection.IceSession.ConnectedRemoteEndPoint;
-                    peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEP, remoteEP);
+                    //var remoteEP = peerConnection.IceSession.ConnectedRemoteEndPoint;
+                    //peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEP, remoteEP);
                 }
                 else
                 {
@@ -134,7 +134,7 @@ namespace WebRTCAspNetMvc
                 }
             });
 
-            var offerSdp = await peerConnection.createOffer(null);
+            var offerSdp = peerConnection.createOffer(null);
             await peerConnection.setLocalDescription(offerSdp);
 
             _peerConnections.TryAdd(id, peerConnection);
@@ -142,7 +142,7 @@ namespace WebRTCAspNetMvc
             return offerSdp;
         }
 
-        public async Task SetRemoteDescription(string id, RTCSessionDescriptionInit description)
+        public void SetRemoteDescription(string id, RTCSessionDescriptionInit description)
         {
             if (!_peerConnections.TryGetValue(id, out var pc))
             {
@@ -151,12 +151,11 @@ namespace WebRTCAspNetMvc
             else
             { 
                 _logger.LogDebug("Answer SDP: " + description.sdp);
-                await pc.setRemoteDescription(description);
-
+                pc.setRemoteDescription(description);
             }
         }
 
-        public async Task AddIceCandidate(string id, RTCIceCandidateInit iceCandidate)
+        public void AddIceCandidate(string id, RTCIceCandidateInit iceCandidate)
         {
             if (!_peerConnections.TryGetValue(id, out var pc))
             {
@@ -165,7 +164,7 @@ namespace WebRTCAspNetMvc
             else
             {
                 _logger.LogDebug("ICE Candidate: " + iceCandidate.candidate);
-                await pc.addIceCandidate(iceCandidate);
+                pc.addIceCandidate(iceCandidate);
             }
 
         }
@@ -187,13 +186,16 @@ namespace WebRTCAspNetMvc
                 throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
             }
 
-            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
+            byte[] clientFingerprint = null;
+            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref clientFingerprint);
 
             _logger.LogDebug("DtlsContext initialisation result=" + res);
 
             if (dtls.IsHandshakeComplete())
             {
                 _logger.LogDebug("DTLS negotiation complete.");
+
+                // TODO: Check client fingerprint matches one supplied in the SDP.
 
                 var srtpSendContext = new Srtp(dtls, false);
                 var srtpReceiveContext = new Srtp(dtls, true);

@@ -386,7 +386,7 @@ namespace SIPSorcery.Net
                     {
                         remoteIceUser = remoteIceUser ?? videoAnnounce.IceUfrag;
                         remoteIcePassword = remoteIcePassword ?? videoAnnounce.IcePwd;
-                        dtlsFingerprint = dtlsFingerprint ?? audioAnnounce.DtlsFingerprint;
+                        dtlsFingerprint = dtlsFingerprint ?? videoAnnounce.DtlsFingerprint;
                     }
                 }
 
@@ -639,6 +639,18 @@ namespace SIPSorcery.Net
 
                 return initDescription;
             }
+        }
+
+        /// <summary>
+        /// For standard use this method should not need to be called. The remote peer's ICE
+        /// user and password will be set when from the SDP. This method is provided for 
+        /// diagnostics purposes.
+        /// </summary>
+        /// <param name="remoteIceUser">The remote peer's ICE user value.</param>
+        /// <param name="remoteIcePassword">The remote peer's ICE password value.</param>
+        public void SetRemoteCredentials(string remoteIceUser, string remoteIcePassword)
+        {
+            _rtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
         }
 
         /// <summary>

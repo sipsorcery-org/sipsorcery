@@ -139,9 +139,9 @@ namespace TestConsole
 
             // Add local recvonly tracks. This ensures that the SDP answer includes only
             // the codecs we support.
-            MediaStreamTrack audioTrack = new MediaStreamTrack("0", SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
-            MediaStreamTrack videoTrack = new MediaStreamTrack("1", SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.RecvOnly);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(videoTrack);
 
             return peerConnection;
@@ -165,7 +165,7 @@ namespace TestConsole
 
                 var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
 
-                await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = msg, type = RTCSdpType.offer });
+                peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = msg, type = RTCSdpType.offer });
 
                 peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
                 peerConnection.OnSendReport += RtpSession_OnSendReport;
@@ -206,7 +206,7 @@ namespace TestConsole
                 };
 
 
-                var answerInit = await peerConnection.createAnswer(null);
+                var answerInit = peerConnection.createAnswer(null);
                 await peerConnection.setLocalDescription(answerInit);
 
                 Console.WriteLine($"answer sdp: {answerInit.sdp}");
@@ -302,13 +302,16 @@ namespace TestConsole
         {
             Console.WriteLine("DoDtlsHandshake started.");
 
-            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
+            byte[] clientFingerprint = null;
+            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref clientFingerprint);
 
             Console.WriteLine("DtlsContext initialisation result=" + res);
 
             if (dtls.IsHandshakeComplete())
             {
                 Console.WriteLine("DTLS negotiation complete.");
+
+                // TODO: Check client fingerprint matches one supplied in the SDP.
 
                 // TODO fix race condition!!! First RTP packet is not getting decrypted.
                 var srtpSendContext = new Srtp(dtls, false);
