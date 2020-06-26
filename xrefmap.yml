@@ -3651,6 +3651,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.setLocalDescription
   nameWithType: RTCPeerConnection.setLocalDescription
+- uid: SIPSorcery.Net.RTCPeerConnection.SetRemoteCredentials(System.String,System.String)
+  name: SetRemoteCredentials(String, String)
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_SetRemoteCredentials_System_String_System_String_
+  commentId: M:SIPSorcery.Net.RTCPeerConnection.SetRemoteCredentials(System.String,System.String)
+  fullName: SIPSorcery.Net.RTCPeerConnection.SetRemoteCredentials(System.String, System.String)
+  nameWithType: RTCPeerConnection.SetRemoteCredentials(String, String)
+- uid: SIPSorcery.Net.RTCPeerConnection.SetRemoteCredentials*
+  name: SetRemoteCredentials
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_SetRemoteCredentials_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.SetRemoteCredentials
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPeerConnection.SetRemoteCredentials
+  nameWithType: RTCPeerConnection.SetRemoteCredentials
 - uid: SIPSorcery.Net.RTCPeerConnection.setRemoteDescription(SIPSorcery.Net.RTCSessionDescriptionInit)
   name: setRemoteDescription(RTCSessionDescriptionInit)
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_setRemoteDescription_SIPSorcery_Net_RTCSessionDescriptionInit_
