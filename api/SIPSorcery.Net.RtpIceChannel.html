@@ -1,0 +1,1153 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class RtpIceChannel
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class RtpIceChannel
+   ">
+    <meta name="generator" content="docfx 2.55.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.RtpIceChannel">
+  
+  
+  <h1 id="SIPSorcery_Net_RtpIceChannel" data-uid="SIPSorcery.Net.RtpIceChannel" class="text-break">Class RtpIceChannel
+  </h1>
+  <div class="markdown level0 summary"><p>An ICE session carries out connectivity checks with a remote peer in an
+attempt to determine the best destination end point to communicate with the
+remote party.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><a class="xref" href="SIPSorcery.Net.RTPChannel.html">RTPChannel</a></div>
+    <div class="level2"><span class="xref">RtpIceChannel</span></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.IDisposable</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_m_rtpReceiver">RTPChannel.m_rtpReceiver</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_m_controlReceiver">RTPChannel.m_controlReceiver</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RtpSocket">RTPChannel.RtpSocket</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_LastRtpDestination">RTPChannel.LastRtpDestination</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RTPPort">RTPChannel.RTPPort</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RTPLocalEndPoint">RTPChannel.RTPLocalEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_ControlPort">RTPChannel.ControlPort</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_ControlLocalEndPoint">RTPChannel.ControlLocalEndPoint</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_IsDualMode">RTPChannel.IsDualMode</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_IsClosed">RTPChannel.IsClosed</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnControlDataReceived">RTPChannel.OnControlDataReceived</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnClosed">RTPChannel.OnClosed</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Start">RTPChannel.Start()</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Close_System_String_">RTPChannel.Close(String)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Dispose_System_Boolean_">RTPChannel.Dispose(Boolean)</a>
+    </div>
+    <div>
+      <a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_Dispose">RTPChannel.Dispose()</a>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Net_RtpIceChannel_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class RtpIceChannel : RTPChannel, IDisposable</code></pre>
+  </div>
+  <h5 id="SIPSorcery_Net_RtpIceChannel_remarks"><strong>Remarks</strong></h5>
+  <div class="markdown level0 remarks"><p>Local server reflexive candidates don't get added to the checklist since they are just local
+&quot;host&quot; candidates with an extra NAT address mapping. The NAT address mapping is needed for the
+remote ICE peer but locally a server reflexive candidate is always going to be represented by
+a &quot;host&quot; candidate.</p>
+<p>Limitations:</p>
+<ul>
+<li>To reduce complexity only a single checklist is used. This is based on the main
+webrtc use case where RTP (audio and video) and RTCP are all multiplexed on a
+single socket pair. Therefore  there only needs to be a single component and single
+data stream. If an additional use case occurs then multiple checklists could be added.</li>
+</ul>
+<p>Developer Notes:
+There are 4 main tasks occurring during the ICE checks:</p>
+<ul>
+<li>Local candidates: ICE server checks (which can take seconds) are being carried out to
+gather &quot;server reflexive&quot; and &quot;relay&quot; candidates.</li>
+<li>Remote candidates: the remote peer should be trickling in its candidates which need to
+be validated and if accepted new entries added to the checklist.</li>
+<li>Checklist connectivity checks: the candidate pairs in the checklist need to have
+connectivity checks sent.</li>
+<li>Match STUN messages: STUN requests and responses are being received and need to be
+matched to either an ICE server check or a checklist entry check. After matching
+action needs to be taken to update the status of the ICE server or checklist entry
+check.</li>
+</ul>
+</div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel__ctor.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.%23ctor%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L243">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel__ctor_" data-uid="SIPSorcery.Net.RtpIceChannel.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel__ctor" data-uid="SIPSorcery.Net.RtpIceChannel.#ctor">RtpIceChannel()</h4>
+  <div class="markdown level1 summary"><p>Creates a new instance of an RTP ICE channel to provide RTP channel functions
+with ICE connectivity checks.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RtpIceChannel()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel__ctor_System_Net_IPAddress_SIPSorcery_Net_RTCIceComponent_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.%23ctor(System.Net.IPAddress%2CSIPSorcery.Net.RTCIceComponent%2CSystem.Collections.Generic.List%7BSIPSorcery.Net.RTCIceServer%7D%2CSIPSorcery.Net.RTCIceTransportPolicy)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L262">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel__ctor_" data-uid="SIPSorcery.Net.RtpIceChannel.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel__ctor_System_Net_IPAddress_SIPSorcery_Net_RTCIceComponent_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_" data-uid="SIPSorcery.Net.RtpIceChannel.#ctor(System.Net.IPAddress,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)">RtpIceChannel(IPAddress, RTCIceComponent, List&lt;RTCIceServer&gt;, RTCIceTransportPolicy)</h4>
+  <div class="markdown level1 summary"><p>Creates a new instance of an RTP ICE channel to provide RTP channel functions
+with ICE connectivity checks.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RtpIceChannel(IPAddress bindAddress, RTCIceComponent component, List&lt;RTCIceServer&gt; iceServers = null, RTCIceTransportPolicy policy = RTCIceTransportPolicy.all)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.IPAddress</span></td>
+        <td><span class="parametername">bindAddress</span></td>
+        <td><p>Optional. If supplied this address will
+dictate which local interface host ICE candidates will be gathered from.
+Restricting the host candidate IP addresses to a single interface is
+as per the recommendation at:
+<a href="https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2">https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2</a>.
+If this is not set then the default is to use the Internet facing interface as
+returned by the OS routing table.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceComponent.html">RTCIceComponent</a></td>
+        <td><span class="parametername">component</span></td>
+        <td><p>The component (RTP or RTCP) the channel is being used for. Note
+for cases where RTP and RTCP are multiplexed the component is set to RTP.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceServer.html">RTCIceServer</a>&gt;</td>
+        <td><span class="parametername">iceServers</span></td>
+        <td><p>A list of STUN or TURN servers that can be used by this ICE agent.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceTransportPolicy.html">RTCIceTransportPolicy</a></td>
+        <td><span class="parametername">policy</span></td>
+        <td><p>Determines which ICE candidates can be used in this ICE session.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_LocalIcePassword.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.LocalIcePassword%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L224">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_LocalIcePassword" data-uid="SIPSorcery.Net.RtpIceChannel.LocalIcePassword">LocalIcePassword</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public readonly string LocalIcePassword</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_LocalIceUser.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.LocalIceUser%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L223">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_LocalIceUser" data-uid="SIPSorcery.Net.RtpIceChannel.LocalIceUser">LocalIceUser</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public readonly string LocalIceUser</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_SDP_MID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.SDP_MID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L104">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_SDP_MID" data-uid="SIPSorcery.Net.RtpIceChannel.SDP_MID">SDP_MID</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const string SDP_MID = &quot;0&quot;</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_SDP_MLINE_INDEX.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.SDP_MLINE_INDEX%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L105">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_SDP_MLINE_INDEX" data-uid="SIPSorcery.Net.RtpIceChannel.SDP_MLINE_INDEX">SDP_MLINE_INDEX</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public const int SDP_MLINE_INDEX = 0</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_Candidates.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.Candidates%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L148">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_Candidates_" data-uid="SIPSorcery.Net.RtpIceChannel.Candidates*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_Candidates" data-uid="SIPSorcery.Net.RtpIceChannel.Candidates">Candidates</h4>
+  <div class="markdown level1 summary"><p>The list of host ICE candidates that have been gathered for this peer.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public List&lt;RTCIceCandidate&gt; Candidates { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_Component.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.Component%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L133">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_Component_" data-uid="SIPSorcery.Net.RtpIceChannel.Component*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_Component" data-uid="SIPSorcery.Net.RtpIceChannel.Component">Component</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCIceComponent Component { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceComponent.html">RTCIceComponent</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_IceConnectionState.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.IceConnectionState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L137">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_IceConnectionState_" data-uid="SIPSorcery.Net.RtpIceChannel.IceConnectionState*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_IceConnectionState" data-uid="SIPSorcery.Net.RtpIceChannel.IceConnectionState">IceConnectionState</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCIceConnectionState IceConnectionState { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceConnectionState.html">RTCIceConnectionState</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_IceGatheringState.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.IceGatheringState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L135">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_IceGatheringState_" data-uid="SIPSorcery.Net.RtpIceChannel.IceGatheringState*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_IceGatheringState" data-uid="SIPSorcery.Net.RtpIceChannel.IceGatheringState">IceGatheringState</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCIceGatheringState IceGatheringState { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceGatheringState.html">RTCIceGatheringState</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_IsController.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.IsController%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L143">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_IsController_" data-uid="SIPSorcery.Net.RtpIceChannel.IsController*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_IsController" data-uid="SIPSorcery.Net.RtpIceChannel.IsController">IsController</h4>
+  <div class="markdown level1 summary"><p>True if we are the &quot;controlling&quot; ICE agent (we initiated the communications) or
+false if we are the &quot;controlled&quot; agent.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool IsController { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_NominatedEntry.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.NominatedEntry%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L200">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_NominatedEntry_" data-uid="SIPSorcery.Net.RtpIceChannel.NominatedEntry*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_NominatedEntry" data-uid="SIPSorcery.Net.RtpIceChannel.NominatedEntry">NominatedEntry</h4>
+  <div class="markdown level1 summary"><p>If the connectivity checks are successful this will hold the entry that was
+nominated by the connection check process.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ChecklistEntry NominatedEntry { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.ChecklistEntry.html">ChecklistEntry</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_RemoteIcePassword.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.RemoteIcePassword%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L226">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_RemoteIcePassword_" data-uid="SIPSorcery.Net.RtpIceChannel.RemoteIcePassword*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_RemoteIcePassword" data-uid="SIPSorcery.Net.RtpIceChannel.RemoteIcePassword">RemoteIcePassword</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string RemoteIcePassword { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_RemoteIceUser.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.RemoteIceUser%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L225">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_RemoteIceUser_" data-uid="SIPSorcery.Net.RtpIceChannel.RemoteIceUser*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_RemoteIceUser" data-uid="SIPSorcery.Net.RtpIceChannel.RemoteIceUser">RemoteIceUser</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string RemoteIceUser { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_AddRemoteCandidate_SIPSorcery_Net_RTCIceCandidate_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L375">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_AddRemoteCandidate_" data-uid="SIPSorcery.Net.RtpIceChannel.AddRemoteCandidate*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_AddRemoteCandidate_SIPSorcery_Net_RTCIceCandidate_" data-uid="SIPSorcery.Net.RtpIceChannel.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)">AddRemoteCandidate(RTCIceCandidate)</h4>
+  <div class="markdown level1 summary"><p>Adds a remote ICE candidate to the ICE session.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void AddRemoteCandidate(RTCIceCandidate candidate)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a></td>
+        <td><span class="parametername">candidate</span></td>
+        <td><p>An ICE candidate from the remote party.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_Close.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.Close%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L361">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_Close_" data-uid="SIPSorcery.Net.RtpIceChannel.Close*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_Close" data-uid="SIPSorcery.Net.RtpIceChannel.Close">Close()</h4>
+  <div class="markdown level1 summary"><p>Closes the ICE session and stops any further connectivity checks.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Close()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_OnRTPPacketReceived_SIPSorcery_Net_UdpReceiver_System_Int32_System_Net_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver%2CSystem.Int32%2CSystem.Net.IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L1485">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_OnRTPPacketReceived_" data-uid="SIPSorcery.Net.RtpIceChannel.OnRTPPacketReceived*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_OnRTPPacketReceived_SIPSorcery_Net_UdpReceiver_System_Int32_System_Net_IPEndPoint_System_Byte___" data-uid="SIPSorcery.Net.RtpIceChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver,System.Int32,System.Net.IPEndPoint,System.Byte[])">OnRTPPacketReceived(UdpReceiver, Int32, IPEndPoint, Byte[])</h4>
+  <div class="markdown level1 summary"><p>Event handler for packets received on the RTP UDP socket. This channel will detect STUN messages
+and extract STUN messages to deal with ICE connectivity checks and TURN relays.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected override void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.UdpReceiver.html">UdpReceiver</a></td>
+        <td><span class="parametername">receiver</span></td>
+        <td><p>The UDP receiver the packet was received on.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">localPort</span></td>
+        <td><p>The local port it was received on.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">remoteEndPoint</span></td>
+        <td><p>The remote end point of the sender.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">packet</span></td>
+        <td><p>The raw packet received (note this may not be RTP if other protocols are being multiplexed).</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnRTPPacketReceived_SIPSorcery_Net_UdpReceiver_System_Int32_System_Net_IPEndPoint_System_Byte___">RTPChannel.OnRTPPacketReceived(UdpReceiver, Int32, IPEndPoint, Byte[])</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_ProcessStunMessage_SIPSorcery_Net_STUNMessage_System_Net_IPEndPoint_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.ProcessStunMessage(SIPSorcery.Net.STUNMessage%2CSystem.Net.IPEndPoint%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L1127">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_ProcessStunMessage_" data-uid="SIPSorcery.Net.RtpIceChannel.ProcessStunMessage*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_ProcessStunMessage_SIPSorcery_Net_STUNMessage_System_Net_IPEndPoint_System_Boolean_" data-uid="SIPSorcery.Net.RtpIceChannel.ProcessStunMessage(SIPSorcery.Net.STUNMessage,System.Net.IPEndPoint,System.Boolean)">ProcessStunMessage(STUNMessage, IPEndPoint, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Processes a received STUN request or response.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task ProcessStunMessage(STUNMessage stunMessage, IPEndPoint remoteEndPoint, bool wasRelayed)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.STUNMessage.html">STUNMessage</a></td>
+        <td><span class="parametername">stunMessage</span></td>
+        <td><p>The STUN message received.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">remoteEndPoint</span></td>
+        <td><p>The remote end point the STUN packet was received from.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">wasRelayed</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="SIPSorcery_Net_RtpIceChannel_ProcessStunMessage_SIPSorcery_Net_STUNMessage_System_Net_IPEndPoint_System_Boolean__remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>Actions to take on a successful STUN response <a href="https://tools.ietf.org/html/rfc8445#section-7.2.5.3">https://tools.ietf.org/html/rfc8445#section-7.2.5.3</a></p>
+<ul>
+<li>Discover peer reflexive remote candidates as per <a href="https://tools.ietf.org/html/rfc8445#section-7.2.5.3.1">https://tools.ietf.org/html/rfc8445#section-7.2.5.3.1</a>.</li>
+<li>Construct a valid pair which means match a candidate pair in the check list and mark it as valid (since a successful STUN exchange
+has now taken place on it). A new entry may need to be created for this pair for a peer reflexive candidate.</li>
+<li>Update state of candidate pair that generated the check to Succeeded.</li>
+<li>If the controlling candidate set the USE_CANDIDATE attribute then the ICE agent that receives the successful response sets the nominated
+flag of the pair to true. Once the nominated flag is set it concludes the ICE processing for that component.</li>
+</ul>
+</div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_Restart.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.Restart%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L429">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_Restart_" data-uid="SIPSorcery.Net.RtpIceChannel.Restart*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_Restart" data-uid="SIPSorcery.Net.RtpIceChannel.Restart">Restart()</h4>
+  <div class="markdown level1 summary"><p>Restarts the ICE gathering and connection checks for this ICE session.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void Restart()</code></pre>
+  </div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum%2CSystem.Net.IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L1546">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_SendAsync_" data-uid="SIPSorcery.Net.RtpIceChannel.SendAsync*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___" data-uid="SIPSorcery.Net.RtpIceChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])">SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])</h4>
+  <div class="markdown level1 summary"><p>The send method for the RTP ICE channel. The sole purpose of this overload is to package up
+sends that need to be relayed via a TURN server. If the connected channel is not a relay then
+the send can be passed straight through to the underlying RTP channel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTPChannelSocketsEnum.html">RTPChannelSocketsEnum</a></td>
+        <td><span class="parametername">sendOn</span></td>
+        <td><p>The socket to send on. Can be the RTP or Control socket.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Net.IPEndPoint</span></td>
+        <td><span class="parametername">dstEndPoint</span></td>
+        <td><p>The destination end point to send to.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">buffer</span></td>
+        <td><p>The data to send.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Net.Sockets.SocketError</span></td>
+        <td><p>The result of initiating the send. This result does not reflect anything about
+whether the remote party received the packet or not.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><a class="xref" href="SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___">RTPChannel.SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])</a></div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_SetRemoteCredentials_System_String_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.SetRemoteCredentials(System.String%2CSystem.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L345">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_SetRemoteCredentials_" data-uid="SIPSorcery.Net.RtpIceChannel.SetRemoteCredentials*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_SetRemoteCredentials_System_String_System_String_" data-uid="SIPSorcery.Net.RtpIceChannel.SetRemoteCredentials(System.String,System.String)">SetRemoteCredentials(String, String)</h4>
+  <div class="markdown level1 summary"><p>Set the ICE credentials that have been supplied by the remote peer. Once these
+are set the connectivity checks should be able to commence.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SetRemoteCredentials(string username, string password)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">username</span></td>
+        <td><p>The remote peer's ICE username.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">password</span></td>
+        <td><p>The remote peer's ICE password.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_StartGathering.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.StartGathering%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L304">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RtpIceChannel_StartGathering_" data-uid="SIPSorcery.Net.RtpIceChannel.StartGathering*"></a>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_StartGathering" data-uid="SIPSorcery.Net.RtpIceChannel.StartGathering">StartGathering()</h4>
+  <div class="markdown level1 summary"><p>We've been given the green light to start the ICE candidate gathering process.
+This could include contacting external STUN and TURN servers. Events will
+be fired as each ICE is identified and as the gathering state machine changes
+state.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void StartGathering()</code></pre>
+  </div>
+  <h3 id="events">Events
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_OnIceCandidate.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.OnIceCandidate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L232">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_OnIceCandidate" data-uid="SIPSorcery.Net.RtpIceChannel.OnIceCandidate">OnIceCandidate</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;RTCIceCandidate&gt; OnIceCandidate</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_OnIceCandidateError.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.OnIceCandidateError%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L235">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_OnIceCandidateError" data-uid="SIPSorcery.Net.RtpIceChannel.OnIceCandidateError">OnIceCandidateError</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;RTCIceCandidate, string&gt; OnIceCandidateError</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a>, <span class="xref">System.String</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_OnIceConnectionStateChange.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.OnIceConnectionStateChange%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L233">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_OnIceConnectionStateChange" data-uid="SIPSorcery.Net.RtpIceChannel.OnIceConnectionStateChange">OnIceConnectionStateChange</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;RTCIceConnectionState&gt; OnIceConnectionStateChange</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceConnectionState.html">RTCIceConnectionState</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_OnIceGatheringStateChange.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.OnIceGatheringStateChange%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L234">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_OnIceGatheringStateChange" data-uid="SIPSorcery.Net.RtpIceChannel.OnIceGatheringStateChange">OnIceGatheringStateChange</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;RTCIceGatheringState&gt; OnIceGatheringStateChange</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="SIPSorcery.Net.RTCIceGatheringState.html">RTCIceGatheringState</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel_OnRTPDataReceived.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel.OnRTPDataReceived%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L237">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_RtpIceChannel_OnRTPDataReceived" data-uid="SIPSorcery.Net.RtpIceChannel.OnRTPDataReceived">OnRTPDataReceived</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;int, IPEndPoint, byte[]&gt; OnRTPDataReceived</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Int32</span>, <span class="xref">System.Net.IPEndPoint</span>, <span class="xref">System.Byte</span>[]&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.IDisposable</span>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RtpIceChannel.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RtpIceChannel%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/RtpIceChannel.cs/#L96" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>

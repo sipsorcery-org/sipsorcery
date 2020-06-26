@@ -1003,6 +1003,167 @@ references:
   commentId: F:SIPSorcery.Net.CaptureProtocolTypeEnum.XMPP
   fullName: SIPSorcery.Net.CaptureProtocolTypeEnum.XMPP
   nameWithType: CaptureProtocolTypeEnum.XMPP
+- uid: SIPSorcery.Net.ChecklistEntry
+  name: ChecklistEntry
+  href: api/SIPSorcery.Net.ChecklistEntry.html
+  commentId: T:SIPSorcery.Net.ChecklistEntry
+  fullName: SIPSorcery.Net.ChecklistEntry
+  nameWithType: ChecklistEntry
+- uid: SIPSorcery.Net.ChecklistEntry.#ctor(SIPSorcery.Net.RTCIceCandidate,SIPSorcery.Net.RTCIceCandidate,System.Boolean)
+  name: ChecklistEntry(RTCIceCandidate, RTCIceCandidate, Boolean)
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry__ctor_SIPSorcery_Net_RTCIceCandidate_SIPSorcery_Net_RTCIceCandidate_System_Boolean_
+  commentId: M:SIPSorcery.Net.ChecklistEntry.#ctor(SIPSorcery.Net.RTCIceCandidate,SIPSorcery.Net.RTCIceCandidate,System.Boolean)
+  fullName: SIPSorcery.Net.ChecklistEntry.ChecklistEntry(SIPSorcery.Net.RTCIceCandidate, SIPSorcery.Net.RTCIceCandidate, System.Boolean)
+  nameWithType: ChecklistEntry.ChecklistEntry(RTCIceCandidate, RTCIceCandidate, Boolean)
+- uid: SIPSorcery.Net.ChecklistEntry.#ctor*
+  name: ChecklistEntry
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry__ctor_
+  commentId: Overload:SIPSorcery.Net.ChecklistEntry.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.ChecklistEntry.ChecklistEntry
+  nameWithType: ChecklistEntry.ChecklistEntry
+- uid: SIPSorcery.Net.ChecklistEntry.ChecksSent
+  name: ChecksSent
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_ChecksSent
+  commentId: F:SIPSorcery.Net.ChecklistEntry.ChecksSent
+  fullName: SIPSorcery.Net.ChecklistEntry.ChecksSent
+  nameWithType: ChecklistEntry.ChecksSent
+- uid: SIPSorcery.Net.ChecklistEntry.CompareTo(System.Object)
+  name: CompareTo(Object)
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_CompareTo_System_Object_
+  commentId: M:SIPSorcery.Net.ChecklistEntry.CompareTo(System.Object)
+  fullName: SIPSorcery.Net.ChecklistEntry.CompareTo(System.Object)
+  nameWithType: ChecklistEntry.CompareTo(Object)
+- uid: SIPSorcery.Net.ChecklistEntry.CompareTo*
+  name: CompareTo
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_CompareTo_
+  commentId: Overload:SIPSorcery.Net.ChecklistEntry.CompareTo
+  isSpec: "True"
+  fullName: SIPSorcery.Net.ChecklistEntry.CompareTo
+  nameWithType: ChecklistEntry.CompareTo
+- uid: SIPSorcery.Net.ChecklistEntry.Default
+  name: Default
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_Default
+  commentId: F:SIPSorcery.Net.ChecklistEntry.Default
+  fullName: SIPSorcery.Net.ChecklistEntry.Default
+  nameWithType: ChecklistEntry.Default
+- uid: SIPSorcery.Net.ChecklistEntry.LastCheckSentAt
+  name: LastCheckSentAt
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LastCheckSentAt
+  commentId: F:SIPSorcery.Net.ChecklistEntry.LastCheckSentAt
+  fullName: SIPSorcery.Net.ChecklistEntry.LastCheckSentAt
+  nameWithType: ChecklistEntry.LastCheckSentAt
+- uid: SIPSorcery.Net.ChecklistEntry.LocalCandidate
+  name: LocalCandidate
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_LocalCandidate
+  commentId: F:SIPSorcery.Net.ChecklistEntry.LocalCandidate
+  fullName: SIPSorcery.Net.ChecklistEntry.LocalCandidate
+  nameWithType: ChecklistEntry.LocalCandidate
+- uid: SIPSorcery.Net.ChecklistEntry.Nominated
+  name: Nominated
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_Nominated
+  commentId: F:SIPSorcery.Net.ChecklistEntry.Nominated
+  fullName: SIPSorcery.Net.ChecklistEntry.Nominated
+  nameWithType: ChecklistEntry.Nominated
+- uid: SIPSorcery.Net.ChecklistEntry.Priority
+  name: Priority
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_Priority
+  commentId: P:SIPSorcery.Net.ChecklistEntry.Priority
+  fullName: SIPSorcery.Net.ChecklistEntry.Priority
+  nameWithType: ChecklistEntry.Priority
+- uid: SIPSorcery.Net.ChecklistEntry.Priority*
+  name: Priority
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_Priority_
+  commentId: Overload:SIPSorcery.Net.ChecklistEntry.Priority
+  isSpec: "True"
+  fullName: SIPSorcery.Net.ChecklistEntry.Priority
+  nameWithType: ChecklistEntry.Priority
+- uid: SIPSorcery.Net.ChecklistEntry.RemoteCandidate
+  name: RemoteCandidate
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_RemoteCandidate
+  commentId: F:SIPSorcery.Net.ChecklistEntry.RemoteCandidate
+  fullName: SIPSorcery.Net.ChecklistEntry.RemoteCandidate
+  nameWithType: ChecklistEntry.RemoteCandidate
+- uid: SIPSorcery.Net.ChecklistEntry.RequestTransactionID
+  name: RequestTransactionID
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_RequestTransactionID
+  commentId: F:SIPSorcery.Net.ChecklistEntry.RequestTransactionID
+  fullName: SIPSorcery.Net.ChecklistEntry.RequestTransactionID
+  nameWithType: ChecklistEntry.RequestTransactionID
+- uid: SIPSorcery.Net.ChecklistEntry.State
+  name: State
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_State
+  commentId: F:SIPSorcery.Net.ChecklistEntry.State
+  fullName: SIPSorcery.Net.ChecklistEntry.State
+  nameWithType: ChecklistEntry.State
+- uid: SIPSorcery.Net.ChecklistEntry.TurnPermissionsRequestSent
+  name: TurnPermissionsRequestSent
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_TurnPermissionsRequestSent
+  commentId: P:SIPSorcery.Net.ChecklistEntry.TurnPermissionsRequestSent
+  fullName: SIPSorcery.Net.ChecklistEntry.TurnPermissionsRequestSent
+  nameWithType: ChecklistEntry.TurnPermissionsRequestSent
+- uid: SIPSorcery.Net.ChecklistEntry.TurnPermissionsRequestSent*
+  name: TurnPermissionsRequestSent
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_TurnPermissionsRequestSent_
+  commentId: Overload:SIPSorcery.Net.ChecklistEntry.TurnPermissionsRequestSent
+  isSpec: "True"
+  fullName: SIPSorcery.Net.ChecklistEntry.TurnPermissionsRequestSent
+  nameWithType: ChecklistEntry.TurnPermissionsRequestSent
+- uid: SIPSorcery.Net.ChecklistEntry.TurnPermissionsResponseAt
+  name: TurnPermissionsResponseAt
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_TurnPermissionsResponseAt
+  commentId: P:SIPSorcery.Net.ChecklistEntry.TurnPermissionsResponseAt
+  fullName: SIPSorcery.Net.ChecklistEntry.TurnPermissionsResponseAt
+  nameWithType: ChecklistEntry.TurnPermissionsResponseAt
+- uid: SIPSorcery.Net.ChecklistEntry.TurnPermissionsResponseAt*
+  name: TurnPermissionsResponseAt
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_TurnPermissionsResponseAt_
+  commentId: Overload:SIPSorcery.Net.ChecklistEntry.TurnPermissionsResponseAt
+  isSpec: "True"
+  fullName: SIPSorcery.Net.ChecklistEntry.TurnPermissionsResponseAt
+  nameWithType: ChecklistEntry.TurnPermissionsResponseAt
+- uid: SIPSorcery.Net.ChecklistEntry.Valid
+  name: Valid
+  href: api/SIPSorcery.Net.ChecklistEntry.html#SIPSorcery_Net_ChecklistEntry_Valid
+  commentId: F:SIPSorcery.Net.ChecklistEntry.Valid
+  fullName: SIPSorcery.Net.ChecklistEntry.Valid
+  nameWithType: ChecklistEntry.Valid
+- uid: SIPSorcery.Net.ChecklistEntryState
+  name: ChecklistEntryState
+  href: api/SIPSorcery.Net.ChecklistEntryState.html
+  commentId: T:SIPSorcery.Net.ChecklistEntryState
+  fullName: SIPSorcery.Net.ChecklistEntryState
+  nameWithType: ChecklistEntryState
+- uid: SIPSorcery.Net.ChecklistEntryState.Failed
+  name: Failed
+  href: api/SIPSorcery.Net.ChecklistEntryState.html#SIPSorcery_Net_ChecklistEntryState_Failed
+  commentId: F:SIPSorcery.Net.ChecklistEntryState.Failed
+  fullName: SIPSorcery.Net.ChecklistEntryState.Failed
+  nameWithType: ChecklistEntryState.Failed
+- uid: SIPSorcery.Net.ChecklistEntryState.Frozen
+  name: Frozen
+  href: api/SIPSorcery.Net.ChecklistEntryState.html#SIPSorcery_Net_ChecklistEntryState_Frozen
+  commentId: F:SIPSorcery.Net.ChecklistEntryState.Frozen
+  fullName: SIPSorcery.Net.ChecklistEntryState.Frozen
+  nameWithType: ChecklistEntryState.Frozen
+- uid: SIPSorcery.Net.ChecklistEntryState.InProgress
+  name: InProgress
+  href: api/SIPSorcery.Net.ChecklistEntryState.html#SIPSorcery_Net_ChecklistEntryState_InProgress
+  commentId: F:SIPSorcery.Net.ChecklistEntryState.InProgress
+  fullName: SIPSorcery.Net.ChecklistEntryState.InProgress
+  nameWithType: ChecklistEntryState.InProgress
+- uid: SIPSorcery.Net.ChecklistEntryState.Succeeded
+  name: Succeeded
+  href: api/SIPSorcery.Net.ChecklistEntryState.html#SIPSorcery_Net_ChecklistEntryState_Succeeded
+  commentId: F:SIPSorcery.Net.ChecklistEntryState.Succeeded
+  fullName: SIPSorcery.Net.ChecklistEntryState.Succeeded
+  nameWithType: ChecklistEntryState.Succeeded
+- uid: SIPSorcery.Net.ChecklistEntryState.Waiting
+  name: Waiting
+  href: api/SIPSorcery.Net.ChecklistEntryState.html#SIPSorcery_Net_ChecklistEntryState_Waiting
+  commentId: F:SIPSorcery.Net.ChecklistEntryState.Waiting
+  fullName: SIPSorcery.Net.ChecklistEntryState.Waiting
+  nameWithType: ChecklistEntryState.Waiting
 - uid: SIPSorcery.Net.ChunkTypeEnum
   name: ChunkTypeEnum
   href: api/SIPSorcery.Net.ChunkTypeEnum.html
@@ -1334,271 +1495,6 @@ references:
   commentId: T:SIPSorcery.Net.IceServer
   fullName: SIPSorcery.Net.IceServer
   nameWithType: IceServer
-- uid: SIPSorcery.Net.IceSession
-  name: IceSession
-  href: api/SIPSorcery.Net.IceSession.html
-  commentId: T:SIPSorcery.Net.IceSession
-  fullName: SIPSorcery.Net.IceSession
-  nameWithType: IceSession
-- uid: SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel,SIPSorcery.Net.RTCIceComponent,System.Net.IPAddress,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)
-  name: IceSession(RTPChannel, RTCIceComponent, IPAddress, List<RTCIceServer>, RTCIceTransportPolicy)
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession__ctor_SIPSorcery_Net_RTPChannel_SIPSorcery_Net_RTCIceComponent_System_Net_IPAddress_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_
-  commentId: M:SIPSorcery.Net.IceSession.#ctor(SIPSorcery.Net.RTPChannel,SIPSorcery.Net.RTCIceComponent,System.Net.IPAddress,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)
-  name.vb: IceSession(RTPChannel, RTCIceComponent, IPAddress, List(Of RTCIceServer), RTCIceTransportPolicy)
-  fullName: SIPSorcery.Net.IceSession.IceSession(SIPSorcery.Net.RTPChannel, SIPSorcery.Net.RTCIceComponent, System.Net.IPAddress, System.Collections.Generic.List<SIPSorcery.Net.RTCIceServer>, SIPSorcery.Net.RTCIceTransportPolicy)
-  fullName.vb: SIPSorcery.Net.IceSession.IceSession(SIPSorcery.Net.RTPChannel, SIPSorcery.Net.RTCIceComponent, System.Net.IPAddress, System.Collections.Generic.List(Of SIPSorcery.Net.RTCIceServer), SIPSorcery.Net.RTCIceTransportPolicy)
-  nameWithType: IceSession.IceSession(RTPChannel, RTCIceComponent, IPAddress, List<RTCIceServer>, RTCIceTransportPolicy)
-  nameWithType.vb: IceSession.IceSession(RTPChannel, RTCIceComponent, IPAddress, List(Of RTCIceServer), RTCIceTransportPolicy)
-- uid: SIPSorcery.Net.IceSession.#ctor*
-  name: IceSession
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession__ctor_
-  commentId: Overload:SIPSorcery.Net.IceSession.#ctor
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.IceSession
-  nameWithType: IceSession.IceSession
-- uid: SIPSorcery.Net.IceSession.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)
-  name: AddRemoteCandidate(RTCIceCandidate)
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_AddRemoteCandidate_SIPSorcery_Net_RTCIceCandidate_
-  commentId: M:SIPSorcery.Net.IceSession.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)
-  fullName: SIPSorcery.Net.IceSession.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)
-  nameWithType: IceSession.AddRemoteCandidate(RTCIceCandidate)
-- uid: SIPSorcery.Net.IceSession.AddRemoteCandidate*
-  name: AddRemoteCandidate
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_AddRemoteCandidate_
-  commentId: Overload:SIPSorcery.Net.IceSession.AddRemoteCandidate
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.AddRemoteCandidate
-  nameWithType: IceSession.AddRemoteCandidate
-- uid: SIPSorcery.Net.IceSession.Candidates
-  name: Candidates
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_Candidates
-  commentId: P:SIPSorcery.Net.IceSession.Candidates
-  fullName: SIPSorcery.Net.IceSession.Candidates
-  nameWithType: IceSession.Candidates
-- uid: SIPSorcery.Net.IceSession.Candidates*
-  name: Candidates
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_Candidates_
-  commentId: Overload:SIPSorcery.Net.IceSession.Candidates
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.Candidates
-  nameWithType: IceSession.Candidates
-- uid: SIPSorcery.Net.IceSession.Close
-  name: Close()
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_Close
-  commentId: M:SIPSorcery.Net.IceSession.Close
-  fullName: SIPSorcery.Net.IceSession.Close()
-  nameWithType: IceSession.Close()
-- uid: SIPSorcery.Net.IceSession.Close*
-  name: Close
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_Close_
-  commentId: Overload:SIPSorcery.Net.IceSession.Close
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.Close
-  nameWithType: IceSession.Close
-- uid: SIPSorcery.Net.IceSession.Component
-  name: Component
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_Component
-  commentId: P:SIPSorcery.Net.IceSession.Component
-  fullName: SIPSorcery.Net.IceSession.Component
-  nameWithType: IceSession.Component
-- uid: SIPSorcery.Net.IceSession.Component*
-  name: Component
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_Component_
-  commentId: Overload:SIPSorcery.Net.IceSession.Component
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.Component
-  nameWithType: IceSession.Component
-- uid: SIPSorcery.Net.IceSession.ConnectedRemoteEndPoint
-  name: ConnectedRemoteEndPoint
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_ConnectedRemoteEndPoint
-  commentId: P:SIPSorcery.Net.IceSession.ConnectedRemoteEndPoint
-  fullName: SIPSorcery.Net.IceSession.ConnectedRemoteEndPoint
-  nameWithType: IceSession.ConnectedRemoteEndPoint
-- uid: SIPSorcery.Net.IceSession.ConnectedRemoteEndPoint*
-  name: ConnectedRemoteEndPoint
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_ConnectedRemoteEndPoint_
-  commentId: Overload:SIPSorcery.Net.IceSession.ConnectedRemoteEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.ConnectedRemoteEndPoint
-  nameWithType: IceSession.ConnectedRemoteEndPoint
-- uid: SIPSorcery.Net.IceSession.ConnectionState
-  name: ConnectionState
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_ConnectionState
-  commentId: P:SIPSorcery.Net.IceSession.ConnectionState
-  fullName: SIPSorcery.Net.IceSession.ConnectionState
-  nameWithType: IceSession.ConnectionState
-- uid: SIPSorcery.Net.IceSession.ConnectionState*
-  name: ConnectionState
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_ConnectionState_
-  commentId: Overload:SIPSorcery.Net.IceSession.ConnectionState
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.ConnectionState
-  nameWithType: IceSession.ConnectionState
-- uid: SIPSorcery.Net.IceSession.GatheringState
-  name: GatheringState
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_GatheringState
-  commentId: P:SIPSorcery.Net.IceSession.GatheringState
-  fullName: SIPSorcery.Net.IceSession.GatheringState
-  nameWithType: IceSession.GatheringState
-- uid: SIPSorcery.Net.IceSession.GatheringState*
-  name: GatheringState
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_GatheringState_
-  commentId: Overload:SIPSorcery.Net.IceSession.GatheringState
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.GatheringState
-  nameWithType: IceSession.GatheringState
-- uid: SIPSorcery.Net.IceSession.IsController
-  name: IsController
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_IsController
-  commentId: P:SIPSorcery.Net.IceSession.IsController
-  fullName: SIPSorcery.Net.IceSession.IsController
-  nameWithType: IceSession.IsController
-- uid: SIPSorcery.Net.IceSession.IsController*
-  name: IsController
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_IsController_
-  commentId: Overload:SIPSorcery.Net.IceSession.IsController
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.IsController
-  nameWithType: IceSession.IsController
-- uid: SIPSorcery.Net.IceSession.LocalIcePassword
-  name: LocalIcePassword
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_LocalIcePassword
-  commentId: F:SIPSorcery.Net.IceSession.LocalIcePassword
-  fullName: SIPSorcery.Net.IceSession.LocalIcePassword
-  nameWithType: IceSession.LocalIcePassword
-- uid: SIPSorcery.Net.IceSession.LocalIceUser
-  name: LocalIceUser
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_LocalIceUser
-  commentId: F:SIPSorcery.Net.IceSession.LocalIceUser
-  fullName: SIPSorcery.Net.IceSession.LocalIceUser
-  nameWithType: IceSession.LocalIceUser
-- uid: SIPSorcery.Net.IceSession.NominatedCandidate
-  name: NominatedCandidate
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_NominatedCandidate
-  commentId: P:SIPSorcery.Net.IceSession.NominatedCandidate
-  fullName: SIPSorcery.Net.IceSession.NominatedCandidate
-  nameWithType: IceSession.NominatedCandidate
-- uid: SIPSorcery.Net.IceSession.NominatedCandidate*
-  name: NominatedCandidate
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_NominatedCandidate_
-  commentId: Overload:SIPSorcery.Net.IceSession.NominatedCandidate
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.NominatedCandidate
-  nameWithType: IceSession.NominatedCandidate
-- uid: SIPSorcery.Net.IceSession.OnIceCandidate
-  name: OnIceCandidate
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_OnIceCandidate
-  commentId: E:SIPSorcery.Net.IceSession.OnIceCandidate
-  fullName: SIPSorcery.Net.IceSession.OnIceCandidate
-  nameWithType: IceSession.OnIceCandidate
-- uid: SIPSorcery.Net.IceSession.OnIceCandidateError
-  name: OnIceCandidateError
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_OnIceCandidateError
-  commentId: E:SIPSorcery.Net.IceSession.OnIceCandidateError
-  fullName: SIPSorcery.Net.IceSession.OnIceCandidateError
-  nameWithType: IceSession.OnIceCandidateError
-- uid: SIPSorcery.Net.IceSession.OnIceConnectionStateChange
-  name: OnIceConnectionStateChange
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_OnIceConnectionStateChange
-  commentId: E:SIPSorcery.Net.IceSession.OnIceConnectionStateChange
-  fullName: SIPSorcery.Net.IceSession.OnIceConnectionStateChange
-  nameWithType: IceSession.OnIceConnectionStateChange
-- uid: SIPSorcery.Net.IceSession.OnIceGatheringStateChange
-  name: OnIceGatheringStateChange
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_OnIceGatheringStateChange
-  commentId: E:SIPSorcery.Net.IceSession.OnIceGatheringStateChange
-  fullName: SIPSorcery.Net.IceSession.OnIceGatheringStateChange
-  nameWithType: IceSession.OnIceGatheringStateChange
-- uid: SIPSorcery.Net.IceSession.ProcessStunMessage(SIPSorcery.Net.STUNMessage,System.Net.IPEndPoint)
-  name: ProcessStunMessage(STUNMessage, IPEndPoint)
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_ProcessStunMessage_SIPSorcery_Net_STUNMessage_System_Net_IPEndPoint_
-  commentId: M:SIPSorcery.Net.IceSession.ProcessStunMessage(SIPSorcery.Net.STUNMessage,System.Net.IPEndPoint)
-  fullName: SIPSorcery.Net.IceSession.ProcessStunMessage(SIPSorcery.Net.STUNMessage, System.Net.IPEndPoint)
-  nameWithType: IceSession.ProcessStunMessage(STUNMessage, IPEndPoint)
-- uid: SIPSorcery.Net.IceSession.ProcessStunMessage*
-  name: ProcessStunMessage
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_ProcessStunMessage_
-  commentId: Overload:SIPSorcery.Net.IceSession.ProcessStunMessage
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.ProcessStunMessage
-  nameWithType: IceSession.ProcessStunMessage
-- uid: SIPSorcery.Net.IceSession.RemoteIcePassword
-  name: RemoteIcePassword
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_RemoteIcePassword
-  commentId: P:SIPSorcery.Net.IceSession.RemoteIcePassword
-  fullName: SIPSorcery.Net.IceSession.RemoteIcePassword
-  nameWithType: IceSession.RemoteIcePassword
-- uid: SIPSorcery.Net.IceSession.RemoteIcePassword*
-  name: RemoteIcePassword
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_RemoteIcePassword_
-  commentId: Overload:SIPSorcery.Net.IceSession.RemoteIcePassword
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.RemoteIcePassword
-  nameWithType: IceSession.RemoteIcePassword
-- uid: SIPSorcery.Net.IceSession.RemoteIceUser
-  name: RemoteIceUser
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_RemoteIceUser
-  commentId: P:SIPSorcery.Net.IceSession.RemoteIceUser
-  fullName: SIPSorcery.Net.IceSession.RemoteIceUser
-  nameWithType: IceSession.RemoteIceUser
-- uid: SIPSorcery.Net.IceSession.RemoteIceUser*
-  name: RemoteIceUser
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_RemoteIceUser_
-  commentId: Overload:SIPSorcery.Net.IceSession.RemoteIceUser
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.RemoteIceUser
-  nameWithType: IceSession.RemoteIceUser
-- uid: SIPSorcery.Net.IceSession.Restart
-  name: Restart()
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_Restart
-  commentId: M:SIPSorcery.Net.IceSession.Restart
-  fullName: SIPSorcery.Net.IceSession.Restart()
-  nameWithType: IceSession.Restart()
-- uid: SIPSorcery.Net.IceSession.Restart*
-  name: Restart
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_Restart_
-  commentId: Overload:SIPSorcery.Net.IceSession.Restart
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.Restart
-  nameWithType: IceSession.Restart
-- uid: SIPSorcery.Net.IceSession.SDP_MID
-  name: SDP_MID
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_SDP_MID
-  commentId: F:SIPSorcery.Net.IceSession.SDP_MID
-  fullName: SIPSorcery.Net.IceSession.SDP_MID
-  nameWithType: IceSession.SDP_MID
-- uid: SIPSorcery.Net.IceSession.SDP_MLINE_INDEX
-  name: SDP_MLINE_INDEX
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_SDP_MLINE_INDEX
-  commentId: F:SIPSorcery.Net.IceSession.SDP_MLINE_INDEX
-  fullName: SIPSorcery.Net.IceSession.SDP_MLINE_INDEX
-  nameWithType: IceSession.SDP_MLINE_INDEX
-- uid: SIPSorcery.Net.IceSession.SetRemoteCredentials(System.String,System.String)
-  name: SetRemoteCredentials(String, String)
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_SetRemoteCredentials_System_String_System_String_
-  commentId: M:SIPSorcery.Net.IceSession.SetRemoteCredentials(System.String,System.String)
-  fullName: SIPSorcery.Net.IceSession.SetRemoteCredentials(System.String, System.String)
-  nameWithType: IceSession.SetRemoteCredentials(String, String)
-- uid: SIPSorcery.Net.IceSession.SetRemoteCredentials*
-  name: SetRemoteCredentials
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_SetRemoteCredentials_
-  commentId: Overload:SIPSorcery.Net.IceSession.SetRemoteCredentials
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.SetRemoteCredentials
-  nameWithType: IceSession.SetRemoteCredentials
-- uid: SIPSorcery.Net.IceSession.StartGathering
-  name: StartGathering()
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_StartGathering
-  commentId: M:SIPSorcery.Net.IceSession.StartGathering
-  fullName: SIPSorcery.Net.IceSession.StartGathering()
-  nameWithType: IceSession.StartGathering()
-- uid: SIPSorcery.Net.IceSession.StartGathering*
-  name: StartGathering
-  href: api/SIPSorcery.Net.IceSession.html#SIPSorcery_Net_IceSession_StartGathering_
-  commentId: Overload:SIPSorcery.Net.IceSession.StartGathering
-  isSpec: "True"
-  fullName: SIPSorcery.Net.IceSession.StartGathering
-  nameWithType: IceSession.StartGathering
 - uid: SIPSorcery.Net.IRTCIceCandidate
   name: IRTCIceCandidate
   href: api/SIPSorcery.Net.IRTCIceCandidate.html
@@ -2231,6 +2127,12 @@ references:
   commentId: F:SIPSorcery.Net.Mjpeg.Tags.TextComment
   fullName: SIPSorcery.Net.Mjpeg.Tags.TextComment
   nameWithType: Mjpeg.Tags.TextComment
+- uid: SIPSorcery.Net.PacketReceivedDelegate
+  name: PacketReceivedDelegate
+  href: api/SIPSorcery.Net.PacketReceivedDelegate.html
+  commentId: T:SIPSorcery.Net.PacketReceivedDelegate
+  fullName: SIPSorcery.Net.PacketReceivedDelegate
+  nameWithType: PacketReceivedDelegate
 - uid: SIPSorcery.Net.ProtectRtpPacket
   name: ProtectRtpPacket
   href: api/SIPSorcery.Net.ProtectRtpPacket.html
@@ -2593,19 +2495,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidate.foundation
   nameWithType: RTCIceCandidate.foundation
-- uid: SIPSorcery.Net.RTCIceCandidate.GetShortDescription
-  name: GetShortDescription()
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_GetShortDescription
-  commentId: M:SIPSorcery.Net.RTCIceCandidate.GetShortDescription
-  fullName: SIPSorcery.Net.RTCIceCandidate.GetShortDescription()
-  nameWithType: RTCIceCandidate.GetShortDescription()
-- uid: SIPSorcery.Net.RTCIceCandidate.GetShortDescription*
-  name: GetShortDescription
-  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_GetShortDescription_
-  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.GetShortDescription
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTCIceCandidate.GetShortDescription
-  nameWithType: RTCIceCandidate.GetShortDescription
 - uid: SIPSorcery.Net.RTCIceCandidate.IceServer
   name: IceServer
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_IceServer
@@ -2806,6 +2695,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCIceCandidate.toJSON
   nameWithType: RTCIceCandidate.toJSON
+- uid: SIPSorcery.Net.RTCIceCandidate.ToShortString
+  name: ToShortString()
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_ToShortString
+  commentId: M:SIPSorcery.Net.RTCIceCandidate.ToShortString
+  fullName: SIPSorcery.Net.RTCIceCandidate.ToShortString()
+  nameWithType: RTCIceCandidate.ToShortString()
+- uid: SIPSorcery.Net.RTCIceCandidate.ToShortString*
+  name: ToShortString
+  href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_ToShortString_
+  commentId: Overload:SIPSorcery.Net.RTCIceCandidate.ToShortString
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCIceCandidate.ToShortString
+  nameWithType: RTCIceCandidate.ToShortString
 - uid: SIPSorcery.Net.RTCIceCandidate.ToString
   name: ToString()
   href: api/SIPSorcery.Net.RTCIceCandidate.html#SIPSorcery_Net_RTCIceCandidate_ToString
@@ -3444,6 +3346,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.createOffer
   nameWithType: RTCPeerConnection.createOffer
+- uid: SIPSorcery.Net.RTCPeerConnection.CreateRtpChannel(SIPSorcery.Net.SDPMediaTypesEnum)
+  name: CreateRtpChannel(SDPMediaTypesEnum)
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_CreateRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_
+  commentId: M:SIPSorcery.Net.RTCPeerConnection.CreateRtpChannel(SIPSorcery.Net.SDPMediaTypesEnum)
+  fullName: SIPSorcery.Net.RTCPeerConnection.CreateRtpChannel(SIPSorcery.Net.SDPMediaTypesEnum)
+  nameWithType: RTCPeerConnection.CreateRtpChannel(SDPMediaTypesEnum)
+- uid: SIPSorcery.Net.RTCPeerConnection.CreateRtpChannel*
+  name: CreateRtpChannel
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_CreateRtpChannel_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.CreateRtpChannel
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPeerConnection.CreateRtpChannel
+  nameWithType: RTCPeerConnection.CreateRtpChannel
 - uid: SIPSorcery.Net.RTCPeerConnection.currentLocalDescription
   name: currentLocalDescription
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_currentLocalDescription
@@ -3522,19 +3437,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.IceRole
   nameWithType: RTCPeerConnection.IceRole
-- uid: SIPSorcery.Net.RTCPeerConnection.IceSession
-  name: IceSession
-  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_IceSession
-  commentId: P:SIPSorcery.Net.RTCPeerConnection.IceSession
-  fullName: SIPSorcery.Net.RTCPeerConnection.IceSession
-  nameWithType: RTCPeerConnection.IceSession
-- uid: SIPSorcery.Net.RTCPeerConnection.IceSession*
-  name: IceSession
-  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_IceSession_
-  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.IceSession
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTCPeerConnection.IceSession
-  nameWithType: RTCPeerConnection.IceSession
 - uid: SIPSorcery.Net.RTCPeerConnection.IsDtlsNegotiationComplete
   name: IsDtlsNegotiationComplete
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_IsDtlsNegotiationComplete
@@ -3564,7 +3466,14 @@ references:
 - uid: SIPSorcery.Net.RTCPeerConnection.LocalSdpSessionID
   name: LocalSdpSessionID
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_LocalSdpSessionID
-  commentId: F:SIPSorcery.Net.RTCPeerConnection.LocalSdpSessionID
+  commentId: P:SIPSorcery.Net.RTCPeerConnection.LocalSdpSessionID
+  fullName: SIPSorcery.Net.RTCPeerConnection.LocalSdpSessionID
+  nameWithType: RTCPeerConnection.LocalSdpSessionID
+- uid: SIPSorcery.Net.RTCPeerConnection.LocalSdpSessionID*
+  name: LocalSdpSessionID
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_LocalSdpSessionID_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.LocalSdpSessionID
+  isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.LocalSdpSessionID
   nameWithType: RTCPeerConnection.LocalSdpSessionID
 - uid: SIPSorcery.Net.RTCPeerConnection.onconnectionstatechange
@@ -3648,19 +3557,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.remoteDescription
   nameWithType: RTCPeerConnection.remoteDescription
-- uid: SIPSorcery.Net.RTCPeerConnection.RemoteEndPoint
-  name: RemoteEndPoint
-  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_RemoteEndPoint
-  commentId: P:SIPSorcery.Net.RTCPeerConnection.RemoteEndPoint
-  fullName: SIPSorcery.Net.RTCPeerConnection.RemoteEndPoint
-  nameWithType: RTCPeerConnection.RemoteEndPoint
-- uid: SIPSorcery.Net.RTCPeerConnection.RemoteEndPoint*
-  name: RemoteEndPoint
-  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_RemoteEndPoint_
-  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.RemoteEndPoint
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTCPeerConnection.RemoteEndPoint
-  nameWithType: RTCPeerConnection.RemoteEndPoint
 - uid: SIPSorcery.Net.RTCPeerConnection.RemotePeerDtlsFingerprint
   name: RemotePeerDtlsFingerprint
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_RemotePeerDtlsFingerprint
@@ -3690,7 +3586,14 @@ references:
 - uid: SIPSorcery.Net.RTCPeerConnection.SdpSessionID
   name: SdpSessionID
   href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_SdpSessionID
-  commentId: F:SIPSorcery.Net.RTCPeerConnection.SdpSessionID
+  commentId: P:SIPSorcery.Net.RTCPeerConnection.SdpSessionID
+  fullName: SIPSorcery.Net.RTCPeerConnection.SdpSessionID
+  nameWithType: RTCPeerConnection.SdpSessionID
+- uid: SIPSorcery.Net.RTCPeerConnection.SdpSessionID*
+  name: SdpSessionID
+  href: api/SIPSorcery.Net.RTCPeerConnection.html#SIPSorcery_Net_RTCPeerConnection_SdpSessionID_
+  commentId: Overload:SIPSorcery.Net.RTCPeerConnection.SdpSessionID
+  isSpec: "True"
   fullName: SIPSorcery.Net.RTCPeerConnection.SdpSessionID
   nameWithType: RTCPeerConnection.SdpSessionID
 - uid: SIPSorcery.Net.RTCPeerConnection.SendMedia(SIPSorcery.Net.SDPMediaTypesEnum,System.UInt32,System.Byte[])
@@ -4629,6 +4532,31 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPChannel.IsDualMode
   nameWithType: RTPChannel.IsDualMode
+- uid: SIPSorcery.Net.RTPChannel.LastRtpDestination
+  name: LastRtpDestination
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_LastRtpDestination
+  commentId: P:SIPSorcery.Net.RTPChannel.LastRtpDestination
+  fullName: SIPSorcery.Net.RTPChannel.LastRtpDestination
+  nameWithType: RTPChannel.LastRtpDestination
+- uid: SIPSorcery.Net.RTPChannel.LastRtpDestination*
+  name: LastRtpDestination
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_LastRtpDestination_
+  commentId: Overload:SIPSorcery.Net.RTPChannel.LastRtpDestination
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPChannel.LastRtpDestination
+  nameWithType: RTPChannel.LastRtpDestination
+- uid: SIPSorcery.Net.RTPChannel.m_controlReceiver
+  name: m_controlReceiver
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_m_controlReceiver
+  commentId: F:SIPSorcery.Net.RTPChannel.m_controlReceiver
+  fullName: SIPSorcery.Net.RTPChannel.m_controlReceiver
+  nameWithType: RTPChannel.m_controlReceiver
+- uid: SIPSorcery.Net.RTPChannel.m_rtpReceiver
+  name: m_rtpReceiver
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_m_rtpReceiver
+  commentId: F:SIPSorcery.Net.RTPChannel.m_rtpReceiver
+  fullName: SIPSorcery.Net.RTPChannel.m_rtpReceiver
+  nameWithType: RTPChannel.m_rtpReceiver
 - uid: SIPSorcery.Net.RTPChannel.OnClosed
   name: OnClosed
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnClosed
@@ -4647,6 +4575,22 @@ references:
   commentId: E:SIPSorcery.Net.RTPChannel.OnRTPDataReceived
   fullName: SIPSorcery.Net.RTPChannel.OnRTPDataReceived
   nameWithType: RTPChannel.OnRTPDataReceived
+- uid: SIPSorcery.Net.RTPChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver,System.Int32,System.Net.IPEndPoint,System.Byte[])
+  name: OnRTPPacketReceived(UdpReceiver, Int32, IPEndPoint, Byte[])
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnRTPPacketReceived_SIPSorcery_Net_UdpReceiver_System_Int32_System_Net_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.Net.RTPChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver,System.Int32,System.Net.IPEndPoint,System.Byte[])
+  name.vb: OnRTPPacketReceived(UdpReceiver, Int32, IPEndPoint, Byte())
+  fullName: SIPSorcery.Net.RTPChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver, System.Int32, System.Net.IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTPChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver, System.Int32, System.Net.IPEndPoint, System.Byte())
+  nameWithType: RTPChannel.OnRTPPacketReceived(UdpReceiver, Int32, IPEndPoint, Byte[])
+  nameWithType.vb: RTPChannel.OnRTPPacketReceived(UdpReceiver, Int32, IPEndPoint, Byte())
+- uid: SIPSorcery.Net.RTPChannel.OnRTPPacketReceived*
+  name: OnRTPPacketReceived
+  href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_OnRTPPacketReceived_
+  commentId: Overload:SIPSorcery.Net.RTPChannel.OnRTPPacketReceived
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPChannel.OnRTPPacketReceived
+  nameWithType: RTPChannel.OnRTPPacketReceived
 - uid: SIPSorcery.Net.RTPChannel.RTPLocalEndPoint
   name: RTPLocalEndPoint
   href: api/SIPSorcery.Net.RTPChannel.html#SIPSorcery_Net_RTPChannel_RTPLocalEndPoint
@@ -5027,6 +4971,302 @@ references:
   commentId: F:SIPSorcery.Net.RTPHeader.Version
   fullName: SIPSorcery.Net.RTPHeader.Version
   nameWithType: RTPHeader.Version
+- uid: SIPSorcery.Net.RtpIceChannel
+  name: RtpIceChannel
+  href: api/SIPSorcery.Net.RtpIceChannel.html
+  commentId: T:SIPSorcery.Net.RtpIceChannel
+  fullName: SIPSorcery.Net.RtpIceChannel
+  nameWithType: RtpIceChannel
+- uid: SIPSorcery.Net.RtpIceChannel.#ctor
+  name: RtpIceChannel()
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel__ctor
+  commentId: M:SIPSorcery.Net.RtpIceChannel.#ctor
+  fullName: SIPSorcery.Net.RtpIceChannel.RtpIceChannel()
+  nameWithType: RtpIceChannel.RtpIceChannel()
+- uid: SIPSorcery.Net.RtpIceChannel.#ctor(System.Net.IPAddress,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)
+  name: RtpIceChannel(IPAddress, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy)
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel__ctor_System_Net_IPAddress_SIPSorcery_Net_RTCIceComponent_System_Collections_Generic_List_SIPSorcery_Net_RTCIceServer__SIPSorcery_Net_RTCIceTransportPolicy_
+  commentId: M:SIPSorcery.Net.RtpIceChannel.#ctor(System.Net.IPAddress,SIPSorcery.Net.RTCIceComponent,System.Collections.Generic.List{SIPSorcery.Net.RTCIceServer},SIPSorcery.Net.RTCIceTransportPolicy)
+  name.vb: RtpIceChannel(IPAddress, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy)
+  fullName: SIPSorcery.Net.RtpIceChannel.RtpIceChannel(System.Net.IPAddress, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List<SIPSorcery.Net.RTCIceServer>, SIPSorcery.Net.RTCIceTransportPolicy)
+  fullName.vb: SIPSorcery.Net.RtpIceChannel.RtpIceChannel(System.Net.IPAddress, SIPSorcery.Net.RTCIceComponent, System.Collections.Generic.List(Of SIPSorcery.Net.RTCIceServer), SIPSorcery.Net.RTCIceTransportPolicy)
+  nameWithType: RtpIceChannel.RtpIceChannel(IPAddress, RTCIceComponent, List<RTCIceServer>, RTCIceTransportPolicy)
+  nameWithType.vb: RtpIceChannel.RtpIceChannel(IPAddress, RTCIceComponent, List(Of RTCIceServer), RTCIceTransportPolicy)
+- uid: SIPSorcery.Net.RtpIceChannel.#ctor*
+  name: RtpIceChannel
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel__ctor_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.RtpIceChannel
+  nameWithType: RtpIceChannel.RtpIceChannel
+- uid: SIPSorcery.Net.RtpIceChannel.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)
+  name: AddRemoteCandidate(RTCIceCandidate)
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_AddRemoteCandidate_SIPSorcery_Net_RTCIceCandidate_
+  commentId: M:SIPSorcery.Net.RtpIceChannel.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)
+  fullName: SIPSorcery.Net.RtpIceChannel.AddRemoteCandidate(SIPSorcery.Net.RTCIceCandidate)
+  nameWithType: RtpIceChannel.AddRemoteCandidate(RTCIceCandidate)
+- uid: SIPSorcery.Net.RtpIceChannel.AddRemoteCandidate*
+  name: AddRemoteCandidate
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_AddRemoteCandidate_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.AddRemoteCandidate
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.AddRemoteCandidate
+  nameWithType: RtpIceChannel.AddRemoteCandidate
+- uid: SIPSorcery.Net.RtpIceChannel.Candidates
+  name: Candidates
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Candidates
+  commentId: P:SIPSorcery.Net.RtpIceChannel.Candidates
+  fullName: SIPSorcery.Net.RtpIceChannel.Candidates
+  nameWithType: RtpIceChannel.Candidates
+- uid: SIPSorcery.Net.RtpIceChannel.Candidates*
+  name: Candidates
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Candidates_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.Candidates
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.Candidates
+  nameWithType: RtpIceChannel.Candidates
+- uid: SIPSorcery.Net.RtpIceChannel.Close
+  name: Close()
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Close
+  commentId: M:SIPSorcery.Net.RtpIceChannel.Close
+  fullName: SIPSorcery.Net.RtpIceChannel.Close()
+  nameWithType: RtpIceChannel.Close()
+- uid: SIPSorcery.Net.RtpIceChannel.Close*
+  name: Close
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Close_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.Close
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.Close
+  nameWithType: RtpIceChannel.Close
+- uid: SIPSorcery.Net.RtpIceChannel.Component
+  name: Component
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Component
+  commentId: P:SIPSorcery.Net.RtpIceChannel.Component
+  fullName: SIPSorcery.Net.RtpIceChannel.Component
+  nameWithType: RtpIceChannel.Component
+- uid: SIPSorcery.Net.RtpIceChannel.Component*
+  name: Component
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Component_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.Component
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.Component
+  nameWithType: RtpIceChannel.Component
+- uid: SIPSorcery.Net.RtpIceChannel.IceConnectionState
+  name: IceConnectionState
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_IceConnectionState
+  commentId: P:SIPSorcery.Net.RtpIceChannel.IceConnectionState
+  fullName: SIPSorcery.Net.RtpIceChannel.IceConnectionState
+  nameWithType: RtpIceChannel.IceConnectionState
+- uid: SIPSorcery.Net.RtpIceChannel.IceConnectionState*
+  name: IceConnectionState
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_IceConnectionState_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.IceConnectionState
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.IceConnectionState
+  nameWithType: RtpIceChannel.IceConnectionState
+- uid: SIPSorcery.Net.RtpIceChannel.IceGatheringState
+  name: IceGatheringState
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_IceGatheringState
+  commentId: P:SIPSorcery.Net.RtpIceChannel.IceGatheringState
+  fullName: SIPSorcery.Net.RtpIceChannel.IceGatheringState
+  nameWithType: RtpIceChannel.IceGatheringState
+- uid: SIPSorcery.Net.RtpIceChannel.IceGatheringState*
+  name: IceGatheringState
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_IceGatheringState_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.IceGatheringState
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.IceGatheringState
+  nameWithType: RtpIceChannel.IceGatheringState
+- uid: SIPSorcery.Net.RtpIceChannel.IsController
+  name: IsController
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_IsController
+  commentId: P:SIPSorcery.Net.RtpIceChannel.IsController
+  fullName: SIPSorcery.Net.RtpIceChannel.IsController
+  nameWithType: RtpIceChannel.IsController
+- uid: SIPSorcery.Net.RtpIceChannel.IsController*
+  name: IsController
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_IsController_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.IsController
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.IsController
+  nameWithType: RtpIceChannel.IsController
+- uid: SIPSorcery.Net.RtpIceChannel.LocalIcePassword
+  name: LocalIcePassword
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_LocalIcePassword
+  commentId: F:SIPSorcery.Net.RtpIceChannel.LocalIcePassword
+  fullName: SIPSorcery.Net.RtpIceChannel.LocalIcePassword
+  nameWithType: RtpIceChannel.LocalIcePassword
+- uid: SIPSorcery.Net.RtpIceChannel.LocalIceUser
+  name: LocalIceUser
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_LocalIceUser
+  commentId: F:SIPSorcery.Net.RtpIceChannel.LocalIceUser
+  fullName: SIPSorcery.Net.RtpIceChannel.LocalIceUser
+  nameWithType: RtpIceChannel.LocalIceUser
+- uid: SIPSorcery.Net.RtpIceChannel.NominatedEntry
+  name: NominatedEntry
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_NominatedEntry
+  commentId: P:SIPSorcery.Net.RtpIceChannel.NominatedEntry
+  fullName: SIPSorcery.Net.RtpIceChannel.NominatedEntry
+  nameWithType: RtpIceChannel.NominatedEntry
+- uid: SIPSorcery.Net.RtpIceChannel.NominatedEntry*
+  name: NominatedEntry
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_NominatedEntry_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.NominatedEntry
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.NominatedEntry
+  nameWithType: RtpIceChannel.NominatedEntry
+- uid: SIPSorcery.Net.RtpIceChannel.OnIceCandidate
+  name: OnIceCandidate
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_OnIceCandidate
+  commentId: E:SIPSorcery.Net.RtpIceChannel.OnIceCandidate
+  fullName: SIPSorcery.Net.RtpIceChannel.OnIceCandidate
+  nameWithType: RtpIceChannel.OnIceCandidate
+- uid: SIPSorcery.Net.RtpIceChannel.OnIceCandidateError
+  name: OnIceCandidateError
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_OnIceCandidateError
+  commentId: E:SIPSorcery.Net.RtpIceChannel.OnIceCandidateError
+  fullName: SIPSorcery.Net.RtpIceChannel.OnIceCandidateError
+  nameWithType: RtpIceChannel.OnIceCandidateError
+- uid: SIPSorcery.Net.RtpIceChannel.OnIceConnectionStateChange
+  name: OnIceConnectionStateChange
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_OnIceConnectionStateChange
+  commentId: E:SIPSorcery.Net.RtpIceChannel.OnIceConnectionStateChange
+  fullName: SIPSorcery.Net.RtpIceChannel.OnIceConnectionStateChange
+  nameWithType: RtpIceChannel.OnIceConnectionStateChange
+- uid: SIPSorcery.Net.RtpIceChannel.OnIceGatheringStateChange
+  name: OnIceGatheringStateChange
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_OnIceGatheringStateChange
+  commentId: E:SIPSorcery.Net.RtpIceChannel.OnIceGatheringStateChange
+  fullName: SIPSorcery.Net.RtpIceChannel.OnIceGatheringStateChange
+  nameWithType: RtpIceChannel.OnIceGatheringStateChange
+- uid: SIPSorcery.Net.RtpIceChannel.OnRTPDataReceived
+  name: OnRTPDataReceived
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_OnRTPDataReceived
+  commentId: E:SIPSorcery.Net.RtpIceChannel.OnRTPDataReceived
+  fullName: SIPSorcery.Net.RtpIceChannel.OnRTPDataReceived
+  nameWithType: RtpIceChannel.OnRTPDataReceived
+- uid: SIPSorcery.Net.RtpIceChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver,System.Int32,System.Net.IPEndPoint,System.Byte[])
+  name: OnRTPPacketReceived(UdpReceiver, Int32, IPEndPoint, Byte[])
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_OnRTPPacketReceived_SIPSorcery_Net_UdpReceiver_System_Int32_System_Net_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.Net.RtpIceChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver,System.Int32,System.Net.IPEndPoint,System.Byte[])
+  name.vb: OnRTPPacketReceived(UdpReceiver, Int32, IPEndPoint, Byte())
+  fullName: SIPSorcery.Net.RtpIceChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver, System.Int32, System.Net.IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RtpIceChannel.OnRTPPacketReceived(SIPSorcery.Net.UdpReceiver, System.Int32, System.Net.IPEndPoint, System.Byte())
+  nameWithType: RtpIceChannel.OnRTPPacketReceived(UdpReceiver, Int32, IPEndPoint, Byte[])
+  nameWithType.vb: RtpIceChannel.OnRTPPacketReceived(UdpReceiver, Int32, IPEndPoint, Byte())
+- uid: SIPSorcery.Net.RtpIceChannel.OnRTPPacketReceived*
+  name: OnRTPPacketReceived
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_OnRTPPacketReceived_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.OnRTPPacketReceived
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.OnRTPPacketReceived
+  nameWithType: RtpIceChannel.OnRTPPacketReceived
+- uid: SIPSorcery.Net.RtpIceChannel.ProcessStunMessage(SIPSorcery.Net.STUNMessage,System.Net.IPEndPoint,System.Boolean)
+  name: ProcessStunMessage(STUNMessage, IPEndPoint, Boolean)
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_ProcessStunMessage_SIPSorcery_Net_STUNMessage_System_Net_IPEndPoint_System_Boolean_
+  commentId: M:SIPSorcery.Net.RtpIceChannel.ProcessStunMessage(SIPSorcery.Net.STUNMessage,System.Net.IPEndPoint,System.Boolean)
+  fullName: SIPSorcery.Net.RtpIceChannel.ProcessStunMessage(SIPSorcery.Net.STUNMessage, System.Net.IPEndPoint, System.Boolean)
+  nameWithType: RtpIceChannel.ProcessStunMessage(STUNMessage, IPEndPoint, Boolean)
+- uid: SIPSorcery.Net.RtpIceChannel.ProcessStunMessage*
+  name: ProcessStunMessage
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_ProcessStunMessage_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.ProcessStunMessage
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.ProcessStunMessage
+  nameWithType: RtpIceChannel.ProcessStunMessage
+- uid: SIPSorcery.Net.RtpIceChannel.RemoteIcePassword
+  name: RemoteIcePassword
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_RemoteIcePassword
+  commentId: P:SIPSorcery.Net.RtpIceChannel.RemoteIcePassword
+  fullName: SIPSorcery.Net.RtpIceChannel.RemoteIcePassword
+  nameWithType: RtpIceChannel.RemoteIcePassword
+- uid: SIPSorcery.Net.RtpIceChannel.RemoteIcePassword*
+  name: RemoteIcePassword
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_RemoteIcePassword_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.RemoteIcePassword
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.RemoteIcePassword
+  nameWithType: RtpIceChannel.RemoteIcePassword
+- uid: SIPSorcery.Net.RtpIceChannel.RemoteIceUser
+  name: RemoteIceUser
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_RemoteIceUser
+  commentId: P:SIPSorcery.Net.RtpIceChannel.RemoteIceUser
+  fullName: SIPSorcery.Net.RtpIceChannel.RemoteIceUser
+  nameWithType: RtpIceChannel.RemoteIceUser
+- uid: SIPSorcery.Net.RtpIceChannel.RemoteIceUser*
+  name: RemoteIceUser
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_RemoteIceUser_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.RemoteIceUser
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.RemoteIceUser
+  nameWithType: RtpIceChannel.RemoteIceUser
+- uid: SIPSorcery.Net.RtpIceChannel.Restart
+  name: Restart()
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Restart
+  commentId: M:SIPSorcery.Net.RtpIceChannel.Restart
+  fullName: SIPSorcery.Net.RtpIceChannel.Restart()
+  nameWithType: RtpIceChannel.Restart()
+- uid: SIPSorcery.Net.RtpIceChannel.Restart*
+  name: Restart
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_Restart_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.Restart
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.Restart
+  nameWithType: RtpIceChannel.Restart
+- uid: SIPSorcery.Net.RtpIceChannel.SDP_MID
+  name: SDP_MID
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_SDP_MID
+  commentId: F:SIPSorcery.Net.RtpIceChannel.SDP_MID
+  fullName: SIPSorcery.Net.RtpIceChannel.SDP_MID
+  nameWithType: RtpIceChannel.SDP_MID
+- uid: SIPSorcery.Net.RtpIceChannel.SDP_MLINE_INDEX
+  name: SDP_MLINE_INDEX
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_SDP_MLINE_INDEX
+  commentId: F:SIPSorcery.Net.RtpIceChannel.SDP_MLINE_INDEX
+  fullName: SIPSorcery.Net.RtpIceChannel.SDP_MLINE_INDEX
+  nameWithType: RtpIceChannel.SDP_MLINE_INDEX
+- uid: SIPSorcery.Net.RtpIceChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
+  name: SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_SendAsync_SIPSorcery_Net_RTPChannelSocketsEnum_System_Net_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.Net.RtpIceChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum,System.Net.IPEndPoint,System.Byte[])
+  name.vb: SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte())
+  fullName: SIPSorcery.Net.RtpIceChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RtpIceChannel.SendAsync(SIPSorcery.Net.RTPChannelSocketsEnum, System.Net.IPEndPoint, System.Byte())
+  nameWithType: RtpIceChannel.SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte[])
+  nameWithType.vb: RtpIceChannel.SendAsync(RTPChannelSocketsEnum, IPEndPoint, Byte())
+- uid: SIPSorcery.Net.RtpIceChannel.SendAsync*
+  name: SendAsync
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_SendAsync_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.SendAsync
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.SendAsync
+  nameWithType: RtpIceChannel.SendAsync
+- uid: SIPSorcery.Net.RtpIceChannel.SetRemoteCredentials(System.String,System.String)
+  name: SetRemoteCredentials(String, String)
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_SetRemoteCredentials_System_String_System_String_
+  commentId: M:SIPSorcery.Net.RtpIceChannel.SetRemoteCredentials(System.String,System.String)
+  fullName: SIPSorcery.Net.RtpIceChannel.SetRemoteCredentials(System.String, System.String)
+  nameWithType: RtpIceChannel.SetRemoteCredentials(String, String)
+- uid: SIPSorcery.Net.RtpIceChannel.SetRemoteCredentials*
+  name: SetRemoteCredentials
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_SetRemoteCredentials_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.SetRemoteCredentials
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.SetRemoteCredentials
+  nameWithType: RtpIceChannel.SetRemoteCredentials
+- uid: SIPSorcery.Net.RtpIceChannel.StartGathering
+  name: StartGathering()
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_StartGathering
+  commentId: M:SIPSorcery.Net.RtpIceChannel.StartGathering
+  fullName: SIPSorcery.Net.RtpIceChannel.StartGathering()
+  nameWithType: RtpIceChannel.StartGathering()
+- uid: SIPSorcery.Net.RtpIceChannel.StartGathering*
+  name: StartGathering
+  href: api/SIPSorcery.Net.RtpIceChannel.html#SIPSorcery_Net_RtpIceChannel_StartGathering_
+  commentId: Overload:SIPSorcery.Net.RtpIceChannel.StartGathering
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RtpIceChannel.StartGathering
+  nameWithType: RtpIceChannel.StartGathering
 - uid: SIPSorcery.Net.RTPPacket
   name: RTPPacket
   href: api/SIPSorcery.Net.RTPPacket.html
@@ -5196,6 +5436,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.CreateOffer
   nameWithType: RTPSession.CreateOffer
+- uid: SIPSorcery.Net.RTPSession.CreateRtpChannel(SIPSorcery.Net.SDPMediaTypesEnum)
+  name: CreateRtpChannel(SDPMediaTypesEnum)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateRtpChannel_SIPSorcery_Net_SDPMediaTypesEnum_
+  commentId: M:SIPSorcery.Net.RTPSession.CreateRtpChannel(SIPSorcery.Net.SDPMediaTypesEnum)
+  fullName: SIPSorcery.Net.RTPSession.CreateRtpChannel(SIPSorcery.Net.SDPMediaTypesEnum)
+  nameWithType: RTPSession.CreateRtpChannel(SDPMediaTypesEnum)
+- uid: SIPSorcery.Net.RTPSession.CreateRtpChannel*
+  name: CreateRtpChannel
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_CreateRtpChannel_
+  commentId: Overload:SIPSorcery.Net.RTPSession.CreateRtpChannel
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.CreateRtpChannel
+  nameWithType: RTPSession.CreateRtpChannel
 - uid: SIPSorcery.Net.RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID
   name: DEFAULT_DTMF_EVENT_PAYLOAD_ID
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_DEFAULT_DTMF_EVENT_PAYLOAD_ID
@@ -5388,6 +5641,22 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.IsStarted
   nameWithType: RTPSession.IsStarted
+- uid: SIPSorcery.Net.RTPSession.OnReceive(System.Int32,System.Net.IPEndPoint,System.Byte[])
+  name: OnReceive(Int32, IPEndPoint, Byte[])
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceive_System_Int32_System_Net_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.Net.RTPSession.OnReceive(System.Int32,System.Net.IPEndPoint,System.Byte[])
+  name.vb: OnReceive(Int32, IPEndPoint, Byte())
+  fullName: SIPSorcery.Net.RTPSession.OnReceive(System.Int32, System.Net.IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTPSession.OnReceive(System.Int32, System.Net.IPEndPoint, System.Byte())
+  nameWithType: RTPSession.OnReceive(Int32, IPEndPoint, Byte[])
+  nameWithType.vb: RTPSession.OnReceive(Int32, IPEndPoint, Byte())
+- uid: SIPSorcery.Net.RTPSession.OnReceive*
+  name: OnReceive
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceive_
+  commentId: Overload:SIPSorcery.Net.RTPSession.OnReceive
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.OnReceive
+  nameWithType: RTPSession.OnReceive
 - uid: SIPSorcery.Net.RTPSession.OnReceiveReport
   name: OnReceiveReport
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_OnReceiveReport
@@ -5430,19 +5699,6 @@ references:
   commentId: E:SIPSorcery.Net.RTPSession.OnTimeout
   fullName: SIPSorcery.Net.RTPSession.OnTimeout
   nameWithType: RTPSession.OnTimeout
-- uid: SIPSorcery.Net.RTPSession.PauseReceive
-  name: PauseReceive()
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_PauseReceive
-  commentId: M:SIPSorcery.Net.RTPSession.PauseReceive
-  fullName: SIPSorcery.Net.RTPSession.PauseReceive()
-  nameWithType: RTPSession.PauseReceive()
-- uid: SIPSorcery.Net.RTPSession.PauseReceive*
-  name: PauseReceive
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_PauseReceive_
-  commentId: Overload:SIPSorcery.Net.RTPSession.PauseReceive
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPSession.PauseReceive
-  nameWithType: RTPSession.PauseReceive
 - uid: SIPSorcery.Net.RTPSession.RemoteDescription
   name: RemoteDescription
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RemoteDescription
@@ -5469,19 +5725,6 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.RemoteRtpEventPayloadID
   nameWithType: RTPSession.RemoteRtpEventPayloadID
-- uid: SIPSorcery.Net.RTPSession.ResumeReceive
-  name: ResumeReceive()
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_ResumeReceive
-  commentId: M:SIPSorcery.Net.RTPSession.ResumeReceive
-  fullName: SIPSorcery.Net.RTPSession.ResumeReceive()
-  nameWithType: RTPSession.ResumeReceive()
-- uid: SIPSorcery.Net.RTPSession.ResumeReceive*
-  name: ResumeReceive
-  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_ResumeReceive_
-  commentId: Overload:SIPSorcery.Net.RTPSession.ResumeReceive
-  isSpec: "True"
-  fullName: SIPSorcery.Net.RTPSession.ResumeReceive
-  nameWithType: RTPSession.ResumeReceive
 - uid: SIPSorcery.Net.RTPSession.RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
   name: RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_RTP_EVENT_DEFAULT_SAMPLE_PERIOD_MS
@@ -9745,6 +9988,19 @@ references:
   commentId: F:SIPSorcery.Net.STUNHeader.MAGIC_COOKIE
   fullName: SIPSorcery.Net.STUNHeader.MAGIC_COOKIE
   nameWithType: STUNHeader.MAGIC_COOKIE
+- uid: SIPSorcery.Net.STUNHeader.MessageClass
+  name: MessageClass
+  href: api/SIPSorcery.Net.STUNHeader.html#SIPSorcery_Net_STUNHeader_MessageClass
+  commentId: P:SIPSorcery.Net.STUNHeader.MessageClass
+  fullName: SIPSorcery.Net.STUNHeader.MessageClass
+  nameWithType: STUNHeader.MessageClass
+- uid: SIPSorcery.Net.STUNHeader.MessageClass*
+  name: MessageClass
+  href: api/SIPSorcery.Net.STUNHeader.html#SIPSorcery_Net_STUNHeader_MessageClass_
+  commentId: Overload:SIPSorcery.Net.STUNHeader.MessageClass
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNHeader.MessageClass
+  nameWithType: STUNHeader.MessageClass
 - uid: SIPSorcery.Net.STUNHeader.MessageLength
   name: MessageLength
   href: api/SIPSorcery.Net.STUNHeader.html#SIPSorcery_Net_STUNHeader_MessageLength
@@ -9785,6 +10041,12 @@ references:
   commentId: F:SIPSorcery.Net.STUNHeader.STUN_INITIAL_BYTE_MASK
   fullName: SIPSorcery.Net.STUNHeader.STUN_INITIAL_BYTE_MASK
   nameWithType: STUNHeader.STUN_INITIAL_BYTE_MASK
+- uid: SIPSorcery.Net.STUNHeader.STUN_MESSAGE_CLASS_MASK
+  name: STUN_MESSAGE_CLASS_MASK
+  href: api/SIPSorcery.Net.STUNHeader.html#SIPSorcery_Net_STUNHeader_STUN_MESSAGE_CLASS_MASK
+  commentId: F:SIPSorcery.Net.STUNHeader.STUN_MESSAGE_CLASS_MASK
+  fullName: SIPSorcery.Net.STUNHeader.STUN_MESSAGE_CLASS_MASK
+  nameWithType: STUNHeader.STUN_MESSAGE_CLASS_MASK
 - uid: SIPSorcery.Net.STUNHeader.TRANSACTION_ID_LENGTH
   name: TRANSACTION_ID_LENGTH
   href: api/SIPSorcery.Net.STUNHeader.html#SIPSorcery_Net_STUNHeader_TRANSACTION_ID_LENGTH
@@ -9848,6 +10110,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNMessage.AddUsernameAttribute
   nameWithType: STUNMessage.AddUsernameAttribute
+- uid: SIPSorcery.Net.STUNMessage.AddXORAddressAttribute(SIPSorcery.Net.STUNAttributeTypesEnum,System.Net.IPAddress,System.Int32)
+  name: AddXORAddressAttribute(STUNAttributeTypesEnum, IPAddress, Int32)
+  href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_AddXORAddressAttribute_SIPSorcery_Net_STUNAttributeTypesEnum_System_Net_IPAddress_System_Int32_
+  commentId: M:SIPSorcery.Net.STUNMessage.AddXORAddressAttribute(SIPSorcery.Net.STUNAttributeTypesEnum,System.Net.IPAddress,System.Int32)
+  fullName: SIPSorcery.Net.STUNMessage.AddXORAddressAttribute(SIPSorcery.Net.STUNAttributeTypesEnum, System.Net.IPAddress, System.Int32)
+  nameWithType: STUNMessage.AddXORAddressAttribute(STUNAttributeTypesEnum, IPAddress, Int32)
+- uid: SIPSorcery.Net.STUNMessage.AddXORAddressAttribute*
+  name: AddXORAddressAttribute
+  href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_AddXORAddressAttribute_
+  commentId: Overload:SIPSorcery.Net.STUNMessage.AddXORAddressAttribute
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNMessage.AddXORAddressAttribute
+  nameWithType: STUNMessage.AddXORAddressAttribute
 - uid: SIPSorcery.Net.STUNMessage.AddXORMappedAddressAttribute(System.Net.IPAddress,System.Int32)
   name: AddXORMappedAddressAttribute(IPAddress, Int32)
   href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_AddXORMappedAddressAttribute_System_Net_IPAddress_System_Int32_
@@ -9861,6 +10136,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNMessage.AddXORMappedAddressAttribute
   nameWithType: STUNMessage.AddXORMappedAddressAttribute
+- uid: SIPSorcery.Net.STUNMessage.AddXORPeerAddressAttribute(System.Net.IPAddress,System.Int32)
+  name: AddXORPeerAddressAttribute(IPAddress, Int32)
+  href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_AddXORPeerAddressAttribute_System_Net_IPAddress_System_Int32_
+  commentId: M:SIPSorcery.Net.STUNMessage.AddXORPeerAddressAttribute(System.Net.IPAddress,System.Int32)
+  fullName: SIPSorcery.Net.STUNMessage.AddXORPeerAddressAttribute(System.Net.IPAddress, System.Int32)
+  nameWithType: STUNMessage.AddXORPeerAddressAttribute(IPAddress, Int32)
+- uid: SIPSorcery.Net.STUNMessage.AddXORPeerAddressAttribute*
+  name: AddXORPeerAddressAttribute
+  href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_AddXORPeerAddressAttribute_
+  commentId: Overload:SIPSorcery.Net.STUNMessage.AddXORPeerAddressAttribute
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNMessage.AddXORPeerAddressAttribute
+  nameWithType: STUNMessage.AddXORPeerAddressAttribute
 - uid: SIPSorcery.Net.STUNMessage.Attributes
   name: Attributes
   href: api/SIPSorcery.Net.STUNMessage.html#SIPSorcery_Net_STUNMessage_Attributes
@@ -10080,6 +10368,12 @@ references:
   commentId: F:SIPSorcery.Net.STUNMessageTypesEnum.Send
   fullName: SIPSorcery.Net.STUNMessageTypesEnum.Send
   nameWithType: STUNMessageTypesEnum.Send
+- uid: SIPSorcery.Net.STUNMessageTypesEnum.SendIndication
+  name: SendIndication
+  href: api/SIPSorcery.Net.STUNMessageTypesEnum.html#SIPSorcery_Net_STUNMessageTypesEnum_SendIndication
+  commentId: F:SIPSorcery.Net.STUNMessageTypesEnum.SendIndication
+  fullName: SIPSorcery.Net.STUNMessageTypesEnum.SendIndication
+  nameWithType: STUNMessageTypesEnum.SendIndication
 - uid: SIPSorcery.Net.STUNProtocolsEnum
   name: STUNProtocolsEnum
   href: api/SIPSorcery.Net.STUNProtocolsEnum.html
@@ -10434,6 +10728,63 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNXORAddressAttribute.ToString
   nameWithType: STUNXORAddressAttribute.ToString
+- uid: SIPSorcery.Net.UdpReceiver
+  name: UdpReceiver
+  href: api/SIPSorcery.Net.UdpReceiver.html
+  commentId: T:SIPSorcery.Net.UdpReceiver
+  fullName: SIPSorcery.Net.UdpReceiver
+  nameWithType: UdpReceiver
+- uid: SIPSorcery.Net.UdpReceiver.#ctor(System.Net.Sockets.Socket)
+  name: UdpReceiver(Socket)
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver__ctor_System_Net_Sockets_Socket_
+  commentId: M:SIPSorcery.Net.UdpReceiver.#ctor(System.Net.Sockets.Socket)
+  fullName: SIPSorcery.Net.UdpReceiver.UdpReceiver(System.Net.Sockets.Socket)
+  nameWithType: UdpReceiver.UdpReceiver(Socket)
+- uid: SIPSorcery.Net.UdpReceiver.#ctor*
+  name: UdpReceiver
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver__ctor_
+  commentId: Overload:SIPSorcery.Net.UdpReceiver.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.UdpReceiver.UdpReceiver
+  nameWithType: UdpReceiver.UdpReceiver
+- uid: SIPSorcery.Net.UdpReceiver.BeginReceiveFrom
+  name: BeginReceiveFrom()
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_BeginReceiveFrom
+  commentId: M:SIPSorcery.Net.UdpReceiver.BeginReceiveFrom
+  fullName: SIPSorcery.Net.UdpReceiver.BeginReceiveFrom()
+  nameWithType: UdpReceiver.BeginReceiveFrom()
+- uid: SIPSorcery.Net.UdpReceiver.BeginReceiveFrom*
+  name: BeginReceiveFrom
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_BeginReceiveFrom_
+  commentId: Overload:SIPSorcery.Net.UdpReceiver.BeginReceiveFrom
+  isSpec: "True"
+  fullName: SIPSorcery.Net.UdpReceiver.BeginReceiveFrom
+  nameWithType: UdpReceiver.BeginReceiveFrom
+- uid: SIPSorcery.Net.UdpReceiver.Close(System.String)
+  name: Close(String)
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_Close_System_String_
+  commentId: M:SIPSorcery.Net.UdpReceiver.Close(System.String)
+  fullName: SIPSorcery.Net.UdpReceiver.Close(System.String)
+  nameWithType: UdpReceiver.Close(String)
+- uid: SIPSorcery.Net.UdpReceiver.Close*
+  name: Close
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_Close_
+  commentId: Overload:SIPSorcery.Net.UdpReceiver.Close
+  isSpec: "True"
+  fullName: SIPSorcery.Net.UdpReceiver.Close
+  nameWithType: UdpReceiver.Close
+- uid: SIPSorcery.Net.UdpReceiver.OnClosed
+  name: OnClosed
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_OnClosed
+  commentId: E:SIPSorcery.Net.UdpReceiver.OnClosed
+  fullName: SIPSorcery.Net.UdpReceiver.OnClosed
+  nameWithType: UdpReceiver.OnClosed
+- uid: SIPSorcery.Net.UdpReceiver.OnPacketReceived
+  name: OnPacketReceived
+  href: api/SIPSorcery.Net.UdpReceiver.html#SIPSorcery_Net_UdpReceiver_OnPacketReceived
+  commentId: E:SIPSorcery.Net.UdpReceiver.OnPacketReceived
+  fullName: SIPSorcery.Net.UdpReceiver.OnPacketReceived
+  nameWithType: UdpReceiver.OnPacketReceived
 - uid: SIPSorcery.SIP
   name: SIPSorcery.SIP
   href: api/SIPSorcery.SIP.html

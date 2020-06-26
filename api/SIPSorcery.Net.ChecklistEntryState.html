@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Enum STUNClassTypesEnum
+    <title>Enum ChecklistEntryState
    </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Enum STUNClassTypesEnum
+    <meta name="title" content="Enum ChecklistEntryState
    ">
     <meta name="generator" content="docfx 2.55.0.0">
     
@@ -68,20 +68,20 @@
         </div>
         <div class="article row grid-right">
           <div class="col-md-10">
-            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.STUNClassTypesEnum">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.ChecklistEntryState">
   
   
-  <h1 id="SIPSorcery_Net_STUNClassTypesEnum" data-uid="SIPSorcery.Net.STUNClassTypesEnum" class="text-break">Enum STUNClassTypesEnum
+  <h1 id="SIPSorcery_Net_ChecklistEntryState" data-uid="SIPSorcery.Net.ChecklistEntryState" class="text-break">Enum ChecklistEntryState
   </h1>
-  <div class="markdown level0 summary"><p>The class is interpreted from the message type. It does not get explicitly
-set in the STUN header.</p>
+  <div class="markdown level0 summary"><p>List of state conditions for a check list entry as the connectivity checks are
+carried out.</p>
 </div>
   <div class="markdown level0 conceptual"></div>
   <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
-  <h5 id="SIPSorcery_Net_STUNClassTypesEnum_syntax">Syntax</h5>
+  <h5 id="SIPSorcery_Net_ChecklistEntryState_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public enum STUNClassTypesEnum</code></pre>
+    <pre><code class="lang-csharp hljs">public enum ChecklistEntryState</code></pre>
   </div>
   <h3 id="fields">Fields
   </h3>
@@ -94,20 +94,31 @@ set in the STUN header.</p>
     <thead>
     <tbody>
       <tr>
-        <td id="SIPSorcery_Net_STUNClassTypesEnum_ErrorResponse">ErrorResponse</td>
-        <td></td>
+        <td id="SIPSorcery_Net_ChecklistEntryState_Failed">Failed</td>
+        <td><p>A check has been sent for this pair, and it failed (a response to the
+check was never received, or a failure response was received).</p>
+</td>
       </tr>
       <tr>
-        <td id="SIPSorcery_Net_STUNClassTypesEnum_Indication">Indication</td>
-        <td></td>
+        <td id="SIPSorcery_Net_ChecklistEntryState_Frozen">Frozen</td>
+        <td><p>A check for this pair has not been sent, and it cannot be sent until the
+pair is unfrozen and moved into the Waiting state.</p>
+</td>
       </tr>
       <tr>
-        <td id="SIPSorcery_Net_STUNClassTypesEnum_Request">Request</td>
-        <td></td>
+        <td id="SIPSorcery_Net_ChecklistEntryState_InProgress">InProgress</td>
+        <td><p>A check has been sent for this pair, but the transaction is in progress.</p>
+</td>
       </tr>
       <tr>
-        <td id="SIPSorcery_Net_STUNClassTypesEnum_SuccesResponse">SuccesResponse</td>
-        <td></td>
+        <td id="SIPSorcery_Net_ChecklistEntryState_Succeeded">Succeeded</td>
+        <td><p>A check has been sent for this pair, and it produced a successful result.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="SIPSorcery_Net_ChecklistEntryState_Waiting">Waiting</td>
+        <td><p>A check has not been sent for this pair, but the pair is not Frozen.</p>
+</td>
       </tr>
     </tbody>
   </thead></thead></table>
@@ -119,10 +130,10 @@ set in the STUN header.</p>
               <div class="contribution">
                 <ul class="nav">
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_STUNClassTypesEnum.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.STUNClassTypesEnum%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntryState.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntryState%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/STUN/STUNHeader.cs/#L112" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L28" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

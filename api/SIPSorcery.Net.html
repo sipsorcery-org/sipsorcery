@@ -77,6 +77,11 @@
   <div class="markdown level0 remarks"></div>
     <h3 id="classes">Classes
   </h3>
+      <h4><a class="xref" href="SIPSorcery.Net.ChecklistEntry.html">ChecklistEntry</a></h4>
+      <section><p>A check list entry represents an ICE candidate pair (local candidate + remote candidate)
+that is being checked for connectivity. If the overall ICE session does succeed it will
+be due to one of these checklist entries successfully completing the ICE checks.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.DNSManager.html">DNSManager</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.HepChunk.html">HepChunk</a></h4>
@@ -89,11 +94,6 @@ the sole type is SIP).</p>
       <h4><a class="xref" href="SIPSorcery.Net.IceServer.html">IceServer</a></h4>
       <section><p>If ICE servers (STUN or TURN) are being used with the session this class is used to track
 the connection state for each server that gets used.</p>
-</section>
-      <h4><a class="xref" href="SIPSorcery.Net.IceSession.html">IceSession</a></h4>
-      <section><p>An ICE session carries out connectivity checks with a remote peer in an
-attempt to determine the best destination end point to communicate with the
-remote party.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.MediaStreamStatusType.html">MediaStreamStatusType</a></h4>
       <section></section>
@@ -181,6 +181,11 @@ functions.</p>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPHeader.html">RTPHeader</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.RtpIceChannel.html">RtpIceChannel</a></h4>
+      <section><p>An ICE session carries out connectivity checks with a remote peer in an
+attempt to determine the best destination end point to communicate with the
+remote party.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPPacket.html">RTPPacket</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTPSession.html">RTPSession</a></h4>
@@ -299,6 +304,10 @@ As specified in RFC5576, <a href="https://tools.ietf.org/html/rfc5576">https://t
       <section><p>This attribute is the same as the mapped address attribute except the address details are XOR'ed with the STUN magic cookie.
 THe reason for this is to stop NAT application layer gateways from doing string replacements of private IP addresses and ports.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.UdpReceiver.html">UdpReceiver</a></h4>
+      <section><p>A basic UDP socket manager. The RTP channel may need both an RTP and Control socket. This class encapsulates
+the common logic for UDP socket management.</p>
+</section>
     <h3 id="interfaces">Interfaces
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.IRTCIceCandidate.html">IRTCIceCandidate</a></h4>
@@ -315,6 +324,10 @@ RTCRtpSender object, the encoding is changed appropriately.</p>
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.CaptureProtocolTypeEnum.html">CaptureProtocolTypeEnum</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.ChecklistEntryState.html">ChecklistEntryState</a></h4>
+      <section><p>List of state conditions for a check list entry as the connectivity checks are
+carried out.</p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.ChunkTypeEnum.html">ChunkTypeEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.IceRolesEnum.html">IceRolesEnum</a></h4>
@@ -411,7 +424,8 @@ there is no qualifying format attribute provided.</p>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAttributeTypesEnum.html">STUNAttributeTypesEnum</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNClassTypesEnum.html">STUNClassTypesEnum</a></h4>
-      <section><p>Could not work out how the class and message type encoding work despite re-reading the paragraph in the RFC a dozen times!</p>
+      <section><p>The class is interpreted from the message type. It does not get explicitly
+set in the STUN header.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNMessageTypesEnum.html">STUNMessageTypesEnum</a></h4>
       <section></section>
@@ -424,6 +438,8 @@ supported are IPv4 mad IPv6).</p>
     <h3 id="delegates">Delegates
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.DoDtlsHandshakeDelegate.html">DoDtlsHandshakeDelegate</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.PacketReceivedDelegate.html">PacketReceivedDelegate</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ProtectRtpPacket.html">ProtectRtpPacket</a></h4>
       <section></section>

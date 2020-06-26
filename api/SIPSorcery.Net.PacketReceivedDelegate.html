@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Delegate PacketReceivedDelegate
    ">
-    <meta name="generator" content="docfx 2.48.0.0">
+    <meta name="generator" content="docfx 2.55.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -79,7 +79,7 @@
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_PacketReceivedDelegate_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public delegate void PacketReceivedDelegate(UdpReceiver receiver, IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, byte[] packet);</code></pre>
+    <pre><code class="lang-csharp hljs">public delegate void PacketReceivedDelegate(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet);</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -97,8 +97,8 @@
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.Net.IPEndPoint</span></td>
-        <td><span class="parametername">localEndPoint</span></td>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">localPort</span></td>
         <td></td>
       </tr>
       <tr>
@@ -124,7 +124,7 @@
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_PacketReceivedDelegate.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.PacketReceivedDelegate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel2.cs/#L27" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L28" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

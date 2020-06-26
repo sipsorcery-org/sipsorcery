@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class UdpReceiver
    ">
-    <meta name="generator" content="docfx 2.48.0.0">
+    <meta name="generator" content="docfx 2.55.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -73,7 +73,9 @@
   
   <h1 id="SIPSorcery_Net_UdpReceiver" data-uid="SIPSorcery.Net.UdpReceiver" class="text-break">Class UdpReceiver
   </h1>
-  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 summary"><p>A basic UDP socket manager. The RTP channel may need both an RTP and Control socket. This class encapsulates
+the common logic for UDP socket management.</p>
+</div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
     <h5>Inheritance</h5>
@@ -108,7 +110,7 @@
   <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
   <h5 id="SIPSorcery_Net_UdpReceiver_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public class UdpReceiver</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class UdpReceiver</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -117,7 +119,7 @@
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver__ctor_System_Net_Sockets_Socket_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.%23ctor(System.Net.Sockets.Socket)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel2.cs/#L49">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L56">View Source</a>
   </span>
   <a id="SIPSorcery_Net_UdpReceiver__ctor_" data-uid="SIPSorcery.Net.UdpReceiver.#ctor*"></a>
   <h4 id="SIPSorcery_Net_UdpReceiver__ctor_System_Net_Sockets_Socket_" data-uid="SIPSorcery.Net.UdpReceiver.#ctor(System.Net.Sockets.Socket)">UdpReceiver(Socket)</h4>
@@ -148,48 +150,95 @@
   </h3>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_BeginReceive.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.BeginReceive%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_BeginReceiveFrom.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.BeginReceiveFrom%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel2.cs/#L59">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L68">View Source</a>
   </span>
-  <a id="SIPSorcery_Net_UdpReceiver_BeginReceive_" data-uid="SIPSorcery.Net.UdpReceiver.BeginReceive*"></a>
-  <h4 id="SIPSorcery_Net_UdpReceiver_BeginReceive" data-uid="SIPSorcery.Net.UdpReceiver.BeginReceive">BeginReceive()</h4>
+  <a id="SIPSorcery_Net_UdpReceiver_BeginReceiveFrom_" data-uid="SIPSorcery.Net.UdpReceiver.BeginReceiveFrom*"></a>
+  <h4 id="SIPSorcery_Net_UdpReceiver_BeginReceiveFrom" data-uid="SIPSorcery.Net.UdpReceiver.BeginReceiveFrom">BeginReceiveFrom()</h4>
   <div class="markdown level1 summary"><p>Starts the receive. This method returns immediately. An event will be fired in the corresponding &quot;End&quot; event to
 return any data received.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void BeginReceive()</code></pre>
+    <pre><code class="lang-csharp hljs">public void BeginReceiveFrom()</code></pre>
   </div>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_Close.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.Close%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel2.cs/#L80">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L156">View Source</a>
   </span>
   <a id="SIPSorcery_Net_UdpReceiver_Close_" data-uid="SIPSorcery.Net.UdpReceiver.Close*"></a>
-  <h4 id="SIPSorcery_Net_UdpReceiver_Close" data-uid="SIPSorcery.Net.UdpReceiver.Close">Close()</h4>
+  <h4 id="SIPSorcery_Net_UdpReceiver_Close_System_String_" data-uid="SIPSorcery.Net.UdpReceiver.Close(System.String)">Close(String)</h4>
   <div class="markdown level1 summary"><p>Closes the socket and stops any new receives from being initiated.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public void Close()</code></pre>
+    <pre><code class="lang-csharp hljs">public void Close(string reason)</code></pre>
   </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">reason</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="events">Events
   </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_OnClosed.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.OnClosed%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L54">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_UdpReceiver_OnClosed" data-uid="SIPSorcery.Net.UdpReceiver.OnClosed">OnClosed</h4>
+  <div class="markdown level1 summary"><p>Fires when there is an error attempting to receive on the UDP socket.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public event Action&lt;string&gt; OnClosed</code></pre>
+  </div>
+  <h5 class="eventType">Event Type</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.String</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_OnPacketReceived.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.OnPacketReceived%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel2.cs/#L42">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L49">View Source</a>
   </span>
   <h4 id="SIPSorcery_Net_UdpReceiver_OnPacketReceived" data-uid="SIPSorcery.Net.UdpReceiver.OnPacketReceived">OnPacketReceived</h4>
-  <div class="markdown level1 summary"><p>Fires when a new packet has been received in the UDP socket.</p>
+  <div class="markdown level1 summary"><p>Fires when a new packet has been received on the UDP socket.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -211,36 +260,6 @@ return any data received.</p>
       </tr>
     </tbody>
   </table>
-  <span class="small pull-right mobile-hide">
-    <span class="divider">|</span>
-    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver_OnReceiveError.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver.OnReceiveError%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
-  </span>
-  <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel2.cs/#L47">View Source</a>
-  </span>
-  <h4 id="SIPSorcery_Net_UdpReceiver_OnReceiveError" data-uid="SIPSorcery.Net.UdpReceiver.OnReceiveError">OnReceiveError</h4>
-  <div class="markdown level1 summary"><p>Fires when there is an error attempting to receive on the UDP socket.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public event Action&lt;Exception&gt; OnReceiveError</code></pre>
-  </div>
-  <h5 class="eventType">Event Type</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Action</span>&lt;<span class="xref">System.Exception</span>&gt;</td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
 </article>
           </div>
           
@@ -252,7 +271,7 @@ return any data received.</p>
                     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_UdpReceiver.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.UdpReceiver%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
                   </li>
                   <li>
-                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel2.cs/#L29" class="contribution-link">View Source</a>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPChannel.cs/#L34" class="contribution-link">View Source</a>
                   </li>
                 </ul>
               </div>

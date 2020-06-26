@@ -1,0 +1,651 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class ChecklistEntry
+   </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class ChecklistEntry
+   ">
+    <meta name="generator" content="docfx 2.55.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="SIPSorcery.Net.ChecklistEntry">
+  
+  
+  <h1 id="SIPSorcery_Net_ChecklistEntry" data-uid="SIPSorcery.Net.ChecklistEntry" class="text-break">Class ChecklistEntry
+  </h1>
+  <div class="markdown level0 summary"><p>A check list entry represents an ICE candidate pair (local candidate + remote candidate)
+that is being checked for connectivity. If the overall ICE session does succeed it will
+be due to one of these checklist entries successfully completing the ICE checks.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">ChecklistEntry</span></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.IComparable</span></div>
+  </div>
+  <div class="inheritedMembers">
+    <h5>Inherited Members</h5>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
+    </div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="SIPSorcery.Net.html">SIPSorcery.Net</a></h6>
+  <h6><strong>Assembly</strong>: SIPSorcery.dll</h6>
+  <h5 id="SIPSorcery_Net_ChecklistEntry_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public class ChecklistEntry : IComparable</code></pre>
+  </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry__ctor_SIPSorcery_Net_RTCIceCandidate_SIPSorcery_Net_RTCIceCandidate_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.%23ctor(SIPSorcery.Net.RTCIceCandidate%2CSIPSorcery.Net.RTCIceCandidate%2CSystem.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L178">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_ChecklistEntry__ctor_" data-uid="SIPSorcery.Net.ChecklistEntry.#ctor*"></a>
+  <h4 id="SIPSorcery_Net_ChecklistEntry__ctor_SIPSorcery_Net_RTCIceCandidate_SIPSorcery_Net_RTCIceCandidate_System_Boolean_" data-uid="SIPSorcery.Net.ChecklistEntry.#ctor(SIPSorcery.Net.RTCIceCandidate,SIPSorcery.Net.RTCIceCandidate,System.Boolean)">ChecklistEntry(RTCIceCandidate, RTCIceCandidate, Boolean)</h4>
+  <div class="markdown level1 summary"><p>Creates a new entry for the ICE session checklist.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ChecklistEntry(RTCIceCandidate localCandidate, RTCIceCandidate remoteCandidate, bool isLocalController)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a></td>
+        <td><span class="parametername">localCandidate</span></td>
+        <td><p>The local candidate for the checklist pair.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a></td>
+        <td><span class="parametername">remoteCandidate</span></td>
+        <td><p>The remote candidate for the checklist pair.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">isLocalController</span></td>
+        <td><p>True if we are acting as the controlling agent in the ICE session.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="fields">Fields
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_ChecksSent.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.ChecksSent%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L152">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_ChecksSent" data-uid="SIPSorcery.Net.ChecklistEntry.ChecksSent">ChecksSent</h4>
+  <div class="markdown level1 summary"><p>The number of checks that have been sent without a response.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int ChecksSent</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_Default.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.Default%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L117">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_Default" data-uid="SIPSorcery.Net.ChecklistEntry.Default">Default</h4>
+  <div class="markdown level1 summary"><p>The candidate pairs whose local and remote candidates are both the
+default candidates for a particular component is called the &quot;default
+candidate pair&quot; for that component.  This is the pair that would be
+used to transmit data if both agents had not been ICE aware.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Default</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_LastCheckSentAt.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.LastCheckSentAt%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L147">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_LastCheckSentAt" data-uid="SIPSorcery.Net.ChecklistEntry.LastCheckSentAt">LastCheckSentAt</h4>
+  <div class="markdown level1 summary"><p>Timestamp the last connectivity check (STUN binding request) was sent at.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DateTime LastCheckSentAt</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.DateTime</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_LocalCandidate.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.LocalCandidate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L98">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_LocalCandidate" data-uid="SIPSorcery.Net.ChecklistEntry.LocalCandidate">LocalCandidate</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCIceCandidate LocalCandidate</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_Nominated.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.Nominated%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L131">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_Nominated" data-uid="SIPSorcery.Net.ChecklistEntry.Nominated">Nominated</h4>
+  <div class="markdown level1 summary"><p>Gets set to true if this entry is selected as the single nominated entry to be
+used for the session communications. Setting a check list entry as nominated
+indicates the ICE checks have been successful and the application can begin
+normal communications.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Nominated</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_RemoteCandidate.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.RemoteCandidate%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L99">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_RemoteCandidate" data-uid="SIPSorcery.Net.ChecklistEntry.RemoteCandidate">RemoteCandidate</h4>
+  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCIceCandidate RemoteCandidate</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCIceCandidate.html">RTCIceCandidate</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_RequestTransactionID.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.RequestTransactionID%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L157">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_RequestTransactionID" data-uid="SIPSorcery.Net.ChecklistEntry.RequestTransactionID">RequestTransactionID</h4>
+  <div class="markdown level1 summary"><p>The transaction ID that was set in the last STUN request connectivity check.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string RequestTransactionID</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_State.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.State%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L109">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_State" data-uid="SIPSorcery.Net.ChecklistEntry.State">State</h4>
+  <div class="markdown level1 summary"><p>The current state of this checklist entry. Indicates whether a STUN check has been
+sent, responded to, timed out etc.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ChecklistEntryState State</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.ChecklistEntryState.html">ChecklistEntryState</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="SIPSorcery_Net_ChecklistEntry_State_remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>See <a href="https://tools.ietf.org/html/rfc8445#section-6.1.2.6">https://tools.ietf.org/html/rfc8445#section-6.1.2.6</a> for the state
+transition diagram for a check list entry.</p>
+</div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_Valid.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.Valid%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L123">View Source</a>
+  </span>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_Valid" data-uid="SIPSorcery.Net.ChecklistEntry.Valid">Valid</h4>
+  <div class="markdown level1 summary"><p>Gets set to true when the connectivity checks for the candidate pair are
+successful. Valid entries are eligible to be set as nominated.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Valid</code></pre>
+  </div>
+  <h5 class="fieldValue">Field Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_Priority.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.Priority%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L142">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_ChecklistEntry_Priority_" data-uid="SIPSorcery.Net.ChecklistEntry.Priority*"></a>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_Priority" data-uid="SIPSorcery.Net.ChecklistEntry.Priority">Priority</h4>
+  <div class="markdown level1 summary"><p>The priority for the candidate pair:</p>
+<ul>
+<li>Let G be the priority for the candidate provided by the controlling agent.</li>
+<li>Let D be the priority for the candidate provided by the controlled agent.
+Pair Priority = 2^32<em>MIN(G,D) + 2</em>MAX(G,D) + (G&gt;D?1:0)</li>
+</ul>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ulong Priority { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.UInt64</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 id="SIPSorcery_Net_ChecklistEntry_Priority_remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>See <a href="https://tools.ietf.org/html/rfc8445#section-6.1.2.3">https://tools.ietf.org/html/rfc8445#section-6.1.2.3</a>.</p>
+</div>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_TurnPermissionsRequestSent.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.TurnPermissionsRequestSent%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L165">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_ChecklistEntry_TurnPermissionsRequestSent_" data-uid="SIPSorcery.Net.ChecklistEntry.TurnPermissionsRequestSent*"></a>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_TurnPermissionsRequestSent" data-uid="SIPSorcery.Net.ChecklistEntry.TurnPermissionsRequestSent">TurnPermissionsRequestSent</h4>
+  <div class="markdown level1 summary"><p>Before a remote peer will be able to use the relay it's IP address needs
+to be authorised by sending a Create Permissions request to the TURN server.
+This field records the number of Create Permissions requests that have been
+sent for this entry.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int TurnPermissionsRequestSent { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_TurnPermissionsResponseAt.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.TurnPermissionsResponseAt%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L170">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_ChecklistEntry_TurnPermissionsResponseAt_" data-uid="SIPSorcery.Net.ChecklistEntry.TurnPermissionsResponseAt*"></a>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_TurnPermissionsResponseAt" data-uid="SIPSorcery.Net.ChecklistEntry.TurnPermissionsResponseAt">TurnPermissionsResponseAt</h4>
+  <div class="markdown level1 summary"><p>This field records the time a Create Permissions response was received.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public DateTime TurnPermissionsResponseAt { get; set; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.DateTime</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry_CompareTo_System_Object_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry.CompareTo(System.Object)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L194">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_ChecklistEntry_CompareTo_" data-uid="SIPSorcery.Net.ChecklistEntry.CompareTo*"></a>
+  <h4 id="SIPSorcery_Net_ChecklistEntry_CompareTo_System_Object_" data-uid="SIPSorcery.Net.ChecklistEntry.CompareTo(System.Object)">CompareTo(Object)</h4>
+  <div class="markdown level1 summary"><p>Compare method to allow the checklist to be sorted in priority order.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public int CompareTo(object other)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">other</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.IComparable</span>
+  </div>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <div class="contribution">
+                <ul class="nav">
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_ChecklistEntry.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.ChecklistEntry%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A" class="contribution-link">Improve this Doc</a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/ICE/IceChecklistEntry.cs/#L94" class="contribution-link">View Source</a>
+                  </li>
+                </ul>
+              </div>
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
