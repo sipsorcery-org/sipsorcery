@@ -28,7 +28,7 @@ namespace SIPSorcery.Sys
     public class IPSocket
     {
         /// <summary>
-        /// Specifies the minimum acceptable value for the <see cref='System.Net.IPEndPoint/> Port property.
+        /// Specifies the minimum acceptable value for the <see cref='System.Net.IPEndPoint'/> Port property.
         /// </summary>
         public const int MinPort = 0x00000000;
 
