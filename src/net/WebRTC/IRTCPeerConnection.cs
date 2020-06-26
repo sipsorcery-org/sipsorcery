@@ -88,8 +88,8 @@ namespace SIPSorcery.Net
     /// </remarks>
     public enum RTCIceTransportPolicy
     {
-        relay,
-        all
+        all,
+        relay
     }
 
     /// <summary>
@@ -257,7 +257,7 @@ namespace SIPSorcery.Net
         void close();
         event Action onnegotiationneeded;
         event Action<RTCIceCandidate> onicecandidate;
-        event Action onicecandidateerror;
+        event Action<RTCIceCandidate, string> onicecandidateerror;
         event Action onsignalingstatechange;
         event Action<RTCIceConnectionState> oniceconnectionstatechange;
         event Action<RTCIceGatheringState> onicegatheringstatechange;

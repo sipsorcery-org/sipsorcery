@@ -425,7 +425,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The remote RTP end point this session is sending audio to.
         /// </summary>
-        public IPEndPoint AudioDestinationEndPoint { get; private set; }
+        public IPEndPoint AudioDestinationEndPoint { get; protected set; }
 
         /// <summary>
         /// The remote RTP control end point this session is sending to RTCP reports 
@@ -1293,7 +1293,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="mediaType">The type of media the RTP channel is for. Must be audio or video.</param>
         /// <returns>A new RTPChannel instance.</returns>
-        private RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
+        protected virtual RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
         {
             // If RTCP is multiplexed we don't need a control socket.
             var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress);
@@ -1891,16 +1891,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        public void PauseReceive()
-        {
-            m_rtpChannels[SDPMediaTypesEnum.audio].PauseReceive();
-        }
-
-        public void ResumeReceive()
-        {
-            m_rtpChannels[SDPMediaTypesEnum.audio].ResumeReceive();
-        }
-
         /// <summary>
         /// Event handler for receiving data on the RTP and Control channels. For multiplexed
         /// sessions both RTP and RTCP packets will be received on the RTP channel.
@@ -1908,7 +1898,7 @@ namespace SIPSorcery.Net
         /// <param name="localPort">The local port the data was received on.</param>
         /// <param name="remoteEndPoint">The remote end point the data was received from.</param>
         /// <param name="buffer">The data received.</param>
-        private void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+        protected void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
         {
             if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
             {

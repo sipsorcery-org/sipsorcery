@@ -1,8 +1,9 @@
 ﻿//-----------------------------------------------------------------------------
-// Filename: IceSession.cs
+// Filename: RtpIceChannel.cs
 //
-// Description: Represents a ICE Session as described in the Interactive
-// Connectivity Establishment RFC8445 https://tools.ietf.org/html/rfc8445.
+// Description: Represents an RTP channel with ICE connectivity checks as 
+// described in the Interactive Connectivity Establishment RFC8445
+// https://tools.ietf.org/html/rfc8445.
 //
 // Additionally support for the following standards or proposed standards 
 // is included:
@@ -20,7 +21,7 @@
 //   https://tools.ietf.org/html/rfc5766
 //
 // Notes:
-// The source from Chromium that performs the equivalent of this IceSession class
+// The source from Chromium that performs the equivalent of this class
 // (and much more) is:
 // https://chromium.googlesource.com/external/webrtc/+/refs/heads/master/p2p/base/p2p_transport_channel.cc
 //
@@ -37,6 +38,7 @@
 // 
 // History:
 // 15 Mar 2020	Aaron Clauson	Created, Dublin, Ireland.
+// 23 Jun 2020  Aaron Clauson   Renamed from IceSession to RtpIceChannel.
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -77,8 +79,21 @@ namespace SIPSorcery.Net
     ///    webrtc use case where RTP (audio and video) and RTCP are all multiplexed on a 
     ///    single socket pair. Therefore  there only needs to be a single component and single 
     ///    data stream. If an additional use case occurs then multiple checklists could be added.
+    ///    
+    /// Developer Notes:
+    /// There are 4 main tasks occurring during the ICE checks:
+    /// - Local candidates: ICE server checks (which can take seconds) are being carried out to
+    ///   gather "server reflexive" and "relay" candidates.
+    /// - Remote candidates: the remote peer should be trickling in its candidates which need to
+    ///   be validated and if accepted new entries added to the checklist.
+    /// - Checklist connectivity checks: the candidate pairs in the checklist need to have
+    ///   connectivity checks sent.
+    /// - Match STUN messages: STUN requests and responses are being received and need to be 
+    ///   matched to either an ICE server check or a checklist entry check. After matching 
+    ///   action needs to be taken to update the status of the ICE server or checklist entry
+    ///   check.
     /// </remarks>
-    public class IceSession
+    public class RtpIceChannel : RTPChannel
     {
         private static DnsClient.LookupClient _dnsLookupClient;
 
@@ -88,10 +103,6 @@ namespace SIPSorcery.Net
         private const string MDNS_TLD = ".local";         // Top Level Domain name for multicast lookups as per RFC6762.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
-        private const int STUN_UNAUTHORISED_ERROR_CODE = 401;   // The STUN error code response indicating an authenticated request is required.
-        //private const ushort TURN_MINIMUM_CHANNEL_NUMBER = 0x4000;
-        private const ushort TURN_MINIMUM_CHANNEL_NUMBER = 0x5000;
-        private const ushort TURN_MAXIMUM_CHANNEL_NUMBER = 0x7FFE;
 
         /// <summary>
         /// ICE transaction spacing interval in milliseconds.
@@ -108,21 +119,22 @@ namespace SIPSorcery.Net
 
         private static readonly ILogger logger = Log.Logger;
 
-        private static ushort _turnChannelNumber = TURN_MINIMUM_CHANNEL_NUMBER;
-
-        private RTPChannel _rtpChannel;
-        private IPAddress _remoteSignallingAddress;
+        private IPAddress _bindAddress;
         private List<RTCIceServer> _iceServers;
         private RTCIceTransportPolicy _policy;
+
+        private DateTime _startedGatheringAt = DateTime.MinValue;
+        private DateTime _connectedAt = DateTime.MinValue;
+
         private ConcurrentDictionary<STUNUri, IceServer> _iceServerConnections;
 
         private IceServer _activeIceServer;
 
         public RTCIceComponent Component { get; private set; }
 
-        public RTCIceGatheringState GatheringState { get; private set; } = RTCIceGatheringState.@new;
+        public RTCIceGatheringState IceGatheringState { get; private set; } = RTCIceGatheringState.@new;
 
-        public RTCIceConnectionState ConnectionState { get; private set; } = RTCIceConnectionState.@new;
+        public RTCIceConnectionState IceConnectionState { get; private set; } = RTCIceConnectionState.@new;
 
         /// <summary>
         /// True if we are the "controlling" ICE agent (we initiated the communications) or
@@ -182,19 +194,10 @@ namespace SIPSorcery.Net
         internal RTCIceCandidate _relayChecklistCandidate;
 
         /// <summary>
-        /// If the connectivity checks are successful this will hold the nominated
-        /// remote candidate.
+        /// If the connectivity checks are successful this will hold the entry that was 
+        /// nominated by the connection check process.
         /// </summary>
-        public RTCIceCandidate NominatedCandidate { get; private set; }
-
-        /// <summary>
-        /// If the session has successfully connected this returns the remote end point of
-        /// the nominate candidate.
-        /// </summary>
-        public IPEndPoint ConnectedRemoteEndPoint
-        {
-            get { return (NominatedCandidate != null) ? NominatedCandidate.DestinationEndPoint : null; }
-        }
+        public ChecklistEntry NominatedEntry { get; private set; }
 
         /// <summary>
         /// Retransmission timer for STUN transactions, measured in milliseconds.
@@ -206,7 +209,7 @@ namespace SIPSorcery.Net
         {
             get
             {
-                if (GatheringState == RTCIceGatheringState.gathering)
+                if (IceGatheringState == RTCIceGatheringState.gathering)
                 {
                     return Math.Max(500, Ta * Candidates.Count(x => x.type == RTCIceCandidateType.srflx || x.type == RTCIceCandidateType.relay));
                 }
@@ -229,44 +232,47 @@ namespace SIPSorcery.Net
         public event Action<RTCIceCandidate> OnIceCandidate;
         public event Action<RTCIceConnectionState> OnIceConnectionStateChange;
         public event Action<RTCIceGatheringState> OnIceGatheringStateChange;
-        public event Action OnIceCandidateError;
+        public event Action<RTCIceCandidate, string> OnIceCandidateError;
+
+        public new event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
 
         /// <summary>
-        /// Creates a new instance of an ICE session.
+        /// Creates a new instance of an RTP ICE channel to provide RTP channel functions 
+        /// with ICE connectivity checks.
         /// </summary>
-        /// <param name="rtpChannel">The RTP channel is the object managing the socket
-        /// doing the media sending and receiving. Its the same socket the ICE session
-        /// will need to initiate all the connectivity checks on.</param>
-        /// <param name="component">The component (RTP or RTCP) the channel is being used for. Note
-        /// for cases where RTP and RTCP are multiplexed the component is set to RTP.</param>
-        /// <param name="remoteSignallingAddress"> Optional. If supplied this address will 
+        public RtpIceChannel() :
+            this(null, RTCIceComponent.rtp)
+        { }
+
+        /// <summary>
+        /// Creates a new instance of an RTP ICE channel to provide RTP channel functions 
+        /// with ICE connectivity checks.
+        /// </summary>
+        /// <param name="bindAddress"> Optional. If supplied this address will 
         /// dictate which local interface host ICE candidates will be gathered from.
         /// Restricting the host candidate IP addresses to a single interface is 
         /// as per the recommendation at:
         /// https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2.
         /// If this is not set then the default is to use the Internet facing interface as
         /// returned by the OS routing table.</param>
+        /// <param name="component">The component (RTP or RTCP) the channel is being used for. Note
+        /// for cases where RTP and RTCP are multiplexed the component is set to RTP.</param>
         /// <param name="iceServers">A list of STUN or TURN servers that can be used by this ICE agent.</param>
         /// <param name="policy">Determines which ICE candidates can be used in this ICE session.</param>
-        public IceSession(RTPChannel rtpChannel,
+        public RtpIceChannel(
+            IPAddress bindAddress,
             RTCIceComponent component,
-            IPAddress remoteSignallingAddress,
             List<RTCIceServer> iceServers = null,
-            RTCIceTransportPolicy policy = RTCIceTransportPolicy.all)
+            RTCIceTransportPolicy policy = RTCIceTransportPolicy.all) :
+            base(false, bindAddress)
         {
-            if (rtpChannel == null)
-            {
-                throw new ArgumentNullException("rtpChannel");
-            }
-
             if (_dnsLookupClient == null)
             {
                 _dnsLookupClient = new DnsClient.LookupClient();
             }
 
-            _rtpChannel = rtpChannel;
+            _bindAddress = bindAddress;
             Component = component;
-            _remoteSignallingAddress = remoteSignallingAddress;
             _iceServers = iceServers;
             _policy = policy;
 
@@ -282,8 +288,8 @@ namespace SIPSorcery.Net
 
             _localChecklistCandidate.SetAddressProperties(
                 RTCIceProtocol.udp,
-                _rtpChannel.RTPLocalEndPoint.Address,
-                (ushort)_rtpChannel.RTPLocalEndPoint.Port,
+                base.RTPLocalEndPoint.Address,
+                (ushort)base.RTPLocalEndPoint.Port,
                 RTCIceCandidateType.host,
                 null,
                 0);
@@ -297,41 +303,36 @@ namespace SIPSorcery.Net
         /// </summary>
         public void StartGathering()
         {
-            if (GatheringState == RTCIceGatheringState.@new)
+            if (IceGatheringState == RTCIceGatheringState.@new)
             {
-                GatheringState = RTCIceGatheringState.gathering;
-                OnIceGatheringStateChange?.Invoke(GatheringState);
+                _startedGatheringAt = DateTime.Now;
 
-                _candidates = GetHostCandidates();
+                // Start listening on the UDP socket.
+                base.Start();
 
-                if (_candidates == null || _candidates.Count == 0)
+                IceGatheringState = RTCIceGatheringState.gathering;
+                OnIceGatheringStateChange?.Invoke(IceGatheringState);
+
+                if (_policy == RTCIceTransportPolicy.all)
                 {
-                    logger.LogWarning("ICE session did not discover any host candidates no point continuing.");
-                    OnIceCandidateError?.Invoke();
-                    OnIceConnectionStateChange?.Invoke(RTCIceConnectionState.failed);
-                    OnIceConnectionStateChange(RTCIceConnectionState.failed);
+                    _candidates = GetHostCandidates();
+                }
+
+                logger.LogDebug($"ICE session discovered {_candidates.Count} local candidates.");
+
+                if (_iceServers != null)
+                {
+                    InitialiseIceServers(_iceServers);
+                    _processIceServersTimer = new Timer(CheckIceServers, null, 0, Ta);
                 }
                 else
                 {
-                    logger.LogDebug($"ICE session discovered {_candidates.Count} local candidates.");
-
-                    if (_iceServers != null)
-                    {
-                        InitialiseIceServers(_iceServers);
-                        _processIceServersTimer = new Timer(CheckIceServers, null, 0, Ta);
-                    }
-                    else
-                    {
-                        // If there are no ICE servers then gathering has finished.
-                        GatheringState = RTCIceGatheringState.complete;
-                        OnIceGatheringStateChange?.Invoke(GatheringState);
-                    }
-
-                    ConnectionState = RTCIceConnectionState.checking;
-                    OnIceConnectionStateChange?.Invoke(ConnectionState);
-
-                    _processChecklistTimer = new Timer(ProcessChecklist, null, 0, Ta);
+                    // If there are no ICE servers then gathering has finished.
+                    IceGatheringState = RTCIceGatheringState.complete;
+                    OnIceGatheringStateChange?.Invoke(IceGatheringState);
                 }
+
+                _processChecklistTimer = new Timer(ProcessChecklist, null, 0, Ta);
             }
         }
 
@@ -350,8 +351,8 @@ namespace SIPSorcery.Net
 
             // Once the remote party's ICE credentials are known connection checking can 
             // commence immediately as candidates trickle in.
-            ConnectionState = RTCIceConnectionState.checking;
-            OnIceConnectionStateChange?.Invoke(ConnectionState);
+            IceConnectionState = RTCIceConnectionState.checking;
+            OnIceConnectionStateChange?.Invoke(IceConnectionState);
         }
 
         /// <summary>
@@ -377,33 +378,38 @@ namespace SIPSorcery.Net
             {
                 // Note that the way ICE signals the end of the gathering stage is to send
                 // an empty candidate or "end-of-candidates" SDP attribute.
-                logger.LogWarning($"ICE session omitting empty remote candidate.");
+                OnIceCandidateError?.Invoke(candidate, "Remote ICE candidate was empty.");
             }
             else if (candidate.component != Component)
             {
                 // This occurs if the remote party made an offer and assumed we couldn't multiplex the audio and video streams.
                 // It will offer the same ICE candidates separately for the audio and video announcements.
-                logger.LogWarning($"ICE session omitting remote candidate with unsupported component: {candidate}.");
+                OnIceCandidateError?.Invoke(candidate, "Remote ICE candidate has unsupported component.");
+            }
+            else if (candidate.sdpMLineIndex != 0)
+            {
+                // This implementation currently only supports audio and video multiplexed on a single channel.
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate only supports multiplexed media, excluding remote candidate with non-zero sdpMLineIndex of {candidate.sdpMLineIndex}.");
             }
             else if (candidate.protocol != RTCIceProtocol.udp)
             {
                 // This implementation currently only supports UDP for RTP communications.
-                logger.LogWarning($"ICE session omitting remote candidate with unsupported transport protocol: {candidate.protocol}.");
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported transport protocol {candidate.protocol}.");
             }
             else if (candidate.address.Trim().ToLower().EndsWith(MDNS_TLD))
             {
                 // Supporting MDNS lookups means an additional nuget dependency. Hopefully
                 // support is coming to .Net Core soon (AC 12 Jun 2020).
-                logger.LogWarning($"ICE session omitting remote candidate with unsupported MDNS hostname: {candidate.address}");
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");
             }
             else if (IPAddress.TryParse(candidate.address, out var addr) &&
                 (IPAddress.Any.Equals(addr) || IPAddress.IPv6Any.Equals(addr)))
             {
-                logger.LogWarning($"ICE session omitting remote candidate with wildcard IP address: {candidate.address}");
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate had a wildcard IP address {candidate.address}.");
             }
             else if (candidate.port <= 0 || candidate.port > IPEndPoint.MaxPort)
             {
-                logger.LogWarning($"ICE session omitting remote candidate with invalid port: {candidate.port}");
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate had an invalid port {candidate.port}.");
             }
             else
             {
@@ -428,8 +434,8 @@ namespace SIPSorcery.Net
             _candidates.Clear();
             _checklist.Clear();
             _iceServerConnections.Clear();
-            GatheringState = RTCIceGatheringState.@new;
-            ConnectionState = RTCIceConnectionState.@new;
+            IceGatheringState = RTCIceGatheringState.@new;
+            IceConnectionState = RTCIceConnectionState.@new;
 
             StartGathering();
         }
@@ -474,38 +480,36 @@ namespace SIPSorcery.Net
             List<RTCIceCandidate> hostCandidates = new List<RTCIceCandidate>();
             RTCIceCandidateInit init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
 
-            IPAddress signallingDstAddress = _remoteSignallingAddress;
-
             // RFC8445 states that loopback addresses should not be included in
-            // host candidates. If the provided signalling address is a loopback
+            // host candidates. If the provided bind address is a loopback
             // address it means no host candidates will be gathered. To avoid this
             // set the desired interface address to the Internet facing address
             // in the event a loopback address was specified.
-            if (signallingDstAddress != null &&
-                (IPAddress.IsLoopback(signallingDstAddress) ||
-                IPAddress.Any.Equals(signallingDstAddress) ||
-                IPAddress.IPv6Any.Equals(signallingDstAddress)))
-            {
-                // By setting to null means the default Internet facing interface will be used.
-                signallingDstAddress = null;
-            }
+            //if (_bindAddress != null &&
+            //    (IPAddress.IsLoopback(_bindAddress) ||
+            //    IPAddress.Any.Equals(_bindAddress) ||
+            //    IPAddress.IPv6Any.Equals(_bindAddress)))
+            //{
+            //    // By setting to null means the default Internet facing interface will be used.
+            //    signallingDstAddress = null;
+            //}
 
-            var rtpBindAddress = _rtpChannel.RTPLocalEndPoint.Address;
+            var rtpBindAddress = base.RTPLocalEndPoint.Address;
 
             // We get a list of local addresses that can be used with the address the RTP socket is bound on.
             List<IPAddress> localAddresses = null;
             if (IPAddress.IPv6Any.Equals(rtpBindAddress))
             {
-                if (_rtpChannel.RtpSocket.DualMode)
+                if (base.RtpSocket.DualMode)
                 {
                     // IPv6 dual mode listening on [::] means we can use all valid local addresses.
-                    localAddresses = NetServices.GetLocalAddressesOnInterface(signallingDstAddress)
+                    localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress)
                         .Where(x => !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal).ToList();
                 }
                 else
                 {
                     // IPv6 but not dual mode on [::] means can use all valid local IPv6 addresses.
-                    localAddresses = NetServices.GetLocalAddressesOnInterface(signallingDstAddress)
+                    localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress)
                         .Where(x => x.AddressFamily == AddressFamily.InterNetworkV6
                         && !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal).ToList();
                 }
@@ -513,7 +517,7 @@ namespace SIPSorcery.Net
             else if (IPAddress.Any.Equals(rtpBindAddress))
             {
                 // IPv4 on 0.0.0.0 means can use all valid local IPv4 addresses.
-                localAddresses = NetServices.GetLocalAddressesOnInterface(signallingDstAddress)
+                localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress)
                     .Where(x => x.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(x)).ToList();
             }
             else
@@ -526,7 +530,7 @@ namespace SIPSorcery.Net
             foreach (var localAddress in localAddresses)
             {
                 var hostCandidate = new RTCIceCandidate(init);
-                hostCandidate.SetAddressProperties(RTCIceProtocol.udp, localAddress, (ushort)_rtpChannel.RTPPort, RTCIceCandidateType.host, null, 0);
+                hostCandidate.SetAddressProperties(RTCIceProtocol.udp, localAddress, (ushort)base.RTPPort, RTCIceCandidateType.host, null, 0);
 
                 // We currently only support a single multiplexed connection for all data streams and RTCP.
                 if (hostCandidate.component == RTCIceComponent.rtp && hostCandidate.sdpMLineIndex == SDP_MLINE_INDEX)
@@ -543,7 +547,8 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Initialises the ICE servers if any were provided in the initial configuration.
         /// ICE servers are STUN and TURN servers and are used to gather "server reflexive"
-        /// and "relay" candidates.
+        /// and "relay" candidates. If the transport policy is "relay only" then only TURN 
+        /// servers will be added to the list of ICE servers being checked.
         /// </summary>
         /// <remarks>See https://tools.ietf.org/html/rfc8445#section-5.1.1.2</remarks>
         private void InitialiseIceServers(List<RTCIceServer> iceServers)
@@ -565,7 +570,11 @@ namespace SIPSorcery.Net
                         {
                             if (stunUri.Scheme == STUNSchemesEnum.stuns || stunUri.Scheme == STUNSchemesEnum.turns)
                             {
-                                logger.LogWarning($"ICE session does not currently support TLS for STUN and TURN servers, not checking {stunUri}.");
+                                logger.LogWarning($"ICE channel does not currently support TLS for STUN and TURN servers, not checking {stunUri}.");
+                            }
+                            else if (_policy == RTCIceTransportPolicy.relay && stunUri.Scheme == STUNSchemesEnum.stun)
+                            {
+                                logger.LogWarning($"ICE channel policy is relay only, ignoring STUN server {stunUri}.");
                             }
                             else if (!_iceServerConnections.ContainsKey(stunUri))
                             {
@@ -594,10 +603,17 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Checks the list of ICE servers to perform STUN binding or TURN reservation requests.
         /// Only one of the ICE server entries should end up being used. If at least one TURN server
-        /// is provided it will take precedence as it can supply Server Reflexive and Relay candidates.
+        /// is provided it will take precedence as it can potentially supply both Server Reflexive 
+        /// and Relay candidates.
         /// </summary>
         private void CheckIceServers(Object state)
         {
+            if (IceGatheringState == RTCIceGatheringState.complete)
+            {
+                _processIceServersTimer.Dispose();
+                return;
+            }
+
             // The lock is to ensure the timer callback doesn't run multiple instances in parallel. 
             if (Monitor.TryEnter(_iceServerConnections))
             {
@@ -695,31 +711,6 @@ namespace SIPSorcery.Net
                     logger.LogDebug($"Sending TURN allocate request to ICE server {_activeIceServer._uri}.");
                     _activeIceServer.Error = SendTurnAllocateRequest(_activeIceServer);
                 }
-                // Periodically re-send the STUN binding request to keep the NAT mapping fresh. Note that if
-                // the server reflexive candidate wasn't used the as the nominated candidate the periodic timer
-                // calling this method will be cancelled.
-                else if (_activeIceServer.ServerReflexiveEndPoint != null && _activeIceServer._uri.Scheme == STUNSchemesEnum.stun)
-                {
-                    int refreshDueIn = IceServer.STUN_BINDING_REQUEST_REFRESH_SECONDS -
-                        (int)DateTime.Now.Subtract(_activeIceServer.LastResponseReceivedAt).TotalSeconds;
-
-                    if (refreshDueIn <= 0)
-                    {
-                        _activeIceServer.Error = SendStunBindingRequest(_activeIceServer);
-                    }
-                    else
-                    {
-                        // Set the timer to fire the callback when the next refresh request is due.
-                        _processIceServersTimer.Change(refreshDueIn * 1000, Timeout.Infinite);
-                    }
-                }
-                // Periodically send a TURN Refresh request to keep the relay from closing. Note that if
-                // the relay candidate wasn't used the as the nominated candidate the periodic timer
-                // calling this method will be cancelled.
-                else if (_activeIceServer.ServerReflexiveEndPoint != null && _activeIceServer._uri.Scheme == STUNSchemesEnum.turn)
-                {
-                    // TODO.
-                }
                 else
                 {
                     logger.LogWarning($"The active ICE server reached an unexpected state {_activeIceServer._uri}.");
@@ -737,13 +728,18 @@ namespace SIPSorcery.Net
         /// for.</param>
         private async Task AddCandidatesForIceServer(IceServer iceServer)
         {
+            RTCIceCandidateInit init = new RTCIceCandidateInit
+            {
+                usernameFragment = LocalIceUser,
+                sdpMid = SDP_MID,
+                sdpMLineIndex = SDP_MLINE_INDEX,
+            };
+
             if (iceServer.ServerReflexiveEndPoint != null)
             {
-                RTCIceCandidateInit init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
-                RTCIceCandidate svrRflxCandidate = iceServer.GetCandidate(init, RTCIceCandidateType.srflx,
-                    NetServices.InternetDefaultAddress, (ushort)_rtpChannel.RTPPort);
+                RTCIceCandidate svrRflxCandidate = iceServer.GetCandidate(init, RTCIceCandidateType.srflx);
 
-                if (svrRflxCandidate != null)
+                if (_policy == RTCIceTransportPolicy.all && svrRflxCandidate != null)
                 {
                     logger.LogDebug($"Adding server reflex ICE candidate for ICE server {iceServer._uri} and {iceServer.ServerReflexiveEndPoint}.");
 
@@ -756,10 +752,11 @@ namespace SIPSorcery.Net
 
             if (_relayChecklistCandidate == null && iceServer.RelayEndPoint != null)
             {
-                RTCIceCandidateInit init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
-                RTCIceCandidate relayCandidate = iceServer.GetCandidate(init, RTCIceCandidateType.relay,
-                    NetServices.InternetDefaultAddress, (ushort)_rtpChannel.RTPPort);
+                RTCIceCandidate relayCandidate = iceServer.GetCandidate(init, RTCIceCandidateType.relay);
+                relayCandidate.SetDestinationEndPoint(iceServer.RelayEndPoint);
 
+                // A local relay candidate is stored so it can be pared with any remote candidates
+                // that arrive after the checklist update carried out in this method.
                 _relayChecklistCandidate = relayCandidate;
 
                 if (relayCandidate != null)
@@ -770,29 +767,14 @@ namespace SIPSorcery.Net
                     OnIceCandidate?.Invoke(relayCandidate);
                 }
 
-                foreach (var remoteCandidate in _remoteCandidates.Where(x => x.DestinationEndPoint != null))
+                foreach (var remoteCandidate in _remoteCandidates)
                 {
                     await UpdateChecklist(_relayChecklistCandidate, remoteCandidate);
                 }
             }
 
-            GatheringState = RTCIceGatheringState.complete;
-            OnIceGatheringStateChange?.Invoke(GatheringState);
-        }
-
-        /// <summary>
-        /// Gets the next available TURN channel number.
-        /// </summary>
-        private ushort GetNextTurnChannelNumber()
-        {
-            ushort channelNumber = _turnChannelNumber++;
-
-            if(_turnChannelNumber > TURN_MAXIMUM_CHANNEL_NUMBER)
-            {
-                _turnChannelNumber = TURN_MINIMUM_CHANNEL_NUMBER;
-            }
-
-            return channelNumber;
+            IceGatheringState = RTCIceGatheringState.complete;
+            OnIceGatheringStateChange?.Invoke(IceGatheringState);
         }
 
         /// <summary>
@@ -816,9 +798,7 @@ namespace SIPSorcery.Net
                 throw new ArgumentNullException("remoteCandidate", "The remote candidate must be supplied for UpdateChecklist.");
             }
 
-            bool supportsIPv4 = _rtpChannel.RtpSocket.AddressFamily == AddressFamily.InterNetwork || _rtpChannel.IsDualMode;
-            bool supportsIPv6 = _rtpChannel.RtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || _rtpChannel.IsDualMode;
-
+            // Attempt to resolve the remote candidate address.
             if (!IPAddress.TryParse(remoteCandidate.address, out var remoteCandidateIPAddr))
             {
                 // The candidate string can be a hostname or an IP address.
@@ -849,14 +829,26 @@ namespace SIPSorcery.Net
             // If the remote candidate is resolvable create a new checklist entry.
             if (remoteCandidate.DestinationEndPoint != null)
             {
+                bool supportsIPv4 = true;
+                bool supportsIPv6 = false;
+
+                if (localCandidate.type == RTCIceCandidateType.relay)
+                {
+                    supportsIPv4 = localCandidate.DestinationEndPoint.AddressFamily == AddressFamily.InterNetwork;
+                    supportsIPv6 = localCandidate.DestinationEndPoint.AddressFamily == AddressFamily.InterNetworkV6;
+                }
+                else
+                {
+                    supportsIPv4 = base.RtpSocket.AddressFamily == AddressFamily.InterNetwork || base.IsDualMode;
+                    supportsIPv6 = base.RtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || base.IsDualMode;
+                }
+
                 lock (_checklist)
                 {
                     if (remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetwork && supportsIPv4 ||
                         remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetworkV6 && supportsIPv6)
                     {
-                        ushort turnChannelNumber = (localCandidate.type == RTCIceCandidateType.relay) ? GetNextTurnChannelNumber() : (ushort)0;
-
-                        ChecklistEntry entry = new ChecklistEntry(localCandidate, remoteCandidate, IsController, turnChannelNumber);
+                        ChecklistEntry entry = new ChecklistEntry(localCandidate, remoteCandidate, IsController);
 
                         // Because only ONE checklist is currently supported each candidate pair can be set to
                         // a "waiting" state. If an additional checklist is ever added then only one candidate
@@ -924,7 +916,7 @@ namespace SIPSorcery.Net
             else
             {
                 // No existing entry.
-                logger.LogDebug($"Adding new candidate pair to checklist for: {entry.LocalCandidate.GetShortDescription()} -> {entry.RemoteCandidate}");
+                logger.LogDebug($"Adding new candidate pair to checklist for: {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}");
                 _checklist.Add(entry);
             }
         }
@@ -935,84 +927,100 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// The scheduling mechanism for ICE is specified in https://tools.ietf.org/html/rfc8445#section-6.1.4.
         /// </remarks>
-        private void ProcessChecklist(Object stateInfo)
+        private async void ProcessChecklist(Object stateInfo)
         {
-            if (ConnectionState == RTCIceConnectionState.checking)
+            if (IceConnectionState == RTCIceConnectionState.@new ||
+                IceConnectionState == RTCIceConnectionState.checking)
             {
                 while (_pendingRemoteCandidates.Count() > 0)
                 {
                     if (_pendingRemoteCandidates.TryDequeue(out var candidate))
                     {
-                        // The reason not to wait for this operation is that the ICE candidate can
-                        // contain a hostname and require a DNS lookup. There's nothing that can be done
-                        // if the DNS lookup fails so the initiate the task and then keep going with the
-                        // adding any other pending candidates and move on with processing the check list.
-                        _ = UpdateChecklist(_localChecklistCandidate, candidate);
+                        if (_policy != RTCIceTransportPolicy.relay)
+                        {
+                            // The reason not to wait for this operation is that the ICE candidate can
+                            // contain a hostname and require a DNS lookup. There's nothing that can be done
+                            // if the DNS lookup fails so the initiate the task and then keep going with the
+                            // adding any other pending candidates and move on with processing the check list.
+                            _ = UpdateChecklist(_localChecklistCandidate, candidate);
+                        }
 
                         // If a relay server is available add a checklist entry for it as well.
                         if (_relayChecklistCandidate != null)
                         {
-                            _ = UpdateChecklist(_relayChecklistCandidate, candidate);
+                            // The local relay candidate has already been checked and any hostnames 
+                            // resolved when the ICE servers were checked.
+                            await UpdateChecklist(_relayChecklistCandidate, candidate);
                         }
                     }
                 }
 
-                if (_checklist.Count > 0)
+                // The connection state will be set to checking when the remote ICE user and password are available.
+                // Until that happens there is no work to do.
+                if (IceConnectionState == RTCIceConnectionState.checking)
                 {
-                    if (RemoteIceUser == null || RemoteIcePassword == null)
+                    if (_checklist.Count > 0)
                     {
-                        logger.LogWarning("ICE session checklist processing cannot occur as either the remote ICE user or password are not set.");
-                        ConnectionState = RTCIceConnectionState.failed;
-                    }
-                    else
-                    {
-                        lock (_checklist)
+                        if (RemoteIceUser == null || RemoteIcePassword == null)
                         {
-                            // The checklist gets sorted into priority order whenever a remote candidate and its corresponding candidate pairs
-                            // are added. At this point it can be relied upon that the checklist is correctly sorted by candidate pair priority.
-
-                            // Do a check for any timed out entries.
-                            var failedEntries = _checklist.Where(x => x.State == ChecklistEntryState.InProgress
-                                   && DateTime.Now.Subtract(x.LastCheckSentAt).TotalMilliseconds > RTO
-                                   && x.ChecksSent >= N).ToList();
-
-                            foreach (var failedEntry in failedEntries)
+                            logger.LogWarning("ICE RTP channel checklist processing cannot occur as either the remote ICE user or password are not set.");
+                            IceConnectionState = RTCIceConnectionState.failed;
+                        }
+                        else
+                        {
+                            lock (_checklist)
                             {
-                                logger.LogDebug($"Checks for checklist entry have timed out, state being set to failed: {failedEntry.LocalCandidate} -> {failedEntry.RemoteCandidate}.");
-                                failedEntry.State = ChecklistEntryState.Failed;
-                            }
+                                // The checklist gets sorted into priority order whenever a remote candidate and its corresponding candidate pairs
+                                // are added. At this point it can be relied upon that the checklist is correctly sorted by candidate pair priority.
 
-                            // Move on to checking for  checklist entries that need an initial check sent.
-                            var nextEntry = _checklist.Where(x => x.State == ChecklistEntryState.Waiting).FirstOrDefault();
+                                // Do a check for any timed out entries.
+                                var failedEntries = _checklist.Where(x => x.State == ChecklistEntryState.InProgress
+                                       && DateTime.Now.Subtract(x.LastCheckSentAt).TotalMilliseconds > RTO
+                                       && x.ChecksSent >= N).ToList();
 
-                            if (nextEntry != null)
-                            {
-                                SendConnectivityCheck(nextEntry, false);
-                                return;
-                            }
+                                foreach (var failedEntry in failedEntries)
+                                {
+                                    logger.LogDebug($"ICE RTP channel checks for checklist entry have timed out, state being set to failed: {failedEntry.LocalCandidate.ToShortString()}->{failedEntry.RemoteCandidate.ToShortString()}.");
+                                    failedEntry.State = ChecklistEntryState.Failed;
+                                }
 
-                            // No waiting entries so check for ones requiring a retransmit.
-                            var retransmitEntry = _checklist.Where(x => x.State == ChecklistEntryState.InProgress
-                                && DateTime.Now.Subtract(x.LastCheckSentAt).TotalMilliseconds > RTO).FirstOrDefault();
+                                // Move on to checking for  checklist entries that need an initial check sent.
+                                var nextEntry = _checklist.Where(x => x.State == ChecklistEntryState.Waiting).FirstOrDefault();
 
-                            if (retransmitEntry != null)
-                            {
-                                SendConnectivityCheck(retransmitEntry, false);
-                                return;
-                            }
+                                if (nextEntry != null)
+                                {
+                                    SendConnectivityCheck(nextEntry, false);
+                                    return;
+                                }
 
-                            // If this point is reached and all entries are in a failed state then the overall result 
-                            // of the ICE check is a failure.
-                            if (GatheringState == RTCIceGatheringState.complete && _checklist.All(x => x.State == ChecklistEntryState.Failed))
-                            {
-                                _processChecklistTimer.Dispose();
-                                _checklistState = ChecklistState.Failed;
-                                ConnectionState = RTCIceConnectionState.failed;
-                                OnIceConnectionStateChange?.Invoke(ConnectionState);
+                                // No waiting entries so check for ones requiring a retransmit.
+                                var retransmitEntry = _checklist.Where(x => x.State == ChecklistEntryState.InProgress
+                                    && DateTime.Now.Subtract(x.LastCheckSentAt).TotalMilliseconds > RTO).FirstOrDefault();
+
+                                if (retransmitEntry != null)
+                                {
+                                    SendConnectivityCheck(retransmitEntry, false);
+                                    return;
+                                }
+
+                                // If this point is reached and all entries are in a failed state then the overall result 
+                                // of the ICE check is a failure.
+                                if (IceGatheringState == RTCIceGatheringState.complete && _checklist.All(x => x.State == ChecklistEntryState.Failed))
+                                {
+                                    _checklistState = ChecklistState.Failed;
+                                    IceConnectionState = RTCIceConnectionState.failed;
+                                    OnIceConnectionStateChange?.Invoke(IceConnectionState);
+                                }
                             }
                         }
                     }
                 }
+            }
+            else
+            {
+                logger.LogDebug($"ICE RTP channel stopping checklist checks in state {IceConnectionState}.");
+                _processChecklistTimer?.Dispose();
+                _processIceServersTimer?.Dispose();
             }
         }
 
@@ -1023,10 +1031,15 @@ namespace SIPSorcery.Net
         /// <param name="entry">The checklist entry that was nominated.</param>
         private void SetNominatedEntry(ChecklistEntry entry)
         {
+            _connectedAt = DateTime.Now;
+            int duration = (int)_connectedAt.Subtract(_startedGatheringAt).TotalMilliseconds;
+
+            logger.LogInformation($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
+
             entry.Nominated = true;
             _checklistState = ChecklistState.Completed;
-            NominatedCandidate = entry.RemoteCandidate;
-            ConnectionState = RTCIceConnectionState.connected;
+            NominatedEntry = entry;
+            IceConnectionState = RTCIceConnectionState.connected;
             OnIceConnectionStateChange?.Invoke(RTCIceConnectionState.connected);
         }
 
@@ -1053,10 +1066,20 @@ namespace SIPSorcery.Net
 
             bool isRelayCheck = candidatePair.LocalCandidate.type == RTCIceCandidateType.relay;
 
-            if (isRelayCheck && candidatePair.TurnChannelBindResponseAt == DateTime.MinValue)
+            if (isRelayCheck && candidatePair.TurnPermissionsResponseAt == DateTime.MinValue)
             {
-                // Send Create Permissions request to TURN server for remote candidate.
-                SendTurnChannelBindRequest(candidatePair.RequestTransactionID, candidatePair.TurnChannelNumber, candidatePair.LocalCandidate.IceServer, candidatePair.RemoteCandidate.DestinationEndPoint);
+                if (candidatePair.TurnPermissionsRequestSent >= IceServer.MAX_REQUESTS)
+                {
+                    logger.LogWarning($"ICE RTP channel failed to get a Create Permissions response from {candidatePair.LocalCandidate.IceServer._uri} after {candidatePair.TurnPermissionsRequestSent} attempts.");
+                    candidatePair.State = ChecklistEntryState.Failed;
+                }
+                else
+                {
+                    // Send Create Permissions request to TURN server for remote candidate.
+                    candidatePair.TurnPermissionsRequestSent++;
+                    logger.LogDebug($"ICE RTP channel sending TURN permissions request {candidatePair.TurnPermissionsRequestSent} to server {candidatePair.LocalCandidate.IceServer._uri} for peer {candidatePair.RemoteCandidate.DestinationEndPoint} (TxID: {candidatePair.RequestTransactionID}).");
+                    SendTurnCreatePermissionsRequest(candidatePair.RequestTransactionID, candidatePair.LocalCandidate.IceServer, candidatePair.RemoteCandidate.DestinationEndPoint);
+                }
             }
             else
             {
@@ -1072,235 +1095,214 @@ namespace SIPSorcery.Net
 
                 byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
 
-                IPEndPoint remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
-
-                logger.LogDebug($"Sending ICE connectivity check from {_rtpChannel.RTPLocalEndPoint} to {remoteEndPoint} (is relay {isRelayCheck}, use candidate {setUseCandidate}).");
-
-                _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunReqBytes);
+                if (isRelayCheck)
+                {
+                    IPEndPoint relayServerEP = candidatePair.LocalCandidate.IceServer.ServerEndPoint;
+                    logger.LogDebug($"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {base.RTPLocalEndPoint} to relay at {relayServerEP} (use candidate {setUseCandidate}).");
+                    SendAsyncRelay(RTPChannelSocketsEnum.RTP, candidatePair.RemoteCandidate.DestinationEndPoint, stunReqBytes, relayServerEP);
+                }
+                else
+                {
+                    IPEndPoint remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
+                    logger.LogDebug($"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {base.RTPLocalEndPoint} to {remoteEndPoint} (use candidate {setUseCandidate}).");
+                    base.SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunReqBytes);
+                }
             }
         }
 
         /// <summary>
         /// Processes a received STUN request or response.
         /// </summary>
+        /// <remarks>
+        /// Actions to take on a successful STUN response https://tools.ietf.org/html/rfc8445#section-7.2.5.3
+        /// - Discover peer reflexive remote candidates as per https://tools.ietf.org/html/rfc8445#section-7.2.5.3.1.
+        /// - Construct a valid pair which means match a candidate pair in the check list and mark it as valid (since a successful STUN exchange 
+        ///   has now taken place on it). A new entry may need to be created for this pair for a peer reflexive candidate.
+        /// - Update state of candidate pair that generated the check to Succeeded.
+        /// - If the controlling candidate set the USE_CANDIDATE attribute then the ICE agent that receives the successful response sets the nominated
+        ///   flag of the pair to true. Once the nominated flag is set it concludes the ICE processing for that component.
+        /// </remarks>
         /// <param name="stunMessage">The STUN message received.</param>
         /// <param name="remoteEndPoint">The remote end point the STUN packet was received from.</param>
-        public void ProcessStunMessage(STUNMessage stunMessage, IPEndPoint remoteEndPoint)
+        public async Task ProcessStunMessage(STUNMessage stunMessage, IPEndPoint remoteEndPoint, bool wasRelayed)
         {
             remoteEndPoint = (!remoteEndPoint.Address.IsIPv4MappedToIPv6) ? remoteEndPoint : new IPEndPoint(remoteEndPoint.Address.MapToIPv4(), remoteEndPoint.Port);
 
-            logger.LogDebug($"STUN message received from remote {remoteEndPoint} {stunMessage.Header.MessageType}.");
-
-            bool isForIceServerCheck = false;
+            logger.LogDebug($"ICE RTP channel STUN message received from remote {remoteEndPoint} {stunMessage.Header.MessageType} (was relayed {wasRelayed}).");
 
             // Check if the  STUN message is for an ICE server check.
-            if (_iceServerConnections != null)
+            var iceServer = GetIceServerForTransactionID(stunMessage.Header.TransactionId);
+            if (iceServer != null)
             {
-                string txID = Encoding.ASCII.GetString(stunMessage.Header.TransactionId);
-                var iceServerConnection = GetIceServerConnection(txID);
-
-                if (iceServerConnection != null)
+                bool candidatesAvailable = iceServer.GotStunResponse(stunMessage, remoteEndPoint);
+                if (candidatesAvailable)
                 {
-                    isForIceServerCheck = true;
-                    ProcessStunResponseForIceServer(iceServerConnection, stunMessage, remoteEndPoint);
+                    // Safe to wait here as the candidates from an ICE server will always be IP addresses only,
+                    // no DNS lookups required.
+                    await AddCandidatesForIceServer(iceServer);
                 }
             }
-
-            // If the STUN message isn't for an ICE server then look for matching entries in the checklist.
-            if (!isForIceServerCheck)
+            else
             {
+                // If the STUN message isn't for an ICE server then it needs to be matched against a remote
+                // candidate and a checklist entry and if no match a "peer reflexive" candidate may need to
+                // be created.
                 if (stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingRequest)
                 {
-                    #region STUN Binding Requests.
+                    GotStunBindingRequest(stunMessage, remoteEndPoint, wasRelayed);
+                }
+                else if (stunMessage.Header.MessageClass == STUNClassTypesEnum.ErrorResponse ||
+                         stunMessage.Header.MessageClass == STUNClassTypesEnum.SuccesResponse)
+                {
+                    // Correlate with request using transaction ID as per https://tools.ietf.org/html/rfc8445#section-7.2.5.
+                    var matchingChecklistEntry = GetChecklistEntryForStunResponse(stunMessage.Header.TransactionId);
 
-                    // TODO: The integrity check method needs to be implemented (currently just returns true).
-                    bool result = stunMessage.CheckIntegrity(System.Text.Encoding.UTF8.GetBytes(LocalIcePassword), LocalIceUser, RemoteIceUser);
-
-                    if (!result)
+                    if (matchingChecklistEntry == null)
                     {
-                        // Send STUN error response.
-                        STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
-                        stunErrResponse.Header.TransactionId = stunMessage.Header.TransactionId;
-                        _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+                        logger.LogWarning($"ICE RTP channel received a STUN {stunMessage.Header.MessageType} with a transaction ID that did not match a checklist entry.");
                     }
                     else
                     {
-                        var matchingCandidate = (_remoteCandidates != null) ? _remoteCandidates.Where(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)).FirstOrDefault() : null;
+                        matchingChecklistEntry.GotStunResponse(stunMessage, remoteEndPoint);
 
-                        if (matchingCandidate == null)
+                        if (_checklistState == ChecklistState.Running &&
+                            stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
                         {
-                            // This STUN request has come from a socket not in the remote ICE candidates list. 
-                            // Add a new remote peer reflexive candidate.
-                            RTCIceCandidate peerRflxCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
-                            peerRflxCandidate.SetAddressProperties(RTCIceProtocol.udp, remoteEndPoint.Address, (ushort)remoteEndPoint.Port, RTCIceCandidateType.prflx, null, 0);
-                            peerRflxCandidate.SetDestinationEndPoint(remoteEndPoint);
-                            logger.LogDebug($"Adding peer reflex ICE candidate for {remoteEndPoint}.");
-                            _remoteCandidates.Add(peerRflxCandidate);
-
-                            // Add a new entry to the check list for the new peer reflexive candidate.
-                            ChecklistEntry entry = new ChecklistEntry(_localChecklistCandidate, peerRflxCandidate, IsController, 0);
-                            entry.State = ChecklistEntryState.Waiting;
-                            AddChecklistEntry(entry);
-
-                            matchingCandidate = peerRflxCandidate;
-                        }
-
-                        // Find the checklist entry for this remote candidate and update its status.
-                        ChecklistEntry matchingChecklistEntry = null;
-
-                        lock (_checklist)
-                        {
-                            matchingChecklistEntry = _checklist.Where(x => x.RemoteCandidate.foundation == matchingCandidate.foundation).FirstOrDefault();
-                        }
-
-                        if (matchingChecklistEntry == null)
-                        {
-                            logger.LogWarning("ICE session STUN request matched a remote candidate but NOT a checklist entry.");
-                        }
-
-                        // The UseCandidate attribute is only meant to be set by the "Controller" peer. This implementation
-                        // will accept it irrespective of the peer roles. If the remote peer wants us to use a certain remote
-                        // end point then so be it.
-                        if (stunMessage.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.UseCandidate))
-                        {
-                            if (ConnectionState != RTCIceConnectionState.connected)
-                            {
-                                // If we are the "controlled" agent and get a "use candidate" attribute that sets the matching candidate as nominated 
-                                // as per https://tools.ietf.org/html/rfc8445#section-7.3.1.5.
-
-                                if (matchingChecklistEntry == null)
-                                {
-                                    logger.LogWarning("ICE session STUN request had UseCandidate set but no matching checklist entry was found.");
-                                }
-                                else
-                                {
-                                    logger.LogDebug($"ICE session remote peer nominated entry from binding request: {matchingChecklistEntry.RemoteCandidate}");
-                                    SetNominatedEntry(matchingChecklistEntry);
-                                }
-                            }
-                        }
-
-                        STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
-                        stunResponse.Header.TransactionId = stunMessage.Header.TransactionId;
-                        stunResponse.AddXORMappedAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
-
-                        string localIcePassword = LocalIcePassword;
-                        byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(localIcePassword, true);
-                        _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunRespBytes);
-                    }
-
-                    #endregion
-                }
-                else if (stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
-                {
-                    #region STUN Binding Success Responses
-
-                    // Correlate with request using transaction ID as per https://tools.ietf.org/html/rfc8445#section-7.2.5.
-
-                    // Actions to take on a successful STUN response https://tools.ietf.org/html/rfc8445#section-7.2.5.3
-                    // - Discover peer reflexive remote candidates
-                    //   (TODO: According to https://tools.ietf.org/html/rfc8445#section-7.2.5.3.1 peer reflexive get added to the local candidates list?)
-                    // - Construct a valid pair which means match a candidate pair in the check list and mark it as valid (since a successful STUN exchange 
-                    //   has now taken place on it). A new entry may need to be created for this pair since peer reflexive candidates are not added to the connectivity
-                    //   check checklist.
-                    // - Update state of candidate pair that generated the check to Succeeded.
-                    // - If the controlling candidate set the USE_CANDIDATE attribute then the ICE agent that receives the successful response sets the nominated
-                    //   flag of the pair to true. Once the nominated flag is set it concludes the ICE processing for that component.
-
-                    if (_checklistState == ChecklistState.Running)
-                    {
-                        string txID = Encoding.ASCII.GetString(stunMessage.Header.TransactionId);
-
-                        // Attempt to find the checklist entry for this transaction ID.
-                        ChecklistEntry matchingChecklistEntry = null;
-
-                        lock (_checklist)
-                        {
-                            matchingChecklistEntry = _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
-                        }
-
-                        if (matchingChecklistEntry == null)
-                        {
-                            logger.LogWarning("ICE session STUN response transaction ID did not match a checklist entry.");
-                        }
-                        else
-                        {
-                            matchingChecklistEntry.State = ChecklistEntryState.Succeeded;
-
                             if (matchingChecklistEntry.Nominated)
                             {
-                                logger.LogDebug($"ICE session remote peer nominated entry from binding response: {matchingChecklistEntry.RemoteCandidate}");
+                                logger.LogDebug($"ICE RTP channel remote peer nominated entry from binding response {matchingChecklistEntry.RemoteCandidate.ToShortString()}");
 
                                 // This is the response to a connectivity check that had the "UseCandidate" attribute set.
                                 SetNominatedEntry(matchingChecklistEntry);
                             }
-                            else if (this.IsController && !_checklist.Any(x => x.Nominated))
+                            else if (IsController && !_checklist.Any(x => x.Nominated))
                             {
                                 // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
-                                // To start with we'll just use whichever pair gets the first successful STUN exchange. If needs be the selection algorithm can
-                                // improve over time.
-
-                                matchingChecklistEntry.ChecksSent = 0;
-                                matchingChecklistEntry.LastCheckSentAt = DateTime.MinValue;
+                                // For the lack of a more sophisticated approach use whichever pair gets the first successful STUN exchange. If needs be 
+                                // the selection algorithm can improve over time.
                                 matchingChecklistEntry.Nominated = true;
-
                                 SendConnectivityCheck(matchingChecklistEntry, true);
                             }
                         }
                     }
-
-                    #endregion
                 }
-                else if (stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)
+                else
                 {
-                    #region STUN Binding Error Responses
+                    logger.LogWarning($"ICE RTP channel received an unexpected STUN message {stunMessage.Header.MessageType} from {remoteEndPoint}.");
+                }
+            }
+        }
 
-                    logger.LogWarning($"A STUN binding error response was received from {remoteEndPoint}.");
+        /// <summary>
+        /// Handles STUN binding requests received from remote candidates as part of the
+        /// ICE connectivity checks.
+        /// </summary>
+        /// <param name="bindingRequest">The binding request received.</param>
+        /// <param name="remoteEndPoint">The end point the request was received from.</param>
+        /// <param name="wasRelayed">True of the request was relayed via the TURN server in use
+        /// by this ICE channel (i.e. the ICE server that this channel is acting as the client with).</param>
+        private void GotStunBindingRequest(STUNMessage bindingRequest, IPEndPoint remoteEndPoint, bool wasRelayed)
+        {
+            if (_policy == RTCIceTransportPolicy.relay && !wasRelayed)
+            {
+                // If the policy is "relay only" then direct binding requests are accepted.
+                logger.LogWarning($"ICE RTP channel rejecting non-relayed STUN binding request from {remoteEndPoint}.");
 
-                    // Attempt to find the checklist entry for this transaction ID.
-                    string txID = Encoding.ASCII.GetString(stunMessage.Header.TransactionId);
+                STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
+                stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
+                SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+            }
+            else
+            {
+                // TODO: The integrity check method needs to be implemented (currently just returns true).
+                bool result = bindingRequest.CheckIntegrity(System.Text.Encoding.UTF8.GetBytes(LocalIcePassword), LocalIceUser, RemoteIceUser);
 
+                if (!result)
+                {
+                    // Send STUN error response.
+                    STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
+                    stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
+                    SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+                }
+                else
+                {
                     ChecklistEntry matchingChecklistEntry = null;
 
-                    lock (_checklist)
+                    var matchingCandidate = (_remoteCandidates != null) ?
+                        _remoteCandidates.Where(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)).FirstOrDefault() : null;
+
+                    if (matchingCandidate == null)
                     {
-                        _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
+                        // This STUN request has come from a socket not in the remote ICE candidates list. 
+                        // Add a new remote peer reflexive candidate. 
+                        RTCIceCandidate peerRflxCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
+                        peerRflxCandidate.SetAddressProperties(RTCIceProtocol.udp, remoteEndPoint.Address, (ushort)remoteEndPoint.Port, RTCIceCandidateType.prflx, null, 0);
+                        peerRflxCandidate.SetDestinationEndPoint(remoteEndPoint);
+                        logger.LogDebug($"Adding peer reflex ICE candidate for {remoteEndPoint}.");
+                        _remoteCandidates.Add(peerRflxCandidate);
+
+                        // Add a new entry to the check list for the new peer reflexive candidate.
+                        ChecklistEntry entry = new ChecklistEntry((wasRelayed) ? _relayChecklistCandidate : _localChecklistCandidate,
+                            peerRflxCandidate, IsController);
+                        entry.State = ChecklistEntryState.Waiting;
+
+                        if (wasRelayed)
+                        {
+                            // No need to send a TURN permissions request given this request was already successfully relayed.
+                            entry.TurnPermissionsRequestSent = 1;
+                            entry.TurnPermissionsResponseAt = DateTime.Now;
+                        }
+
+                        AddChecklistEntry(entry);
+
+                        matchingCandidate = peerRflxCandidate;
+                        matchingChecklistEntry = entry;
+                    }
+                    else
+                    {
+                        // Find the checklist entry for this remote candidate and update its status.
+                        lock (_checklist)
+                        {
+                            matchingChecklistEntry = _checklist.Where(x => x.RemoteCandidate.foundation == matchingCandidate.foundation &&
+                            (!wasRelayed || (x.LocalCandidate.type == RTCIceCandidateType.relay))).FirstOrDefault();
+                        }
                     }
 
                     if (matchingChecklistEntry == null)
                     {
-                        logger.LogWarning("ICE session STUN error response transaction ID did not match a checklist entry.");
+                        logger.LogWarning("ICE RTP channel STUN request matched a remote candidate but NOT a checklist entry.");
+                        STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
+                        stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
+                        SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
                     }
                     else
                     {
-                        logger.LogWarning($"ICE session check list entry set to failed: {matchingChecklistEntry.RemoteCandidate}");
-                        matchingChecklistEntry.State = ChecklistEntryState.Failed;
-                    }
+                        // The UseCandidate attribute is only meant to be set by the "Controller" peer. This implementation
+                        // will accept it irrespective of the peer roles. If the remote peer wants us to use a certain remote
+                        // end point then so be it.
+                        if (bindingRequest.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.UseCandidate) &&
+                            IceConnectionState != RTCIceConnectionState.connected)
+                        {
+                            // If we are the "controlled" agent and get a "use candidate" attribute that sets the matching candidate as nominated 
+                            // as per https://tools.ietf.org/html/rfc8445#section-7.3.1.5.
+                            logger.LogDebug($"ICE RTP channel remote peer nominated entry from binding request: {matchingChecklistEntry.RemoteCandidate.ToShortString()}");
+                            SetNominatedEntry(matchingChecklistEntry);
+                        }
 
-                    #endregion
-                }
-                else if (stunMessage.Header.MessageType == STUNMessageTypesEnum.ChannelBindSuccessResponse)
-                {
-                    logger.LogDebug($"A TURN Channel Bind response was received from {remoteEndPoint}.");
-                    var matchingChecklistEntry = GetChecklistEntryForStunResponse(stunMessage.Header.TransactionId);
-                    if(matchingChecklistEntry != null)
-                    {
-                        matchingChecklistEntry.TurnChannelBindResponseAt = DateTime.Now;
-                        matchingChecklistEntry.TurnChannelBindSuccessResponse = true;
+                        STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
+                        stunResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
+                        stunResponse.AddXORMappedAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
+                        byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(LocalIcePassword, true);
+
+                        if (wasRelayed)
+                        {
+                            SendAsyncRelay(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunRespBytes, matchingChecklistEntry.LocalCandidate.IceServer.ServerEndPoint);
+                        }
+                        else
+                        {
+                            SendAsync(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunRespBytes);
+                        }
                     }
-                }
-                else if (stunMessage.Header.MessageType == STUNMessageTypesEnum.ChannelBindErrorResponse)
-                {
-                    logger.LogWarning($"A TURN Channel Bind error response was received from {remoteEndPoint}.");
-                    var matchingChecklistEntry = GetChecklistEntryForStunResponse(stunMessage.Header.TransactionId);
-                    if (matchingChecklistEntry != null)
-                    {
-                        matchingChecklistEntry.TurnChannelBindResponseAt = DateTime.Now;
-                    }
-                }
-                else
-                {
-                    logger.LogWarning($"An unexpected STUN message was received from {remoteEndPoint}.");
                 }
             }
         }
@@ -1317,7 +1319,7 @@ namespace SIPSorcery.Net
 
             lock (_checklist)
             {
-                _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
+                matchingChecklistEntry = _checklist.Where(x => x.RequestTransactionID == txID).FirstOrDefault();
             }
 
             return matchingChecklistEntry;
@@ -1329,132 +1331,27 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="transactionID">The transaction ID from the STUN response.</param>
         /// <returns>If found a matching state object or null if not.</returns>
-        private IceServer GetIceServerConnection(string transactionID)
+        private IceServer GetIceServerForTransactionID(byte[] transactionID)
         {
-            var entry = _iceServerConnections
-                       .Where(x => x.Value.IsTransactionIDMatch(transactionID))
-                       .SingleOrDefault();
-
-            if (!entry.Equals(default(KeyValuePair<STUNUri, IceServer>)))
-            {
-                return entry.Value;
-            }
-            else
+            if (_iceServerConnections == null || _iceServerConnections.Count == 0)
             {
                 return null;
             }
-        }
-
-        /// <summary>
-        /// Processes a STUN response for an ICE server check.
-        /// </summary>
-        /// <param name="iceServerConnection">The ICE server connection the STUN response was generated for.</param>
-        /// <param name="stunResponse">The STUN response received from the remote server.</param>
-        /// <param name="remoteEndPoint">The remote end point the STUN response originated from.</param>
-        private void ProcessStunResponseForIceServer(IceServer iceServerConnection, STUNMessage stunResponse, IPEndPoint remoteEndPoint)
-        {
-            if (iceServerConnection == null)
+            else
             {
-                throw new ArgumentNullException("iceServerConenction", "The ICE server connection parameter cannot be null.");
-            }
-            else if (stunResponse == null)
-            {
-                throw new ArgumentNullException("stunResponse", "The STUN response parameter cannot be null.");
-            }
+                string txID = Encoding.ASCII.GetString(transactionID);
 
-            string txID = Encoding.ASCII.GetString(stunResponse.Header.TransactionId);
+                var entry = _iceServerConnections
+                           .Where(x => x.Value.IsTransactionIDMatch(txID))
+                           .SingleOrDefault();
 
-            // Ignore responses to old requests on the assumption they are retransmits.
-            if (iceServerConnection.IsCurrentTransactionIDMatch(txID))
-            {
-                // The STUN response is for a check sent to an ICE server.
-                iceServerConnection.LastResponseReceivedAt = DateTime.Now;
-                iceServerConnection.OutstandingRequestsSent = 0;
-
-                if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+                if (!entry.Equals(default(KeyValuePair<STUNUri, IceServer>)))
                 {
-                    iceServerConnection.ErrorResponseCount = 0;
-
-                    // If the server reflexive end point is set then this connection check has already been completed.
-                    if (iceServerConnection.ServerReflexiveEndPoint == null)
-                    {
-                        logger.LogDebug($"STUN binding success response received for ICE server check to {iceServerConnection._uri}.");
-
-                        var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
-
-                        if (mappedAddrAttr != null)
-                        {
-                            iceServerConnection.ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
-
-                            _ = AddCandidatesForIceServer(iceServerConnection);
-                        }
-                    }
-                }
-                else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateErrorResponse)
-                {
-                    iceServerConnection.ErrorResponseCount++;
-
-                    if (stunResponse.Attributes.Any(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode))
-                    {
-                        var errCodeAttribute = stunResponse.Attributes.First(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as STUNErrorCodeAttribute;
-
-                        if (errCodeAttribute.ErrorCode == STUN_UNAUTHORISED_ERROR_CODE)
-                        {
-                            // Set the authentication properties authenticate.
-                            var nonceAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Nonce);
-                            iceServerConnection.Nonce = nonceAttribute?.Value;
-
-                            var realmAttribute = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Realm);
-                            iceServerConnection.Realm = realmAttribute?.Value;
-
-                            // Set a new transaction ID.
-                            iceServerConnection.GenerateNewTransactionID();
-                        }
-                        else
-                        {
-                            logger.LogWarning($"ICE session received an error response for an Allocate request to {iceServerConnection._uri}, error {errCodeAttribute.ErrorCode} {errCodeAttribute.ReasonPhrase}.");
-                        }
-                    }
-                }
-                else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.AllocateSuccessResponse)
-                {
-                    iceServerConnection.ErrorResponseCount = 0;
-
-                    // If the relay end point is set then this connection check has already been completed.
-                    if (iceServerConnection.RelayEndPoint == null)
-                    {
-                        logger.LogDebug($"TURN allocate success response received for ICE server check to {iceServerConnection._uri}.");
-
-                        var mappedAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORMappedAddress).FirstOrDefault();
-
-                        if (mappedAddrAttr != null)
-                        {
-                            iceServerConnection.ServerReflexiveEndPoint = (mappedAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
-                        }
-
-                        var mappedRelayAddrAttr = stunResponse.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORRelayedAddress).FirstOrDefault();
-
-                        if (mappedRelayAddrAttr != null)
-                        {
-                            iceServerConnection.RelayEndPoint = (mappedRelayAddrAttr as STUNXORAddressAttribute).GetIPEndPoint();
-                        }
-
-                        _ = AddCandidatesForIceServer(iceServerConnection);
-                    }
-                }
-                else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)
-                {
-                    iceServerConnection.ErrorResponseCount++;
-
-                    logger.LogWarning($"STUN binding error response received for ICE server check to {iceServerConnection._uri}.");
-                    // The STUN response is for a check sent to an ICE server.
-                    iceServerConnection.Error = SocketError.ConnectionRefused;
+                    return entry.Value;
                 }
                 else
                 {
-                    iceServerConnection.ErrorResponseCount++;
-
-                    logger.LogWarning($"An unrecognised STUN message for an ICE server check was received from {remoteEndPoint}.");
+                    return null;
                 }
             }
         }
@@ -1475,7 +1372,7 @@ namespace SIPSorcery.Net
             stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(iceServer.TransactionID);
             byte[] stunReqBytes = stunRequest.ToByteBuffer(null, false);
 
-            var sendResult = _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, stunReqBytes);
+            var sendResult = base.SendAsync(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, stunReqBytes);
 
             if (sendResult != SocketError.Success)
             {
@@ -1512,7 +1409,7 @@ namespace SIPSorcery.Net
                 allocateReqBytes = allocateRequest.ToByteBuffer(null, false);
             }
 
-            var sendResult = _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
+            var sendResult = base.SendAsync(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, allocateReqBytes);
 
             if (sendResult != SocketError.Success)
             {
@@ -1524,38 +1421,35 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Sends a channel bind request to a TURN server for a peer end point.
+        /// Sends a create permissions request to a TURN server for a peer end point.
         /// </summary>
         /// <param name="transactionID">The transaction ID to set on the request. This
         /// gets used to match responses back to the sender.</param>
         /// <param name="iceServer">The ICE server to send the request to.</param>
         /// <param name="peerEndPoint">The peer end point to request the channel bind for.</param>
         /// <returns>The result from the socket send (not the response code from the TURN server).</returns>
-        private SocketError SendTurnChannelBindRequest(string transactionID, ushort channelNumber, IceServer iceServer, IPEndPoint peerEndPoint)
+        private SocketError SendTurnCreatePermissionsRequest(string transactionID, IceServer iceServer, IPEndPoint peerEndPoint)
         {
-            logger.LogDebug($"ICE session sending TURN channel binding for server {iceServer._uri} and peer {peerEndPoint}.");
-
-            STUNMessage channelBindRequest = new STUNMessage(STUNMessageTypesEnum.ChannelBind);
-            channelBindRequest.Header.TransactionId = Encoding.ASCII.GetBytes(transactionID);
-            channelBindRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.ChannelNumber, channelNumber));
-            channelBindRequest.Attributes.Add(new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORPeerAddress, peerEndPoint.Port, peerEndPoint.Address));
+            STUNMessage permissionsRequest = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
+            permissionsRequest.Header.TransactionId = Encoding.ASCII.GetBytes(transactionID);
+            permissionsRequest.Attributes.Add(new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORPeerAddress, peerEndPoint.Port, peerEndPoint.Address));
 
             byte[] createPermissionReqBytes = null;
 
             if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
             {
-                createPermissionReqBytes = GetAuthenticatedStunRequest(channelBindRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
+                createPermissionReqBytes = GetAuthenticatedStunRequest(permissionsRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
             }
             else
             {
-                createPermissionReqBytes = channelBindRequest.ToByteBuffer(null, false);
+                createPermissionReqBytes = permissionsRequest.ToByteBuffer(null, false);
             }
 
-            var sendResult = _rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, createPermissionReqBytes);
+            var sendResult = base.SendAsync(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, createPermissionReqBytes);
 
             if (sendResult != SocketError.Success)
             {
-                logger.LogWarning($"Error sending TURN Channel Bind request {iceServer.OutstandingRequestsSent} for " +
+                logger.LogWarning($"Error sending TURN Create Permissions request {iceServer.OutstandingRequestsSent} for " +
                     $"{iceServer._uri} to {iceServer.ServerEndPoint}. {sendResult}.");
             }
 
@@ -1577,7 +1471,92 @@ namespace SIPSorcery.Net
             MD5 md5 = new MD5CryptoServiceProvider();
             byte[] md5Hash = md5.ComputeHash(Encoding.UTF8.GetBytes(key));
 
-           return stunRequest.ToByteBuffer(md5Hash, true);
+            return stunRequest.ToByteBuffer(md5Hash, true);
+        }
+
+        /// <summary>
+        /// Event handler for packets received on the RTP UDP socket. This channel will detect STUN messages
+        /// and extract STUN messages to deal with ICE connectivity checks and TURN relays.
+        /// </summary>
+        /// <param name="receiver">The UDP receiver the packet was received on.</param>
+        /// <param name="localPort">The local port it was received on.</param>
+        /// <param name="remoteEndPoint">The remote end point of the sender.</param>
+        /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
+        protected override void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        {
+            if (packet?.Length > 0)
+            {
+                bool wasRelayed = false;
+
+                if (packet[0] == 0x00 && packet[1] == 0x17)
+                {
+                    wasRelayed = true;
+
+                    // TURN data indication. Extract the data payload and adjust the end point.
+                    var dataIndication = STUNMessage.ParseSTUNMessage(packet, packet.Length);
+                    var dataAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.Data).FirstOrDefault();
+                    packet = dataAttribute?.Value;
+
+                    var peerAddrAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress).FirstOrDefault();
+                    remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
+                }
+
+                base.LastRtpDestination = remoteEndPoint;
+
+                if (packet[0] == 0x00 || packet[0] == 0x01)
+                {
+                    // STUN packet.
+                    var stunMessage = STUNMessage.ParseSTUNMessage(packet, packet.Length);
+                    _ = ProcessStunMessage(stunMessage, remoteEndPoint, wasRelayed);
+                }
+                else
+                {
+                    OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends a packet via a TURN relay server.
+        /// </summary>
+        /// <param name="sendOn">The local socket to send the packet from.</param>
+        /// <param name="dstEndPoint">The peer destination end point.</param>
+        /// <param name="buffer">The data to send to the peer.</param>
+        /// <param name="relayEndPoint">The TURN server end point to send the relayed request to.</param>
+        /// <returns></returns>
+        private SocketError SendAsyncRelay(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer, IPEndPoint relayEndPoint)
+        {
+            STUNMessage sendReq = new STUNMessage(STUNMessageTypesEnum.SendIndication);
+            sendReq.AddXORPeerAddressAttribute(dstEndPoint.Address, dstEndPoint.Port);
+            sendReq.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Data, buffer));
+
+            return base.SendAsync(sendOn, relayEndPoint, sendReq.ToByteBuffer(null, false));
+        }
+
+        /// <summary>
+        /// The send method for the RTP ICE channel. The sole purpose of this overload is to package up
+        /// sends that need to be relayed via a TURN server. If the connected channel is not a relay then
+        /// the send can be passed straight through to the underlying RTP channel.
+        /// </summary>
+        /// <param name="sendOn">The socket to send on. Can be the RTP or Control socket.</param>
+        /// <param name="dstEndPoint">The destination end point to send to.</param>
+        /// <param name="buffer">The data to send.</param>
+        /// <returns>The result of initiating the send. This result does not reflect anything about
+        /// whether the remote party received the packet or not.</returns>
+        public override SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        {
+            if (NominatedEntry != null && NominatedEntry.LocalCandidate.type == RTCIceCandidateType.relay &&
+                NominatedEntry.LocalCandidate.IceServer != null &&
+                NominatedEntry.RemoteCandidate.DestinationEndPoint.Address.Equals(dstEndPoint.Address) &&
+                NominatedEntry.RemoteCandidate.DestinationEndPoint.Port == dstEndPoint.Port)
+            {
+                // A TURN relay channel is being used to communicate with the remote peer.
+                return SendAsyncRelay(sendOn, dstEndPoint, buffer, NominatedEntry.LocalCandidate.IceServer.ServerEndPoint);
+            }
+            else
+            {
+                return base.SendAsync(sendOn, dstEndPoint, buffer);
+            }
         }
     }
 }

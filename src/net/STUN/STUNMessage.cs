@@ -56,7 +56,17 @@ namespace SIPSorcery.Net
 
         public void AddXORMappedAddressAttribute(IPAddress remoteAddress, int remotePort)
         {
-            STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, remotePort, remoteAddress);
+            AddXORAddressAttribute(STUNAttributeTypesEnum.XORMappedAddress, remoteAddress, remotePort);
+        }
+
+        public void AddXORPeerAddressAttribute(IPAddress remoteAddress, int remotePort)
+        {
+            AddXORAddressAttribute(STUNAttributeTypesEnum.XORPeerAddress, remoteAddress, remotePort);
+        }
+
+        public void AddXORAddressAttribute(STUNAttributeTypesEnum addressType, IPAddress remoteAddress, int remotePort)
+        {
+            STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(addressType, remotePort, remoteAddress);
             Attributes.Add(xorAddressAttribute);
         }
 

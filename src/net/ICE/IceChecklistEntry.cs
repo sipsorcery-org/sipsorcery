@@ -14,8 +14,10 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
+using System.Net;
 using System.Text;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -23,7 +25,7 @@ namespace SIPSorcery.Net
     /// List of state conditions for a check list entry as the connectivity checks are 
     /// carried out.
     /// </summary>
-    internal enum ChecklistEntryState
+    public enum ChecklistEntryState
     {
         /// <summary>
         /// A check has not been sent for this pair, but the pair is not Frozen.
@@ -89,8 +91,10 @@ namespace SIPSorcery.Net
     /// that is being checked for connectivity. If the overall ICE session does succeed it will
     /// be due to one of these checklist entries successfully completing the ICE checks.
     /// </summary>
-    internal class ChecklistEntry : IComparable
+    public class ChecklistEntry : IComparable
     {
+        private static readonly ILogger logger = Log.Logger;
+
         public RTCIceCandidate LocalCandidate;
         public RTCIceCandidate RemoteCandidate;
 
@@ -152,16 +156,18 @@ namespace SIPSorcery.Net
         /// </summary>
         public string RequestTransactionID;
 
-        public ushort TurnChannelNumber { get; private set; }
-
-        public DateTime TurnChannelBindRequestSentAt { get; set; } = DateTime.MinValue;
-
-        public DateTime TurnChannelBindResponseAt { get; set; } = DateTime.MinValue;
+        /// <summary>
+        /// Before a remote peer will be able to use the relay it's IP address needs
+        /// to be authorised by sending a Create Permissions request to the TURN server.
+        /// This field records the number of Create Permissions requests that have been
+        /// sent for this entry.
+        /// </summary>
+        public int TurnPermissionsRequestSent { get; set; } = 0;
 
         /// <summary>
-        /// Gets set to true if a success response is received on the TURN channel bind request.
+        /// This field records the time a Create Permissions response was received.
         /// </summary>
-        public bool TurnChannelBindSuccessResponse { get; set; }
+        public DateTime TurnPermissionsResponseAt { get; set; } = DateTime.MinValue;
 
         /// <summary>
         /// Creates a new entry for the ICE session checklist.
@@ -169,11 +175,10 @@ namespace SIPSorcery.Net
         /// <param name="localCandidate">The local candidate for the checklist pair.</param>
         /// <param name="remoteCandidate">The remote candidate for the checklist pair.</param>
         /// <param name="isLocalController">True if we are acting as the controlling agent in the ICE session.</param>
-        public ChecklistEntry(RTCIceCandidate localCandidate, RTCIceCandidate remoteCandidate, bool isLocalController, ushort turnChannelNumber)
+        public ChecklistEntry(RTCIceCandidate localCandidate, RTCIceCandidate remoteCandidate, bool isLocalController)
         {
             LocalCandidate = localCandidate;
             RemoteCandidate = remoteCandidate;
-            TurnChannelNumber = turnChannelNumber;
 
             var controllingCandidate = (isLocalController) ? localCandidate : remoteCandidate;
             var controlledCandidate = (isLocalController) ? remoteCandidate : localCandidate;
@@ -196,6 +201,37 @@ namespace SIPSorcery.Net
             else
             {
                 throw new ApplicationException("CompareTo is not implemented for ChecklistEntry and arbitrary types.");
+            }
+        }
+
+        internal void GotStunResponse(STUNMessage stunResponse, IPEndPoint remoteEndPoint)
+        {
+            if(stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
+            {
+                State = ChecklistEntryState.Succeeded;
+                ChecksSent = 0;
+                LastCheckSentAt = DateTime.MinValue;
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)
+            {
+                logger.LogWarning($"ICE RTP channel a STUN binding error response was received from {remoteEndPoint}.");
+                logger.LogWarning($"ICE RTP channel check list entry set to failed: {RemoteCandidate}");
+                State = ChecklistEntryState.Failed;
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionSuccessResponse)
+            {
+                logger.LogDebug($"A TURN Create Permission success response was received from {remoteEndPoint} (TxID: {Encoding.ASCII.GetString(stunResponse.Header.TransactionId)}).");
+                TurnPermissionsResponseAt = DateTime.Now;
+            }
+            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionErrorResponse)
+            {
+                logger.LogWarning($"ICE RTP channel TURN Create Permission error response was received from {remoteEndPoint}.");
+                TurnPermissionsResponseAt = DateTime.Now;
+                State = ChecklistEntryState.Failed;
+            }
+            else
+            {
+                logger.LogWarning($"ICE RTP channel received an unexpected STUN response {stunResponse.Header.MessageType} from {remoteEndPoint}.");
             }
         }
     }

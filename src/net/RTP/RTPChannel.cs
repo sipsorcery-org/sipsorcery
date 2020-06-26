@@ -25,13 +25,13 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    internal delegate void PacketReceivedDelegate(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet);
+    public delegate void PacketReceivedDelegate(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet);
 
     /// <summary>
     /// A basic UDP socket manager. The RTP channel may need both an RTP and Control socket. This class encapsulates
     /// the common logic for UDP socket management.
     /// </summary>
-    internal class UdpReceiver
+    public sealed class UdpReceiver
     {
         private const int RECEIVE_BUFFER_SIZE = 2048;   // MTU is 1452 bytes so this should be heaps.
 
@@ -42,8 +42,6 @@ namespace SIPSorcery.Net
         private bool m_isClosed;
         private int m_localPort;
         private AddressFamily m_addressFamily;
-
-        public bool PauseReceive;
 
         /// <summary>
         /// Fires when a new packet has been received on the UDP socket.
@@ -145,7 +143,7 @@ namespace SIPSorcery.Net
             }
             finally
             {
-                if (!m_isClosed && !PauseReceive)
+                if (!m_isClosed)
                 {
                     BeginReceiveFrom();
                 }
@@ -181,9 +179,9 @@ namespace SIPSorcery.Net
     public class RTPChannel : IDisposable
     {
         private static ILogger logger = Log.Logger;
-        private UdpReceiver m_rtpReceiver;
+        protected UdpReceiver m_rtpReceiver;
         private Socket m_controlSocket;
-        private UdpReceiver m_controlReceiver;
+        protected UdpReceiver m_controlReceiver;
         private bool m_started = false;
         private bool m_isClosed;
 
@@ -193,7 +191,7 @@ namespace SIPSorcery.Net
         /// The last remote end point an RTP packet was sent to or received from. Used for 
         /// reporting purposes only.
         /// </summary>
-        internal IPEndPoint LastRtpDestination { get; private set; }
+        protected IPEndPoint LastRtpDestination { get; set; }
 
         /// <summary>
         /// The last remote end point an RTCP packet was sent to or received from. Used for
@@ -345,7 +343,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        public virtual SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
             if (m_isClosed)
             {
@@ -405,20 +403,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        internal void PauseReceive()
-        {
-            m_rtpReceiver.PauseReceive = true;
-        }
-
-        internal void ResumeReceive()
-        {
-            if (m_rtpReceiver.PauseReceive)
-            {
-                m_rtpReceiver.PauseReceive = false;
-                m_rtpReceiver.BeginReceiveFrom();
-            }
-        }
-
         /// <summary>
         /// Ends an async send on one of the channel's sockets.
         /// </summary>
@@ -454,7 +438,7 @@ namespace SIPSorcery.Net
         /// <param name="localPort">The local port it was received on.</param>
         /// <param name="remoteEndPoint">The remote end point of the sender.</param>
         /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-        private void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        protected virtual void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
         {
             if (packet?.Length > 0)
             {
