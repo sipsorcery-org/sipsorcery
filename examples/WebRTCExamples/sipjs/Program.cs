@@ -91,7 +91,7 @@ namespace demo
 
                     if (state == RTCIceConnectionState.connected)
                     {
-                        var remoteEndPoint = peerConnection.IceSession.NominatedCandidate.DestinationEndPoint;
+                        var remoteEndPoint = peerConnection.AudioDestinationEndPoint;
                        Log.LogInformation($"ICE connected to remote end point {remoteEndPoint}.");
 
                         await Task.Run(() => DoDtlsHandshake(peerConnection, dtls))
@@ -101,7 +101,7 @@ namespace demo
 
                             if (dtlsResult.Result)
                             {
-                                var remoteEP = peerConnection.IceSession.ConnectedRemoteEndPoint;
+                                var remoteEP = peerConnection.AudioDestinationEndPoint;
                                 peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEP, remoteEP);
                             }
                             else
@@ -117,7 +117,7 @@ namespace demo
                 {
                     if (state == RTCPeerConnectionState.connected)
                     {
-                        var remoteEP = peerConnection.IceSession.ConnectedRemoteEndPoint;
+                        var remoteEP = peerConnection.AudioDestinationEndPoint;
 
                         Log.LogDebug($"DTLS connected on {remoteEP}.");
 
@@ -130,7 +130,7 @@ namespace demo
                     }
                 };
 
-                MediaStreamTrack audioTrack = new MediaStreamTrack("0", SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.SendRecv);
+                MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.SendRecv);
                 peerConnection.addTrack(audioTrack);
                 //MediaStreamTrack videoTrack = new MediaStreamTrack("1", SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.Inactive);
                 //peerConnection.addTrack(videoTrack);
