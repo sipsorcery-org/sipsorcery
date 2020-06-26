@@ -25,7 +25,7 @@ namespace SIPSorcery.Net
     /// List of state conditions for a check list entry as the connectivity checks are 
     /// carried out.
     /// </summary>
-    internal enum ChecklistEntryState
+    public enum ChecklistEntryState
     {
         /// <summary>
         /// A check has not been sent for this pair, but the pair is not Frozen.
@@ -91,7 +91,7 @@ namespace SIPSorcery.Net
     /// that is being checked for connectivity. If the overall ICE session does succeed it will
     /// be due to one of these checklist entries successfully completing the ICE checks.
     /// </summary>
-    internal class ChecklistEntry : IComparable
+    public class ChecklistEntry : IComparable
     {
         private static readonly ILogger logger = Log.Logger;
 

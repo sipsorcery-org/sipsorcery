@@ -130,10 +130,10 @@ namespace SIPSorcery.Net
         private static ILogger logger = Log.Logger;
 
         public string SessionID { get; private set; }
-        public string SdpSessionID;
-        public string LocalSdpSessionID;
+        public string SdpSessionID { get; private set; }
+        public string LocalSdpSessionID { get; private set; }
 
-        public RtpIceChannel RtpIceChannel { get; private set; }
+        private RtpIceChannel _rtpIceChannel;
 
         /// <summary>
         /// The ICE role the peer is acting in.
@@ -151,23 +151,17 @@ namespace SIPSorcery.Net
             get { return base.IsSecureContextReady; }
         }
 
-        /// <summary>
-        /// The raison d'etre for the ICE checks. This represents the end point
-        /// that we were able to connect to for the WebRTC session.
-        /// </summary>
-        public IPEndPoint RemoteEndPoint { get; private set; }
-
         public RTCSessionDescription localDescription { get; private set; }
 
         public RTCSessionDescription remoteDescription { get; private set; }
 
-        public RTCSessionDescription currentLocalDescription => throw new NotImplementedException();
+        public RTCSessionDescription currentLocalDescription => localDescription;
 
-        public RTCSessionDescription pendingLocalDescription => throw new NotImplementedException();
+        public RTCSessionDescription pendingLocalDescription => null;
 
-        public RTCSessionDescription currentRemoteDescription => throw new NotImplementedException();
+        public RTCSessionDescription currentRemoteDescription => remoteDescription;
 
-        public RTCSessionDescription pendingRemoteDescription => throw new NotImplementedException();
+        public RTCSessionDescription pendingRemoteDescription => null;
 
         public RTCSignalingState signalingState { get; private set; } = RTCSignalingState.stable;
 
@@ -177,7 +171,7 @@ namespace SIPSorcery.Net
 
         public RTCPeerConnectionState connectionState { get; private set; } = RTCPeerConnectionState.@new;
 
-        public bool canTrickleIceCandidates { get => throw new NotImplementedException(); }
+        public bool canTrickleIceCandidates { get => true; }
 
         private RTCConfiguration _configuration;
         private RTCCertificate _currentCertificate;
@@ -245,31 +239,18 @@ namespace SIPSorcery.Net
             SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
 
-            // Request the underlying RTP session to create the RTP channel.
+            // Request the underlying RTP session to create a single RTP channel that will
+            // be used to multiplex all required media streams.
             addSingleTrack();
 
-            //RtpIceChannel = new RtpIceChannel(
-            //    false,
-            //    configuration?.X_BindAddress,
-            //    RTCIceComponent.rtp, 
-            //    configuration?.X_RemoteSignallingAddress,
-            //    configuration?.iceServers, 
-            //    configuration != null ? configuration.iceTransportPolicy : RTCIceTransportPolicy.all);
+            _rtpIceChannel = GetRtpChannel(SDPMediaTypesEnum.audio) as RtpIceChannel;
 
-            RtpIceChannel = GetRtpChannel(SDPMediaTypesEnum.audio) as RtpIceChannel;
-            //rtpChannel.OnRTPDataReceived += OnRTPDataReceived;
-
-            RtpIceChannel.OnIceCandidate += (candidate) => onicecandidate?.Invoke(candidate);
-            RtpIceChannel.OnIceConnectionStateChange += (state) =>
+            _rtpIceChannel.OnIceCandidate += (candidate) => onicecandidate?.Invoke(candidate);
+            _rtpIceChannel.OnIceConnectionStateChange += (state) =>
             {
-                if (state == RTCIceConnectionState.connected && RtpIceChannel.NominatedCandidate != null)
+                if (state == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
                 {
-                    RemoteEndPoint = RtpIceChannel.NominatedCandidate.DestinationEndPoint;
-
-                    //if (!IsSecureContextReady)
-                    //{
-                    //    PauseReceive();
-                    //}
+                    base.AudioDestinationEndPoint = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
                 }
 
                 iceConnectionState = state;
@@ -284,15 +265,15 @@ namespace SIPSorcery.Net
                     onconnectionstatechange?.Invoke(RTCPeerConnectionState.connected);
                 }
             };
-            RtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
-            RtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
+            _rtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
+            _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
 
             onnegotiationneeded?.Invoke();
 
-            RtpIceChannel.StartGathering();
+            _rtpIceChannel.StartGathering();
         }
 
         /// <summary>
@@ -303,9 +284,6 @@ namespace SIPSorcery.Net
         /// <returns>A new RTPChannel instance.</returns>
         protected override RTPChannel CreateRtpChannel(SDPMediaTypesEnum mediaType)
         {
-            // If RTCP is multiplexed we don't need a control socket.
-            //var rtpChannel = new RTPChannel(!m_isRtcpMultiplexed, m_bindAddress);
-
             var rtpIceChannel = new RtpIceChannel(
                 _configuration?.X_BindAddress,
                 RTCIceComponent.rtp, 
@@ -315,8 +293,6 @@ namespace SIPSorcery.Net
             m_rtpChannels.Add(mediaType, rtpIceChannel);
 
             rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
-            //rtpIceChannel.OnControlDataReceived += OnReceive; // RTCP packets could come on RTP or control socket.
-            //rtpIceChannel.OnClosed += base.OnRTPChannelClosed;
 
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
             rtpIceChannel.Start();
@@ -340,7 +316,7 @@ namespace SIPSorcery.Net
 
             if (init.type == RTCSdpType.offer)
             {
-                RtpIceChannel.IsController = true;
+                _rtpIceChannel.IsController = true;
             }
 
             // This is the point the ICE session potentially starts contacting STUN and TURN servers.
@@ -418,7 +394,7 @@ namespace SIPSorcery.Net
 
                 if (init.type == RTCSdpType.answer)
                 {
-                    RtpIceChannel.IsController = true;
+                    _rtpIceChannel.IsController = true;
                     // Set DTLS role to be server.
                     IceRole = IceRolesEnum.passive;
                 }
@@ -433,7 +409,7 @@ namespace SIPSorcery.Net
 
                 if (remoteIceUser != null && remoteIcePassword != null)
                 {
-                    RtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
+                    _rtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
                 }
 
                 if(!string.IsNullOrWhiteSpace(dtlsFingerprint))
@@ -506,8 +482,6 @@ namespace SIPSorcery.Net
                 connectionState = RTCPeerConnectionState.connected;
                 onconnectionstatechange?.Invoke(RTCPeerConnectionState.connected);
             }
-
-            ResumeReceive();
         }
 
         /// <summary>
@@ -518,7 +492,7 @@ namespace SIPSorcery.Net
         /// <param name="sample">The sample payload.</param>
         public void SendMedia(SDPMediaTypesEnum mediaType, uint sampleTimestamp, byte[] sample)
         {
-            if (RemoteEndPoint != null && IsDtlsNegotiationComplete && connectionState != RTCPeerConnectionState.closed)
+            if (base.AudioDestinationEndPoint != null && IsDtlsNegotiationComplete && connectionState != RTCPeerConnectionState.closed)
             {
                 if (mediaType == SDPMediaTypesEnum.video)
                 {
@@ -541,7 +515,7 @@ namespace SIPSorcery.Net
         {
             if (!IsClosed)
             {
-                RtpIceChannel.Close();
+                _rtpIceChannel.Close();
                 base.Close(reason);
 
                 connectionState = RTCPeerConnectionState.closed;
@@ -712,17 +686,17 @@ namespace SIPSorcery.Net
                 announcement.MediaStreamStatus = track.StreamStatus;
                 announcement.MediaID = track.MID;
 
-                announcement.IceUfrag = RtpIceChannel.LocalIceUser;
-                announcement.IcePwd = RtpIceChannel.LocalIcePassword;
+                announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
+                announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
                 announcement.IceOptions = ICE_OPTIONS;
                 announcement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
 
-                if (iceCandidatesAdded == false && RtpIceChannel.Candidates?.Count > 0)
+                if (iceCandidatesAdded == false && _rtpIceChannel.Candidates?.Count > 0)
                 {
                     announcement.IceCandidates = new List<string>();
 
                     // Add ICE candidates.
-                    foreach (var iceCandidate in RtpIceChannel.Candidates)
+                    foreach (var iceCandidate in _rtpIceChannel.Candidates)
                     {
                         announcement.IceCandidates.Add(iceCandidate.ToString());
                     }
@@ -783,9 +757,9 @@ namespace SIPSorcery.Net
         {
             RTCIceCandidate candidate = new RTCIceCandidate(candidateInit);
 
-            if (RtpIceChannel.Component == candidate.component)
+            if (_rtpIceChannel.Component == candidate.component)
             {
-                RtpIceChannel.AddRemoteCandidate(candidate);
+                _rtpIceChannel.AddRemoteCandidate(candidate);
             }
             else
             {
@@ -798,7 +772,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public void restartIce()
         {
-            RtpIceChannel.Restart();
+            _rtpIceChannel.Restart();
         }
 
         public RTCConfiguration getConfiguration()

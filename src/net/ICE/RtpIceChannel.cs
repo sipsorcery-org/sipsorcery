@@ -194,10 +194,10 @@ namespace SIPSorcery.Net
         internal RTCIceCandidate _relayChecklistCandidate;
 
         /// <summary>
-        /// If the connectivity checks are successful this will hold the nominated
-        /// remote candidate.
+        /// If the connectivity checks are successful this will hold the entry that was 
+        /// nominated by the connection check process.
         /// </summary>
-        public RTCIceCandidate NominatedCandidate { get; private set; }
+        public ChecklistEntry NominatedEntry { get; private set; }
 
         /// <summary>
         /// Retransmission timer for STUN transactions, measured in milliseconds.
@@ -385,6 +385,11 @@ namespace SIPSorcery.Net
                 // This occurs if the remote party made an offer and assumed we couldn't multiplex the audio and video streams.
                 // It will offer the same ICE candidates separately for the audio and video announcements.
                 OnIceCandidateError?.Invoke(candidate, "Remote ICE candidate has unsupported component.");
+            }
+            else if (candidate.sdpMLineIndex != 0)
+            {
+                // This implementation currently only supports audio and video multiplexed on a single channel.
+                OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate only supports multiplexed media, excluding remote candidate with non-zero sdpMLineIndex of {candidate.sdpMLineIndex}.");
             }
             else if (candidate.protocol != RTCIceProtocol.udp)
             {
@@ -1029,11 +1034,11 @@ namespace SIPSorcery.Net
             _connectedAt = DateTime.Now;
             int duration = (int)_connectedAt.Subtract(_startedGatheringAt).TotalMilliseconds;
 
-            logger.LogDebug($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
+            logger.LogInformation($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
 
             entry.Nominated = true;
             _checklistState = ChecklistState.Completed;
-            NominatedCandidate = entry.RemoteCandidate;
+            NominatedEntry = entry;
             IceConnectionState = RTCIceConnectionState.connected;
             OnIceConnectionStateChange?.Invoke(RTCIceConnectionState.connected);
         }
@@ -1224,8 +1229,7 @@ namespace SIPSorcery.Net
                     ChecklistEntry matchingChecklistEntry = null;
 
                     var matchingCandidate = (_remoteCandidates != null) ?
-                        _remoteCandidates.Where(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)).FirstOrDefault()
-                        : null;
+                        _remoteCandidates.Where(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint)).FirstOrDefault() : null;
 
                     if (matchingCandidate == null)
                     {
@@ -1259,7 +1263,8 @@ namespace SIPSorcery.Net
                         // Find the checklist entry for this remote candidate and update its status.
                         lock (_checklist)
                         {
-                            matchingChecklistEntry = _checklist.Where(x => x.RemoteCandidate.foundation == matchingCandidate.foundation).FirstOrDefault();
+                            matchingChecklistEntry = _checklist.Where(x => x.RemoteCandidate.foundation == matchingCandidate.foundation &&
+                            (!wasRelayed || (x.LocalCandidate.type == RTCIceCandidateType.relay))).FirstOrDefault();
                         }
                     }
 
@@ -1540,7 +1545,18 @@ namespace SIPSorcery.Net
         /// whether the remote party received the packet or not.</returns>
         public override SocketError SendAsync(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
-            return base.SendAsync(sendOn, dstEndPoint, buffer);
+            if (NominatedEntry != null && NominatedEntry.LocalCandidate.type == RTCIceCandidateType.relay &&
+                NominatedEntry.LocalCandidate.IceServer != null &&
+                NominatedEntry.RemoteCandidate.DestinationEndPoint.Address.Equals(dstEndPoint.Address) &&
+                NominatedEntry.RemoteCandidate.DestinationEndPoint.Port == dstEndPoint.Port)
+            {
+                // A TURN relay channel is being used to communicate with the remote peer.
+                return SendAsyncRelay(sendOn, dstEndPoint, buffer, NominatedEntry.LocalCandidate.IceServer.ServerEndPoint);
+            }
+            else
+            {
+                return base.SendAsync(sendOn, dstEndPoint, buffer);
+            }
         }
     }
 }

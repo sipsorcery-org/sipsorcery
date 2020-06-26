@@ -14,7 +14,7 @@
 //-----------------------------------------------------------------------------
 
 // If uncommented the logic to do the DTLS handshake will be called.
-//#define DTLS_IS_ENABLED
+#define DTLS_IS_ENABLED
 
 using System;
 using System.Collections.Generic;
@@ -35,7 +35,7 @@ namespace SIPSorcery.Examples
 {
     public class WebRtcClient : WebSocketBehavior
     {
-        public RTCPeerConnection PeerConnection;
+        public RTCPeerConnection pc;
 
         public event Func<WebSocketContext, Task<RTCPeerConnection>> WebSocketOpened;
         public event Func<WebSocketContext, RTCPeerConnection, string, Task> OnMessageReceived;
@@ -45,13 +45,13 @@ namespace SIPSorcery.Examples
 
         protected override void OnMessage(MessageEventArgs e)
         {
-            OnMessageReceived(this.Context, PeerConnection, e.Data);
+            OnMessageReceived(this.Context, pc, e.Data);
         }
 
         protected override async void OnOpen()
         {
             base.OnOpen();
-            PeerConnection = await WebSocketOpened(this.Context);
+            pc = await WebSocketOpened(this.Context);
         }
     }
 
@@ -62,7 +62,7 @@ namespace SIPSorcery.Examples
         private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
         private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
         private const int WEBSOCKET_PORT = 8081;
-        private const string SIPSORCERY_STUN_SERVER = "turn:sipsorcery.com"; //"stun.sipsorcery.com";
+        private const string SIPSORCERY_STUN_SERVER = "turn:sipsorcery.com";
         private const string SIPSORCERY_STUN_SERVER_USERNAME = "aaron"; //"stun.sipsorcery.com";
         private const string SIPSORCERY_STUN_SERVER_PASSWORD = "password"; //"stun.sipsorcery.com";
 
@@ -89,16 +89,6 @@ namespace SIPSorcery.Examples
             ManualResetEvent exitMre = new ManualResetEvent(false);
 
             AddConsoleLogger();
-
-            //RTCConfiguration pcConfiguration = new RTCConfiguration
-            //{
-            //    iceServers = new List<RTCIceServer> { new RTCIceServer { urls = SIPSORCERY_STUN_SERVER,
-            //        username = SIPSORCERY_STUN_SERVER_USERNAME,
-            //        credential = SIPSORCERY_STUN_SERVER_PASSWORD,
-            //        credentialType = RTCIceCredentialType.password} }
-            //};
-
-            //var peerConnection = new RTCPeerConnection(pcConfiguration);
 
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
@@ -136,29 +126,27 @@ namespace SIPSorcery.Examples
         private static Task<RTCPeerConnection> ReceiveOffer(WebSocketContext context)
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, waiting for offer...");
-
-            var peerConnection = CreatePeerConnection(context);
-
-            return Task.FromResult(peerConnection);
+            var pc = Createpc(context);
+            return Task.FromResult(pc);
         }
 
         private static async Task<RTCPeerConnection> SendOffer(WebSocketContext context)
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}, sending offer.");
 
-            var peerConnection = CreatePeerConnection(context);
+            var pc = Createpc(context);
 
-            var offerInit = peerConnection.createOffer(null);
-            await peerConnection.setLocalDescription(offerInit);
+            var offerInit = pc.createOffer(null);
+            await pc.setLocalDescription(offerInit);
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
 
             context.WebSocket.Send(offerInit.sdp);
 
-            return peerConnection;
+            return pc;
         }
 
-        private static RTCPeerConnection CreatePeerConnection(WebSocketContext context)
+        private static RTCPeerConnection Createpc(WebSocketContext context)
         {
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
@@ -184,57 +172,56 @@ namespace SIPSorcery.Examples
                 iceTransportPolicy = RTCIceTransportPolicy.relay
             };
 
-            var peerConnection = new RTCPeerConnection(pcConfiguration);
+            var pc = new RTCPeerConnection(pcConfiguration);
 
 #if DTLS_IS_ENABLED
             SIPSorceryMedia.DtlsHandshake dtls = new SIPSorceryMedia.DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-            //dtls.Debug = true;
+            dtls.Debug = true;
 #endif
 
             // Add inactive audio and video tracks.
             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
-            peerConnection.addTrack(audioTrack);
+            pc.addTrack(audioTrack);
             MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.Inactive);
-            peerConnection.addTrack(videoTrack);
+            pc.addTrack(videoTrack);
 
-            peerConnection.onicecandidate += (candidate) =>
+            pc.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
+            pc.onconnectionstatechange += (state) => logger.LogDebug($"Peer connection state change to {state}.");
+            pc.OnReceiveReport += (type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
+            pc.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
+
+            pc.onicecandidate += (candidate) =>
             {
-                logger.LogDebug($"ICE candidate discovered: {candidate}.");
-
-                // Host candidates are included in the SDP we send.
-                if (candidate.type != RTCIceCandidateType.host)
+                if (pc.signalingState == RTCSignalingState.have_local_offer || 
+                    pc.signalingState == RTCSignalingState.have_remote_offer)
                 {
                     context.WebSocket.Send($"candidate:{candidate}");
                 }
             };
 
-            peerConnection.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
-
             // Peer ICE connection state changes are for ICE events such as the STUN checks completing.
-            peerConnection.oniceconnectionstatechange += (state) =>
+            pc.oniceconnectionstatechange += (state) =>
             {
                 logger.LogDebug($"ICE connection state change to {state}.");
 
                 if (state == RTCIceConnectionState.connected)
                 {
-                    var remoteEndPoint = peerConnection.RtpIceChannel.NominatedCandidate.DestinationEndPoint;
-                    //var remoteEndPoint = peerConnection.AudioDestinationEndPoint;
-                    logger.LogInformation($"ICE connected to remote end point {remoteEndPoint}.");
+                    logger.LogInformation($"ICE connected to remote end point {pc.AudioDestinationEndPoint}.");
 
-                    if (peerConnection.RemotePeerDtlsFingerprint == null)
+                    if (pc.RemotePeerDtlsFingerprint == null)
                     {
                         logger.LogWarning("DTLS handshake cannot proceed, no fingerprint was available for the remote peer.");
-                        peerConnection.Close("No DTLS fingerprint.");
+                        pc.Close("No DTLS fingerprint.");
                     }
                     else
                     {
 #if DTLS_IS_ENABLED
-                        if (peerConnection.IceRole == IceRolesEnum.active)
+                        if (pc.IceRole == IceRolesEnum.active)
                         {
                             logger.LogDebug("Starting DLS handshake as client task.");
                             _ = Task.Run(() =>
                             {
-                                bool handshakedResult = DoDtlsHandshake(peerConnection, dtls, true, peerConnection.RemotePeerDtlsFingerprint);
+                                bool handshakedResult = DoDtlsHandshake(pc, dtls, true, pc.RemotePeerDtlsFingerprint);
                                 logger.LogDebug($"DTLS handshake result {handshakedResult}.");
                             });
                         }
@@ -243,7 +230,7 @@ namespace SIPSorcery.Examples
                             logger.LogDebug("Starting DLS handshake as server task.");
                             _ = Task.Run(() =>
                             {
-                                bool handshakedResult = DoDtlsHandshake(peerConnection, dtls, false, peerConnection.RemotePeerDtlsFingerprint);
+                                bool handshakedResult = DoDtlsHandshake(pc, dtls, false, pc.RemotePeerDtlsFingerprint);
                                 logger.LogDebug($"DTLS handshake result {handshakedResult}.");
                             });
                         }
@@ -252,25 +239,14 @@ namespace SIPSorcery.Examples
                 }
             };
 
-            // Peer connection state changes are for DTLS handshake completing.
-            peerConnection.onconnectionstatechange += (state) =>
-            {
-                logger.LogDebug($"Peer connection state change to {state}.");
-            };
-
-            peerConnection.OnReceiveReport += (type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
-            peerConnection.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {reason}.");
-
-            peerConnection.RtpIceChannel.StartGathering();
-
-            return peerConnection;
+            return pc;
         }
 
-        private static async Task WebSocketMessageReceived(WebSocketContext context, RTCPeerConnection peerConnection, string message)
+        private static async Task WebSocketMessageReceived(WebSocketContext context, RTCPeerConnection pc, string message)
         {
             try
             {
-                if (peerConnection.localDescription == null)
+                if (pc.localDescription == null)
                 {
                     //logger.LogDebug("Offer SDP: " + message);
                     logger.LogDebug("Offer SDP received.");
@@ -278,17 +254,17 @@ namespace SIPSorcery.Examples
                     // Add local media tracks depending on what was offered. Also add local tracks with the same media ID as 
                     // the remote tracks so that the media announcement in the SDP answer are in the same order.
                     SDP remoteSdp = SDP.ParseSDPDescription(message);
-                    peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
+                    pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.offer });
 
-                    var answer = peerConnection.createAnswer(null);
-                    await peerConnection.setLocalDescription(answer);
+                    var answer = pc.createAnswer(null);
+                    await pc.setLocalDescription(answer);
 
                     context.WebSocket.Send(answer.sdp);
                 }
-                else if (peerConnection.remoteDescription == null)
+                else if (pc.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
-                    peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                    pc.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
                 }
                 else
                 {
@@ -300,7 +276,8 @@ namespace SIPSorcery.Examples
                     }
                     else
                     {
-                        peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
+                        var candInit = Newtonsoft.Json.JsonConvert.DeserializeObject<RTCIceCandidateInit>(message);
+                        pc.addIceCandidate(candInit);
                     }
                 }
             }
@@ -331,7 +308,7 @@ namespace SIPSorcery.Examples
         /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
         /// </summary>
         /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
-        private static bool DoDtlsHandshake(RTCPeerConnection peerConnection, SIPSorceryMedia.DtlsHandshake dtls, bool isClient, byte[] sdpFingerprint)
+        private static bool DoDtlsHandshake(RTCPeerConnection pc, SIPSorceryMedia.DtlsHandshake dtls, bool isClient, byte[] sdpFingerprint)
         {
             logger.LogDebug("DoDtlsHandshake started.");
 
@@ -349,14 +326,14 @@ namespace SIPSorcery.Examples
 
             if (isClient)
             {
-                IPEndPoint peerEP = peerConnection.IceSession.NominatedCandidate.DestinationEndPoint;
-                logger.LogDebug($"DTLS client handshake starting to {peerEP}.");
+                logger.LogDebug($"DTLS client handshake starting to {pc.AudioDestinationEndPoint}.");
 
                 // For the DTLS handshake to work connect must be called on the socket so openssl knows where to send.
-                var rtpSocket = peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket;
-                rtpSocket.Connect(peerEP);
+                var rtpSocket = pc.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket;
+                rtpSocket.Connect(pc.AudioDestinationEndPoint);
 
                 byte[] fingerprint = null;
+                var peerEP = pc.AudioDestinationEndPoint;
                 res = dtls.DoHandshakeAsClient((ulong)rtpSocket.Handle, (short)peerEP.AddressFamily.GetHashCode(), peerEP.Address.GetAddressBytes(), (ushort)peerEP.Port, ref fingerprint);
                 if (fingerprint != null)
                 {
@@ -367,7 +344,7 @@ namespace SIPSorcery.Examples
             else
             {
                 byte[] fingerprint = null;
-                res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref fingerprint);
+                res = dtls.DoHandshakeAsServer((ulong)pc.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref fingerprint);
                 if (fingerprint != null)
                 {
                     logger.LogDebug($"DTLS client fingerprint {ByteBufferInfo.HexStr(fingerprint)}.");
@@ -391,7 +368,7 @@ namespace SIPSorcery.Examples
                     var srtpSendContext = new SIPSorceryMedia.Srtp(dtls, isClient);
                     var srtpReceiveContext = new SIPSorceryMedia.Srtp(dtls, !isClient);
 
-                    peerConnection.SetSecurityContext(
+                    pc.SetSecurityContext(
                         srtpSendContext.ProtectRTP,
                         srtpReceiveContext.UnprotectRTP,
                         srtpSendContext.ProtectRTCP,

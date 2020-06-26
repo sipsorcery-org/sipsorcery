@@ -425,7 +425,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The remote RTP end point this session is sending audio to.
         /// </summary>
-        public IPEndPoint AudioDestinationEndPoint { get; private set; }
+        public IPEndPoint AudioDestinationEndPoint { get; protected set; }
 
         /// <summary>
         /// The remote RTP control end point this session is sending to RTCP reports 
@@ -1889,16 +1889,6 @@ namespace SIPSorcery.Net
 
                 OnRtpClosed?.Invoke(reason);
             }
-        }
-
-        public void PauseReceive()
-        {
-            m_rtpChannels[SDPMediaTypesEnum.audio].PauseReceive();
-        }
-
-        public void ResumeReceive()
-        {
-            m_rtpChannels[SDPMediaTypesEnum.audio].ResumeReceive();
         }
 
         /// <summary>

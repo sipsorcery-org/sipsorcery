@@ -43,8 +43,6 @@ namespace SIPSorcery.Net
         private int m_localPort;
         private AddressFamily m_addressFamily;
 
-        public bool PauseReceive;
-
         /// <summary>
         /// Fires when a new packet has been received on the UDP socket.
         /// </summary>
@@ -145,7 +143,7 @@ namespace SIPSorcery.Net
             }
             finally
             {
-                if (!m_isClosed && !PauseReceive)
+                if (!m_isClosed)
                 {
                     BeginReceiveFrom();
                 }
@@ -402,20 +400,6 @@ namespace SIPSorcery.Net
                     logger.LogError($"Exception RTPChannel.SendAsync. {excp}");
                     return SocketError.Fault;
                 }
-            }
-        }
-
-        internal void PauseReceive()
-        {
-            m_rtpReceiver.PauseReceive = true;
-        }
-
-        internal void ResumeReceive()
-        {
-            if (m_rtpReceiver.PauseReceive)
-            {
-                m_rtpReceiver.PauseReceive = false;
-                m_rtpReceiver.BeginReceiveFrom();
             }
         }
 

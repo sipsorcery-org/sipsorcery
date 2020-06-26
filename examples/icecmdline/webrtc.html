@@ -34,8 +34,8 @@
                             credential: "password"
                         }
                     ],
-                    iceTransportPolicy: "relay"
-                    //iceTransportPolicy: "all"
+                    //iceTransportPolicy: "relay"
+                    iceTransportPolicy: "all"
                 });
 
                 localStream.getTracks().forEach(track => {
@@ -50,7 +50,11 @@
                         console.log(event.candidate.candidate);
                         console.log(event.candidate);
                         //console.log(pc.localDescription.sdp);
-                        ws.send(event.candidate.candidate);
+                        //ws.send(event.candidate.candidate);
+                        //console.log("JSON: " + event.candidate.toJSON().stringify())
+                        console.log("JSON: " + JSON.stringify(event.candidate.toJSON()))
+                        //ws.send(event.candidate.toJSON().stringify());
+                        ws.send(JSON.stringify(event.candidate.toJSON()));
                     }
                 };
 
