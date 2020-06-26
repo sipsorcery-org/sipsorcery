@@ -284,8 +284,8 @@ namespace SIPSorcery.Net.UnitTests
 
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelA.IceConnectionState);
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelB.IceConnectionState);
-            Assert.NotNull(rtpIceChannelA.NominatedCandidate);
-            Assert.NotNull(rtpIceChannelB.NominatedCandidate);
+            Assert.NotNull(rtpIceChannelA.NominatedEntry);
+            Assert.NotNull(rtpIceChannelB.NominatedEntry);
         }
 
         /// <summary>
@@ -421,8 +421,8 @@ namespace SIPSorcery.Net.UnitTests
 
                 Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelRelay.IceConnectionState);
                 Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelHost.IceConnectionState);
-                Assert.NotNull(rtpIceChannelRelay.NominatedCandidate);
-                Assert.NotNull(rtpIceChannelHost.NominatedCandidate);
+                Assert.NotNull(rtpIceChannelRelay.NominatedEntry);
+                Assert.NotNull(rtpIceChannelHost.NominatedEntry);
             }
         }
     }
