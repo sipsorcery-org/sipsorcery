@@ -166,7 +166,8 @@ namespace demo
                 throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
             }
 
-            var dtlsResult = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
+            byte[] clientFingerprint = null;
+            var dtlsResult = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref clientFingerprint);
 
             Log.LogDebug($"DtlsContext initialisation result {dtlsResult}.");
 
