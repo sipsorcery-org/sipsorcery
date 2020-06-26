@@ -9850,11 +9850,11 @@ references:
   commentId: F:SIPSorcery.Net.STUNDns.MDNS_TLD
   fullName: SIPSorcery.Net.STUNDns.MDNS_TLD
   nameWithType: STUNDns.MDNS_TLD
-- uid: SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri,DnsClient.QueryType)
+- uid: SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri,QueryType)
   name: Resolve(STUNUri, QueryType)
-  href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_Resolve_SIPSorcery_Net_STUNUri_DnsClient_QueryType_
-  commentId: M:SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri,DnsClient.QueryType)
-  fullName: SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri, DnsClient.QueryType)
+  href: api/SIPSorcery.Net.STUNDns.html#SIPSorcery_Net_STUNDns_Resolve_SIPSorcery_Net_STUNUri_QueryType_
+  commentId: M:SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri,QueryType)
+  fullName: SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri, QueryType)
   nameWithType: STUNDns.Resolve(STUNUri, QueryType)
 - uid: SIPSorcery.Net.STUNDns.Resolve(SIPSorcery.Net.STUNUri,System.Boolean)
   name: Resolve(STUNUri, Boolean)
