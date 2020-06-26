@@ -40,14 +40,14 @@ namespace WebRTCServer
         public RTCPeerConnection PeerConnection;
 
         public event Func<WebSocketContext, Task<RTCPeerConnection>> WebSocketOpened;
-        public event Func<RTCPeerConnection, string, Task> OnMessageReceived;
+        public event Action<RTCPeerConnection, string> OnMessageReceived;
 
         public SDPExchange()
         { }
 
-        protected override async void OnMessage(MessageEventArgs e)
+        protected override void OnMessage(MessageEventArgs e)
         {
-            await OnMessageReceived(PeerConnection, e.Data);
+            OnMessageReceived(PeerConnection, e.Data);
         }
 
         protected override async void OnOpen()
@@ -155,7 +155,7 @@ namespace WebRTCServer
             var peerConnection = new RTCPeerConnection(pcConfiguration);
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack("0", SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
             peerConnection.addTrack(videoTrack);
 
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
@@ -203,8 +203,8 @@ namespace WebRTCServer
 
                         if (dtlsResult)
                         {
-                            var remoteEP = peerConnection.IceSession.ConnectedRemoteEndPoint;
-                            peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEP, remoteEP);
+                            //var remoteEP = peerConnection.IceSession.ConnectedRemoteEndPoint;
+                            //peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEP, remoteEP);
                         }
                         else
                         {
@@ -215,7 +215,7 @@ namespace WebRTCServer
                 }
             };
 
-            var offerSdp = await peerConnection.createOffer(null);
+            var offerSdp = peerConnection.createOffer(null);
             await peerConnection.setLocalDescription(offerSdp);
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
@@ -226,19 +226,19 @@ namespace WebRTCServer
             return peerConnection;
         }
 
-        private static async Task WebSocketMessageReceived(RTCPeerConnection peerConnection, string message)
+        private static void WebSocketMessageReceived(RTCPeerConnection peerConnection, string message)
         {
             try
             {
                 if (peerConnection.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
-                    await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                    peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
                 }
                 else
                 {
                     logger.LogDebug("ICE Candidate: " + message);
-                    await peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
+                    peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
                 }
             }
             catch (Exception excp)
@@ -264,13 +264,16 @@ namespace WebRTCServer
                 throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
             }
 
-            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
+            byte[] clientFingerprint = null;
+            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref clientFingerprint);
 
             logger.LogDebug("DtlsContext initialisation result=" + res);
 
             if (dtls.IsHandshakeComplete())
             {
                 logger.LogDebug("DTLS negotiation complete.");
+
+                // TODO: Check client fingerprint matches one supplied in the SDP.
 
                 var srtpSendContext = new Srtp(dtls, false);
                 var srtpReceiveContext = new Srtp(dtls, true);

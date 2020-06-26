@@ -171,9 +171,9 @@ namespace WebRTCServer
             var peerConnection = new RTCPeerConnection(pcConfiguration);
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack("0", SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             peerConnection.addTrack(audioTrack);
-            MediaStreamTrack videoTrack = new MediaStreamTrack("1", SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
             peerConnection.addTrack(videoTrack);
 
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
@@ -208,14 +208,14 @@ namespace WebRTCServer
                     logger.LogDebug("Starting DTLS handshake task.");
 
                     bool dtlsResult = false;
-                    Task.Run(async () => dtlsResult = await DoDtlsHandshake(peerConnection, dtls))
+                    Task.Run(async () => dtlsResult = await DoDtlsHandshake(peerConnection, dtls, peerConnection.RemotePeerDtlsFingerprint))
                     .ContinueWith((t) =>
                     {
                         logger.LogDebug($"dtls handshake result {dtlsResult}.");
 
                         if (dtlsResult)
                         {
-                            peerConnection.SetDestination(SDPMediaTypesEnum.audio, peerConnection.IceSession.ConnectedRemoteEndPoint, peerConnection.IceSession.ConnectedRemoteEndPoint);
+                            //peerConnection.SetDestination(SDPMediaTypesEnum.audio, peerConnection.IceSession.ConnectedRemoteEndPoint, peerConnection.IceSession.ConnectedRemoteEndPoint);
                         }
                         else
                         {
@@ -226,7 +226,7 @@ namespace WebRTCServer
                 }
             };
 
-            var offerInit = await peerConnection.createOffer(null);
+            var offerInit = peerConnection.createOffer(null);
             await peerConnection.setLocalDescription(offerInit);
 
             logger.LogDebug($"Sending SDP offer to client {context.UserEndPoint}.");
@@ -243,12 +243,12 @@ namespace WebRTCServer
                 if (peerConnection.remoteDescription == null)
                 {
                     logger.LogDebug("Answer SDP: " + message);
-                    await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
+                    peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { sdp = message, type = RTCSdpType.answer });
                 }
                 else
                 {
                     logger.LogDebug("ICE Candidate: " + message);
-                    await peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
+                    peerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = message });
                 }
             }
             catch (Exception excp)
@@ -262,16 +262,19 @@ namespace WebRTCServer
         /// </summary>
         /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
         /// <returns>True if the handshake completed successfully or false otherwise.</returns>
-        private static async Task<bool> DoDtlsHandshake(RTCPeerConnection peerConnection, DtlsHandshake dtls)
+        private static async Task<bool> DoDtlsHandshake(RTCPeerConnection peerConnection, DtlsHandshake dtls, byte[] sdpFingerprint)
         {
             logger.LogDebug("DoDtlsHandshake started.");
 
-            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
+            byte[] clientFingerprint = null;
+            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref clientFingerprint);
 
             logger.LogDebug("DtlsContext initialisation result=" + res);
 
             if (dtls.IsHandshakeComplete())
             {
+                // TODO: The client fingerprint should be checked against the SDP fingerprint.
+
                 logger.LogDebug("DTLS negotiation complete.");
 
                 var srtpSendContext = new Srtp(dtls, false);
@@ -458,19 +461,24 @@ namespace WebRTCServer
         {
             IPAddress testAddr = IPAddress.Loopback;
 
+            //var dtlsFingerprint = DTLS_CERTIFICATE_FINGERPRINT.Substring(DTLS_CERTIFICATE_FINGERPRINT.Length + 1).Trim().Replace(":", "").Replace(" ", "");
+            //var dtlsFingerprintBuffer = SIPSorcery.Sys.ByteBufferInfo.ParseHexStr(dtlsFingerprint);
+
             Socket svrSock = new Socket(testAddr.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             svrSock.Bind(new IPEndPoint(testAddr, 9000));
             int svrPort = ((IPEndPoint)svrSock.LocalEndPoint).Port;
             DtlsHandshake svrHandshake = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-            //svrHandshake.Debug = true;
-            var svrTask = Task.Run(() => svrHandshake.DoHandshakeAsServer((ulong)svrSock.Handle));
+            svrHandshake.Debug = true;
+            byte[] clientFingerprint = null;
+            var svrTask = Task.Run(() => svrHandshake.DoHandshakeAsServer((ulong)svrSock.Handle, ref clientFingerprint));
 
             Socket cliSock = new Socket(testAddr.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             cliSock.Bind(new IPEndPoint(testAddr, 0));
             cliSock.Connect(testAddr, svrPort);
             DtlsHandshake cliHandshake = new DtlsHandshake();
-            //cliHandshake.Debug = true;
-            var cliTask = Task.Run(() => cliHandshake.DoHandshakeAsClient((ulong)cliSock.Handle, (short)testAddr.AddressFamily, testAddr.GetAddressBytes(), (ushort)svrPort));
+            cliHandshake.Debug = true;
+            byte[] serverFingerprint = null;
+            var cliTask = Task.Run(() => cliHandshake.DoHandshakeAsClient((ulong)cliSock.Handle, (short)testAddr.AddressFamily, testAddr.GetAddressBytes(), (ushort)svrPort, ref serverFingerprint));
 
             bool result = Task.WaitAll(new Task[] { svrTask, cliTask }, TEST_DTLS_HANDSHAKE_TIMEOUT);
 

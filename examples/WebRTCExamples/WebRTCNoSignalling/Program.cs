@@ -106,7 +106,7 @@ namespace WebRTCServer
             Console.Write("Enter the remote peer ICE Password (e.g. for 'a=ice-pwd:Icew1/BpwUIJLn2dBMbQyYPB' enter Icew1/BpwUIJLn2dBMbQyYPB) => ");
             var remoteIcePassword = Console.ReadLine();
 
-            pc.IceSession.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
+            pc.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
 
             var dtlsResult = await dtlsTask;
 
@@ -114,7 +114,7 @@ namespace WebRTCServer
 
             if (dtlsResult)
             {
-                var remoteEP = pc.IceSession.ConnectedRemoteEndPoint;
+                var remoteEP = pc.AudioDestinationEndPoint;
                 pc.SetDestination(SDPMediaTypesEnum.audio, remoteEP, remoteEP);
             }
             else
@@ -146,7 +146,6 @@ namespace WebRTCServer
             var peerConnection = new RTCPeerConnection(pcConfiguration);
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(
-                "0", 
                 SDPMediaTypesEnum.video, 
                 false, 
                 new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, 
@@ -198,12 +197,12 @@ namespace WebRTCServer
                 // The ICE connectivity check completed successfully.
                 if(state == RTCIceConnectionState.connected)
                 {
-                    var remoteEP = peerConnection.IceSession.ConnectedRemoteEndPoint;
+                    var remoteEP = peerConnection.AudioDestinationEndPoint;
                     peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEP, remoteEP);
                 }
             };
 
-            var offerSdp = await peerConnection.createOffer(null);
+            var offerSdp = peerConnection.createOffer(null);
             await peerConnection.setLocalDescription(offerSdp);
 
             logger.LogDebug(offerSdp.sdp);
@@ -230,13 +229,16 @@ namespace WebRTCServer
 
             var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
 
-            var dtlsResult = await Task.Run(() => dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle));
+            byte[] clientFingerprint = null;
+            var dtlsResult = await Task.Run(() => dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref clientFingerprint));
 
             logger.LogDebug("DtlsContext initialisation result=" + dtlsResult);
 
             if (dtls.IsHandshakeComplete())
             {
                 logger.LogDebug("DTLS handshake succeeded.");
+
+                // TODO: Check client fingerprint matches one supplied in the SDP.
 
                 var srtpSendContext = new Srtp(dtls, false);
                 var srtpReceiveContext = new Srtp(dtls, true);

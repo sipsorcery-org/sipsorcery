@@ -53,7 +53,7 @@ namespace SIPSorcery
         public RTCPeerConnection PeerConnection;
 
         public event Func<WebSocketContext, Task<RTCPeerConnection>> WebSocketOpened;
-        public event Func<RTCPeerConnection, string, Task> SDPAnswerReceived;
+        public event Action<RTCPeerConnection, string> SDPAnswerReceived;
 
         public SDPExchange()
         { }
@@ -242,10 +242,10 @@ namespace SIPSorcery
                 }
             };
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
             _peerConnection.addTrack(audioTrack);
 
-            var offerInit = await _peerConnection.createOffer(null);
+            var offerInit = _peerConnection.createOffer(null);
             await _peerConnection.setLocalDescription(offerInit);
 
             context.WebSocket.Send(offerInit.sdp);
@@ -262,13 +262,13 @@ namespace SIPSorcery
             return _peerConnection;
         }
 
-        private static async Task SDPAnswerReceived(RTCPeerConnection peerConnection, string sdpAnswer)
+        private static void SDPAnswerReceived(RTCPeerConnection peerConnection, string sdpAnswer)
         {
             try
             {
                 Log.LogDebug("Answer SDP: " + sdpAnswer);
 
-                await peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = sdpAnswer });
+                peerConnection.setRemoteDescription(new RTCSessionDescriptionInit { type = RTCSdpType.answer, sdp = sdpAnswer });
 
                 // Forward audio samples from the SIP session to the WebRTC session (one way).
                 //OnMediaFromSIPSampleReady += webRtcSession.SendMedia;
@@ -305,12 +305,15 @@ namespace SIPSorcery
                 }
             };
 
-            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
+            byte[] clientFingerprint = null;
+            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref clientFingerprint);
 
             Log.LogDebug("DtlsContext initialisation result=" + res);
 
             if (dtls.IsHandshakeComplete())
             {
+                // TODO: Check client fingerprint matches one supplied in the SDP.
+
                 Log.LogDebug("DTLS negotiation complete.");
 
                 var srtpSendContext = new Srtp(dtls, false);
