@@ -20,7 +20,7 @@ using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {
-    [Trait("Category", "unit")]
+    [Trait("Category", "dns")]
     public class STUNDnsUnitTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;
