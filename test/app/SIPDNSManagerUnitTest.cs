@@ -19,7 +19,7 @@ using Xunit;
 
 namespace SIPSorcery.SIP.App.UnitTests
 {
-    [Trait("Category", "integration")]
+    [Trait("Category", "dns")]
     public class SIPDNSManagerUnitTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;
