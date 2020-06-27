@@ -22,7 +22,7 @@ using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
 {
-    [Trait("Category", "integration")]
+    [Trait("Category", "dns")]
     public class DNSUnitTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;
