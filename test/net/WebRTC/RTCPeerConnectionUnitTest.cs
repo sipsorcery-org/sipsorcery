@@ -12,7 +12,6 @@
 
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 using Xunit;
 
 namespace SIPSorcery.Net.UnitTests
@@ -101,13 +100,16 @@ namespace SIPSorcery.Net.UnitTests
                     {
                         X_Fingerprint = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD"
                     }
-                }
+                },
+                X_UseRtpFeedbackProfile = true
             };
 
             RTCPeerConnection pcSrc = new RTCPeerConnection(pcConfiguration);
             var videoTrackSrc = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
             pcSrc.addTrack(videoTrackSrc);
             var offer = pcSrc.createOffer(new RTCOfferOptions());
+
+            logger.LogDebug($"offer: {offer.sdp}");
 
             RTCPeerConnection pcDst = new RTCPeerConnection(pcConfiguration);
             var videoTrackDst = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
@@ -119,6 +121,8 @@ namespace SIPSorcery.Net.UnitTests
             var answer = pcDst.createAnswer(null);
             var setAnswerResult = pcSrc.setRemoteDescription(answer);
             Assert.Equal(SetDescriptionResultEnum.OK, setAnswerResult);
+
+            logger.LogDebug($"answer: {answer.sdp}");
 
             RTCPFeedback pliReport = new RTCPFeedback(pcDst.VideoLocalTrack.Ssrc, pcDst.VideoRemoteTrack.Ssrc, PSFBFeedbackTypesEnum.PLI);
             pcDst.SendRtcpFeedback(SDPMediaTypesEnum.video, pliReport);
