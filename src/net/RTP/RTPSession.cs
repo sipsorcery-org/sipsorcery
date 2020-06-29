@@ -1857,7 +1857,7 @@ namespace SIPSorcery.Net
             {
                 var rtpChannel = GetRtpChannel(mediaType);
                 RTCPSession rtcpSession = (mediaType == SDPMediaTypesEnum.video) ? VideoRtcpSession : AudioRtcpSession;
-                IPEndPoint dstEndPoint = (mediaType == SDPMediaTypesEnum.video) ? VideoDestinationEndPoint : AudioDestinationEndPoint;
+                IPEndPoint dstEndPoint = (mediaType == SDPMediaTypesEnum.audio || m_isMediaMultiplexed) ? AudioDestinationEndPoint : VideoDestinationEndPoint;
                 MediaStreamTrack track = (mediaType == SDPMediaTypesEnum.video) ? VideoLocalTrack : AudioLocalTrack;
 
                 if (dstEndPoint != null)
@@ -2076,7 +2076,7 @@ namespace SIPSorcery.Net
                                     AudioRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
                                 }
                             }
-                            else if (rtpMediaType == SDPMediaTypesEnum.video && VideoRemoteTrack != null && VideoRemoteTrack.Ssrc == 0 && VideoDestinationEndPoint != null)
+                            else if (rtpMediaType == SDPMediaTypesEnum.video && VideoRemoteTrack != null && VideoRemoteTrack.Ssrc == 0 && (m_isMediaMultiplexed || VideoDestinationEndPoint != null))
                             {
                                 bool isValidSource = AdjustRemoteEndPoint(SDPMediaTypesEnum.video, rtpPacket.Header.SyncSource, remoteEndPoint);
 
@@ -2119,7 +2119,7 @@ namespace SIPSorcery.Net
         private bool AdjustRemoteEndPoint(SDPMediaTypesEnum mediaType, uint ssrc, IPEndPoint receivedOnEndPoint)
         {
             bool isValidSource = false;
-            IPEndPoint expectedEndPoint = (mediaType == SDPMediaTypesEnum.video) ? VideoDestinationEndPoint : AudioDestinationEndPoint;
+            IPEndPoint expectedEndPoint = (mediaType == SDPMediaTypesEnum.audio || m_isMediaMultiplexed) ? AudioDestinationEndPoint : VideoDestinationEndPoint;
 
             if (expectedEndPoint.Address.Equals(receivedOnEndPoint.Address) && expectedEndPoint.Port == receivedOnEndPoint.Port)
             {
