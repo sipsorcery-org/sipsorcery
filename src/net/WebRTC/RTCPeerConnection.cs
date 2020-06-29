@@ -232,15 +232,17 @@ namespace SIPSorcery.Net
             }
 
             _configuration = configuration;
-
-            if (_configuration != null && _configuration.certificates?.Count > 0)
+            if (_configuration != null)
             {
-                _currentCertificate = _configuration.certificates.First();
-            }
+                if (_configuration.certificates?.Count > 0)
+                {
+                    _currentCertificate = _configuration.certificates.First();
+                }
 
-            if(_configuration.X_UseRtpFeedbackProfile)
-            {
-                RTP_MEDIA_PROFILE = RTP_MEDIA_FEEDBACK_PROFILE;
+                if (_configuration.X_UseRtpFeedbackProfile)
+                {
+                    RTP_MEDIA_PROFILE = RTP_MEDIA_FEEDBACK_PROFILE;
+                }
             }
 
             SessionID = Guid.NewGuid().ToString();
