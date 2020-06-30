@@ -283,6 +283,9 @@ namespace SIPSorcery.Net.UnitTests
             rtpIceChannelA.Candidates.ForEach(x => rtpIceChannelB.AddRemoteCandidate(x));
             rtpIceChannelB.Candidates.ForEach(x => rtpIceChannelA.AddRemoteCandidate(x));
 
+            // Give the RTP ICE channel checklists time to send the first few checks.
+            await Task.Delay(3000);
+
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelA.IceConnectionState);
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelB.IceConnectionState);
             Assert.NotNull(rtpIceChannelA.NominatedEntry);
