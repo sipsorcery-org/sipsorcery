@@ -358,32 +358,32 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The local audio stream for this session. Will be null if we are not sending audio.
         /// </summary>
-        internal MediaStreamTrack AudioLocalTrack { get; private set; }
+        public MediaStreamTrack AudioLocalTrack { get; private set; }
 
         /// <summary>
         /// The remote audio track for this session. Will be null if the remote party is not sending audio.
         /// </summary>
-        internal MediaStreamTrack AudioRemoteTrack { get; private set; }
+        public MediaStreamTrack AudioRemoteTrack { get; private set; }
 
         /// <summary>
         /// The reporting session for the audio stream. Will be null if only video is being sent.
         /// </summary>
-        internal RTCPSession AudioRtcpSession { get; private set; }
+        public RTCPSession AudioRtcpSession { get; private set; }
 
         /// <summary>
         /// The local video track for this session. Will be null if we are not sending video.
         /// </summary>
-        internal MediaStreamTrack VideoLocalTrack { get; private set; }
+        public MediaStreamTrack VideoLocalTrack { get; private set; }
 
         /// <summary>
         /// The remote video track for this session. Will be null if the remote party is not sending video.
         /// </summary>
-        internal MediaStreamTrack VideoRemoteTrack { get; private set; }
+        public MediaStreamTrack VideoRemoteTrack { get; private set; }
 
         /// <summary>
         /// The reporting session for the video stream. Will be null if only audio is being sent.
         /// </summary>
-        internal RTCPSession VideoRtcpSession { get; private set; }
+        public RTCPSession VideoRtcpSession { get; private set; }
 
         /// <summary>
         /// The SDP offered by the remote call party for this session.
@@ -1857,7 +1857,7 @@ namespace SIPSorcery.Net
             {
                 var rtpChannel = GetRtpChannel(mediaType);
                 RTCPSession rtcpSession = (mediaType == SDPMediaTypesEnum.video) ? VideoRtcpSession : AudioRtcpSession;
-                IPEndPoint dstEndPoint = (mediaType == SDPMediaTypesEnum.video) ? VideoDestinationEndPoint : AudioDestinationEndPoint;
+                IPEndPoint dstEndPoint = (mediaType == SDPMediaTypesEnum.audio || m_isMediaMultiplexed) ? AudioDestinationEndPoint : VideoDestinationEndPoint;
                 MediaStreamTrack track = (mediaType == SDPMediaTypesEnum.video) ? VideoLocalTrack : AudioLocalTrack;
 
                 if (dstEndPoint != null)
@@ -1865,6 +1865,17 @@ namespace SIPSorcery.Net
                     SendRtpPacket(rtpChannel, dstEndPoint, payload, timestamp, markerBit, payloadTypeID, track.Ssrc, track.SeqNum++, rtcpSession);
                 }
             }
+        }
+
+        /// <summary>
+        /// Allows sending of RTCP feedback reports.
+        /// </summary>
+        /// <param name="mediaType">The media type of the RTCP report  being sent. Must be audio or video.</param>
+        /// <param name="feedback">The feedback report to send.</param>
+        public void SendRtcpFeedback(SDPMediaTypesEnum mediaType, RTCPFeedback feedback)
+        {
+            var reportBytes = feedback.GetBytes();
+            SendRtcpReport(mediaType, reportBytes);
         }
 
         /// <summary>
@@ -2065,7 +2076,7 @@ namespace SIPSorcery.Net
                                     AudioRemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
                                 }
                             }
-                            else if (rtpMediaType == SDPMediaTypesEnum.video && VideoRemoteTrack != null && VideoRemoteTrack.Ssrc == 0 && VideoDestinationEndPoint != null)
+                            else if (rtpMediaType == SDPMediaTypesEnum.video && VideoRemoteTrack != null && VideoRemoteTrack.Ssrc == 0 && (m_isMediaMultiplexed || VideoDestinationEndPoint != null))
                             {
                                 bool isValidSource = AdjustRemoteEndPoint(SDPMediaTypesEnum.video, rtpPacket.Header.SyncSource, remoteEndPoint);
 
@@ -2108,7 +2119,7 @@ namespace SIPSorcery.Net
         private bool AdjustRemoteEndPoint(SDPMediaTypesEnum mediaType, uint ssrc, IPEndPoint receivedOnEndPoint)
         {
             bool isValidSource = false;
-            IPEndPoint expectedEndPoint = (mediaType == SDPMediaTypesEnum.video) ? VideoDestinationEndPoint : AudioDestinationEndPoint;
+            IPEndPoint expectedEndPoint = (mediaType == SDPMediaTypesEnum.audio || m_isMediaMultiplexed) ? AudioDestinationEndPoint : VideoDestinationEndPoint;
 
             if (expectedEndPoint.Address.Equals(receivedOnEndPoint.Address) && expectedEndPoint.Port == receivedOnEndPoint.Port)
             {
@@ -2316,6 +2327,17 @@ namespace SIPSorcery.Net
         /// <param name="report">RTCP report to send.</param>
         private void SendRtcpReport(SDPMediaTypesEnum mediaType, RTCPCompoundPacket report)
         {
+            var reportBytes = report.GetBytes();
+            SendRtcpReport(mediaType, reportBytes);
+            OnSendReport?.Invoke(mediaType, report);
+        }
+
+        /// <summary>
+        /// Sends the RTCP report to the remote call party.
+        /// </summary>
+        /// <param name="report">The serialised RTCP report to send.</param>
+        private void SendRtcpReport(SDPMediaTypesEnum mediaType, byte[] reportBuffer)
+        {
             IPEndPoint controlDstEndPoint = null;
             if (m_isMediaMultiplexed || mediaType == SDPMediaTypesEnum.audio)
             {
@@ -2332,8 +2354,6 @@ namespace SIPSorcery.Net
             }
             else if (controlDstEndPoint != null)
             {
-                var reportBytes = report.GetBytes();
-
                 //logger.LogDebug($"SendRtcpReport: {reportBytes.HexStr()}");
 
                 var sendOnSocket = (m_isRtcpMultiplexed) ? RTPChannelSocketsEnum.RTP : RTPChannelSocketsEnum.Control;
@@ -2342,12 +2362,12 @@ namespace SIPSorcery.Net
 
                 if (m_srtcpControlProtect == null)
                 {
-                    rtpChannel.SendAsync(sendOnSocket, controlDstEndPoint, reportBytes);
+                    rtpChannel.SendAsync(sendOnSocket, controlDstEndPoint, reportBuffer);
                 }
                 else
                 {
-                    byte[] sendBuffer = new byte[reportBytes.Length + SRTP_MAX_PREFIX_LENGTH];
-                    Buffer.BlockCopy(reportBytes, 0, sendBuffer, 0, reportBytes.Length);
+                    byte[] sendBuffer = new byte[reportBuffer.Length + SRTP_MAX_PREFIX_LENGTH];
+                    Buffer.BlockCopy(reportBuffer, 0, sendBuffer, 0, reportBuffer.Length);
 
                     int outBufLen = 0;
                     int rtperr = m_srtcpControlProtect(sendBuffer, sendBuffer.Length - SRTP_MAX_PREFIX_LENGTH, out outBufLen);
@@ -2360,8 +2380,6 @@ namespace SIPSorcery.Net
                         rtpChannel.SendAsync(sendOnSocket, controlDstEndPoint, sendBuffer.Take(outBufLen).ToArray());
                     }
                 }
-
-                OnSendReport?.Invoke(mediaType, report);
             }
         }
 

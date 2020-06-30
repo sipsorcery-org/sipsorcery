@@ -52,7 +52,7 @@ namespace SIPSorcery.Net
     ///   - First RTCP packet must be a SR or RR,
     ///   - Must contain an SDES packet.
     /// </remarks>
-    internal class RTCPSession
+    public class RTCPSession
     {
         public const string NO_ACTIVITY_TIMEOUT_REASON = "No activity timeout.";
         private const int RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS = 5000;

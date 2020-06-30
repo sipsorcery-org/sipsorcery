@@ -193,6 +193,12 @@ namespace SIPSorcery.Net
         /// returned by the OS routing table.
         /// </summary>
         public IPAddress X_RemoteSignallingAddress;
+
+        /// <summary>
+        /// Optional. If set to true the feedback profile set in the SDP offers and answers will be
+        /// UDP/TLS/RTP/SAVPF instead of UDP/TLS/RTP/SAVP.
+        /// </summary>
+        public bool X_UseRtpFeedbackProfile;
     }
 
     /// <summary>

@@ -82,5 +82,50 @@ namespace SIPSorcery.Net.UnitTests
 
             logger.LogDebug(offer.sdp);
         }
+
+        /// <summary>
+        /// Tests that attempting to send an RTCP feedback report for an audio stream works correctly.
+        /// </summary>
+        [Fact]
+        public void SendVideoRtcpFeedbackReportUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            RTCConfiguration pcConfiguration = new RTCConfiguration
+            {
+                certificates = new List<RTCCertificate>
+                {
+                    new RTCCertificate
+                    {
+                        X_Fingerprint = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD"
+                    }
+                },
+                X_UseRtpFeedbackProfile = true
+            };
+
+            RTCPeerConnection pcSrc = new RTCPeerConnection(pcConfiguration);
+            var videoTrackSrc = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            pcSrc.addTrack(videoTrackSrc);
+            var offer = pcSrc.createOffer(new RTCOfferOptions());
+
+            logger.LogDebug($"offer: {offer.sdp}");
+
+            RTCPeerConnection pcDst = new RTCPeerConnection(pcConfiguration);
+            var videoTrackDst = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            pcDst.addTrack(videoTrackDst);
+
+            var setOfferResult = pcDst.setRemoteDescription(offer);
+            Assert.Equal(SetDescriptionResultEnum.OK, setOfferResult);
+
+            var answer = pcDst.createAnswer(null);
+            var setAnswerResult = pcSrc.setRemoteDescription(answer);
+            Assert.Equal(SetDescriptionResultEnum.OK, setAnswerResult);
+
+            logger.LogDebug($"answer: {answer.sdp}");
+
+            RTCPFeedback pliReport = new RTCPFeedback(pcDst.VideoLocalTrack.Ssrc, pcDst.VideoRemoteTrack.Ssrc, PSFBFeedbackTypesEnum.PLI);
+            pcDst.SendRtcpFeedback(SDPMediaTypesEnum.video, pliReport);
+        }
     }
 }

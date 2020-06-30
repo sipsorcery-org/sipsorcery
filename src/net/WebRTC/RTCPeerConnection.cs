@@ -117,7 +117,8 @@ namespace SIPSorcery.Net
     {
         // SDP constants.
         //private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
-        private new const string RTP_MEDIA_PROFILE = "UDP/TLS/RTP/SAVP";
+        private const string RTP_MEDIA_NON_FEEDBACK_PROFILE = "UDP/TLS/RTP/SAVP";
+        private const string RTP_MEDIA_FEEDBACK_PROFILE = "UDP/TLS/RTP/SAVPF";
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";    // Indicates the media announcement is using multiplexed RTCP.
         private const string ICE_SETUP_ATTRIBUTE = "a=setup:";     // Indicates ICE agent can act as either the "controlling" or "controlled" peer.
         private const string BUNDLE_ATTRIBUTE = "BUNDLE";
@@ -125,6 +126,7 @@ namespace SIPSorcery.Net
         private const string NORMAL_CLOSE_REASON = "normal";
         private const string DTLS_FINGERPRINT_DIGEST = "sha-256";  // The digest algorithm for checking a certificate during the DTLS handshake.
 
+        private new readonly string RTP_MEDIA_PROFILE = RTP_MEDIA_NON_FEEDBACK_PROFILE;
         private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
         private static ILogger logger = Log.Logger;
@@ -230,10 +232,17 @@ namespace SIPSorcery.Net
             }
 
             _configuration = configuration;
-
-            if (_configuration != null && _configuration.certificates?.Count > 0)
+            if (_configuration != null)
             {
-                _currentCertificate = _configuration.certificates.First();
+                if (_configuration.certificates?.Count > 0)
+                {
+                    _currentCertificate = _configuration.certificates.First();
+                }
+
+                if (_configuration.X_UseRtpFeedbackProfile)
+                {
+                    RTP_MEDIA_PROFILE = RTP_MEDIA_FEEDBACK_PROFILE;
+                }
             }
 
             SessionID = Guid.NewGuid().ToString();

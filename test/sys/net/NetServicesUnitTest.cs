@@ -295,7 +295,6 @@ namespace SIPSorcery.Sys.UnitTests
                 Socket rtpSocket = null;
                 Socket controlSocket = null;
 
-                //NetServices.CreateRtpSocket(49152, 65534, 51277, true, null, out rtpSocket, out controlSocket);
                 NetServices.CreateRtpSocket(true, null, out rtpSocket, out controlSocket);
 
                 Assert.NotNull(rtpSocket);
