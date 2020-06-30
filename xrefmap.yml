@@ -1400,6 +1400,24 @@ references:
   commentId: T:SIPSorcery.Net.DoDtlsHandshakeDelegate
   fullName: SIPSorcery.Net.DoDtlsHandshakeDelegate
   nameWithType: DoDtlsHandshakeDelegate
+- uid: SIPSorcery.Net.FeedbackProtocol
+  name: FeedbackProtocol
+  href: api/SIPSorcery.Net.FeedbackProtocol.html
+  commentId: T:SIPSorcery.Net.FeedbackProtocol
+  fullName: SIPSorcery.Net.FeedbackProtocol
+  nameWithType: FeedbackProtocol
+- uid: SIPSorcery.Net.FeedbackProtocol.PSFB
+  name: PSFB
+  href: api/SIPSorcery.Net.FeedbackProtocol.html#SIPSorcery_Net_FeedbackProtocol_PSFB
+  commentId: F:SIPSorcery.Net.FeedbackProtocol.PSFB
+  fullName: SIPSorcery.Net.FeedbackProtocol.PSFB
+  nameWithType: FeedbackProtocol.PSFB
+- uid: SIPSorcery.Net.FeedbackProtocol.RTCP
+  name: RTCP
+  href: api/SIPSorcery.Net.FeedbackProtocol.html#SIPSorcery_Net_FeedbackProtocol_RTCP
+  commentId: F:SIPSorcery.Net.FeedbackProtocol.RTCP
+  fullName: SIPSorcery.Net.FeedbackProtocol.RTCP
+  nameWithType: FeedbackProtocol.RTCP
 - uid: SIPSorcery.Net.HepChunk
   name: HepChunk
   href: api/SIPSorcery.Net.HepChunk.html
@@ -2151,12 +2169,36 @@ references:
   commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.AFB
   fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.AFB
   nameWithType: PSFBFeedbackTypesEnum.AFB
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.FIR
+  name: FIR
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_FIR
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.FIR
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.FIR
+  nameWithType: PSFBFeedbackTypesEnum.FIR
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.LRR
+  name: LRR
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_LRR
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.LRR
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.LRR
+  nameWithType: PSFBFeedbackTypesEnum.LRR
 - uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.PLI
   name: PLI
   href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_PLI
   commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.PLI
   fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.PLI
   nameWithType: PSFBFeedbackTypesEnum.PLI
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.PSLEI
+  name: PSLEI
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_PSLEI
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.PSLEI
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.PSLEI
+  nameWithType: PSFBFeedbackTypesEnum.PSLEI
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.ROI
+  name: ROI
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_ROI
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.ROI
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.ROI
+  nameWithType: PSFBFeedbackTypesEnum.ROI
 - uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.RPSI
   name: RPSI
   href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_RPSI
@@ -2169,12 +2211,30 @@ references:
   commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.SLI
   fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.SLI
   nameWithType: PSFBFeedbackTypesEnum.SLI
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.TSTN
+  name: TSTN
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_TSTN
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.TSTN
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.TSTN
+  nameWithType: PSFBFeedbackTypesEnum.TSTN
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.TSTR
+  name: TSTR
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_TSTR
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.TSTR
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.TSTR
+  nameWithType: PSFBFeedbackTypesEnum.TSTR
 - uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.unassigned
   name: unassigned
   href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_unassigned
   commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.unassigned
   fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.unassigned
   nameWithType: PSFBFeedbackTypesEnum.unassigned
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.VBCM
+  name: VBCM
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_VBCM
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.VBCM
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.VBCM
+  nameWithType: PSFBFeedbackTypesEnum.VBCM
 - uid: SIPSorcery.Net.ReceptionReport
   name: ReceptionReport
   href: api/SIPSorcery.Net.ReceptionReport.html
@@ -3827,6 +3887,12 @@ references:
   commentId: M:SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,System.UInt32,SIPSorcery.Net.PSFBFeedbackTypesEnum)
   fullName: SIPSorcery.Net.RTCPFeedback.RTCPFeedback(System.UInt32, System.UInt32, SIPSorcery.Net.PSFBFeedbackTypesEnum)
   nameWithType: RTCPFeedback.RTCPFeedback(UInt32, UInt32, PSFBFeedbackTypesEnum)
+- uid: SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,System.UInt32,SIPSorcery.Net.RTCPFeedbackTypesEnum)
+  name: RTCPFeedback(UInt32, UInt32, RTCPFeedbackTypesEnum)
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback__ctor_System_UInt32_System_UInt32_SIPSorcery_Net_RTCPFeedbackTypesEnum_
+  commentId: M:SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,System.UInt32,SIPSorcery.Net.RTCPFeedbackTypesEnum)
+  fullName: SIPSorcery.Net.RTCPFeedback.RTCPFeedback(System.UInt32, System.UInt32, SIPSorcery.Net.RTCPFeedbackTypesEnum)
+  nameWithType: RTCPFeedback.RTCPFeedback(UInt32, UInt32, RTCPFeedbackTypesEnum)
 - uid: SIPSorcery.Net.RTCPFeedback.#ctor*
   name: RTCPFeedback
   href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback__ctor_
@@ -3901,12 +3967,60 @@ references:
   commentId: T:SIPSorcery.Net.RTCPFeedbackTypesEnum
   fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum
   nameWithType: RTCPFeedbackTypesEnum
+- uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.DBI
+  name: DBI
+  href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_DBI
+  commentId: F:SIPSorcery.Net.RTCPFeedbackTypesEnum.DBI
+  fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum.DBI
+  nameWithType: RTCPFeedbackTypesEnum.DBI
 - uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.NACK
   name: NACK
   href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_NACK
   commentId: F:SIPSorcery.Net.RTCPFeedbackTypesEnum.NACK
   fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum.NACK
   nameWithType: RTCPFeedbackTypesEnum.NACK
+- uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.PAUSE_RESUME
+  name: PAUSE_RESUME
+  href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_PAUSE_RESUME
+  commentId: F:SIPSorcery.Net.RTCPFeedbackTypesEnum.PAUSE_RESUME
+  fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum.PAUSE_RESUME
+  nameWithType: RTCPFeedbackTypesEnum.PAUSE_RESUME
+- uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.RAMS
+  name: RAMS
+  href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_RAMS
+  commentId: F:SIPSorcery.Net.RTCPFeedbackTypesEnum.RAMS
+  fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum.RAMS
+  nameWithType: RTCPFeedbackTypesEnum.RAMS
+- uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.RTCP_ECN_FB
+  name: RTCP_ECN_FB
+  href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_RTCP_ECN_FB
+  commentId: F:SIPSorcery.Net.RTCPFeedbackTypesEnum.RTCP_ECN_FB
+  fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum.RTCP_ECN_FB
+  nameWithType: RTCPFeedbackTypesEnum.RTCP_ECN_FB
+- uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.RTCP_SR_REQ
+  name: RTCP_SR_REQ
+  href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_RTCP_SR_REQ
+  commentId: F:SIPSorcery.Net.RTCPFeedbackTypesEnum.RTCP_SR_REQ
+  fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum.RTCP_SR_REQ
+  nameWithType: RTCPFeedbackTypesEnum.RTCP_SR_REQ
+- uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.TLLEI
+  name: TLLEI
+  href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_TLLEI
+  commentId: F:SIPSorcery.Net.RTCPFeedbackTypesEnum.TLLEI
+  fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum.TLLEI
+  nameWithType: RTCPFeedbackTypesEnum.TLLEI
+- uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.TMMBN
+  name: TMMBN
+  href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_TMMBN
+  commentId: F:SIPSorcery.Net.RTCPFeedbackTypesEnum.TMMBN
+  fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum.TMMBN
+  nameWithType: RTCPFeedbackTypesEnum.TMMBN
+- uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.TMMBR
+  name: TMMBR
+  href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_TMMBR
+  commentId: F:SIPSorcery.Net.RTCPFeedbackTypesEnum.TMMBR
+  fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum.TMMBR
+  nameWithType: RTCPFeedbackTypesEnum.TMMBR
 - uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.unassigned
   name: unassigned
   href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_unassigned
