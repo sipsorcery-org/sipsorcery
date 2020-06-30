@@ -276,11 +276,12 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(RTCIceConnectionState.checking, rtpIceChannelA.IceConnectionState);
             Assert.Equal(RTCIceConnectionState.checking, rtpIceChannelB.IceConnectionState);
 
+            // Give the RTP channel listeners time to start.
+            await Task.Delay(1000);
+
             // Exchange ICE candidates.
             rtpIceChannelA.Candidates.ForEach(x => rtpIceChannelB.AddRemoteCandidate(x));
             rtpIceChannelB.Candidates.ForEach(x => rtpIceChannelA.AddRemoteCandidate(x));
-
-            await Task.Delay(1000);
 
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelA.IceConnectionState);
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelB.IceConnectionState);
@@ -299,6 +300,9 @@ namespace SIPSorcery.Net.UnitTests
 
             using (MockTurnServer mockStunServer = new MockTurnServer())
             {
+                // Give the TURN server socket receive tasks time to fire up.
+                await Task.Delay(1000);
+
                 var iceServers = new List<RTCIceServer> {
                 new RTCIceServer
                     {
@@ -339,6 +343,9 @@ namespace SIPSorcery.Net.UnitTests
 
             using (MockTurnServer mockTurnServer = new MockTurnServer())
             {
+                // Give the TURN server socket receive tasks time to fire up.
+                await Task.Delay(1000);
+
                 var iceServers = new List<RTCIceServer> {
                 new RTCIceServer
                     {
