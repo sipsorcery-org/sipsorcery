@@ -2139,6 +2139,42 @@ references:
   commentId: T:SIPSorcery.Net.ProtectRtpPacket
   fullName: SIPSorcery.Net.ProtectRtpPacket
   nameWithType: ProtectRtpPacket
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum
+  name: PSFBFeedbackTypesEnum
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html
+  commentId: T:SIPSorcery.Net.PSFBFeedbackTypesEnum
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum
+  nameWithType: PSFBFeedbackTypesEnum
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.AFB
+  name: AFB
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_AFB
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.AFB
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.AFB
+  nameWithType: PSFBFeedbackTypesEnum.AFB
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.PLI
+  name: PLI
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_PLI
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.PLI
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.PLI
+  nameWithType: PSFBFeedbackTypesEnum.PLI
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.RPSI
+  name: RPSI
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_RPSI
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.RPSI
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.RPSI
+  nameWithType: PSFBFeedbackTypesEnum.RPSI
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.SLI
+  name: SLI
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_SLI
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.SLI
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.SLI
+  nameWithType: PSFBFeedbackTypesEnum.SLI
+- uid: SIPSorcery.Net.PSFBFeedbackTypesEnum.unassigned
+  name: unassigned
+  href: api/SIPSorcery.Net.PSFBFeedbackTypesEnum.html#SIPSorcery_Net_PSFBFeedbackTypesEnum_unassigned
+  commentId: F:SIPSorcery.Net.PSFBFeedbackTypesEnum.unassigned
+  fullName: SIPSorcery.Net.PSFBFeedbackTypesEnum.unassigned
+  nameWithType: PSFBFeedbackTypesEnum.unassigned
 - uid: SIPSorcery.Net.ReceptionReport
   name: ReceptionReport
   href: api/SIPSorcery.Net.ReceptionReport.html
@@ -2393,6 +2429,12 @@ references:
   commentId: F:SIPSorcery.Net.RTCConfiguration.X_RemoteSignallingAddress
   fullName: SIPSorcery.Net.RTCConfiguration.X_RemoteSignallingAddress
   nameWithType: RTCConfiguration.X_RemoteSignallingAddress
+- uid: SIPSorcery.Net.RTCConfiguration.X_UseRtpFeedbackProfile
+  name: X_UseRtpFeedbackProfile
+  href: api/SIPSorcery.Net.RTCConfiguration.html#SIPSorcery_Net_RTCConfiguration_X_UseRtpFeedbackProfile
+  commentId: F:SIPSorcery.Net.RTCConfiguration.X_UseRtpFeedbackProfile
+  fullName: SIPSorcery.Net.RTCConfiguration.X_UseRtpFeedbackProfile
+  nameWithType: RTCConfiguration.X_UseRtpFeedbackProfile
 - uid: SIPSorcery.Net.RTCDtlsFingerprint
   name: RTCDtlsFingerprint
   href: api/SIPSorcery.Net.RTCDtlsFingerprint.html
@@ -3758,12 +3800,137 @@ references:
   commentId: F:SIPSorcery.Net.RTCPeerConnectionState.new
   fullName: SIPSorcery.Net.RTCPeerConnectionState.new
   nameWithType: RTCPeerConnectionState.new
+- uid: SIPSorcery.Net.RTCPFeedback
+  name: RTCPFeedback
+  href: api/SIPSorcery.Net.RTCPFeedback.html
+  commentId: T:SIPSorcery.Net.RTCPFeedback
+  fullName: SIPSorcery.Net.RTCPFeedback
+  nameWithType: RTCPFeedback
+- uid: SIPSorcery.Net.RTCPFeedback.#ctor(System.Byte[])
+  name: RTCPFeedback(Byte[])
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback__ctor_System_Byte___
+  commentId: M:SIPSorcery.Net.RTCPFeedback.#ctor(System.Byte[])
+  name.vb: RTCPFeedback(Byte())
+  fullName: SIPSorcery.Net.RTCPFeedback.RTCPFeedback(System.Byte[])
+  fullName.vb: SIPSorcery.Net.RTCPFeedback.RTCPFeedback(System.Byte())
+  nameWithType: RTCPFeedback.RTCPFeedback(Byte[])
+  nameWithType.vb: RTCPFeedback.RTCPFeedback(Byte())
+- uid: SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,SIPSorcery.Net.RTCPFeedbackTypesEnum,System.UInt16,System.UInt16)
+  name: RTCPFeedback(UInt32, RTCPFeedbackTypesEnum, UInt16, UInt16)
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback__ctor_System_UInt32_SIPSorcery_Net_RTCPFeedbackTypesEnum_System_UInt16_System_UInt16_
+  commentId: M:SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,SIPSorcery.Net.RTCPFeedbackTypesEnum,System.UInt16,System.UInt16)
+  fullName: SIPSorcery.Net.RTCPFeedback.RTCPFeedback(System.UInt32, SIPSorcery.Net.RTCPFeedbackTypesEnum, System.UInt16, System.UInt16)
+  nameWithType: RTCPFeedback.RTCPFeedback(UInt32, RTCPFeedbackTypesEnum, UInt16, UInt16)
+- uid: SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,System.UInt32,SIPSorcery.Net.PSFBFeedbackTypesEnum)
+  name: RTCPFeedback(UInt32, UInt32, PSFBFeedbackTypesEnum)
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback__ctor_System_UInt32_System_UInt32_SIPSorcery_Net_PSFBFeedbackTypesEnum_
+  commentId: M:SIPSorcery.Net.RTCPFeedback.#ctor(System.UInt32,System.UInt32,SIPSorcery.Net.PSFBFeedbackTypesEnum)
+  fullName: SIPSorcery.Net.RTCPFeedback.RTCPFeedback(System.UInt32, System.UInt32, SIPSorcery.Net.PSFBFeedbackTypesEnum)
+  nameWithType: RTCPFeedback.RTCPFeedback(UInt32, UInt32, PSFBFeedbackTypesEnum)
+- uid: SIPSorcery.Net.RTCPFeedback.#ctor*
+  name: RTCPFeedback
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback__ctor_
+  commentId: Overload:SIPSorcery.Net.RTCPFeedback.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPFeedback.RTCPFeedback
+  nameWithType: RTCPFeedback.RTCPFeedback
+- uid: SIPSorcery.Net.RTCPFeedback.BLP
+  name: BLP
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_BLP
+  commentId: F:SIPSorcery.Net.RTCPFeedback.BLP
+  fullName: SIPSorcery.Net.RTCPFeedback.BLP
+  nameWithType: RTCPFeedback.BLP
+- uid: SIPSorcery.Net.RTCPFeedback.FCI
+  name: FCI
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_FCI
+  commentId: F:SIPSorcery.Net.RTCPFeedback.FCI
+  fullName: SIPSorcery.Net.RTCPFeedback.FCI
+  nameWithType: RTCPFeedback.FCI
+- uid: SIPSorcery.Net.RTCPFeedback.GetBytes
+  name: GetBytes()
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_GetBytes
+  commentId: M:SIPSorcery.Net.RTCPFeedback.GetBytes
+  fullName: SIPSorcery.Net.RTCPFeedback.GetBytes()
+  nameWithType: RTCPFeedback.GetBytes()
+- uid: SIPSorcery.Net.RTCPFeedback.GetBytes*
+  name: GetBytes
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_GetBytes_
+  commentId: Overload:SIPSorcery.Net.RTCPFeedback.GetBytes
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPFeedback.GetBytes
+  nameWithType: RTCPFeedback.GetBytes
+- uid: SIPSorcery.Net.RTCPFeedback.Header
+  name: Header
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_Header
+  commentId: F:SIPSorcery.Net.RTCPFeedback.Header
+  fullName: SIPSorcery.Net.RTCPFeedback.Header
+  nameWithType: RTCPFeedback.Header
+- uid: SIPSorcery.Net.RTCPFeedback.MediaSSRC
+  name: MediaSSRC
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_MediaSSRC
+  commentId: F:SIPSorcery.Net.RTCPFeedback.MediaSSRC
+  fullName: SIPSorcery.Net.RTCPFeedback.MediaSSRC
+  nameWithType: RTCPFeedback.MediaSSRC
+- uid: SIPSorcery.Net.RTCPFeedback.MIN_PACKET_SIZE
+  name: MIN_PACKET_SIZE
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_MIN_PACKET_SIZE
+  commentId: F:SIPSorcery.Net.RTCPFeedback.MIN_PACKET_SIZE
+  fullName: SIPSorcery.Net.RTCPFeedback.MIN_PACKET_SIZE
+  nameWithType: RTCPFeedback.MIN_PACKET_SIZE
+- uid: SIPSorcery.Net.RTCPFeedback.PID
+  name: PID
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_PID
+  commentId: F:SIPSorcery.Net.RTCPFeedback.PID
+  fullName: SIPSorcery.Net.RTCPFeedback.PID
+  nameWithType: RTCPFeedback.PID
+- uid: SIPSorcery.Net.RTCPFeedback.SENDER_PAYLOAD_SIZE
+  name: SENDER_PAYLOAD_SIZE
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_SENDER_PAYLOAD_SIZE
+  commentId: F:SIPSorcery.Net.RTCPFeedback.SENDER_PAYLOAD_SIZE
+  fullName: SIPSorcery.Net.RTCPFeedback.SENDER_PAYLOAD_SIZE
+  nameWithType: RTCPFeedback.SENDER_PAYLOAD_SIZE
+- uid: SIPSorcery.Net.RTCPFeedback.SenderSSRC
+  name: SenderSSRC
+  href: api/SIPSorcery.Net.RTCPFeedback.html#SIPSorcery_Net_RTCPFeedback_SenderSSRC
+  commentId: F:SIPSorcery.Net.RTCPFeedback.SenderSSRC
+  fullName: SIPSorcery.Net.RTCPFeedback.SenderSSRC
+  nameWithType: RTCPFeedback.SenderSSRC
+- uid: SIPSorcery.Net.RTCPFeedbackTypesEnum
+  name: RTCPFeedbackTypesEnum
+  href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html
+  commentId: T:SIPSorcery.Net.RTCPFeedbackTypesEnum
+  fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum
+  nameWithType: RTCPFeedbackTypesEnum
+- uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.NACK
+  name: NACK
+  href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_NACK
+  commentId: F:SIPSorcery.Net.RTCPFeedbackTypesEnum.NACK
+  fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum.NACK
+  nameWithType: RTCPFeedbackTypesEnum.NACK
+- uid: SIPSorcery.Net.RTCPFeedbackTypesEnum.unassigned
+  name: unassigned
+  href: api/SIPSorcery.Net.RTCPFeedbackTypesEnum.html#SIPSorcery_Net_RTCPFeedbackTypesEnum_unassigned
+  commentId: F:SIPSorcery.Net.RTCPFeedbackTypesEnum.unassigned
+  fullName: SIPSorcery.Net.RTCPFeedbackTypesEnum.unassigned
+  nameWithType: RTCPFeedbackTypesEnum.unassigned
 - uid: SIPSorcery.Net.RTCPHeader
   name: RTCPHeader
   href: api/SIPSorcery.Net.RTCPHeader.html
   commentId: T:SIPSorcery.Net.RTCPHeader
   fullName: SIPSorcery.Net.RTCPHeader
   nameWithType: RTCPHeader
+- uid: SIPSorcery.Net.RTCPHeader.#ctor(SIPSorcery.Net.PSFBFeedbackTypesEnum)
+  name: RTCPHeader(PSFBFeedbackTypesEnum)
+  href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader__ctor_SIPSorcery_Net_PSFBFeedbackTypesEnum_
+  commentId: M:SIPSorcery.Net.RTCPHeader.#ctor(SIPSorcery.Net.PSFBFeedbackTypesEnum)
+  fullName: SIPSorcery.Net.RTCPHeader.RTCPHeader(SIPSorcery.Net.PSFBFeedbackTypesEnum)
+  nameWithType: RTCPHeader.RTCPHeader(PSFBFeedbackTypesEnum)
+- uid: SIPSorcery.Net.RTCPHeader.#ctor(SIPSorcery.Net.RTCPFeedbackTypesEnum)
+  name: RTCPHeader(RTCPFeedbackTypesEnum)
+  href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader__ctor_SIPSorcery_Net_RTCPFeedbackTypesEnum_
+  commentId: M:SIPSorcery.Net.RTCPHeader.#ctor(SIPSorcery.Net.RTCPFeedbackTypesEnum)
+  fullName: SIPSorcery.Net.RTCPHeader.RTCPHeader(SIPSorcery.Net.RTCPFeedbackTypesEnum)
+  nameWithType: RTCPHeader.RTCPHeader(RTCPFeedbackTypesEnum)
 - uid: SIPSorcery.Net.RTCPHeader.#ctor(SIPSorcery.Net.RTCPReportTypesEnum,System.Int32)
   name: RTCPHeader(RTCPReportTypesEnum, Int32)
   href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader__ctor_SIPSorcery_Net_RTCPReportTypesEnum_System_Int32_
@@ -3786,6 +3953,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPHeader.RTCPHeader
   nameWithType: RTCPHeader.RTCPHeader
+- uid: SIPSorcery.Net.RTCPHeader.FeedbackMessageType
+  name: FeedbackMessageType
+  href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader_FeedbackMessageType
+  commentId: P:SIPSorcery.Net.RTCPHeader.FeedbackMessageType
+  fullName: SIPSorcery.Net.RTCPHeader.FeedbackMessageType
+  nameWithType: RTCPHeader.FeedbackMessageType
+- uid: SIPSorcery.Net.RTCPHeader.FeedbackMessageType*
+  name: FeedbackMessageType
+  href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader_FeedbackMessageType_
+  commentId: Overload:SIPSorcery.Net.RTCPHeader.FeedbackMessageType
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPHeader.FeedbackMessageType
+  nameWithType: RTCPHeader.FeedbackMessageType
 - uid: SIPSorcery.Net.RTCPHeader.GetBytes
   name: GetBytes()
   href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader_GetBytes
@@ -3818,6 +3998,19 @@ references:
   commentId: F:SIPSorcery.Net.RTCPHeader.HEADER_BYTES_LENGTH
   fullName: SIPSorcery.Net.RTCPHeader.HEADER_BYTES_LENGTH
   nameWithType: RTCPHeader.HEADER_BYTES_LENGTH
+- uid: SIPSorcery.Net.RTCPHeader.IsFeedbackReport
+  name: IsFeedbackReport()
+  href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader_IsFeedbackReport
+  commentId: M:SIPSorcery.Net.RTCPHeader.IsFeedbackReport
+  fullName: SIPSorcery.Net.RTCPHeader.IsFeedbackReport()
+  nameWithType: RTCPHeader.IsFeedbackReport()
+- uid: SIPSorcery.Net.RTCPHeader.IsFeedbackReport*
+  name: IsFeedbackReport
+  href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader_IsFeedbackReport_
+  commentId: Overload:SIPSorcery.Net.RTCPHeader.IsFeedbackReport
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPHeader.IsFeedbackReport
+  nameWithType: RTCPHeader.IsFeedbackReport
 - uid: SIPSorcery.Net.RTCPHeader.Length
   name: Length
   href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader_Length
@@ -3863,6 +4056,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTCPHeader.PaddingFlag
   nameWithType: RTCPHeader.PaddingFlag
+- uid: SIPSorcery.Net.RTCPHeader.PayloadFeedbackMessageType
+  name: PayloadFeedbackMessageType
+  href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader_PayloadFeedbackMessageType
+  commentId: P:SIPSorcery.Net.RTCPHeader.PayloadFeedbackMessageType
+  fullName: SIPSorcery.Net.RTCPHeader.PayloadFeedbackMessageType
+  nameWithType: RTCPHeader.PayloadFeedbackMessageType
+- uid: SIPSorcery.Net.RTCPHeader.PayloadFeedbackMessageType*
+  name: PayloadFeedbackMessageType
+  href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader_PayloadFeedbackMessageType_
+  commentId: Overload:SIPSorcery.Net.RTCPHeader.PayloadFeedbackMessageType
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPHeader.PayloadFeedbackMessageType
+  nameWithType: RTCPHeader.PayloadFeedbackMessageType
 - uid: SIPSorcery.Net.RTCPHeader.ReceptionReportCount
   name: ReceptionReportCount
   href: api/SIPSorcery.Net.RTCPHeader.html#SIPSorcery_Net_RTCPHeader_ReceptionReportCount
@@ -4244,6 +4450,291 @@ references:
   commentId: F:SIPSorcery.Net.RTCPSenderReport.SSRC
   fullName: SIPSorcery.Net.RTCPSenderReport.SSRC
   nameWithType: RTCPSenderReport.SSRC
+- uid: SIPSorcery.Net.RTCPSession
+  name: RTCPSession
+  href: api/SIPSorcery.Net.RTCPSession.html
+  commentId: T:SIPSorcery.Net.RTCPSession
+  fullName: SIPSorcery.Net.RTCPSession
+  nameWithType: RTCPSession
+- uid: SIPSorcery.Net.RTCPSession.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.UInt32)
+  name: RTCPSession(SDPMediaTypesEnum, UInt32)
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession__ctor_SIPSorcery_Net_SDPMediaTypesEnum_System_UInt32_
+  commentId: M:SIPSorcery.Net.RTCPSession.#ctor(SIPSorcery.Net.SDPMediaTypesEnum,System.UInt32)
+  fullName: SIPSorcery.Net.RTCPSession.RTCPSession(SIPSorcery.Net.SDPMediaTypesEnum, System.UInt32)
+  nameWithType: RTCPSession.RTCPSession(SDPMediaTypesEnum, UInt32)
+- uid: SIPSorcery.Net.RTCPSession.#ctor*
+  name: RTCPSession
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession__ctor_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.RTCPSession
+  nameWithType: RTCPSession.RTCPSession
+- uid: SIPSorcery.Net.RTCPSession.Close(System.String)
+  name: Close(String)
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_Close_System_String_
+  commentId: M:SIPSorcery.Net.RTCPSession.Close(System.String)
+  fullName: SIPSorcery.Net.RTCPSession.Close(System.String)
+  nameWithType: RTCPSession.Close(String)
+- uid: SIPSorcery.Net.RTCPSession.Close*
+  name: Close
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_Close_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.Close
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.Close
+  nameWithType: RTCPSession.Close
+- uid: SIPSorcery.Net.RTCPSession.Cname
+  name: Cname
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_Cname
+  commentId: P:SIPSorcery.Net.RTCPSession.Cname
+  fullName: SIPSorcery.Net.RTCPSession.Cname
+  nameWithType: RTCPSession.Cname
+- uid: SIPSorcery.Net.RTCPSession.Cname*
+  name: Cname
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_Cname_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.Cname
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.Cname
+  nameWithType: RTCPSession.Cname
+- uid: SIPSorcery.Net.RTCPSession.CreatedAt
+  name: CreatedAt
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_CreatedAt
+  commentId: P:SIPSorcery.Net.RTCPSession.CreatedAt
+  fullName: SIPSorcery.Net.RTCPSession.CreatedAt
+  nameWithType: RTCPSession.CreatedAt
+- uid: SIPSorcery.Net.RTCPSession.CreatedAt*
+  name: CreatedAt
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_CreatedAt_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.CreatedAt
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.CreatedAt
+  nameWithType: RTCPSession.CreatedAt
+- uid: SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp(System.DateTime)
+  name: DateTimeToNtpTimestamp(DateTime)
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_DateTimeToNtpTimestamp_System_DateTime_
+  commentId: M:SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp(System.DateTime)
+  fullName: SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp(System.DateTime)
+  nameWithType: RTCPSession.DateTimeToNtpTimestamp(DateTime)
+- uid: SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp*
+  name: DateTimeToNtpTimestamp
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_DateTimeToNtpTimestamp_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp
+  nameWithType: RTCPSession.DateTimeToNtpTimestamp
+- uid: SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp32(System.DateTime)
+  name: DateTimeToNtpTimestamp32(DateTime)
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_DateTimeToNtpTimestamp32_System_DateTime_
+  commentId: M:SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp32(System.DateTime)
+  fullName: SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp32(System.DateTime)
+  nameWithType: RTCPSession.DateTimeToNtpTimestamp32(DateTime)
+- uid: SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp32*
+  name: DateTimeToNtpTimestamp32
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_DateTimeToNtpTimestamp32_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp32
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.DateTimeToNtpTimestamp32
+  nameWithType: RTCPSession.DateTimeToNtpTimestamp32
+- uid: SIPSorcery.Net.RTCPSession.IsClosed
+  name: IsClosed
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_IsClosed
+  commentId: P:SIPSorcery.Net.RTCPSession.IsClosed
+  fullName: SIPSorcery.Net.RTCPSession.IsClosed
+  nameWithType: RTCPSession.IsClosed
+- uid: SIPSorcery.Net.RTCPSession.IsClosed*
+  name: IsClosed
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_IsClosed_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.IsClosed
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.IsClosed
+  nameWithType: RTCPSession.IsClosed
+- uid: SIPSorcery.Net.RTCPSession.IsTimedOut
+  name: IsTimedOut
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_IsTimedOut
+  commentId: P:SIPSorcery.Net.RTCPSession.IsTimedOut
+  fullName: SIPSorcery.Net.RTCPSession.IsTimedOut
+  nameWithType: RTCPSession.IsTimedOut
+- uid: SIPSorcery.Net.RTCPSession.IsTimedOut*
+  name: IsTimedOut
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_IsTimedOut_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.IsTimedOut
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.IsTimedOut
+  nameWithType: RTCPSession.IsTimedOut
+- uid: SIPSorcery.Net.RTCPSession.LastActivityAt
+  name: LastActivityAt
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_LastActivityAt
+  commentId: P:SIPSorcery.Net.RTCPSession.LastActivityAt
+  fullName: SIPSorcery.Net.RTCPSession.LastActivityAt
+  nameWithType: RTCPSession.LastActivityAt
+- uid: SIPSorcery.Net.RTCPSession.LastActivityAt*
+  name: LastActivityAt
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_LastActivityAt_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.LastActivityAt
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.LastActivityAt
+  nameWithType: RTCPSession.LastActivityAt
+- uid: SIPSorcery.Net.RTCPSession.LastNtpTimestampSent
+  name: LastNtpTimestampSent
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_LastNtpTimestampSent
+  commentId: P:SIPSorcery.Net.RTCPSession.LastNtpTimestampSent
+  fullName: SIPSorcery.Net.RTCPSession.LastNtpTimestampSent
+  nameWithType: RTCPSession.LastNtpTimestampSent
+- uid: SIPSorcery.Net.RTCPSession.LastNtpTimestampSent*
+  name: LastNtpTimestampSent
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_LastNtpTimestampSent_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.LastNtpTimestampSent
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.LastNtpTimestampSent
+  nameWithType: RTCPSession.LastNtpTimestampSent
+- uid: SIPSorcery.Net.RTCPSession.LastRtpTimestampSent
+  name: LastRtpTimestampSent
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_LastRtpTimestampSent
+  commentId: P:SIPSorcery.Net.RTCPSession.LastRtpTimestampSent
+  fullName: SIPSorcery.Net.RTCPSession.LastRtpTimestampSent
+  nameWithType: RTCPSession.LastRtpTimestampSent
+- uid: SIPSorcery.Net.RTCPSession.LastRtpTimestampSent*
+  name: LastRtpTimestampSent
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_LastRtpTimestampSent_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.LastRtpTimestampSent
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.LastRtpTimestampSent
+  nameWithType: RTCPSession.LastRtpTimestampSent
+- uid: SIPSorcery.Net.RTCPSession.LastSeqNum
+  name: LastSeqNum
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_LastSeqNum
+  commentId: P:SIPSorcery.Net.RTCPSession.LastSeqNum
+  fullName: SIPSorcery.Net.RTCPSession.LastSeqNum
+  nameWithType: RTCPSession.LastSeqNum
+- uid: SIPSorcery.Net.RTCPSession.LastSeqNum*
+  name: LastSeqNum
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_LastSeqNum_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.LastSeqNum
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.LastSeqNum
+  nameWithType: RTCPSession.LastSeqNum
+- uid: SIPSorcery.Net.RTCPSession.MediaType
+  name: MediaType
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_MediaType
+  commentId: P:SIPSorcery.Net.RTCPSession.MediaType
+  fullName: SIPSorcery.Net.RTCPSession.MediaType
+  nameWithType: RTCPSession.MediaType
+- uid: SIPSorcery.Net.RTCPSession.MediaType*
+  name: MediaType
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_MediaType_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.MediaType
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.MediaType
+  nameWithType: RTCPSession.MediaType
+- uid: SIPSorcery.Net.RTCPSession.NO_ACTIVITY_TIMEOUT_REASON
+  name: NO_ACTIVITY_TIMEOUT_REASON
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_NO_ACTIVITY_TIMEOUT_REASON
+  commentId: F:SIPSorcery.Net.RTCPSession.NO_ACTIVITY_TIMEOUT_REASON
+  fullName: SIPSorcery.Net.RTCPSession.NO_ACTIVITY_TIMEOUT_REASON
+  nameWithType: RTCPSession.NO_ACTIVITY_TIMEOUT_REASON
+- uid: SIPSorcery.Net.RTCPSession.OctetsReceivedCount
+  name: OctetsReceivedCount
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_OctetsReceivedCount
+  commentId: P:SIPSorcery.Net.RTCPSession.OctetsReceivedCount
+  fullName: SIPSorcery.Net.RTCPSession.OctetsReceivedCount
+  nameWithType: RTCPSession.OctetsReceivedCount
+- uid: SIPSorcery.Net.RTCPSession.OctetsReceivedCount*
+  name: OctetsReceivedCount
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_OctetsReceivedCount_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.OctetsReceivedCount
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.OctetsReceivedCount
+  nameWithType: RTCPSession.OctetsReceivedCount
+- uid: SIPSorcery.Net.RTCPSession.OctetsSentCount
+  name: OctetsSentCount
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_OctetsSentCount
+  commentId: P:SIPSorcery.Net.RTCPSession.OctetsSentCount
+  fullName: SIPSorcery.Net.RTCPSession.OctetsSentCount
+  nameWithType: RTCPSession.OctetsSentCount
+- uid: SIPSorcery.Net.RTCPSession.OctetsSentCount*
+  name: OctetsSentCount
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_OctetsSentCount_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.OctetsSentCount
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.OctetsSentCount
+  nameWithType: RTCPSession.OctetsSentCount
+- uid: SIPSorcery.Net.RTCPSession.PacketsReceivedCount
+  name: PacketsReceivedCount
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_PacketsReceivedCount
+  commentId: P:SIPSorcery.Net.RTCPSession.PacketsReceivedCount
+  fullName: SIPSorcery.Net.RTCPSession.PacketsReceivedCount
+  nameWithType: RTCPSession.PacketsReceivedCount
+- uid: SIPSorcery.Net.RTCPSession.PacketsReceivedCount*
+  name: PacketsReceivedCount
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_PacketsReceivedCount_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.PacketsReceivedCount
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.PacketsReceivedCount
+  nameWithType: RTCPSession.PacketsReceivedCount
+- uid: SIPSorcery.Net.RTCPSession.PacketsSentCount
+  name: PacketsSentCount
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_PacketsSentCount
+  commentId: P:SIPSorcery.Net.RTCPSession.PacketsSentCount
+  fullName: SIPSorcery.Net.RTCPSession.PacketsSentCount
+  nameWithType: RTCPSession.PacketsSentCount
+- uid: SIPSorcery.Net.RTCPSession.PacketsSentCount*
+  name: PacketsSentCount
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_PacketsSentCount_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.PacketsSentCount
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.PacketsSentCount
+  nameWithType: RTCPSession.PacketsSentCount
+- uid: SIPSorcery.Net.RTCPSession.ReceptionReport
+  name: ReceptionReport
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_ReceptionReport
+  commentId: P:SIPSorcery.Net.RTCPSession.ReceptionReport
+  fullName: SIPSorcery.Net.RTCPSession.ReceptionReport
+  nameWithType: RTCPSession.ReceptionReport
+- uid: SIPSorcery.Net.RTCPSession.ReceptionReport*
+  name: ReceptionReport
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_ReceptionReport_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.ReceptionReport
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.ReceptionReport
+  nameWithType: RTCPSession.ReceptionReport
+- uid: SIPSorcery.Net.RTCPSession.Ssrc
+  name: Ssrc
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_Ssrc
+  commentId: P:SIPSorcery.Net.RTCPSession.Ssrc
+  fullName: SIPSorcery.Net.RTCPSession.Ssrc
+  nameWithType: RTCPSession.Ssrc
+- uid: SIPSorcery.Net.RTCPSession.Ssrc*
+  name: Ssrc
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_Ssrc_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.Ssrc
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.Ssrc
+  nameWithType: RTCPSession.Ssrc
+- uid: SIPSorcery.Net.RTCPSession.Start
+  name: Start()
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_Start
+  commentId: M:SIPSorcery.Net.RTCPSession.Start
+  fullName: SIPSorcery.Net.RTCPSession.Start()
+  nameWithType: RTCPSession.Start()
+- uid: SIPSorcery.Net.RTCPSession.Start*
+  name: Start
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_Start_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.Start
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.Start
+  nameWithType: RTCPSession.Start
+- uid: SIPSorcery.Net.RTCPSession.StartedAt
+  name: StartedAt
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_StartedAt
+  commentId: P:SIPSorcery.Net.RTCPSession.StartedAt
+  fullName: SIPSorcery.Net.RTCPSession.StartedAt
+  nameWithType: RTCPSession.StartedAt
+- uid: SIPSorcery.Net.RTCPSession.StartedAt*
+  name: StartedAt
+  href: api/SIPSorcery.Net.RTCPSession.html#SIPSorcery_Net_RTCPSession_StartedAt_
+  commentId: Overload:SIPSorcery.Net.RTCPSession.StartedAt
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTCPSession.StartedAt
+  nameWithType: RTCPSession.StartedAt
 - uid: SIPSorcery.Net.RTCRtcpMuxPolicy
   name: RTCRtcpMuxPolicy
   href: api/SIPSorcery.Net.RTCRtcpMuxPolicy.html
@@ -5410,6 +5901,45 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.AudioDestinationEndPoint
   nameWithType: RTPSession.AudioDestinationEndPoint
+- uid: SIPSorcery.Net.RTPSession.AudioLocalTrack
+  name: AudioLocalTrack
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioLocalTrack
+  commentId: P:SIPSorcery.Net.RTPSession.AudioLocalTrack
+  fullName: SIPSorcery.Net.RTPSession.AudioLocalTrack
+  nameWithType: RTPSession.AudioLocalTrack
+- uid: SIPSorcery.Net.RTPSession.AudioLocalTrack*
+  name: AudioLocalTrack
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioLocalTrack_
+  commentId: Overload:SIPSorcery.Net.RTPSession.AudioLocalTrack
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.AudioLocalTrack
+  nameWithType: RTPSession.AudioLocalTrack
+- uid: SIPSorcery.Net.RTPSession.AudioRemoteTrack
+  name: AudioRemoteTrack
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioRemoteTrack
+  commentId: P:SIPSorcery.Net.RTPSession.AudioRemoteTrack
+  fullName: SIPSorcery.Net.RTPSession.AudioRemoteTrack
+  nameWithType: RTPSession.AudioRemoteTrack
+- uid: SIPSorcery.Net.RTPSession.AudioRemoteTrack*
+  name: AudioRemoteTrack
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioRemoteTrack_
+  commentId: Overload:SIPSorcery.Net.RTPSession.AudioRemoteTrack
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.AudioRemoteTrack
+  nameWithType: RTPSession.AudioRemoteTrack
+- uid: SIPSorcery.Net.RTPSession.AudioRtcpSession
+  name: AudioRtcpSession
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioRtcpSession
+  commentId: P:SIPSorcery.Net.RTPSession.AudioRtcpSession
+  fullName: SIPSorcery.Net.RTPSession.AudioRtcpSession
+  nameWithType: RTPSession.AudioRtcpSession
+- uid: SIPSorcery.Net.RTPSession.AudioRtcpSession*
+  name: AudioRtcpSession
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_AudioRtcpSession_
+  commentId: Overload:SIPSorcery.Net.RTPSession.AudioRtcpSession
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.AudioRtcpSession
+  nameWithType: RTPSession.AudioRtcpSession
 - uid: SIPSorcery.Net.RTPSession.Close(System.String)
   name: Close(String)
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_Close_System_String_
@@ -5824,6 +6354,19 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.SendJpegFrame
   nameWithType: RTPSession.SendJpegFrame
+- uid: SIPSorcery.Net.RTPSession.SendRtcpFeedback(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.RTCPFeedback)
+  name: SendRtcpFeedback(SDPMediaTypesEnum, RTCPFeedback)
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpFeedback_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_RTCPFeedback_
+  commentId: M:SIPSorcery.Net.RTPSession.SendRtcpFeedback(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.RTCPFeedback)
+  fullName: SIPSorcery.Net.RTPSession.SendRtcpFeedback(SIPSorcery.Net.SDPMediaTypesEnum, SIPSorcery.Net.RTCPFeedback)
+  nameWithType: RTPSession.SendRtcpFeedback(SDPMediaTypesEnum, RTCPFeedback)
+- uid: SIPSorcery.Net.RTPSession.SendRtcpFeedback*
+  name: SendRtcpFeedback
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtcpFeedback_
+  commentId: Overload:SIPSorcery.Net.RTPSession.SendRtcpFeedback
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.SendRtcpFeedback
+  nameWithType: RTPSession.SendRtcpFeedback
 - uid: SIPSorcery.Net.RTPSession.SendRtpRaw(SIPSorcery.Net.SDPMediaTypesEnum,System.Byte[],System.UInt32,System.Int32,System.Int32)
   name: SendRtpRaw(SDPMediaTypesEnum, Byte[], UInt32, Int32, Int32)
   href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_SendRtpRaw_SIPSorcery_Net_SDPMediaTypesEnum_System_Byte___System_UInt32_System_Int32_System_Int32_
@@ -5953,6 +6496,45 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.RTPSession.VideoDestinationEndPoint
   nameWithType: RTPSession.VideoDestinationEndPoint
+- uid: SIPSorcery.Net.RTPSession.VideoLocalTrack
+  name: VideoLocalTrack
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoLocalTrack
+  commentId: P:SIPSorcery.Net.RTPSession.VideoLocalTrack
+  fullName: SIPSorcery.Net.RTPSession.VideoLocalTrack
+  nameWithType: RTPSession.VideoLocalTrack
+- uid: SIPSorcery.Net.RTPSession.VideoLocalTrack*
+  name: VideoLocalTrack
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoLocalTrack_
+  commentId: Overload:SIPSorcery.Net.RTPSession.VideoLocalTrack
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.VideoLocalTrack
+  nameWithType: RTPSession.VideoLocalTrack
+- uid: SIPSorcery.Net.RTPSession.VideoRemoteTrack
+  name: VideoRemoteTrack
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoRemoteTrack
+  commentId: P:SIPSorcery.Net.RTPSession.VideoRemoteTrack
+  fullName: SIPSorcery.Net.RTPSession.VideoRemoteTrack
+  nameWithType: RTPSession.VideoRemoteTrack
+- uid: SIPSorcery.Net.RTPSession.VideoRemoteTrack*
+  name: VideoRemoteTrack
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoRemoteTrack_
+  commentId: Overload:SIPSorcery.Net.RTPSession.VideoRemoteTrack
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.VideoRemoteTrack
+  nameWithType: RTPSession.VideoRemoteTrack
+- uid: SIPSorcery.Net.RTPSession.VideoRtcpSession
+  name: VideoRtcpSession
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoRtcpSession
+  commentId: P:SIPSorcery.Net.RTPSession.VideoRtcpSession
+  fullName: SIPSorcery.Net.RTPSession.VideoRtcpSession
+  nameWithType: RTPSession.VideoRtcpSession
+- uid: SIPSorcery.Net.RTPSession.VideoRtcpSession*
+  name: VideoRtcpSession
+  href: api/SIPSorcery.Net.RTPSession.html#SIPSorcery_Net_RTPSession_VideoRtcpSession_
+  commentId: Overload:SIPSorcery.Net.RTPSession.VideoRtcpSession
+  isSpec: "True"
+  fullName: SIPSorcery.Net.RTPSession.VideoRtcpSession
+  nameWithType: RTPSession.VideoRtcpSession
 - uid: SIPSorcery.Net.RTSPConstants
   name: RTSPConstants
   href: api/SIPSorcery.Net.RTSPConstants.html

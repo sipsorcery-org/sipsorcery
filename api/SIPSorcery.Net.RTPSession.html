@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class RTPSession
    ">
-    <meta name="generator" content="docfx 2.55.0.0">
+    <meta name="generator" content="docfx 2.56.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -520,6 +520,99 @@ for the audio stream to.</p>
   </table>
   <span class="small pull-right mobile-hide">
     <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_AudioLocalTrack.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.AudioLocalTrack%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L361">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_AudioLocalTrack_" data-uid="SIPSorcery.Net.RTPSession.AudioLocalTrack*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_AudioLocalTrack" data-uid="SIPSorcery.Net.RTPSession.AudioLocalTrack">AudioLocalTrack</h4>
+  <div class="markdown level1 summary"><p>The local audio stream for this session. Will be null if we are not sending audio.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public MediaStreamTrack AudioLocalTrack { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.MediaStreamTrack.html">MediaStreamTrack</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_AudioRemoteTrack.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.AudioRemoteTrack%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L366">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_AudioRemoteTrack_" data-uid="SIPSorcery.Net.RTPSession.AudioRemoteTrack*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_AudioRemoteTrack" data-uid="SIPSorcery.Net.RTPSession.AudioRemoteTrack">AudioRemoteTrack</h4>
+  <div class="markdown level1 summary"><p>The remote audio track for this session. Will be null if the remote party is not sending audio.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public MediaStreamTrack AudioRemoteTrack { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.MediaStreamTrack.html">MediaStreamTrack</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_AudioRtcpSession.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.AudioRtcpSession%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L371">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_AudioRtcpSession_" data-uid="SIPSorcery.Net.RTPSession.AudioRtcpSession*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_AudioRtcpSession" data-uid="SIPSorcery.Net.RTPSession.AudioRtcpSession">AudioRtcpSession</h4>
+  <div class="markdown level1 summary"><p>The reporting session for the audio stream. Will be null if only video is being sent.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCPSession AudioRtcpSession { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCPSession.html">RTCPSession</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_HasAudio.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.HasAudio%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
@@ -834,6 +927,99 @@ for the video stream to.</p>
       </tr>
     </tbody>
   </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_VideoLocalTrack.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.VideoLocalTrack%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L376">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_VideoLocalTrack_" data-uid="SIPSorcery.Net.RTPSession.VideoLocalTrack*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_VideoLocalTrack" data-uid="SIPSorcery.Net.RTPSession.VideoLocalTrack">VideoLocalTrack</h4>
+  <div class="markdown level1 summary"><p>The local video track for this session. Will be null if we are not sending video.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public MediaStreamTrack VideoLocalTrack { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.MediaStreamTrack.html">MediaStreamTrack</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_VideoRemoteTrack.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.VideoRemoteTrack%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L381">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_VideoRemoteTrack_" data-uid="SIPSorcery.Net.RTPSession.VideoRemoteTrack*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_VideoRemoteTrack" data-uid="SIPSorcery.Net.RTPSession.VideoRemoteTrack">VideoRemoteTrack</h4>
+  <div class="markdown level1 summary"><p>The remote video track for this session. Will be null if the remote party is not sending video.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public MediaStreamTrack VideoRemoteTrack { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.MediaStreamTrack.html">MediaStreamTrack</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_VideoRtcpSession.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.VideoRtcpSession%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L386">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_VideoRtcpSession_" data-uid="SIPSorcery.Net.RTPSession.VideoRtcpSession*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_VideoRtcpSession" data-uid="SIPSorcery.Net.RTPSession.VideoRtcpSession">VideoRtcpSession</h4>
+  <div class="markdown level1 summary"><p>The reporting session for the video stream. Will be null if only audio is being sent.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RTCPSession VideoRtcpSession { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCPSession.html">RTCPSession</a></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="methods">Methods
   </h3>
   <span class="small pull-right mobile-hide">
@@ -894,7 +1080,7 @@ we're receiving).</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_Close_System_String_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.Close(System.String)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L1873">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L1884">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_Close_" data-uid="SIPSorcery.Net.RTPSession.Close*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_Close_System_String_" data-uid="SIPSorcery.Net.RTPSession.Close(System.String)">Close(String)</h4>
@@ -1091,7 +1277,7 @@ packets) for use with this session.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_Dispose.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.Dispose%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L2434">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L2452">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_Dispose_" data-uid="SIPSorcery.Net.RTPSession.Dispose*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_Dispose" data-uid="SIPSorcery.Net.RTPSession.Dispose">Dispose()</h4>
@@ -1106,7 +1292,7 @@ packets) for use with this session.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_Dispose_System_Boolean_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.Dispose(System.Boolean)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L2429">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L2447">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_Dispose_" data-uid="SIPSorcery.Net.RTPSession.Dispose*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_Dispose_System_Boolean_" data-uid="SIPSorcery.Net.RTPSession.Dispose(System.Boolean)">Dispose(Boolean)</h4>
@@ -1334,7 +1520,7 @@ If media multiplexing is being used there will only a single RTP channel.</p>
     <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_OnReceive_System_Int32_System_Net_IPEndPoint_System_Byte___.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.OnReceive(System.Int32%2CSystem.Net.IPEndPoint%2CSystem.Byte%5B%5D)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
   </span>
   <span class="small pull-right mobile-hide">
-    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L1901">View Source</a>
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L1912">View Source</a>
   </span>
   <a id="SIPSorcery_Net_RTPSession_OnReceive_" data-uid="SIPSorcery.Net.RTPSession.OnReceive*"></a>
   <h4 id="SIPSorcery_Net_RTPSession_OnReceive_System_Int32_System_Net_IPEndPoint_System_Byte___" data-uid="SIPSorcery.Net.RTPSession.OnReceive(System.Int32,System.Net.IPEndPoint,System.Byte[])">OnReceive(Int32, IPEndPoint, Byte[])</h4>
@@ -1646,6 +1832,46 @@ quality image is required since the header used in this method does not support 
         <td><span class="xref">System.Int32</span></td>
         <td><span class="parametername">jpegHeight</span></td>
         <td><p>The height of the JPEG image.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <span class="small pull-right mobile-hide">
+    <span class="divider">|</span>
+    <a href="https://github.com/sipsorcery/sipsorcery/new/gh-pages/apiSpec/new?filename=SIPSorcery_Net_RTPSession_SendRtcpFeedback_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_RTCPFeedback_.md&amp;value=---%0Auid%3A%20SIPSorcery.Net.RTPSession.SendRtcpFeedback(SIPSorcery.Net.SDPMediaTypesEnum%2CSIPSorcery.Net.RTCPFeedback)%0Asummary%3A%20'*You%20can%20override%20summary%20for%20the%20API%20here%20using%20*MARKDOWN*%20syntax'%0A---%0A%0A*Please%20type%20below%20more%20information%20about%20this%20API%3A*%0A%0A">Improve this Doc</a>
+  </span>
+  <span class="small pull-right mobile-hide">
+    <a href="https://github.com/sipsorcery/sipsorcery/blob/gh-pages/src/net/RTP/RTPSession.cs/#L1875">View Source</a>
+  </span>
+  <a id="SIPSorcery_Net_RTPSession_SendRtcpFeedback_" data-uid="SIPSorcery.Net.RTPSession.SendRtcpFeedback*"></a>
+  <h4 id="SIPSorcery_Net_RTPSession_SendRtcpFeedback_SIPSorcery_Net_SDPMediaTypesEnum_SIPSorcery_Net_RTCPFeedback_" data-uid="SIPSorcery.Net.RTPSession.SendRtcpFeedback(SIPSorcery.Net.SDPMediaTypesEnum,SIPSorcery.Net.RTCPFeedback)">SendRtcpFeedback(SDPMediaTypesEnum, RTCPFeedback)</h4>
+  <div class="markdown level1 summary"><p>Allows sending of RTCP feedback reports.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public void SendRtcpFeedback(SDPMediaTypesEnum mediaType, RTCPFeedback feedback)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.SDPMediaTypesEnum.html">SDPMediaTypesEnum</a></td>
+        <td><span class="parametername">mediaType</span></td>
+        <td><p>The media type of the RTCP report  being sent. Must be audio or video.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="SIPSorcery.Net.RTCPFeedback.html">RTCPFeedback</a></td>
+        <td><span class="parametername">feedback</span></td>
+        <td><p>The feedback report to send.</p>
 </td>
       </tr>
     </tbody>

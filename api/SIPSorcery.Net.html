@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Namespace SIPSorcery.Net
    ">
-    <meta name="generator" content="docfx 2.55.0.0">
+    <meta name="generator" content="docfx 2.56.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -145,6 +145,8 @@ received reports but does for sends.</p>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPeerConnection.html">RTCPeerConnection</a></h4>
       <section><p>Represents a WebRTC RTCPeerConnection.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCPFeedback.html">RTCPFeedback</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPHeader.html">RTCPHeader</a></h4>
       <section><p>RTCP Header as defined in RFC3550.</p>
 </section>
@@ -158,6 +160,11 @@ Only the mandatory CNAME item is supported.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPSenderReport.html">RTCPSenderReport</a></h4>
       <section><p>An RTCP sender report is for use by active RTP senders.</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCPSession.html">RTCPSession</a></h4>
+      <section><p>Represents an RTCP session intended to be used in conjunction with an
+RTP session. This class needs to get notified of all RTP sends and receives
+and will take care of RTCP reporting.</p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCRtpReceiver.html">RTCRtpReceiver</a></h4>
       <section><p>This class represents a remote real-time sourced stream. It can be thought of
@@ -342,6 +349,10 @@ Note that this status applies to RTP streams only. If there is an RTCP stream
 associated with the RTP it should carry on as normal.
 See <a href="https://tools.ietf.org/html/rfc4566#section-6">https://tools.ietf.org/html/rfc4566#section-6</a></p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.PSFBFeedbackTypesEnum.html">PSFBFeedbackTypesEnum</a></h4>
+      <section><p>The different types of Feedback Message Types. (RFC4585)
+<a href="https://tools.ietf.org/html/rfc4585#page-35">https://tools.ietf.org/html/rfc4585#page-35</a></p>
+</section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCBundlePolicy.html">RTCBundlePolicy</a></h4>
       <section><p>Affects which media tracks are negotiated if the remote end point is not bundle aware.</p>
 </section>
@@ -377,6 +388,10 @@ set as completed as soon as a local and remote candidate have set their nominate
 <li>PeerConnectionState: takes into account the IceConnectionState but also includes the DTLS
 handshake and actions at the application layer such as a request to close the peer connection.</li>
 </ul>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.RTCPFeedbackTypesEnum.html">RTCPFeedbackTypesEnum</a></h4>
+      <section><p>The different types of Feedback Message Types. (RFC4585)
+<a href="https://tools.ietf.org/html/rfc4585#page-35">https://tools.ietf.org/html/rfc4585#page-35</a></p>
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.RTCPReportTypesEnum.html">RTCPReportTypesEnum</a></h4>
       <section><p>The different types of RTCP packets as defined in RFC3550.</p>
