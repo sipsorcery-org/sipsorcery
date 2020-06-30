@@ -224,7 +224,7 @@ namespace SIPSorcery.Net
         public RTCPeerConnection(RTCConfiguration configuration) :
             base(true, true, true, configuration?.X_BindAddress)
         {
-            if(_configuration != null &&
+            if (_configuration != null &&
                _configuration.iceTransportPolicy == RTCIceTransportPolicy.relay &&
                _configuration.iceServers?.Count == 0)
             {
@@ -259,7 +259,8 @@ namespace SIPSorcery.Net
             {
                 if (state == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
                 {
-                    base.AudioDestinationEndPoint = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                    var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                    base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
                 }
 
                 iceConnectionState = state;
@@ -295,8 +296,8 @@ namespace SIPSorcery.Net
         {
             var rtpIceChannel = new RtpIceChannel(
                 _configuration?.X_BindAddress,
-                RTCIceComponent.rtp, 
-                _configuration?.iceServers, 
+                RTCIceComponent.rtp,
+                _configuration?.iceServers,
                 _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all);
 
             m_rtpChannels.Add(mediaType, rtpIceChannel);
@@ -349,9 +350,11 @@ namespace SIPSorcery.Net
         /// <returns>The result of attempting to set the remote description.</returns>
         public override SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP sessionDescription)
         {
-            RTCSessionDescriptionInit init = new RTCSessionDescriptionInit { 
-                sdp = sessionDescription.ToString(), 
-                type = (sdpType == SdpType.answer) ? RTCSdpType.answer : RTCSdpType.offer };
+            RTCSessionDescriptionInit init = new RTCSessionDescriptionInit
+            {
+                sdp = sessionDescription.ToString(),
+                type = (sdpType == SdpType.answer) ? RTCSdpType.answer : RTCSdpType.offer
+            };
 
             return setRemoteDescription(init);
         }
@@ -421,23 +424,23 @@ namespace SIPSorcery.Net
                     _rtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
                 }
 
-                if(!string.IsNullOrWhiteSpace(dtlsFingerprint))
+                if (!string.IsNullOrWhiteSpace(dtlsFingerprint))
                 {
                     dtlsFingerprint = dtlsFingerprint.Trim().ToLower();
 
-                    if(dtlsFingerprint.Length < DTLS_FINGERPRINT_DIGEST.Length + 1)
+                    if (dtlsFingerprint.Length < DTLS_FINGERPRINT_DIGEST.Length + 1)
                     {
                         logger.LogWarning($"The DTLS fingerprint was too short.");
                         return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
                     }
-                    else if(!dtlsFingerprint.StartsWith(DTLS_FINGERPRINT_DIGEST))
+                    else if (!dtlsFingerprint.StartsWith(DTLS_FINGERPRINT_DIGEST))
                     {
                         logger.LogWarning($"The DTLS fingerprint was supplied with an unsupported digest function (supported one is {DTLS_FINGERPRINT_DIGEST}): {dtlsFingerprint}.");
                         return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
                     }
                     else
                     {
-                        dtlsFingerprint = dtlsFingerprint.Substring(DTLS_FINGERPRINT_DIGEST.Length + 1).Trim().Replace(":","").Replace(" ", "");
+                        dtlsFingerprint = dtlsFingerprint.Substring(DTLS_FINGERPRINT_DIGEST.Length + 1).Trim().Replace(":", "").Replace(" ", "");
                         RemotePeerDtlsFingerprint = ByteBufferInfo.ParseHexStr(dtlsFingerprint);
                         logger.LogDebug($"The DTLS fingerprint for the remote peer's SDP {ByteBufferInfo.HexStr(RemotePeerDtlsFingerprint)}.");
                     }
@@ -454,7 +457,7 @@ namespace SIPSorcery.Net
                 {
                     foreach (var iceCandidate in remoteSdp.IceCandidates)
                     {
-                         addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
+                        addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
                     }
                 }
 
@@ -464,7 +467,7 @@ namespace SIPSorcery.Net
                     {
                         foreach (var iceCandidate in media.IceCandidates)
                         {
-                             addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
+                            addIceCandidate(new RTCIceCandidateInit { candidate = iceCandidate });
                         }
                     }
                 }
@@ -594,8 +597,8 @@ namespace SIPSorcery.Net
         public override SDP CreateAnswer(IPAddress connectionAddress)
         {
             var result = createAnswer(null);
-            
-            if(result?.sdp != null)
+
+            if (result?.sdp != null)
             {
                 return SDP.ParseSDPDescription(result.sdp);
             }
