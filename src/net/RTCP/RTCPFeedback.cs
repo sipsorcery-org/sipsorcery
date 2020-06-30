@@ -37,8 +37,20 @@ namespace SIPSorcery.Net
     /// </summary>
     public enum RTCPFeedbackTypesEnum : int
     {
-        unassigned = 0,
-        NACK = 1
+        unassigned = 0,     // Unassigned
+        NACK = 1,   		// Generic NACK	Generic negative acknowledgment		    [RFC4585]
+        // reserved = 2		// Reserved												[RFC5104]
+        TMMBR = 3, 			// Temporary Maximum Media Stream Bit Rate Request		[RFC5104]
+        TMMBN = 4,			// Temporary Maximum Media Stream Bit Rate Notification	[RFC5104]
+        RTCP_SR_REQ = 5, 	// RTCP Rapid Resynchronisation Request					[RFC6051]
+        RAMS = 6,			// Rapid Acquisition of Multicast Sessions				[RFC6285]
+        TLLEI = 7, 			// Transport-Layer Third-Party Loss Early Indication	[RFC6642]
+        RTCP_ECN_FB = 8,	// RTCP ECN Feedback 									[RFC6679]
+        PAUSE_RESUME = 9,   // Media Pause/Resume									[RFC7728]
+
+        DBI = 10			// Delay Budget Information (DBI) [3GPP TS 26.114 v16.3.0][Ozgur_Oyman]
+        // 11-30			// Unassigned	
+        // Extension = 31	// Reserved for future extensions						[RFC4585]
     }
 
     /// <summary>
@@ -47,14 +59,27 @@ namespace SIPSorcery.Net
     /// </summary>
     public enum PSFBFeedbackTypesEnum : byte
     {
-        unassigned = 0,
-        PLI = 1,  // Picture Loss Indication (PLI)
-        SLI = 2,  // Slice Loss Indication (SLI)
-        RPSI = 3, // Reference Picture Selection Indication (RPSI)
-                  // 4-14 unassigned
-        AFB = 15, // Application layer FB (AFB) message
-                  // 16-30: unassigned
-                  // 31: reserved for future expansion of the sequence number space
+        unassigned = 0,     // Unassigned
+        PLI = 1,            // Picture Loss Indication                              [RFC4585]
+        SLI = 2,            // Slice Loss Indication   [RFC4585]
+        RPSI = 3,           // Reference Picture Selection Indication  [RFC4585]
+        FIR = 4,            // Full Intra Request Command  [RFC5104]
+        TSTR = 5,           // Temporal-Spatial Trade-off Request  [RFC5104]
+        TSTN = 6,           // Temporal-Spatial Trade-off Notification [RFC5104]
+        VBCM = 7,           // Video Back Channel Message  [RFC5104]
+        PSLEI = 8,          // Payload-Specific Third-Party Loss Early Indication  [RFC6642]
+        ROI = 9,            // Video region-of-interest (ROI)	[3GPP TS 26.114 v16.3.0][Ozgur_Oyman]
+        LRR = 10,           // Layer Refresh Request Command   [RFC-ietf-avtext-lrr-07]
+        // 11-14		    // Unassigned	
+        AFB = 15            // Application Layer Feedback  [RFC4585]
+        // 16-30		    // Unassigned	
+        // Extension = 31   //Extension   Reserved for future extensions  [RFC4585]
+    }
+
+    public enum FeedbackProtocol
+    {
+        RTCP = 0,
+        PSFB = 1
     }
 
     public class RTCPFeedback
@@ -77,6 +102,19 @@ namespace SIPSorcery.Net
             SenderSSRC = ssrc;
             PID = sequenceNo;
             BLP = bitMask;
+        }
+
+        /// <summary>
+        /// Constructor for RTP feedback reports that do not require any additional feedback control
+        /// indication parameters (e.g. RTCP Rapid Resynchronisation Request).
+        /// </summary>
+        /// <param name="feedbackMessageType">The payload specific feedback type.</param>
+        public RTCPFeedback(uint senderSsrc, uint mediaSsrc, RTCPFeedbackTypesEnum feedbackMessageType)
+        {
+            Header = new RTCPHeader(feedbackMessageType);
+            SenderSSRC = senderSsrc;
+            MediaSSRC = mediaSsrc;
+            SENDER_PAYLOAD_SIZE = 8;
         }
 
         /// <summary>
@@ -136,6 +174,9 @@ namespace SIPSorcery.Net
 
             switch (Header)
             {
+                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+                    // PLI feedback reports do no have any additional parameters.
+                    break;
                 case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
                     if (BitConverter.IsLittleEndian)
                     {
@@ -150,9 +191,7 @@ namespace SIPSorcery.Net
                     break;
 
                 case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
-                    // PLI feedback reports do no have any additional parameters.
                     break;
-
                 default:
                     throw new NotImplementedException($"Serialisation for feedback report {Header.PacketType} not yet implemented.");
             }
