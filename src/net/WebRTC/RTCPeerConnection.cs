@@ -217,6 +217,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<RTCPeerConnectionState> onconnectionstatechange;
 
+        public event Action<byte[]> OnDtlsPacket;
+
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
@@ -751,19 +753,25 @@ namespace SIPSorcery.Net
         {
             //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
 
+            // By this pint the RTP ICE channel has already processed any STUN packets which means 
+            // it's only necessary to separate RTP/RTCP from DTLS.
+            // Because DTLS packets can be fragmented and RTP/RTCP should never be use the RTP/RTCP 
+            // prefix to distinguish.
+
             if (buffer?.Length > 0)
             {
                 try
                 {
-                    if (buffer[0] >= 20 && buffer[0] <= 63)
+                    if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
                     {
-                        // DTLS packet.
-                        // Do nothing. The DTLSContext already has the socket handle and is monitoring
-                        // for DTLS packets.
+                        // RTP/RTCP packet.
+                        base.OnReceive(localPort, remoteEP, buffer);
                     }
                     else
+                        //if (buffer[0] >= 20 && buffer[0] <= 63)
                     {
-                        base.OnReceive(localPort, remoteEP, buffer);
+                        // DTLS packet.
+                        OnDtlsPacket?.Invoke(buffer);
                     }
                 }
                 catch (Exception excp)
