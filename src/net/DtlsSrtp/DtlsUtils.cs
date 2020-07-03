@@ -1,17 +1,29 @@
-﻿/**
- * 
- * This class provides useful functions to handle certificate in DTLS-SRTP.
+﻿//-----------------------------------------------------------------------------
+// Filename: DtlsUtils.cs
+//
+// Description: This class provides useful functions to handle certificate in 
+// DTLS-SRTP.
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
 
- * 
- * @author Rafael Soares (raf.csoares@kyubinteractive.com)
- * 
- *
- */
-
-
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -22,14 +34,8 @@ using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.Utilities.IO.Pem;
 using Org.BouncyCastle.X509;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 
-namespace Org.BouncyCastle.Crypto.DtlsSrtp
+namespace SIPSorcery.Net
 {
     public class DtlsUtils
     {
@@ -222,11 +228,12 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
                 }
 
                 if (signatureAndHashAlgorithm == null)
+                {
                     return null;
+                }
             }
 
-            return LoadSignerCredentials(context, certificate,
-                privateKey, signatureAndHashAlgorithm);
+            return LoadSignerCredentials(context, certificate, privateKey, signatureAndHashAlgorithm);
         }
 
         public static TlsSignerCredentials LoadSignerCredentials(TlsContext context, IList supportedSignatureAlgorithms,
@@ -333,7 +340,9 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
         {
             const int keyStrength = 2048;
             if (privateKey == null)
+            {
                 privateKey = CreatePrivateKeyResource(issuerName);
+            }
             var issuerPrivKey = privateKey;
 
             // Generating Random Numbers
@@ -375,7 +384,7 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
             var certificate = certificateGenerator.Generate(signatureFactory);
 
             // corresponding private key
-            var info = Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(subjectKeyPair.Private);
+            var info = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(subjectKeyPair.Private);
 
             // merge into X509Certificate2
             var x509 = new X509Certificate2(certificate.GetEncoded());

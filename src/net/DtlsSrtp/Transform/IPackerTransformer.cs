@@ -1,14 +1,25 @@
-﻿/**
- * Encapsulate the concept of packet transformation. Given a packet,
- * <tt>PacketTransformer</tt> can either transform it or reverse the
- * transformation.
- * 
- * @author Bing SU (nova.su@gmail.com)
- * @author Rafael Soares (raf.csoares@kyubinteractive.com)
- * 
- */
+﻿//-----------------------------------------------------------------------------
+// Filename: IPacketTransformer.cs
+//
+// Description: Encapsulate the concept of packet transformation. Given a packet,
+// PacketTransformer can either transform it or reverse the
+// transformation.
+//
+// Derived From:
+// https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/PacketTransformer.java
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// Original Source: AGPL-3.0 License
+//-----------------------------------------------------------------------------
 
-namespace Org.BouncyCastle.Crypto.DtlsSrtp
+namespace SIPSorcery.Net
 {
     public interface IPacketTransformer
     {

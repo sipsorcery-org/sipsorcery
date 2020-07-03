@@ -1,20 +1,59 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿//-----------------------------------------------------------------------------
+// Filename: SrtpCrtpyoContext.cs
+//
+// Description: SrtpCryptoContext class is the core class of SRTP implementation. 
+// There can be multiple SRTP sources in one SRTP session.And each SRTP stream 
+// has a corresponding SrtpCryptoContext object, identified by SSRC.In this way,
+// different sources can be protected independently.
+//
+// Derived From:
+// https://github.com/jitsi/jitsi-srtp/blob/master/src/main/java/org/jitsi/srtp/SrtpCryptoContext.java
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+//
+// License:
+// Customisations: BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// Original Source: Apache License: see below
+//-----------------------------------------------------------------------------
 
-/**
- * 
- * Code derived and adapted from the Jitsi client side SRTP framework.
- * 
- * Distributed under LGPL license.
- * See terms of license at gnu.org.
- */
-
-using Org.BouncyCastle.Crypto.Macs;
-using Org.BouncyCastle.Crypto.Digests;
-using Org.BouncyCastle.Crypto.Engines;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Utilities;
-using System.IO;
+/*
+ * Copyright @ 2015 - present 8x8, Inc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Some of the code in this class is derived from ccRtp's SRTP implementation,
+ * which has the following copyright notice:
+ *
+ * Copyright (C) 2004-2006 the Minisip Team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+*/
 
 /**
  * SRTPCryptoContext class is the core class of SRTP implementation. There can
@@ -40,9 +79,17 @@ using System.IO;
  * 
  * @author Bing SU (nova.su@gmail.com)
  */
-namespace Org.BouncyCastle.Crypto.DtlsSrtp
-{
 
+using System.IO;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Macs;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Utilities;
+
+namespace SIPSorcery.Net
+{
     public class SrtpCryptoContext
     {
         /**

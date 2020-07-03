@@ -1,11 +1,33 @@
-﻿namespace Org.BouncyCastle.Crypto.DtlsSrtp
+﻿//-----------------------------------------------------------------------------
+// Filename: SrtpTransformEngine.cs
+//
+// Description: SRTPTransformEngine class implements TransformEngine interface. 
+// It stores important information / objects regarding SRTP processing.Through
+// SRTPTransformEngine, we can get the needed PacketTransformer, which will be
+// used by abstract TransformConnector classes.
+//
+// Derived From:
+// https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/SRTPTransformEngine.java
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// Original Source: AGPL-3.0 License
+//-----------------------------------------------------------------------------
+
+namespace SIPSorcery.Net
 {
     public class SrtpTransformEngine : ITransformEngine
     {
         /**
-	 * The default SRTPCryptoContext, which will be used to derivate other
-	 * contexts.
-	 */
+	    * The default SRTPCryptoContext, which will be used to derivate other
+	    * contexts.
+	    */
         private SrtpCryptoContext defaultContext;
 
         /**

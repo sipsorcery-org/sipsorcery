@@ -1,7 +1,26 @@
-﻿using Org.BouncyCastle.Crypto.Tls;
-using System;
+﻿//-----------------------------------------------------------------------------
+// Filename: SrtpParameters.cs
+//
+// Description: Parameters for Secure RTP (SRTP) sessions.
+//
+// Derived From: 
+// https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/SRTPParameters.java
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+//
+// License:
+// Customisations: BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// Original Source: AGPL-3.0 License
+//-----------------------------------------------------------------------------
 
-namespace Org.BouncyCastle.Crypto.DtlsSrtp
+using System;
+using Org.BouncyCastle.Crypto.Tls;
+
+namespace SIPSorcery.Net
 {
     public struct SrtpParameters
     {
@@ -66,7 +85,7 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
                 case SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32:
                     return SRTP_NULL_HMAC_SHA1_32;
                 default:
-                    throw new Exception("SRTP Protection Profile value %d is not allowed for DTLS SRTP. See http://tools.ietf.org/html/rfc5764#section-4.1.2 for valid values.");
+                    throw new Exception($"SRTP Protection Profile value {profileValue} is not allowed for DTLS SRTP. See http://tools.ietf.org/html/rfc5764#section-4.1.2 for valid values.");
             }
         }
 

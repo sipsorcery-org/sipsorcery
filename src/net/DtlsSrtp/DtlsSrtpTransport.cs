@@ -1,24 +1,29 @@
-﻿/**
- * 
- * This class represents the DTLS SRTP transport connection to use as Client or Server.
- * 
- * 
- * @author Rafael Soares (raf.csoares@kyubinteractive.com)
- * 
- *
- */
+﻿//-----------------------------------------------------------------------------
+// Filename: DtlsSrtpTransport.cs
+//
+// Description: This class represents the DTLS SRTP transport connection to use 
+// as Client or Server.
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+// 02 Jul 2020  Aaron Clauson   Switched underlying transport from socket to
+//                              memory stream.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
 
-using Org.BouncyCastle.Crypto.Tls;
-using Org.BouncyCastle.Security;
 using System;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
+using Org.BouncyCastle.Crypto.Tls;
+using Org.BouncyCastle.Security;
 
-namespace Org.BouncyCastle.Crypto.DtlsSrtp
+namespace SIPSorcery.Net
 {
     public class DtlsSrtpTransport : DatagramTransport
     {
@@ -34,12 +39,6 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
         private IPacketTransformer srtcpDecoder;
         IDtlsSrtpPeer connection = null;
 
-        //Socket to receive
-        //Socket connectedSocket = null;
-        //Socket to send
-        //Socket remoteSocket = null;
-        //IPEndPoint remoteEndPoint = null;
-        //PipedStream _pipedStreamRecv;
         MemoryStream _inStream = new MemoryStream();
 
         public Action<byte[]> OnDataReady;
@@ -124,16 +123,8 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
             }
         }
 
-        #region Internal Handshake Functions
-
         public bool DoHandshakeAsClient()
         {
-            //if (serverEndPoint == null && clientSocket.Connected)
-            //    serverEndPoint = clientSocket.RemoteEndPoint as IPEndPoint;
-
-            //this.remoteEndPoint = serverEndPoint;
-            //this.connectedSocket = clientSocket;
-
             if (!handshaking && !handshakeComplete)
             {
                 this.startTime = System.DateTime.Now;
@@ -295,21 +286,9 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
             }
         }
 
-        #endregion
-
-        #region RTP Public Functions
-
         public byte[] UnprotectRTP(byte[] packet, int offset, int length)
         {
-            try
-            {
-                return this.srtpDecoder.ReverseTransform(packet, offset, length);
-            }
-            catch (Exception)
-            {
-                //UnityEngine.Debug.Log("[DecodeRTP] Invalid packet");
-            }
-            return null;
+            return this.srtpDecoder.ReverseTransform(packet, offset, length);
         }
 
         public int UnprotectRTP(byte[] payload, int length, out int outLength)
@@ -329,15 +308,7 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
 
         public byte[] ProtectRTP(byte[] packet, int offset, int length)
         {
-            try
-            {
-                return this.srtpEncoder.Transform(packet, offset, length);
-            }
-            catch (Exception)
-            {
-                //UnityEngine.Debug.Log("[EncodeRTP] Invalid packet");
-            }
-            return null;
+            return this.srtpEncoder.Transform(packet, offset, length);
         }
 
         public int ProtectRTP(byte[] payload, int length, out int outLength)
@@ -355,21 +326,9 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
             return 0; //No Errors
         }
 
-        #endregion
-
-        #region RTCP Public Functions
-
         public byte[] UnprotectRTCP(byte[] packet, int offset, int length)
         {
-            try
-            {
-                return this.srtcpDecoder.ReverseTransform(packet, offset, length);
-            }
-            catch (Exception)
-            {
-                //UnityEngine.Debug.Log("[DecodeRTCP] Invalid packet");
-            }
-            return null;
+            return this.srtcpDecoder.ReverseTransform(packet, offset, length);
         }
 
         public int UnprotectRTCP(byte[] payload, int length, out int outLength)
@@ -389,15 +348,7 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
 
         public byte[] ProtectRTCP(byte[] packet, int offset, int length)
         {
-            try
-            {
-                return this.srtcpEncoder.Transform(packet, offset, length);
-            }
-            catch (Exception)
-            {
-                //UnityEngine.Debug.Log("[EncodeRTCP] Invalid packet");
-            }
-            return null;
+            return this.srtcpEncoder.Transform(packet, offset, length);
         }
 
         public int ProtectRTCP(byte[] payload, int length, out int outLength)
@@ -414,10 +365,6 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
 
             return 0; //No Errors
         }
-
-        #endregion
-
-        #region Datagram Transport Implementations
 
         protected bool HasTimeout()
         {
@@ -436,7 +383,6 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
 
         public void WriteToRecvStream(byte[] buf)
         {
-            //_pipedStreamRecv.Write(buf, 0, buf.Length);
             lock (_inStream)
             {
                 _inStream.Write(buf, 0, buf.Length);
@@ -445,116 +391,23 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
         {
+            if(_inStream.Position <= 0)
+            {
+                Task.Delay(waitMillis).Wait();
+            }
+                
             if (_inStream.Position > 0)
             {
                 lock (_inStream)
                 {
-                    Console.WriteLine($"DtlsSrtpTransport {_inStream.Position} bytes available.");
                     var msBuf = _inStream.ToArray();
                     Buffer.BlockCopy(msBuf, 0, buf, off, msBuf.Length);
                     _inStream.Position = 0;
-
-                    Console.WriteLine($"DtlsSrtpTransport {msBuf.Length} bytes supplied to DTLS context.");
                     return msBuf.Length;
                 }
             }
-            else
-            {
-                Task.Delay(waitMillis).Wait();
 
-                if (_inStream.Position > 0)
-                {
-                    lock (_inStream)
-                    {
-                        Console.WriteLine($"DtlsSrtpTransport {_inStream.Position} bytes available.");
-                        var msBuf = _inStream.ToArray();
-                        Buffer.BlockCopy(msBuf, 0, buf, off, msBuf.Length);
-                        _inStream.Position = 0;
-
-                        Console.WriteLine($"DtlsSrtpTransport {msBuf.Length} bytes supplied to DTLS context.");
-                        return msBuf.Length;
-                    }
-                }
-            }
-
-            return 0;
-
-            //System.Random random = new Random();
-            ////Handshake reliable contains too long default backoff times
-            //waitMillis = System.Math.Max(100, waitMillis / (random.Next(100, 1000)));
-
-            //var readStartTime = System.DateTime.Now;
-            //var curren tWaitTime = waitMillis;
-            //var totalReceivedLen = 0;
-
-            //while (currentWaitTime > 0)
-            //{
-            //    // MEDIA-48: DTLS handshake thread does not terminate
-            //    // https://telestax.atlassian.net/browse/MEDIA-48
-            //    if (this.HasTimeout())
-            //    {
-            //        Close();
-            //        throw new System.Exception("Handshake is taking too long! (>" + MAX_DELAY + "ms");
-            //    }
-            //    if (!connectedSocket.IsBound)
-            //    {
-            //        Close();
-            //        throw new System.Exception("Socked not bound to any IP Address");
-            //    }
-
-            //    var cachedTimeout = connectedSocket.ReceiveTimeout;
-            //    try
-            //    {
-            //        connectedSocket.ReceiveTimeout = currentWaitTime;
-            //        // Creates an IPEndPoint to capture the identity of the sending host.
-            //        // In UDP we dont have Connect/Accept rule, so we must listen to packets to know the sender
-            //        if (remoteEndPoint == null || remoteEndPoint.AddressFamily != connectedSocket.AddressFamily)
-            //            remoteEndPoint = new IPEndPoint(connectedSocket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0);
-            //        EndPoint senderRemote = /*remoteEndPoint == null? 
-            //            new IPEndPoint(connectedSocket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0) :*/ 
-            //            (EndPoint)remoteEndPoint;
-
-            //        if (!connectedSocket.IsBound)
-            //            connectedSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, 0));
-
-            //        var receivedLength = 0;
-            //        if (off == 0)
-            //        {
-            //            receivedLength = connectedSocket.ReceiveFrom(buf, len, SocketFlags.None, ref senderRemote);
-            //        }
-            //        else
-            //        {
-            //            byte[] rv = new byte[len];
-            //            receivedLength = connectedSocket.ReceiveFrom(rv, len, SocketFlags.None, ref senderRemote);
-
-            //            if(receivedLength > 0)
-            //                Buffer.BlockCopy(rv, 0, buf, off, receivedLength);
-            //        }
-
-            //        //Set IPEndPoint from received message
-            //        remoteEndPoint = senderRemote as IPEndPoint;
-
-            //        //Update offset and received length
-            //        off += receivedLength;
-            //        totalReceivedLen += receivedLength;
-            //        //Reduce the receive limit to prevent errors in next run
-            //        len -= receivedLength;
-            //    }
-            //    catch (System.Net.Sockets.SocketException) { }
-            //    finally
-            //    {
-            //        if (connectedSocket != null)
-            //        {
-            //            connectedSocket.ReceiveTimeout = cachedTimeout;
-            //        }
-            //    }
-            //    System.Threading.Thread.Sleep(1);
-            //    currentWaitTime = waitMillis - (int)(System.DateTime.Now - readStartTime).TotalMilliseconds;
-            //}
-
-            //return totalReceivedLen > 0 ? totalReceivedLen : -1;
-
-            //return 0;
+            return -1;
         }
 
         public void Send(byte[] buf, int off, int len)
@@ -563,74 +416,11 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
             {
                 OnDataReady?.Invoke(buf.Skip(off).Take(len).ToArray());
             }
-            //_pipedStreamSend.Write(buf, off, len);
-            //if (!HasTimeout())
-            //{
-            //    TryCreateSenderFromEndpoint();
-            //    if (remoteSocket != null && this.remoteEndPoint != null)
-            //    {
-            //        if (remoteEndPoint.AddressFamily == AddressFamily.InterNetwork && remoteSocket.AddressFamily != remoteEndPoint.AddressFamily)
-            //            remoteEndPoint = new IPEndPoint(remoteEndPoint.Address.MapToIPv6(), remoteEndPoint.Port);
-
-            //        remoteSocket.SendTo(buf, off, len, SocketFlags.None, remoteEndPoint);
-            //        System.Threading.Thread.Sleep(1);
-            //    }
-            //    else
-            //    {
-            //        //UnityEngine.Debug.Log("Handler skipped send operation because channel is not open or connected.");
-            //    }
-            //}
-            //else
-            //{
-            //    //UnityEngine.Debug.Log("Handler has timed out so send operation will be skipped.");
-            //    //logger.warn("Handler has timed out so send operation will be skipped.");
-            //}
         }
-
-        /// <summary>
-        /// Create a new socket to respond to client based in remoteEndPoint received from last message
-        /// </summary>
-        //protected virtual void TryCreateSenderFromEndpoint()
-        //{
-        //    if (this.remoteEndPoint != null)
-        //    {
-        //        if (remoteSocket == null || 
-        //            (remoteSocket.AddressFamily != this.remoteEndPoint.AddressFamily &&
-        //            (remoteSocket.AddressFamily == AddressFamily.InterNetwork || !remoteSocket.DualMode)))
-        //        {
-        //            if (this.remoteSocket != null && remoteSocket != connectedSocket)
-        //            {
-        //                this.remoteSocket.Close();
-        //                this.remoteSocket = null;
-        //            }
-
-        //            if (connectedSocket != null && 
-        //                ((connectedSocket.AddressFamily == AddressFamily.InterNetworkV6 && connectedSocket.DualMode) || 
-        //                connectedSocket.AddressFamily == remoteEndPoint.Address.AddressFamily))
-        //                this.remoteSocket = connectedSocket;
-        //            else
-        //            {
-        //                //Create a new socket to send data using IPV6 Dual Mode
-        //                this.remoteSocket = new Socket(AddressFamily.InterNetworkV6,
-        //                                SocketType.Dgram,
-        //                                ProtocolType.Udp);
-        //                remoteSocket.DualMode = true;
-        //            }
-        //        }
-        //    }
-        //}
 
         public virtual void Close()
         {
-            //if (this.remoteSocket != null && remoteSocket != connectedSocket)
-            //    this.remoteSocket.Close();
-            //this.remoteSocket = null;
-            //this.connectedSocket = null;
-            //this.startTime = System.DateTime.MinValue;
-            //this.remoteEndPoint = null;
-            //_pipedStreamRecv.Close();
+            this.startTime = System.DateTime.MinValue;
         }
-
-        #endregion
     }
 }

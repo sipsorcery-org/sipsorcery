@@ -1,7 +1,37 @@
-﻿using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Utilities;
-using System.IO;
+﻿//-----------------------------------------------------------------------------
+// Filename: SrtpCipherF8.cs
+//
+// Description: Implements SRTP F8 Mode Encryption for 128 bits block cipher.
+//
+// Derived From:
+// https://github.com/jitsi/jitsi-srtp/blob/master/src/main/java/org/jitsi/srtp/crypto/SrtpCipherF8.java
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+//
+// License:
+// Customisations: BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// Original Source: Apache License: see below
+//-----------------------------------------------------------------------------
+
+/*
+ * Copyright @ 2015 - present 8x8, Inc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /**
  * SRTPCipherF8 implements SRTP F8 Mode AES Encryption (AES-f8).
@@ -30,9 +60,14 @@ using System.IO;
  * @author Bing SU (nova.su@gmail.com)
  * @author Werner Dittmann <werner.dittmann@t-online.de>
  */
-namespace Org.BouncyCastle.Crypto.DtlsSrtp
-{
 
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Utilities;
+using System.IO;
+
+namespace SIPSorcery.Net
+{
     public class SrtpCipherF8
     {
         /**
@@ -66,14 +101,18 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
              */
             System.Array.Copy(salt, 0, saltMask, 0, salt.Length);
             for (int i = salt.Length; i < saltMask.Length; ++i)
+            {
                 saltMask[i] = 0x55;
+            }
 
             /*
              * XOR the original key with the above created mask to get the special
              * key.
              */
             for (int i = 0; i < key.Length; i++)
+            {
                 maskedKey[i] = (byte)(key[i] ^ saltMask[i]);
+            }
 
             /*
              * Prepare the f8Cipher with the special key to compute IV'
@@ -144,7 +183,9 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
              * ( S(-1) xor IV' )
              */
             for (int i = 0; i < BLKLEN; i++)
+            {
                 f8ctx.S[i] ^= f8ctx.ivAccent[i];
+            }
 
             /*
              * Now XOR (S(n-1) xor IV') with the current counter, then increment 

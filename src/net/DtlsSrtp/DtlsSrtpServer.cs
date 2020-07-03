@@ -1,25 +1,30 @@
-﻿/**
- * 
- * This class represents the DTLS SRTP server connection handler.
- * 
- * The implementation follows the advise from Pierrick Grasland and Tim Panton on this forum thread:
- * http://bouncy-castle.1462172.n4.nabble.com/DTLS-SRTP-with-bouncycastle-1-49-td4656286.html
- * 
- * @author Rafael Soares (raf.csoares@kyubinteractive.com)
- * 
- *
- */
+﻿//-----------------------------------------------------------------------------
+// Filename: DtlsSrtpServer.cs
+//
+// Description: This class represents the DTLS SRTP server connection handler.
+//
+// Derived From:
+// https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/DtlsSrtpServer.java
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// Original Source: AGPL-3.0 License
+//-----------------------------------------------------------------------------
 
-using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Utilities;
-using Org.BouncyCastle.Utilities.IO.Pem;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 
-namespace Org.BouncyCastle.Crypto.DtlsSrtp
+namespace SIPSorcery.Net
 {
     public interface IDtlsSrtpPeer
     {

@@ -30,7 +30,6 @@ using SIPSorcery.Sys;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
 using WebSocketSharp.Server;
-using Org.BouncyCastle.Crypto.DtlsSrtp;
 
 namespace SIPSorcery.Examples
 {
@@ -175,17 +174,6 @@ namespace SIPSorcery.Examples
 
             var pc = new RTCPeerConnection(pcConfiguration);
 
-#if DTLS_IS_ENABLED
-            //SIPSorceryMedia.DtlsHandshake dtls = new SIPSorceryMedia.DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-            //dtls.Debug = true;
-
-            //var certificate = DtlsUtils.CreateSelfSignedCert();
-            //DtlsSrtpTransport dtlsHandle = new DtlsSrtpTransport(
-            //                                    pc.IceRole == IceRolesEnum.active ?
-            //                                    (IDtlsSrtpPeer)new DtlsSrtpClient(certificate) :
-            //                                    (IDtlsSrtpPeer)new DtlsSrtpServer(certificate));
-#endif
-
             // Add inactive audio and video tracks.
             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             pc.addTrack(audioTrack);
@@ -234,25 +222,6 @@ namespace SIPSorcery.Examples
                             var dtlsResult = await DoDtlsHandshake(pc, dtlsHandle);
                             logger.LogDebug($"DTLS handshake result {dtlsResult}.");
                         });
-
-                        //if (pc.IceRole == IceRolesEnum.active)
-                        //{
-                        //    logger.LogDebug("Starting DTLS handshake as client task.");
-                        //    _ = Task.Run(() =>
-                        //    {
-                        //        bool handshakedResult = DoDtlsHandshake(pc, dtls, true, pc.RemotePeerDtlsFingerprint);
-                        //        logger.LogDebug($"DTLS handshake result {handshakedResult}.");
-                        //    });
-                        //}
-                        //else
-                        //{
-                        //    logger.LogDebug("Starting DTLS handshake as server task.");
-                        //    _ = Task.Run(() =>
-                        //    {
-                        //        bool handshakedResult = DoDtlsHandshake(pc, dtls, false, pc.RemotePeerDtlsFingerprint);
-                        //        logger.LogDebug($"DTLS handshake result {handshakedResult}.");
-                        //    });
-                        //}
 #endif
                     }
                 }

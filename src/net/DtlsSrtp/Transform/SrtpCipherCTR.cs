@@ -1,10 +1,43 @@
-﻿using System.IO;
+﻿//-----------------------------------------------------------------------------
+// Filename: SrtpCipherCTR.cs
+//
+// Description: Implements SRTP Counter Mode Encryption.
+//
+// Derived From:
+// https://github.com/jitsi/jitsi-srtp/blob/master/src/main/java/org/jitsi/srtp/crypto/SrtpCipherCtr.java
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+//
+// License:
+// Customisations: BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// Original Source: Apache License: see below
+//-----------------------------------------------------------------------------
+
+/*
+ * Copyright @ 2016 - present 8x8, Inc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /**
  * SRTPCipherF8 implements SRTP F8 Mode AES Encryption (AES-f8).
  * F8 Mode AES Encryption algorithm is defined in RFC3711, section 4.1.2.
  * 
- * Other than Null Cipher, RFC3711 defined two two encryption algorithms:
+ * Other than Null Cipher, RFC3711 defined two encryption algorithms:
  * Counter Mode AES Encryption and F8 Mode AES encryption. Both encryption
  * algorithms are capable to encrypt / decrypt arbitrary length data, and the
  * size of packet data is not required to be a multiple of the AES block 
@@ -27,7 +60,11 @@
  * @author Bing SU (nova.su@gmail.com)
  * @author Werner Dittmann <werner.dittmann@t-online.de>
  */
-namespace Org.BouncyCastle.Crypto.DtlsSrtp
+
+using System.IO;
+using Org.BouncyCastle.Crypto;
+
+namespace SIPSorcery.Net
 {
     /**
      * SRTPCipherCTR implements SRTP Counter Mode AES Encryption (AES-CM).
@@ -58,7 +95,6 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
      */
     public class SrtpCipherCTR
     {
-
         private const int BLKLEN = 16;
         private const int MAX_BUFFER_LENGTH = 10 * 1024;
         private byte[] cipherInBlock = new byte[BLKLEN];

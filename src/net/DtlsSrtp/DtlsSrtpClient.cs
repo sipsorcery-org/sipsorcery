@@ -1,31 +1,32 @@
-﻿/**
- * 
- * This class represents the DTLS SRTP client connection handler.
- * 
- * The implementation follows the advise from Pierrick Grasland and Tim Panton on this forum thread:
- * http://bouncy-castle.1462172.n4.nabble.com/DTLS-SRTP-with-bouncycastle-1-49-td4656286.html
- * 
- * @author Rafael Soares (raf.csoares@kyubinteractive.com)
- * 
- *
- */
+﻿//-----------------------------------------------------------------------------
+// Filename: DtlsSrtpClient.cs
+//
+// Description: This class represents the DTLS SRTP client connection handler.
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+//-----------------------------------------------------------------------------
 
 using System;
 using System.Collections;
 using System.IO;
-//using System.Security.Cryptography.X509Certificates;
 using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.Utilities.Encoders;
 
-namespace Org.BouncyCastle.Crypto.DtlsSrtp
+namespace SIPSorcery.Net
 {
     public class DtlsSrtpClient : MockDtlsClient, IDtlsSrtpPeer
     {
-        #region Private Variables
-
         internal Certificate mCertificateChain = null;
         internal AsymmetricKeyParameter mPrivateKey = null;
 
@@ -42,19 +43,18 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
         private SrtpPolicy srtpPolicy;
         private SrtpPolicy srtcpPolicy;
 
-        #endregion
-
-        #region Constructors
-
-        public DtlsSrtpClient() : this(DtlsUtils.CreateSelfSignedCert())
+        public DtlsSrtpClient() :
+            this(DtlsUtils.CreateSelfSignedCert())
         {
         }
 
-        public DtlsSrtpClient(System.Security.Cryptography.X509Certificates.X509Certificate2 certificate) : this(DtlsUtils.LoadCertificateChain(certificate), DtlsUtils.LoadPrivateKeyResource(certificate))
+        public DtlsSrtpClient(System.Security.Cryptography.X509Certificates.X509Certificate2 certificate) :
+            this(DtlsUtils.LoadCertificateChain(certificate), DtlsUtils.LoadPrivateKeyResource(certificate))
         {
         }
 
-        public DtlsSrtpClient(string certificatePath, string keyPath) : this(new string[] { certificatePath }, keyPath)
+        public DtlsSrtpClient(string certificatePath, string keyPath) :
+            this(new string[] { certificatePath }, keyPath)
         {
         }
 
@@ -63,11 +63,13 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
         {
         }
 
-        public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey) : this(certificateChain, privateKey, null)
+        public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey) :
+            this(certificateChain, privateKey, null)
         {
         }
 
-        public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData) : base(null)
+        public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData) :
+            base(null)
         {
             if (clientSrtpData == null)
             {
@@ -78,7 +80,9 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
                 this.clientSrtpData = new UseSrtpData(protectionProfiles, mki);
             }
             else
+            {
                 this.clientSrtpData = clientSrtpData;
+            }
 
             this.mPrivateKey = privateKey;
             mCertificateChain = certificateChain;
@@ -92,10 +96,6 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
         {
             this.clientSrtpData = clientSrtpData;
         }
-
-        #endregion
-
-        #region Public Functions
 
         public override IDictionary GetClientExtensions()
         {
@@ -193,10 +193,6 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
             return true;
         }
 
-        #endregion
-
-        #region Internal Functions
-
         protected byte[] GetKeyingMaterial(int length)
         {
             return mContext.ExportKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
@@ -255,17 +251,13 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
             Buffer.BlockCopy(sharedSecret, 2 * keyLen, srtpMasterClientSalt, 0, saltLen);
             Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), srtpMasterServerSalt, 0, saltLen);
         }
-
-        #endregion
     }
-
-    #region Internal Helper Classes
 
     public abstract class MockDtlsClient : DefaultTlsClient
     {
         //Received from server
         protected internal string mRemoteFingerprint = "";
-    
+
         protected internal TlsSession mSession;
 
         public virtual string RemoteFingerprint
@@ -378,20 +370,22 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
             public virtual void NotifyServerCertificate(Certificate serverCertificate)
             {
                 //Console.WriteLine("DTLS client received server certificate chain of length " + chain.Length);
-                X509CertificateStructure entry = serverCertificate.Length > 0? serverCertificate.GetCertificateAt(0) : null;
-                mClient.mRemoteFingerprint = entry != null? DtlsUtils.Fingerprint(entry) : string.Empty;
+                X509CertificateStructure entry = serverCertificate.Length > 0 ? serverCertificate.GetCertificateAt(0) : null;
+                mClient.mRemoteFingerprint = entry != null ? DtlsUtils.Fingerprint(entry) : string.Empty;
             }
 
             public virtual TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
             {
                 byte[] certificateTypes = certificateRequest.CertificateTypes;
                 if (certificateTypes == null || !Arrays.Contains(certificateTypes, ClientCertificateType.rsa_sign))
+                {
                     return null;
-                
+                }
+
                 return DtlsUtils.LoadSignerCredentials(mContext,
                     certificateRequest.SupportedSignatureAlgorithms,
                     SignatureAlgorithm.rsa,
-                    mClient.mCertificateChain, 
+                    mClient.mCertificateChain,
                     mClient.mPrivateKey);
             }
 
@@ -401,6 +395,4 @@ namespace Org.BouncyCastle.Crypto.DtlsSrtp
             }
         };
     }
-
-    #endregion
 }

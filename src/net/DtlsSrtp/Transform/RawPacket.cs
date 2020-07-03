@@ -1,5 +1,25 @@
-﻿
-using System.IO;
+﻿//-----------------------------------------------------------------------------
+// Filename: RawPacket.cs
+//
+// TODO: This class should be replaced by the existing RTP packet implementation
+// in src/net/RTP.
+//
+// Description: See below.
+//
+// Derived From:
+// https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/RawPacket.java
+//
+// Author(s):
+// Rafael Soares (raf.csoares@kyubinteractive.com)
+//
+// History:
+// 01 Jul 2020	Rafael Soares   Created.
+//
+// License:
+// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
+// Original Source: AGPL-3.0 License
+//-----------------------------------------------------------------------------
+
 /**
 * When using TransformConnector, a RTP/RTCP packet is represented using
 * RawPacket. RawPacket stores the buffer holding the RTP/RTCP packet, as well
@@ -19,9 +39,11 @@ using System.IO;
 * @author Lyubomir Marinov
 * 
 */
-namespace Org.BouncyCastle.Crypto.DtlsSrtp
-{
 
+using System.IO;
+
+namespace SIPSorcery.Net
+{
     public class RawPacket
     {
 
