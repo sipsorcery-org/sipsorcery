@@ -10,18 +10,18 @@
 // History:
 // 01 Jul 2020	Rafael Soares   Created.
 // 02 Jul 2020  Aaron Clauson   Switched underlying transport from socket to
-//                              memory stream.
+//                              piped memory stream.
 //
 // License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
 using System;
-using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -31,7 +31,9 @@ namespace SIPSorcery.Net
         public const int MIN_IP_OVERHEAD = 20;
         public const int MAX_IP_OVERHEAD = MIN_IP_OVERHEAD + 64;
         public const int UDP_OVERHEAD = 8;
-        public const int MAX_DELAY = 20000;
+        public const int DEFAULT_TIMEOUT_MILLISECONDS = 20000;
+
+        private static readonly ILogger logger = Log.Logger;
 
         private IPacketTransformer srtpEncoder;
         private IPacketTransformer srtpDecoder;
@@ -39,7 +41,13 @@ namespace SIPSorcery.Net
         private IPacketTransformer srtcpDecoder;
         IDtlsSrtpPeer connection = null;
 
-        MemoryStream _inStream = new MemoryStream();
+        private PipedMemoryStream _inStream = new PipedMemoryStream();
+
+        /// <summary>
+        /// Sets the period in milliseconds that the handshake attempt will timeout
+        /// after.
+        /// </summary>
+        public int TimeoutMilliseconds = DEFAULT_TIMEOUT_MILLISECONDS; 
 
         public Action<byte[]> OnDataReady;
 
@@ -125,6 +133,8 @@ namespace SIPSorcery.Net
 
         public bool DoHandshakeAsClient()
         {
+            logger.LogDebug("DTLS commencing handshake as client.");
+
             if (!handshaking && !handshakeComplete)
             {
                 this.startTime = System.DateTime.Now;
@@ -152,10 +162,13 @@ namespace SIPSorcery.Net
                     handshaking = false;
                     // Warn listeners handshake completed
                     //UnityEngine.Debug.Log("DTLS Handshake Completed");
+
                     return true;
                 }
-                catch (System.Exception)
+                catch (System.Exception excp)
                 {
+                    logger.LogWarning($"DTLS handshake as client failed. {excp.Message}");
+
                     // Declare handshake as failed
                     handshakeComplete = false;
                     handshakeFailed = true;
@@ -169,6 +182,8 @@ namespace SIPSorcery.Net
 
         public bool DoHandshakeAsServer()
         {
+            logger.LogDebug("DTLS commencing handshake as server.");
+
             if (!handshaking && !handshakeComplete)
             {
                 this.startTime = System.DateTime.Now;
@@ -178,6 +193,7 @@ namespace SIPSorcery.Net
                 try
                 {
                     var server = (DtlsSrtpServer)connection;
+                    
                     // Perform the handshake in a non-blocking fashion
                     serverProtocol.Accept(server, this);
                     // Prepare the shared key to be used in RTP streaming
@@ -198,8 +214,10 @@ namespace SIPSorcery.Net
                     //UnityEngine.Debug.Log("DTLS Handshake Completed");
                     return true;
                 }
-                catch (System.Exception)
+                catch (System.Exception excp)
                 {
+                    logger.LogWarning($"DTLS handshake as server failed. {excp.Message}");
+
                     // Declare handshake as failed
                     handshakeComplete = false;
                     handshakeFailed = true;
@@ -366,9 +384,12 @@ namespace SIPSorcery.Net
             return 0; //No Errors
         }
 
-        protected bool HasTimeout()
+        /// <summary>
+        /// Returns the number of milliseconds remaining until a timeout occurs.
+        /// </summary>
+        private int GetMillisecondsRemaining()
         {
-            return this.startTime == System.DateTime.MinValue || (System.DateTime.Now - this.startTime).TotalMilliseconds > MAX_DELAY;
+            return TimeoutMilliseconds - (int)(System.DateTime.Now - this.startTime).TotalMilliseconds;
         }
 
         public int GetReceiveLimit()
@@ -383,39 +404,28 @@ namespace SIPSorcery.Net
 
         public void WriteToRecvStream(byte[] buf)
         {
-            lock (_inStream)
-            {
-                _inStream.Write(buf, 0, buf.Length);
-            }
+            _inStream.Write(buf, 0, buf.Length);
         }
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
         {
-            if(_inStream.Position <= 0)
-            {
-                Task.Delay(waitMillis).Wait();
-            }
-                
-            if (_inStream.Position > 0)
-            {
-                lock (_inStream)
-                {
-                    var msBuf = _inStream.ToArray();
-                    Buffer.BlockCopy(msBuf, 0, buf, off, msBuf.Length);
-                    _inStream.Position = 0;
-                    return msBuf.Length;
-                }
-            }
+            int millisecondsRemaining = GetMillisecondsRemaining();
 
-            return -1;
+            if (millisecondsRemaining <= 0)
+            {
+                logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
+                throw new TimeoutException();
+            }
+            else
+            {
+                waitMillis = (int)System.Math.Min(waitMillis, millisecondsRemaining);
+                return _inStream.Read(buf, off, len, waitMillis);
+            }
         }
 
         public void Send(byte[] buf, int off, int len)
         {
-            if (len > 0)
-            {
-                OnDataReady?.Invoke(buf.Skip(off).Take(len).ToArray());
-            }
+            OnDataReady?.Invoke(buf.Skip(off).Take(len).ToArray());
         }
 
         public virtual void Close()

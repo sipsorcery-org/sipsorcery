@@ -31,7 +31,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that creating a new IceSession instance works correctly.
+        /// Tests that creating a new RtpIceChannel instance works correctly.
         /// </summary>
         [Fact]
         public void CreateInstanceUnitTest()
@@ -51,7 +51,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that creating a new IceSession instance and requesting the host candidates works correctly.
+        /// Tests that creating a new RtpIceChannel instance and requesting the host candidates works correctly.
         /// </summary>
         [Fact]
         public void GetHostCandidatesUnitTest()
@@ -75,7 +75,7 @@ namespace SIPSorcery.Net.UnitTests
         }
 
         /// <summary>
-        /// Tests that creating a new IceSession instance and requesting the host candidates works correctly
+        /// Tests that creating a new RtpIceChannel instance and requesting the host candidates works correctly
         /// when the RTP channel was bound to a single IP address.
         /// </summary>
         [Fact]

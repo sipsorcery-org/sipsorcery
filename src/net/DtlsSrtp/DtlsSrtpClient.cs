@@ -21,14 +21,71 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
-using Org.BouncyCastle.Utilities.Encoders;
 
 namespace SIPSorcery.Net
 {
-    public class DtlsSrtpClient : MockDtlsClient, IDtlsSrtpPeer
+    internal class DtlsSrtpTlsAuthentication
+            : TlsAuthentication
+    {
+        private readonly DtlsSrtpClient mClient;
+        private readonly TlsContext mContext;
+
+        internal DtlsSrtpTlsAuthentication(DtlsSrtpClient client)
+        {
+            this.mClient = client;
+            this.mContext = client.TlsContext;
+        }
+
+        public virtual void NotifyServerCertificate(Certificate serverCertificate)
+        {
+            //Console.WriteLine("DTLS client received server certificate chain of length " + chain.Length);
+            X509CertificateStructure entry = serverCertificate.Length > 0 ? serverCertificate.GetCertificateAt(0) : null;
+            mClient.mRemoteFingerprint = entry != null ? DtlsUtils.Fingerprint(entry) : string.Empty;
+        }
+
+        public virtual TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
+        {
+            byte[] certificateTypes = certificateRequest.CertificateTypes;
+            if (certificateTypes == null || !Arrays.Contains(certificateTypes, ClientCertificateType.rsa_sign))
+            {
+                return null;
+            }
+
+            return DtlsUtils.LoadSignerCredentials(mContext,
+                certificateRequest.SupportedSignatureAlgorithms,
+                SignatureAlgorithm.rsa,
+                mClient.mCertificateChain,
+                mClient.mPrivateKey);
+        }
+
+        public TlsCredentials GetClientCredentials(TlsContext context, CertificateRequest certificateRequest)
+        {
+            return GetClientCredentials(certificateRequest);
+        }
+    };
+
+    public class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
     {
         internal Certificate mCertificateChain = null;
         internal AsymmetricKeyParameter mPrivateKey = null;
+
+        internal TlsClientContext TlsContext
+        {
+            get { return mContext; }
+        }
+
+        //Received from server
+        protected internal string mRemoteFingerprint = "";
+
+        protected internal TlsSession mSession;
+
+        public virtual string RemoteFingerprint
+        {
+            get
+            {
+                return mRemoteFingerprint;
+            }
+        }
 
         private UseSrtpData clientSrtpData;
 
@@ -99,11 +156,9 @@ namespace SIPSorcery.Net
 
         public override IDictionary GetClientExtensions()
         {
-
             var clientExtensions = base.GetClientExtensions();
             if (TlsSRTPUtils.GetUseSrtpExtension(clientExtensions) == null)
             {
-
                 if (clientExtensions == null)
                 {
                     clientExtensions = new Hashtable();
@@ -180,7 +235,9 @@ namespace SIPSorcery.Net
 
         public override void NotifyHandshakeComplete()
         {
-            //Copy master Secret (will be inacessible after this call)
+            base.NotifyHandshakeComplete();
+
+            //Copy master Secret (will be inaccessible after this call)
             masterSecret = new byte[mContext.SecurityParameters.MasterSecret != null ? mContext.SecurityParameters.MasterSecret.Length : 0];
             Buffer.BlockCopy(mContext.SecurityParameters.MasterSecret, 0, masterSecret, 0, masterSecret.Length);
 
@@ -215,7 +272,7 @@ namespace SIPSorcery.Net
             srtpMasterClientSalt = new byte[saltLen];
             srtpMasterServerSalt = new byte[saltLen];
 
-            // 2* (key + salt lenght) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
+            // 2* (key + salt length) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
             // No need to divide by 8 here since lengths are already in bits
             byte[] sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
 
@@ -250,27 +307,6 @@ namespace SIPSorcery.Net
             Buffer.BlockCopy(sharedSecret, keyLen, srtpMasterServerKey, 0, keyLen);
             Buffer.BlockCopy(sharedSecret, 2 * keyLen, srtpMasterClientSalt, 0, saltLen);
             Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), srtpMasterServerSalt, 0, saltLen);
-        }
-    }
-
-    public abstract class MockDtlsClient : DefaultTlsClient
-    {
-        //Received from server
-        protected internal string mRemoteFingerprint = "";
-
-        protected internal TlsSession mSession;
-
-        public virtual string RemoteFingerprint
-        {
-            get
-            {
-                return mRemoteFingerprint;
-            }
-        }
-
-        public MockDtlsClient(TlsSession session)
-        {
-            this.mSession = session;
         }
 
         public override ProtocolVersion ClientVersion
@@ -310,89 +346,11 @@ namespace SIPSorcery.Net
                 + ", " + AlertDescription.GetText(alertDescription));
         }
 
-        public override IDictionary GetClientExtensions()
-        {
-            IDictionary clientExtensions = TlsExtensionsUtilities.EnsureExtensionsInitialised(base.GetClientExtensions());
-            TlsExtensionsUtilities.AddEncryptThenMacExtension(clientExtensions);
-            {
-                /*
-                 * NOTE: If you are copying test code, do not blindly set these extensions in your own client.
-                 */
-                TlsExtensionsUtilities.AddMaxFragmentLengthExtension(clientExtensions, MaxFragmentLength.pow2_9);
-                TlsExtensionsUtilities.AddPaddingExtension(clientExtensions, mContext.SecureRandom.Next(16));
-                TlsExtensionsUtilities.AddTruncatedHMacExtension(clientExtensions);
-            }
-            return clientExtensions;
-        }
-
         public override void NotifyServerVersion(ProtocolVersion serverVersion)
         {
             base.NotifyServerVersion(serverVersion);
 
             //Console.WriteLine("Negotiated " + serverVersion);
         }
-
-        public override void NotifyHandshakeComplete()
-        {
-            base.NotifyHandshakeComplete();
-
-            TlsSession newSession = mContext.ResumableSession;
-            if (newSession != null)
-            {
-                byte[] newSessionID = newSession.SessionID;
-                string hex = Hex.ToHexString(newSessionID);
-
-                if (this.mSession != null && Arrays.AreEqual(this.mSession.SessionID, newSessionID))
-                {
-                    //Console.WriteLine("Resumed session: " + hex);
-                }
-                else
-                {
-                    //Console.WriteLine("Established session: " + hex);
-                }
-
-                this.mSession = newSession;
-            }
-        }
-
-        internal class DtlsSrtpTlsAuthentication
-            : TlsAuthentication
-        {
-            private readonly DtlsSrtpClient mClient;
-            private readonly TlsContext mContext;
-
-            internal DtlsSrtpTlsAuthentication(DtlsSrtpClient client)
-            {
-                this.mClient = client;
-                this.mContext = client.mContext;
-            }
-
-            public virtual void NotifyServerCertificate(Certificate serverCertificate)
-            {
-                //Console.WriteLine("DTLS client received server certificate chain of length " + chain.Length);
-                X509CertificateStructure entry = serverCertificate.Length > 0 ? serverCertificate.GetCertificateAt(0) : null;
-                mClient.mRemoteFingerprint = entry != null ? DtlsUtils.Fingerprint(entry) : string.Empty;
-            }
-
-            public virtual TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
-            {
-                byte[] certificateTypes = certificateRequest.CertificateTypes;
-                if (certificateTypes == null || !Arrays.Contains(certificateTypes, ClientCertificateType.rsa_sign))
-                {
-                    return null;
-                }
-
-                return DtlsUtils.LoadSignerCredentials(mContext,
-                    certificateRequest.SupportedSignatureAlgorithms,
-                    SignatureAlgorithm.rsa,
-                    mClient.mCertificateChain,
-                    mClient.mPrivateKey);
-            }
-
-            public TlsCredentials GetClientCredentials(TlsContext context, CertificateRequest certificateRequest)
-            {
-                return GetClientCredentials(certificateRequest);
-            }
-        };
     }
 }

@@ -17,12 +17,13 @@
 // Original Source: AGPL-3.0 License
 //-----------------------------------------------------------------------------
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+//using System.Security.Cryptography.X509Certificates;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Utilities;
-using System;
-using System.Collections;
-using System.Security.Cryptography.X509Certificates;
 
 namespace SIPSorcery.Net
 {
@@ -37,14 +38,48 @@ namespace SIPSorcery.Net
         bool IsClient();
     }
 
+    //public class AlgorithmCertificate
+    //{
+    //    //RSA(SignatureAlgorithm.rsa, ClientCertificateType.rsa_sign),
+    //    //RSA_FIXED_DH(SignatureAlgorithm.rsa, ClientCertificateType.rsa_fixed_dh),
+    //    //RSA_EPHEMERAL_DH_RESERVED(SignatureAlgorithm.rsa, ClientCertificateType.rsa_ephemeral_dh_RESERVED),
+    //    //RSA_FIXED_ECDH(SignatureAlgorithm.rsa, ClientCertificateType.rsa_fixed_ecdh),
+    //    //DSA(SignatureAlgorithm.dsa, ClientCertificateType.dss_sign),
+    //    //DSA_FIXED_DH(SignatureAlgorithm.dsa, ClientCertificateType.dss_fixed_dh),
+    //    //DSA_EPHEMERAL_DH_RESERVED(SignatureAlgorithm.dsa, ClientCertificateType.dss_ephemeral_dh_RESERVED),
+    //    //ECDSA(SignatureAlgorithm.ecdsa, ClientCertificateType.ecdsa_sign),
+    //    //ECDSA_FIXED_ECDH(SignatureAlgorithm.ecdsa, ClientCertificateType.ecdsa_fixed_ecdh);
+
+    //    private byte signatureAlgorithm;
+    //    private byte clientCertificate;
+
+    //    public AlgorithmCertificate(byte signatureAlgorithm, byte clientCertificate)
+    //    {
+    //        this.signatureAlgorithm = signatureAlgorithm;
+    //        this.clientCertificate = clientCertificate;
+    //    }
+
+    //    public byte getSignatureAlgorithm()
+    //    {
+    //        return signatureAlgorithm;
+    //    }
+
+    //    public byte getClientCertificate()
+    //    {
+    //        return clientCertificate;
+    //    }
+    //}
+
     public class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
     {
-        #region Private Variables
-
         Certificate mCertificateChain = null;
         AsymmetricKeyParameter mPrivateKey = null;
 
         private string mFingerPrint = "";
+
+        //private AlgorithmCertificate algorithmCertificate;
+
+        public Certificate ClientCertificate { get; private set; }
 
         // the server response to the client handshake request
         // http://tools.ietf.org/html/rfc5764#section-4.1.1
@@ -63,15 +98,11 @@ namespace SIPSorcery.Net
 
         private int[] cipherSuites;
 
-        #endregion
-
-        #region Constructors
-
         public DtlsSrtpServer() : this(DtlsUtils.CreateSelfSignedCert())
         {
         }
 
-        public DtlsSrtpServer(X509Certificate2 certificate) : this(DtlsUtils.LoadCertificateChain(certificate), DtlsUtils.LoadPrivateKeyResource(certificate))
+        public DtlsSrtpServer(System.Security.Cryptography.X509Certificates.X509Certificate2 certificate) : this(DtlsUtils.LoadCertificateChain(certificate), DtlsUtils.LoadPrivateKeyResource(certificate))
         {
         }
 
@@ -93,19 +124,18 @@ namespace SIPSorcery.Net
 
             //Generate FingerPrint
             var certificate = mCertificateChain.GetCertificateAt(0);
+
             this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : string.Empty;
         }
-
-        #endregion
-
-        #region Properties
 
         public string Fingerprint
         {
             get
             {
                 if (mFingerPrint == null)
+                {
                     mFingerPrint = string.Empty;
+                }
                 return mFingerPrint;
             }
         }
@@ -142,10 +172,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        #endregion
-
-        #region Public Functions
-
         public override int GetSelectedCipherSuite()
         {
             /*
@@ -175,6 +201,33 @@ namespace SIPSorcery.Net
                 }
             }
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
+        }
+
+        public override CertificateRequest GetCertificateRequest()
+        {
+            List<SignatureAndHashAlgorithm> serverSigAlgs = new List<SignatureAndHashAlgorithm>();
+ 
+            if (TlsUtilities.IsSignatureAlgorithmsExtensionAllowed(mServerVersion))
+            {
+                byte[] hashAlgorithms = new byte[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256, HashAlgorithm.sha224, HashAlgorithm.sha1 };
+                //byte[] signatureAlgorithms = new byte[] { algorithmCertificate.getSignatureAlgorithm(), SignatureAlgorithm.ecdsa };
+                byte[] signatureAlgorithms = new byte[] { SignatureAlgorithm.ecdsa };
+
+                serverSigAlgs = new List<SignatureAndHashAlgorithm>();
+                for (int i = 0; i < hashAlgorithms.Length; ++i)
+                {
+                    for (int j = 0; j < signatureAlgorithms.Length; ++j)
+                    {
+                        serverSigAlgs.Add(new SignatureAndHashAlgorithm(hashAlgorithms[i], signatureAlgorithms[j]));
+                    }
+                }
+            }
+            return new CertificateRequest(new byte[] { ClientCertificateType.rsa_sign }, serverSigAlgs, null);
+        }
+
+        public override void NotifyClientCertificate(Certificate clientCertificate)
+        {
+            ClientCertificate = clientCertificate;
         }
 
         public override IDictionary GetServerExtensions()
@@ -252,7 +305,7 @@ namespace SIPSorcery.Net
 
         public override void NotifyHandshakeComplete()
         {
-            //Copy master Secret (will be inacessible after this call)
+            //Copy master Secret (will be inaccessible after this call)
             masterSecret = new byte[mContext.SecurityParameters.MasterSecret != null ? mContext.SecurityParameters.MasterSecret.Length : 0];
             Buffer.BlockCopy(mContext.SecurityParameters.MasterSecret, 0, masterSecret, 0, masterSecret.Length);
 
@@ -264,10 +317,6 @@ namespace SIPSorcery.Net
         {
             return false;
         }
-
-        #endregion
-
-        #region Internal Helper Functions
 
         protected override TlsSignerCredentials GetECDsaSignerCredentials()
         {
@@ -324,7 +373,7 @@ namespace SIPSorcery.Net
             srtpMasterClientSalt = new byte[saltLen];
             srtpMasterServerSalt = new byte[saltLen];
 
-            // 2* (key + salt lenght) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
+            // 2* (key + salt length) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
             // No need to divide by 8 here since lengths are already in bits
             byte[] sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
 
@@ -346,7 +395,7 @@ namespace SIPSorcery.Net
              *                Here we run as a server, so 'local' referring to the client is actually confusing. 
              * 
              * l(k) = KEY length
-             * s(k) = salt lenght
+             * s(k) = salt length
              * 
              * So we have the following repartition :
              *                           l(k)                                 2*l(k)+s(k)   
@@ -366,7 +415,6 @@ namespace SIPSorcery.Net
             return mContext.ExportKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
         }
 
-
         protected override int[] GetCipherSuites()
         {
             int[] cipherSuites = new int[this.cipherSuites.Length];
@@ -376,7 +424,5 @@ namespace SIPSorcery.Net
             }
             return cipherSuites;
         }
-
-        #endregion
     }
 }

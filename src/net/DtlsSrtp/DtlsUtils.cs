@@ -358,7 +358,6 @@ namespace SIPSorcery.Net
             var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
             certificateGenerator.SetSerialNumber(serialNumber);
 
-
             // Issuer and Subject Name
             var subjectDn = new X509Name(subjectName);
             var issuerDn = new X509Name(issuerName);
@@ -399,8 +398,11 @@ namespace SIPSorcery.Net
             var rsaparams = new RsaPrivateCrtKeyParameters(
                 rsa.Modulus, rsa.PublicExponent, rsa.PrivateExponent, rsa.Prime1, rsa.Prime2, rsa.Exponent1, rsa.Exponent2, rsa.Coefficient);
 
-            
+#if NETCOREAPP
+            x509 = x509.CopyWithPrivateKey(DotNetUtilities.ToRSA(rsaparams));
+#else
             x509.PrivateKey = DotNetUtilities.ToRSA(rsaparams);
+#endif
 
             return x509;
         }
@@ -442,6 +444,6 @@ namespace SIPSorcery.Net
             return subjectKeyPair.Private;
         }
 
-        #endregion
+#endregion
     }
 }
