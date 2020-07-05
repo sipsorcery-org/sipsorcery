@@ -211,7 +211,7 @@ namespace SIPSorcery.Net
             {
                 byte[] hashAlgorithms = new byte[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256, HashAlgorithm.sha224, HashAlgorithm.sha1 };
                 //byte[] signatureAlgorithms = new byte[] { algorithmCertificate.getSignatureAlgorithm(), SignatureAlgorithm.ecdsa };
-                byte[] signatureAlgorithms = new byte[] { SignatureAlgorithm.ecdsa };
+                byte[] signatureAlgorithms = new byte[] { SignatureAlgorithm.rsa };
 
                 serverSigAlgs = new List<SignatureAndHashAlgorithm>();
                 for (int i = 0; i < hashAlgorithms.Length; ++i)

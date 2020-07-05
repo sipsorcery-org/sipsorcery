@@ -71,10 +71,20 @@ namespace SIPSorcery.Net.UnitTests
             var dtlsServer = new DtlsSrtpServer();
 
             DtlsSrtpTransport dtlsClientTransport = new DtlsSrtpTransport(dtlsClient);
+            dtlsClientTransport.TimeoutMilliseconds = 5000;
             DtlsSrtpTransport dtlsServerTransport = new DtlsSrtpTransport(dtlsServer);
+            dtlsServerTransport.TimeoutMilliseconds = 5000;
 
-            dtlsClientTransport.OnDataReady += (buf) => dtlsServerTransport.WriteToRecvStream(buf);
-            dtlsServerTransport.OnDataReady += (buf) => dtlsClientTransport.WriteToRecvStream(buf);
+            dtlsClientTransport.OnDataReady += (buf) =>
+            {
+                logger.LogDebug($"DTLS client transport sending {buf.Length} bytes to server.");
+                dtlsServerTransport.WriteToRecvStream(buf);
+            };
+            dtlsServerTransport.OnDataReady += (buf) =>
+            {
+                logger.LogDebug($"DTLS server transport sending {buf.Length} bytes to client.");
+                dtlsClientTransport.WriteToRecvStream(buf);
+            };
 
             var serverTask = Task.Run<bool>(dtlsServerTransport.DoHandshake);
             var clientTask = Task.Run<bool>(dtlsClientTransport.DoHandshake);

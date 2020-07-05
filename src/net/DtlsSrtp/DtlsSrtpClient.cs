@@ -21,6 +21,8 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -66,6 +68,8 @@ namespace SIPSorcery.Net
 
     public class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
     {
+        private static readonly ILogger logger = Log.Logger;
+
         internal Certificate mCertificateChain = null;
         internal AsymmetricKeyParameter mPrivateKey = null;
 
@@ -125,8 +129,7 @@ namespace SIPSorcery.Net
         {
         }
 
-        public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData) :
-            base(null)
+        public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData)
         {
             if (clientSrtpData == null)
             {
@@ -326,31 +329,27 @@ namespace SIPSorcery.Net
 
         public override void NotifyAlertRaised(byte alertLevel, byte alertDescription, string message, Exception cause)
         {
-            TextWriter output = (alertLevel == AlertLevel.fatal) ? Console.Error : Console.Out;
-            output.WriteLine("DTLS client raised alert: " + AlertLevel.GetText(alertLevel)
-                + ", " + AlertDescription.GetText(alertDescription));
+            string description = null;
             if (message != null)
             {
-                output.WriteLine("> " + message);
+                description += message;
             }
             if (cause != null)
             {
-                output.WriteLine(cause);
+                description += cause;
             }
+
+            logger.LogWarning($"DTLS client raised alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}, {description}.");  
         }
 
         public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
         {
-            TextWriter output = (alertLevel == AlertLevel.fatal) ? Console.Error : Console.Out;
-            output.WriteLine("DTLS client received alert: " + AlertLevel.GetText(alertLevel)
-                + ", " + AlertDescription.GetText(alertDescription));
+            logger.LogWarning($"DTLS client received alert: {AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}.");
         }
 
         public override void NotifyServerVersion(ProtocolVersion serverVersion)
         {
             base.NotifyServerVersion(serverVersion);
-
-            //Console.WriteLine("Negotiated " + serverVersion);
         }
     }
 }
