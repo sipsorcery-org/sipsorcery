@@ -18,6 +18,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Org.BouncyCastle.Asn1;
@@ -377,9 +378,10 @@ namespace SIPSorcery.Net
                 rsa.Modulus, rsa.PublicExponent, rsa.PrivateExponent, rsa.Prime1, rsa.Prime2, rsa.Exponent1, rsa.Exponent2, rsa.Coefficient);
 
 #if NETCOREAPP
-            x509 = x509.CopyWithPrivateKey(DotNetUtilities.ToRSA(rsaparams));
+            x509 = x509.CopyWithPrivateKey(ToRSA(rsaparams));
 #else
-            x509.PrivateKey = DotNetUtilities.ToRSA(rsaparams);
+            //x509.PrivateKey = DotNetUtilities.ToRSA(rsaparams);
+            x509.PrivateKey = ToRSA(rsaparams);
 #endif
 
             return x509;
@@ -422,6 +424,59 @@ namespace SIPSorcery.Net
             return subjectKeyPair.Private;
         }
 
-#endregion
+        #endregion
+
+        /// <summary>
+        /// This method and the related ones have been copied from the BouncyCode DotNetUtilities 
+        /// class due to https://github.com/bcgit/bc-csharp/issues/160 which prevents the original
+        /// version from working on non-Windows platforms.
+        /// </summary>
+        public static RSA ToRSA(RsaPrivateCrtKeyParameters privKey)
+        {
+            return CreateRSAProvider(ToRSAParameters(privKey));
+        }
+
+        private static RSA CreateRSAProvider(RSAParameters rp)
+        {
+            //CspParameters csp = new CspParameters();
+            //csp.KeyContainerName = string.Format("BouncyCastle-{0}", Guid.NewGuid());
+            //RSACryptoServiceProvider rsaCsp = new RSACryptoServiceProvider(csp);
+            RSACryptoServiceProvider rsaCsp = new RSACryptoServiceProvider();
+            rsaCsp.ImportParameters(rp);
+            return rsaCsp;
+        }
+
+        public static RSAParameters ToRSAParameters(RsaPrivateCrtKeyParameters privKey)
+        {
+            RSAParameters rp = new RSAParameters();
+            rp.Modulus = privKey.Modulus.ToByteArrayUnsigned();
+            rp.Exponent = privKey.PublicExponent.ToByteArrayUnsigned();
+            rp.P = privKey.P.ToByteArrayUnsigned();
+            rp.Q = privKey.Q.ToByteArrayUnsigned();
+            rp.D = ConvertRSAParametersField(privKey.Exponent, rp.Modulus.Length);
+            rp.DP = ConvertRSAParametersField(privKey.DP, rp.P.Length);
+            rp.DQ = ConvertRSAParametersField(privKey.DQ, rp.Q.Length);
+            rp.InverseQ = ConvertRSAParametersField(privKey.QInv, rp.Q.Length);
+            return rp;
+        }
+
+        private static byte[] ConvertRSAParametersField(BigInteger n, int size)
+        {
+            byte[] bs = n.ToByteArrayUnsigned();
+
+            if (bs.Length == size)
+            {
+                return bs;
+            }
+
+            if (bs.Length > size)
+            {
+                throw new ArgumentException("Specified size too small", "size");
+            }
+
+            byte[] padded = new byte[size];
+            Array.Copy(bs, 0, padded, size - bs.Length, bs.Length);
+            return padded;
+        }
     }
 }
