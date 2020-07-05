@@ -55,7 +55,7 @@ namespace SIPSorcery.Sys
                 }
                 else
                 {
-                    return 0;
+                    return -1;
                 }
             }
         }

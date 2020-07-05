@@ -414,11 +414,8 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    // Set DTLS role to be server.
-                    // As of 20 Jun 2020 the DTLS handshake logic is based on OpenSSL and the mechanism
-                    // used hands over the socket handle to the C++ class. This logic works a lot better
-                    // when acting as the server in the handshake.
-                    IceRole = IceRolesEnum.passive;
+                    // Set DTLS role as client.
+                    IceRole = IceRolesEnum.active;
                 }
 
                 if (remoteIceUser != null && remoteIcePassword != null)

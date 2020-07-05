@@ -204,29 +204,29 @@ namespace SIPSorcery.Net
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
-        public override CertificateRequest GetCertificateRequest()
-        {
-            List<SignatureAndHashAlgorithm> serverSigAlgs = new List<SignatureAndHashAlgorithm>();
+        //public override CertificateRequest GetCertificateRequest()
+        //{
+        //    List<SignatureAndHashAlgorithm> serverSigAlgs = new List<SignatureAndHashAlgorithm>();
  
-            if (TlsUtilities.IsSignatureAlgorithmsExtensionAllowed(mServerVersion))
-            {
-                byte[] hashAlgorithms = new byte[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256, HashAlgorithm.sha224, HashAlgorithm.sha1 };
-                //byte[] signatureAlgorithms = new byte[] { algorithmCertificate.getSignatureAlgorithm(), SignatureAlgorithm.ecdsa };
-                // TODO: Don't think this should be pegged to RSA. Mot likely should be a negotiation. AC 5 Jul 2020.
-                byte[] signatureAlgorithms = new byte[] { SignatureAlgorithm.rsa };
+        //    if (TlsUtilities.IsSignatureAlgorithmsExtensionAllowed(mServerVersion))
+        //    {
+        //        byte[] hashAlgorithms = new byte[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256, HashAlgorithm.sha224, HashAlgorithm.sha1 };
+        //        //byte[] signatureAlgorithms = new byte[] { algorithmCertificate.getSignatureAlgorithm(), SignatureAlgorithm.ecdsa };
+        //        // TODO: Don't think this should be pegged to RSA. Mot likely should be a negotiation. AC 5 Jul 2020.
+        //        byte[] signatureAlgorithms = new byte[] { SignatureAlgorithm.rsa };
 
-                serverSigAlgs = new List<SignatureAndHashAlgorithm>();
-                for (int i = 0; i < hashAlgorithms.Length; ++i)
-                {
-                    for (int j = 0; j < signatureAlgorithms.Length; ++j)
-                    {
-                        serverSigAlgs.Add(new SignatureAndHashAlgorithm(hashAlgorithms[i], signatureAlgorithms[j]));
-                    }
-                }
-            }
-            // TODO: Don't think this should be pegged to RSA. Mot likely should be a negotiation. AC 5 Jul 2020.
-            return new CertificateRequest(new byte[] { ClientCertificateType.rsa_sign }, serverSigAlgs, null);
-        }
+        //        serverSigAlgs = new List<SignatureAndHashAlgorithm>();
+        //        for (int i = 0; i < hashAlgorithms.Length; ++i)
+        //        {
+        //            for (int j = 0; j < signatureAlgorithms.Length; ++j)
+        //            {
+        //                serverSigAlgs.Add(new SignatureAndHashAlgorithm(hashAlgorithms[i], signatureAlgorithms[j]));
+        //            }
+        //        }
+        //    }
+        //    // TODO: Don't think this should be pegged to RSA. Mot likely should be a negotiation. AC 5 Jul 2020.
+        //    return new CertificateRequest(new byte[] { ClientCertificateType.rsa_sign }, serverSigAlgs, null);
+        //}
 
         public override void NotifyClientCertificate(Certificate clientCertificate)
         {

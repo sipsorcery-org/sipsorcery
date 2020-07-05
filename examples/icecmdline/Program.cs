@@ -19,7 +19,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -216,10 +215,16 @@ namespace SIPSorcery.Examples
                                     (IDtlsSrtpPeer)new DtlsSrtpClient(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH) :
                                     (IDtlsSrtpPeer)new DtlsSrtpServer(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH));
 
-                        logger.LogDebug($"Starting DLS handshake with role {pc.IceRole}.");
-                        Task.Run(async () => 
+                        pc.OnDtlsPacket += (buf) =>
                         {
-                            var dtlsResult = await DoDtlsHandshake(pc, dtlsHandle);
+                            logger.LogDebug($"DTLS transport received {buf.Length} bytes from {pc.AudioDestinationEndPoint}.");
+                            dtlsHandle.WriteToRecvStream(buf);
+                        };
+
+                        logger.LogDebug($"Starting DLS handshake with role {pc.IceRole}.");
+                        Task.Run(() => 
+                        {
+                            var dtlsResult = DoDtlsHandshake(pc, dtlsHandle);
                             logger.LogDebug($"DTLS handshake result {dtlsResult}.");
                         });
 #endif
@@ -293,17 +298,20 @@ namespace SIPSorcery.Examples
 #if DTLS_IS_ENABLED
 
         /* DtlsHandshake requires DtlsSrtpTransport to work.
-        * DtlsSrtpTransport is similar to C++ Dtls class combined with Srtp class and can perform Handshake as Server or Client in same call. 
+        * DtlsSrtpTransport is similar to C++ DTLS class combined with Srtp class and can perform Handshake as Server or Client in same call. 
         * The constructor of transport require a DtlsStrpClient or DtlsSrtpServer to work and the method DoHandshake require a socket with
         * support to IPV6 Multiplex and a RemoteEndPoint (RemoteEndPoint will be discarded when performing as Server) */
-        private static async Task<bool> DoDtlsHandshake(RTCPeerConnection peerConnection, DtlsSrtpTransport dtlsHandle)
+        private static bool DoDtlsHandshake(RTCPeerConnection peerConnection, DtlsSrtpTransport dtlsHandle)
         {
             Console.WriteLine("DoDtlsHandshake started.");
 
             var rtpChannel = peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio);
 
-            dtlsHandle.OnDataReady += (buf) => rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, peerConnection.AudioDestinationEndPoint, buf);
-            peerConnection.OnDtlsPacket += (buf) => dtlsHandle.WriteToRecvStream(buf);
+            dtlsHandle.OnDataReady += (buf) =>
+            {
+                logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {peerConnection.AudioDestinationEndPoint}.");
+                rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, peerConnection.AudioDestinationEndPoint, buf);
+            };
 
             var res = dtlsHandle.DoHandshake();
 
@@ -318,8 +326,6 @@ namespace SIPSorcery.Examples
                     dtlsHandle.UnprotectRTP,
                     dtlsHandle.ProtectRTCP,
                     dtlsHandle.UnprotectRTCP);
-
-                await peerConnection.Start();
 
                 return true;
             }
