@@ -42,7 +42,7 @@ namespace SIPSorcery.Net
         {
             //Console.WriteLine("DTLS client received server certificate chain of length " + chain.Length);
             X509CertificateStructure entry = serverCertificate.Length > 0 ? serverCertificate.GetCertificateAt(0) : null;
-            mClient.mRemoteFingerprint = entry != null ? DtlsUtils.Fingerprint(entry) : string.Empty;
+            mClient.mServerFingerprint = entry != null ? DtlsUtils.Fingerprint(entry) : null;
         }
 
         public virtual TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
@@ -78,18 +78,19 @@ namespace SIPSorcery.Net
             get { return mContext; }
         }
 
-        //Received from server
-        protected internal string mRemoteFingerprint = "";
-
         protected internal TlsSession mSession;
 
-        public virtual string RemoteFingerprint
+        //Received from server
+        internal string mServerFingerprint;
+        public string ServerFingerprint
         {
             get
             {
-                return mRemoteFingerprint;
+                return mServerFingerprint;
             }
         }
+
+        public string Fingerprint { get; private set; }
 
         private UseSrtpData clientSrtpData;
 
@@ -149,7 +150,7 @@ namespace SIPSorcery.Net
 
             //Generate FingerPrint
             var certificate = mCertificateChain.GetCertificateAt(0);
-            //this.mFingerPrint = certificate != null ? TlsUtils.Fingerprint(certificate) : string.Empty;
+            Fingerprint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
         }
 
         public DtlsSrtpClient(UseSrtpData clientSrtpData) : this(DtlsUtils.CreateSelfSignedCert())

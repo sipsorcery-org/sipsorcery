@@ -80,6 +80,7 @@ namespace SIPSorcery.Net
         //private AlgorithmCertificate algorithmCertificate;
 
         public Certificate ClientCertificate { get; private set; }
+        public string ClientFingerprint { get; private set; }
 
         // the server response to the client handshake request
         // http://tools.ietf.org/html/rfc5764#section-4.1.1
@@ -211,6 +212,7 @@ namespace SIPSorcery.Net
             {
                 byte[] hashAlgorithms = new byte[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256, HashAlgorithm.sha224, HashAlgorithm.sha1 };
                 //byte[] signatureAlgorithms = new byte[] { algorithmCertificate.getSignatureAlgorithm(), SignatureAlgorithm.ecdsa };
+                // TODO: Don't think this should be pegged to RSA. Mot likely should be a negotiation. AC 5 Jul 2020.
                 byte[] signatureAlgorithms = new byte[] { SignatureAlgorithm.rsa };
 
                 serverSigAlgs = new List<SignatureAndHashAlgorithm>();
@@ -222,12 +224,14 @@ namespace SIPSorcery.Net
                     }
                 }
             }
+            // TODO: Don't think this should be pegged to RSA. Mot likely should be a negotiation. AC 5 Jul 2020.
             return new CertificateRequest(new byte[] { ClientCertificateType.rsa_sign }, serverSigAlgs, null);
         }
 
         public override void NotifyClientCertificate(Certificate clientCertificate)
         {
             ClientCertificate = clientCertificate;
+            ClientFingerprint = DtlsUtils.Fingerprint(clientCertificate);
         }
 
         public override IDictionary GetServerExtensions()
