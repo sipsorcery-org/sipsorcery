@@ -73,9 +73,10 @@
                 };
 
                 if (url == sendOfferUrl) {
-                    console.log("Sending offer");
                     const offer = await pc.createOffer();
                     await pc.setLocalDescription(offer)
+                    console.log("Sending offer SDP:");
+                    console.log(offer.sdp);
                     ws.send(offer.sdp);
                 }
             };
@@ -89,13 +90,13 @@
                 }
                 else {
                     if (url == sendOfferUrl) {
-                        console.log("Answer SDP received.");
+                        console.log("Answer SDP received:");
                         console.log(evt.data);
                         await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: evt.data }));
                     }
                     else {
                         // Received SDP offer from the remote web socket server.
-                        console.log("Offer SDP received.");
+                        console.log("Offer SDP received:");
                         console.log(evt.data);
 
                         await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: evt.data }))
@@ -104,7 +105,7 @@
                         pc.createAnswer().then(function (answer) {
                             return pc.setLocalDescription(answer);
                         }).then(function () {
-                            console.log("Sending answer SDP.");
+                            console.log("Sending answer SDP:");
                             console.log(pc.localDescription.sdp);
                             ws.send(pc.localDescription.sdp);
                         });

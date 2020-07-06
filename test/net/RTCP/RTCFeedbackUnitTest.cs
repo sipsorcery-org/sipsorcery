@@ -45,7 +45,7 @@ namespace SIPSorcery.Net.UnitTests
             RTCPFeedback rtcpPli = new RTCPFeedback(senderSsrc, mediaSsrc, PSFBFeedbackTypesEnum.PLI);
             byte[] buffer = rtcpPli.GetBytes();
 
-            logger.LogDebug($"Serialised PLI feedback report: {ByteBufferInfo.HexStr(buffer)}.");
+            logger.LogDebug($"Serialised PLI feedback report: {BufferUtils.HexStr(buffer)}.");
 
             RTCPFeedback parsedPli = new RTCPFeedback(buffer);
 

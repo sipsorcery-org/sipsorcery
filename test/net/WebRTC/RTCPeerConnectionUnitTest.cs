@@ -98,8 +98,8 @@ namespace SIPSorcery.Net.UnitTests
                 {
                     new RTCCertificate
                     {
-                        X_Fingerprint = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD"
-                    }
+                        Certificate = DtlsUtils.CreateSelfSignedCert()
+        }
                 },
                 X_UseRtpFeedbackProfile = true
             };

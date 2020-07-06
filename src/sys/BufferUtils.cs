@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Filename: ByteBufferInfo.cs
+// Filename: BufferUtils.cs
 //
 // Description: Provides some useful methods for working with byte[] buffers.
 //
@@ -13,12 +13,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Text;
 
 namespace SIPSorcery.Sys
 {
-    public class ByteBufferInfo
+    public class BufferUtils
     {
         /// <summary>
         /// Searches a buffer for a string up until a specified end string.
@@ -82,35 +81,14 @@ namespace SIPSorcery.Sys
             return GetStringPosition(buffer, startPosition, endPosition, find, end) != -1;
         }
 
-        public static string HexStr(byte[] buffer)
-        {
-            return HexStr(buffer, buffer.Length);
-        }
-
-        public static string HexStr(byte[] buffer, int length)
-        {
-            // Each byte requires 2 characters. Add one additional byte to hold the null termination char.
-            string hexStr = null;
-
-            char[] hexmap = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-
-            for (int i = 0; i < length; i++)
-            {
-                hexStr += buffer[i].ToString("X2");
-            }
-
-            return hexStr;
-        }
-
         public static byte[] ParseHexStr(string hex)
         {
-            int NumberChars = hex.Length;
-            byte[] bytes = new byte[NumberChars / 2];
-            for (int i = 0; i < NumberChars; i += 2)
-            {
-                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
-            }
-            return bytes;
+            return TypeExtensions.ParseHexStr(hex);
+        }
+
+        public static string HexStr(byte[] buffer)
+        {
+            return buffer.HexStr();
         }
     }
 }
