@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -135,15 +136,16 @@ namespace SIPSorcery.Examples
 
         private static RTCPeerConnection Createpc(WebSocketContext context)
         {
-            System.Security.Cryptography.X509Certificates.X509Certificate2 certificate = null;
-            //if(File.Exists(LOCALHOST_CERTIFICATE_PATH))
-            //{
-            //    certificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
-            //}
-            //else
-            //{
+            X509Certificate2 certificate = null;
+            if (File.Exists(LOCALHOST_CERTIFICATE_PATH))
+            {
+                //certificate = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
+                certificate = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH, (string)null, X509KeyStorageFlags.Exportable);
+            }
+            else
+            {
                 certificate = DtlsUtils.CreateSelfSignedCert();
-            //}
+            }
 
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
@@ -322,7 +324,7 @@ namespace SIPSorcery.Examples
             }
             else
             {
-                Console.WriteLine($"Remote certificate fingerprint matched expected value.");
+                Console.WriteLine($"Remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
             }
 
             if (dtlsHandle.IsHandshakeComplete())
