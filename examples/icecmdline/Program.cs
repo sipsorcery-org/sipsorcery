@@ -136,26 +136,16 @@ namespace SIPSorcery.Examples
 
         private static RTCPeerConnection Createpc(WebSocketContext context)
         {
-            X509Certificate2 certificate = null;
+            List<RTCCertificate> presetCertificates = null;
             if (File.Exists(LOCALHOST_CERTIFICATE_PATH))
             {
-                //certificate = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
-                certificate = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH, (string)null, X509KeyStorageFlags.Exportable);
-            }
-            else
-            {
-                certificate = DtlsUtils.CreateSelfSignedCert();
+                var localhostCert = new X509Certificate2(LOCALHOST_CERTIFICATE_PATH, (string)null, X509KeyStorageFlags.Exportable);
+                presetCertificates = new List<RTCCertificate> { new RTCCertificate { Certificate = localhostCert } };
             }
 
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
-                certificates = new List<RTCCertificate>
-                {
-                    new RTCCertificate
-                    {
-                        Certificate = certificate
-                    }
-                },
+                certificates = presetCertificates,
                 X_RemoteSignallingAddress = context.UserEndPoint.Address,
                 iceServers = new List<RTCIceServer> {
                     new RTCIceServer

@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP.App;
@@ -176,7 +177,7 @@ namespace SIPSorcery.Net
         public bool canTrickleIceCandidates { get => true; }
 
         private RTCConfiguration _configuration;
-        
+
         /// <summary>
         /// The certificate being used to negotiate the DTLS handshake with the 
         /// remote peer.
@@ -245,18 +246,65 @@ namespace SIPSorcery.Net
                 throw new ApplicationException("RTCPeerConnection must have at least one ICE server specified for a relay only transport policy.");
             }
 
-            _configuration = configuration;
-            if (_configuration != null)
+            if (configuration != null)
             {
+                _configuration = configuration;
                 if (_configuration.certificates?.Count > 0)
                 {
-                    _currentCertificate = _configuration.certificates.First();
+                    // Find the first certificate that has a usable private key.
+                    RTCCertificate usableCert = null;
+                    foreach (var cert in _configuration.certificates)
+                    {
+                        // Attempting to check that a certificate has an exportable private key.
+                        // TODO: Does not seem to be a particularly reliable way of checking private key exportability.
+                        if (cert.Certificate.HasPrivateKey)
+                        {
+                            if (cert.Certificate.PrivateKey is RSACryptoServiceProvider)
+                            {
+                                var rsa = cert.Certificate.PrivateKey as RSACryptoServiceProvider;
+                                if (!rsa.CspKeyContainerInfo.Exportable)
+                                {
+                                    logger.LogWarning($"RTCPeerConnection was passed a certificate for {cert.Certificate.FriendlyName} with a non-exportable RSA private key.");
+                                }
+                                else
+                                {
+                                    usableCert = cert;
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                usableCert = cert;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (usableCert == null)
+                    {
+                        throw new ApplicationException("RTCPeerConnection was not able to find a certificate from the input configuration list with a usable private key.");
+                    }
+                    else
+                    {
+                        _currentCertificate = usableCert;
+                    }
                 }
 
                 if (_configuration.X_UseRtpFeedbackProfile)
                 {
                     RTP_MEDIA_PROFILE = RTP_MEDIA_FEEDBACK_PROFILE;
                 }
+            }
+            else
+            {
+                _configuration = new RTCConfiguration();
+            }
+
+            // No certificate was provided so create a new self signed one.
+            if (_configuration.certificates == null || _configuration.certificates.Count == 0)
+            {
+                _currentCertificate = new RTCCertificate { Certificate = DtlsUtils.CreateSelfSignedCert() };
+                _configuration.certificates = new List<RTCCertificate> { _currentCertificate };
             }
 
             SessionID = Guid.NewGuid().ToString();
@@ -438,7 +486,7 @@ namespace SIPSorcery.Net
                 if (!string.IsNullOrWhiteSpace(dtlsFingerprint))
                 {
                     dtlsFingerprint = dtlsFingerprint.Trim().ToLower();
-                    if(RTCDtlsFingerprint.TryParse(dtlsFingerprint, out var remoteFingerprint))
+                    if (RTCDtlsFingerprint.TryParse(dtlsFingerprint, out var remoteFingerprint))
                     {
                         RemotePeerDtlsFingerprint = remoteFingerprint;
                     }
@@ -716,7 +764,7 @@ namespace SIPSorcery.Net
                 announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
                 announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
                 announcement.IceOptions = ICE_OPTIONS;
-                announcement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.getFingerprints().First().ToString() : null;
+                announcement.DtlsFingerprint = _currentCertificate.getFingerprints().First().ToString();
 
                 if (iceCandidatesAdded == false && _rtpIceChannel.Candidates?.Count > 0)
                 {
@@ -769,7 +817,7 @@ namespace SIPSorcery.Net
                         base.OnReceive(localPort, remoteEP, buffer);
                     }
                     else
-                        //if (buffer[0] >= 20 && buffer[0] <= 63)
+                    //if (buffer[0] >= 20 && buffer[0] <= 63)
                     {
                         // DTLS packet.
                         OnDtlsPacket?.Invoke(buffer);
