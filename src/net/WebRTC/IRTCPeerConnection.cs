@@ -134,7 +134,8 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            return $"{algorithm} {value}";
+            // FireFox wasn't happy unless the fingerprint hash was in upper case.
+            return $"{algorithm} {value.ToUpper()}";
         }
 
         /// <summary>

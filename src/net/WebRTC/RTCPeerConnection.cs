@@ -743,6 +743,7 @@ namespace SIPSorcery.Net
             // Add a bundle attribute. Indicates that audio and video sessions will be multiplexed
             // on a single RTP socket.
             offerSdp.Group = BUNDLE_ATTRIBUTE;
+            offerSdp.DtlsFingerprint = _currentCertificate.getFingerprints().First().ToString();
 
             // Media announcements must be in the same order in the offer and answer.
             foreach (var track in tracks.OrderBy(x => x.MLineIndex))
@@ -764,7 +765,7 @@ namespace SIPSorcery.Net
                 announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
                 announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
                 announcement.IceOptions = ICE_OPTIONS;
-                announcement.DtlsFingerprint = _currentCertificate.getFingerprints().First().ToString();
+                announcement.DtlsFingerprint = offerSdp.DtlsFingerprint;
 
                 if (iceCandidatesAdded == false && _rtpIceChannel.Candidates?.Count > 0)
                 {
