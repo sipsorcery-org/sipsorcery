@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.SIP.App;
@@ -146,7 +147,7 @@ namespace SIPSorcery.Net
         /// The DTLS fingerprint supplied by the remote peer in their SDP. Needs to be checked
         /// that the certificate supplied during the DTLS handshake matches.
         /// </summary>
-        public byte[] RemotePeerDtlsFingerprint { get; private set; }
+        public RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; private set; }
 
         public bool IsDtlsNegotiationComplete
         {
@@ -176,7 +177,19 @@ namespace SIPSorcery.Net
         public bool canTrickleIceCandidates { get => true; }
 
         private RTCConfiguration _configuration;
+
+        /// <summary>
+        /// The certificate being used to negotiate the DTLS handshake with the 
+        /// remote peer.
+        /// </summary>
         private RTCCertificate _currentCertificate;
+        public RTCCertificate CurrentCertificate
+        {
+            get
+            {
+                return _currentCertificate;
+            }
+        }
 
         /// <summary>
         /// Informs the application that session negotiation needs to be done (i.e. a createOffer call 
@@ -217,6 +230,8 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<RTCPeerConnectionState> onconnectionstatechange;
 
+        public event Action<byte[]> OnDtlsPacket;
+
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
@@ -231,18 +246,65 @@ namespace SIPSorcery.Net
                 throw new ApplicationException("RTCPeerConnection must have at least one ICE server specified for a relay only transport policy.");
             }
 
-            _configuration = configuration;
-            if (_configuration != null)
+            if (configuration != null)
             {
+                _configuration = configuration;
                 if (_configuration.certificates?.Count > 0)
                 {
-                    _currentCertificate = _configuration.certificates.First();
+                    // Find the first certificate that has a usable private key.
+                    RTCCertificate usableCert = null;
+                    foreach (var cert in _configuration.certificates)
+                    {
+                        // Attempting to check that a certificate has an exportable private key.
+                        // TODO: Does not seem to be a particularly reliable way of checking private key exportability.
+                        if (cert.Certificate.HasPrivateKey)
+                        {
+                            //if (cert.Certificate.PrivateKey is RSACryptoServiceProvider)
+                            //{
+                            //    var rsa = cert.Certificate.PrivateKey as RSACryptoServiceProvider;
+                            //    if (!rsa.CspKeyContainerInfo.Exportable)
+                            //    {
+                            //        logger.LogWarning($"RTCPeerConnection was passed a certificate for {cert.Certificate.FriendlyName} with a non-exportable RSA private key.");
+                            //    }
+                            //    else
+                            //    {
+                            //        usableCert = cert;
+                            //        break;
+                            //    }
+                            //}
+                            //else
+                            //{
+                                usableCert = cert;
+                                break;
+                            //}
+                        }
+                    }
+
+                    if (usableCert == null)
+                    {
+                        throw new ApplicationException("RTCPeerConnection was not able to find a certificate from the input configuration list with a usable private key.");
+                    }
+                    else
+                    {
+                        _currentCertificate = usableCert;
+                    }
                 }
 
                 if (_configuration.X_UseRtpFeedbackProfile)
                 {
                     RTP_MEDIA_PROFILE = RTP_MEDIA_FEEDBACK_PROFILE;
                 }
+            }
+            else
+            {
+                _configuration = new RTCConfiguration();
+            }
+
+            // No certificate was provided so create a new self signed one.
+            if (_configuration.certificates == null || _configuration.certificates.Count == 0)
+            {
+                _currentCertificate = new RTCCertificate { Certificate = DtlsUtils.CreateSelfSignedCert() };
+                _configuration.certificates = new List<RTCCertificate> { _currentCertificate };
             }
 
             SessionID = Guid.NewGuid().ToString();
@@ -261,19 +323,41 @@ namespace SIPSorcery.Net
                 {
                     var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
                     base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
+
+                    logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
+
+                    DtlsSrtpTransport dtlsHandle = new DtlsSrtpTransport(
+                                IceRole == IceRolesEnum.active ?
+                                (IDtlsSrtpPeer)new DtlsSrtpClient(_currentCertificate.Certificate) :
+                                (IDtlsSrtpPeer)new DtlsSrtpServer(_currentCertificate.Certificate));
+
+                    OnDtlsPacket += (buf) =>
+                    {
+                        logger.LogDebug($"DTLS transport received {buf.Length} bytes from {AudioDestinationEndPoint}.");
+                        dtlsHandle.WriteToRecvStream(buf);
+                    };
+
+                    logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
+                    Task.Run<bool>(() => DoDtlsHandshake(dtlsHandle))
+                    .ContinueWith(t =>
+                    {
+                        if (t.IsFaulted)
+                        {
+                            logger.LogWarning($"RTCPeerConnection DTLS handshake task completed in a faulted state. {t.Exception?.Flatten().Message}");
+
+                            connectionState = RTCPeerConnectionState.failed;
+                            onconnectionstatechange?.Invoke(connectionState);
+                        }
+                        else
+                        {
+                            connectionState = (t.Result) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
+                            onconnectionstatechange?.Invoke(connectionState);
+                        }
+                    });
                 }
 
                 iceConnectionState = state;
                 oniceconnectionstatechange?.Invoke(iceConnectionState);
-
-                if (base.IsSecureContextReady &&
-                    iceConnectionState == RTCIceConnectionState.connected &&
-                    connectionState != RTCPeerConnectionState.connected)
-                {
-                    // This is the case where the ICE connection checks completed after the DTLS handshake.
-                    connectionState = RTCPeerConnectionState.connected;
-                    onconnectionstatechange?.Invoke(RTCPeerConnectionState.connected);
-                }
             };
             _rtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
             _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
@@ -412,11 +496,8 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    // Set DTLS role to be server.
-                    // As of 20 Jun 2020 the DTLS handshake logic is based on OpenSSL and the mechanism
-                    // used hands over the socket handle to the C++ class. This logic works a lot better
-                    // when acting as the server in the handshake.
-                    IceRole = IceRolesEnum.passive;
+                    // Set DTLS role as client.
+                    IceRole = IceRolesEnum.active;
                 }
 
                 if (remoteIceUser != null && remoteIcePassword != null)
@@ -427,22 +508,14 @@ namespace SIPSorcery.Net
                 if (!string.IsNullOrWhiteSpace(dtlsFingerprint))
                 {
                     dtlsFingerprint = dtlsFingerprint.Trim().ToLower();
-
-                    if (dtlsFingerprint.Length < DTLS_FINGERPRINT_DIGEST.Length + 1)
+                    if (RTCDtlsFingerprint.TryParse(dtlsFingerprint, out var remoteFingerprint))
                     {
-                        logger.LogWarning($"The DTLS fingerprint was too short.");
-                        return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
-                    }
-                    else if (!dtlsFingerprint.StartsWith(DTLS_FINGERPRINT_DIGEST))
-                    {
-                        logger.LogWarning($"The DTLS fingerprint was supplied with an unsupported digest function (supported one is {DTLS_FINGERPRINT_DIGEST}): {dtlsFingerprint}.");
-                        return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
+                        RemotePeerDtlsFingerprint = remoteFingerprint;
                     }
                     else
                     {
-                        dtlsFingerprint = dtlsFingerprint.Substring(DTLS_FINGERPRINT_DIGEST.Length + 1).Trim().Replace(":", "").Replace(" ", "");
-                        RemotePeerDtlsFingerprint = ByteBufferInfo.ParseHexStr(dtlsFingerprint);
-                        logger.LogDebug($"The DTLS fingerprint for the remote peer's SDP {ByteBufferInfo.HexStr(RemotePeerDtlsFingerprint)}.");
+                        logger.LogWarning($"The DTLS fingerprint was invalid or not supported.");
+                        return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
                     }
                 }
                 else
@@ -692,6 +765,7 @@ namespace SIPSorcery.Net
             // Add a bundle attribute. Indicates that audio and video sessions will be multiplexed
             // on a single RTP socket.
             offerSdp.Group = BUNDLE_ATTRIBUTE;
+            offerSdp.DtlsFingerprint = _currentCertificate.getFingerprints().First().ToString();
 
             // Media announcements must be in the same order in the offer and answer.
             foreach (var track in tracks.OrderBy(x => x.MLineIndex))
@@ -713,7 +787,7 @@ namespace SIPSorcery.Net
                 announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
                 announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
                 announcement.IceOptions = ICE_OPTIONS;
-                announcement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
+                announcement.DtlsFingerprint = offerSdp.DtlsFingerprint;
 
                 if (iceCandidatesAdded == false && _rtpIceChannel.Candidates?.Count > 0)
                 {
@@ -751,19 +825,25 @@ namespace SIPSorcery.Net
         {
             //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
 
+            // By this pint the RTP ICE channel has already processed any STUN packets which means 
+            // it's only necessary to separate RTP/RTCP from DTLS.
+            // Because DTLS packets can be fragmented and RTP/RTCP should never be use the RTP/RTCP 
+            // prefix to distinguish.
+
             if (buffer?.Length > 0)
             {
                 try
                 {
-                    if (buffer[0] >= 20 && buffer[0] <= 63)
+                    if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
                     {
-                        // DTLS packet.
-                        // Do nothing. The DTLSContext already has the socket handle and is monitoring
-                        // for DTLS packets.
+                        // RTP/RTCP packet.
+                        base.OnReceive(localPort, remoteEP, buffer);
                     }
                     else
+                    //if (buffer[0] >= 20 && buffer[0] <= 63)
                     {
-                        base.OnReceive(localPort, remoteEP, buffer);
+                        // DTLS packet.
+                        OnDtlsPacket?.Invoke(buffer);
                     }
                 }
                 catch (Exception excp)
@@ -801,12 +881,66 @@ namespace SIPSorcery.Net
 
         public RTCConfiguration getConfiguration()
         {
-            throw new NotImplementedException();
+            return _configuration;
         }
 
         public void setConfiguration(RTCConfiguration configuration = null)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        ///  DtlsHandshake requires DtlsSrtpTransport to work.
+        ///  DtlsSrtpTransport is similar to C++ DTLS class combined with Srtp class and can perform 
+        ///  Handshake as Server or Client in same call. The constructor of transport require a DtlsStrpClient 
+        ///  or DtlsSrtpServer to work.
+        /// </summary>
+        /// <param name="dtlsHandle">The DTLS transport handle to perform the handshake with.</param>
+        /// <returns></returns>
+        private bool DoDtlsHandshake(DtlsSrtpTransport dtlsHandle)
+        {
+            logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");
+
+            var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
+
+            dtlsHandle.OnDataReady += (buf) =>
+            {
+                //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
+                rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf);
+            };
+
+            var handshakeResult = dtlsHandle.DoHandshake();
+
+            if (!handshakeResult)
+            {
+                logger.LogWarning($"RTCPeerConnection DTLS handshake failed.");
+                return false;
+            }
+            else
+            {
+                logger.LogDebug($"RTCPeerConnection DTLS handshake result {handshakeResult}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
+
+                var expectedFp = RemotePeerDtlsFingerprint;
+                var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
+
+                if (remoteFingerprint.value != expectedFp.value)
+                {
+                    logger.LogWarning($"RTCPeerConnection remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
+                    return false;
+                }
+                else
+                {
+                    logger.LogDebug($"RTCPeerConnection remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
+
+                    SetSecurityContext(
+                        dtlsHandle.ProtectRTP,
+                        dtlsHandle.UnprotectRTP,
+                        dtlsHandle.ProtectRTCP,
+                        dtlsHandle.UnprotectRTCP);
+
+                    return true;
+                }
+            }
         }
     }
 }

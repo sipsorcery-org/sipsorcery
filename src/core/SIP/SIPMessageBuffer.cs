@@ -69,7 +69,7 @@ namespace SIPSorcery.SIP
                 {
                     throw new ApplicationException("SIP message received that exceeded the maximum allowed message length, ignoring.");
                 }
-                else if (!ByteBufferInfo.HasString(buffer, 0, buffer.Length, SIP_MESSAGE_IDENTIFIER, m_CRLF))
+                else if (!BufferUtils.HasString(buffer, 0, buffer.Length, SIP_MESSAGE_IDENTIFIER, m_CRLF))
                 {
                     // Message does not contain "SIP" anywhere on the first line, ignore.
                     return null;
@@ -234,7 +234,7 @@ namespace SIPSorcery.SIP
 
             if (start < length)
             {
-                int endMessageIndex = ByteBufferInfo.GetStringPosition(receiveBuffer, start, length, m_sipMessageDelimiter, null);
+                int endMessageIndex = BufferUtils.GetStringPosition(receiveBuffer, start, length, m_sipMessageDelimiter, null);
                 if (endMessageIndex != -1)
                 {
                     int contentLength = GetContentLength(receiveBuffer, start, endMessageIndex);

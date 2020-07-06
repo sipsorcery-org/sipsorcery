@@ -17,11 +17,11 @@ using Xunit;
 namespace SIPSorcery.Sys.UnitTests
 {
     [Trait("Category", "unit")]
-    public class ByteBufferInfoUnitTest
+    public class BufferUtilsUnitTest
     {
         private Microsoft.Extensions.Logging.ILogger logger = null;
 
-        public ByteBufferInfoUnitTest(Xunit.Abstractions.ITestOutputHelper output)
+        public BufferUtilsUnitTest(Xunit.Abstractions.ITestOutputHelper output)
         {
             logger = SIPSorcery.UnitTests.TestLogHelper.InitTestLogger(output);
         }
@@ -34,7 +34,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             byte[] sample = Encoding.ASCII.GetBytes("The quick brown fox jumped over...");
 
-            bool hasFox = ByteBufferInfo.HasString(sample, 0, Int32.MaxValue, "fox", null);
+            bool hasFox = BufferUtils.HasString(sample, 0, Int32.MaxValue, "fox", null);
 
             Assert.True(hasFox, "The string was not found in the buffer.");
         }
@@ -47,7 +47,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             byte[] sample = Encoding.ASCII.GetBytes("The quick brown fox jumped over...");
 
-            bool hasFox = ByteBufferInfo.HasString(sample, 0, Int32.MaxValue, "fox", "brown");
+            bool hasFox = BufferUtils.HasString(sample, 0, Int32.MaxValue, "fox", "brown");
 
             Assert.True(!hasFox, "The string was not found in the buffer.");
         }
@@ -73,7 +73,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             byte[] sample = Encoding.ASCII.GetBytes(sipMsg);
 
-            int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
+            int endOfMsgIndex = BufferUtils.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
 
             Assert.True(endOfMsgIndex == sample.Length - 4, "The string position was not correctly found in the buffer.");
         }
@@ -118,7 +118,7 @@ namespace SIPSorcery.Sys.UnitTests
 
             byte[] sample = Encoding.ASCII.GetBytes(sipMsg);
 
-            int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
+            int endOfMsgIndex = BufferUtils.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
 
             Assert.True(endOfMsgIndex == sipMsg.IndexOf("\r\n\r\n"), "The string position was not correctly found in the buffer. Index found was " + endOfMsgIndex + ", should have been " + sipMsg.IndexOf("\r\n\r\n") + ".");
         }
@@ -144,9 +144,35 @@ namespace SIPSorcery.Sys.UnitTests
 
             byte[] sample = Encoding.ASCII.GetBytes(sipMsg);
 
-            int endOfMsgIndex = ByteBufferInfo.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
+            int endOfMsgIndex = BufferUtils.GetStringPosition(sample, 0, Int32.MaxValue, "\r\n\r\n", null);
 
             Assert.True(endOfMsgIndex == -1, "The string position was not correctly found in the buffer.");
+        }
+
+        [Fact]
+        public void HexStrUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            byte[] buffer = new byte[] { 1, 2, 3 };
+
+            logger.LogDebug($"HexStr result: {buffer.HexStr()}.");
+
+            Assert.Equal("010203", buffer.HexStr());
+        }
+
+        [Fact]
+        public void HexStrWithSeparatorUnitTest()
+        {
+            logger.LogDebug("--> " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            logger.BeginScope(System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+            byte[] buffer = new byte[] { 1, 2, 3 };
+
+            logger.LogDebug($"HexStr result: {buffer.HexStr(':')}.");
+
+            Assert.Equal("01:02:03", buffer.HexStr(':'));
         }
     }
 }
