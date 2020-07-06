@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Namespace SIPSorcery.Net
    ">
-    <meta name="generator" content="docfx 2.56.0.0">
+    <meta name="generator" content="docfx 2.56.1.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -84,6 +84,14 @@ be due to one of these checklist entries successfully completing the ICE checks.
 </section>
       <h4><a class="xref" href="SIPSorcery.Net.DNSManager.html">DNSManager</a></h4>
       <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.DtlsSrtpClient.html">DtlsSrtpClient</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.DtlsSrtpServer.html">DtlsSrtpServer</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.DtlsSrtpTransport.html">DtlsSrtpTransport</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.DtlsUtils.html">DtlsUtils</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.HepChunk.html">HepChunk</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.HepPacket.html">HepPacket</a></h4>
@@ -102,6 +110,8 @@ the connection state for each server that gets used.</p>
       <h4><a class="xref" href="SIPSorcery.Net.Mjpeg.html">Mjpeg</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.Mjpeg.Tags.html">Mjpeg.Tags</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.RawPacket.html">RawPacket</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.ReceptionReport.html">ReceptionReport</a></h4>
       <section><p>Maintains the reception statistics for a received RTP stream.</p>
@@ -283,6 +293,27 @@ SDPSecurityDescription desc = SDPSecurityDescription.Parse(crypto);</code></pre>
 a media source and the relationship between them.
 As specified in RFC5576, <a href="https://tools.ietf.org/html/rfc5576">https://tools.ietf.org/html/rfc5576</a>.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.SrtcpCryptoContext.html">SrtcpCryptoContext</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SrtcpTransformer.html">SrtcpTransformer</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SrtpCipherCTR.html">SrtpCipherCTR</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SrtpCipherF8.html">SrtpCipherF8</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SrtpCipherF8.F8Context.html">SrtpCipherF8.F8Context</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SrtpCryptoContext.html">SrtpCryptoContext</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SrtpPolicy.html">SrtpPolicy</a></h4>
+      <section><p>SrtpPolicy holds the SRTP encryption / authentication policy of a SRTP
+session.</p>
+<p>@author Bing SU (nova.su @gmail.com)</p>
+</section>
+      <h4><a class="xref" href="SIPSorcery.Net.SrtpTransformEngine.html">SrtpTransformEngine</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.SrtpTransformer.html">SrtpTransformer</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAddressAttribute.html">STUNAddressAttribute</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.STUNAttribute.html">STUNAttribute</a></h4>
@@ -315,8 +346,16 @@ THe reason for this is to stop NAT application layer gateways from doing string 
       <section><p>A basic UDP socket manager. The RTP channel may need both an RTP and Control socket. This class encapsulates
 the common logic for UDP socket management.</p>
 </section>
+    <h3 id="structs">Structs
+  </h3>
+      <h4><a class="xref" href="SIPSorcery.Net.SrtpParameters.html">SrtpParameters</a></h4>
+      <section></section>
     <h3 id="interfaces">Interfaces
   </h3>
+      <h4><a class="xref" href="SIPSorcery.Net.IDtlsSrtpPeer.html">IDtlsSrtpPeer</a></h4>
+      <section></section>
+      <h4><a class="xref" href="SIPSorcery.Net.IPacketTransformer.html">IPacketTransformer</a></h4>
+      <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.IRTCIceCandidate.html">IRTCIceCandidate</a></h4>
       <section></section>
       <h4><a class="xref" href="SIPSorcery.Net.IRTCRtpReceiver.html">IRTCRtpReceiver</a></h4>
@@ -327,6 +366,8 @@ the common logic for UDP socket management.</p>
 is encoded and transmitted to a remote peer. When setParameters is called on an
 RTCRtpSender object, the encoding is changed appropriately.</p>
 </section>
+      <h4><a class="xref" href="SIPSorcery.Net.ITransformEngine.html">ITransformEngine</a></h4>
+      <section></section>
     <h3 id="enums">Enums
   </h3>
       <h4><a class="xref" href="SIPSorcery.Net.CaptureProtocolTypeEnum.html">CaptureProtocolTypeEnum</a></h4>
