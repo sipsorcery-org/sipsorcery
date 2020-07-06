@@ -13,9 +13,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-// If uncommented the logic to do the DTLS handshake will be called.
-#define DTLS_IS_ENABLED
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -185,39 +182,6 @@ namespace SIPSorcery.Examples
             pc.oniceconnectionstatechange += (state) =>
             {
                 logger.LogDebug($"ICE connection state change to {state}.");
-
-                if (state == RTCIceConnectionState.connected)
-                {
-                    logger.LogInformation($"ICE connected to remote end point {pc.AudioDestinationEndPoint}.");
-
-                    if (pc.RemotePeerDtlsFingerprint == null)
-                    {
-                        logger.LogWarning("DTLS handshake cannot proceed, no fingerprint was available for the remote peer.");
-                        pc.Close("No DTLS fingerprint.");
-                    }
-                    else
-                    {
-#if DTLS_IS_ENABLED
-                        DtlsSrtpTransport dtlsHandle = new DtlsSrtpTransport(
-                                    pc.IceRole == IceRolesEnum.active ?
-                                    (IDtlsSrtpPeer)new DtlsSrtpClient(pc.CurrentCertificate.Certificate) :
-                                    (IDtlsSrtpPeer)new DtlsSrtpServer(pc.CurrentCertificate.Certificate));
-
-                        pc.OnDtlsPacket += (buf) =>
-                        {
-                            logger.LogDebug($"DTLS transport received {buf.Length} bytes from {pc.AudioDestinationEndPoint}.");
-                            dtlsHandle.WriteToRecvStream(buf);
-                        };
-
-                        logger.LogDebug($"Starting DLS handshake with role {pc.IceRole}.");
-                        Task.Run(() =>
-                        {
-                            var dtlsResult = DoDtlsHandshake(pc, dtlsHandle);
-                            logger.LogDebug($"DTLS handshake result {dtlsResult}.");
-                        });
-#endif
-                    }
-                }
             };
 
             return pc;
@@ -282,137 +246,5 @@ namespace SIPSorcery.Examples
             loggerFactory.AddSerilog(loggerConfig);
             SIPSorcery.Sys.Log.LoggerFactory = loggerFactory;
         }
-
-#if DTLS_IS_ENABLED
-
-        /* DtlsHandshake requires DtlsSrtpTransport to work.
-        * DtlsSrtpTransport is similar to C++ DTLS class combined with Srtp class and can perform Handshake as Server or Client in same call. 
-        * The constructor of transport require a DtlsStrpClient or DtlsSrtpServer to work and the method DoHandshake require a socket with
-        * support to IPV6 Multiplex and a RemoteEndPoint (RemoteEndPoint will be discarded when performing as Server) */
-        private static bool DoDtlsHandshake(RTCPeerConnection peerConnection, DtlsSrtpTransport dtlsHandle)
-        {
-            Console.WriteLine("DoDtlsHandshake started.");
-
-            var rtpChannel = peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio);
-
-            dtlsHandle.OnDataReady += (buf) =>
-            {
-                logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {peerConnection.AudioDestinationEndPoint}.");
-                rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, peerConnection.AudioDestinationEndPoint, buf);
-            };
-
-            var res = dtlsHandle.DoHandshake();
-
-            Console.WriteLine("DtlsContext handshake result=" + res);
-
-            var expectedFp = peerConnection.RemotePeerDtlsFingerprint;
-            var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
-
-            if(remoteFingerprint.value != expectedFp.value)
-            {
-                Console.WriteLine($"Remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
-            }
-            else
-            {
-                Console.WriteLine($"Remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
-            }
-
-            if (dtlsHandle.IsHandshakeComplete())
-            {
-                Console.WriteLine("DTLS negotiation complete.");
-
-                peerConnection.SetSecurityContext(
-                    dtlsHandle.ProtectRTP,
-                    dtlsHandle.UnprotectRTP,
-                    dtlsHandle.ProtectRTCP,
-                    dtlsHandle.UnprotectRTCP);
-
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
-        /// </summary>
-        /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
-        //private static bool DoDtlsHandshake(RTCPeerConnection pc, SIPSorceryMedia.DtlsHandshake dtls, bool isClient, byte[] sdpFingerprint)
-        //{
-        //    logger.LogDebug("DoDtlsHandshake started.");
-
-        //    if (!File.Exists(DTLS_CERTIFICATE_PATH))
-        //    {
-        //        throw new ApplicationException($"The DTLS certificate file could not be found at {DTLS_CERTIFICATE_PATH}.");
-        //    }
-        //    else if (!File.Exists(DTLS_KEY_PATH))
-        //    {
-        //        throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
-        //    }
-
-        //    int res = 0;
-        //    bool fingerprintMatch = false;
-
-        //    if (isClient)
-        //    {
-        //        logger.LogDebug($"DTLS client handshake starting to {pc.AudioDestinationEndPoint}.");
-
-        //        // For the DTLS handshake to work connect must be called on the socket so openssl knows where to send.
-        //        var rtpSocket = pc.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket;
-        //        rtpSocket.Connect(pc.AudioDestinationEndPoint);
-
-        //        byte[] fingerprint = null;
-        //        var peerEP = pc.AudioDestinationEndPoint;
-        //        res = dtls.DoHandshakeAsClient((ulong)rtpSocket.Handle, (short)peerEP.AddressFamily.GetHashCode(), peerEP.Address.GetAddressBytes(), (ushort)peerEP.Port, ref fingerprint);
-        //        if (fingerprint != null)
-        //        {
-        //            logger.LogDebug($"DTLS server fingerprint {ByteBufferInfo.HexStr(fingerprint)}.");
-        //            fingerprintMatch = sdpFingerprint.SequenceEqual(fingerprint);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        byte[] fingerprint = null;
-        //        res = dtls.DoHandshakeAsServer((ulong)pc.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref fingerprint);
-        //        if (fingerprint != null)
-        //        {
-        //            logger.LogDebug($"DTLS client fingerprint {ByteBufferInfo.HexStr(fingerprint)}.");
-        //            fingerprintMatch = sdpFingerprint.SequenceEqual(fingerprint);
-        //        }
-        //    }
-
-        //    logger.LogDebug("DtlsContext initialisation result=" + res);
-
-        //    if (dtls.IsHandshakeComplete())
-        //    {
-        //        logger.LogDebug("DTLS negotiation complete.");
-
-        //        if (!fingerprintMatch)
-        //        {
-        //            logger.LogWarning("DTLS fingerprint mismatch.");
-        //            return false;
-        //        }
-        //        else
-        //        {
-        //            var srtpSendContext = new SIPSorceryMedia.Srtp(dtls, isClient);
-        //            var srtpReceiveContext = new SIPSorceryMedia.Srtp(dtls, !isClient);
-
-        //            pc.SetSecurityContext(
-        //                srtpSendContext.ProtectRTP,
-        //                srtpReceiveContext.UnprotectRTP,
-        //                srtpSendContext.ProtectRTCP,
-        //                srtpReceiveContext.UnprotectRTCP);
-
-        //            return true;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        return false;
-        //    }
-        //}
-#endif
     }
 }

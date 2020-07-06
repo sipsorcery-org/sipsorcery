@@ -259,24 +259,24 @@ namespace SIPSorcery.Net
                         // TODO: Does not seem to be a particularly reliable way of checking private key exportability.
                         if (cert.Certificate.HasPrivateKey)
                         {
-                            if (cert.Certificate.PrivateKey is RSACryptoServiceProvider)
-                            {
-                                var rsa = cert.Certificate.PrivateKey as RSACryptoServiceProvider;
-                                if (!rsa.CspKeyContainerInfo.Exportable)
-                                {
-                                    logger.LogWarning($"RTCPeerConnection was passed a certificate for {cert.Certificate.FriendlyName} with a non-exportable RSA private key.");
-                                }
-                                else
-                                {
-                                    usableCert = cert;
-                                    break;
-                                }
-                            }
-                            else
-                            {
+                            //if (cert.Certificate.PrivateKey is RSACryptoServiceProvider)
+                            //{
+                            //    var rsa = cert.Certificate.PrivateKey as RSACryptoServiceProvider;
+                            //    if (!rsa.CspKeyContainerInfo.Exportable)
+                            //    {
+                            //        logger.LogWarning($"RTCPeerConnection was passed a certificate for {cert.Certificate.FriendlyName} with a non-exportable RSA private key.");
+                            //    }
+                            //    else
+                            //    {
+                            //        usableCert = cert;
+                            //        break;
+                            //    }
+                            //}
+                            //else
+                            //{
                                 usableCert = cert;
                                 break;
-                            }
+                            //}
                         }
                     }
 
@@ -323,19 +323,41 @@ namespace SIPSorcery.Net
                 {
                     var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
                     base.SetDestination(SDPMediaTypesEnum.audio, connectedEP, connectedEP);
+
+                    logger.LogInformation($"ICE connected to remote end point {AudioDestinationEndPoint}.");
+
+                    DtlsSrtpTransport dtlsHandle = new DtlsSrtpTransport(
+                                IceRole == IceRolesEnum.active ?
+                                (IDtlsSrtpPeer)new DtlsSrtpClient(_currentCertificate.Certificate) :
+                                (IDtlsSrtpPeer)new DtlsSrtpServer(_currentCertificate.Certificate));
+
+                    OnDtlsPacket += (buf) =>
+                    {
+                        logger.LogDebug($"DTLS transport received {buf.Length} bytes from {AudioDestinationEndPoint}.");
+                        dtlsHandle.WriteToRecvStream(buf);
+                    };
+
+                    logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
+                    Task.Run<bool>(() => DoDtlsHandshake(dtlsHandle))
+                    .ContinueWith(t =>
+                    {
+                        if (t.IsFaulted)
+                        {
+                            logger.LogWarning($"RTCPeerConnection DTLS handshake task completed in a faulted state. {t.Exception?.Flatten().Message}");
+
+                            connectionState = RTCPeerConnectionState.failed;
+                            onconnectionstatechange?.Invoke(connectionState);
+                        }
+                        else
+                        {
+                            connectionState = (t.Result) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
+                            onconnectionstatechange?.Invoke(connectionState);
+                        }
+                    });
                 }
 
                 iceConnectionState = state;
                 oniceconnectionstatechange?.Invoke(iceConnectionState);
-
-                if (base.IsSecureContextReady &&
-                    iceConnectionState == RTCIceConnectionState.connected &&
-                    connectionState != RTCPeerConnectionState.connected)
-                {
-                    // This is the case where the ICE connection checks completed after the DTLS handshake.
-                    connectionState = RTCPeerConnectionState.connected;
-                    onconnectionstatechange?.Invoke(RTCPeerConnectionState.connected);
-                }
             };
             _rtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
             _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
@@ -859,12 +881,66 @@ namespace SIPSorcery.Net
 
         public RTCConfiguration getConfiguration()
         {
-            throw new NotImplementedException();
+            return _configuration;
         }
 
         public void setConfiguration(RTCConfiguration configuration = null)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        ///  DtlsHandshake requires DtlsSrtpTransport to work.
+        ///  DtlsSrtpTransport is similar to C++ DTLS class combined with Srtp class and can perform 
+        ///  Handshake as Server or Client in same call. The constructor of transport require a DtlsStrpClient 
+        ///  or DtlsSrtpServer to work.
+        /// </summary>
+        /// <param name="dtlsHandle">The DTLS transport handle to perform the handshake with.</param>
+        /// <returns></returns>
+        private bool DoDtlsHandshake(DtlsSrtpTransport dtlsHandle)
+        {
+            logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");
+
+            var rtpChannel = GetRtpChannel(SDPMediaTypesEnum.audio);
+
+            dtlsHandle.OnDataReady += (buf) =>
+            {
+                //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
+                rtpChannel.SendAsync(RTPChannelSocketsEnum.RTP, AudioDestinationEndPoint, buf);
+            };
+
+            var handshakeResult = dtlsHandle.DoHandshake();
+
+            if (!handshakeResult)
+            {
+                logger.LogWarning($"RTCPeerConnection DTLS handshake failed.");
+                return false;
+            }
+            else
+            {
+                logger.LogDebug($"RTCPeerConnection DTLS handshake result {handshakeResult}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
+
+                var expectedFp = RemotePeerDtlsFingerprint;
+                var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
+
+                if (remoteFingerprint.value != expectedFp.value)
+                {
+                    logger.LogWarning($"RTCPeerConnection remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
+                    return false;
+                }
+                else
+                {
+                    logger.LogDebug($"RTCPeerConnection remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
+
+                    SetSecurityContext(
+                        dtlsHandle.ProtectRTP,
+                        dtlsHandle.UnprotectRTP,
+                        dtlsHandle.ProtectRTCP,
+                        dtlsHandle.UnprotectRTCP);
+
+                    return true;
+                }
+            }
         }
     }
 }
