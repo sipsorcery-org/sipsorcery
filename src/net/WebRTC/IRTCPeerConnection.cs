@@ -6,6 +6,9 @@
 // date with:
 // https://www.w3.org/TR/webrtc/#interface-definition
 //
+// See also:
+// https://tools.ietf.org/html/draft-ietf-rtcweb-jsep-25#section-3.5.4
+//
 // History:
 // 16 Mar 2020	Aaron Clauson	Created.
 //
@@ -16,7 +19,9 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -126,26 +131,91 @@ namespace SIPSorcery.Net
         /// the syntax of 'fingerprint' in [RFC4572] Section 5.
         /// </summary>
         public string value;
+
+        public override string ToString()
+        {
+            return $"{algorithm} {value}";
+        }
+
+        /// <summary>
+        /// Attempts to parse the fingerprint fields from a string.
+        /// </summary>
+        /// <param name="str">The string to parse from.</param>
+        /// <param name="fingerprint">If successful a fingerprint object.</param>
+        /// <returns>True if a fingerprint was successfully parsed. False if not.</returns>
+        public static bool TryParse(string str, out RTCDtlsFingerprint fingerprint)
+        {
+            fingerprint = null;
+
+            if(string.IsNullOrEmpty(str))
+            {
+                return false;
+            }
+            else
+            {
+                int spaceIndex = str.IndexOf(' ');
+                if(spaceIndex == -1)
+                {
+                    return false;
+                }
+                else
+                {
+                    string algStr = str.Substring(0, spaceIndex);
+                    string val = str.Substring(spaceIndex + 1);
+
+                    if (!DtlsUtils.IsHashSupported(algStr))
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        fingerprint = new RTCDtlsFingerprint
+                        {
+                            algorithm = algStr,
+                            value = val
+                        };
+                        return true;
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>
     /// Represents a certificate used to authenticate WebRTC communications.
     /// </summary>
+    /// <remarks>
+    /// TODO:
+    /// From https://www.w3.org/TR/webrtc/#methods-4:
+    /// "Implementations SHOULD store the sensitive keying material in a secure module safe from 
+    /// same-process memory attacks."
+    /// </remarks>
     public class RTCCertificate
     {
         /// <summary>
         /// The expires attribute indicates the date and time in milliseconds relative to 1970-01-01T00:00:00Z 
         /// after which the certificate will be considered invalid by the browser.
         /// </summary>
-        public DateTimeOffset expires;
+        public long expires
+        {
+            get
+            {
+                if(Certificate == null)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return Certificate.NotAfter.GetEpoch();
+                }
+            }
+        }
 
-        public string X_CertificatePath;
-        public string X_KeyPath;
-        public string X_Fingerprint;
+        public X509Certificate2 Certificate;
 
         public List<RTCDtlsFingerprint> getFingerprints()
         {
-            throw new NotImplementedException("RTCCertificate.getFingerprints");
+            return new List<RTCDtlsFingerprint> { DtlsUtils.Fingerprint(Certificate) };
         }
     }
 

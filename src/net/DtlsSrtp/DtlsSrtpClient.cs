@@ -40,8 +40,7 @@ namespace SIPSorcery.Net
         public virtual void NotifyServerCertificate(Certificate serverCertificate)
         {
             //Console.WriteLine("DTLS client received server certificate chain of length " + chain.Length);
-            X509CertificateStructure entry = serverCertificate.Length > 0 ? serverCertificate.GetCertificateAt(0) : null;
-            mClient.mServerFingerprint = entry != null ? DtlsUtils.Fingerprint(entry) : null;
+            mClient.ServerCertificate = serverCertificate;
         }
 
         public virtual TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
@@ -80,16 +79,9 @@ namespace SIPSorcery.Net
         protected internal TlsSession mSession;
 
         //Received from server
-        internal string mServerFingerprint;
-        public string ServerFingerprint
-        {
-            get
-            {
-                return mServerFingerprint;
-            }
-        }
+        public Certificate ServerCertificate { get; internal set; }
 
-        public string Fingerprint { get; private set; }
+        public RTCDtlsFingerprint Fingerprint { get; private set; }
 
         private UseSrtpData clientSrtpData;
 
@@ -350,6 +342,11 @@ namespace SIPSorcery.Net
         public override void NotifyServerVersion(ProtocolVersion serverVersion)
         {
             base.NotifyServerVersion(serverVersion);
+        }
+
+        public Certificate GetRemoteCertificate()
+        {
+            return ServerCertificate;
         }
     }
 }

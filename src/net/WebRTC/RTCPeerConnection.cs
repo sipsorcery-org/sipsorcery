@@ -146,7 +146,7 @@ namespace SIPSorcery.Net
         /// The DTLS fingerprint supplied by the remote peer in their SDP. Needs to be checked
         /// that the certificate supplied during the DTLS handshake matches.
         /// </summary>
-        public byte[] RemotePeerDtlsFingerprint { get; private set; }
+        public RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; private set; }
 
         public bool IsDtlsNegotiationComplete
         {
@@ -176,7 +176,19 @@ namespace SIPSorcery.Net
         public bool canTrickleIceCandidates { get => true; }
 
         private RTCConfiguration _configuration;
+        
+        /// <summary>
+        /// The certificate being used to negotiate the DTLS handshake with the 
+        /// remote peer.
+        /// </summary>
         private RTCCertificate _currentCertificate;
+        public RTCCertificate CurrentCertificate
+        {
+            get
+            {
+                return _currentCertificate;
+            }
+        }
 
         /// <summary>
         /// Informs the application that session negotiation needs to be done (i.e. a createOffer call 
@@ -426,22 +438,14 @@ namespace SIPSorcery.Net
                 if (!string.IsNullOrWhiteSpace(dtlsFingerprint))
                 {
                     dtlsFingerprint = dtlsFingerprint.Trim().ToLower();
-
-                    if (dtlsFingerprint.Length < DTLS_FINGERPRINT_DIGEST.Length + 1)
+                    if(RTCDtlsFingerprint.TryParse(dtlsFingerprint, out var remoteFingerprint))
                     {
-                        logger.LogWarning($"The DTLS fingerprint was too short.");
-                        return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
-                    }
-                    else if (!dtlsFingerprint.StartsWith(DTLS_FINGERPRINT_DIGEST))
-                    {
-                        logger.LogWarning($"The DTLS fingerprint was supplied with an unsupported digest function (supported one is {DTLS_FINGERPRINT_DIGEST}): {dtlsFingerprint}.");
-                        return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
+                        RemotePeerDtlsFingerprint = remoteFingerprint;
                     }
                     else
                     {
-                        dtlsFingerprint = dtlsFingerprint.Substring(DTLS_FINGERPRINT_DIGEST.Length + 1).Trim().Replace(":", "").Replace(" ", "");
-                        RemotePeerDtlsFingerprint = ByteBufferInfo.ParseHexStr(dtlsFingerprint);
-                        logger.LogDebug($"The DTLS fingerprint for the remote peer's SDP {ByteBufferInfo.HexStr(RemotePeerDtlsFingerprint)}.");
+                        logger.LogWarning($"The DTLS fingerprint was invalid or not supported.");
+                        return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
                     }
                 }
                 else
@@ -712,7 +716,7 @@ namespace SIPSorcery.Net
                 announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
                 announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
                 announcement.IceOptions = ICE_OPTIONS;
-                announcement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.X_Fingerprint : null;
+                announcement.DtlsFingerprint = _currentCertificate != null ? _currentCertificate.getFingerprints().First().ToString() : null;
 
                 if (iceCandidatesAdded == false && _rtpIceChannel.Candidates?.Count > 0)
                 {

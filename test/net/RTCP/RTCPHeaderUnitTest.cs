@@ -63,7 +63,7 @@ namespace SIPSorcery.Net.UnitTests
             logger.LogDebug("PacketType: " + src.PacketType + ", " + dst.PacketType);
             logger.LogDebug("Length: " + src.Length + ", " + dst.Length);
 
-            logger.LogDebug($"Raw Header: {ByteBufferInfo.HexStr(headerBuffer.Take(headerBuffer.Length).ToArray())}.");
+            logger.LogDebug($"Raw Header: {headerBuffer.HexStr(headerBuffer.Length)}.");
 
             Assert.True(src.Version == dst.Version, "Version was mismatched.");
             Assert.True(src.PaddingFlag == dst.PaddingFlag, "PaddingFlag was mismatched.");

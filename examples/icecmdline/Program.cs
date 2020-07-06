@@ -56,10 +56,7 @@ namespace SIPSorcery.Examples
 
     class Program
     {
-        private const string WEBSOCKET_CERTIFICATE_PATH = "certs/localhost.pfx";
-        private const string DTLS_CERTIFICATE_PATH = "certs/localhost.pem";
-        private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
-        private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
+        private const string LOCALHOST_CERTIFICATE_PATH = "certs/localhost.pfx";
         private const int WEBSOCKET_PORT = 8081;
         private const string SIPSORCERY_STUN_SERVER = "turn:sipsorcery.com";
         private const string SIPSORCERY_STUN_SERVER_USERNAME = "aaron"; //"stun.sipsorcery.com";
@@ -74,15 +71,6 @@ namespace SIPSorcery.Examples
             Console.WriteLine("ICE Console Test Program");
             Console.WriteLine("Press ctrl-c to exit.");
 
-            if (!File.Exists(DTLS_CERTIFICATE_PATH))
-            {
-                throw new ApplicationException($"The DTLS certificate file could not be found at {DTLS_CERTIFICATE_PATH}.");
-            }
-            else if (!File.Exists(DTLS_KEY_PATH))
-            {
-                throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
-            }
-
             // Plumbing code to facilitate a graceful exit.
             CancellationTokenSource exitCts = new CancellationTokenSource(); // Cancellation token to stop the SIP transport and RTP stream.
             ManualResetEvent exitMre = new ManualResetEvent(false);
@@ -92,7 +80,7 @@ namespace SIPSorcery.Examples
             // Start web socket.
             Console.WriteLine("Starting web socket server...");
             _webSocketServer = new WebSocketServer(IPAddress.Any, WEBSOCKET_PORT, true);
-            _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(WEBSOCKET_CERTIFICATE_PATH);
+            _webSocketServer.SslConfiguration.ServerCertificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
             _webSocketServer.SslConfiguration.CheckCertificateRevocation = false;
             //_webSocketServer.Log.Level = WebSocketSharp.LogLevel.Debug;
             _webSocketServer.AddWebSocketService<WebRtcClient>("/sendoffer", (client) =>
@@ -147,15 +135,23 @@ namespace SIPSorcery.Examples
 
         private static RTCPeerConnection Createpc(WebSocketContext context)
         {
+            System.Security.Cryptography.X509Certificates.X509Certificate2 certificate = null;
+            //if(File.Exists(LOCALHOST_CERTIFICATE_PATH))
+            //{
+            //    certificate = new System.Security.Cryptography.X509Certificates.X509Certificate2(LOCALHOST_CERTIFICATE_PATH);
+            //}
+            //else
+            //{
+                certificate = DtlsUtils.CreateSelfSignedCert();
+            //}
+
             RTCConfiguration pcConfiguration = new RTCConfiguration
             {
                 certificates = new List<RTCCertificate>
                 {
                     new RTCCertificate
                     {
-                        X_CertificatePath = DTLS_CERTIFICATE_PATH,
-                        X_KeyPath = DTLS_KEY_PATH,
-                        X_Fingerprint = DTLS_CERTIFICATE_FINGERPRINT
+                        Certificate = certificate
                     }
                 },
                 X_RemoteSignallingAddress = context.UserEndPoint.Address,
@@ -180,13 +176,13 @@ namespace SIPSorcery.Examples
             pc.addTrack(videoTrack);
 
             pc.onicecandidateerror += (candidate, error) => logger.LogWarning($"Error adding remote ICE candidate. {error} {candidate}");
-            pc.onconnectionstatechange += (state) => logger.LogDebug($"Peer connection state change to {state}.");
+            pc.onconnectionstatechange += (state) => logger.LogDebug($"Peer connection state changed to {state}.");
             pc.OnReceiveReport += (type, rtcp) => logger.LogDebug($"RTCP {type} report received.");
             pc.OnRtcpBye += (reason) => logger.LogDebug($"RTCP BYE receive, reason: {(string.IsNullOrWhiteSpace(reason) ? "<none>" : reason)}.");
 
             pc.onicecandidate += (candidate) =>
             {
-                if (pc.signalingState == RTCSignalingState.have_local_offer || 
+                if (pc.signalingState == RTCSignalingState.have_local_offer ||
                     pc.signalingState == RTCSignalingState.have_remote_offer)
                 {
                     context.WebSocket.Send($"candidate:{candidate}");
@@ -212,8 +208,8 @@ namespace SIPSorcery.Examples
 #if DTLS_IS_ENABLED
                         DtlsSrtpTransport dtlsHandle = new DtlsSrtpTransport(
                                     pc.IceRole == IceRolesEnum.active ?
-                                    (IDtlsSrtpPeer)new DtlsSrtpClient(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH) :
-                                    (IDtlsSrtpPeer)new DtlsSrtpServer(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH));
+                                    (IDtlsSrtpPeer)new DtlsSrtpClient(pc.CurrentCertificate.Certificate) :
+                                    (IDtlsSrtpPeer)new DtlsSrtpServer(pc.CurrentCertificate.Certificate));
 
                         pc.OnDtlsPacket += (buf) =>
                         {
@@ -222,7 +218,7 @@ namespace SIPSorcery.Examples
                         };
 
                         logger.LogDebug($"Starting DLS handshake with role {pc.IceRole}.");
-                        Task.Run(() => 
+                        Task.Run(() =>
                         {
                             var dtlsResult = DoDtlsHandshake(pc, dtlsHandle);
                             logger.LogDebug($"DTLS handshake result {dtlsResult}.");
@@ -315,7 +311,19 @@ namespace SIPSorcery.Examples
 
             var res = dtlsHandle.DoHandshake();
 
-            Console.WriteLine("DtlsContext initialisation result=" + res);
+            Console.WriteLine("DtlsContext handshake result=" + res);
+
+            var expectedFp = peerConnection.RemotePeerDtlsFingerprint;
+            var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
+
+            if(remoteFingerprint.value != expectedFp.value)
+            {
+                Console.WriteLine($"Remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
+            }
+            else
+            {
+                Console.WriteLine($"Remote certificate fingerprint matched expected value.");
+            }
 
             if (dtlsHandle.IsHandshakeComplete())
             {

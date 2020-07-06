@@ -229,6 +229,11 @@ namespace SIPSorcery.Net
             return false;
         }
 
+        public Certificate GetRemoteCertificate()
+        {
+            return connection.GetRemoteCertificate();
+        }
+
         protected byte[] GetMasterServerKey()
         {
             return connection.GetSrtpMasterServerKey();

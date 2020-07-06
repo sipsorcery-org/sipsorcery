@@ -20,7 +20,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-//using System.Security.Cryptography.X509Certificates;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Utilities;
@@ -36,51 +35,19 @@ namespace SIPSorcery.Net
         byte[] GetSrtpMasterClientKey();
         byte[] GetSrtpMasterClientSalt();
         bool IsClient();
+        Certificate GetRemoteCertificate();
     }
-
-    //public class AlgorithmCertificate
-    //{
-    //    //RSA(SignatureAlgorithm.rsa, ClientCertificateType.rsa_sign),
-    //    //RSA_FIXED_DH(SignatureAlgorithm.rsa, ClientCertificateType.rsa_fixed_dh),
-    //    //RSA_EPHEMERAL_DH_RESERVED(SignatureAlgorithm.rsa, ClientCertificateType.rsa_ephemeral_dh_RESERVED),
-    //    //RSA_FIXED_ECDH(SignatureAlgorithm.rsa, ClientCertificateType.rsa_fixed_ecdh),
-    //    //DSA(SignatureAlgorithm.dsa, ClientCertificateType.dss_sign),
-    //    //DSA_FIXED_DH(SignatureAlgorithm.dsa, ClientCertificateType.dss_fixed_dh),
-    //    //DSA_EPHEMERAL_DH_RESERVED(SignatureAlgorithm.dsa, ClientCertificateType.dss_ephemeral_dh_RESERVED),
-    //    //ECDSA(SignatureAlgorithm.ecdsa, ClientCertificateType.ecdsa_sign),
-    //    //ECDSA_FIXED_ECDH(SignatureAlgorithm.ecdsa, ClientCertificateType.ecdsa_fixed_ecdh);
-
-    //    private byte signatureAlgorithm;
-    //    private byte clientCertificate;
-
-    //    public AlgorithmCertificate(byte signatureAlgorithm, byte clientCertificate)
-    //    {
-    //        this.signatureAlgorithm = signatureAlgorithm;
-    //        this.clientCertificate = clientCertificate;
-    //    }
-
-    //    public byte getSignatureAlgorithm()
-    //    {
-    //        return signatureAlgorithm;
-    //    }
-
-    //    public byte getClientCertificate()
-    //    {
-    //        return clientCertificate;
-    //    }
-    //}
 
     public class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
     {
         Certificate mCertificateChain = null;
         AsymmetricKeyParameter mPrivateKey = null;
 
-        private string mFingerPrint = "";
+        private RTCDtlsFingerprint mFingerPrint;
 
         //private AlgorithmCertificate algorithmCertificate;
 
         public Certificate ClientCertificate { get; private set; }
-        public string ClientFingerprint { get; private set; }
 
         // the server response to the client handshake request
         // http://tools.ietf.org/html/rfc5764#section-4.1.1
@@ -126,17 +93,13 @@ namespace SIPSorcery.Net
             //Generate FingerPrint
             var certificate = mCertificateChain.GetCertificateAt(0);
 
-            this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : string.Empty;
+            this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
         }
 
-        public string Fingerprint
+        public RTCDtlsFingerprint Fingerprint
         {
             get
             {
-                if (mFingerPrint == null)
-                {
-                    mFingerPrint = string.Empty;
-                }
                 return mFingerPrint;
             }
         }
@@ -228,7 +191,6 @@ namespace SIPSorcery.Net
         public override void NotifyClientCertificate(Certificate clientCertificate)
         {
             ClientCertificate = clientCertificate;
-            ClientFingerprint = DtlsUtils.Fingerprint(clientCertificate);
         }
 
         public override IDictionary GetServerExtensions()
@@ -424,6 +386,11 @@ namespace SIPSorcery.Net
                 cipherSuites[i] = this.cipherSuites[i];
             }
             return cipherSuites;
+        }
+
+        public Certificate GetRemoteCertificate()
+        {
+            return ClientCertificate;
         }
     }
 }
