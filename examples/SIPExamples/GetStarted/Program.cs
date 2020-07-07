@@ -19,7 +19,6 @@
 using System;
 using System.Threading.Tasks;
 using Serilog;
-using SIPSorcery.Media;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
 
@@ -53,6 +52,8 @@ namespace demo
             {
                 Console.WriteLine("Hanging up.");
                 userAgent.Hangup();
+
+                Task.Delay(1000).Wait();
             }
 
             // Clean up.
