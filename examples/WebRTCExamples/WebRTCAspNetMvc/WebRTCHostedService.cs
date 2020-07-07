@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -32,10 +31,6 @@ namespace WebRTCAspNetMvc
 {
     public class WebRTCHostedService : IHostedService
     {
-        private const string DTLS_CERTIFICATE_PATH = "certs/localhost.pem";
-        private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
-        private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
-
         private readonly ILogger<WebRTCHostedService> _logger;
 
         private ConcurrentDictionary<string, RTCPeerConnection> _peerConnections = new ConcurrentDictionary<string, RTCPeerConnection>();
@@ -48,12 +43,6 @@ namespace WebRTCAspNetMvc
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogDebug("WebRTCHostedService StartAsync.");
-
-            // Initialise OpenSSL & libsrtp, saves a couple of seconds for the first client connection.
-            _logger.LogDebug("Initialising OpenSSL and libsrtp...");
-            DtlsHandshake.InitialiseOpenSSL();
-            Srtp.InitialiseLibSrtp();
-
             return Task.CompletedTask;
         }
 
@@ -72,43 +61,22 @@ namespace WebRTCAspNetMvc
             {
                 throw new ArgumentNullException("id", "The specified peer connection ID is already in use.");
             }
-
-            RTCConfiguration pcConfiguration = new RTCConfiguration
-            {
-                certificates = new List<RTCCertificate>
-                {
-                    new RTCCertificate
-                    {
-                        X_CertificatePath = DTLS_CERTIFICATE_PATH,
-                        X_KeyPath = DTLS_KEY_PATH,
-                        X_Fingerprint = DTLS_CERTIFICATE_FINGERPRINT
-                    }
-                }
-            };
-
-            var peerConnection = new RTCPeerConnection(pcConfiguration);
-            var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
+            var peerConnection = new RTCPeerConnection(null);
 
             MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.RecvOnly);
             peerConnection.addTrack(audioTrack);
 
-            //peerConnection.OnRtpPacketReceived += (SDPMediaTypesEnum media, RTPPacket rtpPkt) => _logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}, SeqNum {rtpPkt.Header.SequenceNumber}.");
+            peerConnection.OnRtpPacketReceived += (SDPMediaTypesEnum media, RTPPacket rtpPkt) => _logger.LogDebug($"RTP {media} pkt received, SSRC {rtpPkt.Header.SyncSource}, SeqNum {rtpPkt.Header.SequenceNumber}.");
             //peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             //peerConnection.OnSendReport += RtpSession_OnSendReport;
 
-            peerConnection.OnTimeout += (mediaType) =>
-            {
-                peerConnection.Close("remote timeout");
-                dtls.Shutdown();
-            };
-
+            peerConnection.OnTimeout += (mediaType) => _logger.LogWarning($"Timeout for {mediaType}.");
             peerConnection.onconnectionstatechange += (state) =>
             {
+                _logger.LogDebug($"Peer connection {id} state changed to {state}.");
+
                 if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {
-                    //peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
-                    //peerConnection.OnSendReport -= RtpSession_OnSendReport;
-                    _logger.LogDebug($"Peer connection {id} closed.");
                     _peerConnections.TryRemove(id, out _);
                 }
                 else if (state == RTCPeerConnectionState.connected)
@@ -116,23 +84,6 @@ namespace WebRTCAspNetMvc
                     _logger.LogDebug("Peer connection connected.");
                 }
             };
-
-            _ = Task<bool>.Run(() => Task.FromResult(DoDtlsHandshake(peerConnection, dtls)))
-            .ContinueWith((t) =>
-            {
-                _logger.LogDebug($"dtls handshake result {t.Result}.");
-
-                if (t.Result)
-                {
-                    //var remoteEP = peerConnection.IceSession.ConnectedRemoteEndPoint;
-                    //peerConnection.SetDestination(SDPMediaTypesEnum.audio, remoteEP, remoteEP);
-                }
-                else
-                {
-                    dtls.Shutdown();
-                    peerConnection.Close("dtls handshake failed.");
-                }
-            });
 
             var offerSdp = peerConnection.createOffer(null);
             await peerConnection.setLocalDescription(offerSdp);
@@ -165,54 +116,6 @@ namespace WebRTCAspNetMvc
             {
                 _logger.LogDebug("ICE Candidate: " + iceCandidate.candidate);
                 pc.addIceCandidate(iceCandidate);
-            }
-
-        }
-
-        /// <summary>
-        /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
-        /// </summary>
-        /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
-        private bool DoDtlsHandshake(RTCPeerConnection peerConnection, DtlsHandshake dtls)
-        {
-            _logger.LogDebug("DoDtlsHandshake started.");
-
-            if (!File.Exists(DTLS_CERTIFICATE_PATH))
-            {
-                throw new ApplicationException($"The DTLS certificate file could not be found at {DTLS_CERTIFICATE_PATH}.");
-            }
-            else if (!File.Exists(DTLS_KEY_PATH))
-            {
-                throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
-            }
-
-            byte[] clientFingerprint = null;
-            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref clientFingerprint);
-
-            _logger.LogDebug("DtlsContext initialisation result=" + res);
-
-            if (dtls.IsHandshakeComplete())
-            {
-                _logger.LogDebug("DTLS negotiation complete.");
-
-                // TODO: Check client fingerprint matches one supplied in the SDP.
-
-                var srtpSendContext = new Srtp(dtls, false);
-                var srtpReceiveContext = new Srtp(dtls, true);
-
-                peerConnection.SetSecurityContext(
-                    srtpSendContext.ProtectRTP,
-                    srtpReceiveContext.UnprotectRTP,
-                    srtpSendContext.ProtectRTCP,
-                    srtpReceiveContext.UnprotectRTCP);
-
-                //dtls.Shutdown();
-
-                return true;
-            }
-            else
-            {
-                return false;
             }
         }
     }

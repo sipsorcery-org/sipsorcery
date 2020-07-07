@@ -11,19 +11,18 @@
 
 	var offerSDP = 
 `v=0
-o=- 74941 0 IN IP4 127.0.0.1
+o=- 95304 0 IN IP4 127.0.0.1
 s=-
 t=0 0
+a=fingerprint:sha-256 1E:D5:C4:54:F1:6E:8D:5E:A4:17:CF:A6:FB:19:4B:BC:22:6F:27:6A:45:B6:7E:31:9E:4A:34:7D:BA:5B:2C:7A
 a=group:BUNDLE 0
-m=video 9 RTP/SAVP 100
+m=video 9 UDP/TLS/RTP/SAVP 100
 c=IN IP4 0.0.0.0
-a=ice-ufrag:DXJS
-a=ice-pwd:SHJCVCLKETCMHGYVJNBZZEDM
-a=fingerprint:sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD
-a=candidate:2306 1 udp 659136 fe80::910e:8bfe:e7e3:7919%52 57437 typ host generation 0
-a=candidate:2337 1 udp 659136 172.20.16.1 57437 typ host generation 0
-a=candidate:2441 1 udp 659136 fe80::54a9:d238:b2ee:ceb%21 57437 typ host generation 0
-a=candidate:2944 1 udp 659136 192.168.11.50 57437 typ host generation 0
+a=ice-ufrag:UFTU
+a=ice-pwd:KAPMTZKUJOPLCXHXLLXFCJAI
+a=fingerprint:sha-256 1E:D5:C4:54:F1:6E:8D:5E:A4:17:CF:A6:FB:19:4B:BC:22:6F:27:6A:45:B6:7E:31:9E:4A:34:7D:BA:5B:2C:7A
+a=candidate:2441 1 udp 659136 fe80::54a9:d238:b2ee:ceb%21 53194 typ host generation 0
+a=candidate:2944 1 udp 659136 192.168.11.50 53194 typ host generation 0
 a=ice-options:ice2,trickle
 a=mid:0
 a=rtpmap:100 VP8/90000

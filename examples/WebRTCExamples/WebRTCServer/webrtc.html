@@ -5,25 +5,45 @@
     <script type="text/javascript">
 
         const url = "wss://localhost:8081/"
-		var pc;
+		var pc, ws;
 	
 		function start() {
 		
 			closePeer();
 
-			const videoControl = document.querySelector('#videoCtl');
-			const ms = new MediaStream();
-			 videoControl.srcObject = ms;
+			let videoControl = document.querySelector('#videoCtl');
 
-            var ws = new WebSocket(url, []);
+            ws = new WebSocket(url, []);
 
 			ws.onopen = function () {
                 pc = new RTCPeerConnection(null);
 
-                pc.addEventListener('track', async (event) => {
-					console.log('Remote ' + event.track.kind + ' stream available.');
-					ms.addTrack(event.track, ms);
-				});
+                pc.ontrack = ({ track, streams: [stream] }) => {
+                    track.onunmute = () => {
+                        videoControl.srcObject = stream;
+                    };
+                };
+
+                pc.onicegatheringstatechange = function () {
+                    console.log("onicegatheringstatechange: " + pc.iceGatheringState);
+                }
+
+                pc.oniceconnectionstatechange = function () {
+                    console.log("oniceconnectionstatechange: " + pc.iceConnectionState);
+                }
+
+                pc.onsignalingstatechange = function () {
+                    console.log("onsignalingstatechange: " + pc.signalingState);
+                }
+
+                pc.onicecandidate = function (event) {
+                    if (event.candidate) {
+                        console.log('new-ice-candidate:');
+                        console.log(event.candidate.candidate);
+                        console.log(event.candidate);
+                        ws.send(event.candidate.candidate);
+                    }
+                };
             };
 
             ws.onmessage = async function (evt) {
@@ -43,8 +63,14 @@
             };
 		};
 
-		function closePeer() {
-			if(pc != null) {
+        function closePeer() {
+            if (ws != null) {
+                console.log("closing web socket.");
+                ws.close();
+            }
+
+            if (pc != null) {
+                console.log("close peer");
 				pc.close();
 			}
 		};
