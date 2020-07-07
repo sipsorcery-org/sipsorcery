@@ -552,23 +552,6 @@ namespace SIPSorcery.Net
             return setResult;
         }
 
-        public override void SetSecurityContext(
-            ProtectRtpPacket protectRtp,
-            ProtectRtpPacket unprotectRtp,
-            ProtectRtpPacket protectRtcp,
-            ProtectRtpPacket unprotectRtcp)
-        {
-            base.SetSecurityContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
-
-            if (iceConnectionState == RTCIceConnectionState.connected &&
-                connectionState != RTCPeerConnectionState.connected)
-            {
-                // This is the case where the DTLS handshake completed before the ICE connection checks.
-                connectionState = RTCPeerConnectionState.connected;
-                onconnectionstatechange?.Invoke(RTCPeerConnectionState.connected);
-            }
-        }
-
         /// <summary>
         /// Send a media sample to the remote party.
         /// </summary>
@@ -932,7 +915,7 @@ namespace SIPSorcery.Net
                 {
                     logger.LogDebug($"RTCPeerConnection remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
 
-                    SetSecurityContext(
+                    base.SetSecurityContext(
                         dtlsHandle.ProtectRTP,
                         dtlsHandle.UnprotectRTP,
                         dtlsHandle.ProtectRTCP,

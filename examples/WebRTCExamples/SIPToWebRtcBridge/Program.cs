@@ -31,7 +31,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
@@ -75,9 +74,6 @@ namespace SIPSorcery
     {
         private static int SIP_LISTEN_PORT = 5060;
         private const string WEBSOCKET_CERTIFICATE_PATH = "certs/localhost.pfx";
-        private const string DTLS_CERTIFICATE_PATH = "certs/localhost.pem";
-        private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
-        private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
         private const int WEBSOCKET_PORT = 8081;
 
         private static Microsoft.Extensions.Logging.ILogger Log = SIPSorcery.Sys.Log.Logger;
@@ -234,9 +230,10 @@ namespace SIPSorcery
 
             _peerConnection.onconnectionstatechange += (state) =>
             {
+                Log.LogDebug($"WebRTC peer connection state changed to {state}.");
+
                 if (state == RTCPeerConnectionState.closed)
                 {
-                    Log.LogDebug($"RTC peer connection closed.");
                     _peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
                     _peerConnection.OnSendReport -= RtpSession_OnSendReport;
                 }
@@ -249,15 +246,6 @@ namespace SIPSorcery
             await _peerConnection.setLocalDescription(offerInit);
 
             context.WebSocket.Send(offerInit.sdp);
-
-            if (DoDtlsHandshake(_peerConnection))
-            {
-                Log.LogInformation("DTLS handshake completed successfully.");
-            }
-            else
-            {
-                _peerConnection.Close("dtls handshake failed.");
-            }
 
             return _peerConnection;
         }
@@ -276,60 +264,6 @@ namespace SIPSorcery
             catch (Exception excp)
             {
                 Log.LogError("Exception SDPAnswerReceived. " + excp.Message);
-            }
-        }
-
-        /// <summary>
-        /// Hands the socket handle to the DTLS context and waits for the handshake to complete.
-        /// </summary>
-        /// <param name="webRtcSession">The WebRTC session to perform the DTLS handshake on.</param>
-        private static bool DoDtlsHandshake(RTCPeerConnection peerConnection)
-        {
-            Log.LogDebug("DoDtlsHandshake started.");
-
-            if (!File.Exists(DTLS_CERTIFICATE_PATH))
-            {
-                throw new ApplicationException($"The DTLS certificate file could not be found at {DTLS_CERTIFICATE_PATH}.");
-            }
-            else if (!File.Exists(DTLS_KEY_PATH))
-            {
-                throw new ApplicationException($"The DTLS key file could not be found at {DTLS_KEY_PATH}.");
-            }
-
-            var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-            peerConnection.onconnectionstatechange += (state) =>
-            {
-                if (state == RTCPeerConnectionState.closed)
-                {
-                    dtls.Shutdown();
-                }
-            };
-
-            byte[] clientFingerprint = null;
-            int res = dtls.DoHandshakeAsServer((ulong)peerConnection.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle, ref clientFingerprint);
-
-            Log.LogDebug("DtlsContext initialisation result=" + res);
-
-            if (dtls.IsHandshakeComplete())
-            {
-                // TODO: Check client fingerprint matches one supplied in the SDP.
-
-                Log.LogDebug("DTLS negotiation complete.");
-
-                var srtpSendContext = new Srtp(dtls, false);
-                var srtpReceiveContext = new Srtp(dtls, true);
-
-                peerConnection.SetSecurityContext(
-                    srtpSendContext.ProtectRTP,
-                    srtpReceiveContext.UnprotectRTP,
-                    srtpSendContext.ProtectRTCP,
-                    srtpReceiveContext.UnprotectRTCP);
-
-                return true;
-            }
-            else
-            {
-                return false;
             }
         }
 

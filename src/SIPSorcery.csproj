@@ -33,7 +33,7 @@
 
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.57-pre</Version>
+	<Version>4.0.58-pre</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
@@ -56,7 +56,7 @@ library.
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
 	<PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- v4.0.57-pre: Support for DTLS/SRTP without native library thanks to @rafcsoares.
+	<PackageReleaseNotes>- v4.0.58-pre: Support for DTLS/SRTP without native library thanks to @rafcsoares.
 - v4.0.55-pre: RtpIceChannel support for TURN relaying.
 - v4.0.53-pre: Add STUN server support for WebRTC connection checks.
 - v4.0.52-pre: Modify RTCPeerConnection so it can be used by SIPUserAgent.
@@ -89,8 +89,9 @@ library.
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
 </PackageReleaseNotes>
 	<NeutralLanguage>en-GB</NeutralLanguage>
-	<AssemblyVersion>4.0.57.0</AssemblyVersion>
-	<FileVersion>4.0.57.0</FileVersion>
+	<AssemblyVersion>4.0.58.0</AssemblyVersion>
+	<FileVersion>4.0.58.0</FileVersion>
+	<UserSecretsId>fbb23854-472d-4529-a87e-5688407b8d59</UserSecretsId>
   </PropertyGroup>    
 
 </Project>

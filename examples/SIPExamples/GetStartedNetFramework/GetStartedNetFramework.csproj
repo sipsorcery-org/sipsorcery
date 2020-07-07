@@ -69,7 +69,10 @@
       <Version>3.1.1</Version>
     </PackageReference>
     <PackageReference Include="SIPSorcery">
-      <Version>4.0.51-pre</Version>
+      <Version>4.0.58-pre</Version>
+    </PackageReference>
+    <PackageReference Include="SIPSorceryMedia">
+      <Version>4.0.58-pre</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

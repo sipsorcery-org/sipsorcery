@@ -141,37 +141,32 @@ namespace WebRTCServer
 
             var peerConnection = new RTCPeerConnection(null);
 
-            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) });
+            MediaStreamTrack audioTrack = new MediaStreamTrack(SDPMediaTypesEnum.audio, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.PCMU) }, MediaStreamStatusEnum.SendOnly);
             peerConnection.addTrack(audioTrack);
-            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
+            MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.SendOnly);
             peerConnection.addTrack(videoTrack);
 
             peerConnection.OnReceiveReport += RtpSession_OnReceiveReport;
             peerConnection.OnSendReport += RtpSession_OnSendReport;
-
             peerConnection.OnTimeout += (mediaType) => peerConnection.Close("remote timeout");
             peerConnection.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state changed to {state}.");
             peerConnection.onconnectionstatechange += (state) =>
             {
+                logger.LogDebug($"Peer connection state changed to {state}.");
+
                 if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {
-                    logger.LogDebug($"RTC peer connection was closed.");
                     OnMediaSampleReady -= peerConnection.SendMedia;
                     peerConnection.OnReceiveReport -= RtpSession_OnReceiveReport;
                     peerConnection.OnSendReport -= RtpSession_OnSendReport;
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
-                    logger.LogDebug("Peer connection connected.");
-
-                    lock (_mediaSource)
+                    if (!_isSampling)
                     {
-                        if (!_isSampling)
-                        {
-                            _isSampling = true;
-                            OnMediaSampleReady += peerConnection.SendMedia;
-                            _ = Task.Run(StartMedia);
-                        }
+                        _isSampling = true;
+                        OnMediaSampleReady += peerConnection.SendMedia;
+                        _ = Task.Run(StartMedia);
                     }
                 }
             };

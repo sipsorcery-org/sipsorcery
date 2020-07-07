@@ -1127,7 +1127,7 @@ namespace SIPSorcery.Net
         {
             remoteEndPoint = (!remoteEndPoint.Address.IsIPv4MappedToIPv6) ? remoteEndPoint : new IPEndPoint(remoteEndPoint.Address.MapToIPv4(), remoteEndPoint.Port);
 
-            logger.LogDebug($"ICE RTP channel STUN message received from remote {remoteEndPoint} {stunMessage.Header.MessageType} (was relayed {wasRelayed}).");
+            //logger.LogDebug($"ICE RTP channel STUN message received from remote {remoteEndPoint} {stunMessage.Header.MessageType} (was relayed {wasRelayed}).");
 
             // Check if the  STUN message is for an ICE server check.
             var iceServer = GetIceServerForTransactionID(stunMessage.Header.TransactionId);

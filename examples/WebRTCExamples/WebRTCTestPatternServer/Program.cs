@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -131,39 +130,20 @@ namespace WebRTCServer
         {
             logger.LogDebug($"Web socket client connection from {context.UserEndPoint}.");
 
-            RTCConfiguration pcConfiguration = new RTCConfiguration
-            {
-                //certificates = new List<RTCCertificate>
-                //{
-                //    new RTCCertificate
-                //    {
-                //        X_CertificatePath = DTLS_CERTIFICATE_PATH,
-                //        X_KeyPath = DTLS_KEY_PATH,
-                //        X_Fingerprint = DTLS_CERTIFICATE_FINGERPRINT
-                //    }
-                //}
-            };
-
-            var pc = new RTCPeerConnection(pcConfiguration);
+            var pc = new RTCPeerConnection(null);
 
             MediaStreamTrack videoTrack = new MediaStreamTrack(SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, MediaStreamStatusEnum.SendOnly);
             pc.addTrack(videoTrack);
 
             pc.OnReceiveReport += RtpSession_OnReceiveReport;
             pc.OnSendReport += RtpSession_OnSendReport;
-
-            //peerConnection.OnRtcpBye += (reason) =>
-            //{
-            //    logger.LogInformation("RTCP BYE report received from remote peer.");
-            //    peerConnection.Close(reason);
-            //    dtls.Shutdown();
-            //};
-
             pc.OnTimeout += (mediaType) => pc.Close("remote timeout");
             pc.oniceconnectionstatechange += (state) => logger.LogDebug($"ICE connection state change to {state}.");
 
             pc.onconnectionstatechange += (state) =>
             {
+                logger.LogDebug($"Peer connection state change to {state}.");
+
                 if (state == RTCPeerConnectionState.closed || state == RTCPeerConnectionState.disconnected || state == RTCPeerConnectionState.failed)
                 {
                     OnTestPatternSampleReady -= pc.SendMedia;
@@ -173,13 +153,8 @@ namespace WebRTCServer
                 }
                 else if (state == RTCPeerConnectionState.connected)
                 {
-                    logger.LogDebug("Peer connection connected.");
-
-                    if (state == RTCPeerConnectionState.connected && _sendTestPatternTimer == null)
-                    {
-                        OnTestPatternSampleReady += pc.SendMedia;
-                        _sendTestPatternTimer = new Timer(SendTestPattern, null, 0, TEST_PATTERN_SPACING_MILLISECONDS);
-                    }
+                    OnTestPatternSampleReady += pc.SendMedia;
+                    _sendTestPatternTimer = new Timer(SendTestPattern, null, 0, TEST_PATTERN_SPACING_MILLISECONDS);
                 }
             };
 
