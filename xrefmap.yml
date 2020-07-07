@@ -13669,6 +13669,44 @@ references:
   commentId: F:SIPSorcery.Net.STUNClassTypesEnum.SuccesResponse
   fullName: SIPSorcery.Net.STUNClassTypesEnum.SuccesResponse
   nameWithType: STUNClassTypesEnum.SuccesResponse
+- uid: SIPSorcery.Net.STUNClient
+  name: STUNClient
+  href: api/SIPSorcery.Net.STUNClient.html
+  commentId: T:SIPSorcery.Net.STUNClient
+  fullName: SIPSorcery.Net.STUNClient
+  nameWithType: STUNClient
+- uid: SIPSorcery.Net.STUNClient.DEFAULT_STUN_PORT
+  name: DEFAULT_STUN_PORT
+  href: api/SIPSorcery.Net.STUNClient.html#SIPSorcery_Net_STUNClient_DEFAULT_STUN_PORT
+  commentId: F:SIPSorcery.Net.STUNClient.DEFAULT_STUN_PORT
+  fullName: SIPSorcery.Net.STUNClient.DEFAULT_STUN_PORT
+  nameWithType: STUNClient.DEFAULT_STUN_PORT
+- uid: SIPSorcery.Net.STUNClient.GetPublicIPAddress(System.String,System.Int32)
+  name: GetPublicIPAddress(String, Int32)
+  href: api/SIPSorcery.Net.STUNClient.html#SIPSorcery_Net_STUNClient_GetPublicIPAddress_System_String_System_Int32_
+  commentId: M:SIPSorcery.Net.STUNClient.GetPublicIPAddress(System.String,System.Int32)
+  fullName: SIPSorcery.Net.STUNClient.GetPublicIPAddress(System.String, System.Int32)
+  nameWithType: STUNClient.GetPublicIPAddress(String, Int32)
+- uid: SIPSorcery.Net.STUNClient.GetPublicIPAddress*
+  name: GetPublicIPAddress
+  href: api/SIPSorcery.Net.STUNClient.html#SIPSorcery_Net_STUNClient_GetPublicIPAddress_
+  commentId: Overload:SIPSorcery.Net.STUNClient.GetPublicIPAddress
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNClient.GetPublicIPAddress
+  nameWithType: STUNClient.GetPublicIPAddress
+- uid: SIPSorcery.Net.STUNClient.GetPublicIPEndPoint(System.String,System.Int32)
+  name: GetPublicIPEndPoint(String, Int32)
+  href: api/SIPSorcery.Net.STUNClient.html#SIPSorcery_Net_STUNClient_GetPublicIPEndPoint_System_String_System_Int32_
+  commentId: M:SIPSorcery.Net.STUNClient.GetPublicIPEndPoint(System.String,System.Int32)
+  fullName: SIPSorcery.Net.STUNClient.GetPublicIPEndPoint(System.String, System.Int32)
+  nameWithType: STUNClient.GetPublicIPEndPoint(String, Int32)
+- uid: SIPSorcery.Net.STUNClient.GetPublicIPEndPoint*
+  name: GetPublicIPEndPoint
+  href: api/SIPSorcery.Net.STUNClient.html#SIPSorcery_Net_STUNClient_GetPublicIPEndPoint_
+  commentId: Overload:SIPSorcery.Net.STUNClient.GetPublicIPEndPoint
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNClient.GetPublicIPEndPoint
+  nameWithType: STUNClient.GetPublicIPEndPoint
 - uid: SIPSorcery.Net.STUNConstants
   name: STUNConstants
   href: api/SIPSorcery.Net.STUNConstants.html
@@ -13946,6 +13984,86 @@ references:
   commentId: F:SIPSorcery.Net.STUNHeader.TransactionId
   fullName: SIPSorcery.Net.STUNHeader.TransactionId
   nameWithType: STUNHeader.TransactionId
+- uid: SIPSorcery.Net.STUNListener
+  name: STUNListener
+  href: api/SIPSorcery.Net.STUNListener.html
+  commentId: T:SIPSorcery.Net.STUNListener
+  fullName: SIPSorcery.Net.STUNListener
+  nameWithType: STUNListener
+- uid: SIPSorcery.Net.STUNListener.#ctor(System.Net.IPEndPoint)
+  name: STUNListener(IPEndPoint)
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener__ctor_System_Net_IPEndPoint_
+  commentId: M:SIPSorcery.Net.STUNListener.#ctor(System.Net.IPEndPoint)
+  fullName: SIPSorcery.Net.STUNListener.STUNListener(System.Net.IPEndPoint)
+  nameWithType: STUNListener.STUNListener(IPEndPoint)
+- uid: SIPSorcery.Net.STUNListener.#ctor*
+  name: STUNListener
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener__ctor_
+  commentId: Overload:SIPSorcery.Net.STUNListener.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNListener.STUNListener
+  nameWithType: STUNListener.STUNListener
+- uid: SIPSorcery.Net.STUNListener.Close
+  name: Close()
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener_Close
+  commentId: M:SIPSorcery.Net.STUNListener.Close
+  fullName: SIPSorcery.Net.STUNListener.Close()
+  nameWithType: STUNListener.Close()
+- uid: SIPSorcery.Net.STUNListener.Close*
+  name: Close
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener_Close_
+  commentId: Overload:SIPSorcery.Net.STUNListener.Close
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNListener.Close
+  nameWithType: STUNListener.Close
+- uid: SIPSorcery.Net.STUNListener.Dispose(System.Boolean)
+  name: Dispose(Boolean)
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener_Dispose_System_Boolean_
+  commentId: M:SIPSorcery.Net.STUNListener.Dispose(System.Boolean)
+  fullName: SIPSorcery.Net.STUNListener.Dispose(System.Boolean)
+  nameWithType: STUNListener.Dispose(Boolean)
+- uid: SIPSorcery.Net.STUNListener.Dispose*
+  name: Dispose
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener_Dispose_
+  commentId: Overload:SIPSorcery.Net.STUNListener.Dispose
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNListener.Dispose
+  nameWithType: STUNListener.Dispose
+- uid: SIPSorcery.Net.STUNListener.MessageReceived
+  name: MessageReceived
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener_MessageReceived
+  commentId: E:SIPSorcery.Net.STUNListener.MessageReceived
+  fullName: SIPSorcery.Net.STUNListener.MessageReceived
+  nameWithType: STUNListener.MessageReceived
+- uid: SIPSorcery.Net.STUNListener.Send(System.Net.IPEndPoint,System.Byte[])
+  name: Send(IPEndPoint, Byte[])
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener_Send_System_Net_IPEndPoint_System_Byte___
+  commentId: M:SIPSorcery.Net.STUNListener.Send(System.Net.IPEndPoint,System.Byte[])
+  name.vb: Send(IPEndPoint, Byte())
+  fullName: SIPSorcery.Net.STUNListener.Send(System.Net.IPEndPoint, System.Byte[])
+  fullName.vb: SIPSorcery.Net.STUNListener.Send(System.Net.IPEndPoint, System.Byte())
+  nameWithType: STUNListener.Send(IPEndPoint, Byte[])
+  nameWithType.vb: STUNListener.Send(IPEndPoint, Byte())
+- uid: SIPSorcery.Net.STUNListener.Send*
+  name: Send
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener_Send_
+  commentId: Overload:SIPSorcery.Net.STUNListener.Send
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNListener.Send
+  nameWithType: STUNListener.Send
+- uid: SIPSorcery.Net.STUNListener.SIPChannelEndPoint
+  name: SIPChannelEndPoint
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener_SIPChannelEndPoint
+  commentId: P:SIPSorcery.Net.STUNListener.SIPChannelEndPoint
+  fullName: SIPSorcery.Net.STUNListener.SIPChannelEndPoint
+  nameWithType: STUNListener.SIPChannelEndPoint
+- uid: SIPSorcery.Net.STUNListener.SIPChannelEndPoint*
+  name: SIPChannelEndPoint
+  href: api/SIPSorcery.Net.STUNListener.html#SIPSorcery_Net_STUNListener_SIPChannelEndPoint_
+  commentId: Overload:SIPSorcery.Net.STUNListener.SIPChannelEndPoint
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNListener.SIPChannelEndPoint
+  nameWithType: STUNListener.SIPChannelEndPoint
 - uid: SIPSorcery.Net.STUNMessage
   name: STUNMessage
   href: api/SIPSorcery.Net.STUNMessage.html
@@ -14122,6 +14240,12 @@ references:
   isSpec: "True"
   fullName: SIPSorcery.Net.STUNMessage.ToString
   nameWithType: STUNMessage.ToString
+- uid: SIPSorcery.Net.STUNMessageReceived
+  name: STUNMessageReceived
+  href: api/SIPSorcery.Net.STUNMessageReceived.html
+  commentId: T:SIPSorcery.Net.STUNMessageReceived
+  fullName: SIPSorcery.Net.STUNMessageReceived
+  nameWithType: STUNMessageReceived
 - uid: SIPSorcery.Net.STUNMessageTypes
   name: STUNMessageTypes
   href: api/SIPSorcery.Net.STUNMessageTypes.html
@@ -14321,6 +14445,112 @@ references:
   commentId: F:SIPSorcery.Net.STUNSchemesEnum.turns
   fullName: SIPSorcery.Net.STUNSchemesEnum.turns
   nameWithType: STUNSchemesEnum.turns
+- uid: SIPSorcery.Net.STUNSendMessageDelegate
+  name: STUNSendMessageDelegate
+  href: api/SIPSorcery.Net.STUNSendMessageDelegate.html
+  commentId: T:SIPSorcery.Net.STUNSendMessageDelegate
+  fullName: SIPSorcery.Net.STUNSendMessageDelegate
+  nameWithType: STUNSendMessageDelegate
+- uid: SIPSorcery.Net.STUNServer
+  name: STUNServer
+  href: api/SIPSorcery.Net.STUNServer.html
+  commentId: T:SIPSorcery.Net.STUNServer
+  fullName: SIPSorcery.Net.STUNServer
+  nameWithType: STUNServer
+- uid: SIPSorcery.Net.STUNServer.#ctor(System.Net.IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate,System.Net.IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate)
+  name: STUNServer(IPEndPoint, STUNSendMessageDelegate, IPEndPoint, STUNSendMessageDelegate)
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer__ctor_System_Net_IPEndPoint_SIPSorcery_Net_STUNSendMessageDelegate_System_Net_IPEndPoint_SIPSorcery_Net_STUNSendMessageDelegate_
+  commentId: M:SIPSorcery.Net.STUNServer.#ctor(System.Net.IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate,System.Net.IPEndPoint,SIPSorcery.Net.STUNSendMessageDelegate)
+  fullName: SIPSorcery.Net.STUNServer.STUNServer(System.Net.IPEndPoint, SIPSorcery.Net.STUNSendMessageDelegate, System.Net.IPEndPoint, SIPSorcery.Net.STUNSendMessageDelegate)
+  nameWithType: STUNServer.STUNServer(IPEndPoint, STUNSendMessageDelegate, IPEndPoint, STUNSendMessageDelegate)
+- uid: SIPSorcery.Net.STUNServer.#ctor*
+  name: STUNServer
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer__ctor_
+  commentId: Overload:SIPSorcery.Net.STUNServer.#ctor
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNServer.STUNServer
+  nameWithType: STUNServer.STUNServer
+- uid: SIPSorcery.Net.STUNServer.Stop
+  name: Stop()
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_Stop
+  commentId: M:SIPSorcery.Net.STUNServer.Stop
+  fullName: SIPSorcery.Net.STUNServer.Stop()
+  nameWithType: STUNServer.Stop()
+- uid: SIPSorcery.Net.STUNServer.Stop*
+  name: Stop
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_Stop_
+  commentId: Overload:SIPSorcery.Net.STUNServer.Stop
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNServer.Stop
+  nameWithType: STUNServer.Stop
+- uid: SIPSorcery.Net.STUNServer.STUNPrimaryReceived(System.Net.IPEndPoint,System.Net.IPEndPoint,System.Byte[],System.Int32)
+  name: STUNPrimaryReceived(IPEndPoint, IPEndPoint, Byte[], Int32)
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNPrimaryReceived_System_Net_IPEndPoint_System_Net_IPEndPoint_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.STUNServer.STUNPrimaryReceived(System.Net.IPEndPoint,System.Net.IPEndPoint,System.Byte[],System.Int32)
+  name.vb: STUNPrimaryReceived(IPEndPoint, IPEndPoint, Byte(), Int32)
+  fullName: SIPSorcery.Net.STUNServer.STUNPrimaryReceived(System.Net.IPEndPoint, System.Net.IPEndPoint, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.STUNServer.STUNPrimaryReceived(System.Net.IPEndPoint, System.Net.IPEndPoint, System.Byte(), System.Int32)
+  nameWithType: STUNServer.STUNPrimaryReceived(IPEndPoint, IPEndPoint, Byte[], Int32)
+  nameWithType.vb: STUNServer.STUNPrimaryReceived(IPEndPoint, IPEndPoint, Byte(), Int32)
+- uid: SIPSorcery.Net.STUNServer.STUNPrimaryReceived*
+  name: STUNPrimaryReceived
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNPrimaryReceived_
+  commentId: Overload:SIPSorcery.Net.STUNServer.STUNPrimaryReceived
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNServer.STUNPrimaryReceived
+  nameWithType: STUNServer.STUNPrimaryReceived
+- uid: SIPSorcery.Net.STUNServer.STUNPrimaryRequestInTraceEvent
+  name: STUNPrimaryRequestInTraceEvent
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNPrimaryRequestInTraceEvent
+  commentId: E:SIPSorcery.Net.STUNServer.STUNPrimaryRequestInTraceEvent
+  fullName: SIPSorcery.Net.STUNServer.STUNPrimaryRequestInTraceEvent
+  nameWithType: STUNServer.STUNPrimaryRequestInTraceEvent
+- uid: SIPSorcery.Net.STUNServer.STUNPrimaryResponseOutTraceEvent
+  name: STUNPrimaryResponseOutTraceEvent
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNPrimaryResponseOutTraceEvent
+  commentId: E:SIPSorcery.Net.STUNServer.STUNPrimaryResponseOutTraceEvent
+  fullName: SIPSorcery.Net.STUNServer.STUNPrimaryResponseOutTraceEvent
+  nameWithType: STUNServer.STUNPrimaryResponseOutTraceEvent
+- uid: SIPSorcery.Net.STUNServer.STUNSecondaryReceived(System.Net.IPEndPoint,System.Net.IPEndPoint,System.Byte[],System.Int32)
+  name: STUNSecondaryReceived(IPEndPoint, IPEndPoint, Byte[], Int32)
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNSecondaryReceived_System_Net_IPEndPoint_System_Net_IPEndPoint_System_Byte___System_Int32_
+  commentId: M:SIPSorcery.Net.STUNServer.STUNSecondaryReceived(System.Net.IPEndPoint,System.Net.IPEndPoint,System.Byte[],System.Int32)
+  name.vb: STUNSecondaryReceived(IPEndPoint, IPEndPoint, Byte(), Int32)
+  fullName: SIPSorcery.Net.STUNServer.STUNSecondaryReceived(System.Net.IPEndPoint, System.Net.IPEndPoint, System.Byte[], System.Int32)
+  fullName.vb: SIPSorcery.Net.STUNServer.STUNSecondaryReceived(System.Net.IPEndPoint, System.Net.IPEndPoint, System.Byte(), System.Int32)
+  nameWithType: STUNServer.STUNSecondaryReceived(IPEndPoint, IPEndPoint, Byte[], Int32)
+  nameWithType.vb: STUNServer.STUNSecondaryReceived(IPEndPoint, IPEndPoint, Byte(), Int32)
+- uid: SIPSorcery.Net.STUNServer.STUNSecondaryReceived*
+  name: STUNSecondaryReceived
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNSecondaryReceived_
+  commentId: Overload:SIPSorcery.Net.STUNServer.STUNSecondaryReceived
+  isSpec: "True"
+  fullName: SIPSorcery.Net.STUNServer.STUNSecondaryReceived
+  nameWithType: STUNServer.STUNSecondaryReceived
+- uid: SIPSorcery.Net.STUNServer.STUNSecondaryRequestInTraceEvent
+  name: STUNSecondaryRequestInTraceEvent
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNSecondaryRequestInTraceEvent
+  commentId: E:SIPSorcery.Net.STUNServer.STUNSecondaryRequestInTraceEvent
+  fullName: SIPSorcery.Net.STUNServer.STUNSecondaryRequestInTraceEvent
+  nameWithType: STUNServer.STUNSecondaryRequestInTraceEvent
+- uid: SIPSorcery.Net.STUNServer.STUNSecondaryResponseOutTraceEvent
+  name: STUNSecondaryResponseOutTraceEvent
+  href: api/SIPSorcery.Net.STUNServer.html#SIPSorcery_Net_STUNServer_STUNSecondaryResponseOutTraceEvent
+  commentId: E:SIPSorcery.Net.STUNServer.STUNSecondaryResponseOutTraceEvent
+  fullName: SIPSorcery.Net.STUNServer.STUNSecondaryResponseOutTraceEvent
+  nameWithType: STUNServer.STUNSecondaryResponseOutTraceEvent
+- uid: SIPSorcery.Net.STUNServerRequestInTraceDelegate
+  name: STUNServerRequestInTraceDelegate
+  href: api/SIPSorcery.Net.STUNServerRequestInTraceDelegate.html
+  commentId: T:SIPSorcery.Net.STUNServerRequestInTraceDelegate
+  fullName: SIPSorcery.Net.STUNServerRequestInTraceDelegate
+  nameWithType: STUNServerRequestInTraceDelegate
+- uid: SIPSorcery.Net.STUNServerResponseOutTraceDelegate
+  name: STUNServerResponseOutTraceDelegate
+  href: api/SIPSorcery.Net.STUNServerResponseOutTraceDelegate.html
+  commentId: T:SIPSorcery.Net.STUNServerResponseOutTraceDelegate
+  fullName: SIPSorcery.Net.STUNServerResponseOutTraceDelegate
+  nameWithType: STUNServerResponseOutTraceDelegate
 - uid: SIPSorcery.Net.STUNUri
   name: STUNUri
   href: api/SIPSorcery.Net.STUNUri.html
@@ -14672,6 +14902,47 @@ references:
   commentId: E:SIPSorcery.Net.UdpReceiver.OnPacketReceived
   fullName: SIPSorcery.Net.UdpReceiver.OnPacketReceived
   nameWithType: UdpReceiver.OnPacketReceived
+- uid: SIPSorcery.Net.Utility
+  name: Utility
+  href: api/SIPSorcery.Net.Utility.html
+  commentId: T:SIPSorcery.Net.Utility
+  fullName: SIPSorcery.Net.Utility
+  nameWithType: Utility
+- uid: SIPSorcery.Net.Utility.PrintBuffer(System.Byte[])
+  name: PrintBuffer(Byte[])
+  href: api/SIPSorcery.Net.Utility.html#SIPSorcery_Net_Utility_PrintBuffer_System_Byte___
+  commentId: M:SIPSorcery.Net.Utility.PrintBuffer(System.Byte[])
+  name.vb: PrintBuffer(Byte())
+  fullName: SIPSorcery.Net.Utility.PrintBuffer(System.Byte[])
+  fullName.vb: SIPSorcery.Net.Utility.PrintBuffer(System.Byte())
+  nameWithType: Utility.PrintBuffer(Byte[])
+  nameWithType.vb: Utility.PrintBuffer(Byte())
+- uid: SIPSorcery.Net.Utility.PrintBuffer*
+  name: PrintBuffer
+  href: api/SIPSorcery.Net.Utility.html#SIPSorcery_Net_Utility_PrintBuffer_
+  commentId: Overload:SIPSorcery.Net.Utility.PrintBuffer
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Utility.PrintBuffer
+  nameWithType: Utility.PrintBuffer
+- uid: SIPSorcery.Net.Utility.ReverseEndian(System.UInt16)
+  name: ReverseEndian(UInt16)
+  href: api/SIPSorcery.Net.Utility.html#SIPSorcery_Net_Utility_ReverseEndian_System_UInt16_
+  commentId: M:SIPSorcery.Net.Utility.ReverseEndian(System.UInt16)
+  fullName: SIPSorcery.Net.Utility.ReverseEndian(System.UInt16)
+  nameWithType: Utility.ReverseEndian(UInt16)
+- uid: SIPSorcery.Net.Utility.ReverseEndian(System.UInt32)
+  name: ReverseEndian(UInt32)
+  href: api/SIPSorcery.Net.Utility.html#SIPSorcery_Net_Utility_ReverseEndian_System_UInt32_
+  commentId: M:SIPSorcery.Net.Utility.ReverseEndian(System.UInt32)
+  fullName: SIPSorcery.Net.Utility.ReverseEndian(System.UInt32)
+  nameWithType: Utility.ReverseEndian(UInt32)
+- uid: SIPSorcery.Net.Utility.ReverseEndian*
+  name: ReverseEndian
+  href: api/SIPSorcery.Net.Utility.html#SIPSorcery_Net_Utility_ReverseEndian_
+  commentId: Overload:SIPSorcery.Net.Utility.ReverseEndian
+  isSpec: "True"
+  fullName: SIPSorcery.Net.Utility.ReverseEndian
+  nameWithType: Utility.ReverseEndian
 - uid: SIPSorcery.SIP
   name: SIPSorcery.SIP
   href: api/SIPSorcery.SIP.html
