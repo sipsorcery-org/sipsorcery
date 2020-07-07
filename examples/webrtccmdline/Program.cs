@@ -1,7 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: Program.cs
 //
-// Description: A console application to test the ICE negotiation process.
+// Description: A console application to test the WebRTC ICE negotiation and
+// DTLS handshake.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)

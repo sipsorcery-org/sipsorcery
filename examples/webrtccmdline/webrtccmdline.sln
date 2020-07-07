@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29911.84
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "webrtccmdline", "webrtccmdline.csproj", "{63A81F37-D59E-49C6-9805-947F6A2C64D4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{63A81F37-D59E-49C6-9805-947F6A2C64D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63A81F37-D59E-49C6-9805-947F6A2C64D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63A81F37-D59E-49C6-9805-947F6A2C64D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63A81F37-D59E-49C6-9805-947F6A2C64D4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6F7E6139-CA35-49B6-B187-4947EBF00DFA}
+	EndGlobalSection
+EndGlobal

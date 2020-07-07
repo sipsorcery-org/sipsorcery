@@ -277,14 +277,14 @@ namespace SIPSorcery.Net.UnitTests
             Assert.Equal(RTCIceConnectionState.checking, rtpIceChannelB.IceConnectionState);
 
             // Give the RTP channel listeners time to start.
-            await Task.Delay(5000);
+            await Task.Delay(500);
 
             // Exchange ICE candidates.
             rtpIceChannelA.Candidates.ForEach(x => rtpIceChannelB.AddRemoteCandidate(x));
             rtpIceChannelB.Candidates.ForEach(x => rtpIceChannelA.AddRemoteCandidate(x));
 
             // Give the RTP ICE channel checklists time to send the first few checks.
-            await Task.Delay(5000);
+            await Task.Delay(2000);
 
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelA.IceConnectionState);
             Assert.Equal(RTCIceConnectionState.connected, rtpIceChannelB.IceConnectionState);
