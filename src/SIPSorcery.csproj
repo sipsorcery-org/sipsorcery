@@ -10,7 +10,6 @@
     <Compile Remove="net\RTSP\RTSPClient.cs" />
     <Compile Remove="net\RTSP\RTSPConnection.cs" />
     <Compile Remove="net\RTSP\RTSPServer.cs" />
-    <Compile Remove="net\WebRTC\WebRtcSession.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,14 +33,14 @@
 
   <PropertyGroup>
   <TargetFrameworks>netstandard2.0;net46;netcoreapp3.1</TargetFrameworks>
-	<Version>4.0.55-pre</Version>
+	<Version>4.0.56-pre</Version>
 	<Authors>Aaron Clauson &amp; Contributors</Authors>
 	<Copyright>Copyright © 2010-2020 Aaron Clauson</Copyright>
 	<PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
 	<Title>SIPSorcery</Title>
 	<Summary>A cross platform C# .NET library for SIP, VoIP and WebRTC.</Summary>
 	<Description>This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol (SIP) and related protocols plus experimental support for WebRTC.
-This library is largely a .Net implementation and not a wrapper for a 3rd party library. The exceptions being DTLS, SRTP and media device integrations which are in the separate SIPSorceryMedia
+This library is largely a .Net implementation and not a wrapper for a 3rd party library. The exceptions being codec and media device integrations which are in the separate SIPSorceryMedia
 library.
   </Description>
 	<Company>SIP Sorcery PTY LTD</Company>
@@ -56,8 +55,9 @@ library.
 	<RepositoryUrl>https://github.com/sipsorcery/sipsorcery</RepositoryUrl>
   <RepositoryType>git</RepositoryType>
   <RepositoryBranch>master</RepositoryBranch>
-	<PackageTags>SIP WebRTC VoIP RTP SDP STUN SIPSorcery</PackageTags>
-	<PackageReleaseNotes>- v4.0.55-pre: RtpIceChannel support for TURN relaying.
+	<PackageTags>SIP WebRTC VoIP RTP SDP STUN ICE SIPSorcery</PackageTags>
+	<PackageReleaseNotes>- v4.0.56-pre: Support for DTLS/SRTP without native library thanks to @rafcsoares.
+- v4.0.55-pre: RtpIceChannel support for TURN relaying.
 - v4.0.53-pre: Add STUN server support for WebRTC connection checks.
 - v4.0.52-pre: Modify RTCPeerConnection so it can be used by SIPUserAgent.
 - v4.0.51-pre: Add play stream feature to RtpAudioSession.
@@ -89,8 +89,8 @@ library.
 - Version &gt; 4.0.0 - Major refactor of SIP transport layer to support IPAddress.Any and IPAddress.IPv6Any.
 </PackageReleaseNotes>
 	<NeutralLanguage>en-GB</NeutralLanguage>
-	<AssemblyVersion>4.0.55.0</AssemblyVersion>
-	<FileVersion>4.0.55.0</FileVersion>
+	<AssemblyVersion>4.0.56.0</AssemblyVersion>
+	<FileVersion>4.0.56.0</FileVersion>
   </PropertyGroup>    
 
 </Project>
