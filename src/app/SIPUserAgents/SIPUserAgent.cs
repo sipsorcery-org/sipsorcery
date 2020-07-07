@@ -327,11 +327,20 @@ namespace SIPSorcery.SIP.App
                 throw new ApplicationException("The destination was not recognised as a valid SIP URI.");
             }
 
+            string fromHeader = SIPConstants.SIP_DEFAULT_FROMURI;
+
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                // If the call needs to be authenticated the From header needs to be set
+                // with the username and domain to match the credentials.
+                fromHeader = (new SIPURI(username, dstUri.Host, null, dstUri.Scheme, dstUri.Protocol)).ToParameterlessString();
+            }
+
             SIPCallDescriptor callDescriptor = new SIPCallDescriptor(
                username ?? SIPConstants.SIP_DEFAULT_USERNAME,
                password,
                dstUri.ToString(),
-               SIPConstants.SIP_DEFAULT_FROMURI,
+               fromHeader,
                dstUri.CanonicalAddress,
                null, null, null,
                SIPCallDirection.Out,
