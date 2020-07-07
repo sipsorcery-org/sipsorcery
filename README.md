@@ -7,9 +7,9 @@
 
 This repository contains the source for a C# .NET library with full support for the Session Initiation Protocol [(SIP)](https://tools.ietf.org/html/rfc3261) and the Real-time Transport Protocol [(RTP)](https://tools.ietf.org/html/rfc3550). 
 
-**This library does NOT provide any media (audio and video) handling. For Windows the companion [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media) library provides audio & video functions for rendering & capture. This project can be used for SIP signalling and to send and receive RTP packets.**
+**This library provide an interface for audio/video capturing/rendering. For Windows the companion [SIPSorceryMedia](https://github.com/sipsorcery/sipsorcery-media) library does provide some audio & video functions. Supporting cross platform audio/video capabilities with .NET Core is a major project by itself.
 
-**NEW (Feb/Mar 2020)**: Pre-release support for Web Real-Time Communication [(WebRTC)](https://www.w3.org/TR/webrtc/) for early adopters. See [Getting Started WebRTC](#getting-started-webrtc).
+**NEW (Jul 2020)**: Pre-release support for Web Real-Time Communication [(WebRTC)](https://www.w3.org/TR/webrtc/) for early adopters and now with C# DTLS/SRTP implementation (native libraries no longer required) thanks to @rafcsoares. See [Getting Started WebRTC](#getting-started-webrtc).
 
 ## Installation
 
@@ -18,13 +18,13 @@ The library is compliant with .NET Standard 2.0, .Net Core 3.1 and .NET Framewor
 For .NET Core:
 
 ````bash
-dotnet add package SIPSorcery
+dotnet add package SIPSorcery -v 4.0.58-pre
 ````
 
 With Visual Studio Package Manager Console (or search for [SIPSorcery on NuGet](https://www.nuget.org/packages/SIPSorcery/)):
 
 ````ps1
-Install-Package SIPSorcery
+Install-Package SIPSorcery -v 4.0.58-pre
 ````
 
 #### SIPSorceryMedia Install
@@ -40,13 +40,13 @@ The `SIPSorceryMedia` library is compliant with .NET Core 3.1. It is available v
 For .NET Core:
 
 ````bash
-dotnet add package SIPSorceryMedia -v 4.0.28-pre
+dotnet add package SIPSorceryMedia -v 4.0.58-pre
 ````
 
 With Visual Studio Package Manager Console (or search for [SIPSorceryMedia on NuGet](https://www.nuget.org/packages/SIPSorceryMedia/)):
 
 ````ps1
-Install-Package SIPSorceryMedia -v 4.0.28-pre
+Install-Package SIPSorceryMedia -v 4.0.58-pre
 ````
 
 ## Documentation
@@ -55,20 +55,22 @@ Class reference documentation and articles explaining common usage are available
 
 ## Getting Started SIP/VoIP
 
-The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia` library to play the received audio.
+The simplest possible example to place an audio-only SIP call is shown below. This example relies on the Windows specific `SIPSorceryMedia` library to play the received audio and only works on Windows (due to lack of audio device support on non-Windows platforms).
 
 ````bash
 dotnet new console --name SIPGetStarted
 cd SIPGetStarted
-dotnet add package SIPSorcery -v 4.0.28-pre
-dotnet add package SIPSorceryMedia -v 4.0.28-pre
-edit Program.cs and paste in the contents below
+dotnet add package SIPSorcery -v 4.0.58-pre
+dotnet add package SIPSorceryMedia -v 4.0.58-pre
+code . # If you have [Visual Studio Code](https://code.visualstudio.com/) installed
+# edit Program.cs and paste in the contents below.
 dotnet run
+# if successful you will here the current time read out.
+ctrl-c
 ````
 
 ````csharp
 using System;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
@@ -80,13 +82,13 @@ namespace SIPGetStarted
     {
          private static string DESTINATION = "time@sipsorcery.com";
         
-        static async Task Main(string[] args)
+        static async Task Main()
         {
             Console.WriteLine("SIP Get Started");
             
             var sipTransport = new SIPTransport();
             var userAgent = new SIPUserAgent(sipTransport, null);
-            var rtpSession = new RtpAVSession(AddressFamily.InterNetwork, new AudioOptions { AudioSource = AudioSourcesEnum.Microphone }, null);
+            var rtpSession = new RtpAVSession(new AudioOptions { AudioSource = AudioSourcesEnum.CaptureDevice }, null);
 
             // Place the call and wait for the result.
             bool callResult = await userAgent.Call(DESTINATION, null, null, rtpSession);
@@ -104,14 +106,7 @@ The three key classes in the above example are described in dedicated articles:
  - [SIPUserAgent](https://sipsorcery.github.io/sipsorcery/articles/sipuseragent.html),
  - [RTPSession](https://sipsorcery.github.io/sipsorcery/articles/rtpsession.html) base class for `RtpAVSession`.
 
-The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examples) contains sample code to demonstrate other common SIP use cases such as:
-
- - Attended Transfers,
- - Blind Transfers,
- - Call Hold,
- - Sending DTMF tones.
-
- The full list of SIP examples available is:
+The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examples) contains sample code to demonstrate other common cases including:
 
   - [Get Started](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted): Simplest example. Demonstrates how to place a SIP call.
   - [Get Started Video](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStartedVideo): Adds video to the [Get Started](https://github.com/sipsorcery/sipsorcery/tree/master/examples/GetStarted) example.
@@ -130,86 +125,54 @@ The [examples folder](https://github.com/sipsorcery/sipsorcery/tree/master/examp
 
 The core of the code required to establish a WebRTC connection is demonstrated below. The code shown will build but will not establish a connection due to no mechanism to exchange the SDP offer and answer between peers. A full working example with a web socket signalling mechanism is available in the [WebRTCTestPatternServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCTestPatternServer) example.
 
+If you are familiar with the [WebRTC javascript API](https://www.w3.org/TR/webrtc/) the API in this project aims to be as close to it as possible.
+
 ````bash
 dotnet new console --name WebRTCGetStarted
 cd WebRTCGetStarted
-dotnet add package SIPSorcery -v 4.0.28-pre
-dotnet add package SIPSorceryMedia -v 4.0.28-pre
-edit Program.cs and paste in the contents below
+dotnet add package SIPSorcery -v 4.0.58-pre
+dotnet add package SIPSorceryMedia -v 4.0.58-pre
+code . # If you have [Visual Studio Code](https://code.visualstudio.com/) installed
+# edit Program.cs and paste in the contents below.
 dotnet run
 ````
 
 ````csharp
 using System;
 using System.Collections.Generic;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 using SIPSorcery.Net;
-using SIPSorceryMedia;
 
 namespace WebRTCGetStarted
 {
     class Program
     {
-        private const string DTLS_CERTIFICATE_PATH = "certs/localhost.pem";
-        private const string DTLS_KEY_PATH = "certs/localhost_key.pem";
-        private const string DTLS_CERTIFICATE_FINGERPRINT = "sha-256 C6:ED:8C:9D:06:50:77:23:0A:4A:D8:42:68:29:D0:70:2F:BB:C7:72:EC:98:5C:62:07:1B:0C:5D:CB:CE:BE:CD";
-        
-        static async Task Main(string[] args)
+        static async Task Main()
         {
             Console.WriteLine("Get Started WebRTC");
             
-            var webRtcSession = new WebRtcSession(
-                AddressFamily.InterNetwork,
-                DTLS_CERTIFICATE_FINGERPRINT,
-                null,
-                null);
+            var pc = new RTCPeerConnection(null);
 
-            MediaStreamTrack videoTrack = new MediaStreamTrack(null, SDPMediaTypesEnum.video, false, new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) });
-            webRtcSession.addTrack(videoTrack);
-            
-            var offerSdp = await webRtcSession.createOffer(null);
-            webRtcSession.setLocalDescription(new RTCSessionDescription { sdp = offerSdp, type = RTCSdpType.offer });
-            
-            // At this point the SDP offer and answer need to be exchanged with the remote peer.
-            
-            var answerSdp = SDP.ParseSDPDescription(sdpAnswer);
-            webRtcSession.setRemoteDescription(new RTCSessionDescription { sdp = answerSdp, type = RTCSdpType.answer }); 
-            
-            var dtls = new DtlsHandshake(DTLS_CERTIFICATE_PATH, DTLS_KEY_PATH);
-            webRtcSession.OnClose += (reason) => dtls.Shutdown();
-            
-            dtls.DoHandshakeAsServer((ulong)webRtcSession.GetRtpChannel(SDPMediaTypesEnum.audio).RtpSocket.Handle);
+            MediaStreamTrack videoTrack = new MediaStreamTrack(
+              SDPMediaTypesEnum.video, 
+              false, 
+              new List<SDPMediaFormat> { new SDPMediaFormat(SDPMediaFormatsEnum.VP8) }, 
+              MediaStreamStatusEnum.SendOnly);
+            pc.addTrack(videoTrack);
 
-            if (dtls.IsHandshakeComplete())
-            {
-                var srtpSendContext = new Srtp(dtls, false);
-                var srtpReceiveContext = new Srtp(dtls, true);
+            pc.oniceconnectionstatechange += (state) => Console.WriteLine($"ICE connection state change to {state}.");
+            pc.onconnectionstatechange += (state) => Console.WriteLine($"Peer connection state change to {state}.");
 
-                webRtcSession.SetSecurityContext(
-                    srtpSendContext.ProtectRTP,
-                    srtpReceiveContext.UnprotectRTP,
-                    srtpSendContext.ProtectRTCP,
-                    srtpReceiveContext.UnprotectRTCP);
+            var offerSdp = pc.createOffer(null);
+            await pc.setLocalDescription(offerSdp);
 
-                Console.WriteLine("DTLS handshake completed.");
-            }
-            else
-            {
-               Console.WriteLine("DTLS handshake failed.");
-            }
-            
-            // If the DTLS key exchange succeeded then secure RTP packets can now be exchanged between the peers.
+            Console.ReadLine();
         }
     }
 }
 ````
 
-The key class for using WebRTC is described in this article:
- 
-  - [WebRTCSession](https://sipsorcery.github.io/sipsorcery/articles/webrtcsession.html)
-
-The full list of WebRTC examples available is:
+Some of the WebRTC examples available are:
 
  - [WebRTCTestPatternServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCTestPatternServer): The simplest example. This program serves up a test pattern video stream to a WebRTC peer.
  - [WebRTCServer](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCServer): This example extends the test pattern example and can act as a media source for a peer. It has two source options:
@@ -218,4 +181,3 @@ The full list of WebRTC examples available is:
  The example includes an html file which runs in a Browser and will connect to a sample program running on the same machine.
 - [WebRTCReceiver](https://github.com/sipsorcery/sipsorcery/tree/master/examples/WebRTCReceiver): A receive only example. It attempts to connect to a WebRTC peer and display the video stream that it receives.
 
-**The WebRtcSession class and all WebRTC functionality in this library are still under heavy development. There are large blocks of functionality still missing, particularly ICE and codec support. All issues and PR's are very welcome.**
